@@ -37,12 +37,7 @@ export const SamlGeneralSettings = ({
 
       <FormGroup
         label={t("alias")}
-        labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:alias")}
-            fieldLabelId="identity-providers:alias"
-          />
-        }
+        labelIcon={<HelpItem helpText={t("aliasHelp")} fieldLabelId="alias" />}
         fieldId="alias"
         isRequired
         validated={
@@ -73,10 +68,7 @@ export const SamlGeneralSettings = ({
           label={t("endpoints")}
           fieldId="endpoints"
           labelIcon={
-            <HelpItem
-              helpText={t("identity-providers-help:alias")}
-              fieldLabelId="identity-providers:alias"
-            />
+            <HelpItem helpText={t("aliasHelp")} fieldLabelId="alias" />
           }
           className="keycloak__identity-providers__saml_link"
         >

@@ -38,9 +38,9 @@ export const EventConfigForm = ({
   const eventsEnabled: boolean = watch(eventKey);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:events-disable-title",
-    messageKey: "realm-settings:events-disable-confirm",
-    continueButtonLabel: "realm-settings:confirm",
+    titleKey: "events-disable-title",
+    messageKey: "events-disable-confirm",
+    continueButtonLabel: "confirm",
     onConfirm: () => setValue(eventKey, false, { shouldDirty: true }),
   });
 
@@ -53,8 +53,8 @@ export const EventConfigForm = ({
         fieldId={eventKey}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:save-${type}-events`)}
-            fieldLabelId="realm-settings:saveEvents"
+            helpText={t(`save-${type}-eventsHelp`)}
+            fieldLabelId="saveEvents"
           />
         }
       >
@@ -91,7 +91,7 @@ export const EventConfigForm = ({
               labelIcon={
                 <HelpItem
                   helpText={t("includeRepresentationHelp")}
-                  fieldLabelId="realm-settings:includeRepresentation"
+                  fieldLabelId="includeRepresentation"
                 />
               }
             >
@@ -119,7 +119,7 @@ export const EventConfigForm = ({
             labelIcon={
               <HelpItem
                 helpText={t("expirationHelp")}
-                fieldLabelId="realm-settings:expiration"
+                fieldLabelId="expiration"
               />
             }
           >
@@ -160,7 +160,7 @@ export const EventConfigForm = ({
         fieldId={`clear-${type}-events`}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:${type}-clearEvents`)}
+            helpText={t(`${type}-clearEventsHelp`)}
             fieldLabelId={`realm-settings:clear-${type}-events`}
           />
         }

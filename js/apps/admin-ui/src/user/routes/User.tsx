@@ -24,7 +24,7 @@ const EditUser = lazy(() => import("../EditUser"));
 export const UserRoute: AppRouteObject = {
   path: "/:realm/users/:id/:tab",
   element: <EditUser />,
-  breadcrumb: (t) => t("users:userDetails"),
+  breadcrumb: (t) => t("userDetails"),
   handle: {
     access: "query-users",
   },

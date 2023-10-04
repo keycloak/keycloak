@@ -91,7 +91,7 @@ const WebauthnSelect = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`authentication-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`authentication:${label}`}
         />
       }

@@ -41,7 +41,7 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
   };
 
   const options =
-    (attribute.validations?.options as Options | undefined)?.options || [];
+    (attribute.validators?.options as Options | undefined)?.options || [];
 
   const optionLabel = attribute.annotations?.[
     "inputOptionLabels"

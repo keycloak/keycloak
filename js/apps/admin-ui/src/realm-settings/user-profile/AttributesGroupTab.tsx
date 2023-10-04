@@ -35,9 +35,9 @@ export const AttributesGroupTab = () => {
   }
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteDialogTitle",
+    titleKey: "deleteDialogTitle",
     children: (
-      <Trans i18nKey="realm-settings:deleteDialogDescription">
+      <Trans i18nKey="deleteDialogDescription">
         {" "}
         <strong>{{ group: groupToDelete?.name }}</strong>.
       </Trans>
@@ -52,8 +52,8 @@ export const AttributesGroupTab = () => {
       save(
         { ...config, groups },
         {
-          successMessageKey: "realm-settings:deleteSuccess",
-          errorMessageKey: "realm-settings:deleteAttributeGroupError",
+          successMessageKey: "deleteSuccess",
+          errorMessageKey: "deleteAttributeGroupError",
         },
       );
     },
@@ -70,7 +70,7 @@ export const AttributesGroupTab = () => {
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="realm-settings:tableTitle"
+        ariaLabelKey="tableTitle"
         toolbarItem={
           <ToolbarItem>
             <Button
@@ -85,7 +85,7 @@ export const AttributesGroupTab = () => {
         columns={[
           {
             name: "name",
-            displayKey: "realm-settings:columnName",
+            displayKey: "columnName",
             cellRenderer: (group) => (
               <Link to={toEditAttributesGroup({ realm, name: group.name! })}>
                 {group.name}
@@ -94,11 +94,11 @@ export const AttributesGroupTab = () => {
           },
           {
             name: "displayHeader",
-            displayKey: "realm-settings:columnDisplayName",
+            displayKey: "columnDisplayName",
           },
           {
             name: "displayDescription",
-            displayKey: "realm-settings:columnDisplayDescription",
+            displayKey: "columnDisplayDescription",
           },
         ]}
         actions={[

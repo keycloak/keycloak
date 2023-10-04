@@ -107,7 +107,7 @@ export default function UserFederationSection() {
         refresh();
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("user-federation:userFedDeleteError", error);
+        addError("userFedDeleteError", error);
       }
     },
   });
@@ -181,12 +181,12 @@ export default function UserFederationSection() {
       )}
       <ViewHeader
         titleKey="userFederation"
-        subKey="user-federation:userFederationExplain"
+        subKey="userFederationExplain"
         helpUrl={helpUrls.userFederationUrl}
         {...(userFederations && userFederations.length > 0
           ? {
               lowerDropdownItems: ufAddProviderDropdownItems,
-              lowerDropdownMenuTitle: "user-federation:addNewProvider",
+              lowerDropdownMenuTitle: "addNewProvider",
               lowerButton: lowerButtonProps,
             }
           : {})}

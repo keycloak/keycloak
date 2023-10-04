@@ -26,6 +26,7 @@ import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
+import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
 import java.util.Set;
@@ -94,6 +95,10 @@ public class RealmCacheManager extends CacheManager {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
         invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
         addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
+    }
+
+    public void groupNameInvalidations(String groupId, Set<String> invalidations) {
+        addInvalidations(InGroupPredicate.create().group(groupId), invalidations);
     }
 
     public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {

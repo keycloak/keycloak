@@ -46,8 +46,8 @@ export const LdapSettingsSearching = ({
           label={t("editMode")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:editModeLdapHelp")}
-              fieldLabelId="user-federation:editMode"
+              helpText={t("editModeLdapHelp")}
+              fieldLabelId="editMode"
             />
           }
           fieldId="kc-edit-mode"
@@ -99,10 +99,7 @@ export const LdapSettingsSearching = ({
         <FormGroup
           label={t("usersDN")}
           labelIcon={
-            <HelpItem
-              helpText={t("user-federation-help:usersDNHelp")}
-              fieldLabelId="user-federation:usersDn"
-            />
+            <HelpItem helpText={t("usersDNHelp")} fieldLabelId="usersDn" />
           }
           fieldId="kc-ui-users-dn"
           isRequired
@@ -137,8 +134,8 @@ export const LdapSettingsSearching = ({
           label={t("usernameLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:usernameLdapAttributeHelp")}
-              fieldLabelId="user-federation:usernameLdapAttribute"
+              helpText={t("usernameLdapAttributeHelp")}
+              fieldLabelId="usernameLdapAttribute"
             />
           }
           fieldId="kc-username-ldap-attribute"
@@ -175,8 +172,8 @@ export const LdapSettingsSearching = ({
           label={t("rdnLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:rdnLdapAttributeHelp")}
-              fieldLabelId="user-federation:rdnLdapAttribute"
+              helpText={t("rdnLdapAttributeHelp")}
+              fieldLabelId="rdnLdapAttribute"
             />
           }
           fieldId="kc-rdn-ldap-attribute"
@@ -212,8 +209,8 @@ export const LdapSettingsSearching = ({
           label={t("uuidLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:uuidLdapAttributeHelp")}
-              fieldLabelId="user-federation:uuidLdapAttribute"
+              helpText={t("uuidLdapAttributeHelp")}
+              fieldLabelId="uuidLdapAttribute"
             />
           }
           fieldId="kc-uuid-ldap-attribute"
@@ -250,8 +247,8 @@ export const LdapSettingsSearching = ({
           label={t("userObjectClasses")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:userObjectClassesHelp")}
-              fieldLabelId="user-federation:userObjectClasses"
+              helpText={t("userObjectClassesHelp")}
+              fieldLabelId="userObjectClasses"
             />
           }
           fieldId="kc-user-object-classes"
@@ -288,8 +285,8 @@ export const LdapSettingsSearching = ({
           label={t("userLdapFilter")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:userLdapFilterHelp")}
-              fieldLabelId="user-federation:userLdapFilter"
+              helpText={t("userLdapFilterHelp")}
+              fieldLabelId="userLdapFilter"
             />
           }
           fieldId="kc-user-ldap-filter"
@@ -324,8 +321,8 @@ export const LdapSettingsSearching = ({
           label={t("searchScope")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:searchScopeHelp")}
-              fieldLabelId="user-federation:searchScope"
+              helpText={t("searchScopeHelp")}
+              fieldLabelId="searchScope"
             />
           }
           fieldId="kc-search-scope"
@@ -363,8 +360,8 @@ export const LdapSettingsSearching = ({
           label={t("readTimeout")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:readTimeoutHelp")}
-              fieldLabelId="user-federation:readTimeout"
+              helpText={t("readTimeoutHelp")}
+              fieldLabelId="readTimeout"
             />
           }
           fieldId="kc-read-timeout"
@@ -381,8 +378,8 @@ export const LdapSettingsSearching = ({
           label={t("pagination")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:paginationHelp")}
-              fieldLabelId="user-federation:pagination"
+              helpText={t("paginationHelp")}
+              fieldLabelId="pagination"
             />
           }
           fieldId="kc-ui-pagination"

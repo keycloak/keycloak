@@ -81,7 +81,7 @@ export const KeyProviderForm = ({
         onClose?.();
       }
     } catch (error) {
-      addError("realm-settings:saveProviderError", error);
+      addError("saveProviderError", error);
     }
   };
 

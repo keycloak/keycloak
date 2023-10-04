@@ -36,7 +36,7 @@ export function EventsTypeTable({
   return (
     <KeycloakDataTable
       ariaLabelKey={ariaLabelKey}
-      searchPlaceholderKey="realm-settings:searchEventType"
+      searchPlaceholderKey="searchEventType"
       loader={data}
       onSelect={onSelect ? onSelect : undefined}
       canSelectAll={!!onSelect}
@@ -62,7 +62,7 @@ export function EventsTypeTable({
       columns={[
         {
           name: "name",
-          displayKey: "realm-settings:eventType",
+          displayKey: "eventType",
         },
         {
           name: "description",

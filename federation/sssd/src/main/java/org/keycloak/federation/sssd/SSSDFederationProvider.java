@@ -125,7 +125,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
         user.setFirstName(sssdUser.getFirstName());
         user.setLastName(sssdUser.getLastName());
         for (String s : sssd.getGroups()) {
-            GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "/" + s);
+            GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, "/" + s);
             if (group == null) {
                 group = session.groups().createGroup(realm, s);
             }

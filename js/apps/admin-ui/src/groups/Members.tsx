@@ -264,8 +264,8 @@ export const Members = () => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("users:noUsersFound")}
-            instructions={isManager ? t("users:emptyInstructions") : undefined}
+            message={t("noUsersFound")}
+            instructions={isManager ? t("emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
             secondaryActions={[

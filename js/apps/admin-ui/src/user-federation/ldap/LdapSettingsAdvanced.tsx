@@ -46,7 +46,7 @@ export const LdapSettingsAdvanced = ({
         (passwordModifyOid.length > 0).toString(),
       ]);
     } catch (error) {
-      addError("user-federation:testError", error);
+      addError("testError", error);
     }
   };
 
@@ -65,8 +65,8 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:enableLdapv3PasswordHelp")}
-              fieldLabelId="user-federation:enableLdapv3Password"
+              helpText={t("enableLdapv3PasswordHelp")}
+              fieldLabelId="enableLdapv3Password"
             />
           }
           fieldId="kc-enable-ldapv3-password"
@@ -95,8 +95,8 @@ export const LdapSettingsAdvanced = ({
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:validatePasswordPolicyHelp")}
-              fieldLabelId="user-federation:validatePasswordPolicy"
+              helpText={t("validatePasswordPolicyHelp")}
+              fieldLabelId="validatePasswordPolicy"
             />
           }
           fieldId="kc-validate-password-policy"
@@ -125,8 +125,8 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:trustEmailHelp")}
-              fieldLabelId="user-federation:trustEmail"
+              helpText={t("trustEmailHelp")}
+              fieldLabelId="trustEmail"
             />
           }
           fieldId="kc-trust-email"

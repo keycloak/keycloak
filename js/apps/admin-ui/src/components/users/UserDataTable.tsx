@@ -128,25 +128,25 @@ export function UserDataTable() {
       });
     } catch (error) {
       if (userStorage?.length) {
-        addError("users:noUsersFoundErrorStorage", error);
+        addError("noUsersFoundErrorStorage", error);
       } else {
-        addError("users:noUsersFoundError", error);
+        addError("noUsersFoundError", error);
       }
       return [];
     }
   };
 
   const [toggleUnlockUsersDialog, UnlockUsersConfirm] = useConfirmDialog({
-    titleKey: "users:unlockAllUsers",
-    messageKey: "users:unlockUsersConfirm",
-    continueButtonLabel: "users:unlock",
+    titleKey: "unlockAllUsers",
+    messageKey: "unlockUsersConfirm",
+    continueButtonLabel: "unlock",
     onConfirm: async () => {
       try {
         await adminClient.attackDetection.delAll();
         refresh();
         addAlert(t("unlockUsersSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:unlockUsersError", error);
+        addError("unlockUsersError", error);
       }
     },
   });
@@ -165,7 +165,7 @@ export function UserDataTable() {
         clearAllFilters();
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:userDeletedError", error);
+        addError("userDeletedError", error);
       }
     },
   });
@@ -368,27 +368,27 @@ export function UserDataTable() {
         columns={[
           {
             name: "username",
-            displayKey: "users:username",
+            displayKey: "username",
             cellRenderer: UserDetailLink,
           },
           {
             name: "email",
-            displayKey: "users:email",
+            displayKey: "email",
             cellRenderer: ValidatedEmail,
           },
           {
             name: "lastName",
-            displayKey: "users:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "users:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "status",
-            displayKey: "users:status",
+            displayKey: "status",
             cellRenderer: StatusRow,
           },
         ]}

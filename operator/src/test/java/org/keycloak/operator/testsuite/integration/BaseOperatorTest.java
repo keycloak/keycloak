@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -62,6 +63,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -69,6 +71,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -85,6 +88,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
   public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
   public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
+  public static final String POSTGRESQL_NAME = "postgresql-db";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
@@ -150,7 +154,12 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"));
+    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+        if (obj instanceof ClusterRoleBinding) {
+            ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
+        }
+        return obj;
+    });
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -172,7 +181,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler);
+      operator.register(reconciler, overrider -> overrider.settingNamespace(namespace));
     }
   }
 
@@ -205,7 +214,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
     Awaitility.await()
-            .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
+            .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(POSTGRESQL_NAME).get().getStatus().getReadyReplicas()).isEqualTo(1));
   }
 
   protected static void deployDBSecret() {
@@ -214,18 +223,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
   protected static void deleteDB() {
     // Delete the Postgres StatefulSet
-    k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").delete();
-    Awaitility.await()
-            .ignoreExceptions()
-            .untilAsserted(() -> {
-              Log.infof("Waiting for postgres to be deleted");
-              assertThat(k8sclient
-                      .apps()
-                      .statefulSets()
-                      .inNamespace(namespace)
-                      .withName("postgresql-db")
-                      .get()).isNull();
-            });
+    Log.infof("Waiting for postgres to be deleted");
+    k8sclient.apps().statefulSets().inNamespace(namespace).withName(POSTGRESQL_NAME).withTimeout(2, TimeUnit.MINUTES).delete();
   }
 
   // TODO improve this (preferably move to JOSDK)
@@ -271,10 +270,15 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   @Override
   public void afterEach(QuarkusTestMethodContext context) {
       if (!(context.getTestInstance() instanceof BaseOperatorTest)) {
-          return;
+          return; // this hook gets called for all quarkus tests, not all are operator tests
       }
       try {
-          if (!context.getTestStatus().isTestFailed() || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException) {
+          Method testMethod = context.getTestMethod();
+          if (context.getTestStatus().getTestErrorCause() == null
+                  || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException
+                  || !Stream.of(context.getTestStatus().getTestErrorCause().getStackTrace())
+                          .anyMatch(ste -> ste.getMethodName().equals(testMethod.getName())
+                                  && ste.getClassName().equals(testMethod.getDeclaringClass().getName()))) {
               return;
           }
           Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());
@@ -284,7 +288,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           if (operatorDeployment == OperatorDeployment.remote) {
               logFailed(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus);
           }
-          logFailed(k8sclient.apps().statefulSets().withName("example-kc"), StatefulSet::getStatus);
+          logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
       } finally {
           cleanup();
       }
@@ -334,7 +338,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     }
 
     Log.info("Deleting namespace : " + namespace);
-    assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotNull();
+    assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotEmpty();
     k8sclient.close();
   }
 

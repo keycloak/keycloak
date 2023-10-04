@@ -10,13 +10,13 @@ import {
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
 } from "@patternfly/react-core";
-import Keycloak from "keycloak-js";
 import { ReactNode } from "react";
 
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
 import { loggedInUserName } from "./util";
 import { DefaultAvatar } from "./DefaultAvatar";
+import { useKeycloak } from "./KeycloakContext";
 
 type BrandLogo = BrandProps & {
   href: string;
@@ -30,7 +30,6 @@ type KeycloakMastheadProps = PageHeaderProps & {
     hasManageAccount?: boolean;
     hasUsername?: boolean;
   };
-  keycloak?: Keycloak;
   kebabDropdownItems?: ReactNode[];
   dropdownItems?: ReactNode[];
   toolbarItems?: ReactNode[];
@@ -44,19 +43,19 @@ const KeycloakMasthead = ({
     hasManageAccount = true,
     hasUsername = true,
   } = {},
-  keycloak,
   kebabDropdownItems,
   dropdownItems = [],
   toolbarItems,
   ...rest
 }: KeycloakMastheadProps) => {
   const { t } = useTranslation();
+  const { keycloak } = useKeycloak()!;
   const extraItems = [];
   if (hasManageAccount) {
     extraItems.push(
       <DropdownItem
         key="manageAccount"
-        onClick={() => keycloak?.accountManagement()}
+        onClick={() => keycloak.accountManagement()}
       >
         {t("manageAccount")}
       </DropdownItem>,
@@ -64,13 +63,13 @@ const KeycloakMasthead = ({
   }
   if (hasLogout) {
     extraItems.push(
-      <DropdownItem key="signOut" onClick={() => keycloak?.logout()}>
+      <DropdownItem key="signOut" onClick={() => keycloak.logout()}>
         {t("signOut")}
       </DropdownItem>,
     );
   }
 
-  const picture = keycloak?.tokenParsed?.picture;
+  const picture = keycloak.tokenParsed?.picture;
   return (
     <PageHeader
       {...rest}
@@ -104,8 +103,8 @@ const KeycloakMasthead = ({
                 data-testid="options"
                 dropDownItems={[...dropdownItems, extraItems]}
                 title={
-                  hasUsername && keycloak
-                    ? loggedInUserName(keycloak, t)
+                  hasUsername
+                    ? loggedInUserName(keycloak.tokenParsed, t)
                     : undefined
                 }
               />

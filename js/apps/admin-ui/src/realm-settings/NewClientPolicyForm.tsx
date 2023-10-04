@@ -116,8 +116,8 @@ export default function NewClientPolicyForm() {
     const { t } = useTranslation();
 
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-      titleKey: "realm-settings:disablePolicyConfirmTitle",
-      messageKey: "realm-settings:disablePolicyConfirm",
+      titleKey: "disablePolicyConfirmTitle",
+      messageKey: "disablePolicyConfirm",
       continueButtonLabel: "disable",
       onConfirm: () => {
         onChange(!value);
@@ -137,7 +137,7 @@ export default function NewClientPolicyForm() {
           titleKey={
             showAddConditionsAndProfilesForm || policyName
               ? policyName
-              : "realm-settings:createPolicy"
+              : "createPolicy"
           }
           divider
           dropdownItems={
@@ -250,14 +250,14 @@ export default function NewClientPolicyForm() {
       });
       addAlert(
         policyName
-          ? t("realm-settings:updateClientPolicySuccess")
-          : t("realm-settings:createClientPolicySuccess"),
+          ? t("updateClientPolicySuccess")
+          : t("createClientPolicySuccess"),
         AlertVariant.success,
       );
       navigate(toEditClientPolicy({ realm, policyName: createdForm.name! }));
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
-      addError("realm-settings:createClientPolicyError", error);
+      addError("createClientPolicyError", error);
     }
   };
 
@@ -419,12 +419,9 @@ export default function NewClientPolicyForm() {
       });
       setPolicies(newPolicies);
       navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
-      addAlert(
-        t("realm-settings:addClientProfileSuccess"),
-        AlertVariant.success,
-      );
+      addAlert(t("addClientProfileSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:addClientProfileError", error);
+      addError("addClientProfileError", error);
     }
   };
 
@@ -531,7 +528,7 @@ export default function NewClientPolicyForm() {
                     {t("conditions")}
                     <HelpItem
                       helpText={t("conditionsHelp")}
-                      fieldLabelId="realm-settings:conditions"
+                      fieldLabelId="conditions"
                     />
                   </Text>
                 </FlexItem>
@@ -552,7 +549,7 @@ export default function NewClientPolicyForm() {
                     data-testid="addCondition"
                     icon={<PlusCircleIcon />}
                   >
-                    {t("realm-settings:addCondition")}
+                    {t("addCondition")}
                   </Button>
                 </FlexItem>
               </Flex>
@@ -632,7 +629,7 @@ export default function NewClientPolicyForm() {
                     className="kc-emptyConditions"
                     component={TextVariants.h2}
                   >
-                    {t("realm-settings:emptyConditions")}
+                    {t("emptyConditions")}
                   </Text>
                 </>
               )}
@@ -649,7 +646,7 @@ export default function NewClientPolicyForm() {
                     {t("clientProfiles")}
                     <HelpItem
                       helpText={t("clientProfilesHelp")}
-                      fieldLabelId="realm-settings:clientProfiles"
+                      fieldLabelId="clientProfiles"
                     />
                   </Text>
                 </FlexItem>
@@ -662,7 +659,7 @@ export default function NewClientPolicyForm() {
                     icon={<PlusCircleIcon />}
                     onClick={toggleModal}
                   >
-                    {t("realm-settings:addClientProfile")}
+                    {t("addClientProfile")}
                   </Button>
                 </FlexItem>
               </Flex>
@@ -738,7 +735,7 @@ export default function NewClientPolicyForm() {
                     className="kc-emptyClientProfiles"
                     component={TextVariants.h2}
                   >
-                    {t("realm-settings:emptyProfiles")}
+                    {t("emptyProfiles")}
                   </Text>
                 </>
               )}

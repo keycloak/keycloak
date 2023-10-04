@@ -387,6 +387,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
+        navigateToLoginPage();
+        assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
 
@@ -514,7 +516,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
-        driver.navigate().to(oauth.getLoginFormUrl());
+
+        driver.navigate().to(
+                currentTestProvider.equals(PAYPAL)
+                        ? oauth.getLoginFormUrl("https://127.0.0.1:8543/auth")
+                        : oauth.getLoginFormUrl()
+        );
         loginPage.clickSocial(currentTestProvider.id());
 
         // Just to be sure there's no redirect in progress
@@ -540,7 +547,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(1, users.size());
         assertNotNull(users.get(0).getAttributes());
         assertNotNull(users.get(0).getAttributes().get(attrName));
-        assertEquals(expectedValue, users.get(0).getAttributes().get(attrName).get(0));
+        String attrValue = users.get(0).getAttributes().get(attrName).get(0);
+        if (currentTestProvider.equals(LINKEDIN) && attrName.equals("picture")) {
+            assertTrue(attrValue.contains(expectedValue));
+        } else {
+            assertEquals(expectedValue, attrValue);
+        }
     }
 
     private void assertUpdateProfile(boolean firstName, boolean lastName, boolean email) {

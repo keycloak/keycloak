@@ -33,7 +33,7 @@ export default function RealmRolesSection() {
     <>
       <ViewHeader
         titleKey="titleRoles"
-        subKey="roles:roleExplain"
+        subKey="roleExplain"
         helpUrl={helpUrls.realmRolesUrl}
       />
       <PageSection variant="light" padding={{ default: "noPadding" }}>

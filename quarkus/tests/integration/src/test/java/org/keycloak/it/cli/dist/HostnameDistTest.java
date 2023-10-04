@@ -19,17 +19,20 @@ package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
+import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 
+import java.util.function.Consumer;
+
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @DistributionTest(keepAlive = true, enableTls = true, defaultOptions = { "--http-enabled=true" })
 @RawDistOnly(reason = "Containers are immutable")
@@ -109,7 +112,6 @@ public class HostnameDistTest {
     }
 
     @Test
-    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-port=8543" })
     public void testWelcomePageAdminUrl() {
         when().get("http://mykeycloak.org:8080").then().body(Matchers.containsString("http://mykeycloak.org:8080/admin/"));
@@ -155,6 +157,27 @@ public class HostnameDistTest {
     public void testHostnameAdminSet() {
         when().get("https://mykeycloak.org:8443/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"https://mykeycloakadmin.org:8443\""));
         when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.org:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+
+        when().get("http://localhost:8080/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"http://mykeycloakadmin.org:8080\""));
+    }
+
+    @Test
+    @Launch({"start", "--hostname=mykeycloak.org", "--hostname-debug=true"})
+    public void testHostnameAdminFromHeaders() {
+        when().get("https://mykeycloak.org:8443/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"https://mykeycloak.org:8443\""));
+        when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloak.org:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+
+        // Admin URL should be resolved from headers
+        when().get("http://localhost:8080/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"http://localhost:8080\""));
+        when().get("http://localhost:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=http://localhost:8080/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+
+        Consumer<String> assertDebugAdmin = (url) -> {
+            final var body = StringUtils.deleteWhitespace(when().get(url + "/realms/master/hostname-debug").then().extract().response().body().asString());
+            assertThat(body, Matchers.containsString("<td>Admin</td><td>" + url));
+        };
+
+        assertDebugAdmin.accept("https://mykeycloak.org:8443");
+        assertDebugAdmin.accept("http://localhost:8080");
     }
 
     @Test
@@ -170,10 +193,10 @@ public class HostnameDistTest {
     }
 
     @Test
-    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--proxy=edge", "--hostname=mykeycloak.org", "--hostname-admin-url=http://mykeycloakadmin.org:1234" })
     public void testAdminUrl() {
         when().get("https://mykeycloak.org:8443").then().body(Matchers.containsString("http://mykeycloakadmin.org:1234/admin/"));
+        when().get("http://localhost:8080/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"http://mykeycloakadmin.org:1234\""));
     }
 
     @Test

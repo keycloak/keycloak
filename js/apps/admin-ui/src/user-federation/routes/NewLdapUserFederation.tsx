@@ -12,8 +12,7 @@ const CreateUserFederationLdapSettings = lazy(
 export const NewLdapUserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap/new",
   element: <CreateUserFederationLdapSettings />,
-  breadcrumb: (t) =>
-    t("user-federation:addProvider", { provider: "LDAP", count: 1 }),
+  breadcrumb: (t) => t("addProvider", { provider: "LDAP", count: 1 }),
   handle: {
     access: "view-realm",
   },

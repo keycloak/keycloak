@@ -180,6 +180,13 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         for (String name : nameSet()) {
             AttributeMetadata metadata = getMetadata(name);
+            RealmModel realm = session.getContext().getRealm();
+
+            if (UserModel.USERNAME.equals(name)
+                    && UserProfileContext.USER_API.equals(context)
+                    && realm.isRegistrationEmailAsUsername()) {
+                    continue;
+            }
 
             if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {
                 attributes.remove(name);

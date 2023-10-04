@@ -56,7 +56,7 @@ const EmailVerified = () => {
       labelIcon={
         <HelpItem
           helpText={t("emailVerifiedHelp")}
-          fieldLabelId="users:emailVerified"
+          fieldLabelId="emailVerified"
         />
       }
     >
@@ -120,7 +120,7 @@ export const UserForm = ({
       await adminClient.attackDetection.del({ id: user!.id! });
       addAlert(t("unlockSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("users:unlockError", error);
+      addError("unlockError", error);
     }
   };
 
@@ -143,9 +143,9 @@ export const UserForm = ({
           id: user!.id!,
           groupId: group.id!,
         });
-        addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+        addAlert(t("addedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addError("users:addedGroupMembershipError", error);
+        addError("addedGroupMembershipError", error);
       }
     });
   };
@@ -170,8 +170,8 @@ export const UserForm = ({
         <GroupPickerDialog
           type="selectMany"
           text={{
-            title: "users:selectGroups",
-            ok: "users:join",
+            title: "selectGroups",
+            ok: "join",
           }}
           canBrowse={isManager}
           onConfirm={(groups) => {
@@ -182,7 +182,6 @@ export const UserForm = ({
           filterGroups={selectedGroups}
         />
       )}
-      {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
           <FormGroup label={t("id")} fieldId="kc-id" isRequired>
@@ -217,15 +216,15 @@ export const UserForm = ({
           labelIcon={
             <HelpItem
               helpText={t("federationLinkHelp")}
-              fieldLabelId="users:federationLink"
+              fieldLabelId="federationLink"
             />
           }
         >
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled ? (
-        <UserProfileFields config={user?.userProfileMetadata!} />
+      {isUserProfileEnabled && user?.userProfileMetadata ? (
+        <UserProfileFields config={user.userProfileMetadata} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
@@ -251,7 +250,7 @@ export const UserForm = ({
             label={t("email")}
             fieldId="kc-email"
             validated={errors.email ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            helperTextInvalid={t("emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -282,7 +281,7 @@ export const UserForm = ({
           >
             <KeycloakTextInput
               data-testid="lastName-input"
-              id="kc-lastname"
+              id="kc-lastName"
               aria-label={t("lastName")}
               {...register("lastName")}
             />
@@ -296,7 +295,7 @@ export const UserForm = ({
           labelIcon={
             <HelpItem
               helpText={t("temporaryLockedHelp")}
-              fieldLabelId="users:temporaryLocked"
+              fieldLabelId="temporaryLocked"
             />
           }
         >
@@ -320,9 +319,7 @@ export const UserForm = ({
           fieldId="kc-groups"
           validated={errors.requiredActions ? "error" : "default"}
           helperTextInvalid={t("required")}
-          labelIcon={
-            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
-          }
+          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
         >
           <Controller
             name="groups"
@@ -346,7 +343,7 @@ export const UserForm = ({
                   variant="secondary"
                   data-testid="join-groups-button"
                 >
-                  {t("users:joinGroups")}
+                  {t("joinGroups")}
                 </Button>
               </InputGroup>
             )}

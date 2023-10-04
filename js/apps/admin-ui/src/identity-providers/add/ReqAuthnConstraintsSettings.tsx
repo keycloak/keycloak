@@ -22,10 +22,7 @@ export const ReqAuthnConstraints = () => {
       <FormGroup
         label={t("comparison")}
         labelIcon={
-          <HelpItem
-            helpText={t("comparisonHelp")}
-            fieldLabelId="identity-providers:comparison"
-          />
+          <HelpItem helpText={t("comparisonHelp")} fieldLabelId="comparison" />
         }
         fieldId="comparison"
       >
@@ -74,7 +71,7 @@ export const ReqAuthnConstraints = () => {
         <MultiLineInput
           name="config.authnContextClassRefs"
           aria-label={t("identify-providers:authnContextClassRefs")}
-          addButtonLabel="identity-providers:addAuthnContextClassRef"
+          addButtonLabel="addAuthnContextClassRef"
           data-testid="classref-field"
         />
       </FormGroup>
@@ -91,7 +88,7 @@ export const ReqAuthnConstraints = () => {
         <MultiLineInput
           name="config.authnContextDeclRefs"
           aria-label={t("identify-providers:authnContextDeclRefs")}
-          addButtonLabel="identity-providers:addAuthnContextDeclRef"
+          addButtonLabel="addAuthnContextDeclRef"
           data-testid="declref-field"
         />
       </FormGroup>

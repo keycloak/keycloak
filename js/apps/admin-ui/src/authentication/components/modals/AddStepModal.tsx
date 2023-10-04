@@ -90,16 +90,16 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
     [],
   );
 
-  const page = useMemo(
-    () =>
-      localeSort(providers ?? [], mapByKey("displayName"))
-        .filter(
-          (p) =>
-            p.displayName?.includes(search) || p.description?.includes(search),
-        )
-        .slice(first, first + max + 1),
-    [providers, search, first, max],
-  );
+  const page = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return localeSort(providers ?? [], mapByKey("displayName"))
+      .filter(
+        ({ displayName, description }) =>
+          displayName?.toLowerCase().includes(normalizedSearch) ||
+          description?.toLowerCase().includes(normalizedSearch),
+      )
+      .slice(first, first + max + 1);
+  }, [providers, search, first, max]);
 
   return (
     <Modal

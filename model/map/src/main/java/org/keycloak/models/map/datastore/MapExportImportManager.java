@@ -415,7 +415,7 @@ public class MapExportImportManager implements ExportImportManager {
             importGroups(newRealm, rep);
             if (rep.getDefaultGroups() != null) {
                 for (String path : rep.getDefaultGroups()) {
-                    GroupModel found = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                    GroupModel found = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
                     if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
                     newRealm.addDefaultGroup(found);
                 }
@@ -1204,7 +1204,7 @@ public class MapExportImportManager implements ExportImportManager {
             }
             user.setServiceAccountClientLink(client.getId());
         }
-        createGroups(userRep, newRealm, user);
+        createGroups(session, userRep, newRealm, user);
         return user;
     }
 

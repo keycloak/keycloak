@@ -8,11 +8,6 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
-                       and a new server image must be built prior to starting the server. This
-                       option provides an alternative to manually running the 'build' prior to
-                       starting the server. Use this configuration carefully in production as it
-                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
@@ -144,16 +139,16 @@ Feature:
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, legacy-welcome, linkedin-oauth, map-storage, par,
-                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       js-adapter, kerberos, linkedin-oauth, map-storage, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
                        update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, legacy-welcome, linkedin-oauth, map-storage, par,
-                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       js-adapter, kerberos, linkedin-oauth, map-storage, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
                        update-email, web-authn.
 
 Hostname:

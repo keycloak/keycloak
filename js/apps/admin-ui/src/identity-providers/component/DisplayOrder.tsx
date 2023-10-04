@@ -15,7 +15,7 @@ export const DisplayOrder = () => {
       labelIcon={
         <HelpItem
           helpText={t("displayOrderHelp")}
-          fieldLabelId="identity-providers:displayOrder"
+          fieldLabelId="displayOrder"
         />
       }
       fieldId="kc-display-order"

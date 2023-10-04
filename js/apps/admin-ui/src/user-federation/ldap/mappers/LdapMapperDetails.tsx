@@ -132,7 +132,7 @@ export default function LdapMapperDetails() {
         }),
       );
     } catch (error) {
-      addError("user-federation:syncLDAPGroupsError", error);
+      addError("syncLDAPGroupsError", error);
     }
     refresh();
   };
@@ -219,10 +219,7 @@ export default function LdapMapperDetails() {
           <FormGroup
             label={t("name")}
             labelIcon={
-              <HelpItem
-                helpText={t("user-federation-help:nameHelp")}
-                fieldLabelId="name"
-              />
+              <HelpItem helpText={t("nameHelp")} fieldLabelId="name" />
             }
             fieldId="kc-ldap-mapper-name"
             isRequired
@@ -260,9 +257,7 @@ export default function LdapMapperDetails() {
               labelIcon={
                 <HelpItem
                   helpText={
-                    mapper?.helpText
-                      ? mapper.helpText
-                      : t("user-federation-help:mapperTypeHelp")
+                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
                   }
                   fieldLabelId="mapperType"
                 />
@@ -284,9 +279,7 @@ export default function LdapMapperDetails() {
               labelIcon={
                 <HelpItem
                   helpText={
-                    mapper?.helpText
-                      ? mapper.helpText
-                      : t("user-federation-help:mapperTypeHelp")
+                    mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
                   }
                   fieldLabelId="mapperType"
                 />

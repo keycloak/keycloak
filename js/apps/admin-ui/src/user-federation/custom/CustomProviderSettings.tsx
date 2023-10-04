@@ -129,8 +129,8 @@ export default function CustomProviderSettings() {
             label={t("uiDisplayName")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:uiDisplayNameHelp")}
-                fieldLabelId="user-federation:uiDisplayName"
+                helpText={t("uiDisplayNameHelp")}
+                fieldLabelId="uiDisplayName"
               />
             }
             helperTextInvalid={t("validateName")}

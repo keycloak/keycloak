@@ -115,7 +115,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
 
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addError("users:removedGroupMembershipError", error);
+        addError("removedGroupMembershipError", error);
       }
       refresh();
     },
@@ -139,7 +139,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
 
       addAlert(t("addedGroupMembership"), AlertVariant.success);
     } catch (error) {
-      addError("users:addedGroupMembershipError", error);
+      addError("addedGroupMembershipError", error);
     }
     refresh();
   };
@@ -153,7 +153,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           type="selectMany"
           text={{
             title: t("joinGroupsFor", { username: user.username }),
-            ok: "users:join",
+            ok: "join",
           }}
           canBrowse={isManager}
           onClose={() => setOpen(false)}
@@ -168,7 +168,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         loader={loader}
         className="keycloak_user-section_groups-table"
         isPaginated
-        ariaLabelKey="roles:roleList"
+        ariaLabelKey="roleList"
         searchPlaceholderKey="searchGroup"
         canSelectAll
         onSelect={(groups) =>
@@ -233,14 +233,14 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         columns={[
           {
             name: "groupMembership",
-            displayKey: "users:groupMembership",
+            displayKey: "groupMembership",
             cellRenderer: (group: GroupRepresentation) => group.name || "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(40)],
           },
           {
             name: "path",
-            displayKey: "users:path",
+            displayKey: "path",
             cellRenderer: (group: GroupRepresentation) => (
               <GroupPath group={group} />
             ),

@@ -79,8 +79,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         label={t("cachePolicy")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:cachePolicyHelp")}
-            fieldLabelId="user-federation:cachePolicy"
+            helpText={t("cachePolicyHelp")}
+            fieldLabelId="cachePolicy"
           />
         }
         fieldId="kc-cache-policy"
@@ -117,8 +117,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("evictionDay")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:evictionDayHelp")}
-              fieldLabelId="user-federation:evictionDay"
+              helpText={t("evictionDayHelp")}
+              fieldLabelId="evictionDay"
             />
           }
           isRequired
@@ -175,8 +175,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionHour")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionHourHelp")}
-                fieldLabelId="user-federation:evictionHour"
+                helpText={t("evictionHourHelp")}
+                fieldLabelId="evictionHour"
               />
             }
             isRequired
@@ -207,8 +207,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionMinute")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionMinuteHelp")}
-                fieldLabelId="user-federation:evictionMinute"
+                helpText={t("evictionMinuteHelp")}
+                fieldLabelId="evictionMinute"
               />
             }
             isRequired
@@ -242,8 +242,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("maxLifespan")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:maxLifespanHelp")}
-              fieldLabelId="user-federation:maxLifespan"
+              helpText={t("maxLifespanHelp")}
+              fieldLabelId="maxLifespan"
             />
           }
           fieldId="kc-max-lifespan"

@@ -35,6 +35,8 @@
     <packaging>pom</packaging>
 
     <properties>
+        <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
+
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
@@ -47,6 +49,9 @@
         <quarkus.build.version>3.2.6.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
+
+        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
+        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>

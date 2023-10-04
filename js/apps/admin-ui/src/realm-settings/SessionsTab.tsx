@@ -59,8 +59,8 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdle"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdle")}
-                fieldLabelId="realm-settings:SSOSessionIdle"
+                helpText={t("ssoSessionIdle")}
+                fieldLabelId="SSOSessionIdle"
               />
             }
           >
@@ -85,8 +85,8 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMax"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMax")}
-                fieldLabelId="realm-settings:SSOSessionMax"
+                helpText={t("ssoSessionMax")}
+                fieldLabelId="SSOSessionMax"
               />
             }
           >
@@ -110,8 +110,8 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdleRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdleRememberMe")}
-                fieldLabelId="realm-settings:SSOSessionIdleRememberMe"
+                helpText={t("ssoSessionIdleRememberMe")}
+                fieldLabelId="SSOSessionIdleRememberMe"
               />
             }
           >
@@ -135,8 +135,8 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMaxRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMaxRememberMe")}
-                fieldLabelId="realm-settings:SSOSessionMaxRememberMe"
+                helpText={t("ssoSessionMaxRememberMe")}
+                fieldLabelId="SSOSessionMaxRememberMe"
               />
             }
           >
@@ -172,7 +172,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("clientSessionIdleHelp")}
-                fieldLabelId="realm-settings:clientSessionIdle"
+                fieldLabelId="clientSessionIdle"
               />
             }
           >
@@ -197,7 +197,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("clientSessionMaxHelp")}
-                fieldLabelId="realm-settings:clientSessionMax"
+                fieldLabelId="clientSessionMax"
               />
             }
           >
@@ -233,7 +233,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("offlineSessionIdleHelp")}
-                fieldLabelId="realm-settings:offlineSessionIdle"
+                fieldLabelId="offlineSessionIdle"
               />
             }
           >
@@ -260,7 +260,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("offlineSessionMaxLimitedHelp")}
-                fieldLabelId="realm-settings:offlineSessionMaxLimited"
+                fieldLabelId="offlineSessionMaxLimited"
               />
             }
           >
@@ -289,7 +289,7 @@ export const RealmSettingsSessionsTab = ({
               labelIcon={
                 <HelpItem
                   helpText={t("offlineSessionMaxHelp")}
-                  fieldLabelId="realm-settings:offlineSessionMax"
+                  fieldLabelId="offlineSessionMax"
                 />
               }
             >
@@ -327,7 +327,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("loginTimeoutHelp")}
-                fieldLabelId="realm-settings:loginTimeout"
+                fieldLabelId="loginTimeout"
               />
             }
           >
@@ -353,7 +353,7 @@ export const RealmSettingsSessionsTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("loginActionTimeoutHelp")}
-                fieldLabelId="realm-settings:loginActionTimeout"
+                fieldLabelId="loginActionTimeout"
               />
             }
           >

@@ -50,10 +50,7 @@ export const AddMapperForm = ({
       <FormGroup
         label={t("name")}
         labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:addIdpMapperName")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("addIdpMapperName")} fieldLabelId="name" />
         }
         fieldId="kc-name"
         isRequired
@@ -77,7 +74,7 @@ export const AddMapperForm = ({
         labelIcon={
           <HelpItem
             helpText={t("syncModeOverrideHelp")}
-            fieldLabelId="identity-providers:syncModeOverride"
+            fieldLabelId="syncModeOverride"
           />
         }
         fieldId="syncMode"
@@ -119,10 +116,7 @@ export const AddMapperForm = ({
       <FormGroup
         label={t("mapperType")}
         labelIcon={
-          <HelpItem
-            helpText={mapperType.helpText}
-            fieldLabelId="identity-providers:mapperType"
-          />
+          <HelpItem helpText={mapperType.helpText} fieldLabelId="mapperType" />
         }
         fieldId="identityProviderMapper"
       >

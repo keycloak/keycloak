@@ -23,12 +23,11 @@ import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,7 +73,7 @@ public class KeycloakMain implements QuarkusApplication {
             ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
             PrintWriter errStream = new PrintWriter(System.err, true);
 
-            if (isDevProfileNotAllowed(Arrays.asList(args))) {
+            if (isDevProfileNotAllowed()) {
                 errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
                 return;
             }

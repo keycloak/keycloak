@@ -66,15 +66,11 @@ export const ResetPasswordDialog = ({
   const { addAlert, addError } = useAlerts();
 
   const [toggleConfirmSaveModal, ConfirmSaveModal] = useConfirmDialog({
-    titleKey: isResetPassword
-      ? "users:resetPasswordConfirm"
-      : "users:setPasswordConfirm",
+    titleKey: isResetPassword ? "resetPasswordConfirm" : "setPasswordConfirm",
     messageKey: isResetPassword
       ? t("resetPasswordConfirmText", { username: user.username })
       : t("setPasswordConfirmText", { username: user.username }),
-    continueButtonLabel: isResetPassword
-      ? "users:resetPassword"
-      : "users:savePassword",
+    continueButtonLabel: isResetPassword ? "resetPassword" : "savePassword",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: () => handleSubmit(saveUserPassword)(),
   });
@@ -114,9 +110,7 @@ export const ResetPasswordDialog = ({
       refresh();
     } catch (error) {
       addError(
-        isResetPassword
-          ? "users:resetPasswordError"
-          : "users:savePasswordError",
+        isResetPassword ? "resetPasswordError" : "savePasswordError",
         error,
       );
     }

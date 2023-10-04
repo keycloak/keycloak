@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.Consumes;
@@ -406,6 +407,15 @@ public interface TestingResource {
     @Path("/disable-truststore-spi")
     @NoCache
     void disableTruststoreSpi();
+
+    /**
+     * Temporarily changes the trustore SPI with another hostname verification policy. Call reenableTruststoreSpi to revert.
+     * @param hostnamePolicy The hostname verification policy to set
+     */
+    @GET
+    @Path("/modify-truststore-spi-hostname-policy")
+    @NoCache
+    public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy);
 
     /**
      * Re-enable truststore SPI after it was temporarily disabled by {@link #disableTruststoreSpi()}

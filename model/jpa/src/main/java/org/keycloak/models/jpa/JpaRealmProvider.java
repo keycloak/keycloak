@@ -436,6 +436,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdByNameAndParent", String.class);
+        query.setParameter("name", name);
+        query.setParameter("realm", realm.getId());
+        query.setParameter("parent", parent != null ? parent.getId() : GroupEntity.TOP_PARENT_ID);
+        List<String> entities = query.getResultList();
+        if (entities.isEmpty()) return null;
+        if (entities.size() > 1) throw new IllegalStateException("Should not be more than one Group with same name");
+        String id = query.getResultList().get(0);
+
+        return session.groups().getGroupById(realm, id);
+    }
+
+    @Override
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;

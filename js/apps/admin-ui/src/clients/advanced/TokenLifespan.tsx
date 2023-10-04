@@ -50,10 +50,7 @@ export const TokenLifespan = ({
       label={t(id)}
       fieldId={id}
       labelIcon={
-        <HelpItem
-          helpText={t(`clients-help:${id}`)}
-          fieldLabelId={`clients:${id}`}
-        />
+        <HelpItem helpText={t(`${id}Help`)} fieldLabelId={`clients:${id}`} />
       }
     >
       <Controller

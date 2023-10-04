@@ -87,7 +87,7 @@ export const KeysProvidersTab = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteProviderTitle",
+    titleKey: "deleteProviderTitle",
     messageKey: t("deleteProviderConfirm", {
       provider: selectedComponent?.name,
     }),
@@ -104,7 +104,7 @@ export const KeysProvidersTab = ({
 
         addAlert(t("deleteProviderSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("realm-settings:deleteProviderError", error);
+        addError("deleteProviderError", error);
       }
     },
   });
@@ -225,13 +225,13 @@ export const KeysProvidersTab = ({
               refresh();
               addAlert(t("saveProviderListSuccess"), AlertVariant.success);
             } catch (error) {
-              addError("realm-settings:saveProviderError", error);
+              addError("saveProviderError", error);
             }
           }}
           columns={[
             {
               name: "name",
-              displayKey: "realm-settings:name",
+              displayKey: "name",
               cellRenderer: (component) => (
                 <Link
                   key={component.name}
@@ -248,11 +248,11 @@ export const KeysProvidersTab = ({
             },
             {
               name: "providerId",
-              displayKey: "realm-settings:provider",
+              displayKey: "provider",
             },
             {
               name: "providerDescription",
-              displayKey: "realm-settings:providerDescription",
+              displayKey: "providerDescription",
             },
           ]}
           actions={[

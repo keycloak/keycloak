@@ -139,9 +139,9 @@ const SigningIn = () => {
                         action: container.createAction,
                       })
                     }
-                    title={t("setUpNew", [
-                      t(container.displayName as TFuncKey),
-                    ])}
+                    title={t("setUpNew", {
+                      name: t(container.displayName as TFuncKey),
+                    })}
                   />
                 </div>
               </SplitItem>
@@ -151,7 +151,9 @@ const SigningIn = () => {
           <DataList aria-label="credential list" className="pf-u-mb-xl">
             {container.userCredentialMetadatas.length === 0 && (
               <EmptyRow
-                message={t("notSetUp", [t(container.displayName as TFuncKey)])}
+                message={t("notSetUp", {
+                  name: t(container.displayName as TFuncKey),
+                })}
               />
             )}
 
@@ -171,9 +173,9 @@ const SigningIn = () => {
                         {container.removeable ? (
                           <ContinueCancelModal
                             buttonTitle={t("delete")}
-                            modalTitle={t("removeCred", [
-                              label(meta.credential),
-                            ])}
+                            modalTitle={t("removeCred", {
+                              name: label(meta.credential),
+                            })}
                             continueLabel={t("confirm")}
                             cancelLabel={t("cancel")}
                             buttonVariant="danger"
@@ -196,7 +198,9 @@ const SigningIn = () => {
                               }
                             }}
                           >
-                            {t("stopUsingCred", [label(meta.credential)])}
+                            {t("stopUsingCred", {
+                              name: label(meta.credential),
+                            })}
                           </ContinueCancelModal>
                         ) : (
                           <Button

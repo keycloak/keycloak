@@ -136,7 +136,7 @@ export default function IdentityProvidersSection() {
     ));
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:deleteProvider",
+    titleKey: "deleteProvider",
     messageKey: t("deleteConfirm", { provider: selectedProvider?.alias }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -174,7 +174,7 @@ export default function IdentityProvidersSection() {
       )}
       <ViewHeader
         titleKey="identityProviders"
-        subKey="identity-providers:listExplain"
+        subKey="listExplain"
         helpUrl={helpUrls.identityProvidersUrl}
       />
       <PageSection
@@ -220,7 +220,7 @@ export default function IdentityProvidersSection() {
           <KeycloakDataTable
             loader={providers}
             ariaLabelKey="identityProviders"
-            searchPlaceholderKey="identity-providers:searchForProvider"
+            searchPlaceholderKey="searchForProvider"
             toolbarItem={
               <>
                 <ToolbarItem>
@@ -267,7 +267,7 @@ export default function IdentityProvidersSection() {
               },
               {
                 name: "providerId",
-                displayKey: "identity-providers:providerDetails",
+                displayKey: "providerDetails",
                 cellFormatters: [upperCaseFormatter()],
               },
             ]}

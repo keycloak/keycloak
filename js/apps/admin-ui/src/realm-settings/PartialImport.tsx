@@ -275,7 +275,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       });
       setImportResponse(importResults);
     } catch (error) {
-      addError("realm-settings:importFail", error);
+      addError("importFail", error);
     }
 
     setImportInProgress(false);
@@ -470,7 +470,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
         <KeycloakDataTable
           loader={loader}
           isPaginated
-          ariaLabelKey="realm-settings:partialImport"
+          ariaLabelKey="partialImport"
           columns={[
             {
               name: "action",

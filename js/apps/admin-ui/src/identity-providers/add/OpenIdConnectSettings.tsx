@@ -34,8 +34,9 @@ export const OpenIdConnectSettings = () => {
     formData.append("file", new Blob([JSON.stringify(obj)]));
 
     try {
-      const result =
-        await adminClient.identityProviders.importFromUrl(formData);
+      const result = await adminClient.identityProviders.importFromUrl(
+        formData,
+      );
       setupForm(result);
     } catch (error) {
       setError("discoveryError", {
@@ -60,7 +61,7 @@ export const OpenIdConnectSettings = () => {
             labelIcon={
               <HelpItem
                 helpText={t("importConfigHelp")}
-                fieldLabelId="identity-providers:importConfig"
+                fieldLabelId="importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

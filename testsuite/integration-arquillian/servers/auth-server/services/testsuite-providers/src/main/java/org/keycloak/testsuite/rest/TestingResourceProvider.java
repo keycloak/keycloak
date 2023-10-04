@@ -64,6 +64,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -88,7 +89,9 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.FileTruststoreProvider;
 import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -113,6 +116,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -122,7 +126,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.UUID;
-import org.keycloak.services.ErrorResponse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1076,6 +1079,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
         FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
         this.factory.truststoreProvider = factory.create(session);
         factory.setProvider(null);
+    }
+
+    @GET
+    @Path("/modify-truststore-spi-hostname-policy")
+    @NoCache
+    public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy) {
+        FileTruststoreProviderFactory fact = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = fact.create(session);
+        FileTruststoreProvider origTrustProvider = (FileTruststoreProvider) this.factory.truststoreProvider;
+        TruststoreProvider newTrustProvider = new FileTruststoreProvider(
+                origTrustProvider.getTruststore(), hostnamePolicy,
+                Collections.unmodifiableMap(origTrustProvider.getRootCertificates()),
+                Collections.unmodifiableMap(origTrustProvider.getIntermediateCertificates()));
+        fact.setProvider(newTrustProvider);
     }
 
     @GET
