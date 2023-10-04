@@ -35,6 +35,8 @@
     <packaging>pom</packaging>
 
     <properties>
+        <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
+
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
