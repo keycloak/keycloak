@@ -121,7 +121,7 @@ export const ShareTheResource = ({
         <Button
           key="confirm"
           variant="primary"
-          id="done"
+          data-testId="done"
           isDisabled={!isValid}
           type="submit"
           form="share-form"
@@ -138,7 +138,7 @@ export const ShareTheResource = ({
           label={t("shareUser")}
           type="string"
           helperTextInvalid={errors.usernames?.message}
-          fieldId="users"
+          fielddata-testId="users"
           isRequired
           validated={
             errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
@@ -147,6 +147,7 @@ export const ShareTheResource = ({
           <InputGroup>
             <KeycloakTextInput
               id="users"
+              data-testId="users"
               placeholder={t("usernamePlaceholder")}
               validated={
                 errors.usernames
@@ -160,7 +161,7 @@ export const ShareTheResource = ({
             <Button
               key="add-user"
               variant="primary"
-              id="add"
+              data-testId="add"
               onClick={() => append({ value: "" })}
               isDisabled={isDisabled}
             >
@@ -181,7 +182,7 @@ export const ShareTheResource = ({
           )}
         </FormGroup>
         <FormProvider {...form}>
-          <FormGroup label="" fieldId="permissions-selected">
+          <FormGroup label="" fielddata-testId="permissions-selected">
             <SelectControl
               name="permissions"
               variant="typeaheadmulti"
