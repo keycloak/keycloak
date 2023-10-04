@@ -24,6 +24,7 @@ import { convertAttributeNameToForm } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
+import { AcrFlowMapping } from "../../components/acr-flow-mapping/AcrFlowMapping";
 
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
@@ -280,6 +281,7 @@ export const AdvancedSettings = ({
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>
+          <AcrFlowMapping />
           <FormGroup
             label={t("defaultACRValues")}
             fieldId="defaultACRValues"

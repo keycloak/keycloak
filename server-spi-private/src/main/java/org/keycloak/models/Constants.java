@@ -156,4 +156,11 @@ public final class Constants {
 
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
+    // Note used to store the authentication flow requested by a client
+    public static final String REQUESTED_AUTHENTICATION_FLOW = "requested-authentication-flow";
+    // Note used to store the completed authentication flow
+    public static final String COMPLETED_FLOW_ID = "completed-flow-id";
+
+    // Client attribute containing the configured acr to auth flow map
+    public static final String ACR_FLOW_MAP = "acr.authflow.map";
 }

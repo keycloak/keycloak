@@ -214,6 +214,16 @@ export const RealmSettingsTabs = ({
       );
     }
 
+    if (r.attributes?.["acr.authflow.map"]) {
+      r.attributes["acr.authflow.map"] = JSON.stringify(
+        Object.fromEntries(
+          (r.attributes["acr.authflow.map"] as KeyValueType[])
+            .filter(({ key }) => key !== "")
+            .map(({ key, value }) => [key, value]),
+        ),
+      );
+    }
+
     try {
       const savedRealm: UIRealmRepresentation = {
         ...realm,

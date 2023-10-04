@@ -22,6 +22,7 @@ import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { AcrFlowMapping } from "../components/acr-flow-mapping/AcrFlowMapping";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -86,6 +87,17 @@ export const RealmSettingsGeneralTab = ({
         result,
       );
     }
+
+    if (realm.attributes?.["acr.authflow.map"]) {
+      setValue(
+        convertAttributeNameToForm("attributes.acr.authflow.map"),
+        // @ts-ignore
+        Object.entries(
+          JSON.parse(realm.attributes["acr.authflow.map"]),
+        ).flatMap(([key, value]) => ({ key, value })),
+      );
+    }
+    
     setUserProfileEnabled(realm.attributes?.["userProfileEnabled"] === "true");
   };
 
@@ -222,6 +234,9 @@ export const RealmSettingsGeneralTab = ({
             />
           </FormProvider>
         </FormGroup>
+        <FormProvider {...form}>
+          <AcrFlowMapping />
+        </FormProvider>
         <FormGroup
           hasNoPaddingTop
           label={t("userManagedAccess")}

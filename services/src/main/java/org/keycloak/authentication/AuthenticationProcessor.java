@@ -1122,6 +1122,9 @@ public class AuthenticationProcessor {
     }
     
     protected Response authenticationComplete() {
+        // set a note recording the completed authentication flow - used for evaluating the acr claim in the OIDC flow
+        authenticationSession.setUserSessionNote(Constants.COMPLETED_FLOW_ID, flowId);
+
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(authenticationSession);
 

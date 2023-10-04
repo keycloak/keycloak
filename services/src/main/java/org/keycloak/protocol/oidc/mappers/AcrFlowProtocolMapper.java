@@ -18,20 +18,10 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.common.Profile;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -39,20 +29,27 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.AuthenticationManager;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    private static final Logger logger = Logger.getLogger(AcrProtocolMapper.class);
+/**
+ * @author Ben Cresitello-Dittmar
+ * This protocol mapper populates the 'acr' claim in the OIDC tokens based on the authentication flow completed by the user
+ * and the ACR to auth flow mappings configured for the initiating client.
+ */
+public class AcrFlowProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, EnvironmentDependentProviderFactory {
+
+    private static final Logger logger = Logger.getLogger(AcrFlowProtocolMapper.class);
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
-        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, AcrProtocolMapper.class);
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, AcrFlowProtocolMapper.class);
     }
 
-    public static final String PROVIDER_ID = "oidc-acr-mapper";
+    public static final String PROVIDER_ID = "oidc-acr-flow-mapper";
 
 
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -66,7 +63,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
 
     @Override
     public String getDisplayType() {
-        return "Authentication Context Class Reference (ACR)";
+        return "Authentication Context Class Reference (ACR) Flow Mapper";
     }
 
     @Override
@@ -76,7 +73,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
 
     @Override
     public String getHelpText() {
-        return "Maps the achieved LoA (Level of Authentication) to the 'acr' claim of the token";
+        return "Maps the successful authentication flow to the 'acr' claim of the token";
     }
 
     @Override
@@ -87,7 +84,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         token.setAcr(acr);
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -95,39 +92,32 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         Map<String, String> config = new HashMap<>();
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }
 
+    /**
+     * Extract the completed flow from the clientSession notes and return the associated ACR value
+     * @param clientSession The authenticated client session
+     * @return The ACR value associated with the completed auth flow
+     */
     protected String getAcr(AuthenticatedClientSessionModel clientSession) {
-        int loa = LoAUtil.getCurrentLevelOfAuthentication(clientSession);
-        logger.tracef("Loa level when authenticated to client %s: %d", clientSession.getClient().getClientId(), loa);
-        if (loa < Constants.MINIMUM_LOA) {
-            loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
-        }
+        List<String> acrValues = AcrUtils.getAcrValues(
+                clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
+                clientSession.getNote(OIDCLoginProtocol.ACR_PARAM), clientSession.getClient());
 
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(clientSession.getClient());
-        String acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getRequiredAcrValues(
-                clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM)));
-        if (acr == null) {
-            acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getAcrValues(
-                    clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
-                    clientSession.getNote(OIDCLoginProtocol.ACR_PARAM), clientSession.getClient()));
-            if (acr == null) {
-                acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, acrLoaMap.keySet());
-                if (acr == null) {
-                    acr = String.valueOf(loa);
-                }
-            }
-        }
+        Map<String, String> acrFlowMap = AcrUtils.getAcrFlowMap(clientSession.getClient());
+        String completedFlow = AcrUtils.getCompletedFlowId(clientSession);
 
-        logger.tracef("Level sent in the token to client %s: %s. Original loa from the authentication: %d", clientSession.getClient().getClientId(), acr, loa);
+        String acr = AcrUtils.mapFlowToAcr(completedFlow, acrValues, acrFlowMap);
+
+        logger.tracef("Authentication flow completed when authenticated to client %s: %d", clientSession.getClient().getClientId(), completedFlow);
+
         return acr;
     }
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
+        return true;
     }
 }

@@ -34,7 +34,7 @@ import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AcrProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.AcrLoaProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
@@ -214,7 +214,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.put(GROUPS, model);
 
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
-            model = AcrProtocolMapper.create(ACR, true, true, true);
+            model = AcrLoaProtocolMapper.create(ACR, true, true, true);
             builtins.put(ACR, model);
         }
     }

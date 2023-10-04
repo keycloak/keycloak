@@ -193,3 +193,23 @@ really requires level 2, the client is encouraged to check the presence of the `
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
 For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].
+
+[[_mapping-acr-to-auth-flow-client]]
+*ACR to Authentication Flow Mapping*
+
+In the advanced settings of a client, you can define mappings from `Authentication Context Class Reference (ACR)` values in OIDC authorization requests to authentication
+flows. This enables clients to request specific authentication flows using the OIDC ACR claim. For more details on using this claim see the
+https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
+
+ACR authentication flow mappings and level of authentication (LoA) mappings provide two different ways for administrators to enable clients to request a particular strength of
+authentication when authenticating users. While LoA provides the ability to step-up authentication, sometimes it is necessary for applications to authenticate users with an
+entirely different policy in different scenarios. For these cases, clients can use the ACR to authentication flow mapping functionality.
+
+[NOTE]
+====
+When both level of authentication (LoA) and auth flow mappings are defined for a given client or realm, Keycloak will first check if there is a valid auth flow
+mapping. If there is, then Keycloak will ignore any matching LoA mappings and route the authentication session to the mapped authentication flow. If there isn't,
+then the LoA process will continue as described in the chapter <<_mapping-acr-to-loa-client, ACR to Level of Authentication (LoA) Mapping>>
+====
+
+image:images/client-oidc-map-acr-to-auth-flow.png[alt="ACR to auth flow mapping"]

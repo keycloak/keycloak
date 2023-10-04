@@ -302,6 +302,16 @@ export default function ClientDetails() {
         ),
       );
     }
+
+    if (client.attributes?.["acr.authflow.map"]) {
+      form.setValue(
+        convertAttributeNameToForm("attributes.acr.authflow.map"),
+        // @ts-ignore
+        Object.entries(
+          JSON.parse(client.attributes["acr.authflow.map"]),
+        ).flatMap(([key, value]) => ({ key, value })),
+      );
+    }
   };
 
   useFetch(
@@ -344,6 +354,16 @@ export default function ClientDetails() {
       submittedClient.attributes["acr.loa.map"] = JSON.stringify(
         Object.fromEntries(
           (submittedClient.attributes["acr.loa.map"] as KeyValueType[])
+            .filter(({ key }) => key !== "")
+            .map(({ key, value }) => [key, value]),
+        ),
+      );
+    }
+
+    if (submittedClient.attributes?.["acr.authflow.map"]) {
+      submittedClient.attributes["acr.authflow.map"] = JSON.stringify(
+        Object.fromEntries(
+          (submittedClient.attributes["acr.authflow.map"] as KeyValueType[])
             .filter(({ key }) => key !== "")
             .map(({ key, value }) => [key, value]),
         ),
