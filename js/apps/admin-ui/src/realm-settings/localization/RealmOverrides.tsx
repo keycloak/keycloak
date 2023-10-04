@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   AlertVariant,
   Button,
-  ButtonVariant,
   Divider,
   Dropdown,
   DropdownItem,
@@ -43,7 +42,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
@@ -95,8 +93,7 @@ export const RealmOverrides = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const [selectedKey, setSelectedKey] = useState("");
+  const [selectedRows, setSelectedRows] = useState<IRow[]>([]);
 
   const refreshTable = () => {
     setTableKey(tableKey + 1);
@@ -309,45 +306,20 @@ export const RealmOverrides = ({
     }
   };
 
-  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteMessageBundle", {
-      key: selectedKey,
-    }),
-    messageKey: "",
-    continueButtonLabel: "delete",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: async () => {
-      try {
-        await adminClient.realms.deleteRealmLocalizationTexts({
-          realm: currentRealm!,
-          selectedLocale: selectMenuLocale,
-          key: selectedKey,
-        });
-        refreshTable();
-        addAlert(t("deleteMessageBundleSuccess"));
-      } catch (error) {
-        addError("deleteMessageBundleError", error);
-      }
-    },
-  });
-
   const handleRowSelect = (isSelected: boolean, rowIndex: number) => {
     if (isSelected) {
-      const updatedTableRows = [...tableRows];
-      updatedTableRows[rowIndex].isSelected = isSelected;
-      setSelectedRows((prevSelected) => [...prevSelected, rowIndex]);
+      setSelectedRows((prevSelected) => [...prevSelected, tableRows[rowIndex]]);
     } else {
       setSelectedRows((prevSelected) =>
-        prevSelected.filter((rowIndex) => rowIndex !== rowIndex),
+        prevSelected.filter((row) => row !== tableRows[rowIndex]),
       );
     }
   };
 
-  console.log("selectedRows ", selectedRows);
+  console.log("selectedRows", selectedRows);
 
   return (
     <>
-      <DeleteConfirm />
       {addMessageBundleModalOpen && (
         <AddMessageBundleModal
           handleModalToggle={handleModalToggle}
@@ -395,7 +367,6 @@ export const RealmOverrides = ({
                       component="button"
                       isDisabled={messageBundles.length === 0}
                       onClick={() => {
-                        toggleDeleteDialog();
                         setKebabOpen(false);
                       }}
                     >
@@ -460,11 +431,7 @@ export const RealmOverrides = ({
               cells={[t("key"), t("value")]}
               rows={tableRows}
               onSelect={(event, isSelected, rowIndex) => {
-                console.log("row .... ", rowIndex);
                 handleRowSelect(isSelected, rowIndex);
-                setSelectedKey(
-                  (tableRows[rowIndex].cells?.[0] as IRowCell).props.value,
-                );
               }}
               canSelectAll
               selectVariant="checkbox"
