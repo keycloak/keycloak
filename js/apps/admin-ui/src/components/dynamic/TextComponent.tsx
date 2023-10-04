@@ -12,6 +12,7 @@ export const TextComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ export const TextComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      required={required}
     >
       <KeycloakTextArea
         id={name!}

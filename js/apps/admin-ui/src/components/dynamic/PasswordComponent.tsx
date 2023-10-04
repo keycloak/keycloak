@@ -12,6 +12,7 @@ export const PasswordComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ export const PasswordComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <PasswordInput
         id={name!}

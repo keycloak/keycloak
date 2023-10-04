@@ -17,7 +17,6 @@ import type { ComponentProps } from "../dynamic/components";
 
 type ClientSelectProps = ComponentProps & {
   namespace: string;
-  required?: boolean;
 };
 
 export const ClientSelect = ({
