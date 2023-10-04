@@ -13,6 +13,7 @@ export const StringComponent = ({
   helpText,
   defaultValue,
   isDisabled = false,
+  required,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { register } = useFormContext();
@@ -22,6 +23,7 @@ export const StringComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <KeycloakTextInput
         id={name!}

@@ -12,6 +12,7 @@ export const ScriptComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export const ScriptComponent = ({
         />
       }
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

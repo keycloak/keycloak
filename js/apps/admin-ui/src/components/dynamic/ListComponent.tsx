@@ -18,6 +18,7 @@ export const ListComponent = ({
   helpText,
   defaultValue,
   options,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -29,6 +30,7 @@ export const ListComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

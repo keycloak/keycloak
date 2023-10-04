@@ -28,6 +28,7 @@ export const RoleComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -47,6 +48,7 @@ export const RoleComponent = ({
       validated={errors[fieldName] ? "error" : "default"}
       helperTextInvalid={t("required")}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={fieldName}

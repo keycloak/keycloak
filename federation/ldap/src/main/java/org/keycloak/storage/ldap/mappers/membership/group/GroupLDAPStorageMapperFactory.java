@@ -96,6 +96,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                 .label("LDAP Groups DN")
                 .helpText("LDAP DN where are groups of this tree saved. For example 'ou=groups,dc=example,dc=org' ")
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .required(true)
                 .add()
                 .property().name(GroupMapperConfig.GROUP_NAME_LDAP_ATTRIBUTE)
                 .label("Group Name LDAP Attribute")

@@ -15,7 +15,12 @@ import { HelpItem } from "ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
-export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
+export const GroupComponent = ({
+  name,
+  label,
+  helpText,
+  required,
+}: ComponentProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
@@ -51,6 +56,7 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
               <HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />
             }
             fieldId={name!}
+            isRequired={required}
           >
             <InputGroup>
               <ChipGroup>

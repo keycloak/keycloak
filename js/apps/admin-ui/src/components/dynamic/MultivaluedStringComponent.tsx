@@ -12,6 +12,7 @@ export const MultiValuedStringComponent = ({
   defaultValue,
   helpText,
   stringify,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ export const MultiValuedStringComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <MultiLineInput
         aria-label={t(label!)}
