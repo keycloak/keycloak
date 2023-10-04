@@ -16,8 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.io.IOException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -119,16 +119,22 @@ public class UserProfileResource {
         List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
                 .map(name -> profile.getAttributes().getMetadata(name))
                 .filter(Objects::nonNull)
-                .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
+                .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
                 .map(sam -> toRestMetadata(sam, session, profile))
                 .collect(Collectors.toList());
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        String rawConfig = provider.getConfiguration();
+
+        if (rawConfig == null) {
+            return null;
+        }
+
         UPConfig config;
 
         try {
-            config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
-        } catch (IOException cause) {
+            config = JsonSerialization.readValue(rawConfig, UPConfig.class);
+        } catch (Exception cause) {
             throw new RuntimeException("Failed to parse configuration", cause);
         }
 

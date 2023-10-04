@@ -113,12 +113,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
             user = getUser();
-            assertNotNull(user.getUserProfileMetadata());
-            // can write both username and email
-            assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
-            assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
-            assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+            if (isDeclarativeUserProfile()) {
+                assertNotNull(user.getUserProfileMetadata());
+                // can write both username and email
+                assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
+                assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+                assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
+                assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+            }
             user.setUsername("changed-username");
             user.setEmail("changed-email@keycloak.org");
             user = updateAndGet(user);
@@ -129,10 +131,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setEditUsernameAllowed(false);
             realm.update(realmRep);
             user = getUser();
-            assertNotNull(user.getUserProfileMetadata());
-            // username is readonly but email is writable
-            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+            if (isDeclarativeUserProfile()) {
+                assertNotNull(user.getUserProfileMetadata());
+                // username is readonly but email is writable
+                assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+            }
             user.setUsername("should-not-change");
             user.setEmail("changed-email@keycloak.org");
             updateError(user, 400, Messages.READ_ONLY_USERNAME);
@@ -141,10 +145,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
             user = getUser();
-            assertNotNull(user.getUserProfileMetadata());
-            // username is read-only and is the same as email, but email is writable
-            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+            if (isDeclarativeUserProfile()) {
+                assertNotNull(user.getUserProfileMetadata());
+                // username is read-only and is the same as email, but email is writable
+                assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+            }
             user.setUsername("should-be-the-email");
             user.setEmail("user@keycloak.org");
             user = updateAndGet(user);
@@ -155,10 +161,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setEditUsernameAllowed(false);
             realm.update(realmRep);
             user = getUser();
-            assertNotNull(user.getUserProfileMetadata());
-            // username is read-only and is the same as email, but email is read-only
-            assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+            if (isDeclarativeUserProfile()) {
+                assertNotNull(user.getUserProfileMetadata());
+                // username is read-only and is the same as email, but email is read-only
+                assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+            }
             user.setUsername("should-be-the-email");
             user.setEmail("should-not-change@keycloak.org");
             user = updateAndGet(user);
@@ -189,24 +197,28 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realm.update(realmRep);
             
             UserRepresentation user = getUser();
-            assertNotNull(user.getUserProfileMetadata());
-            UserProfileAttributeMetadata upm = assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
-            //makes sure internal validators are not exposed
-            Assert.assertEquals(0,  upm.getValidators().size());
+            if (isDeclarativeUserProfile()) {
+                assertNotNull(user.getUserProfileMetadata());
+                UserProfileAttributeMetadata upm = assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                //makes sure internal validators are not exposed
+                Assert.assertEquals(0, upm.getValidators().size());
 
-            upm = assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
-            Assert.assertEquals(1,  upm.getValidators().size());
-            Assert.assertTrue(upm.getValidators().containsKey(EmailValidator.ID));
+                upm = assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
+                Assert.assertEquals(1, upm.getValidators().size());
+                Assert.assertTrue(upm.getValidators().containsKey(EmailValidator.ID));
+            }
 
             realmRep.setRegistrationEmailAsUsername(true);
             realm.update(realmRep);
             user = getUser();
-            upm = assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
-            Assert.assertEquals(1,  upm.getValidators().size());
-            Assert.assertTrue(upm.getValidators().containsKey(EmailValidator.ID));
+            if (isDeclarativeUserProfile()) {
+                UserProfileAttributeMetadata upm = assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
+                Assert.assertEquals(1, upm.getValidators().size());
+                Assert.assertTrue(upm.getValidators().containsKey(EmailValidator.ID));
 
-            assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
-            assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+                assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
+                assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
+            }
         } finally {
             RealmRepresentation realmRep = testRealm().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
