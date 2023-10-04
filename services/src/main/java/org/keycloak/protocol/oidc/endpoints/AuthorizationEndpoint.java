@@ -193,13 +193,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             request.setDpopJkt(dpopJkt);
         }
 
+        authenticationSession = createAuthenticationSession(client, request.getState());
+
         try {
-            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params));
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params, authenticationSession));
         } catch (ClientPolicyException cpe) {
             return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
         }
 
-        authenticationSession = createAuthenticationSession(client, request.getState());
         updateAuthenticationSession();
 
         // So back button doesn't work
@@ -365,6 +366,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 }
             }
         }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
+
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {

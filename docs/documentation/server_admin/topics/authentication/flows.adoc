@@ -235,6 +235,16 @@ Creating an advanced flow such as this can have side effects. For example, if yo
 * In the *Action* menu, select *Bind flow* and select *Reset credentials flow* from the dropdown and click *Save*
 ====
 
+==== Using Client Policies to Select an Authentication Flow
+Client policies can be used to dynamically select an Authentication Flow based on specific conditions, such as requesting a particular scope or an ACR (Authentication Context Class Reference) using the `AuthenticationFlowSelectorExecutor` in combination with the condition you prefer.
+
+The `AuthenticationFlowSelectorExecutor` allows you to select an appropriate authentication flow and set the level of authentication to be applied once the selected flow is completed.
+
+A possible configuration involves using the `ACRCondition` in combination with the `AuthenticationFlowSelectorExecutor`. This setup enables you to select an authentication flow based on the requested ACR and have the ACR value included in the token using <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
+
+For more details on client policies, refer to the dedicated chapter: <<_client_policies, Client Policies>>.
+
+
 [[_step-up-flow]]
 ==== Creating a browser login flow with step-up mechanism
 
