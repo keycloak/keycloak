@@ -93,7 +93,6 @@ export const RealmOverrides = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const [selectedRows, setSelectedRows] = useState<IRow[]>([]);
 
   const refreshTable = () => {
     setTableKey(tableKey + 1);
@@ -225,13 +224,10 @@ export const RealmOverrides = ({
     }
     newRows[rowIndex] = newRow;
 
-    // Update the copy of the retrieved data set so we can save it when the user saves changes
-
     if (!invalid && type === RowEditAction.Save) {
       const key = (newRow.cells?.[0] as IRowCell).props.value;
       const value = (newRow.cells?.[1] as IRowCell).props.value;
 
-      // We only have one editable value, otherwise we'd need to save each
       try {
         await adminClient.realms.addLocalization(
           {
@@ -306,17 +302,26 @@ export const RealmOverrides = ({
     }
   };
 
-  const handleRowSelect = (isSelected: boolean, rowIndex: number) => {
-    if (isSelected) {
-      setSelectedRows((prevSelected) => [...prevSelected, tableRows[rowIndex]]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+
+  // Handle row selection
+  const handleRowSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    rowIndex: number,
+  ) => {
+    const selectedKey = tableRows[rowIndex].key;
+    if (event.target.checked) {
+      setSelectedRowKeys((prevSelected) => [...prevSelected, selectedKey]);
     } else {
-      setSelectedRows((prevSelected) =>
-        prevSelected.filter((row) => row !== tableRows[rowIndex]),
+      setSelectedRowKeys((prevSelected) =>
+        prevSelected.filter((key) => key !== selectedKey),
       );
     }
   };
 
-  console.log("selectedRows", selectedRows);
+  const isRowSelected = (rowKey: string) => {
+    return selectedRowKeys.includes(rowKey);
+  };
 
   return (
     <>
@@ -429,9 +434,12 @@ export const RealmOverrides = ({
               data-testid="editable-rows-table"
               variant={TableVariant.compact}
               cells={[t("key"), t("value")]}
-              rows={tableRows}
+              rows={tableRows.map((row) => ({
+                ...row,
+                selected: isRowSelected(row.key),
+              }))}
               onSelect={(event, isSelected, rowIndex) => {
-                handleRowSelect(isSelected, rowIndex);
+                handleRowSelect(event, rowIndex);
               }}
               canSelectAll
               selectVariant="checkbox"
