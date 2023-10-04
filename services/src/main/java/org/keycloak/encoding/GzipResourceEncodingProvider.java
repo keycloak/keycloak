@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 
 public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
@@ -28,7 +29,11 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
     public InputStream getEncodedStream(StreamSupplier producer, String... path) {
         StringBuilder sb = new StringBuilder();
         sb.append(cacheDir.getAbsolutePath());
+        String[] disallowed = {"..", "/", "\\"};
         for (String p : path) {
+            if (Arrays.stream(disallowed).anyMatch(p::contains)) {
+                throw new IllegalArgumentException("Invalid path: " + p);
+            }
             sb.append(File.separatorChar);
             sb.append(p);
         }
@@ -38,7 +43,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
         try {
             File encodedFile = new File(filePath);
-            if (!encodedFile.getCanonicalPath().startsWith(cacheDir.getCanonicalPath())) {
+            if (!encodedFile.toPath().normalize().startsWith(cacheDir.toPath())) {
                 return null;
             }
 
