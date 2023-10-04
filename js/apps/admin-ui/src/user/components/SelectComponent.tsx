@@ -24,22 +24,14 @@ export const SelectComponent = ({
     value: string,
     field: ControllerRenderProps<UserFormFields>,
   ) => {
-    // If the field is a single value, just set it.
-    if (typeof field.value === "string") {
-      field.onChange(value);
-      return;
-    }
-
-    // We can't handle non-array values from here on.
-    if (!Array.isArray(field.value)) {
-      return;
-    }
-
-    // If the value doesn't exist in the array, append it. Otherwise, remove it.
-    if (field.value.includes(value)) {
-      field.onChange(field.value.filter((item) => item !== value));
+    if (isMultiValue) {
+      if (field.value.includes(value)) {
+        field.onChange(field.value.filter((item: string) => item !== value));
+      } else {
+        field.onChange([...field.value, value]);
+      }
     } else {
-      field.onChange([...field.value, value]);
+      field.onChange(value);
     }
   };
 
