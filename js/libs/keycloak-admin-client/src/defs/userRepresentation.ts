@@ -2,7 +2,7 @@ import type CredentialRepresentation from "./credentialRepresentation.js";
 import type FederatedIdentityRepresentation from "./federatedIdentityRepresentation.js";
 import type { RequiredActionAlias } from "./requiredActionProviderRepresentation.js";
 import type UserConsentRepresentation from "./userConsentRepresentation.js";
-import type UserProfileMetadata from "./userProfileMetadata.js";
+import type { UserProfileMetadata } from "./userProfileMetadata.js";
 
 export default interface UserRepresentation {
   id?: string;

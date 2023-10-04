@@ -1,5 +1,5 @@
 // See: https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/userprofile/config/UPConfig.java
-export default interface UserProfileConfig {
+export interface UserProfileConfig {
   attributes?: UserProfileAttribute[];
   groups?: UserProfileGroup[];
 }

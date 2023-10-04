@@ -1,5 +1,5 @@
 // See: https://github.com/keycloak/keycloak/blob/main/core/src/main/java/org/keycloak/representations/idm/UserProfileMetadata.java
-export default interface UserProfileMetadata {
+export interface UserProfileMetadata {
   attributes?: UserProfileAttributeMetadata[];
 }
 
