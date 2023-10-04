@@ -16,10 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Path;
@@ -37,6 +39,7 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
@@ -47,6 +50,9 @@ import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.Validators;
 
 /**
@@ -104,7 +110,7 @@ public class UserProfileResource {
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
 
-    static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
+    public static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
         Map<String, List<String>> am = profile.getAttributes().getReadable();
 
         if(am == null)
@@ -116,7 +122,24 @@ public class UserProfileResource {
                 .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
                 .map(sam -> toRestMetadata(sam, session, profile))
                 .collect(Collectors.toList());
-        return new UserProfileMetadata(attributes);
+
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UPConfig config;
+
+        try {
+            config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to parse configuration", cause);
+        }
+
+        List<UserProfileAttributeGroupMetadata> groups = config.getGroups().stream().map(new Function<UPGroup, UserProfileAttributeGroupMetadata>() {
+            @Override
+            public UserProfileAttributeGroupMetadata apply(UPGroup upGroup) {
+                return new UserProfileAttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations());
+            }
+        }).collect(Collectors.toList());
+
+        return new UserProfileMetadata(attributes, groups);
     }
 
     private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {

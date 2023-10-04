@@ -27,18 +27,24 @@ import java.util.Optional;
 public class UserProfileMetadata {
 
     private List<UserProfileAttributeMetadata> attributes;
+    private List<UserProfileAttributeGroupMetadata> groups;
 
     public UserProfileMetadata() {
 
     }
 
-    public UserProfileMetadata(List<UserProfileAttributeMetadata> attributes) {
+    public UserProfileMetadata(List<UserProfileAttributeMetadata> attributes, List<UserProfileAttributeGroupMetadata> groups) {
         super();
         this.attributes = attributes;
+        this.groups = groups;
     }
 
     public List<UserProfileAttributeMetadata> getAttributes() {
         return attributes;
+    }
+
+    public List<UserProfileAttributeGroupMetadata> getGroups() {
+        return groups;
     }
 
     public void setAttributes(List<UserProfileAttributeMetadata> attributes) {
