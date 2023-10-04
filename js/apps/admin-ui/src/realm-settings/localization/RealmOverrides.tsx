@@ -308,7 +308,8 @@ export const RealmOverrides = ({
     event: React.ChangeEvent<HTMLInputElement>,
     rowIndex: number,
   ) => {
-    const selectedKey = tableRows[rowIndex].key;
+    const selectedKey = (tableRows[rowIndex].cells?.[0] as IRowCell).props
+      .value;
     if (event.target.checked) {
       setSelectedRowKeys((prevSelected) => [...prevSelected, selectedKey]);
     } else {
@@ -435,7 +436,9 @@ export const RealmOverrides = ({
               cells={[t("key"), t("value")]}
               rows={tableRows.map((row) => ({
                 ...row,
-                selected: isRowSelected(row.key), // Set the correct isSelected property
+                selected: isRowSelected(
+                  (row.cells?.[0] as IRowCell).props.value,
+                ),
               }))}
               onSelect={(event, isSelected, rowIndex) => {
                 handleRowSelect(event, rowIndex);
