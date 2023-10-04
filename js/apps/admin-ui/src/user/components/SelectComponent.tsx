@@ -77,7 +77,7 @@ export const SelectComponent = ({
             variant={isMultiValue ? "typeaheadmulti" : "single"}
             aria-label={t("selectOne")}
             isOpen={open}
-            readOnly={attribute.readOnly}
+            isDisabled={attribute.readOnly}
             required={isRequired}
           >
             {options.map((option) => (
