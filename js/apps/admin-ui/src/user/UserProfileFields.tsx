@@ -1,9 +1,9 @@
 import type {
+  UserProfileAttributeGroupMetadata,
   UserProfileAttributeMetadata,
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
-import { Fragment } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -87,6 +87,11 @@ export type UserProfileFieldsProps = {
   hideReadOnly?: boolean;
 };
 
+type GroupWithAttributes = {
+  group: UserProfileAttributeGroupMetadata;
+  attributes: UserProfileAttributeMetadata[];
+};
+
 export const UserProfileFields = ({
   form,
   userProfileMetadata,
@@ -98,32 +103,42 @@ export const UserProfileFields = ({
   const attributes = hideReadOnly
     ? userProfileMetadata.attributes?.filter(({ readOnly }) => !readOnly)
     : userProfileMetadata.attributes;
+  const groups = userProfileMetadata.groups ?? [];
+  const groupsWithAttributes = [
+    { name: undefined },
+    ...groups,
+  ].map<GroupWithAttributes>((group) => {
+    const groupAttributes =
+      attributes?.filter((attribute) => attribute.group === group.name) ?? [];
+
+    return {
+      group,
+      attributes: groupAttributes,
+    };
+  });
 
   return (
     <ScrollForm
-      sections={[{ name: "" }, ...(userProfileMetadata.groups || [])].map(
-        (g) => ({
-          title: g.displayHeader || g.name || t("general"),
+      sections={groupsWithAttributes
+        .filter((group) => group.attributes.length > 0)
+        .map(({ group, attributes }) => ({
+          title: group.displayHeader || group.name || t("general"),
           panel: (
             <div className="pf-c-form">
-              {g.displayDescription && (
-                <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
+              {group.displayDescription && (
+                <Text className="pf-u-pb-lg">{group.displayDescription}</Text>
               )}
-              {attributes?.map((attribute) => (
-                <Fragment key={attribute.name}>
-                  {(attribute.group || "") === g.name && (
-                    <FormField
-                      form={form}
-                      attribute={attribute}
-                      roles={roles}
-                    />
-                  )}
-                </Fragment>
+              {attributes.map((attribute) => (
+                <FormField
+                  key={attribute.name}
+                  form={form}
+                  attribute={attribute}
+                  roles={roles}
+                />
               ))}
             </div>
           ),
-        }),
-      )}
+        }))}
     />
   );
 };

@@ -10,6 +10,7 @@ export interface UserProfileAttributeMetadata {
   displayName?: string;
   required?: boolean;
   readOnly?: boolean;
+  group?: string;
   annotations?: Record<string, unknown>;
   validators?: Record<string, Record<string, unknown>>;
 }
