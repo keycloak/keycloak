@@ -1,6 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ActionGroup,
@@ -42,7 +42,7 @@ export type UserFormProps = {
   realm: RealmRepresentation;
   user?: UserRepresentation;
   bruteForce?: BruteForced;
-  userProfileMetadata?: UserProfileConfig;
+  userProfileMetadata?: UserProfileMetadata;
   save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
@@ -189,7 +189,7 @@ export const UserForm = ({
       {userProfileMetadata ? (
         <UserProfileFields
           form={form}
-          config={userProfileMetadata}
+          userProfileMetadata={userProfileMetadata}
           hideReadOnly={!user}
         />
       ) : (

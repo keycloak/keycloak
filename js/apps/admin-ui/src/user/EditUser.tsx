@@ -1,5 +1,5 @@
+import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs//userProfileMetadata";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -64,7 +64,7 @@ export default function EditUser() {
   const [user, setUser] = useState<UserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [userProfileMetadata, setUserProfileMetadata] =
-    useState<UserProfileConfig>();
+    useState<UserProfileMetadata>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
 

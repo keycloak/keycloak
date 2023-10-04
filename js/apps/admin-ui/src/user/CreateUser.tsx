@@ -1,6 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -34,7 +34,7 @@ export default function CreateUser() {
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [userProfileMetadata, setUserProfileMetadata] =
-    useState<UserProfileConfig>();
+    useState<UserProfileMetadata>();
 
   useFetch(
     () =>

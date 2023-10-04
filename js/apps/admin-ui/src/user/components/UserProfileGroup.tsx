@@ -1,4 +1,4 @@
-import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { FormGroup } from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 import { UseFormReturn } from "react-hook-form";
@@ -11,7 +11,7 @@ import { isRequiredAttribute } from "../utils/user-profile";
 
 export type UserProfileGroupProps = {
   form: UseFormReturn<UserFormFields>;
-  attribute: UserProfileAttribute;
+  attribute: UserProfileAttributeMetadata;
 };
 
 export const UserProfileGroup = ({

@@ -1,5 +1,7 @@
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type {
+  UserProfileAttributeMetadata,
+  UserProfileMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
 import { Fragment } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
@@ -54,7 +56,7 @@ export type InputType = (typeof INPUT_TYPES)[number];
 export type UserProfileFieldProps = {
   form: UseFormReturn<UserFormFields>;
   inputType: InputType;
-  attribute: UserProfileAttribute;
+  attribute: UserProfileAttributeMetadata;
   roles: string[];
 };
 
@@ -80,49 +82,55 @@ export const FIELDS: {
 
 export type UserProfileFieldsProps = {
   form: UseFormReturn<UserFormFields>;
-  config: UserProfileConfig;
+  userProfileMetadata: UserProfileMetadata;
   roles?: string[];
   hideReadOnly?: boolean;
 };
 
 export const UserProfileFields = ({
   form,
-  config,
+  userProfileMetadata,
   roles = ["admin"],
   hideReadOnly = false,
 }: UserProfileFieldsProps) => {
   const { t } = useTranslation();
   // Hide read-only attributes if 'hideReadOnly' is enabled.
   const attributes = hideReadOnly
-    ? config.attributes?.filter(({ readOnly }) => !readOnly)
-    : config.attributes;
+    ? userProfileMetadata.attributes?.filter(({ readOnly }) => !readOnly)
+    : userProfileMetadata.attributes;
 
   return (
     <ScrollForm
-      sections={[{ name: "" }, ...(config.groups || [])].map((g) => ({
-        title: g.displayHeader || g.name || t("general"),
-        panel: (
-          <div className="pf-c-form">
-            {g.displayDescription && (
-              <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
-            )}
-            {attributes?.map((attribute) => (
-              <Fragment key={attribute.name}>
-                {(attribute.group || "") === g.name && (
-                  <FormField form={form} attribute={attribute} roles={roles} />
-                )}
-              </Fragment>
-            ))}
-          </div>
-        ),
-      }))}
+      sections={[{ name: "" }, ...(userProfileMetadata.groups || [])].map(
+        (g) => ({
+          title: g.displayHeader || g.name || t("general"),
+          panel: (
+            <div className="pf-c-form">
+              {g.displayDescription && (
+                <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
+              )}
+              {attributes?.map((attribute) => (
+                <Fragment key={attribute.name}>
+                  {(attribute.group || "") === g.name && (
+                    <FormField
+                      form={form}
+                      attribute={attribute}
+                      roles={roles}
+                    />
+                  )}
+                </Fragment>
+              ))}
+            </div>
+          ),
+        }),
+      )}
     />
   );
 };
 
 type FormFieldProps = {
   form: UseFormReturn<UserFormFields>;
-  attribute: UserProfileAttribute;
+  attribute: UserProfileAttributeMetadata;
   roles: string[];
 };
 
@@ -144,7 +152,7 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
 const DEFAULT_INPUT_TYPE = "multiselect" satisfies InputType;
 
 function determineInputType(
-  attribute: UserProfileAttribute,
+  attribute: UserProfileAttributeMetadata,
   value: string | string[],
 ): InputType {
   // Always treat the root attributes as a text field.

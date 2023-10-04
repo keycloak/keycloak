@@ -1,9 +1,9 @@
-import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 
 export function isRequiredAttribute({
   required,
   validators,
-}: UserProfileAttribute): boolean {
+}: UserProfileAttributeMetadata): boolean {
   // If the 'required' attribute is not defined, we can assume it is not required.
   if (typeof required === "undefined") {
     return false;
