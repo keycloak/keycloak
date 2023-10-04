@@ -93,6 +93,7 @@ export const RealmOverrides = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
   const refreshTable = () => {
     setTableKey(tableKey + 1);
@@ -302,8 +303,6 @@ export const RealmOverrides = ({
     }
   };
 
-  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-
   // Handle row selection
   const handleRowSelect = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -436,7 +435,7 @@ export const RealmOverrides = ({
               cells={[t("key"), t("value")]}
               rows={tableRows.map((row) => ({
                 ...row,
-                selected: isRowSelected(row.key),
+                selected: isRowSelected(row.key), // Set the correct isSelected property
               }))}
               onSelect={(event, isSelected, rowIndex) => {
                 handleRowSelect(event, rowIndex);
