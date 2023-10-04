@@ -248,6 +248,13 @@ public class SimpleHttp {
         }
     }
 
+    /**
+     * @return the URL without params
+     */
+    public String getUrl() {
+        return url;
+    }
+
     private Response makeRequest() throws IOException {
 
         HttpRequestBase httpRequest = createHttpRequest();

@@ -479,7 +479,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
+            OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
+            
             if (state == null) {
+                logErroneousRedirectUrlError("Redirection URL does not contain a state parameter", providerConfig);
                 return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
             }
 
@@ -487,10 +490,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 AuthenticationSessionModel authSession = this.callback.getAndVerifyAuthenticationSession(state);
                 session.getContext().setAuthenticationSession(authSession);
 
-                OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-
                 if (error != null) {
-                    logger.error(error + " for broker login " + providerConfig.getProviderId());
+                    logErroneousRedirectUrlError("Redirection URL contains an error", providerConfig);
                     if (error.equals(ACCESS_DENIED)) {
                         return callback.cancelled(providerConfig);
                     } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
@@ -500,23 +501,39 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     }
                 }
 
-                if (authorizationCode != null) {
-                    String response = generateTokenRequest(authorizationCode).asString();
-
-                    BrokeredIdentityContext federatedIdentity = provider.getFederatedIdentity(response);
-
-                    if (providerConfig.isStoreToken()) {
-                        // make sure that token wasn't already set by getFederatedIdentity();
-                        // want to be able to allow provider to set the token itself.
-                        if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
-                    }
-
-                    federatedIdentity.setIdpConfig(providerConfig);
-                    federatedIdentity.setIdp(provider);
-                    federatedIdentity.setAuthenticationSession(authSession);
-
-                    return callback.authenticated(federatedIdentity);
+                if (authorizationCode == null) {
+                    logErroneousRedirectUrlError("Redirection URL neither contains a code nor error parameter",
+                            providerConfig);
+                    return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
                 }
+
+                SimpleHttp simpleHttp = generateTokenRequest(authorizationCode);
+                String response;
+                try (SimpleHttp.Response simpleResponse = simpleHttp.asResponse()) {
+                    int status = simpleResponse.getStatus();
+                    boolean success = status >= 200 && status < 400;
+                    response = simpleResponse.asString();
+
+                    if (!success) {
+                        logger.errorf("Unexpected response from token endpoint %s. status=%s, response=%s",
+                                simpleHttp.getUrl(), status, response);
+                        return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                    }
+                }
+
+                BrokeredIdentityContext federatedIdentity = provider.getFederatedIdentity(response);
+
+                if (providerConfig.isStoreToken()) {
+                    // make sure that token wasn't already set by getFederatedIdentity();
+                    // want to be able to allow provider to set the token itself.
+                    if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
+                }
+
+                federatedIdentity.setIdpConfig(providerConfig);
+                federatedIdentity.setIdp(provider);
+                federatedIdentity.setAuthenticationSession(authSession);
+
+                return callback.authenticated(federatedIdentity);
             } catch (WebApplicationException e) {
                 return e.getResponse();
             } catch (IdentityBrokerException e) {
@@ -524,10 +541,18 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     return errorIdentityProviderLogin(e.getMessageCode());
                 }
                 logger.error("Failed to make identity provider oauth callback", e);
+                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
+                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
-            return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+
+        private void logErroneousRedirectUrlError(String mainMessage, OAuth2IdentityProviderConfig providerConfig) {
+            String providerId = providerConfig.getProviderId();
+            String redirectionUrl = session.getContext().getUri().getRequestUri().toString();
+
+            logger.errorf("%s. providerId=%s, redirectionUrl=%s", mainMessage, providerId, redirectionUrl);
         }
 
         private Response errorIdentityProviderLogin(String message) {
