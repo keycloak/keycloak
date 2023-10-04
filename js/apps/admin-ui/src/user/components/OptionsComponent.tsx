@@ -13,7 +13,7 @@ export const OptionComponent = ({
   attribute,
 }: UserProfileFieldProps) => {
   const isRequired = isRequiredAttribute(attribute);
-  const isMultiSelect = inputType.includes("multiselect");
+  const isMultiSelect = inputType.startsWith("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
   const options = (attribute.validators?.options as Options).options || [];
 

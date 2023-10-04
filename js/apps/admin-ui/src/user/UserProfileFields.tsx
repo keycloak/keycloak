@@ -128,14 +128,7 @@ type FormFieldProps = {
 
 const FormField = ({ form, attribute, roles }: FormFieldProps) => {
   const value = form.watch(fieldName(attribute) as FieldPath<UserFormFields>);
-  const inputType =
-    attribute.annotations?.["inputType"] ??
-    (Array.isArray(value) ? "multiselect" : "text");
-
-  if (!isValidInputType(inputType)) {
-    return null;
-  }
-
+  const inputType = determineInputType(attribute, value);
   const Component = FIELDS[inputType];
 
   return (
@@ -147,6 +140,27 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
     />
   );
 };
+
+const DEFAULT_INPUT_TYPE = "multiselect" satisfies InputType;
+
+function determineInputType(
+  attribute: UserProfileAttribute,
+  value: string | string[],
+): InputType {
+  const inputType = attribute.annotations?.inputType;
+
+  // If the attribute has no valid input type, it is always multi-valued.
+  if (!isValidInputType(inputType)) {
+    return DEFAULT_INPUT_TYPE;
+  }
+
+  // An attribute with multiple values is always multi-valued, even if an input type is provided.
+  if (Array.isArray(value) && value.length > 1) {
+    return DEFAULT_INPUT_TYPE;
+  }
+
+  return inputType;
+}
 
 const isValidInputType = (value: unknown): value is InputType =>
   typeof value === "string" && value in FIELDS;

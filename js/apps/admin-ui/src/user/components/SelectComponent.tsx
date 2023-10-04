@@ -10,30 +10,36 @@ import { UserProfileGroup } from "./UserProfileGroup";
 import { isRequiredAttribute } from "../utils/user-profile";
 
 type OptionLabel = Record<string, string> | undefined;
-export const SelectComponent = ({ form, attribute }: UserProfileFieldProps) => {
+export const SelectComponent = ({
+  form,
+  inputType,
+  attribute,
+}: UserProfileFieldProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const isRequired = isRequiredAttribute(attribute);
-
-  const isMultiValue = (field: ControllerRenderProps<UserFormFields>) => {
-    return (
-      attribute.annotations?.["inputType"] === "multiselect" ||
-      Array.isArray(field.value)
-    );
-  };
+  const isMultiValue = inputType === "multiselect";
 
   const setValue = (
     value: string,
     field: ControllerRenderProps<UserFormFields>,
   ) => {
-    if (isMultiValue(field)) {
-      if (field.value.includes(value)) {
-        field.onChange(field.value.filter((item: string) => item !== value));
-      } else {
-        field.onChange([...field.value, value]);
-      }
-    } else {
+    // If the field is a single value, just set it.
+    if (typeof field.value === "string") {
       field.onChange(value);
+      return;
+    }
+
+    // We can't handle non-array values from here on.
+    if (!Array.isArray(field.value)) {
+      return;
+    }
+
+    // If the value doesn't exist in the array, append it. Otherwise, remove it.
+    if (field.value.includes(value)) {
+      field.onChange(field.value.filter((item) => item !== value));
+    } else {
+      field.onChange([...field.value, value]);
     }
   };
 
@@ -66,9 +72,9 @@ export const SelectComponent = ({ form, attribute }: UserProfileFieldProps) => {
               }
             }}
             selections={
-              field.value ? field.value : isMultiValue(field) ? [] : t("choose")
+              field.value ? field.value : isMultiValue ? [] : t("choose")
             }
-            variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
+            variant={isMultiValue ? "typeaheadmulti" : "single"}
             aria-label={t("selectOne")}
             isOpen={open}
             readOnly={attribute.readOnly}
