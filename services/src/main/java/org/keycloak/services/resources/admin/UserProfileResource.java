@@ -124,16 +124,10 @@ public class UserProfileResource {
                 .collect(Collectors.toList());
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        String rawConfig = provider.getConfiguration();
-
-        if (rawConfig == null) {
-            return null;
-        }
-
         UPConfig config;
 
         try {
-            config = JsonSerialization.readValue(rawConfig, UPConfig.class);
+            config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
         } catch (Exception cause) {
             throw new RuntimeException("Failed to parse configuration", cause);
         }

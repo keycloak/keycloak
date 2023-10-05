@@ -195,7 +195,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     public String getConfiguration() {
         if (!isEnabled(session)) {
-            return null;
+            return defaultRawConfig;
         }
 
         String cfg = getConfigJsonFromComponentModel(getComponentModel());
