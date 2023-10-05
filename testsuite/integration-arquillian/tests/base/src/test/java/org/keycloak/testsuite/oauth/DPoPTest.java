@@ -24,15 +24,12 @@ import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignatureException;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -55,8 +52,13 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
+import org.keycloak.crypto.SignatureException;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
@@ -64,7 +66,6 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -566,6 +567,17 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         return keyPair;
     }
 
+    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
+        switch (keyWrapper.getType()) {
+            case KeyType.RSA:
+                return new AsymmetricSignatureSignerContext(keyWrapper);
+            case KeyType.EC:
+                return new ECDSASignatureSignerContext(keyWrapper);
+            default:
+                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
+        }
+    }
+
     private static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey) throws IOException {
 
         String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
@@ -579,14 +591,18 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
 
         try {
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(algorithm));
-            signature.initSign(privateKey);
+            KeyWrapper keyWrapper = new KeyWrapper();
+            keyWrapper.setKid(jwsHeader.getKeyId());
+            keyWrapper.setAlgorithm(algorithm);
+            keyWrapper.setPrivateKey(privateKey);
+            keyWrapper.setType(privateKey.getAlgorithm());
+            keyWrapper.setUse(KeyUse.SIG);
+            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
+
             String data = dpopProofHeaderEncoded + "." + dpopProofPayloadEncoded;
-            byte[] dataByteArray = data.getBytes();
-            signature.update(dataByteArray);
-            byte[] signatureByteArray = signature.sign();
+            byte[] signatureByteArray = sigCtx.sign(data.getBytes());
             return data + "." + Base64Url.encode(signatureByteArray);
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+        } catch (SignatureException e) {
             throw new RuntimeException(e);
         }
     }
