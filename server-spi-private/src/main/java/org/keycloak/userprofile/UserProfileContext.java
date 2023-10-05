@@ -33,7 +33,6 @@ public enum UserProfileContext {
     UPDATE_PROFILE(true),
     USER_API(false),
     ACCOUNT(true),
-    ACCOUNT_OLD(true),
     IDP_REVIEW(false),
     REGISTRATION_PROFILE(false),
     REGISTRATION_USER_CREATION(false),

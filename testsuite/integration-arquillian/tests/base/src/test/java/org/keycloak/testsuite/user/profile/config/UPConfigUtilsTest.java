@@ -39,7 +39,6 @@ public class UPConfigUtilsTest {
     @Test
     public void canBeAuthFlowContext() {
         Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.ACCOUNT));
-        Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.ACCOUNT_OLD));
         Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.USER_API));
 
         Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.IDP_REVIEW));
@@ -57,14 +56,12 @@ public class UPConfigUtilsTest {
         roles.add(ROLE_ADMIN);
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT_OLD, roles));
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.UPDATE_PROFILE, roles));
 
         roles = new HashSet<>();
         roles.add(ROLE_USER);
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT_OLD, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
 
@@ -72,7 +69,6 @@ public class UPConfigUtilsTest {
         roles.add(ROLE_ADMIN);
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT_OLD, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
     }
