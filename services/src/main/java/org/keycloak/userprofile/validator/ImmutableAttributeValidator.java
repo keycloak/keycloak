@@ -16,6 +16,7 @@
  */
 package org.keycloak.userprofile.validator;
 
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.validate.Validators.notBlankValidator;
 
 import java.util.List;
@@ -23,8 +24,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.AttributeContext;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
@@ -61,10 +64,27 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         List<String> currentValue = user.getAttributeStream(inputHint).filter(Objects::nonNull).collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
-        if (!CollectionUtil.collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
+        if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
             if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
                 return context;
             }
+
+            RealmModel realm = ac.getSession().getContext().getRealm();
+
+            if (realm.isRegistrationEmailAsUsername()) {
+                String attributeName = attributeContext.getMetadata().getName();
+
+                if (UserModel.EMAIL.equals(attributeName)) {
+                    return context;
+                }
+
+                List<String> email = attributeContext.getAttributes().getValues(UserModel.EMAIL);
+
+                if (UserModel.USERNAME.equals(attributeName) && collectionEquals(values, email)) {
+                    return context;
+                }
+            }
+
             context.addError(new ValidationError(ID, inputHint, DEFAULT_ERROR_MESSAGE));
         }
 

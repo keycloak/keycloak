@@ -2442,12 +2442,23 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithNewUsernameNotPossible() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        assertFalse(realmRep.isEditUsernameAllowed());
         String id = createUser();
 
         UserResource user = realm.users().get(id);
         UserRepresentation userRep = user.toRepresentation();
         userRep.setUsername("user11");
-        updateUser(user, userRep);
+
+        try {
+            updateUser(user, userRep);
+            if (isDeclarativeUserProfile()) {
+                fail("Should fail because realm does not allow edit username");
+            }
+        } catch (BadRequestException expected) {
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Attribute username is read only.", error.getErrorMessage());
+        }
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user1", userRep.getUsername());
