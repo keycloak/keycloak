@@ -1383,8 +1383,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile.validate();
         profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT_OLD, attributes);
-        profile.validate();
 
         // no fail on auth flow scopes when scope is not required
         profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
@@ -1403,8 +1401,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.USER_API, attributes);
         profile.validate();
         profile = provider.create(UserProfileContext.ACCOUNT, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.ACCOUNT_OLD, attributes);
         profile.validate();
 
         // fail on auth flow scopes when scope is required
