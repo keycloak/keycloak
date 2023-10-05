@@ -20,7 +20,6 @@
 package org.keycloak.testsuite.user.profile;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,10 +34,13 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:joerg.matysiak@bosch.io">Jörg Matysiak</a>
@@ -52,10 +54,13 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testCustomUserProfileProviderIsActive(KeycloakSession session) {
-        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UserProfileProvider provider = getUserProfileProvider(session);
         assertEquals(CustomUserProfileProvider.class.getName(), provider.getClass().getName());
         assertTrue(provider instanceof  CustomUserProfileProvider);
-        assertEquals("custom-user-profile", provider.getComponentModel().getProviderId());
+        provider.setConfiguration(UPConfigUtils.readDefaultConfig());
+        Optional<ComponentModel> component = getComponentModel(session);
+        assertTrue(component.isPresent());
+        assertEquals("custom-user-profile", component.get().getProviderId());
     }
     
     @Test
@@ -64,7 +69,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testInvalidConfiguration(KeycloakSession session) {
-        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UserProfileProvider provider = getUserProfileProvider(session);
 
         try {
             provider.setConfiguration("{\"validateConfigAttribute\": true}");
@@ -80,19 +85,16 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testConfigurationChunks(KeycloakSession session) throws IOException {
-        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
-        ComponentModel component = provider.getComponentModel();
-
-        assertNotNull(component);
-
+        UserProfileProvider provider = getUserProfileProvider(session);
         String newConfig = generateLargeProfileConfig();
 
         provider.setConfiguration(newConfig);
 
-        component = provider.getComponentModel();
+        Optional<ComponentModel> component = getComponentModel(session);
+        assertTrue(component.isPresent());
 
         // assert config is persisted in 2 pieces
-        Assert.assertEquals("2", component.get(DeclarativeUserProfileProvider.UP_PIECES_COUNT_COMPONENT_CONFIG_KEY));
+        Assert.assertEquals("2", component.get().get(DeclarativeUserProfileProvider.UP_PIECES_COUNT_COMPONENT_CONFIG_KEY));
         // assert config is returned correctly
         Assert.assertEquals(newConfig, provider.getConfiguration());
     }
@@ -104,7 +106,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testDefaultConfig(KeycloakSession session) {
-        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UserProfileProvider provider = getUserProfileProvider(session);
 
         // reset configuration to default
         provider.setConfiguration(null);
