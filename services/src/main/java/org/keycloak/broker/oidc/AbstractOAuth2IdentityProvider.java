@@ -34,9 +34,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureProvider;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.MacSignatureSignerContext;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -447,7 +447,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
         }
         String alg = getConfig().getClientAssertionSigningAlg() != null ? getConfig().getClientAssertionSigningAlg() : Algorithm.RS256;
-        return new AsymmetricSignatureProvider(session, alg).signer();
+        return session.getProvider(SignatureProvider.class, alg).signer();
     }
 
     protected static class Endpoint {
