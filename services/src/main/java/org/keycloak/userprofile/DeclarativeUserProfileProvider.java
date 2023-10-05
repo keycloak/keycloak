@@ -126,7 +126,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
-        if (isEnabled(session)) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (isEnabled(realm)) {
             if (user != null && user.getServiceAccountClientLink() != null) {
                 return new LegacyAttributes(context, attributes, user, metadata, session);
             }
@@ -139,8 +141,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
         UserProfileContext context = metadata.getContext();
         UserProfileMetadata decoratedMetadata = metadata.clone();
+        RealmModel realm = session.getContext().getRealm();
 
-        if (!isEnabled(session)) {
+        if (!isEnabled(realm)) {
             if(!context.equals(UserProfileContext.USER_API)
                     && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)
                     && !context.equals(UserProfileContext.UPDATE_EMAIL)) {
@@ -194,7 +197,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     @Override
     public String getConfiguration() {
-        if (!isEnabled(session)) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (!isEnabled(realm)) {
             return defaultRawConfig;
         }
 
@@ -529,14 +534,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         model.getConfig().remove(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY);
     }
 
-    /**
-     * Returns whether the declarative provider is enabled to a realm
-     *
-     * @deprecated should be removed once {@link DeclarativeUserProfileProvider} becomes the default.
-     * @param session the session
-     * @return {@code true} if the declarative provider is enabled. Otherwise, {@code false}.
-     */
-    private Boolean isEnabled(KeycloakSession session) {
-        return isDeclarativeConfigurationEnabled && session.getContext().getRealm().getAttribute(REALM_USER_PROFILE_ENABLED, false);
+    @Override
+    public boolean isEnabled(RealmModel realm) {
+        return isDeclarativeConfigurationEnabled && realm.getAttribute(REALM_USER_PROFILE_ENABLED, false);
     }
 }

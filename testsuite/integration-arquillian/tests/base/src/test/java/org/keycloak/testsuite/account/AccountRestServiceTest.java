@@ -172,6 +172,25 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user = updateAndGet(user);
             assertEquals("user@keycloak.org", user.getUsername());
             assertEquals("user@keycloak.org", user.getEmail());
+
+            realmRep.setRegistrationEmailAsUsername(false);
+            realmRep.setEditUsernameAllowed(true);
+            realm.update(realmRep);
+            user = getUser();
+            user.setUsername("different-than-email");
+            user.setEmail("user@keycloak.org");
+            user = updateAndGet(user);
+            assertEquals("different-than-email", user.getUsername());
+            assertEquals("user@keycloak.org", user.getEmail());
+
+            realmRep.setRegistrationEmailAsUsername(true);
+            realmRep.setEditUsernameAllowed(false);
+            realm.update(realmRep);
+            user = getUser();
+            user.setEmail("should-not-change@keycloak.org");
+            user = updateAndGet(user);
+            assertEquals("different-than-email", user.getUsername());
+            assertEquals("user@keycloak.org", user.getEmail());
         } finally {
             realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realmRep.setEditUsernameAllowed(editUsernameAllowed);
