@@ -1614,6 +1614,28 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testCustomAccountResourceTheme() throws Exception {
+        String accountTheme = "";
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            accountTheme = realmRep.getAccountTheme();
+            realmRep.setAccountTheme("custom-account-provider");
+            adminClient.realm("test").update(realmRep);
+
+            SimpleHttp.Response response = SimpleHttp.doGet(getAccountUrl(null), httpClient)
+                       .header("Accept", "text/html")
+                       .asResponse();
+            assertEquals(200, response.getStatus());
+
+            String html = response.asString();
+            assertTrue(html.contains("Custom Account Console"));
+        } finally {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            realmRep.setAccountTheme(accountTheme);
+            testRealm().update(realmRep);
+        }
+    }
+  
     @EnableFeature(Profile.Feature.UPDATE_EMAIL)
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
         reconnectAdminClient();
