@@ -27,10 +27,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -103,6 +106,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     private String defaultRawConfig;
+    private static final Map<UserProfileContext, UserProfileMetadata> DEFAULT_METADATA = Collections.synchronizedMap(new HashMap<>());
 
     public DeclarativeUserProfileProvider() {
         defaultRawConfig = UPConfigUtils.readDefaultConfig();
@@ -154,16 +158,21 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             return decoratedMetadata;
         }
 
-        ComponentModel model = getComponentModelOrCreate(session);
-        Map<UserProfileContext, UserProfileMetadata> metadataMap = model.getNote(PARSED_CONFIG_COMPONENT_KEY);
+        ComponentModel component = getComponentModel().orElse(null);
+
+        if (component == null) {
+            return DEFAULT_METADATA.computeIfAbsent(context, (c) -> decorateUserProfileForCache(decoratedMetadata, getParsedConfig(defaultRawConfig)));
+        }
+
+        Map<UserProfileContext, UserProfileMetadata> metadataMap = component.getNote(PARSED_CONFIG_COMPONENT_KEY);
 
         // not cached, create a note with cache
         if (metadataMap == null) {
             metadataMap = new ConcurrentHashMap<>();
-            model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
+            component.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
-        return metadataMap.computeIfAbsent(context, (c) -> decorateUserProfileForCache(decoratedMetadata, model));
+        return metadataMap.computeIfAbsent(context, createUserDefinedProfileDecorator(session, decoratedMetadata, component));
     }
 
     @Override
@@ -203,40 +212,52 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             return defaultRawConfig;
         }
 
-        String cfg = getConfigJsonFromComponentModel(getComponentModel());
+        Optional<ComponentModel> component = getComponentModel();
 
-        if (isBlank(cfg)) {
-            return defaultRawConfig;
+        if (component.isPresent()) {
+            String cfg = getConfigJsonFromComponentModel(component.get());
+
+            if (isBlank(cfg)) {
+                return defaultRawConfig;
+            }
+
+            return cfg;
         }
 
-        return cfg;
+        return defaultRawConfig;
     }
 
     @Override
     public void setConfiguration(String configuration) {
-        ComponentModel component = getComponentModel();
+        RealmModel realm = session.getContext().getRealm();
+        Optional<ComponentModel> optionalComponent = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
+
+        if (isBlank(configuration) && !optionalComponent.isPresent()) {
+            return;
+        }
+
+        ComponentModel component = optionalComponent.isPresent() ? optionalComponent.get() : createComponentModel();
 
         removeConfigJsonFromComponentModel(component);
 
-        RealmModel realm = session.getContext().getRealm();
-
-        if (!isBlank(configuration)) {
-            // store new parts
-            List<String> parts = UPConfigUtils.getChunks(configuration, 3800);
-            MultivaluedHashMap<String, String> config = component.getConfig();
-
-            config.putSingle(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, "" + parts.size());
-
-            int i = 0;
-
-            for (String part : parts) {
-                config.putSingle(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + (i++), part);
-            }
-
-            realm.updateComponent(component);
-        } else {
+        if (isBlank(configuration)) {
             realm.removeComponent(component);
+            return;
         }
+
+        // store new parts
+        List<String> parts = UPConfigUtils.getChunks(configuration, 3800);
+        MultivaluedHashMap<String, String> config = component.getConfig();
+
+        config.putSingle(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, "" + parts.size());
+
+        int i = 0;
+
+        for (String part : parts) {
+            config.putSingle(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + (i++), part);
+        }
+
+        realm.updateComponent(component);
     }
 
     @Override
@@ -255,22 +276,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return PROVIDER_PRIORITY;
     }
 
-    public ComponentModel getComponentModel() {
-        return getComponentModelOrCreate(session);
+    private Optional<ComponentModel> getComponentModel() {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
     }
 
     /**
      * Decorate basic metadata provided from {@link AbstractUserProfileProvider} based on 'per realm' configuration.
      * This method is called for each {@link UserProfileContext} in each realm, and metadata are cached then and this
      * method is called again only if configuration changes.
-     *
-     * @param decoratedMetadata base to be decorated based on configuration loaded from component model
-     * @param model component model to get "per realm" configuration from
-     * @return decorated metadata
      */
-    protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, ComponentModel model) {
+    protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
-        UPConfig parsedConfig = getParsedConfig(model);
 
         // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
         // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
@@ -282,7 +299,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         }
 
         Map<String, UPGroup> groupsByName = asHashMap(parsedConfig.getGroups());
-        RealmModel realm = session.getContext().getRealm();
         int guiOrder = 0;
         
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
@@ -346,6 +362,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
             guiOrder++;
 
+            validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
+
             if (isBuiltInAttribute(attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
@@ -381,14 +399,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                     }
                 }
 
-                // Add ImmutableAttributeValidator to ensure that attributes that are configured
-                // as read-only are marked as such.
-                // Skip this for username in realms with username = email to allow change of email
-                // address on initial login with profile via idp
-                if (!realm.isRegistrationEmailAsUsername() && UserModel.EMAIL.equals(attributeName)) {
-                    validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                }
-
                 List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
 
                 if (existingMetadata.isEmpty()) {
@@ -406,7 +416,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                             .setRequired(required);
                 }
             } else {
-                validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
                 decoratedMetadata.addAttribute(attributeName, guiOrder, validators, selector, writeAllowed, required, readAllowed)
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
@@ -440,24 +449,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     /**
      * Get parsed config file configured in model. Default one used if not configured.
-     *
-     * @param model to take config from
-     * @return parsed configuration
      */
-    protected UPConfig getParsedConfig(ComponentModel model) {
-        String rawConfig = getConfigJsonFromComponentModel(model);
-
+    protected UPConfig getParsedConfig(String rawConfig) {
         if (!isBlank(rawConfig)) {
             try {
-                UPConfig upc = parseConfig(rawConfig);
-
-                //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
-                List<String> errors = UPConfigUtils.validate(session, upc);
-                if (!errors.isEmpty()) {
-                    throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid: " + errors.toString());
-                }
-                return upc;
-
+                return parseConfig(rawConfig);
             } catch (IOException e) {
                 throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
             }
@@ -471,22 +467,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Get component to store our "per realm" configuration into.
-     *
-     * @param session to be used, and take realm from
-     * @return component
-     */
-    private ComponentModel getComponentModelOrCreate(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(createComponentModel()));
-    }
-
-    /**
      * Create the component model to store configuration
      * @return component model
      */
     protected ComponentModel createComponentModel() {
-        return new DeclarativeUserProfileModel(getId());
+        RealmModel realm = session.getContext().getRealm();
+        return realm.addComponentModel(new DeclarativeUserProfileModel(getId()));
     }
 
     /**
@@ -537,5 +523,19 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     public boolean isEnabled(RealmModel realm) {
         return isDeclarativeConfigurationEnabled && realm.getAttribute(REALM_USER_PROFILE_ENABLED, false);
+    }
+
+    private Function<UserProfileContext, UserProfileMetadata> createUserDefinedProfileDecorator(KeycloakSession session, UserProfileMetadata decoratedMetadata, ComponentModel component) {
+        return (c) -> {
+            UPConfig parsedConfig = getParsedConfig(getConfigJsonFromComponentModel(component));
+
+            //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
+            List<String> errors = UPConfigUtils.validate(session, parsedConfig);
+            if (!errors.isEmpty()) {
+                throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid: " + errors.toString());
+            }
+
+            return decorateUserProfileForCache(decoratedMetadata, parsedConfig);
+        };
     }
 }
