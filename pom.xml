@@ -184,7 +184,7 @@
         <osgi.bundle.plugin.version>2.4.0</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.12.1</frontend.plugin.version>
+        <frontend.plugin.version>1.14.2</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
@@ -227,8 +227,9 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.17.1</node.version>
-        <pnpm.version>8.6.12</pnpm.version>
+        <node.version>v18.18.2</node.version>
+        <pnpm.version>8.10.0</pnpm.version>
+        <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1904,6 +1905,12 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                        <!-- Warning, this is an undocumented property https://issues.apache.org/jira/browse/MNG-6589. But there is nothing better. -->
+                        <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.keycloak</groupId>

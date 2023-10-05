@@ -24,7 +24,7 @@
     "typescript": "^5.2.2",
     "wireit": "^0.14.1"
   },
-  "packageManager": "pnpm@8.6.12",
+  "packageManager": "pnpm@8.10.0",
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
   }
