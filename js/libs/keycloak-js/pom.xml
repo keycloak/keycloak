@@ -83,8 +83,8 @@
                         </goals>
                         <configuration>
                             <artifacts>
-                                <artifact>${project.basedir}/assembly.xml
-                                    <file>target/keycloak-js-${project.version}.tgz</file>
+                                <artifact>
+                                    <file>target/keycloak-js-${project.version.npm}.tgz</file>
                                     <type>tar.gz</type>
                                 </artifact>
                             </artifacts>

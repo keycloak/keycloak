@@ -77,4 +77,7 @@ include::topics/saml/mod-auth-mellon.adoc[]
 include::topics/docker/docker-overview.adoc[]
 include::topics/client-registration.adoc[]
 include::topics/client-registration/client-registration-cli.adoc[]
+ifeval::[{project_community}==true]
 include::topics/token-exchange/token-exchange.adoc[]
+endif::[]
+

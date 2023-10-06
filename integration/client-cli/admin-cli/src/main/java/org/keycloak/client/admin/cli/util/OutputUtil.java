@@ -22,14 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import org.keycloak.util.JsonSerialization;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-
-import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -48,13 +45,14 @@ public class OutputUtil {
             return (JsonNode) object;
         }
 
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        buffer.write(JsonSerialization.writeValueAsBytes(object));
-        return MAPPER.readValue(buffer.toByteArray(), JsonNode.class);
+        return MAPPER.convertValue(object, JsonNode.class);
     }
 
-
     public static void printAsCsv(Object object, ReturnFields fields, boolean unquoted) throws IOException {
+        printAsCsv(object, fields, unquoted, IoUtil::printOut);
+    }
+
+    public static void printAsCsv(Object object, ReturnFields fields, boolean unquoted, Consumer<String> printer) throws IOException {
 
         JsonNode node = convertToJsonNode(object);
         if (!node.isArray()) {
@@ -67,7 +65,7 @@ public class OutputUtil {
             StringBuilder buffer = new StringBuilder();
             printObjectAsCsv(buffer, item, fields, unquoted);
 
-            printOut(buffer.length() > 0 ? buffer.substring(1) : "");
+            printer.accept(buffer.length() > 0 ? buffer.substring(1) : "");
         }
     }
 
@@ -77,7 +75,9 @@ public class OutputUtil {
 
     static void printObjectAsCsv(StringBuilder out, JsonNode node, ReturnFields fields, boolean unquoted) {
 
-        if (node.isObject()) {
+        if (node == null) {
+            out.append(",");
+        } else if (node.isObject()) {
             if (fields == null) {
                 Iterator<Map.Entry<String, JsonNode>> it = node.fields();
                 while (it.hasNext()) {
@@ -95,7 +95,7 @@ public class OutputUtil {
             for (JsonNode item: node) {
                 printObjectAsCsv(out, item, fields, unquoted);
             }
-        } else if (node != null) {
+        } else {
             out.append(",");
             if (unquoted && node instanceof TextNode) {
                 out.append(node.asText());

@@ -37,11 +37,8 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
     @FindBy(xpath = "//button[text()='Save Info']")
     private WebElement saveInfoBtn;
 
-    @FindBy(xpath = "//button[text()='Authorize']")
-    private WebElement authorizeBtn;
-
-    @FindBy(xpath = "//button[text()='Continue']")
-    private WebElement continueBtn;
+    @FindBy(xpath = "//span[text()='Allow']")
+    private WebElement allowSpan;
 
     @Override
     public void login(String user, String password) {
@@ -50,26 +47,26 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
             usernameInput.sendKeys(user);
             passwordInput.sendKeys(password);
             passwordInput.sendKeys(Keys.RETURN);
-            pause(2000); // wait for the login screen a bit
+            pause(3000);
 
             try {
                 saveInfoBtn.click();
+                pause(3000);
             }
             catch (NoSuchElementException e) {
                 log.info("'Save Info' button not found, ignoring");
-                pause(2000); // wait for the login screen a bit
+                pause(3000);
             }
         }
         catch (NoSuchElementException e) {
             log.info("Instagram is already logged in, just confirmation is expected");
         }
 
+        // Approval dialog
         try {
-            continueBtn.click();
-        }
-        catch (NoSuchElementException e) {
-            log.info("'Continue' button not found, trying 'Authorize'...");
-            authorizeBtn.click();
+            allowSpan.click();
+        } catch (NoSuchElementException e) {
+            log.info("'Allow' button not found, ignoring");
         }
     }
 }

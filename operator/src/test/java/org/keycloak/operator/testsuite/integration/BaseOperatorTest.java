@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -62,6 +63,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -69,6 +71,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -151,7 +154,12 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"));
+    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+        if (obj instanceof ClusterRoleBinding) {
+            ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
+        }
+        return obj;
+    });
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -262,10 +270,15 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   @Override
   public void afterEach(QuarkusTestMethodContext context) {
       if (!(context.getTestInstance() instanceof BaseOperatorTest)) {
-          return;
+          return; // this hook gets called for all quarkus tests, not all are operator tests
       }
       try {
-          if (!context.getTestStatus().isTestFailed() || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException) {
+          Method testMethod = context.getTestMethod();
+          if (context.getTestStatus().getTestErrorCause() == null
+                  || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException
+                  || !Stream.of(context.getTestStatus().getTestErrorCause().getStackTrace())
+                          .anyMatch(ste -> ste.getMethodName().equals(testMethod.getName())
+                                  && ste.getClassName().equals(testMethod.getDeclaringClass().getName()))) {
               return;
           }
           Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());
