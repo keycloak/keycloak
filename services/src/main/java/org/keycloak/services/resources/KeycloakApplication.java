@@ -109,7 +109,6 @@ public class KeycloakApplication extends Application {
 
             singletons.add(new ObjectMapperResolver());
             classes.add(WelcomeResource.class);
-            classes.add(LocaleResource.class);
 
             platform.onStartup(this::startup);
             platform.onShutdown(this::shutdown);
