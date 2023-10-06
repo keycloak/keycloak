@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type EditAttributesGroupParams = {
@@ -24,5 +24,5 @@ export const EditAttributesGroupRoute: AppRouteObject = {
 export const toEditAttributesGroup = (
   params: EditAttributesGroupParams,
 ): Partial<Path> => ({
-  pathname: generatePath(EditAttributesGroupRoute.path, params),
+  pathname: generateUnencodedPath(EditAttributesGroupRoute.path, params),
 });

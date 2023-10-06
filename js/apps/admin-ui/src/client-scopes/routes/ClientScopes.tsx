@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientScopesParams = { realm: string };
@@ -17,5 +17,5 @@ export const ClientScopesRoute: AppRouteObject = {
 };
 
 export const toClientScopes = (params: ClientScopesParams): Partial<Path> => ({
-  pathname: generatePath(ClientScopesRoute.path, params),
+  pathname: generateUnencodedPath(ClientScopesRoute.path, params),
 });

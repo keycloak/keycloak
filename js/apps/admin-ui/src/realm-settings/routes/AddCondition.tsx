@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type NewClientPolicyConditionParams = {
@@ -24,5 +24,5 @@ export const NewClientPolicyConditionRoute: AppRouteObject = {
 export const toNewClientPolicyCondition = (
   params: NewClientPolicyConditionParams,
 ): Partial<Path> => ({
-  pathname: generatePath(NewClientPolicyConditionRoute.path, params),
+  pathname: generateUnencodedPath(NewClientPolicyConditionRoute.path, params),
 });

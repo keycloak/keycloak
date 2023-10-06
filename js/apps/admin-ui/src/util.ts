@@ -5,7 +5,7 @@ import { flatten } from "flat";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-import { generatePath as generateUnencodedPath } from "react-router-dom";
+import { generatePath } from "react-router-dom";
 
 import {
   arrayToKeyValue,
@@ -172,16 +172,17 @@ export const addTrailingSlash = (url: string) =>
 
 export const generateId = () => Math.floor(Math.random() * 1000);
 
-export function generatePath<Path extends string>(
+type PathParam = { [key: string]: string | null };
+
+export function generateUnencodedPath<Path extends string>(
   originalPath: Path,
-  params?: {
-    [key: string]: string | null;
-  },
+  params: PathParam,
 ): string {
-  if (params)
-    Object.entries(params).forEach(
-      ([k, v]) => (params[k] = encodeURIComponent(v || "")),
-    );
-  //@ts-ignore as PathParam isn't an exported type
-  return generateUnencodedPath(originalPath, params);
+  const encodedParams: PathParam = {};
+  Object.entries(params).forEach(
+    ([k, v]) => (encodedParams[k] = encodeURIComponent(v || "")),
+  );
+
+  //@ts-ignore TODO: Fix type annotation once https://github.com/remix-run/react-router/pull/10719 is merged.
+  return generatePath(originalPath, encodedParams);
 }

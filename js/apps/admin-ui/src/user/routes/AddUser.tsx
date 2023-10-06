@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 
 import type { AppRouteObject } from "../../routes";
 
@@ -18,5 +18,5 @@ export const AddUserRoute: AppRouteObject = {
 };
 
 export const toAddUser = (params: AddUserParams): Partial<Path> => ({
-  pathname: generatePath(AddUserRoute.path, params),
+  pathname: generateUnencodedPath(AddUserRoute.path, params),
 });

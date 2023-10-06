@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type AddClientProfileParams = {
@@ -22,5 +22,5 @@ export const AddClientProfileRoute: AppRouteObject = {
 export const toAddClientProfile = (
   params: AddClientProfileParams,
 ): Partial<Path> => ({
-  pathname: generatePath(AddClientProfileRoute.path, params),
+  pathname: generateUnencodedPath(AddClientProfileRoute.path, params),
 });

@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type CreateFlowParams = { realm: string };
@@ -17,5 +17,5 @@ export const CreateFlowRoute: AppRouteObject = {
 };
 
 export const toCreateFlow = (params: CreateFlowParams): Partial<Path> => ({
-  pathname: generatePath(CreateFlowRoute.path, params),
+  pathname: generateUnencodedPath(CreateFlowRoute.path, params),
 });

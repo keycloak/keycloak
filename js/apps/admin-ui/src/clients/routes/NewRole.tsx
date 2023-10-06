@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type NewRoleParams = { realm: string; clientId: string };
@@ -17,5 +17,5 @@ export const NewRoleRoute: AppRouteObject = {
 };
 
 export const toCreateRole = (params: NewRoleParams): Partial<Path> => ({
-  pathname: generatePath(NewRoleRoute.path, params),
+  pathname: generateUnencodedPath(NewRoleRoute.path, params),
 });

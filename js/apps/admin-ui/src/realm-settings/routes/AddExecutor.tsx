@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type AddExecutorParams = {
@@ -20,5 +20,5 @@ export const AddExecutorRoute: AppRouteObject = {
 };
 
 export const toAddExecutor = (params: AddExecutorParams): Partial<Path> => ({
-  pathname: generatePath(AddExecutorRoute.path, params),
+  pathname: generateUnencodedPath(AddExecutorRoute.path, params),
 });

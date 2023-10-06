@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "../../util";
+import { generateUnencodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientRoleTab =
@@ -28,5 +28,5 @@ export const ClientRoleRoute: AppRouteObject = {
 } satisfies AppRouteObject;
 
 export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({
-  pathname: generatePath(ClientRoleRoute.path, params),
+  pathname: generateUnencodedPath(ClientRoleRoute.path, params),
 });
