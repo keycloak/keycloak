@@ -44,24 +44,24 @@ const AppContexts = ({ children }: PropsWithChildren) => (
 
 export const App = () => {
   return (
-    <AppContexts>
-      <Page
-        header={<Header />}
-        isManagedSidebar
-        sidebar={<PageNav />}
-        breadcrumb={<PageBreadCrumbs />}
-        mainContainerId={mainPageContentId}
-      >
-        <ErrorBoundaryFallback fallback={ErrorRenderer}>
-          <ServerInfoProvider>
+    <ServerInfoProvider>
+      <AppContexts>
+        <Page
+          header={<Header />}
+          isManagedSidebar
+          sidebar={<PageNav />}
+          breadcrumb={<PageBreadCrumbs />}
+          mainContainerId={mainPageContentId}
+        >
+          <ErrorBoundaryFallback fallback={ErrorRenderer}>
             <Suspense fallback={<KeycloakSpinner />}>
               <AuthWall>
                 <Outlet />
               </AuthWall>
             </Suspense>
-          </ServerInfoProvider>
-        </ErrorBoundaryFallback>
-      </Page>
-    </AppContexts>
+          </ErrorBoundaryFallback>
+        </Page>
+      </AppContexts>
+    </ServerInfoProvider>
   );
 };
