@@ -40,7 +40,7 @@
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.276.8",
+    "@patternfly/react-core": "^5.1.1",
     "@patternfly/react-styles": "^4.11.8",
     "keycloak-js": "workspace:*",
     "react": "^18.2.0",
