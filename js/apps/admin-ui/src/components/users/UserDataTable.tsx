@@ -1,6 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -29,19 +29,19 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { SearchType } from "../../user/details/SearchFilter";
+import { toAddUser } from "../../user/routes/AddUser";
+import { toUser } from "../../user/routes/User";
+import { emptyFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { emptyFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
-import { toAddUser } from "../../user/routes/AddUser";
-import { toUser } from "../../user/routes/User";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
-import { SearchType } from "../../user/details/SearchFilter";
 
 export type UserAttribute = {
   name: string;

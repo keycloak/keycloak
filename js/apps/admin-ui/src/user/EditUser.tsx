@@ -1,3 +1,4 @@
+import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs//userProfileMetadata";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
@@ -12,6 +13,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -27,7 +29,6 @@ import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileC
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
-import { useUpdateEffect } from "../utils/useUpdateEffect";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
 import { UserCredentials } from "./UserCredentials";
@@ -51,87 +52,26 @@ import { toUsers } from "./routes/Users";
 import "./user-section.css";
 
 export default function EditUser() {
-  const { realm } = useRealm();
-  const { id } = useParams<UserParams>();
   const { t } = useTranslation("users");
-  const [user, setUser] = useState<UserRepresentation>();
-  const [bruteForced, setBruteForced] = useState<BruteForced>();
-  const [refreshCount, setRefreshCount] = useState(0);
-  const refresh = () => setRefreshCount((count) => count + 1);
-
-  useFetch(
-    async () => {
-      const [user, currentRealm, attackDetection] = await Promise.all([
-        adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
-        adminClient.realms.findOne({ realm }),
-        adminClient.attackDetection.findOne({ id: id! }),
-      ]);
-
-      if (!user || !currentRealm || !attackDetection) {
-        throw new Error(t("common:notFound"));
-      }
-
-      const isBruteForceProtected = currentRealm.bruteForceProtected;
-      const isLocked = isBruteForceProtected && attackDetection.disabled;
-
-      return { user, bruteForced: { isBruteForceProtected, isLocked } };
-    },
-    ({ user, bruteForced }) => {
-      setUser(user);
-      setBruteForced(bruteForced);
-    },
-    [refreshCount],
-  );
-
-  if (!user || !bruteForced) {
-    return <KeycloakSpinner />;
-  }
-
-  return (
-    <EditUserForm user={user} bruteForced={bruteForced} refresh={refresh} />
-  );
-}
-
-type EditUserFormProps = {
-  user: UserRepresentation;
-  bruteForced: BruteForced;
-  refresh: () => void;
-};
-
-const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
-  const { t } = useTranslation("users");
-  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
-  const userForm = useForm<UserFormFields>({
-    mode: "onChange",
-    defaultValues: toUserFormFields(user),
-  });
-
-  const [realmRepresentation, setRealmRepresentattion] =
-    useState<RealmRepresentation>();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("common:notFound"));
-      }
-      setRealmRepresentattion(realm);
-    },
-    [],
-  );
-
+  const { id } = useParams<UserParams>();
+  const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
-  const isUserProfileEnabled =
-    isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-    realmRepresentation?.attributes?.userProfileEnabled === "true";
+  const form = useForm<UserFormFields>({ mode: "onChange" });
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const [user, setUser] = useState<UserRepresentation>();
+  const [bruteForced, setBruteForced] = useState<BruteForced>();
+  const [userProfileMetadata, setUserProfileMetadata] =
+    useState<UserProfileMetadata>();
+  const [refreshCount, setRefreshCount] = useState(0);
+  const refresh = () => setRefreshCount((count) => count + 1);
 
   const toTab = (tab: UserTab) =>
     toUser({
-      realm,
-      id: user.id!,
+      realm: realmName,
+      id: user?.id || "",
       tab,
     });
 
@@ -146,13 +86,43 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const identityProviderLinksTab = useTab("identity-provider-links");
   const sessionsTab = useTab("sessions");
 
-  // Ensure the form remains up-to-date when the user is updated.
-  useUpdateEffect(() => userForm.reset(toUserFormFields(user)), [user]);
+  useFetch(
+    async () =>
+      Promise.all([
+        adminClient.realms.findOne({ realm: realmName }),
+        adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
+        adminClient.attackDetection.findOne({ id: id! }),
+      ]),
+    ([realm, user, attackDetection]) => {
+      if (!user || !realm || !attackDetection) {
+        throw new Error(t("common:notFound"));
+      }
+
+      setRealm(realm);
+      setUser(user);
+
+      const isBruteForceProtected = realm.bruteForceProtected;
+      const isLocked = isBruteForceProtected && attackDetection.disabled;
+
+      setBruteForced({ isBruteForceProtected, isLocked });
+
+      const isUserProfileEnabled =
+        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+        realm.attributes?.userProfileEnabled === "true";
+
+      setUserProfileMetadata(
+        isUserProfileEnabled ? user.userProfileMetadata : undefined,
+      );
+
+      form.reset(toUserFormFields(user, isUserProfileEnabled));
+    },
+    [refreshCount],
+  );
 
   const save = async (data: UserFormFields) => {
     try {
       await adminClient.users.update(
-        { id: user.id! },
+        { id: user!.id! },
         toUserRepresentation(data),
       );
       addAlert(t("userSaved"), AlertVariant.success);
@@ -173,9 +143,9 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.users.del({ id: user.id! });
+        await adminClient.users.del({ id: user!.id! });
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
-        navigate(toUsers({ realm }));
+        navigate(toUsers({ realm: realmName }));
       } catch (error) {
         addError("users:userDeletedError", error);
       }
@@ -189,8 +159,8 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     onConfirm: async () => {
       try {
         const data = await adminClient.users.impersonation(
-          { id: user.id! },
-          { user: user.id!, realm },
+          { id: user!.id! },
+          { user: user!.id!, realm: realmName },
         );
         if (data.sameRealm) {
           window.location = data.redirect;
@@ -202,6 +172,10 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       }
     },
   });
+
+  if (!realm || !user || !bruteForced) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
@@ -228,14 +202,17 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
           </DropdownItem>,
         ]}
         onToggle={(value) =>
-          save({ ...toUserFormFields(user), enabled: value })
+          save({
+            ...toUserFormFields(user, !!userProfileMetadata),
+            enabled: value,
+          })
         }
         isEnabled={user.enabled}
       />
 
       <PageSection variant="light" className="pf-u-p-0">
         <UserProfileProvider>
-          <FormProvider {...userForm}>
+          <FormProvider {...form}>
             <RoutableTabs
               isBox
               mountOnEnter
@@ -248,14 +225,16 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
               >
                 <PageSection variant="light">
                   <UserForm
-                    save={save}
+                    form={form}
+                    realm={realm}
                     user={user}
                     bruteForce={bruteForced}
-                    realm={realmRepresentation}
+                    userProfileMetadata={userProfileMetadata}
+                    save={save}
                   />
                 </PageSection>
               </Tab>
-              {!isUserProfileEnabled && (
+              {!userProfileMetadata && (
                 <Tab
                   data-testid="attributes"
                   title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
@@ -320,4 +299,4 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       </PageSection>
     </>
   );
-};
+}

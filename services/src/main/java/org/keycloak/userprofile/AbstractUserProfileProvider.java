@@ -87,6 +87,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             if (realm.isRegistrationEmailAsUsername()) {
                 return false;
             }
+
+            if (isNewUser(c)) {
+                // when creating a user the username is always editable
+                return true;
+            }
         }
 
         return realm.isEditUsernameAllowed();
@@ -116,23 +121,15 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean editEmailCondition(AttributeContext c) {
         RealmModel realm = c.getSession().getContext().getRealm();
 
-        if (REGISTRATION_PROFILE.equals(c.getContext())) {
+        if (REGISTRATION_PROFILE.equals(c.getContext()) || USER_API.equals(c.getContext())) {
             return true;
-        }
-
-        if (USER_API.equals(c.getContext())) {
-            if (realm.isRegistrationEmailAsUsername()) {
-                return true;
-            }
         }
 
         if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
             return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
         }
 
-        UserModel user = c.getUser();
-
-        if (user != null && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+        if (!isNewUser(c) && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
             return false;
         }
 
@@ -142,7 +139,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean readEmailCondition(AttributeContext c) {
         UserProfileContext context = c.getContext();
 
-        if (REGISTRATION_PROFILE.equals(context)) {
+        if (REGISTRATION_PROFILE.equals(context) || USER_API.equals(c.getContext())) {
             return true;
         }
 
@@ -181,6 +178,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean isInternationalizationEnabled(AttributeContext context) {
         RealmModel realm = context.getSession().getContext().getRealm();
         return realm.isInternationalizationEnabled();
+    }
+
+    private static boolean isNewUser(AttributeContext c) {
+        return c.getUser() == null;
     }
 
     /**

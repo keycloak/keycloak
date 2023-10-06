@@ -71,7 +71,7 @@ public class UserTestWithUserProfile extends UserTest {
         assertNotNull(metadata);
 
         for (String name : managedAttributes) {
-            assertNotNull(getAttributeMetadata(metadata, name));
+            assertNotNull(metadata.getAttributeMetadata(name));
         }
     }
 
@@ -83,10 +83,10 @@ public class UserTestWithUserProfile extends UserTest {
         UserRepresentation user = realm.users().get(userId).toRepresentation(true);
         UserProfileMetadata metadata = user.getUserProfileMetadata();
         assertNotNull(metadata);
-        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
         assertNotNull(username);
         assertTrue(username.isReadOnly());
-        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
         assertNotNull(email);
         assertFalse(email.isReadOnly());
     }
@@ -101,24 +101,12 @@ public class UserTestWithUserProfile extends UserTest {
         UserRepresentation user = realm.users().get(userId).toRepresentation(true);
         UserProfileMetadata metadata = user.getUserProfileMetadata();
         assertNotNull(metadata);
-        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
         assertNotNull(username);
         assertTrue(username.isReadOnly());
-        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
         assertNotNull(email);
         assertFalse(email.isReadOnly());
-    }
-
-    @Nullable
-    private static UserProfileAttributeMetadata getAttributeMetadata(UserProfileMetadata metadata, String name) {
-        UserProfileAttributeMetadata attrMetadata = null;
-
-        for (UserProfileAttributeMetadata m : metadata.getAttributes()) {
-            if (name.equals(m.getName())) {
-                attrMetadata = m;
-            }
-        }
-        return attrMetadata;
     }
 
     private UPAttribute createAttributeMetadata(String name) {

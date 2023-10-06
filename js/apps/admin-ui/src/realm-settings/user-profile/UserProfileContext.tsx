@@ -1,4 +1,4 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AlertVariant } from "@patternfly/react-core";
 import { PropsWithChildren, useState } from "react";
 import { useTranslation } from "react-i18next";
