@@ -32,9 +32,12 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -88,6 +91,10 @@ public enum MembershipType {
             }
 
             List<LDAPDn> dns = new ArrayList<>(userDns);
+            // If the LDAP group mapper is in READ_ONLY mode, this is always called with firstResult=0 due to
+            // UserStorageManager.getGroupMembersStream implementing the filtering itself due to this mapper not
+            // implementing UserCountMethodsProvider. When paging through group members, this subList will thus
+            // increase in length with every further page requested.
             int max = Math.min(dns.size(), firstResult + maxResults);
             dns = dns.subList(firstResult, max);
 
@@ -112,10 +119,18 @@ public enum MembershipType {
                 Condition orCondition = conditionsBuilder.orCondition(orSubconditions.toArray(new Condition[] {}));
                 query.addWhereCondition(orCondition);
                 List<LDAPObject> ldapUsers = query.getResultList();
+                // This query may return users in a different order than the subList created above. To make the filtering
+                // described above consistent, we need to make sure the list of usernames is in exactly the same order as
+                // the list of DNs requested above.
+                Map<LDAPDn, String> ldapUsersMap = new HashMap<>();
                 for (LDAPObject ldapUser : ldapUsers) {
-                    if (dns.contains(ldapUser.getDn())) {
-                        String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                        usernames.add(username);
+                    LDAPDn userDn = ldapUser.getDn();
+                    String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
+                    ldapUsersMap.put(userDn, username);
+                }
+                for (LDAPDn userDn : dns) {
+                    if (ldapUsersMap.containsKey(userDn)) {
+                        usernames.add(ldapUsersMap.get(userDn));
                     }
                 }
             }
@@ -175,9 +190,17 @@ public enum MembershipType {
                 Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
                 query.addWhereCondition(orCondition);
                 List<LDAPObject> ldapUsers = query.getResultList();
+                // See the comment for DNs above as to why this is necessary.
+                Map<String, String> ldapUsersMap = new HashMap<>();
                 for (LDAPObject ldapUser : ldapUsers) {
+                    String uid = ldapUser.getAttributeAsString(membershipUserAttrName);
                     String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                    usernames.add(username);
+                    ldapUsersMap.put(uid, username);
+                }
+                for (String uid : uids) {
+                    if (ldapUsersMap.containsKey(uid)) {
+                        usernames.add(ldapUsersMap.get(uid));
+                    }
                 }
             }
 
