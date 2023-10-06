@@ -1315,6 +1315,76 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testIgnoreReadOnlyAttribute() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testIgnoreReadOnlyAttribute);
+    }
+
+    private static void testIgnoreReadOnlyAttribute(KeycloakSession session) throws IOException {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UPConfig config = new UPConfig();
+        UPAttribute firstName = new UPAttribute();
+
+        firstName.setName(UserModel.FIRST_NAME);
+
+        UPAttribute address = new UPAttribute();
+
+        address.setName(ATT_ADDRESS);
+
+        UPAttributeRequired requirements = new UPAttributeRequired();
+        requirements.setRoles(Collections.singleton(UPConfigUtils.ROLE_USER));
+        address.setRequired(requirements);
+        firstName.setRequired(requirements);
+
+        UPAttributePermissions permissions = new UPAttributePermissions();
+        permissions.setEdit(Collections.singleton(UPConfigUtils.ROLE_USER));
+        permissions.setView(Collections.singleton(ROLE_ADMIN));
+        address.setPermissions(permissions);
+        firstName.setPermissions(permissions);
+
+        config.addAttribute(address);
+        config.addAttribute(firstName);
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+
+        // Fails on USER context
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+        // attribute ignored for admin when not provided and creating user
+        profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+
+        // attribute ignored for admin when empty and creating user
+        attributes.put(ATT_ADDRESS, List.of(""));
+        attributes.put(UserModel.FIRST_NAME, List.of(""));
+        profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+
+        // attribute ignored for admin when empty and updating user
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.validate();
+
+        // attribute not ignored for admin when empty and updating user
+        user.setFirstName("alice");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.FIRST_NAME));
+        }
+    }
+
+    @Test
     public void testReadOnlyInternalAttributeValidation() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadOnlyInternalAttributeValidation);
     }

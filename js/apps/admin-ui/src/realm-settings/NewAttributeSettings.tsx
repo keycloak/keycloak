@@ -1,5 +1,7 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type {
+  UserProfileAttribute,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   AlertVariant,
   Button,

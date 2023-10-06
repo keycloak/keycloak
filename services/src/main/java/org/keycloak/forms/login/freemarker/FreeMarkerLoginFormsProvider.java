@@ -306,7 +306,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
     
     private boolean isDynamicUserProfile() {
-        return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
+        return session.getProvider(UserProfileProvider.class).isEnabled(realm);
     }
 
     /**
