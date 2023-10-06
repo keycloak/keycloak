@@ -28,7 +28,7 @@ public class KeycloakRealmImportSecretDependentResource extends CRUDKubernetesDe
                 .withName(getSecretName(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
-                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .addToData(fileName, Utils.asBase64(content))
                 .build();

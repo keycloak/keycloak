@@ -29,6 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
@@ -59,7 +60,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
     }
 
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
-        var builder = new ServiceSpecBuilder().withSelector(OperatorManagedResource.allInstanceLabels(keycloak));
+        var builder = new ServiceSpecBuilder().withSelector(Utils.allInstanceLabels(keycloak));
 
         boolean tlsConfigured = isTlsConfigured(keycloak);
         Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
@@ -81,7 +82,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                 .withName(getServiceName(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
-                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withSpec(getServiceSpec(primary))
                 .build();
