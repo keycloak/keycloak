@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Button,
   ButtonVariant,
@@ -11,13 +11,14 @@ import {
   SearchInput,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { ArrowRightIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useAccess } from "../../context/access/Access";
-import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
-import { ArrowRightIcon } from "@patternfly/react-icons";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
 import { UserAttribute } from "./UserDataTable";
+import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 
 type UserDataTableToolbarItemsProps = {
   realm: RealmRepresentation;

@@ -1,35 +1,30 @@
 import { Select, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
-import {
-  Controller,
-  useFormContext,
-  ControllerRenderProps,
-  FieldValues,
-} from "react-hook-form";
+import { Controller, ControllerRenderProps, FieldPath } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { Options } from "../UserProfileFields";
+import { Options, UserProfileFieldProps } from "../UserProfileFields";
+import { UserFormFields } from "../form-state";
 import { fieldName, unWrap } from "../utils";
-import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
+import { UserProfileGroup } from "./UserProfileGroup";
+import { isRequiredAttribute } from "../utils/user-profile";
 
 type OptionLabel = Record<string, string> | undefined;
-export const SelectComponent = (attribute: UserProfileFieldsProps) => {
+export const SelectComponent = ({
+  form,
+  inputType,
+  attribute,
+}: UserProfileFieldProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
   const [open, setOpen] = useState(false);
-
-  const isMultiValue = (field: ControllerRenderProps<FieldValues, string>) => {
-    return (
-      attribute.annotations?.["inputType"] === "multiselect" ||
-      Array.isArray(field.value)
-    );
-  };
+  const isRequired = isRequiredAttribute(attribute);
+  const isMultiValue = inputType === "multiselect";
 
   const setValue = (
     value: string,
-    field: ControllerRenderProps<FieldValues, string>,
+    field: ControllerRenderProps<UserFormFields>,
   ) => {
-    if (isMultiValue(field)) {
+    if (isMultiValue) {
       if (field.value.includes(value)) {
         field.onChange(field.value.filter((item: string) => item !== value));
       } else {
@@ -50,11 +45,11 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
     optionLabel ? t(unWrap(optionLabel[label])) : label;
 
   return (
-    <UserProfileGroup {...attribute}>
+    <UserProfileGroup form={form} attribute={attribute}>
       <Controller
-        name={fieldName(attribute)}
+        name={fieldName(attribute) as FieldPath<UserFormFields>}
         defaultValue=""
-        control={control}
+        control={form.control}
         render={({ field }) => (
           <Select
             toggleId={attribute.name}
@@ -69,12 +64,13 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
               }
             }}
             selections={
-              field.value ? field.value : isMultiValue(field) ? [] : t("choose")
+              field.value ? field.value : isMultiValue ? [] : t("choose")
             }
-            variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
+            variant={isMultiValue ? "typeaheadmulti" : "single"}
             aria-label={t("selectOne")}
             isOpen={open}
-            readOnly={attribute.readOnly}
+            isDisabled={attribute.readOnly}
+            required={isRequired}
           >
             {options.map((option) => (
               <SelectOption
