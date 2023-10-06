@@ -129,7 +129,7 @@ Usually, PatternFly components will properly style components. Sometimes problem
 
 However, there are other times when modifications must be made to the styling provided by PatternFly, or when styling a custom component. In these cases, PatternFly custom properties (CSS variables) should be used as attribute values. PatternFly defines custom properties for colors, spacing, border width, box shadow, and more. Besides a full color palette, colors are defined specifically for borders, statuses (success, warning, danger, info), backgrounds, etc.
 
-These values can be seen in the [PatternFly design guidelines](https://www.patternfly.org/v4/design-guidelines/styles/colors) and a [full listing of variables](https://www.patternfly.org/v4/documentation/overview/global-css-variables) can be found in the documentation section.
+These values can be seen in the [PatternFly design guidelines](https://v4-archive.patternfly.org/v4/design-guidelines/styles/colors) and a [full listing of variables](https://v4-archive.patternfly.org/v4/developer-resources/global-css-variables) can be found in the documentation section.
 
 For the Admin UI, we modify the PatternFly convention to namespace the classes and variables to the Keycloak packages.
 
@@ -215,8 +215,8 @@ switch (titleStatus) {
 
 ## Resources
 
-* [PatternFly Docs](https://www.patternfly.org/v4/)
-* [Katacoda PatternFly tutorials](https://www.patternfly.org/v4/documentation/react/overview/react-training)
-* [PatternFly global CSS variables](https://www.patternfly.org/v4/documentation/overview/global-css-variables)
-* [PatternFly CSS utility classes](https://www.patternfly.org/v4/documentation/core/utilities/accessibility)
+* [PatternFly Docs](https://v4-archive.patternfly.org/v4/)
+* [Katacoda PatternFly tutorials](https://v4-archive.patternfly.org/v4/training/react)
+* [PatternFly global CSS variables](https://v4-archive.patternfly.org/v4/developer-resources/global-css-variables)
+* [PatternFly CSS utility classes](https://v4-archive.patternfly.org/v4/utilities/accessibility)
 * [React Typescript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/)
