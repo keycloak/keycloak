@@ -7,8 +7,7 @@
     <script type="module">
       attemptCookie();
       
-     // Encapsulate the code in an async to avoid syntax error
-      async function attemptCookie() {
+      async function checkStorageAccess() {
         // Check if the browser has granted us access to 3rd-party storage (such as cookies).
         const hasAccess = await hasStorageAccess();
 
@@ -40,7 +39,7 @@
 
       function signalSupport(isSupported) {
         // Signal 3rd-party access support to the page embedding this iframe.
-        window.parent.postMessage( isSupported ? "supported" : "unsupported", "*");
+        window.parent.postMessage(isSupported ? "supported" : "unsupported", "*");
       }
     </script>
   </body>
