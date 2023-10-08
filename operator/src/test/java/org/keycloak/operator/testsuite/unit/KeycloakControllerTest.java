@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -42,7 +43,7 @@ class KeycloakControllerTest {
         Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getSpec().setInstances(null);
         kc.getSpec().getHostnameSpec().setHostname(null);
-        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakIngressDependentResource.OPENSHIFT_DEFAULT).build());
         kc.getMetadata().setNamespace("ns");
         Context<Keycloak> mockContext = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
         var ingressConfig = new IngressBuilder().withNewSpec().withDomain("openshift.com").endSpec().build();

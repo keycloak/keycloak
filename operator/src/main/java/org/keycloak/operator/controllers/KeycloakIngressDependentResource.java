@@ -37,6 +37,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakIngressDependentResource extends CRUDKubernetesDependentResource<Ingress, Keycloak> {
 
+    public static final String OPENSHIFT_DEFAULT = "openshift-default";
+
     public static class EnabledCondition implements Condition<Ingress, Keycloak> {
         @Override
         public boolean isMet(DependentResource<Ingress, Keycloak> dependentResource, Keycloak primary,
@@ -51,6 +53,11 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
 
     public static boolean isIngressEnabled(Keycloak keycloak) {
         return Optional.ofNullable(keycloak.getSpec().getIngressSpec()).map(IngressSpec::isIngressEnabled).orElse(true);
+    }
+
+    public static boolean isOpenshiftDefaultIngressEnabled(Keycloak keycloak) {
+        return keycloak.getSpec().getIngressSpec() != null && keycloak.getSpec().getIngressSpec().isIngressEnabled()
+                && OPENSHIFT_DEFAULT.equals(keycloak.getSpec().getIngressSpec().getIngressClassName());
     }
 
     @Override

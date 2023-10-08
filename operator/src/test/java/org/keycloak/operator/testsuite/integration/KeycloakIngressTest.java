@@ -28,13 +28,11 @@ import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Map;
@@ -56,21 +54,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .withStrict(false)
                 .withStrictBackchannel(false);
         if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
-
-            // see https://github.com/keycloak/keycloak/issues/14400#issuecomment-1659900081
-            kc.getSpec().setUnsupported(new UnsupportedSpecBuilder()
-                    .withNewPodTemplate()
-                        .withNewSpec()
-                            .addNewContainer()
-                                .addNewEnv()
-                                    .withName("KC_PROXY")
-                                    .withValue("edge")
-                                .endEnv()
-                            .endContainer()
-                        .endSpec()
-                    .endPodTemplate()
-                    .build());
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakIngressDependentResource.OPENSHIFT_DEFAULT).build());
         }
 
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
@@ -97,7 +81,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .withStrict(false)
                 .withStrictBackchannel(false);
         if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakIngressDependentResource.OPENSHIFT_DEFAULT).build());
         }
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
 

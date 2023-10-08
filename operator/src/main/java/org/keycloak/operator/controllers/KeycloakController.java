@@ -68,8 +68,6 @@ import jakarta.inject.Inject;
     })
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
-    public static final String OPENSHIFT_DEFAULT = "openshift-default";
-
     @Inject
     Config config;
 
@@ -112,8 +110,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             kc.getSpec().setInstances(1);
             modifiedSpec = true;
         }
-        if (kc.getSpec().getIngressSpec() != null && kc.getSpec().getIngressSpec().isIngressEnabled()
-                && OPENSHIFT_DEFAULT.equals(kc.getSpec().getIngressSpec().getIngressClassName())
+        if (KeycloakIngressDependentResource.isOpenshiftDefaultIngressEnabled(kc)
                 && Optional.ofNullable(kc.getSpec().getHostnameSpec()).map(HostnameSpec::getHostname).isEmpty()) {
             var optionalHostname = generateOpenshiftHostname(kc, context);
             if (optionalHostname.isPresent()) {

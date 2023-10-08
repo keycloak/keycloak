@@ -25,6 +25,7 @@ import io.quarkus.logging.Log;
 
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
@@ -86,6 +87,9 @@ public class KeycloakDistConfigurator {
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
                 .mapOption("hostname-strict", HostnameSpec::isStrict)
                 .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
+        optionMapper(Function.identity())
+                .mapOption("proxy", kc -> (!CRDUtils.isTlsConfigured(kc)
+                        && KeycloakIngressDependentResource.isOpenshiftDefaultIngressEnabled(kc)) ? "edge" : null);
     }
 
     void configureFeatures() {
