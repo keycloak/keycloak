@@ -76,7 +76,7 @@
     "i18next-http-backend": "^2.2.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
-    "monaco-editor": "^0.43.0",
+    "monaco-editor": "^0.44.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
