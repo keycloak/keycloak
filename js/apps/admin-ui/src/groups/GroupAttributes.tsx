@@ -37,7 +37,7 @@ export const GroupAttributes = () => {
       convertToFormValues(group!, form.setValue);
       setCurrentGroup(group);
     },
-    [],
+    [id],
   );
 
   const save = async (attributeForm: AttributeForm) => {
