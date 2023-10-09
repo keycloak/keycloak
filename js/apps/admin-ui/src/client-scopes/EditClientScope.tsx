@@ -186,6 +186,7 @@ export default function EditClientScope() {
           realm,
           id: clientScope!.id!,
           mapperId: mapper.id!,
+          mode: "create",
         }),
       );
     } else {
@@ -257,7 +258,12 @@ export default function EditClientScope() {
               onAdd={addMappers}
               onDelete={onDelete}
               detailLink={(id) =>
-                toMapper({ realm, id: clientScope.id!, mapperId: id! })
+                toMapper({
+                  realm,
+                  id: clientScope.id!,
+                  mapperId: id!,
+                  mode: "update",
+                })
               }
             />
           </Tab>
