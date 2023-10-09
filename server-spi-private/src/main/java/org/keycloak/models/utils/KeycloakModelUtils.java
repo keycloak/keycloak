@@ -50,7 +50,6 @@ import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;

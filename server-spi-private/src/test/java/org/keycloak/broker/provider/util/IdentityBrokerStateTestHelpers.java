@@ -1654,7 +1654,7 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public Stream<GroupModel> getTopLevelGroupsStream(String search, Integer first, Integer max) {
+        public Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max) {
             return null;
         }
 

@@ -674,7 +674,7 @@ public interface RealmModel extends RoleContainerModel {
      * @param search {@code String} The name of the group that should be search
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(String search, Integer first, Integer max);
+    Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max);
 
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);

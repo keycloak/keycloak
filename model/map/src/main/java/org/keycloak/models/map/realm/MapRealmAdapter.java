@@ -1446,8 +1446,8 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(String search, Integer first, Integer max) {
-        return session.groups().getTopLevelGroupsStream(this, search, first, max);
+    public Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().getTopLevelGroupsStream(this, search, exact, first, max);
     }
 
     @Override

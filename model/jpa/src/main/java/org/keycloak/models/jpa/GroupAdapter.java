@@ -128,11 +128,11 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
-    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
         if(search == null || search.isEmpty()) {
             return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), firstResult, maxResults);
         }
-        return session.groups().searchForSubgroupsByParentIdNameStream(realm, group.getId(), search, firstResult, maxResults);
+        return session.groups().searchForSubgroupsByParentIdNameStream(realm, group.getId(), search, exact, firstResult, maxResults);
     }
 
     @Override

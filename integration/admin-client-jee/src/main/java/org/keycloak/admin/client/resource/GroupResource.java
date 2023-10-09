@@ -87,8 +87,7 @@ public interface GroupResource {
     void remove();
 
     /**
-     * Set or create child.  This will just set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
+     * Get the paginated list of subgroups belonging to this group
      *
      * @param first
      * @param max

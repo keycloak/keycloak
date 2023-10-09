@@ -97,7 +97,7 @@ public class GroupsResource {
         Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
+            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
@@ -109,8 +109,10 @@ public class GroupsResource {
         if(populateHierarchy) {
             return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
         }
+        boolean canViewGlobal = groupsEvaluator.canView();
         return stream
-            .map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation))
+            .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
+            .map(g -> GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation))
             .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 
@@ -142,6 +144,8 @@ public class GroupsResource {
     @Operation( summary = "Returns the groups counts.")
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
         Long results;
         Map<String, Long> map = new HashMap<>();
         if (Objects.nonNull(search)) {

@@ -189,13 +189,18 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        LOG.tracef("getTopLevelGroupsStream(%s, %s, %s,%s)%s", realm, search, firstResult, maxResults, getShortStackTrace());
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        LOG.tracef("getTopLevelGroupsStream(%s, %s,%s, %s,%s)%s", realm, search, exact, firstResult, maxResults, getShortStackTrace());
 
         DefaultModelCriteria<GroupModel> mcb = criteria();
-            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%")
-                .compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+            .compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
+        if(Boolean.TRUE.equals(exact)) {
+            mcb.compare(SearchableFields.NAME, Operator.EQ,search);
+        } else {
+            mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
+
 
         return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));
@@ -221,11 +226,16 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         DefaultModelCriteria<GroupModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-            .compare(SearchableFields.PARENT_ID, Operator.EQ, id)
-            .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+            .compare(SearchableFields.PARENT_ID, Operator.EQ, id);
+
+        if(Boolean.TRUE.equals(exact)) {
+            mcb.compare(SearchableFields.NAME, Operator.EQ, search);
+        } else {
+            mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
 
         return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));

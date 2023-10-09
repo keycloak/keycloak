@@ -1011,12 +1011,12 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer first, Integer max) {
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + search + first + max);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
             || listInvalidations.contains(realm.getId());
         if (queryDB) {
-            return getGroupDelegate().getTopLevelGroupsStream(realm, search, first, max);
+            return getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max);
         }
 
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
@@ -1026,7 +1026,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (Objects.isNull(query)) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getGroupDelegate().getTopLevelGroupsStream(realm, search, first, max).collect(Collectors.toList());
+            List<GroupModel> model = getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max).collect(Collectors.toList());
             if (model.isEmpty()) return Stream.empty();
             Set<String> ids = new HashSet<>();
             for (GroupModel client : model) ids.add(client.getId());
@@ -1059,8 +1059,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
-        return getGroupDelegate().searchForSubgroupsByParentIdNameStream(realm, id, search, firstResult, maxResults);
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return getGroupDelegate().searchForSubgroupsByParentIdNameStream(realm, id, search, exact, firstResult, maxResults);
     }
 
     @Override

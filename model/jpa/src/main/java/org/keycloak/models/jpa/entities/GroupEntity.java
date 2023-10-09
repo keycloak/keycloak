@@ -30,9 +30,9 @@ import java.util.LinkedList;
 @NamedQueries({
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByParentAndName", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and u.name = :search order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByParentAndNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and u.name like concat('%',:search,'%') order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByParentAndNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm = :realm  order by u.name ASC"),
-        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByNameContainingFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.realm = :realm and u.name = :search order by u.name ASC"),
         @NamedQuery(name="getGroupIdsFromIdList", query="select u.id from GroupEntity u where u.realm = :realm and u.id in :ids order by u.name ASC"),

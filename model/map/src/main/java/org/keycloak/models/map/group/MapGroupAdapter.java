@@ -106,11 +106,11 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
     }
 
     @Override
-    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
         if(search == null || search.isEmpty()) {
             return session.groups().searchForSubgroupsByParentIdStream(realm, getId(), firstResult, maxResults);
         }
-        return session.groups().searchForSubgroupsByParentIdNameStream(realm, getId(), search, firstResult, maxResults);
+        return session.groups().searchForSubgroupsByParentIdNameStream(realm, getId(), search, exact, firstResult, maxResults);
     }
 
     @Override

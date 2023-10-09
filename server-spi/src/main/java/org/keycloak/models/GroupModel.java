@@ -111,12 +111,27 @@ public interface GroupModel extends RoleMapperModel {
     Stream<GroupModel> getSubGroupsStream();
 
     /**
-     * Returns all sub groups for the parent group as a stream, paginated.
+     * Returns all sub groups for the parent group matching the fuzzy search as a stream, paginated.
      * Stream is sorted by the group name.
      *
+     * @param search
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
-    Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults);
+    default Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+       return getSubGroupsStream(search, false, firstResult, maxResults);
+    }
+
+    /**
+     * Returns all subgroups for the parent group matching the search as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @param search
+     * @param exact toggles fuzzy searching
+     * @param firstResult
+     * @param maxResults
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults);
 
     /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group

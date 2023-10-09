@@ -81,7 +81,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         return subGroups.get(group);
     }
 
-    public Stream<GroupModel> getSubGroups(Supplier<GroupModel> group, String search, Integer firstResult, Integer maxResults) {
-        return group.get().getSubGroupsStream(search, firstResult, maxResults);
+    public Stream<GroupModel> getSubGroups(Supplier<GroupModel> group, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return group.get().getSubGroupsStream(search, exact, firstResult, maxResults);
     }
 }

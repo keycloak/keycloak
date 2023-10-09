@@ -27,7 +27,7 @@ public class GroupUtils {
     public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator) {
         Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
         groups.forEach(group -> {
-            // TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
+            //TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
             if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
 
             GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
@@ -37,7 +37,7 @@ public class GroupUtils {
             while(currGroup.getParentId() != null) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
-                // TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
+                //TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
                 if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
                     groupIdToGroups.remove(currGroup.getId());
                     break;
@@ -45,7 +45,6 @@ public class GroupUtils {
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
                     id -> toRepresentation(groupEvaluator, parentModel, full));
-                // TODO GROUPS this is here but it really could be moved to be part of converting a model to a representation.
                 populateSubGroupCount(realm, session, parent);
                 GroupRepresentation finalCurrGroup = currGroup;
 

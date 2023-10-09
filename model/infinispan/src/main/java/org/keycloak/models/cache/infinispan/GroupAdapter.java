@@ -238,9 +238,9 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
-        if (isUpdated()) return updated.getSubGroupsStream(search, firstResult, maxResults);
-        return cached.getSubGroups(modelSupplier, search, firstResult, maxResults);
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        if (isUpdated()) return updated.getSubGroupsStream(search, exact, firstResult, maxResults);
+        return cached.getSubGroups(modelSupplier, search, exact, firstResult, maxResults);
     }
 
 

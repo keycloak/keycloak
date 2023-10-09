@@ -135,7 +135,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @return Stream of all top level groups in the realm. Never returns {@code null}.
      */
     default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        return getTopLevelGroupsStream(realm, "", null, null);
+        return getTopLevelGroupsStream(realm, "", false, null, null);
     }
 
     /**
@@ -147,7 +147,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
     default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getTopLevelGroupsStream(realm, "", firstResult, maxResults);
+        return getTopLevelGroupsStream(realm, "", false, firstResult, maxResults);
     }
 
     /**
@@ -159,7 +159,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param search The name that should be matched
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
+    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
 
     /**
      * Creates a new group with the given name in the given realm.

@@ -52,7 +52,7 @@ public interface GroupLookupProvider {
      * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
-     * @param search Case sensitive searched string.
+     * @param search Case insensitive searched string.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
@@ -82,8 +82,8 @@ public interface GroupLookupProvider {
      * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
-     * @param search Case sensitive searched string.
-     * @param exact Boolean which defines wheather search param should be matched exactly.
+     * @param search searched string.
+     * @param exact Boolean which defines wheather search param should be matched exactly (including case).
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
@@ -100,8 +100,8 @@ public interface GroupLookupProvider {
      * @return A Stream of groups that all have the given parent group as their parent.
      */
     default Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
-        return searchForSubgroupsByParentIdNameStream(realm, id, "", firstResult, maxResults);
+        return searchForSubgroupsByParentIdNameStream(realm, id, "", false, firstResult, maxResults);
     }
 
-    Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults);
+    Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults);
 }

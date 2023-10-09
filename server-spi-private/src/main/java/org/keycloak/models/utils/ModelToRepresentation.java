@@ -152,21 +152,8 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
+    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, Map<String,String> attributes, Integer first, Integer max) {
         return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
-    }
-
-    public static Stream<GroupModel> searchForGroupModelByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
-    }
-
-    public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
-        return user.getGroupsStream(search, first, max)
-                .map(group -> toRepresentation(group, full));
-    }
-
-    public static Stream<GroupModel> toGroupModelHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return realm.getTopLevelGroupsStream(first, max);
     }
 
     public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
@@ -535,12 +522,6 @@ public class ModelToRepresentation {
 
         return a;
     }
-
-    // TODO GROUPS We've re-written normal hierarchy behaviors so getting EVERY group for an export now needs to be done much more intentionally
-    // I'm not actually sure why it wouldn't be acceptable to just add a db call for this. SELECT * FROM GROUPS WHERE REALM = ?
-    // This seems like it would work perfectly fine as long as the details get sorted
-    // If we want the hierarchies then it would have to be broken up into getting top level groups and then loading all of the group subgroups recursively
-    // can probably be done depth first -> navigate to each subgroup and load its subgroups and repeat until you hit the end
     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
         rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
     }

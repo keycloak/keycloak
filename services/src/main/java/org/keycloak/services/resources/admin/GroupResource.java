@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import jakarta.ws.rs.DefaultValue;
+import javax.swing.GroupLayout.Group;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -96,7 +97,7 @@ public class GroupResource {
     public GroupRepresentation getGroup() {
         this.auth.groups().requireView(group);
 
-        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
 
         rep.setAccess(auth.groups().getAccess(group));
 
@@ -162,9 +163,10 @@ public class GroupResource {
         @QueryParam("max") @DefaultValue("10") Integer max,
         @QueryParam("full") @DefaultValue("false") Boolean full) {
         this.auth.groups().requireView(group);
+        boolean canViewGlobal = auth.groups().canView();
         return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), first, max)
-            .filter(g -> auth.groups().canView() || auth.groups().canView(g))
-            .map(g -> ModelToRepresentation.toRepresentation(g, full))
+            .filter(g -> canViewGlobal || auth.groups().canView(g))
+            .map(g -> GroupUtils.toRepresentation(auth.groups(), g, full))
             .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 
@@ -218,7 +220,7 @@ public class GroupResource {
             }
             adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
-            GroupRepresentation childRep = ModelToRepresentation.toRepresentation(child, true);
+            GroupRepresentation childRep = GroupUtils.toRepresentation(auth.groups(), child, true);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");

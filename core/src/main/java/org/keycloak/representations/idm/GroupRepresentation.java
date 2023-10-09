@@ -167,11 +167,19 @@ public class GroupRepresentation {
             return false;
         }
         GroupRepresentation that = (GroupRepresentation) o;
-        return id.equals(that.id) && Objects.equals(parentId, that.parentId);
+        boolean isEqual = Objects.equals(id, that.id) && Objects.equals(parentId, that.parentId);
+        if(isEqual) {
+            return true;
+        } else {
+            return Objects.equals(name, that.name) && Objects.equals(path, that.path);
+        }
     }
 
     @Override
     public int hashCode() {
+        if(id == null) {
+            return Objects.hash(name, path);
+        }
         return Objects.hash(id, parentId);
     }
 }

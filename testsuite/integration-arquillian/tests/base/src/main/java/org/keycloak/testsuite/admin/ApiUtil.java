@@ -20,6 +20,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -256,9 +258,9 @@ public class ApiUtil {
         }
     }
 
-    public static boolean groupContainsSubgroup(GroupRepresentation group, GroupRepresentation subgroup) {
+    public static boolean groupContainsSubgroup(GroupResource groupsResource, GroupRepresentation subgroup) {
         boolean contains = false;
-        for (GroupRepresentation sg : group.getSubGroups()) {
+        for (GroupRepresentation sg : groupsResource.getSubGroups(null,null, true)) {
             if (subgroup.getId().equals(sg.getId())) {
                 contains = true;
                 break;
