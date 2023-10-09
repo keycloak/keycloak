@@ -370,8 +370,8 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4(rollup@4.0.2)
       '@rollup/plugin-typescript':
-        specifier: ^11.1.4
-        version: 11.1.4(rollup@4.0.2)(tslib@2.6.2)(typescript@5.2.2)
+        specifier: ^11.1.5
+        version: 11.1.5(rollup@4.0.2)(tslib@2.6.2)(typescript@5.2.2)
       es6-promise:
         specifier: ^4.2.8
         version: 4.2.8
@@ -1343,11 +1343,11 @@ packages:
       terser: 5.19.2
     dev: true
 
-  /@rollup/plugin-typescript@11.1.4(rollup@4.0.2)(tslib@2.6.2)(typescript@5.2.2):
-    resolution: {integrity: sha512-WZRh5LBVLQXdKFICUId5J3eIpmjGURaBqntfg3GSZACgeOAFS+lOSMGTwfzDkELTaZVp/lWdMVNU3UkwCUBg/Q==}
+  /@rollup/plugin-typescript@11.1.5(rollup@4.0.2)(tslib@2.6.2)(typescript@5.2.2):
+    resolution: {integrity: sha512-rnMHrGBB0IUEv69Q8/JGRD/n4/n6b3nfpufUu26axhUcboUzv/twfZU8fIBbTOphRAe0v8EyxzeDpKXqGHfyDA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
-      rollup: ^2.14.0||^3.0.0
+      rollup: ^2.14.0||^3.0.0||^4.0.0
       tslib: '*'
       typescript: '>=3.7.0'
     peerDependenciesMeta:
