@@ -1,22 +1,8 @@
 package org.keycloak.adapters.authorization.integration.jakarta;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletContextAttributeListener;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
@@ -24,11 +10,10 @@ import org.keycloak.adapters.authorization.TokenPrincipal;
 import org.keycloak.adapters.authorization.integration.elytron.ServletHttpRequest;
 import org.keycloak.adapters.authorization.integration.elytron.ServletHttpResponse;
 import org.keycloak.adapters.authorization.spi.ConfigurationResolver;
-import org.keycloak.adapters.authorization.spi.HttpRequest;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
-import org.wildfly.security.http.oidc.OidcClientConfiguration;
-import org.wildfly.security.http.oidc.OidcPrincipal;
-import org.wildfly.security.http.oidc.RefreshableOidcSecurityContext;
+
+import java.io.IOException;
+import java.util.Enumeration;
 
 /**
  * A Jakarta Servlet {@link Filter} acting as a policy enforcer. This filter does not enforce access for anonymous subjects.</p>
@@ -44,12 +29,11 @@ import org.wildfly.security.http.oidc.RefreshableOidcSecurityContext;
 public class ServletPolicyEnforcerFilter implements Filter, ServletContextAttributeListener {
 
     private final Logger logger = Logger.getLogger(getClass());
-    private final Map<PolicyEnforcerConfig, PolicyEnforcer> policyEnforcer;
-    private final ConfigurationResolver configResolver;
+    private final PolicyEnforcer policyEnforcer;
 
     public ServletPolicyEnforcerFilter(ConfigurationResolver configResolver) {
-        this.configResolver = configResolver;
-        this.policyEnforcer = Collections.synchronizedMap(new HashMap<>());
+        PolicyEnforcerConfig policyEnforcerConfig = configResolver.resolve(null);
+        this.policyEnforcer = this.createPolicyEnforcer(null, policyEnforcerConfig);
     }
 
     @Override
@@ -68,7 +52,6 @@ public class ServletPolicyEnforcerFilter implements Filter, ServletContextAttrib
             }
         });
 
-        PolicyEnforcer policyEnforcer = getOrCreatePolicyEnforcer(request, httpRequest);
         AuthorizationContext authzContext = policyEnforcer.enforce(httpRequest, new ServletHttpResponse(response));
 
         request.setAttribute(AuthorizationContext.class.getName(), authzContext);
@@ -100,15 +83,6 @@ public class ServletPolicyEnforcerFilter implements Filter, ServletContextAttrib
         }
 
         return null;
-    }
-
-    private PolicyEnforcer getOrCreatePolicyEnforcer(HttpServletRequest servletRequest, HttpRequest request) {
-        return policyEnforcer.computeIfAbsent(configResolver.resolve(request), new Function<PolicyEnforcerConfig, PolicyEnforcer>() {
-            @Override
-            public PolicyEnforcer apply(PolicyEnforcerConfig enforcerConfig) {
-                return createPolicyEnforcer(servletRequest, enforcerConfig);
-            }
-        });
     }
 
     protected PolicyEnforcer createPolicyEnforcer(HttpServletRequest servletRequest, PolicyEnforcerConfig enforcerConfig) {
