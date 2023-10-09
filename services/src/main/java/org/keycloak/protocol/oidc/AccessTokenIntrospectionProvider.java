@@ -61,6 +61,11 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                 tokenMetadata = JsonSerialization.createObjectNode(accessToken);
                 tokenMetadata.put("client_id", accessToken.getIssuedFor());
 
+                String scope = accessToken.getScope();
+                if (scope != null && scope.trim().isEmpty()) {
+                    tokenMetadata.remove("scope");
+                }
+
                 if (!tokenMetadata.has("username")) {
                     if (accessToken.getPreferredUsername() != null) {
                         tokenMetadata.put("username", accessToken.getPreferredUsername());
