@@ -35,8 +35,14 @@
         </#list>
     </#if>
     <#if authenticationSession??>
-        <script type="text/javascript">
-            new kcAuthChecker().checkCookiesAndSetTimer("${authenticationSession.authSessionId}", "${authenticationSession.tabId}", "${url.ssoLoginInOtherTabsUrl}");
+        <script type="module">
+            import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+
+            checkCookiesAndSetTimer(
+              "${authenticationSession.authSessionId}",
+              "${authenticationSession.tabId}",
+              "${url.ssoLoginInOtherTabsUrl}"
+            );
         </script>
     </#if>
 </head>

@@ -1,76 +1,73 @@
+const CHECK_INTERVAL_MILLISECS = 2000;
+const initialSession = getSession();
 
-function kcAuthChecker() {
-    var authChecker = this;
+export function checkCookiesAndSetTimer(authSessionId, tabId, loginRestartUrl) {
+  if (initialSession) {
+    // We started with a session, so there is nothing to do, exit.
+    return;
+  }
 
-    // How often to check if KEYCLOAK_SESSION cookie was added in the other browser tab?
-    var checkIntervalMillisecs = 2000;
+  const session = getSession();
 
-    // 1 - unknown state or KEYCLOAK_SESSION present since beginning, 2 - cookie KEYCLOAK_SESSION not present, 3 - cookie KEYCLOAK_SESSION present after it
-    // was not present before (possible to move here from state 2, but not from 1. Reason are "re-authentication" scenarios where we want login screens displayed even if SSO cookie exists)
-    var sessionCookieState = 1;
+  if (!session) {
+    // The session is not present, check again later.
+    setTimeout(
+      () => checkCookiesAndSetTimer(authSessionId, tabId, loginRestartUrl),
+      CHECK_INTERVAL_MILLISECS
+    );
+  } else {
+    // The session is present, check the auth state.
+    checkAuthState(authSessionId, tabId, loginRestartUrl);
+  }
+}
 
-     function setupTimer(authSessionId, tabId, loginRestartUrl) {
-        setTimeout(function() {
-            authChecker.checkCookiesAndSetTimer(authSessionId, tabId, loginRestartUrl);
-        }, checkIntervalMillisecs);
-    }
+function checkAuthState(authSessionId, tabId, loginRestartUrl) {
+  const authStateRaw = getAuthState();
 
-    authChecker.checkCookiesAndSetTimer = function(authSessionId, tabId, loginRestartUrl) {
-        var sessionCookie = getCookieByName("KEYCLOAK_SESSION");
-        if (sessionCookie) {
-            if (sessionCookieState == 2) {
-                sessionCookieState = 3;
-                console.log("kcAuthChecker: Cookie KEYCLOAK_SESSION added");
-            }
-        } else {
-            if (sessionCookieState == 1) {
-                sessionCookieState = 2;
-                console.log("kcAuthChecker: Cookie KEYCLOAK_SESSION not present");
-                document.kcAuthCheckerReady = true; // For tests
-            }
-        }
+  if (!authStateRaw) {
+    // The auth state is not present, exit.
+    return;
+  }
 
-        if (sessionCookieState == 3) {
-            checkAuthSession(authSessionId, tabId, loginRestartUrl);
-        } else {
-            setupTimer(authSessionId, tabId, loginRestartUrl);
-        }
-    }
+  // Attempt to parse the auth state as JSON.
+  let authState;
+  try {
+    authState = JSON.parse(authStateRaw);
+  } catch (error) {
+    // The auth state is not valid JSON, exit.
+    return;
+  }
 
-    function checkAuthSession(authSessionId, tabId, loginRestartUrl) {
-        var authCookieStr = getCookieByName("KC_AUTH_STATE");
-        if (authCookieStr) {
-            var authCookie = JSON.parse(authCookieStr);
-            if (authSessionId === authCookie.authSessionId && authCookie.remainingTabs.indexOf(tabId) > -1) {
-                loginRestartUrl = htmlDecode(loginRestartUrl);
-                window.location.href = loginRestartUrl;
-            } else {
-                console.log("kcAuthChecker: Cookie KC_AUTH_STATE present, but value does not match with authentication session parameters in current browser.");
-            }
-        } else {
-            console.log("kcAuthChecker: Cookie KC_AUTH_STATE not present");
-        }
-    }
+  if (authState.authSessionId != authSessionId) {
+    // The session ID does not match, exit.
+    return;
+  }
 
-    function htmlDecode(input) {
-        var doc = new DOMParser().parseFromString(input, "text/html");
-        return doc.documentElement.textContent;
-    }
+  if (
+    !Array.isArray(authState.remainingTabs) ||
+    !authState.remainingTabs.includes(tabId)
+  ) {
+    // The remaining tabs don't include the provided tab ID, exit.
+    return;
+  }
 
-    function getCookieByName(name) {
-        const cookies = {};
-        var cookiesVal = document.cookie.split(";");
+  // We made it this far, redirect to the login restart URL.
+  location.href = loginRestartUrl;
+}
 
-        cookiesVal.forEach(cookieFunc);
+function getSession() {
+  return getCookieByName("KEYCLOAK_SESSION");
+}
 
-        function cookieFunc(cookieVal) {
-            var cookieParsed = cookieVal.split("=");
-            if (cookieParsed.length == 2) {
-                cookies[cookieParsed[0].trim()] = cookieParsed[1].trim();
-            }
-        }
+const getAuthState = () => getCookieByName("KC_AUTH_STATE");
 
-        return cookies[name];
-    }
+function getCookieByName(name) {
+  const cookies = new Map();
 
+  for (const cookie of document.cookie.split(";")) {
+    const [key, value] = cookie.split("=").map((value) => value.trim());
+    cookies.set(key, value);
+  }
+
+  return cookies.get(name) ?? null;
 }
