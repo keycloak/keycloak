@@ -5,6 +5,8 @@ import {
   Divider,
   Dropdown,
   DropdownItem,
+  Form,
+  FormGroup,
   KebabToggle,
   Select,
   SelectGroup,
@@ -16,23 +18,25 @@ import { useTranslation } from "react-i18next";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useFetch } from "../../utils/useFetch";
 import { adminClient } from "../../admin-client";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   EditableTextCell,
   IEditableTextCell,
   IRow,
   IRowCell,
-  RowEditType,
-  RowErrors,
   Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-  applyCellEdits,
-  cancelCellEdits,
-  validateCellEdits,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
 } from "@patternfly/react-table";
-import { SearchIcon } from "@patternfly/react-icons";
+import {
+  CheckIcon,
+  PencilAltIcon,
+  SearchIcon,
+  TimesIcon,
+} from "@patternfly/react-icons";
 import { AddMessageBundleModal } from "../AddMessageBundleModal";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
@@ -42,6 +46,8 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import "./localization.css";
 
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
@@ -82,7 +88,7 @@ export const RealmOverrides = ({
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
   const [kebabOpen, setKebabOpen] = useState(false);
-  const { getValues } = useForm();
+  const { getValues, handleSubmit, control } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
   const [tableKey, setTableKey] = useState(0);
@@ -94,7 +100,9 @@ export const RealmOverrides = ({
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
-
+  const [areAllRowsSelected, setAreAllRowsSelected] = useState(false);
+  const [isBundleMessageValueEdit, setIsBundleMessageValueEdit] =
+    useState(false);
   const refreshTable = () => {
     setTableKey(tableKey + 1);
   };
@@ -195,56 +203,25 @@ export const RealmOverrides = ({
   ) => {
     setTableRows((prev) => {
       const newRows = cloneDeep(prev);
-      const textCell = newRows[rowIndex]?.cells?.[
-        cellIndex
-      ] as IEditableTextCell;
-      textCell.props.editableValue = newValue;
+
+      // Add a check for undefined values
+      if (!newRows[rowIndex]?.cells?.[cellIndex]) {
+        console.error(
+          "Undefined rowIndex, cell or cellIndex:",
+          rowIndex,
+          cellIndex,
+        );
+        return prev; // return the previous state
+      }
+
+      const textCell = newRows[rowIndex].cells[cellIndex] as
+        | IEditableTextCell
+        | undefined;
+
+      // Check if textCell is undefined
+      textCell?.props.onChange?.(newValue, evt, rowIndex, cellIndex);
       return newRows;
     });
-  };
-
-  const updateEditableRows = async (
-    type: RowEditType,
-    rowIndex?: number,
-    validationErrors?: RowErrors,
-  ) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const newRows = cloneDeep(tableRows);
-    let newRow: IRow;
-    const invalid =
-      !!validationErrors && Object.keys(validationErrors).length > 0;
-
-    if (invalid) {
-      newRow = validateCellEdits(newRows[rowIndex], type, validationErrors);
-    } else if (type === RowEditAction.Cancel) {
-      newRow = cancelCellEdits(newRows[rowIndex]);
-    } else {
-      newRow = applyCellEdits(newRows[rowIndex], type);
-    }
-    newRows[rowIndex] = newRow;
-
-    if (!invalid && type === RowEditAction.Save) {
-      const key = (newRow.cells?.[0] as IRowCell).props.value;
-      const value = (newRow.cells?.[1] as IRowCell).props.value;
-
-      try {
-        await adminClient.realms.addLocalization(
-          {
-            realm: realm.realm!,
-            selectedLocale:
-              selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
-            key,
-          },
-          value,
-        );
-        addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
-      } catch (error) {
-        addAlert(t("updateMessageBundleError"), AlertVariant.danger);
-      }
-    }
-    setTableRows(newRows);
   };
 
   const handleModalToggle = () => {
@@ -303,7 +280,6 @@ export const RealmOverrides = ({
     }
   };
 
-  // Handle row selection
   const handleRowSelect = (
     event: React.ChangeEvent<HTMLInputElement>,
     rowIndex: number,
@@ -317,10 +293,32 @@ export const RealmOverrides = ({
         prevSelected.filter((key) => key !== selectedKey),
       );
     }
+
+    setAreAllRowsSelected(
+      tableRows.length ===
+        selectedRowKeys.length + (event.target.checked ? 1 : -1),
+    );
   };
 
-  const isRowSelected = (rowKey: string) => {
-    return selectedRowKeys.includes(rowKey);
+  const toggleSelectAllRows = () => {
+    if (areAllRowsSelected) {
+      setSelectedRowKeys([]);
+    } else {
+      setSelectedRowKeys(
+        tableRows.map((row) => (row.cells?.[0] as IRowCell).props.value),
+      );
+    }
+    setAreAllRowsSelected(!areAllRowsSelected);
+  };
+
+  const isRowSelected = (key: any) => {
+    return selectedRowKeys.includes(key);
+  };
+
+  const onSubmit = (messageBundle: BundleForm) => {
+    console.log("onSubmit ", messageBundle);
+    // setValue(messageBundle);
+    // setIsBundleMessageValueEdit(false);
   };
 
   return (
@@ -432,35 +430,119 @@ export const RealmOverrides = ({
             <Table
               aria-label={t("editableRowsTable")}
               data-testid="editable-rows-table"
-              variant={TableVariant.compact}
-              cells={[t("key"), t("value")]}
-              rows={tableRows.map((row) => ({
-                ...row,
-                selected: isRowSelected(
-                  (row.cells?.[0] as IRowCell).props.value,
-                ),
-              }))}
-              onSelect={(event, isSelected, rowIndex) => {
-                handleRowSelect(event, rowIndex);
-              }}
-              canSelectAll
-              selectVariant="checkbox"
-              onRowEdit={(_, type, _b, rowIndex, validation) =>
-                updateEditableRows(type, rowIndex, validation)
-              }
-              actions={[
-                {
-                  title: t("delete"),
-                  onClick: (_, row) => {
-                    deleteKey(
-                      (tableRows[row].cells?.[0] as IRowCell).props.value,
-                    );
-                  },
-                },
-              ]}
             >
-              <TableHeader />
-              <TableBody />
+              <Thead>
+                <Tr>
+                  <Th>
+                    <input
+                      type="checkbox"
+                      checked={areAllRowsSelected}
+                      onChange={toggleSelectAllRows}
+                    />
+                  </Th>
+                  <Th>{t("key")}</Th>
+                  <Th>{t("value")}</Th>
+                  <Th aria-hidden="true" />
+                </Tr>
+              </Thead>
+              <Tbody>
+                {tableRows.map((row, rowIndex) => (
+                  <Tr key={(row.cells?.[0] as IRowCell).props.value}>
+                    <Td
+                      select={{
+                        rowIndex,
+                        onSelect: (event) =>
+                          handleRowSelect(
+                            event as React.ChangeEvent<HTMLInputElement>,
+                            rowIndex,
+                          ),
+                        isSelected: isRowSelected(
+                          (row.cells?.[0] as IRowCell).props.value,
+                        ),
+                      }}
+                    />
+                    <Td dataLabel={t("key")}>
+                      {(row.cells?.[0] as IRowCell).props.value}
+                    </Td>
+                    <Td dataLabel={t("value")}>
+                      <Form
+                        isHorizontal
+                        className="kc-form-bundleValue"
+                        onSubmit={handleSubmit((bundleValue) => {
+                          onSubmit(bundleValue.value);
+                        })}
+                      >
+                        <FormGroup
+                          fieldId="kc-bundleValue"
+                          className="kc-bundleValue-row"
+                        >
+                          <div className="kc-form-group-bundleValue">
+                            {isBundleMessageValueEdit && (
+                              <>
+                                <Controller
+                                  name="value"
+                                  control={control}
+                                  defaultValue={
+                                    (row.cells?.[1] as IRowCell).props.value
+                                  }
+                                  render={({ field }) => (
+                                    <KeycloakTextInput
+                                      {...field}
+                                      data-testid="userLabelFld"
+                                      className="kc-bundleValue"
+                                      aria-label={t("bundleValue")}
+                                    />
+                                  )}
+                                />
+                                <Button
+                                  data-testid="editUserLabelAcceptBtn"
+                                  variant="link"
+                                  className="kc-editUserLabelAcceptBtn"
+                                  type="submit"
+                                  icon={<CheckIcon />}
+                                />
+                                <Button
+                                  data-testid="editUserLabelCancelBtn"
+                                  variant="link"
+                                  className="kc-editBundleValue-cancelBtn"
+                                  icon={<TimesIcon />}
+                                  onClick={() =>
+                                    setIsBundleMessageValueEdit(false)
+                                  }
+                                />
+                              </>
+                            )}
+                            {!isBundleMessageValueEdit && (
+                              <>
+                                {(row.cells?.[1] as IRowCell).props.value}
+                                <Button
+                                  aria-label={t("editUserLabel")}
+                                  variant="link"
+                                  className="kc-editBundleValue-btn"
+                                  onClick={() =>
+                                    setIsBundleMessageValueEdit(true)
+                                  }
+                                  data-testid="editUserLabelBtn"
+                                  icon={<PencilAltIcon />}
+                                />
+                              </>
+                            )}
+                          </div>
+                        </FormGroup>
+                      </Form>
+                    </Td>
+                    <Td isActionCell>
+                      <Button
+                        onClick={() => {
+                          deleteKey((row.cells?.[0] as IRowCell).props.value);
+                        }}
+                      >
+                        {t("deleteBtn")}
+                      </Button>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
             </Table>
           )}
         </PaginatingTableToolbar>

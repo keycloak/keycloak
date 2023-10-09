@@ -1,0 +1,4 @@
+.kc-editBundleValue-btn,
+.kc-editBundleValue-cancelBtn {
+  color: var(--pf-global--Color--200) !important;
+}
