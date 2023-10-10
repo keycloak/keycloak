@@ -88,7 +88,7 @@ export default function AddMapper() {
             id: id!,
             alias: alias!,
           },
-          { ...identityProviderMapper },
+          { ...identityProviderMapper, id },
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
