@@ -1,8 +1,19 @@
-export type NetworkErrorOptions = { response: Response; responseData: unknown };
+type ResponseData =
+  | string
+  | number
+  | boolean
+  | null
+  | ResponseData[]
+  | { [key: string]: ResponseData };
+
+export type NetworkErrorOptions = {
+  response: Response;
+  responseData: ResponseData;
+};
 
 export class NetworkError extends Error {
   response: Response;
-  responseData: unknown;
+  responseData: ResponseData;
 
   constructor(message: string, options: NetworkErrorOptions) {
     super(message);
@@ -28,7 +39,7 @@ export async function fetchWithError(
   return response;
 }
 
-export async function parseResponse(response: Response): Promise<any> {
+export async function parseResponse(response: Response): Promise<ResponseData> {
   if (!response.body) {
     return "";
   }
