@@ -1,3 +1,6 @@
+// تم تهكير بواسطة إعصار الصفيري
+
+
 <#import "/templates/guide.adoc" as tmpl>
 
 <@tmpl.guide
