@@ -30,7 +30,7 @@
     "@playwright/test": "^1.38.1",
     "@types/lodash-es": "^4.17.9",
     "@types/react": "^18.2.25",
-    "@types/react-dom": "^18.2.11",
+    "@types/react-dom": "^18.2.12",
     "@vitejs/plugin-react-swc": "^3.4.0",
     "lightningcss": "^1.22.0",
     "vite": "^4.4.10",
