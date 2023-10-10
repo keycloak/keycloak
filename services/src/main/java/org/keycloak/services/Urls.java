@@ -160,8 +160,9 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate").build(realmName);
     }
 
-    public static URI realmLoginRestartPage(URI baseUri, String realmId) {
+    public static URI realmLoginRestartPage(URI baseUri, String realmId, boolean skipLogout) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
+                .queryParam(Constants.SKIP_LOGOUT, String.valueOf(skipLogout))
                 .build(realmId);
     }
 

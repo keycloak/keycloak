@@ -46,6 +46,7 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.forms.login.freemarker.model.AuthenticationSessionBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
@@ -224,6 +225,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         attributes.put("login", new LoginBean(formData));
         if (status != null) {
             attributes.put("statusCode", status.getStatusCode());
+        }
+
+
+        if (!isDetachedAuthenticationSession()) {
+            if ((AuthenticationSessionModel.Action.AUTHENTICATE.name().equals(authenticationSession.getAction())) ||
+                (AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name().equals(authenticationSession.getAction())) ||
+                (AuthenticationSessionModel.Action.OAUTH_GRANT.name().equals(authenticationSession.getAction()))) {
+                setAttribute("authenticationSession", new AuthenticationSessionBean(authenticationSession.getParentSession().getId(), authenticationSession.getTabId()));
+            }
         }
 
         switch (page) {

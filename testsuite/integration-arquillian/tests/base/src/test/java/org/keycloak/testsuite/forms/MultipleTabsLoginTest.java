@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.forms;
 
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -58,7 +59,8 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.NoSuchElementException;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
  * Tries to simulate testing with multiple browser tabs
@@ -136,34 +138,43 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void multipleTabsParallelLoginTest() {
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
 
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
 
-        String tab1Url = driver.getCurrentUrl();
+            // Simulate login in different browser tab tab2. I will be on loginPage again.
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
-        // Simulate login in different browser tab tab2. I will be on loginPage again.
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
 
-        // Login in tab2
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            // Login in tab2
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+            updatePasswordPage.changePassword("password", "password");
+            updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
+                    .email("john@doe3.com").submit();
+            appPage.assertCurrent();
 
-        // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
-        driver.navigate().to(tab1Url);
-        infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+            // Try to go back to tab 1. We should be logged-in automatically
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-        infoPage.clickBackToApplicationLink();
-        appPage.assertCurrent();
+            // Should be back on tab1
+            if (driver instanceof HtmlUnitDriver) {
+                driver.navigate().refresh(); // Need to explicitly refresh with HtmlUnitDriver due the authChecker.js javascript does not work
+            }
+
+            // Should be back on tab1 and logged-in automatically here
+            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            appPage.assertCurrent();
+        }
     }
 
     @Test
@@ -448,49 +459,56 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-12161
     @Test
     public void testEmptyBaseUrl() throws Exception {
-        String clientUuid = KeycloakModelUtils.generateId();
-        ClientRepresentation emptyBaseclient = ClientBuilder.create()
-                .clientId("empty-baseurl-client")
-                .id(clientUuid)
-                .enabled(true)
-                .baseUrl("")
-                .addRedirectUri("*")
-                .secret("password")
-                .build();
-        testRealm().clients().create(emptyBaseclient);
-        getCleanup().addClientUuid(clientUuid);
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-        oauth.clientId("empty-baseurl-client");
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+            String clientUuid = KeycloakModelUtils.generateId();
+            ClientRepresentation emptyBaseclient = ClientBuilder.create()
+                    .clientId("empty-baseurl-client")
+                    .id(clientUuid)
+                    .enabled(true)
+                    .baseUrl("")
+                    .addRedirectUri("*")
+                    .secret("password")
+                    .build();
+            testRealm().clients().create(emptyBaseclient);
+            getCleanup().addClientUuid(clientUuid);
 
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            oauth.clientId("empty-baseurl-client");
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
 
-        String tab1Url = driver.getCurrentUrl();
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
 
-        // Simulate login in different browser tab tab2. I will be on loginPage again.
-        oauth.openLoginForm();
-        loginPage.assertCurrent();
+            String tab1Url = driver.getCurrentUrl();
 
-        // Login in tab2
-        loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+            // Simulate login in different browser tab tab2. I will be on loginPage again.
+            tabUtil.newTab(oauth.getLoginFormUrl());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
-        updatePasswordPage.changePassword("password", "password");
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+            loginPage.assertCurrent();
 
-        // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
-        driver.navigate().to(tab1Url);
-        infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+            // Login in tab2
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
 
-        try {
-            infoPage.clickBackToApplicationLink();
-            fail();
+            updatePasswordPage.changePassword("password", "password");
+            updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
+                    .email("john@doe3.com").submit();
+            appPage.assertCurrent();
+
+            // Try to go back to tab 1. We should be logged-in automatically
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            if (driver instanceof HtmlUnitDriver) {
+                driver.navigate().refresh(); // Need to explicitly refresh with HtmlUnitDriver due the authChecker.js javascript does not work
+            }
+
+            // Should be back on tab1 and logged-in automatically here
+            WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
+            appPage.assertCurrent();
         }
-        catch (NoSuchElementException ex) {}
     }
 }
