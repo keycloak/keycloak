@@ -127,7 +127,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                     }
                 }
             }
-            if (!manualStop) {
+            // we should explicitly stop distribution when there is some error during the startup
+            if (!manualStop || getErrorStream().size() > 0) {
                 stop();
                 envVars.clear();
             }
