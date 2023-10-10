@@ -38,7 +38,7 @@ function checkAuthState(authSessionId, tabId, loginRestartUrl) {
     return;
   }
 
-  if (authState.authSessionId != authSessionId) {
+  if (authState.authSessionId !== authSessionId) {
     // The session ID does not match, exit.
     return;
   }
@@ -59,7 +59,9 @@ function getSession() {
   return getCookieByName("KEYCLOAK_SESSION");
 }
 
-const getAuthState = () => getCookieByName("KC_AUTH_STATE");
+function getAuthState() {
+  return getCookieByName("KC_AUTH_STATE");
+}
 
 function getCookieByName(name) {
   const cookies = new Map();
