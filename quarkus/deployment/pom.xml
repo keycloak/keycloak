@@ -150,6 +150,12 @@
             <artifactId>quarkus-logging-json-deployment</artifactId>
         </dependency>
 
+        <!-- CLI -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-picocli-deployment</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
