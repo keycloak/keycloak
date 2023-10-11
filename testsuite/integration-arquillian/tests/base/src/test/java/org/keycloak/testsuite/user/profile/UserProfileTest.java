@@ -121,6 +121,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfileProvider provider = getUserProfileProvider(session);
 
@@ -136,8 +139,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError("address"));
         }
 
-        assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, "address"));
+        containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, "address");
 
         attributes.put("address", "myaddress");
 
@@ -157,6 +159,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfileProvider provider = getUserProfileProvider(session);
 
@@ -311,6 +316,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError("address"));
         }
 
+        user.setSingleAttribute(UserModel.FIRST_NAME, "john");
+        user.setSingleAttribute(UserModel.LAST_NAME, "doe");
+        user.setSingleAttribute(UserModel.EMAIL, "jd@keycloak.org");
         user.setAttribute("address", Arrays.asList("fixed-address"));
 
         profile = provider.create(UserProfileContext.ACCOUNT, user);
@@ -326,6 +334,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
     private static void testGetProfileAttributes(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().addUser(realm, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        user.setFirstName("John");
+        user.setLastName("John");
+        user.setEmail(org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         UserProfileProvider provider = getUserProfileProvider(session);
 
         provider.setConfiguration("{\"attributes\": [{\"name\": \"address\", \"required\": {}, \"permissions\": {\"edit\": [\"user\"]}}]}");
@@ -345,9 +356,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         }
 
         assertNotNull(attributes.getFirstValue(UserModel.USERNAME));
-        assertNull(attributes.getFirstValue(UserModel.EMAIL));
-        assertNull(attributes.getFirstValue(UserModel.FIRST_NAME));
-        assertNull(attributes.getFirstValue(UserModel.LAST_NAME));
+        assertNotNull(attributes.getFirstValue(UserModel.EMAIL));
+        assertNotNull(attributes.getFirstValue(UserModel.FIRST_NAME));
+        assertNotNull(attributes.getFirstValue(UserModel.LAST_NAME));
         assertNull(attributes.getFirstValue("address"));
 
         user.setAttribute("address", Arrays.asList("fixed-address"));
@@ -508,6 +519,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put("address", Arrays.asList("fixed-address"));
         attributes.put("department", Arrays.asList("sales"));
 
@@ -519,7 +533,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE, "department"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE, "department"));
 
         assertNull(user.getFirstAttribute("department"));
 
@@ -558,6 +572,8 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, "readonly@foo.bar");
 
         UserProfileProvider provider = getUserProfileProvider(session);
@@ -569,7 +585,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE));
 
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
 
@@ -600,6 +616,8 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, "canchange@foo.bar");
 
         UserProfileProvider provider = getUserProfileProvider(session);
@@ -611,7 +629,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE));
 
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
 
@@ -637,6 +655,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put("address", Arrays.asList("fixed-address"));
         attributes.put("department", Arrays.asList("sales"));
         attributes.put("phone", Arrays.asList("fixed-phone"));
@@ -649,7 +670,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         UserModel user = profile.create();
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE, "address", "department", "phone"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE, "address", "department", "phone"));
 
         attributes.put("address", Arrays.asList("change-address"));
         attributes.put("department", Arrays.asList("changed-sales"));
@@ -837,6 +858,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "us");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
 
@@ -934,6 +958,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         // not present attributes are OK
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
@@ -997,6 +1024,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
 
@@ -1049,6 +1079,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         // null is OK as attribute is optional
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
@@ -1168,6 +1201,9 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         // NO fail on common contexts
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
@@ -1218,6 +1254,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.USERNAME, "user");
         attributes.put(UserModel.FIRST_NAME, "user");
         attributes.put(UserModel.LAST_NAME, "user");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         // NO fail on USER contexts
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
@@ -1400,6 +1437,8 @@ public class UserProfileTest extends AbstractUserProfileTest {
         Map<String, Object> attributes = new HashMap<>();
 
         attributes.put(UserModel.USERNAME, "user");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, "user@email.test");
 
         // client with default scopes for which is attribute NOT configured as required
