@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.idm.model;
 import org.jboss.logging.Logger;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -48,8 +49,8 @@ public class LDAPObject {
 
     private final Map<String, Set<String>> attributes = new HashMap<>();
 
-    // Copy of "attributes" containing lower-cased keys
-    private final Map<String, Set<String>> lowerCasedAttributes = new HashMap<>();
+    // Copy of "attributes" containing lower-cased keys and original case-sensitive attribute name
+    private final Map<String, Map.Entry<String, Set<String>>> lowerCasedAttributes = new HashMap<>();
 
     // range attributes are always read from 0 to max so just saving the top value
     private final Map<String, Integer> rangedAttributes = new HashMap<>();
@@ -72,8 +73,8 @@ public class LDAPObject {
             for (String name : mandatoryAttributeNames) {
                 name = name.toLowerCase();
                 this.mandatoryAttributeNames.add(name);
-                Set<String> values = lowerCasedAttributes.get(name);
-                if (values == null || values.isEmpty()) {
+                Map.Entry<String, Set<String>> entry = lowerCasedAttributes.get(name);
+                if (entry == null || entry.getValue().isEmpty()) {
                     this.mandatoryAttributeNamesRemaining.add(name);
                 }
             }
@@ -132,6 +133,7 @@ public class LDAPObject {
 
     /**
      * Useful when single value will be used as the "RDN" attribute. Which will be most of the cases
+     * @param rdnAttributeName The RDN of the ldap object
      */
     public void setRdnAttributeName(String rdnAttributeName) {
         this.rdnAttributeNames.clear();
@@ -156,14 +158,22 @@ public class LDAPObject {
     }
 
     public void setAttribute(String attributeName, Set<String> attributeValue) {
-        attributes.put(attributeName, attributeValue);
-        attributeName = attributeName.toLowerCase();
-        lowerCasedAttributes.put(attributeName, attributeValue);
+        final String attributeNameLowerCase = attributeName.toLowerCase();
+        final Set<String> valueSet = attributeValue == null? Collections.emptySet() : attributeValue;
+        Map.Entry<String, Set<String>> entry = lowerCasedAttributes.get(attributeNameLowerCase);
+        if (entry == null) {
+            attributes.put(attributeName, valueSet);
+            lowerCasedAttributes.put(attributeNameLowerCase, Map.entry(attributeName, valueSet));
+        } else {
+            // existing entry, maintain previous case for the attribute name
+            attributes.put(entry.getKey(), valueSet);
+            lowerCasedAttributes.put(attributeNameLowerCase, Map.entry(entry.getKey(), valueSet));
+        }
         if (consumerOnMandatoryAttributesComplete != null) {
-            if (!attributeValue.isEmpty()) {
-                mandatoryAttributeNamesRemaining.remove(attributeName);
-            } else if (mandatoryAttributeNames.contains(attributeName)) {
-                mandatoryAttributeNamesRemaining.add(attributeName);
+            if (!valueSet.isEmpty()) {
+                mandatoryAttributeNamesRemaining.remove(attributeNameLowerCase);
+            } else if (mandatoryAttributeNames.contains(attributeNameLowerCase)) {
+                mandatoryAttributeNamesRemaining.add(attributeNameLowerCase);
             }
             executeConsumerOnMandatoryAttributesComplete();
         }
@@ -171,20 +181,20 @@ public class LDAPObject {
 
     // Case-insensitive
     public String getAttributeAsString(String name) {
-        Set<String> attrValue = lowerCasedAttributes.get(name.toLowerCase());
-        if (attrValue == null || attrValue.size() == 0) {
+        Map.Entry<String, Set<String>> entry = lowerCasedAttributes.get(name.toLowerCase());
+        if (entry == null || entry.getValue().isEmpty()) {
             return null;
-        } else if (attrValue.size() > 1) {
-            logger.warnf("Expected String but attribute '%s' has more values '%s' on object '%s' . Returning just first value", name, attrValue, dn);
+        } else if (entry.getValue().size() > 1) {
+            logger.warnf("Expected String but attribute '%s' has more values '%s' on object '%s' . Returning just first value", name, entry.getValue(), dn);
         }
 
-        return attrValue.iterator().next();
+        return entry.getValue().iterator().next();
     }
 
     // Case-insensitive. Return null if there is not value of attribute with given name or set with all values otherwise
     public Set<String> getAttributeAsSet(String name) {
-        Set<String> values = lowerCasedAttributes.get(name.toLowerCase());
-        return (values == null) ? null : new LinkedHashSet<>(values);
+        Map.Entry<String, Set<String>> entry = lowerCasedAttributes.get(name.toLowerCase());
+        return (entry == null) ? null : new LinkedHashSet<>(entry.getValue());
     }
 
     public boolean isRangeComplete(String name) {
