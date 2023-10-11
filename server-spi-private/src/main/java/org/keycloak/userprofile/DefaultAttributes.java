@@ -31,10 +31,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.StorageId;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 
@@ -224,7 +226,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         for (String name : nameSet()) {
             AttributeMetadata metadata = getMetadata(name);
 
-            if (metadata == null || !metadata.canView(createAttributeContext(metadata))) {
+            if (metadata == null
+                    || !metadata.canView(createAttributeContext(metadata))
+                    || !metadata.isSelected(createAttributeContext(metadata))) {
                 attributes.remove(name);
             }
         }
