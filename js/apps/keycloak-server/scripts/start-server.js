@@ -12,6 +12,8 @@ import { extract } from "tar-fs";
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.resolve(DIR_NAME, "../server");
+const LOCAL_QUARKUS = path.resolve(DIR_NAME, "../../../../quarkus/dist/target");
+const LOCAL_DIST_NAME = "keycloak-999.0.0-SNAPSHOT.tar.gz";
 const SCRIPT_EXTENSION = process.platform === "win32" ? ".bat" : ".sh";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
@@ -21,11 +23,15 @@ const AUTH_RETRY_LIMIT = 3;
 await startServer();
 
 async function startServer() {
-  await downloadServer();
+  var local = false;
+  if (process.argv[2] && process.argv[2] === "--local") {
+    local = true;
+  }
+  await downloadServer(local);
 
   console.info("Starting server…");
 
-  const args = process.argv.slice(2);
+  const args = local ? process.argv.slice(3) : process.argv.slice(2);
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
@@ -50,7 +56,7 @@ async function startServer() {
   await importClient();
 }
 
-async function downloadServer() {
+async function downloadServer(local) {
   const directoryExists = fs.existsSync(SERVER_DIR);
 
   if (directoryExists) {
@@ -58,11 +64,15 @@ async function downloadServer() {
     return;
   }
 
-  console.info("Downloading and extracting server…");
-
-  const nightlyAsset = await getNightlyAsset();
-  const assetStream = await getAssetAsStream(nightlyAsset);
-
+  var assetStream;
+  if (local) {
+    console.info("Looking for " + LOCAL_DIST_NAME + " at " + LOCAL_QUARKUS);
+    assetStream = fs.createReadStream(LOCAL_QUARKUS + "/" + LOCAL_DIST_NAME);
+  } else {
+    console.info("Downloading and extracting server…");
+    const nightlyAsset = await getNightlyAsset();
+    assetStream = await getAssetAsStream(nightlyAsset);
+  }
   await extractTarball(assetStream, SERVER_DIR, { strip: 1 });
 }
 

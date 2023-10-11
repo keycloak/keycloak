@@ -3,11 +3,19 @@
   "type": "module",
   "scripts": {
     "start": "wireit",
-    "clear-data": "rm -r ./server/data"
+    "local": "wireit",
+    "clear-data": "rm -r ./server/data",
+    "clear-server": "rm -r ./server"
   },
   "wireit": {
     "start": {
       "command": "./scripts/start-server.js",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "local": {
+      "command": "./scripts/start-server.js --local",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
