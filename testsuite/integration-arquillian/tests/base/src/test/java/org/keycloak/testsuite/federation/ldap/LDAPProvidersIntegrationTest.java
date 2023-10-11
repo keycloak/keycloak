@@ -25,6 +25,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
@@ -78,6 +79,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import javax.naming.AuthenticationException;
 import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -702,7 +704,28 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             UserModel user = session.users().getUserByUsername(appRealm, "johnzip");
             String postalCode = user.getFirstAttribute("postal_code");
             Assert.assertEquals("12398", postalCode);
+        });
 
+        // modify postal_code in the user
+        RealmResource realm = testRealm();
+        List<UserRepresentation> users = realm.users().search("johnzip", true);
+        Assert.assertEquals("User not found", 1, users.size());
+        UserRepresentation user = users.iterator().next();
+        Assert.assertEquals("Incorrect postal code", Collections.singletonList("12398"), user.getAttributes().get("postal_code"));
+        UserResource userRes = realm.users().get(user.getId());
+        user.getAttributes().put("postal_code", Collections.singletonList("9876"));
+        userRes.update(user);
+        user = userRes.toRepresentation();
+        Assert.assertEquals("Incorrect postal code", Collections.singletonList("9876"), user.getAttributes().get("postal_code"));
+
+        // ensure the ldap contains the correct value
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+            LDAPObject ldapUser = ldapProvider.loadLDAPUserByUsername(appRealm, "johnzip");
+            Assert.assertEquals("Incorrect postal code", "9876", ldapUser.getAttributeAsString("POstalCode"));
         });
     }
 
