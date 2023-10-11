@@ -630,7 +630,15 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     protected void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
         SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
-        assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
+        ErrorRepresentation errorRep = response.asJson(ErrorRepresentation.class);
+        List<ErrorRepresentation> errors = errorRep.getErrors();
+
+        if (errors == null) {
+            assertEquals(expectedMessage, errorRep.getErrorMessage());
+        } else {
+            assertThat(errors.stream().map(ErrorRepresentation::getErrorMessage)
+                    .filter(expectedMessage::equals).collect(Collectors.toList()), containsInAnyOrder(expectedMessage));
+        }
     }
 
     @Test
