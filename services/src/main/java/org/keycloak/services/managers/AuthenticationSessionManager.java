@@ -19,24 +19,30 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
+import org.keycloak.common.util.Time;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.freemarker.AuthenticationStateCookie;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.keycloak.authentication.AuthenticationProcessor.CURRENT_FLOW_PATH;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
@@ -215,25 +221,56 @@ public class AuthenticationSessionManager {
     public void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession, boolean expireRestartCookie) {
         RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
 
-        log.debugf("Removing authSession '%s'. Expire restart cookie: %b", rootAuthSession.getId(), expireRestartCookie);
+        log.debugf("Removing root authSession '%s'. Expire restart cookie: %b", rootAuthSession.getId(), expireRestartCookie);
         session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
 
         // expire restart cookie
         if (expireRestartCookie) {
             UriInfo uriInfo = session.getContext().getUri();
             RestartLoginCookie.expireRestartCookie(realm, uriInfo, session);
+            AuthenticationStateCookie.expireCookie(realm, session);
 
             // With browser session, this makes sure that info/error pages will be rendered correctly when locale is changed on them
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
         }
     }
 
-    public void removeTabIdInAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession) {
+    /**
+     * Remove authentication session from root session. Possibly remove whole root authentication session if there are no other browser tabs
+     * @param realm
+     * @param authSession
+     * @return true if whole root authentication session was removed. False just if single tab was removed
+     */
+    public boolean removeTabIdInAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession) {
         RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
         rootAuthSession.removeAuthenticationSessionByTabId(authSession.getTabId());
         if (rootAuthSession.getAuthenticationSessions().isEmpty()) {
             // no more tabs, remove the session completely
-            removeAuthenticationSession(realm, authSession, false);
+            removeAuthenticationSession(realm, authSession, true);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * This happens when one browser tab successfully finished authentication (including required actions and consent screen if applicable)
+     * Just authenticationSession of the current browser tab is removed from "root authentication session" and other tabs are kept, so
+     * authentication can be automatically finished in other browser tabs (typically with authChecker.js javascript)
+     *
+     * @param realm
+     * @param authSession
+     */
+    public void updateAuthenticationSessionAfterSuccessfulAuthentication(RealmModel realm, AuthenticationSessionModel authSession) {
+        // TODO: The authentication session might need to be expired in short interval (realm accessCodeLifespan, which is 1 minute by default). That should be sufficient for other browser tabs
+        //  to finish authentication and at the same time we won't need to keep authentication sessions in storage longer than needed
+        boolean removedRootAuthSession = removeTabIdInAuthenticationSession(realm, authSession);
+        if (!removedRootAuthSession) {
+            RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
+
+            log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session", rootAuthSession.getId(), authSession.getTabId());
+
+            AuthenticationStateCookie.generateAndSetCookie(session, realm, rootAuthSession);
         }
     }
 

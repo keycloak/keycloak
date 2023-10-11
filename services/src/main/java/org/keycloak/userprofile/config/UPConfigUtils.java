@@ -278,8 +278,7 @@ public class UPConfigUtils {
      * @return true if context CAN BE part of the auth flow
      */
     public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT
-                && context != UserProfileContext.ACCOUNT_OLD;
+        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
     }
 
     /**

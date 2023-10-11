@@ -1,9 +1,9 @@
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();

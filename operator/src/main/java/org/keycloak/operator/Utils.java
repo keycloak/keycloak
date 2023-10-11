@@ -17,6 +17,7 @@
 
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,6 +55,12 @@ public final class Utils {
         }
         return labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(","));
+    }
+
+    public static Map<String, String> allInstanceLabels(HasMetadata primary) {
+        var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
+        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
+        return labels;
     }
 
 }

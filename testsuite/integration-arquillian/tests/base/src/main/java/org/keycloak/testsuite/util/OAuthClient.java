@@ -1057,7 +1057,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
             if (nonce != null) {
-                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, nonce));
             }
             if (codeChallenge != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
@@ -1475,6 +1475,10 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
+        return this.getLoginFormUrl(this.baseUrl);
+    }
+
+    public String getLoginFormUrl(String baseUrl) {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);

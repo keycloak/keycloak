@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.hostname;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.urls.UrlType.ADMIN;
+import static org.keycloak.urls.UrlType.LOCAL_ADMIN;
 import static org.keycloak.urls.UrlType.BACKEND;
 import static org.keycloak.urls.UrlType.FRONTEND;
 import static org.keycloak.utils.StringUtil.isNotBlank;
@@ -61,11 +62,15 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     private int hostnamePort;
     private URI frontEndBaseUri;
     private URI adminBaseUri;
+    private URI localAdminUri;
 
     @Override
     public String getScheme(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getScheme, adminBaseUri, getScheme(originalUriInfo));
+        }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getScheme, localAdminUri, getScheme(originalUriInfo));
         }
 
         String scheme = forNonStrictBackChannel(originalUriInfo, urlType, this::getScheme, this::getScheme);
@@ -82,6 +87,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getHost, adminBaseUri, adminHostName == null ? getHostname(originalUriInfo) : adminHostName);
         }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getHost, localAdminUri, getHostname(originalUriInfo));
+        }
 
         String hostname = forNonStrictBackChannel(originalUriInfo, urlType, this::getHostname, this::getHostname);
 
@@ -97,6 +105,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getPath, adminBaseUri, getContextPath(originalUriInfo));
         }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getPath, localAdminUri, getContextPath(originalUriInfo));
+        }
 
         String path = forNonStrictBackChannel(originalUriInfo, urlType, this::getContextPath, this::getContextPath);
 
@@ -111,6 +122,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     public int getPort(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort(originalUriInfo));
+        }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getPort, localAdminUri, getRequestPort(originalUriInfo));
         }
 
         Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getRequestPort);
@@ -223,6 +237,20 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     @Override
     public void init(Config.Scope config) {
+        boolean isHttpEnabled = Boolean.parseBoolean(Configuration.getConfigValue("kc.http-enabled").getValue());
+        String configPath = Configuration.getConfigValue("kc.http-relative-path").getValue();
+
+        if (!configPath.startsWith("/")) {
+            configPath = "/" + configPath;
+        }
+
+        String httpPort = Configuration.getConfigValue("kc.https-port").getValue();
+        String configPort = isHttpEnabled ? Configuration.getConfigValue("kc.http-port").getValue() : httpPort ;
+
+        String scheme = isHttpEnabled ? "http://" : "https://";
+
+        localAdminUri = URI.create(scheme + "localhost:" + configPort + configPath);
+
         frontEndHostName = config.get("hostname");
 
         try {
@@ -258,7 +286,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
         noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
-        defaultTlsPort = Integer.parseInt(Configuration.getConfigValue("kc.https-port").getValue());
+        defaultTlsPort = Integer.parseInt(httpPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
             defaultTlsPort = RESTEASY_DEFAULT_PORT_VALUE;

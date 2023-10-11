@@ -959,7 +959,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         );
         assertRolesString(testAppScopeMappings,
           "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
-          "test-app-disallowed-by-scope"   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+          "test-app-disallowed-by-scope",   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+          "customer-admin-composite-role",  // from the other application
+          "customer-admin"
         );
 
         // Revert

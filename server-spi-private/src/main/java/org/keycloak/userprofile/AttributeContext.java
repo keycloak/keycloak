@@ -34,15 +34,17 @@ public final class AttributeContext {
     private final Map.Entry<String, List<String>> attribute;
     private final UserModel user;
     private final AttributeMetadata metadata;
+    private final Attributes attributes;
     private UserProfileContext context;
 
     public AttributeContext(UserProfileContext context, KeycloakSession session, Map.Entry<String, List<String>> attribute,
-            UserModel user, AttributeMetadata metadata) {
+            UserModel user, AttributeMetadata metadata, Attributes attributes) {
         this.context = context;
         this.session = session;
         this.attribute = attribute;
         this.user = user;
         this.metadata = metadata;
+        this.attributes = attributes;
     }
 
     public KeycloakSession getSession() {
@@ -63,5 +65,9 @@ public final class AttributeContext {
 
     public AttributeMetadata getMetadata() {
         return metadata;
+    }
+
+    public Attributes getAttributes() {
+        return attributes;
     }
 }

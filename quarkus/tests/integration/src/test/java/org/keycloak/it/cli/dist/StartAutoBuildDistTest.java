@@ -27,11 +27,9 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest
@@ -40,7 +38,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 public class StartAutoBuildDistTest {
 
     @Test
-    @Launch({ "start", AbstractStartCommand.AUTO_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
     void testStartAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -50,7 +48,6 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
-        cliResult.assertMessage(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }
@@ -104,7 +101,6 @@ public class StartAutoBuildDistTest {
     @Order(7)
     void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoMessage(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
         cliResult.assertBuild();
     }
 

@@ -20,7 +20,6 @@ package org.keycloak.social.microsoft;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -32,26 +31,32 @@ import org.keycloak.models.KeycloakSession;
 
 import org.keycloak.services.validation.Validation;
 
+import java.util.Optional;
+
 /**
- * 
+ *
  * Identity provider for Microsoft account. Uses OAuth 2 protocol of Microsoft Graph as documented at
  * <a href="https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/graph-oauth">https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/graph-oauth</a>
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
 
     private static final Logger log = Logger.getLogger(MicrosoftIdentityProvider.class);
 
-    public static final String AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"; // authorization code endpoint
-    public static final String TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"; // token endpoint
-    public static final String PROFILE_URL = "https://graph.microsoft.com/v1.0/me/"; // user profile service endpoint
-    public static final String DEFAULT_SCOPE = "User.read"; // the User.read scope should be sufficient to obtain all necessary user info
+    private static final String AUTH_URL_TEMPLATE = "https://login.microsoftonline.com/%s/oauth2/v2.0/authorize"; // authorization code endpoint
+    private static final String TOKEN_URL_TEMPLATE = "https://login.microsoftonline.com/%s/oauth2/v2.0/token"; // token endpoint
+    private static final String PROFILE_URL = "https://graph.microsoft.com/v1.0/me/"; // user profile service endpoint
+    private static final String DEFAULT_SCOPE = "User.read"; // the User.read scope should be sufficient to obtain all necessary user info
 
-    public MicrosoftIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+    public MicrosoftIdentityProvider(KeycloakSession session, MicrosoftIdentityProviderConfig config) {
         super(session, config);
-        config.setAuthorizationUrl(AUTH_URL);
-        config.setTokenUrl(TOKEN_URL);
+
+        // Use multi-tenant 'common' endpoints if not specified.
+        String tenant = Optional.ofNullable(config.getTenantId()).map(String::trim).orElse("common");
+
+        config.setAuthorizationUrl(String.format(AUTH_URL_TEMPLATE, tenant));
+        config.setTokenUrl(String.format(TOKEN_URL_TEMPLATE, tenant));
         config.setUserInfoUrl(PROFILE_URL);
     }
 

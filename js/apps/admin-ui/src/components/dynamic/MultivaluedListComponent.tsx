@@ -28,6 +28,7 @@ export const MultiValuedListComponent = ({
   options,
   isDisabled = false,
   stringify,
+  required,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
@@ -38,6 +39,7 @@ export const MultiValuedListComponent = ({
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

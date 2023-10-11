@@ -47,6 +47,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
@@ -68,6 +69,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -930,6 +932,11 @@ public class AuthenticationProcessor {
         authSession.clearExecutionStatus();
         authSession.clearUserSessionNotes();
         authSession.clearAuthNotes();
+
+        Set<String> requiredActions = authSession.getRequiredActions();
+        for (String reqAction : requiredActions) {
+            authSession.removeRequiredAction(reqAction);
+        }
 
         authSession.setAction(CommonClientSessionModel.Action.AUTHENTICATE.name());
 

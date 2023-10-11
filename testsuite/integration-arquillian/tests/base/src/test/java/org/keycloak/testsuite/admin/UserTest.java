@@ -645,6 +645,22 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void createUserWithCreateTimestamp() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setEmail("user1@localhost");
+        Long createdTimestamp = 1695238476L;
+        user.setCreatedTimestamp(createdTimestamp);
+
+        String userId = createUser(user);
+
+        // fetch user again and see created timestamp filled in
+        UserRepresentation createdUser = realm.users().get(userId).toRepresentation();
+        assertNotNull(createdUser);
+        assertEquals(user.getCreatedTimestamp(), createdUser.getCreatedTimestamp());
+    }
+
     private List<String> createUsers() {
         List<String> ids = new ArrayList<>();
 
@@ -2460,12 +2476,23 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithNewUsernameNotPossible() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        assertFalse(realmRep.isEditUsernameAllowed());
         String id = createUser();
 
         UserResource user = realm.users().get(id);
         UserRepresentation userRep = user.toRepresentation();
         userRep.setUsername("user11");
-        updateUser(user, userRep);
+
+        try {
+            updateUser(user, userRep);
+            if (isDeclarativeUserProfile()) {
+                fail("Should fail because realm does not allow edit username");
+            }
+        } catch (BadRequestException expected) {
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Attribute username is read only.", error.getErrorMessage());
+        }
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user1", userRep.getUsername());
