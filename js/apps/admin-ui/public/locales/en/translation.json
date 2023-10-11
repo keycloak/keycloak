@@ -2871,6 +2871,7 @@
   "disableUserInfo": "Disable user info",
   "isAccessTokenJWT": "Access Token is JWT",
   "userInfoUrl": "User Info URL",
+  "doNotStoreUsers": "Do not store users",
   "issuer": "Issuer",
   "prompt": "Prompt",
   "prompts": {
@@ -2954,6 +2955,7 @@
   "disableUserInfoHelp": "Disable usage of User Info service to obtain additional user information?  Default is to use this OIDC service.",
   "isAccessTokenJWTHelp": "The Access Token received from the Identity Provider is a JWT and its claims will be accessible for mappers.",
   "userInfoUrlHelp": "The User Info Url. This is optional.",
+  "doNotStoreUsersHelp": "When enabled, users from this broker are not persisted in internal database.",
   "issuerHelp": "The issuer identifier for the issuer of the response. If not provided, no validation will be performed.",
   "promptHelp": "Specifies whether the Authorization Server prompts the End-User for re-authentication and consent.",
   "acceptsPromptNoneHelp": "This is just used together with Identity Provider Authenticator or when kc_idp_hint points to this identity provider. In case that client sends a request with prompt=none and user is not yet authenticated, the error will not be directly returned to client, but the request with prompt=none will be forwarded to this identity provider.",

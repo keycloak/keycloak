@@ -96,6 +96,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   const {
     control,
     register,
+    setValue,
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
@@ -105,6 +106,12 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
     defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
+  const transientSessions = useWatch({
+    control,
+    name: "config.doNotStoreUsers",
+    defaultValue: "false",
+  });
+  const syncModeAvailable = transientSessions === "false";
   return (
     <>
       {!isOIDC && !isSAML && (
@@ -231,46 +238,70 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         defaultValue=""
       />
 
-      <FormGroup
-        className="pf-u-pb-3xl"
-        label={t("syncMode")}
-        labelIcon={
-          <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
-        }
-        fieldId="syncMode"
-      >
+      <FormGroupField label="doNotStoreUsers">
         <Controller
-          name="config.syncMode"
-          defaultValue={syncModes[0].toUpperCase()}
+          name="config.doNotStoreUsers"
+          defaultValue="false"
           control={control}
           render={({ field }) => (
-            <Select
-              toggleId="syncMode"
-              required
-              direction="up"
-              onToggle={() => setSyncModeOpen(!syncModeOpen)}
-              onSelect={(_, value) => {
-                field.onChange(value as string);
-                setSyncModeOpen(false);
+            <Switch
+              id="doNotStoreUsers"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(value) => {
+                field.onChange(value.toString());
+                // if field is checked, set sync mode to import
+                if (value) {
+                  setValue("config.syncMode", "IMPORT");
+                }
               }}
-              selections={t(`syncModes.${field.value.toLowerCase()}`)}
-              variant={SelectVariant.single}
-              aria-label={t("syncMode")}
-              isOpen={syncModeOpen}
-            >
-              {syncModes.map((option) => (
-                <SelectOption
-                  selected={option === field.value}
-                  key={option}
-                  value={option.toUpperCase()}
-                >
-                  {t(`syncModes.${option}`)}
-                </SelectOption>
-              ))}
-            </Select>
+            />
           )}
         />
-      </FormGroup>
+      </FormGroupField>
+      {syncModeAvailable && (
+        <FormGroup
+          className="pf-u-pb-3xl"
+          label={t("syncMode")}
+          labelIcon={
+            <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
+          }
+          fieldId="syncMode"
+        >
+          <Controller
+            name="config.syncMode"
+            defaultValue={syncModes[0].toUpperCase()}
+            control={control}
+            render={({ field }) => (
+              <Select
+                toggleId="syncMode"
+                required
+                direction="up"
+                onToggle={() => setSyncModeOpen(!syncModeOpen)}
+                onSelect={(_, value) => {
+                  field.onChange(value as string);
+                  setSyncModeOpen(false);
+                }}
+                selections={t(`syncModes.${field.value.toLowerCase()}`)}
+                variant={SelectVariant.single}
+                aria-label={t("syncMode")}
+                isOpen={syncModeOpen}
+              >
+                {syncModes.map((option) => (
+                  <SelectOption
+                    selected={option === field.value}
+                    key={option}
+                    value={option.toUpperCase()}
+                  >
+                    {t(`syncModes.${option}`)}
+                  </SelectOption>
+                ))}
+              </Select>
+            )}
+          />
+        </FormGroup>
+      )}
     </>
   );
 };
