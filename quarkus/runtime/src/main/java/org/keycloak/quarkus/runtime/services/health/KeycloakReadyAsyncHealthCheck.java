@@ -18,12 +18,17 @@ package org.keycloak.quarkus.runtime.services.health;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
+import io.quarkus.runtime.BlockingOperationControl;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
+import io.smallrye.health.AsyncHealthCheckFactory;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.vertx.MutinyHelper;
+import io.vertx.core.Vertx;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
@@ -77,7 +82,25 @@ public class KeycloakReadyAsyncHealthCheck implements AsyncHealthCheck {
     AgroalDataSource agroalDataSource;
 
     @Inject
-    QuarkusAsyncHealthCheckFactory healthCheckFactory;
+    Vertx vertx;
+
+    /**
+     * Creating a replacement for {@link QuarkusAsyncHealthCheckFactory} which triggers a bug in Vert.x
+     * as described in <a href="https://github.com/eclipse-vertx/vert.x/issues/4900">eclipse-vertx/vert.x#4900</a>.
+     *
+     * A fix to make the blocking executor non-ordered (= parallel) is tracked upstream in
+     * <a href="https://github.com/quarkusio/quarkus/issues/36419">quarkusio/quarkus#36419</a>.
+     *
+     * Removal of this worakround is tracked in <a href="https://github.com/keycloak/keycloak/issues/24019">keycloak#24019</a>.
+     */
+    AsyncHealthCheckFactory healthCheckFactory = new AsyncHealthCheckFactory() {
+        @Override
+        public Uni<HealthCheckResponse> callSync(HealthCheck healthCheck) {
+            Uni<HealthCheckResponse> healthCheckResponseUni = super.callSync(healthCheck);
+            return BlockingOperationControl.isBlockingAllowed() ? healthCheckResponseUni
+                    : healthCheckResponseUni.runSubscriptionOn(MutinyHelper.blockingExecutor(vertx, false));
+        }
+    };
 
     AtomicReference<Instant> failingSince = new AtomicReference<>();
 
@@ -98,7 +121,7 @@ public class KeycloakReadyAsyncHealthCheck implements AsyncHealthCheck {
             });
         } else {
             failingSince.set(null);
-            return healthCheckFactory.callAsync(() -> Uni.createFrom().item(builder.build()));
+            return Uni.createFrom().item(builder.build());
         }
     }
 
