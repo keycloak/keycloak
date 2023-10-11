@@ -97,8 +97,10 @@
           const [key, value] = cookie.split("=").map((value) => value.trim());
           cookies.set(key, value);
         }
+        
+        const cookieByName = cookies.get(name);
 
-        return cookies.get(name) ?? null;
+        return (cookieByName !== null && cookieByName !== undefined) ? cookieByName : null;
       }
     </script>
   </body>
