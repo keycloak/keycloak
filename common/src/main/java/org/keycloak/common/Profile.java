@@ -92,7 +92,12 @@ public class Profile {
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
 
-        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED);
+        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
+
+        DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
+
+        // Add new Feature above this line
+        ;
 
         private final Type type;
         private final String label;

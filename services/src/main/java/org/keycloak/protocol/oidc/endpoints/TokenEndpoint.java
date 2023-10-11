@@ -309,17 +309,24 @@ public class TokenEndpoint {
             event.event(EventType.PERMISSION_TOKEN);
             action = Action.PERMISSION;
         } else if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
+                throw newUnsupportedGrantTypeException();
+            }
             event.event(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN);
             action = Action.OAUTH2_DEVICE_CODE;
         } else if (grantType.equals(OAuth2Constants.CIBA_GRANT_TYPE)) {
             event.event(EventType.AUTHREQID_TO_TOKEN);
             action = Action.CIBA;
         } else {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
-                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
+            throw newUnsupportedGrantTypeException();
         }
 
         event.detail(Details.GRANT_TYPE, grantType);
+    }
+
+    private CorsErrorResponseException newUnsupportedGrantTypeException() {
+        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
+                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
     }
 
     private void checkParameterDuplicated() {
