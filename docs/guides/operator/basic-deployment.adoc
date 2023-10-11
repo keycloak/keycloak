@@ -2,14 +2,19 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Basic Keycloak deployment"
 priority=20
-summary="How to install Keycloak using the Operator on Kubernetes or OpenShift">
+summary="How to install Keycloak using the Operator">
 
 == Performing a basic Keycloak deployment
-This {section} describes how to perform a basic Keycloak Deployment on Kubernetes or OpenShift using the Operator.
+This {section} describes how to perform a basic Keycloak Deployment on
+<@profile.ifCommunity>
+Kubernetes or
+</@profile.ifCommunity>
+OpenShift using the Operator.
 
 === Preparing for deployment
 
@@ -230,14 +235,14 @@ kubectl port-forward service/example-kc-service 8443:8443
 
 === Accessing the Admin Console
 
-When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a Kubernetes basic-auth Secret in the same namespace as the CR.
+When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a basic-auth Secret object in the same namespace as the CR.
 
 [WARNING]
 ====
 Change the default admin credentials and enable MFA in Keycloak before going to production.
 ====
 
-To fetch the initial admin credentials, you have to read and decode a Kubernetes Secret.
+To fetch the initial admin credentials, you have to read and decode the Secret.
 The Secret name is derived from the Keycloak CR name plus the fixed suffix `-initial-admin`.
 To get the username and password for the `example-kc` CR, enter the following commands:
 
