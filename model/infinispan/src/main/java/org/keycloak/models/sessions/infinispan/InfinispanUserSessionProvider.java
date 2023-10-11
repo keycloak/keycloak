@@ -53,13 +53,13 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.Comparators;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.io.Serializable;
@@ -83,6 +83,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
@@ -231,7 +232,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
         sessionTx.addTask(id, createSessionTask, entity, persistenceState);
 
-        UserSessionAdapter adapter = wrap(realm, entity, false);
+        UserSessionAdapter adapter = user instanceof LightweightUserAdapter
+          ? wrap(realm, entity, false, user)
+          : wrap(realm, entity, false);
         adapter.setPersistenceState(persistenceState);
         return adapter;
     }
@@ -736,7 +739,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         userSessionUpdateTx.addTask(sessionEntity.getId(), removeTask);
     }
 
-    UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
+    UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline, UserModel user) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
 
@@ -744,12 +747,29 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
-        UserModel user = session.users().getUserById(realm, entity.getUser());
+        return new UserSessionAdapter(session, user, this, userSessionUpdateTx, clientSessionUpdateTx, realm, entity, offline);
+    }
+
+    UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
+        UserModel user = null;
+        if (entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+            LightweightUserAdapter lua = LightweightUserAdapter.fromString(session, realm, entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+            final UserSessionAdapter us = wrap(realm, entity, offline, lua);
+            lua.setUpdateHandler(lua1 -> {
+                if (lua == lua1) {  // Ensure there is no conflicting user model, only the latest lightweight user can be used
+                    us.setNote(SESSION_NOTE_LIGHTWEIGHT_USER, lua1.serialize());
+                }
+            });
+            return us;
+        }
+
+        user = session.users().getUserById(realm, entity.getUser());
+
         if (user == null) {
             return null;
         }
 
-        return new UserSessionAdapter(session, user, this, userSessionUpdateTx, clientSessionUpdateTx, realm, entity, offline);
+        return wrap(realm, entity, offline, user);
     }
 
     AuthenticatedClientSessionAdapter wrap(UserSessionModel userSession, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {

@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
@@ -504,6 +505,9 @@ public class AuthenticationProcessor {
         @Override
         public void attachUserSession(UserSessionModel userSession) {
             AuthenticationProcessor.this.userSession = userSession;
+            if (isLightweightUser(userSession.getUser())) {
+                AuthenticationProcessor.this.authenticationSession.setAuthenticatedUser(userSession.getUser());
+            }
         }
 
         @Override
