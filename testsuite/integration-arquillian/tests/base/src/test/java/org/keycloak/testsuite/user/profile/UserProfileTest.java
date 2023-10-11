@@ -42,8 +42,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.component.ComponentModel;
@@ -57,7 +59,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -85,6 +94,9 @@ import org.keycloak.validate.validators.LengthValidator;
 public class UserProfileTest extends AbstractUserProfileTest {
 
     protected static final String ATT_ADDRESS = "address";
+
+    @ClassRule
+    public static LDAPRule ldapRule = new LDAPRule();
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
