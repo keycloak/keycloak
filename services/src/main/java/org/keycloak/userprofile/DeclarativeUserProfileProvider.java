@@ -46,11 +46,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -170,6 +172,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         ComponentModel component = getComponentModel().orElse(null);
 
         if (component == null) {
+            // makes sure user providers can override metadata for any attribute
+            decorateUserProfileMetadataWithUserStorage(realm, decoratedMetadata);
             return decoratedMetadata;
         }
 
@@ -429,8 +433,21 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             }
         }
 
+        if (session != null) {
+            // makes sure user providers can override metadata for any attribute
+            decorateUserProfileMetadataWithUserStorage(session.getContext().getRealm(), decoratedMetadata);
+        }
+
         return decoratedMetadata;
 
+    }
+
+    private void decorateUserProfileMetadataWithUserStorage(RealmModel realm, UserProfileMetadata userProfileMetadata) {
+        // makes sure user providers can override metadata for any attribute
+        UserProvider users = session.users();
+        if (users instanceof UserProfileDecorator) {
+            ((UserProfileDecorator) users).decorateUserProfile(realm, userProfileMetadata);
+        }
     }
 
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {

@@ -111,6 +111,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getLabelForField(String fieldId) {
         return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
+
+    public WebElement getFieldById(String fieldId) {
+        try {
+            return driver.findElement(By.id(fieldId));
+        } catch (NoSuchElementException nsee) {
+            return null;
+        }
+    }
     
     public boolean isDepartmentPresent() {
         try {

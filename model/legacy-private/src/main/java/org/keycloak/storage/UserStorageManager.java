@@ -70,13 +70,15 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserStorageManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
-        implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
+        implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent, UserProfileDecorator {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -784,6 +786,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             if (provider != null ) {
                 provider.onCache(realm, user, delegate);
             }
+        }
+    }
+
+    @Override
+    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+        for (UserProfileDecorator decorator : getEnabledStorageProviders(session.getContext().getRealm(), UserProfileDecorator.class)
+                .collect(Collectors.toList())) {
+            decorator.decorateUserProfile(realm, metadata);
         }
     }
 }
