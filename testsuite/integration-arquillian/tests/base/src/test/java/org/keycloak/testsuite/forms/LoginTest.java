@@ -55,7 +55,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -893,6 +892,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
+
+    @Test
+    public void testAuthenticationSessionExpiresEarlyAfterAuthentication() throws Exception {
+        // Open login form and refresh right after. This simulates creating another "tab" in rootAuthenticationSession
+        oauth.openLoginForm();
+        driver.navigate().refresh();
+
+        // Assert authenticationSession in cache with 2 tabs
+        String authSessionId = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID).getValue();
+        Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        loginPage.login("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        // authentication session should still exists with remaining browser tab
+        Assert.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        // authentication session should be expired after 1 minute
+        setTimeOffset(300);
+        Assert.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+    }
+
 
     @Test
     public void loginRememberMeExpiredIdle() throws Exception {

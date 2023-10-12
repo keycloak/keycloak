@@ -425,4 +425,16 @@ public interface TestingResource {
     @NoCache
     void reenableTruststoreSpi();
 
+    /**
+     * Get count of tabs (child authentication sessions) for given "root authentication session"
+     *
+     * @param realm realm name (not ID)
+     * @param authSessionId ID of authentication session
+     * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
+     */
+    @GET
+    @Path("/get-authentication-session-tabs-count")
+    @NoCache
+    Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realm, @QueryParam("authSessionId") String authSessionId);
+
 }

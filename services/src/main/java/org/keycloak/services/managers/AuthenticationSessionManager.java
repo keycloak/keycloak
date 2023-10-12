@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CookieHelper;
@@ -262,15 +263,22 @@ public class AuthenticationSessionManager {
      * @param authSession
      */
     public void updateAuthenticationSessionAfterSuccessfulAuthentication(RealmModel realm, AuthenticationSessionModel authSession) {
-        // TODO: The authentication session might need to be expired in short interval (realm accessCodeLifespan, which is 1 minute by default). That should be sufficient for other browser tabs
-        //  to finish authentication and at the same time we won't need to keep authentication sessions in storage longer than needed
         boolean removedRootAuthSession = removeTabIdInAuthenticationSession(realm, authSession);
         if (!removedRootAuthSession) {
             RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
 
-            log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session", rootAuthSession.getId(), authSession.getTabId());
+            // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
+            // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediately by JS script authChecker.js
+            // and login user automatically. No need to have authenticationSession and cookie living any longer
+            int authSessionExpiresIn = realm.getAccessCodeLifespan();
 
-            AuthenticationStateCookie.generateAndSetCookie(session, realm, rootAuthSession);
+            // Set timestamp to the past to make sure that authSession is scheduled for expiration in "authSessionExpiresIn" seconds
+            int authSessionExpirationTime = Time.currentTime() - SessionExpiration.getAuthSessionLifespan(realm) + authSessionExpiresIn;
+            rootAuthSession.setTimestamp(authSessionExpirationTime);
+
+            log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
+
+            AuthenticationStateCookie.generateAndSetCookie(session, realm, rootAuthSession, authSessionExpiresIn);
         }
     }
 
