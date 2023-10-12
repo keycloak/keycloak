@@ -37,6 +37,6 @@ This user needs a password to log in. To set the initial password:
 
 . Click *Credentials* at the top of the page.
 . Fill in the *Set password* form with a password.
-. Toggle *Temporary* to *Off* so that the user does not need update this password at the first login.
+. Toggle *Temporary* to *Off* so that the user does not need to update this password at the first login.
 
 image::set-password.png[Set password]
