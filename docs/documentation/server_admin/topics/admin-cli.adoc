@@ -7,7 +7,15 @@ With {project_name}, you can perform administration tasks from the command-line 
 
 {project_name} packages the Admin CLI server distribution with the execution scripts in the `bin` directory.
 
-The Linux script is called `kcadm.sh`, and the script for Windows is called `kcadm.bat`. Add the {project_name} server directory to your `PATH` to use the client from any location on your file system.
+<@profile.ifProduct> 
+The script is called `kcadm.sh`.
+<@profile.ifProduct> 
+
+<@profile.ifCommunity>
+The Linux script is called `kcadm.sh`, and the script for Windows is called `kcadm.bat`.
+<@profile.ifCommunity>
+
+Add the {project_name} server directory to your `PATH` to use the client from any location on your file system.
 
 For example:
 
