@@ -5,15 +5,19 @@
   </head>
   <body>
     <script type="module">
-      // Check if the browser has granted us access to 3rd-party storage (such as cookies).
-      const hasAccess = await hasStorageAccess();
+      checkStorageAccess();
+      
+      async function checkStorageAccess() {
+        // Check if the browser has granted us access to 3rd-party storage (such as cookies).
+        const hasAccess = await hasStorageAccess();
 
-      if (hasAccess) {
-        // If so, attempt to place a cookie to test this assumption.
-        attemptWithTestCookie();
-      } else {
-        // Otherwise, signal that 3rd-party access is not supported.
-        signalSupport(false);
+        if (hasAccess) {
+          // If so, attempt to place a cookie to test this assumption.
+          attemptWithTestCookie();
+        } else {
+          // Otherwise, signal that 3rd-party access is not supported.
+          signalSupport(false);
+        }
       }
 
       async function hasStorageAccess() {
