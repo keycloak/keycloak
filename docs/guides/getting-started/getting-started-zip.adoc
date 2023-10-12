@@ -1,4 +1,5 @@
 <#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="OpenJDK"
@@ -10,14 +11,20 @@ summary="Get started with Keycloak on bare metal">
 
 == Before you start
 
-Make sure you have https://openjdk.java.net/[OpenJDK 17] or a higher version installed.
+Make sure you have https://openjdk.java.net/[OpenJDK 17] installed.
 
 == Download Keycloak
 
 Download and extract https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip[keycloak-{version}.zip]
 from the Keycloak website.
 
-After extracting this file, you should have a directory named keycloak-{version}.
+<@profile.ifCommunity>
+After extracting this file, you should have a directory with a name that starts with `keycloak-{version}`.
+</@profile.ifCommunity>
+
+<@profile.ifProduct>
+After extracting this file, you should have a directory with a name that starts with `rhbk-{version}`.
+</@profile.ifProduct>
 
 include::templates/start-keycloak-localhost.adoc[]
 
