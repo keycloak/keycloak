@@ -24,8 +24,6 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
@@ -82,19 +80,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
 
         }
         {  // search ID Token
-            Object rawIdToken = context.getContextData().get(OIDCIdentityProvider.VALIDATED_ID_TOKEN);
-            JsonWebToken idToken = null;
-
-            if (rawIdToken instanceof String) {
-                try {
-                    idToken = new JWSInput(rawIdToken.toString()).readJsonContent(JsonWebToken.class);
-                } catch (JWSInputException e) {
-                    return null;
-                }
-            } else if (rawIdToken instanceof JsonWebToken) {
-                idToken = (JsonWebToken) rawIdToken;
-            }
-
+            JsonWebToken idToken = (JsonWebToken)context.getContextData().get(OIDCIdentityProvider.VALIDATED_ID_TOKEN);
             if (idToken != null) {
                 Object value = getClaimValue(idToken, claim);
                 if (value != null)
