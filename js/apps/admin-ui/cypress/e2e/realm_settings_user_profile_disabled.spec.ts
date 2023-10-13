@@ -147,7 +147,7 @@ describe("User profile disabled", () => {
     cy.get("#kc-username").should("not.exist");
 
     // Uncomment this once fixed
-    // cy.findByTestId("user-view-header").should(
+    // cy.findByTestId("view-header").should(
     //   "contain.text",
     //   "testuser5@gmail.com",
     // );
