@@ -603,6 +603,8 @@
   "webAuthnPolicyCreateTimeout": "タイムアウト",
   "webAuthnPolicyAvoidSameAuthenticatorRegister": "オーセンティケーターの重複登録回避",
   "webAuthnPolicyAcceptableAaguids": "許容可能なAAGUID",
+  "webAuthnPolicyExtraOrigins": "エクストラオリジンズ",
+  "addOrigins": "オリジンを追加",
   "default": "DEFAULT",
   "flow": {
     "browser": "ブラウザーフロー",
@@ -640,6 +642,7 @@
   "webAuthnPolicyCreateTimeoutHelp": "ユーザーの公開鍵クレデンシャルの作成に対するタイムアウト値（秒単位）。0に設定すると、このタイムアウト・オプションは適応されません。",
   "webAuthnPolicyAvoidSameAuthenticatorRegisterHelp": "すでに登録されているオーセンティケーターの登録を避けるかどうかを設定します。",
   "webAuthnPolicyAcceptableAaguidsHelp": "登録可能なオーセンティケーターのAAGUIDのリスト。",
+  "webAuthnPolicyExtraOriginsHelp": "非 Web アプリケーションの追加オリジンのリスト。",
   "unlinkUsers": "ユーザーのリンクを解除する",
   "removeImported": "インポートを削除",
   "vendor": "ベンダー",

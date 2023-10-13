@@ -82,7 +82,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
+    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));

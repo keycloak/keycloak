@@ -108,7 +108,7 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
-when an offline token is issued by the server upon successful authentication, the server also creates a user and client sessions. However, due to the nature
+when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
 of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
 
 The following caches are used to store offline sessions:

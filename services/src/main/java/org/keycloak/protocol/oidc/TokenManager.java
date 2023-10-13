@@ -176,8 +176,8 @@ public class TokenManager {
         }
 
         if (oldToken.isIssuedBeforeSessionStart(userSession.getStarted())) {
-            logger.debug("Refresh toked issued before the user session started");
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the user session started");
+            logger.debug("Refresh token issued before the user session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token issued before the user session started");
         }
 
 
@@ -195,8 +195,8 @@ public class TokenManager {
         }
 
         if (oldToken.isIssuedBeforeSessionStart(clientSession.getStarted())) {
-            logger.debug("Refresh toked issued before the client session started");
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the client session started");
+            logger.debug("refresh token issued before the client session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "refresh token issued before the client session started");
         }
 
         if (!client.getClientId().equals(oldToken.getIssuedFor())) {
