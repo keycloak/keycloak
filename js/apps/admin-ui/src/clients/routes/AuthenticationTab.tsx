@@ -25,7 +25,7 @@ export const AuthorizationRoute: AppRouteObject = {
   element: <ClientDetails />,
   breadcrumb: (t) => t("clientSettings"),
   handle: {
-    access: "view-clients",
+    access: "anyone", // Actual access is on the parent tab.  See issue #23294.
   },
 };
 
