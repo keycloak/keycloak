@@ -43,6 +43,7 @@ public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
         entity.setCreateTimeout(model.getCreateTimeout());
         entity.setAvoidSameAuthenticatorRegister(model.isAvoidSameAuthenticatorRegister());
         entity.setAcceptableAaguids(model.getAcceptableAaguids());
+        entity.setExtraOrigins(model.getExtraOrigins());
         return entity;
     }
 
@@ -60,6 +61,8 @@ public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
         model.setAvoidSameAuthenticatorRegister(entity.isAvoidSameAuthenticatorRegister());
         List<String> acceptableAaguids = entity.getAcceptableAaguids();
         model.setAcceptableAaguids(acceptableAaguids == null ? new LinkedList<>() : new LinkedList<>(acceptableAaguids));
+        List<String> extraOrigins = entity.getExtraOrigins();
+        model.setExtraOrigins(extraOrigins == null ? new LinkedList<>() : new LinkedList<>(extraOrigins));
         return model;
     }
 
@@ -75,6 +78,7 @@ public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
         entity.setCreateTimeout(0);
         entity.setAvoidSameAuthenticatorRegister(false);
         entity.setAcceptableAaguids(new LinkedList<>());
+        entity.setExtraOrigins(new LinkedList<>());
         return entity;
     }
 
@@ -107,4 +111,7 @@ public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
 
     List<String> getAcceptableAaguids();
     void setAcceptableAaguids(List<String> acceptableAaguids);
+
+    List<String> getExtraOrigins();
+    void setExtraOrigins(List<String> extraOrigins);
 }
