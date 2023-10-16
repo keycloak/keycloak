@@ -121,7 +121,7 @@ export const ShareTheResource = ({
         <Button
           key="confirm"
           variant="primary"
-          data-testId="done"
+          data-testid="done"
           isDisabled={!isValid}
           type="submit"
           form="share-form"
@@ -147,7 +147,7 @@ export const ShareTheResource = ({
           <InputGroup>
             <KeycloakTextInput
               id="users"
-              data-testId="users"
+              data-testid="users"
               placeholder={t("usernamePlaceholder")}
               validated={
                 errors.usernames
@@ -161,7 +161,7 @@ export const ShareTheResource = ({
             <Button
               key="add-user"
               variant="primary"
-              data-testId="add"
+              data-testid="add"
               onClick={() => append({ value: "" })}
               isDisabled={isDisabled}
             >

@@ -8,7 +8,7 @@ type SharedWithProps = {
 
 export const SharedWith = ({ permissions: p = [] }: SharedWithProps) => (
   <div
-    data-testId={`shared-with-${p.length ? p.map((e) => e.username) : "none"}`}
+    data-testid={`shared-with-${p.length ? p.map((e) => e.username) : "none"}`}
   >
     <Trans i18nKey="resourceSharedWith" count={p.length}>
       <strong>
