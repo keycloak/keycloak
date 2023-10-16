@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type NewClientScopeParams = { realm: string };
@@ -19,5 +19,5 @@ export const NewClientScopeRoute: AppRouteObject = {
 export const toNewClientScope = (
   params: NewClientScopeParams,
 ): Partial<Path> => ({
-  pathname: generateUnencodedPath(NewClientScopeRoute.path, params),
+  pathname: generateEncodedPath(NewClientScopeRoute.path, params),
 });

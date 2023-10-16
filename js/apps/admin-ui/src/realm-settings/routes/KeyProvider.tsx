@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type ProviderType =
@@ -33,5 +33,5 @@ export const KeyProviderFormRoute: AppRouteObject = {
 };
 
 export const toKeyProvider = (params: KeyProviderParams): Partial<Path> => ({
-  pathname: generateUnencodedPath(KeyProviderFormRoute.path, params),
+  pathname: generateEncodedPath(KeyProviderFormRoute.path, params),
 });

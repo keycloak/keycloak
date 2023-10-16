@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type PermissionType = "resource" | "scope";
@@ -36,6 +36,6 @@ export const toNewPermission = (params: NewPermissionParams): Partial<Path> => {
     : NewPermissionRoute.path;
 
   return {
-    pathname: generateUnencodedPath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

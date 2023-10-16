@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type UserFederationKerberosParams = {
@@ -24,5 +24,5 @@ export const UserFederationKerberosRoute: AppRouteObject = {
 export const toUserFederationKerberos = (
   params: UserFederationKerberosParams,
 ): Partial<Path> => ({
-  pathname: generateUnencodedPath(UserFederationKerberosRoute.path, params),
+  pathname: generateEncodedPath(UserFederationKerberosRoute.path, params),
 });

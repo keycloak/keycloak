@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type RealmRolesParams = { realm: string };
@@ -17,5 +17,5 @@ export const RealmRolesRoute: AppRouteObject = {
 };
 
 export const toRealmRoles = (params: RealmRolesParams): Partial<Path> => ({
-  pathname: generateUnencodedPath(RealmRolesRoute.path, params),
+  pathname: generateEncodedPath(RealmRolesRoute.path, params),
 });

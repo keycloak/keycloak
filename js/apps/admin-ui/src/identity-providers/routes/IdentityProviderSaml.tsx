@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderSamlParams = { realm: string };
@@ -19,5 +19,5 @@ export const IdentityProviderSamlRoute: AppRouteObject = {
 export const toIdentityProviderSaml = (
   params: IdentityProviderSamlParams,
 ): Partial<Path> => ({
-  pathname: generateUnencodedPath(IdentityProviderSamlRoute.path, params),
+  pathname: generateEncodedPath(IdentityProviderSamlRoute.path, params),
 });

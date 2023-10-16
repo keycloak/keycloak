@@ -172,17 +172,17 @@ export const addTrailingSlash = (url: string) =>
 
 export const generateId = () => Math.floor(Math.random() * 1000);
 
-type PathParam = { [key: string]: string | null };
+type PathParam = { [key: string]: string };
 
-export function generateUnencodedPath<Path extends string>(
+export function generateEncodedPath<Path extends string>(
   originalPath: Path,
   params: PathParam,
 ): string {
   const encodedParams: PathParam = {};
   Object.entries(params).forEach(
-    ([k, v]) => (encodedParams[k] = encodeURIComponent(v || "")),
+    ([k, v]) => (encodedParams[k] = encodeURIComponent(v)),
   );
 
-  //@ts-ignore TODO: Fix type annotation once https://github.com/remix-run/react-router/pull/10719 is merged.
-  return generatePath(originalPath, encodedParams);
+  //TODO: Fix type once https://github.com/remix-run/react-router/pull/10719 is merged.
+  return generatePath(originalPath, encodedParams as any);
 }

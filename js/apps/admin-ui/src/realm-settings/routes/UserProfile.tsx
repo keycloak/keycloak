@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type UserProfileTab = "attributes" | "attributes-group" | "json-editor";
@@ -22,5 +22,5 @@ export const UserProfileRoute: AppRouteObject = {
 };
 
 export const toUserProfile = (params: UserProfileParams): Partial<Path> => ({
-  pathname: generateUnencodedPath(UserProfileRoute.path, params),
+  pathname: generateEncodedPath(UserProfileRoute.path, params),
 });

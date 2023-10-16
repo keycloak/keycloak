@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generateUnencodedPath } from "../../util";
+import { generateEncodedPath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type UserFederationLdapTab = "settings" | "mappers";
@@ -37,6 +37,6 @@ export const toUserFederationLdap = (
     : UserFederationLdapRoute.path;
 
   return {
-    pathname: generateUnencodedPath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };
