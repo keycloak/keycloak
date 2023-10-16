@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -48,6 +47,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
@@ -76,11 +76,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     public static final String ID = "declarative-user-profile";
     public static final int PROVIDER_PRIORITY = 1;
-    public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
+    public static final String UP_COMPONENT_CONFIG_KEY = "kc.user.profile.config";
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
-    private static final String UP_PIECE_COMPONENT_CONFIG_KEY_BASE = "config-piece-";
-
+    
     private static boolean isDeclarativeConfigurationEnabled;
 
     /**
@@ -254,24 +253,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             return;
         }
 
-        // store new parts
-        List<String> parts = UPConfigUtils.getChunks(configuration, 3800);
-        MultivaluedHashMap<String, String> config = component.getConfig();
-
-        config.putSingle(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, "" + parts.size());
-
-        int i = 0;
-
-        for (String part : parts) {
-            config.putSingle(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + (i++), part);
-        }
+        component.getConfig().putSingle(UP_COMPONENT_CONFIG_KEY, configuration);
 
         realm.updateComponent(component);
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return ProviderConfigurationBuilder.create()
+                .property().name(UP_COMPONENT_CONFIG_KEY)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .build();
     }
 
     @Override
@@ -503,34 +496,14 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         if (model == null)
             return null;
 
-        int count = model.get(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, 0);
-        if (count < 1) {
-            return defaultRawConfig;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            String v = model.get(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + i);
-            if (v != null)
-                sb.append(v);
-        }
-
-        return sb.toString();
+        return model.get(UP_COMPONENT_CONFIG_KEY);
     }
 
     private void removeConfigJsonFromComponentModel(ComponentModel model) {
         if (model == null)
             return;
 
-        int count = model.get(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY, 0);
-        if (count < 1) {
-            return;
-        }
-
-        for (int i = 0; i < count; i++) {
-            model.getConfig().remove(UP_PIECE_COMPONENT_CONFIG_KEY_BASE + i);
-        }
-        model.getConfig().remove(UP_PIECES_COUNT_COMPONENT_CONFIG_KEY);
+        model.getConfig().remove(UP_COMPONENT_CONFIG_KEY);
     }
 
     @Override

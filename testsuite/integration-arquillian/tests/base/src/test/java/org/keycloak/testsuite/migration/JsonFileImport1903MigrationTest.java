@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tests that we can import json file from previous version.  MigrationTest only tests DB.
+ * Tests that we can import json file from previous version. MigrationTest only tests DB.
  */
 public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigrationTest {
 
@@ -51,6 +51,7 @@ public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigra
         testMigrationTo20_x();
         testMigrationTo21_x();
         testMigrationTo22_x();
+        testMigrationTo23_x(true);
     }
 
 }
