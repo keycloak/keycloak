@@ -161,7 +161,7 @@
   "groupsListHeader": "En-tête de la liste des groupes",
   "groupsListColumnsNames": "Nom des colonnes de la liste des groupes",
   "aliasHelp": "Nom de la configuration",
-  "flowTypeHelp": "Quel genre de formulaire est-ce",
+  "flowTypeHelp": "De quel genre de formulaire s'agit-il",
   "createFlowHelp": "Vous pouvez créer un flow de premier niveau au sein de ce formulaire",
   "rolesScope": "S'il n'y a aucun mappage de portée de rôle défini, chaque utilisateur est autorisé à utiliser cette portée client. S'il y a des mappages de portée de rôle, l'utilisateur doit être un membre d'au moins d'un des rôles.",
   "scopeNameHelp": "Nom de la portée du client. Doit être unique dans le domaine. Le nom ne doit pas contenir d'espaces car il est utilisé comme valeur du paramètre de la portée",
