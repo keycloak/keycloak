@@ -95,8 +95,6 @@ public class Profile {
         LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
-
-        // Add new Feature above this line
         ;
 
         private final Type type;
