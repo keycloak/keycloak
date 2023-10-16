@@ -102,7 +102,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
     @Test
     @Override
     public void testEditUsernameAllowed() throws IOException {
-
+        super.testEditUsernameAllowed();
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
         UserRepresentation user = getUser();
