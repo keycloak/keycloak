@@ -163,7 +163,7 @@
   "aliasHelp": "Nom de la configuration",
   "flowTypeHelp": "De quel genre de formulaire s'agit-il",
   "createFlowHelp": "Vous pouvez créer un flow de premier niveau au sein de ce formulaire",
-  "rolesScope": "S'il n'y a aucun mappage de portée de rôle défini, chaque utilisateur est autorisé à utiliser cette portée client. S'il y a des mappages de portée de rôle, l'utilisateur doit être un membre d'au moins d'un des rôles.",
+  "rolesScope": "S'il n'y a aucun mappage de portée de rôle défini, chaque utilisateur est autorisé à utiliser cette portée du client. S'il y a des mappages de portée de rôle, l'utilisateur doit être membre d'au moins l'un des rôles.",
   "scopeNameHelp": "Nom de la portée du client. Doit être unique dans le domaine. Le nom ne doit pas contenir d'espaces car il est utilisé comme valeur du paramètre de la portée",
   "scopeDescriptionHelp": "Description de la portée du client",
   "scopeTypeHelp": "Portés du client, qui seront ajoutées comme portées par défaut à chacun des clients créés",
