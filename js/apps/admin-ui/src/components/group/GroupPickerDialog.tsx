@@ -16,15 +16,14 @@ import {
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { adminClient } from "../../admin-client";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
-import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -32,6 +31,7 @@ export type GroupPickerDialogProps = {
   filterGroups?: GroupRepresentation[];
   text: { title: string; ok: string };
   canBrowse?: boolean;
+  isMove?: boolean;
   onConfirm: (groups: GroupRepresentation[] | undefined) => void;
   onClose: () => void;
 };
@@ -46,6 +46,7 @@ export const GroupPickerDialog = ({
   filterGroups,
   text,
   canBrowse = true,
+  isMove = false,
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
@@ -257,7 +258,7 @@ export const GroupPickerDialog = ({
           <ListEmptyState
             hasIcon={false}
             message={t("moveGroupEmpty")}
-            instructions={t("moveGroupEmptyInstructions")}
+            instructions={isMove ? t("moveGroupEmptyInstructions") : undefined}
           />
         )}
         {groups.length === 0 && isSearching && (
@@ -296,9 +297,6 @@ const GroupRow = ({
 }: GroupRowProps) => {
   const { t } = useTranslation();
 
-  const hasSubgroups = (group: GroupRepresentation) =>
-    group.subGroups?.length !== 0;
-
   return (
     <DataListItem
       aria-labelledby={group.name}
@@ -307,18 +305,15 @@ const GroupRow = ({
       onClick={(e) => {
         if (type === "selectOne") {
           onSelect(group.id!);
-        } else if (
-          hasSubgroups(group) &&
-          (e.target as HTMLInputElement).type !== "checkbox"
-        ) {
+        } else if ((e.target as HTMLInputElement).type !== "checkbox") {
           onSelect(group.id!);
           setIsSearching(false);
         }
       }}
     >
       <DataListItemRow
-        className={`join-group-dialog-row-${
-          isRowDisabled(group) ? "m-disabled" : ""
+        className={`join-group-dialog-row${
+          isRowDisabled(group) ? "-m-disabled" : ""
         }`}
         data-testid={group.name}
       >
@@ -364,7 +359,7 @@ const GroupRow = ({
           aria-label={t("groupName")}
           isPlainButtonAction
         >
-          {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
+          {(canBrowse || type === "selectOne") && (
             <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>
