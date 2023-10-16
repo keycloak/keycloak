@@ -1,7 +1,18 @@
+<#import "/templates/profile.adoc" as profile>
+
 == Start Keycloak
 
 . From a terminal, open the keycloak-{version} directory.
 . Enter the following command:
+<@profile.ifProduct> 
++
+[source,bash,subs="attributes+"]
+----
+bin/kc.sh start-dev
+----
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
 * On Linux, run:
 +
 [source,bash,subs="attributes+"]
@@ -15,3 +26,7 @@ bin/kc.sh start-dev
 ----
 bin\kc.bat start-dev
 ----
+</@profile.ifCommunity>
+
+Using the `start-dev` option, you are starting Keycloak development mode. In this mode, you can try out Keycloak for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new Keycloak theme.
+
