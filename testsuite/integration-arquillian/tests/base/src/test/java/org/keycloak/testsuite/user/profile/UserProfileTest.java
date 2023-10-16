@@ -1156,7 +1156,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
 
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         try {
             profile.validate();
             fail("Should fail validation");
@@ -1212,7 +1212,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         profile.validate();
 
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         profile.validate();
 
         // fail on User API
@@ -1451,9 +1451,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile.validate();
 
         // no fail on auth flow scopes when scope is not required
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.REGISTRATION_USER_CREATION, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         profile.validate();
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
         profile.validate();
@@ -1478,7 +1476,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
         try {
-            profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+            profile = provider.create(UserProfileContext.REGISTRATION, attributes);
             profile.validate();
             fail("Should fail validation");
         } catch (ValidationException ve) {

@@ -109,14 +109,6 @@ public class DefaultAuthenticationFlows {
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(registrationFormFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("registration-profile-action");
-        execution.setPriority(40);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(registrationFormFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("registration-password-action");
         execution.setPriority(50);
         execution.setAuthenticatorFlow(false);
