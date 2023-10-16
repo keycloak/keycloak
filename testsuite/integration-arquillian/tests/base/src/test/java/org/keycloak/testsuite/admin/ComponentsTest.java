@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.keycloak.admin.client.resource.ComponentResource;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -32,16 +36,22 @@ import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.hamcrest.Matchers;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -321,6 +331,23 @@ public class ComponentsTest extends AbstractAdminTest {
 
         ComponentRepresentation returned4 = components.query().stream().filter(c -> c.getId().equals(returned2.getId())).findFirst().get();
         assertThat(returned4.getConfig().get("secret"), contains("${vault.value}"));
+    }
+
+    @Test
+    public void testCreateLongValue() {
+        ComponentRepresentation rep = createComponentRepresentation("mycomponent");
+
+        final String randomLongString = RandomStringUtils.random(5000, true, true);
+
+        rep.getConfig().putSingle("required", "Required");
+        rep.getConfig().putSingle("val1", randomLongString);
+
+        String id = createComponent(rep);
+        ComponentRepresentation returned = components.component(id).toRepresentation();
+
+        assertThat(returned.getConfig().size(), equalTo(2));
+        assertNotNull(returned.getConfig().getFirst("val1"));
+        assertThat(returned.getConfig().getFirst("val1"), equalTo(randomLongString));
     }
 
     @Test

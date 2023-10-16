@@ -68,5 +68,6 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo20_x();
         testMigrationTo21_x();
         testMigrationTo22_x();
+        testMigrationTo23_x(true);
     }
 }
