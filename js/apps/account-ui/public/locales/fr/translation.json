@@ -164,7 +164,7 @@
   "flowTypeHelp": "De quel genre de formulaire s'agit-il",
   "createFlowHelp": "Vous pouvez créer un flow de premier niveau au sein de ce formulaire",
   "rolesScope": "S'il n'y a aucun mappage de portée de rôle défini, chaque utilisateur est autorisé à utiliser cette portée du client. S'il y a des mappages de portée de rôle, l'utilisateur doit être membre d'au moins l'un des rôles.",
-  "scopeNameHelp": "Nom de la portée du client. Doit être unique dans le domaine. Le nom ne doit pas contenir d'espaces car il est utilisé comme valeur du paramètre de la portée",
+  "scopeNameHelp": "Nom de la portée du client. Doit être unique dans le domaine. Le nom ne doit pas contenir d'espace car il est utilisé comme valeur du paramètre de la portée",
   "scopeDescriptionHelp": "Description de la portée du client",
   "scopeTypeHelp": "Portées du client, qui seront ajoutées comme portées par défaut à chacun des clients créés",
   "clientDescriptionHelp": "Spécifie la description du client. Par exemple, « Mon client pour TimeSheet ». Prend également en charge les clés pour les valeurs localisées. Par exemple : ${my_client_description}",
