@@ -68,9 +68,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                         "This can only be used on the internet and must be configured after you add it.");
         addProviderInfo(expected, "registration-password-action", "Password Validation",
                 "Validates that password matches password confirmation field.  It also will store password in user's credential store.");
-        addProviderInfo(expected, "registration-user-creation", "Registration User Creation",
-                "This action must always be first! Validates the username of the user in validation phase.  " +
-                        "In success phase, this will create the user in the database.");
+        addProviderInfo(expected, "registration-user-creation", "Registration User Profile Creation",
+                "This action must always be first! Validates the username and user profile of the user in validation phase.  " +
+                        "In success phase, this will create the user in the database including his user profile.");
         addProviderInfo(expected, "registration-terms-and-conditions", "Terms and conditions",
                 "Asks the user to accept terms and conditions before submitting its registration form.");
 

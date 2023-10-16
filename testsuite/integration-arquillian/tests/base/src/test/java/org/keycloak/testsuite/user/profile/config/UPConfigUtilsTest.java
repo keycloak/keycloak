@@ -42,8 +42,7 @@ public class UPConfigUtilsTest {
         Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.USER_API));
 
         Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.IDP_REVIEW));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_PROFILE));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_USER_CREATION));
+        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION));
         Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.UPDATE_PROFILE));
     }
 
@@ -63,14 +62,14 @@ public class UPConfigUtilsTest {
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
+        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION, roles));
 
         // both in roles
         roles.add(ROLE_ADMIN);
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
+        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION, roles));
     }
 
     @Test

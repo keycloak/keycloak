@@ -27,7 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -160,7 +159,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         if (!isEnabled(realm)) {
             if(!context.equals(UserProfileContext.USER_API)
-                    && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)
                     && !context.equals(UserProfileContext.UPDATE_EMAIL)) {
                 decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
@@ -306,10 +304,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
 
-        // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
         // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
         if (parsedConfig == null
-                || context == UserProfileContext.REGISTRATION_USER_CREATION
                 || context == UserProfileContext.UPDATE_EMAIL
         ) {
             return decoratedMetadata;
