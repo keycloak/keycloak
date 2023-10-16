@@ -35,10 +35,11 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
 
   if (!component) return null;
 
+  if (!access.hasAccess("view-realm")) return <span>{component.name}</span>;
+
   return (
     <Button
       variant="link"
-      isDisabled={!access.hasAccess("view-realm")}
       component={(props) => (
         <Link
           {...props}
