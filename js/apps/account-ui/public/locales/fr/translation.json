@@ -169,6 +169,6 @@
   "scopeTypeHelp": "Portées du client, qui seront ajoutées comme portées par défaut à chacun des clients créés",
   "clientDescriptionHelp": "Spécifie la description du client. Par exemple, « Mon client pour TimeSheet ». Prend également en charge les clés pour les valeurs localisées. Par exemple : ${my_client_description}",
   "clientTypeHelp": "Le type de cette ressource. Il peut être utilisé pour grouper ensemble différentes instances de ressources avec le même type.",
-  "scopesHelp": "Les portées associées avec cette ressource."
+  "scopesHelp": "Les portées associées à cette ressource."
 }
 
