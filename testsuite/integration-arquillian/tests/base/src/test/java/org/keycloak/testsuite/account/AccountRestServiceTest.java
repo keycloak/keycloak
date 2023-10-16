@@ -147,8 +147,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user = getUser();
             if (isDeclarativeUserProfile()) {
                 assertNotNull(user.getUserProfileMetadata());
-                // username is read-only and is the same as email, but email is writable
-                assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                // username is read-only, not required, and is the same as email
+                // but email is writable
+                assertUserProfileAttributeMetadata(user, "username", "${username}", false, true);
                 assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
             }
             user.setUsername("should-be-the-email");
@@ -164,7 +165,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             if (isDeclarativeUserProfile()) {
                 assertNotNull(user.getUserProfileMetadata());
                 // username is read-only and is the same as email, but email is read-only
-                assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
+                assertUserProfileAttributeMetadata(user, "username", "${username}", false, true);
                 assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
             }
             user.setUsername("should-be-the-email");
@@ -189,8 +190,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user = getUser();
             user.setEmail("should-not-change@keycloak.org");
             user = updateAndGet(user);
-            assertEquals("different-than-email", user.getUsername());
             assertEquals("user@keycloak.org", user.getEmail());
+            assertEquals(user.getEmail(), user.getUsername());
         } finally {
             realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realmRep.setEditUsernameAllowed(editUsernameAllowed);
