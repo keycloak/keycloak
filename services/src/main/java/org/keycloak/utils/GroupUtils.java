@@ -63,6 +63,15 @@ public class GroupUtils {
         return groupIdToGroups.values().stream().sorted(Comparator.comparing(GroupRepresentation::getName));
     }
 
+    /**
+     * This method's purpose is to look up the subgroup count of a Group and populate it on the representation. This has been kept separate from
+     * {@link #toRepresentation} in order to keep database lookups separate from a function that aims to only convert objects
+     * A way of cohesively ensuring that a GroupRepresentation always has a group count should be considered
+     * @param realm
+     * @param session
+     * @param representation
+     * @return
+     */
     public static GroupRepresentation populateSubGroupCount(RealmModel realm, KeycloakSession session, GroupRepresentation representation) {
         representation.setSubGroupCount(session.groups().getSubGroupsCount(realm, representation.getId()));
         return representation;

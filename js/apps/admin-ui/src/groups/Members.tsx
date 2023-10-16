@@ -31,6 +31,7 @@ import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 
 type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
@@ -41,7 +42,7 @@ const MemberOfRenderer = (member: MembersOf) => {
     <>
       {member.membership.map((group, index) => (
         <>
-          <GroupPath key={group.id} group={group} />
+          <GroupPath key={group.id + "-" + member.id} group={group} />
           {member.membership[index + 1] ? ", " : ""}
         </>
       ))}
@@ -87,13 +88,16 @@ export const Members = () => {
   const getMembership = async (id: string) =>
     await adminClient.users.listGroups({ id: id! });
 
-  const getSubGroups = (groups: GroupRepresentation[]) => {
-    let subGroups: GroupRepresentation[] = [];
-    for (const group of groups!) {
-      subGroups.push(group);
-      const subs = getSubGroups(group.subGroups!);
-      subGroups = subGroups.concat(subs);
-    }
+  // this queries the subgroups using the new search paradigm but doesn't
+  // account for pagination and therefore isn't going to scale well
+  const getSubGroups = async (groupId: string, count: number) => {
+    const params: Record<string, string> = {
+      first: "0",
+      max: count.toString(),
+    };
+    const subGroups: GroupRepresentation[] = await fetchAdminUI<
+      GroupRepresentation[]
+    >(`groups/${id}/children`, { ...params });
     return subGroups;
   };
 
@@ -104,8 +108,11 @@ export const Members = () => {
       max,
     });
 
-    if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup?.subGroups || []);
+    if (includeSubGroup && currentGroup?.subGroupCount && currentGroup.id) {
+      const subGroups = await getSubGroups(
+        currentGroup.id,
+        currentGroup.subGroupCount,
+      );
       for (const group of subGroups) {
         members = members.concat(
           await adminClient.groups.listMembers({ id: group.id! }),

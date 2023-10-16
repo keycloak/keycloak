@@ -154,8 +154,8 @@ public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTes
 
         // Verify same child groups on both nodes
         GroupRepresentation parentGroupOnOtherNode = readEntityOnCurrentFailNode(parentGroup);
-        assertNames(parentGroup.getSubGroups(), group.getName(), "childGroup2");
-        assertNames(parentGroupOnOtherNode.getSubGroups(), group.getName(), "childGroup2");
+        assertNames(entityResourceOnCurrentFailNode(parentGroup).getSubGroups(0, 20, true), group.getName(), "childGroup2");
+        assertNames(entityResourceOnCurrentFailNode(parentGroupOnOtherNode).getSubGroups(0, 20, true), group.getName(), "childGroup2");
 
         // Remove childGroup2
         deleteEntityOnCurrentFailNode(childGroup2);

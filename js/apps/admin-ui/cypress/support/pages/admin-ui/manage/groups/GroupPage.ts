@@ -42,10 +42,21 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
-  protected search(searchField: string, searchValue: string, wait: boolean) {
+  protected search(
+    searchField: string,
+    searchValue: string,
+    wait: boolean,
+    exact: boolean = true,
+  ) {
     if (wait) {
       const searchUrl = `/admin/realms/master/**/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
+    }
+
+    if (exact) {
+      cy.get("[data-testid='exact-search']").check();
+    } else {
+      cy.get("[data-testid='exact-search']").uncheck();
     }
 
     cy.get(searchField + " input").clear();
@@ -145,7 +156,11 @@ export default class GroupPage extends PageObject {
   }
 
   public assertNoSearchResultsMessageExist(exist: boolean) {
-    super.assertEmptyStateExist(exist);
+    if (!exist) {
+      cy.get("keycloak_groups_treeview").should("exist").should("be.visible");
+    } else {
+      cy.get("keycloak_groups_treeview").should("not.exist");
+    }
     return this;
   }
 

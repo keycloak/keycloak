@@ -101,7 +101,7 @@ public class GroupResource {
 
         rep.setAccess(auth.groups().getAccess(group));
 
-        return rep;
+        return GroupUtils.populateSubGroupCount(realm, session, rep);
     }
 
     /**
