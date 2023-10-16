@@ -138,7 +138,7 @@ export const ShareTheResource = ({
           label={t("shareUser")}
           type="string"
           helperTextInvalid={errors.usernames?.message}
-          fielddata-testId="users"
+          fieldId="users"
           isRequired
           validated={
             errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
@@ -182,7 +182,7 @@ export const ShareTheResource = ({
           )}
         </FormGroup>
         <FormProvider {...form}>
-          <FormGroup label="" fielddata-testId="permissions-selected">
+          <FormGroup label="" fieldId="permissions-selected">
             <SelectControl
               name="permissions"
               variant="typeaheadmulti"

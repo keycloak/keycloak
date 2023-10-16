@@ -18,14 +18,14 @@ const Resources = () => {
         unmountOnExit
       >
         <Tab
-          data-testId="myResources"
+          data-testid="myResources"
           eventKey={0}
           title={<TabTitleText>{t("myResources")}</TabTitleText>}
         >
           <ResourcesTab />
         </Tab>
         <Tab
-          data-testId="sharedWithMe"
+          data-testid="sharedWithMe"
           eventKey={1}
           title={<TabTitleText>{t("sharedWithMe")}</TabTitleText>}
         >
