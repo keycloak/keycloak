@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { generateEncodedPath } from "../../util";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { Path } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
 
