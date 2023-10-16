@@ -90,15 +90,27 @@ export const Members = () => {
 
   // this queries the subgroups using the new search paradigm but doesn't
   // account for pagination and therefore isn't going to scale well
-  const getSubGroups = async (groupId: string, count: number) => {
-    const params: Record<string, string> = {
-      first: "0",
-      max: count.toString(),
-    };
-    const subGroups: GroupRepresentation[] = await fetchAdminUI<
-      GroupRepresentation[]
-    >(`groups/${id}/children`, { ...params });
-    return subGroups;
+  const getSubGroups = async (groupId: string, count: number = 0) => {
+    let nestedGroups: GroupRepresentation[] = [];
+    if (!count) {
+      return nestedGroups;
+    } else {
+      const params: Record<string, string> = {
+        first: "0",
+        max: count.toString(),
+      };
+      const subGroups: GroupRepresentation[] = await fetchAdminUI<
+        GroupRepresentation[]
+      >(`groups/${groupId}/children`, { ...params });
+      nestedGroups = nestedGroups.concat(subGroups);
+      for (const g of subGroups) {
+        if (g.id) {
+          const additionalGroups = await getSubGroups(g.id, g.subGroupCount);
+          nestedGroups = nestedGroups.concat(additionalGroups);
+        }
+      }
+      return nestedGroups;
+    }
   };
 
   const loader = async (first?: number, max?: number) => {
