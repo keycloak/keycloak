@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type NewLdapUserFederationParams = { realm: string };
@@ -22,5 +22,5 @@ export const NewLdapUserFederationRoute: AppRouteObject = {
 export const toNewLdapUserFederation = (
   params: NewLdapUserFederationParams,
 ): Partial<Path> => ({
-  pathname: generatePath(NewLdapUserFederationRoute.path, params),
+  pathname: generateEncodedPath(NewLdapUserFederationRoute.path, params),
 });
