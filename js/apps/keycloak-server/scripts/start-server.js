@@ -18,7 +18,7 @@ const LOCAL_DIST_NAME = "keycloak-999.0.0-SNAPSHOT.tar.gz";
 const SCRIPT_EXTENSION = process.platform === "win32" ? ".bat" : ".sh";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
-const AUTH_DELAY = 5000;
+const AUTH_DELAY = 10000;
 const AUTH_RETRY_LIMIT = 3;
 
 const options = {
@@ -30,9 +30,7 @@ const options = {
 await startServer();
 
 async function startServer() {
-  let { values: scriptArgs, args: keycloakArgs } = handleArgs(
-    process.argv.slice(2),
-  );
+  let { scriptArgs, keycloakArgs } = handleArgs(process.argv.slice(2));
 
   await downloadServer(scriptArgs.local);
 
@@ -70,7 +68,7 @@ function handleArgs(args) {
   });
   // we need to remove the args that belong to the script so that we can pass the rest through to keycloak
   tokens
-    .filter((token) => options.hasOwn(token.name))
+    .filter((token) => Object.hasOwn(options, token.name))
     .forEach((token) => {
       let tokenRaw = token.rawName;
       if (token.value) {
@@ -78,7 +76,7 @@ function handleArgs(args) {
       }
       args.splice(args.indexOf(tokenRaw), 1);
     });
-  return { values, args };
+  return { scriptArgs: values, keycloakArgs: args };
 }
 
 async function downloadServer(local) {
@@ -89,10 +87,12 @@ async function downloadServer(local) {
     return;
   }
 
-  var assetStream;
+  let assetStream;
   if (local) {
-    console.info("Looking for " + LOCAL_DIST_NAME + " at " + LOCAL_QUARKUS);
-    assetStream = fs.createReadStream(LOCAL_QUARKUS + "/" + LOCAL_DIST_NAME);
+    console.info(`Looking for ${LOCAL_DIST_NAME} at ${LOCAL_QUARKUS}`);
+    assetStream = fs.createReadStream(
+      path.join(LOCAL_QUARKUS, LOCAL_DIST_NAME),
+    );
   } else {
     console.info("Downloading and extracting server…");
     const nightlyAsset = await getNightlyAsset();
