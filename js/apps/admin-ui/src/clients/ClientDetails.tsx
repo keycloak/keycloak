@@ -586,14 +586,16 @@ export default function ClientDetails() {
                   >
                     <AuthorizationPermissions clientId={clientId} />
                   </Tab>
-                  <Tab
-                    id="evaluate"
-                    data-testid="authorizationEvaluate"
-                    title={<TabTitleText>{t("evaluate")}</TabTitleText>}
-                    {...authorizationEvaluateTab}
-                  >
-                    <AuthorizationEvaluate client={client} save={save} />
-                  </Tab>
+                  {hasViewUsers && (
+                    <Tab
+                      id="evaluate"
+                      data-testid="authorizationEvaluate"
+                      title={<TabTitleText>{t("evaluate")}</TabTitleText>}
+                      {...authorizationEvaluateTab}
+                    >
+                      <AuthorizationEvaluate client={client} save={save} />
+                    </Tab>
+                  )}
                   <Tab
                     id="export"
                     data-testid="authorizationExport"
