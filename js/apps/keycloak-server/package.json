@@ -4,8 +4,8 @@
   "scripts": {
     "start": "wireit",
     "local": "wireit",
-    "clear-data": "rm -r ./server/data",
-    "clear-server": "rm -r ./server"
+    "delete-data": "rm -r ./server/data",
+    "delete-server": "rm -r ./server"
   },
   "wireit": {
     "start": {
