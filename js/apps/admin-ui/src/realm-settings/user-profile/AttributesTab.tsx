@@ -134,15 +134,19 @@ export const AttributesTab = () => {
                 >
                   {t("allGroups")}
                 </SelectOption>,
-                ...config
-                  .attributes!.filter((attr) => !!attr.group)
-                  .map((attr) => (
-                    <SelectOption
-                      key={attr.group}
-                      data-testid={`${attr.group}-option`}
-                      value={attr.group}
-                    />
-                  )),
+                ...[
+                  ...new Set(
+                    config
+                      .attributes!.filter((attr) => !!attr.group)
+                      .map((attr) => attr.group),
+                  ),
+                ].map((group) => (
+                  <SelectOption
+                    key={group}
+                    data-testid={`${group}-option`}
+                    value={group}
+                  />
+                )),
               ]}
             </Select>
           </ToolbarItem>
