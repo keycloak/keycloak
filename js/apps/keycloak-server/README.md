@@ -24,7 +24,7 @@ If you want to run with a local Quarkus distribution of Keycloak for development
 pnpm run start -- --local
 ```
 
-**All other arguments will be passed through to the underlying keycloak script**
+**All other arguments will be passed through to the underlying Keycloak server.**
 
 In order for the development version of the Admin UI to work you will have to import a custom client to the Keycloak server. This is only required during development as the development server for the Admin UI runs on a different port. This client will be imported automatically under the name `security-admin-console-v2` when the Keycloak server starts.
 
