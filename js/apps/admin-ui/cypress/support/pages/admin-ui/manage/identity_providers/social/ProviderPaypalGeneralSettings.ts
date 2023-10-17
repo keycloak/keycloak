@@ -1,15 +1,15 @@
 import ProviderBaseGeneralSettingsPage from "../ProviderBaseGeneralSettingsPage";
 
 export default class ProviderPaypalGeneralSettings extends ProviderBaseGeneralSettingsPage {
-  private targetSandboxSwitch = "sandbox";
+  #targetSandboxSwitch = "sandbox";
 
   public clickTargetSandboxSwitch() {
-    cy.findByTestId(this.targetSandboxSwitch).parent().click();
+    cy.findByTestId(this.#targetSandboxSwitch).parent().click();
     return this;
   }
 
   public assertTargetSandboxSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.findByTestId(this.targetSandboxSwitch), isOn);
+    super.assertSwitchStateOn(cy.findByTestId(this.#targetSandboxSwitch), isOn);
     return this;
   }
 
@@ -21,7 +21,7 @@ export default class ProviderPaypalGeneralSettings extends ProviderBaseGeneralSe
 
   public assertFilledDataEqual(idpName: string) {
     this.assertCommonFilledDataEqual(idpName);
-    this.assertSwitchStateOn(cy.findByTestId(this.targetSandboxSwitch));
+    this.assertSwitchStateOn(cy.findByTestId(this.#targetSandboxSwitch));
     return this;
   }
 }

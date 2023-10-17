@@ -1,38 +1,38 @@
 import CommonElements from "../CommonElements";
 
 export default class SidebarPage extends CommonElements {
-  private realmsDrpDwn = "realmSelectorToggle";
-  private createRealmBtn = "add-realm";
+  #realmsDrpDwn = "realmSelectorToggle";
+  #createRealmBtn = "add-realm";
 
-  private clientsBtn = "#nav-item-clients";
-  private clientScopesBtn = "#nav-item-client-scopes";
-  private realmRolesBtn = "#nav-item-roles";
-  private usersBtn = "#nav-item-users";
-  private groupsBtn = "#nav-item-groups";
-  private sessionsBtn = "#nav-item-sessions";
-  private eventsBtn = "#nav-item-events";
+  #clientsBtn = "#nav-item-clients";
+  #clientScopesBtn = "#nav-item-client-scopes";
+  #realmRolesBtn = "#nav-item-roles";
+  #usersBtn = "#nav-item-users";
+  #groupsBtn = "#nav-item-groups";
+  #sessionsBtn = "#nav-item-sessions";
+  #eventsBtn = "#nav-item-events";
 
-  private realmSettingsBtn = "#nav-item-realm-settings";
-  private authenticationBtn = "#nav-item-authentication";
-  private identityProvidersBtn = "#nav-item-identity-providers";
-  private userFederationBtn = "#nav-item-user-federation";
+  #realmSettingsBtn = "#nav-item-realm-settings";
+  #authenticationBtn = "#nav-item-authentication";
+  #identityProvidersBtn = "#nav-item-identity-providers";
+  #userFederationBtn = "#nav-item-user-federation";
 
   showCurrentRealms(length: number) {
-    cy.findByTestId(this.realmsDrpDwn).click();
+    cy.findByTestId(this.#realmsDrpDwn).click();
     cy.get('[data-testid="realmSelector"] li').should(
       "have.length",
       length + 1, // account for button
     );
-    cy.findByTestId(this.realmsDrpDwn).click({ force: true });
+    cy.findByTestId(this.#realmsDrpDwn).click({ force: true });
   }
 
   getCurrentRealm() {
-    return cy.findByTestId(this.realmsDrpDwn).scrollIntoView().invoke("text");
+    return cy.findByTestId(this.#realmsDrpDwn).scrollIntoView().invoke("text");
   }
 
   goToRealm(realmName: string) {
     this.waitForPageLoad();
-    cy.findByTestId(this.realmsDrpDwn)
+    cy.findByTestId(this.#realmsDrpDwn)
       .click()
       .parent()
       .contains(realmName)
@@ -44,8 +44,8 @@ export default class SidebarPage extends CommonElements {
 
   goToCreateRealm() {
     this.waitForPageLoad();
-    cy.findByTestId(this.realmsDrpDwn).click();
-    cy.findByTestId(this.createRealmBtn).click();
+    cy.findByTestId(this.#realmsDrpDwn).click();
+    cy.findByTestId(this.#createRealmBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -53,7 +53,7 @@ export default class SidebarPage extends CommonElements {
 
   goToClients() {
     this.waitForPageLoad();
-    cy.get(this.clientsBtn).click({ force: true });
+    cy.get(this.#clientsBtn).click({ force: true });
     this.waitForPageLoad();
 
     return this;
@@ -61,14 +61,14 @@ export default class SidebarPage extends CommonElements {
 
   goToClientScopes() {
     this.waitForPageLoad();
-    cy.get(this.clientScopesBtn).click();
+    cy.get(this.#clientScopesBtn).click();
     this.waitForPageLoad();
 
     return this;
   }
 
   goToRealmRoles() {
-    cy.get(this.realmRolesBtn).click();
+    cy.get(this.#realmRolesBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -76,7 +76,7 @@ export default class SidebarPage extends CommonElements {
 
   goToUsers() {
     this.waitForPageLoad();
-    cy.get(this.usersBtn).click();
+    cy.get(this.#usersBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -84,7 +84,7 @@ export default class SidebarPage extends CommonElements {
 
   goToGroups() {
     this.waitForPageLoad();
-    cy.get(this.groupsBtn).click();
+    cy.get(this.#groupsBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -92,7 +92,7 @@ export default class SidebarPage extends CommonElements {
 
   goToSessions() {
     this.waitForPageLoad();
-    cy.get(this.sessionsBtn).click();
+    cy.get(this.#sessionsBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -100,7 +100,7 @@ export default class SidebarPage extends CommonElements {
 
   goToEvents() {
     this.waitForPageLoad();
-    cy.get(this.eventsBtn).click();
+    cy.get(this.#eventsBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -108,7 +108,7 @@ export default class SidebarPage extends CommonElements {
 
   goToRealmSettings() {
     this.waitForPageLoad();
-    cy.get(this.realmSettingsBtn).click({ force: true });
+    cy.get(this.#realmSettingsBtn).click({ force: true });
     this.waitForPageLoad();
 
     return this;
@@ -116,7 +116,7 @@ export default class SidebarPage extends CommonElements {
 
   goToAuthentication() {
     this.waitForPageLoad();
-    cy.get(this.authenticationBtn).click();
+    cy.get(this.#authenticationBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -124,7 +124,7 @@ export default class SidebarPage extends CommonElements {
 
   goToIdentityProviders() {
     this.waitForPageLoad();
-    cy.get(this.identityProvidersBtn).click();
+    cy.get(this.#identityProvidersBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -132,7 +132,7 @@ export default class SidebarPage extends CommonElements {
 
   goToUserFederation() {
     this.waitForPageLoad();
-    cy.get(this.userFederationBtn).click();
+    cy.get(this.#userFederationBtn).click();
     this.waitForPageLoad();
 
     return this;
@@ -144,6 +144,6 @@ export default class SidebarPage extends CommonElements {
   }
 
   checkRealmSettingsLinkContainsText(expectedText: string) {
-    cy.get(this.realmSettingsBtn).should("contain", expectedText);
+    cy.get(this.#realmSettingsBtn).should("contain", expectedText);
   }
 }

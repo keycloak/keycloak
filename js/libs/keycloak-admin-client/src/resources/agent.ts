@@ -41,10 +41,10 @@ export interface RequestArgs {
 }
 
 export class Agent {
-  private client: KeycloakAdminClient;
-  private basePath: string;
-  private getBaseParams?: () => Record<string, any>;
-  private getBaseUrl?: () => string;
+  #client: KeycloakAdminClient;
+  #basePath: string;
+  #getBaseParams?: () => Record<string, any>;
+  #getBaseUrl?: () => string;
 
   constructor({
     client,
@@ -57,10 +57,10 @@ export class Agent {
     getUrlParams?: () => Record<string, any>;
     getBaseUrl?: () => string;
   }) {
-    this.client = client;
-    this.getBaseParams = getUrlParams;
-    this.getBaseUrl = getBaseUrl;
-    this.basePath = path;
+    this.#client = client;
+    this.#getBaseParams = getUrlParams;
+    this.#getBaseUrl = getBaseUrl;
+    this.#basePath = path;
   }
 
   public request({
@@ -79,7 +79,7 @@ export class Agent {
       payload: any = {},
       options?: Pick<RequestArgs, "catchNotFound">,
     ) => {
-      const baseParams = this.getBaseParams?.() ?? {};
+      const baseParams = this.#getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
       const queryParams =
@@ -102,11 +102,11 @@ export class Agent {
 
       // Transform keys of both payload and queryParams
       if (keyTransform) {
-        this.transformKey(payload, keyTransform);
-        this.transformKey(queryParams, keyTransform);
+        this.#transformKey(payload, keyTransform);
+        this.#transformKey(queryParams, keyTransform);
       }
 
-      return this.requestWithParams({
+      return this.#requestWithParams({
         method,
         path,
         payload,
@@ -114,7 +114,7 @@ export class Agent {
         queryParams,
         // catchNotFound precedence: global > local > default
         catchNotFound,
-        ...(this.client.getGlobalRequestArgOptions() ?? options ?? {}),
+        ...(this.#client.getGlobalRequestArgOptions() ?? options ?? {}),
         payloadKey,
         returnResourceIdInLocationHeader,
         headers,
@@ -134,7 +134,7 @@ export class Agent {
     headers,
   }: RequestArgs) {
     return async (query: any = {}, payload: any = {}) => {
-      const baseParams = this.getBaseParams?.() ?? {};
+      const baseParams = this.#getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
       const queryParams = queryParamKeys
@@ -150,10 +150,10 @@ export class Agent {
 
       // Transform keys of queryParams
       if (keyTransform) {
-        this.transformKey(queryParams, keyTransform);
+        this.#transformKey(queryParams, keyTransform);
       }
 
-      return this.requestWithParams({
+      return this.#requestWithParams({
         method,
         path,
         payload,
@@ -167,7 +167,7 @@ export class Agent {
     };
   }
 
-  private async requestWithParams({
+  async #requestWithParams({
     method,
     path,
     payload,
@@ -188,16 +188,16 @@ export class Agent {
     returnResourceIdInLocationHeader?: { field: string };
     headers?: HeadersInit;
   }) {
-    const newPath = urlJoin(this.basePath, path);
+    const newPath = urlJoin(this.#basePath, path);
 
     // Parse template and replace with values from urlParams
     const pathTemplate = parseTemplate(newPath);
     const parsedPath = pathTemplate.expand(urlParams);
-    const url = new URL(`${this.getBaseUrl?.() ?? ""}${parsedPath}`);
-    const requestOptions = { ...this.client.getRequestOptions() };
+    const url = new URL(`${this.#getBaseUrl?.() ?? ""}${parsedPath}`);
+    const requestOptions = { ...this.#client.getRequestOptions() };
     const requestHeaders = new Headers([
       ...new Headers(requestOptions.headers).entries(),
-      ["authorization", `Bearer ${await this.client.getAccessToken()}`],
+      ["authorization", `Bearer ${await this.#client.getAccessToken()}`],
       ["accept", "application/json, text/plain, */*"],
       ...new Headers(headers).entries(),
     ]);
@@ -285,7 +285,7 @@ export class Agent {
     }
   }
 
-  private transformKey(payload: any, keyMapping: Record<string, string>) {
+  #transformKey(payload: any, keyMapping: Record<string, string>) {
     if (!payload) {
       return;
     }
