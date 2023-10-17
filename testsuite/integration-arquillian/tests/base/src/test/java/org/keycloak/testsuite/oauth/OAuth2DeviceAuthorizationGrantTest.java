@@ -27,14 +27,17 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -44,6 +47,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -990,6 +995,32 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             clientRepresentation.setBearerOnly(false);
             client.update(clientRepresentation);
         }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
+    public void ensureDeviceFlowConfigNotPresentWhenDeviceFlowEnabled() {
+
+        OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
+        Assert.assertNotNull("deviceAuthorizationEndpoint should be not null", oidcConfigRep.getDeviceAuthorizationEndpoint());
+        Assert.assertNotNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be not null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
+    }
+
+    @Test
+    @DisableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
+    public void ensureDeviceFlowConfigNotPresentWhenDeviceFlowDisabled() throws Exception {
+
+        OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
+        Assert.assertNull("deviceAuthorizationEndpoint should be null", oidcConfigRep.getDeviceAuthorizationEndpoint());
+        Assert.assertNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        OAuthClient.DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
+        Assert.assertEquals(404, response.getStatusCode());
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, "dummy");
+        Assert.assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, tokenResponse.getError());
     }
 
     private void openVerificationPage(String verificationUri) {
