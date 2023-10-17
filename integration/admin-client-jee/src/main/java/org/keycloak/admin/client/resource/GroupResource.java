@@ -17,7 +17,6 @@
 
 package org.keycloak.admin.client.resource;
 
-import java.util.stream.Stream;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -97,7 +96,7 @@ public interface GroupResource {
     @Path("children")
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("full") Boolean full);
+    List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent

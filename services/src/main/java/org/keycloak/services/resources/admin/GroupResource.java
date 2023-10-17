@@ -161,7 +161,7 @@ public class GroupResource {
     @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
     public Stream<GroupRepresentation> getSubGroups(@QueryParam("first") @DefaultValue("0") Integer first,
         @QueryParam("max") @DefaultValue("10") Integer max,
-        @QueryParam("full") @DefaultValue("false") Boolean full) {
+        @QueryParam("briefRepresentation") @DefaultValue("false") Boolean full) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
         return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), first, max)
