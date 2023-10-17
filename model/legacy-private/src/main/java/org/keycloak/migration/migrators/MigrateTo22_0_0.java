@@ -27,7 +27,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.theme.DefaultThemeSelectorProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -93,10 +92,10 @@ public class MigrateTo22_0_0 implements Migration {
     private void updateClientAttributes(RealmModel realm) {
         realm.getClientsStream()
                 .filter(client -> {
-                    String clientLoginTheme = client.getAttribute(DefaultThemeSelectorProvider.LOGIN_THEME_KEY);
+                    String clientLoginTheme = client.getAttribute("login_theme");
                     return clientLoginTheme != null && clientLoginTheme.equals("rh-sso");
                 })
-                .forEach(client -> client.setAttribute(DefaultThemeSelectorProvider.LOGIN_THEME_KEY, null));
+                .forEach(client -> client.setAttribute("login_theme", null));
     }
 
     @Override
