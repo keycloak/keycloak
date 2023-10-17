@@ -84,7 +84,7 @@
     "react-hook-form": "^7.47.0",
     "react-i18next": "^13.2.2",
     "react-router-dom": "^6.15.0",
-    "reactflow": "^11.9.3",
+    "reactflow": "^11.9.4",
     "ui-shared": "workspace:*",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
