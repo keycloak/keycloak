@@ -90,10 +90,12 @@ import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -161,7 +163,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         RealmRepresentation rep = realm.toRepresentation();
         Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
         Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
-        Assert.assertNull("Account theme was not modified", rep.getAccountTheme());
+        // there should be either new default or left null if not set
+        assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
         // check the client theme is also removed
         List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
         Assert.assertNotNull("migration-saml-client client is missing", client);
