@@ -37,7 +37,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -106,19 +106,19 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean multivalued) {
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multivalued) {
         return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, multivalued, false);
+                accessToken, idToken, introspectionEndpoint, multivalued, false);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint,
                                                         boolean multivalued, boolean aggregateAttrs) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
-                accessToken, idToken,
+                accessToken, idToken, introspectionEndpoint,
                 PROVIDER_ID);
 
         if (multivalued) {
@@ -134,8 +134,8 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken) {
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
         return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
-                accessToken, idToken, false, false);
+                accessToken, idToken, introspectionEndpoint, false, false);
     }
 }

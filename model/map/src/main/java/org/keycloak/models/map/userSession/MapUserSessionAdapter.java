@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.TimeAdapter;
 
@@ -288,5 +287,10 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    @Override
+    public SessionPersistenceState getPersistenceState() {
+        return entity.getPersistenceState();
     }
 }

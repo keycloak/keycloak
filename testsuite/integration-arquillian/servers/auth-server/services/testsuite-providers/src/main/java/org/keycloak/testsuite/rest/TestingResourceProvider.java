@@ -817,7 +817,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             clientScopeModel.setIncludeInTokenScope(true);
 
             // Add audience protocol mapper
-            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false, true );
             clientScopeModel.addProtocolMapper(audienceMapper);
 
             return clientScopeModel.getId();
