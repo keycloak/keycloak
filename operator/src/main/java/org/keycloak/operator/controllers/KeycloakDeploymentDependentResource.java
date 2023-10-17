@@ -186,6 +186,10 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
+        if (!specBuilder.hasSecurityContext()) {
+            specBuilder.withNewSecurityContext().withNewSeccompProfile().withType("RuntimeDefault").endSeccompProfile()
+                    .withRunAsNonRoot().endSecurityContext();
+        }
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
         ContainersNested<SpecNested<TemplateNested<io.fabric8.kubernetes.api.model.apps.StatefulSetFluent.SpecNested<StatefulSetBuilder>>>> containerBuilder = null;
@@ -196,6 +200,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         containerBuilder.withName("keycloak");
+
+        if (!containerBuilder.hasSecurityContext()) {
+            containerBuilder.withNewSecurityContext().withAllowPrivilegeEscalation(false).withNewCapabilities()
+                    .withDrop("ALL").endCapabilities().endSecurityContext();
+        }
 
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
         containerBuilder.withImage(customImage.orElse(operatorConfig.keycloak().image()));

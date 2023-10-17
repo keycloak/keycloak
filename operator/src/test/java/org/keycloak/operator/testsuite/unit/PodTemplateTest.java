@@ -52,6 +52,7 @@ import jakarta.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -107,6 +108,9 @@ public class PodTemplateTest {
 
         // Assert
         assertEquals("keycloak", podTemplate.getSpec().getContainers().get(0).getName());
+
+        assertNotNull(podTemplate.getSpec().getSecurityContext());
+        assertNotNull(podTemplate.getSpec().getContainers().get(0).getSecurityContext());
     }
 
     @Test
