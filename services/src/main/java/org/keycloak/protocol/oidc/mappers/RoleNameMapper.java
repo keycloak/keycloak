@@ -40,7 +40,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, UserInfoTokenMapper {
+public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -105,6 +105,14 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
 
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        // the mapper is always executed and then other role mappers decide if the claims are really set to the token
+        setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+        return token;
+    }
+
+    @Override
+    public AccessToken transformIntrospectionToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         // the mapper is always executed and then other role mappers decide if the claims are really set to the token
         setClaim(token, mappingModel, userSession, session, clientSessionCtx);

@@ -100,18 +100,18 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
     public static ProtocolMapperModel create(String realmRolePrefix,
                                              String name,
-                                             String tokenClaimName, boolean accessToken, boolean idToken) {
+                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
 
-        return create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+        return create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, false);
     }
 
     public static ProtocolMapperModel create(String realmRolePrefix,
                                              String name,
-                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean multiValued) {
+                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multiValued) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-          tokenClaimName, "String",
-          accessToken, idToken, false,
-          PROVIDER_ID);
+                tokenClaimName, "String",
+                accessToken, idToken, false, introspectionEndpoint,
+                PROVIDER_ID);
 
         mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
         mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX, realmRolePrefix);

@@ -233,6 +233,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     }
 
     @Override
+    public SessionPersistenceState getPersistenceState() {
+        return SessionPersistenceState.PERSISTENT;
+    }
+
+    @Override
     public void setState(State state) {
         String stateStr = state==null ? null : state.toString();
         getData().setState(stateStr);

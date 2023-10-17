@@ -167,7 +167,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             MatcherAssert.assertThat(Arrays.asList("one", "two", "three"),
                 Matchers.containsInAnyOrder(fullnameUser.getAttributeStream("myAttrThreeValues").toArray(String[]::new)));
 
-            // Remove "fullnameUser" to assert he is removed from LDAP.
+            // Remove "fullnameUser" to prevent conflicts with other tests
             session.users().removeUser(appRealm, fullnameUser);
         });
     }
@@ -201,6 +201,9 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
 
             UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             Assert.assertEquals(Arrays.asList("role1", "role2"), fullnameUser.getAttributeStream("roles").collect(Collectors.toList()));
+
+            // Remove "fullnameUser" to prevent conflicts with other tests
+            session.users().removeUser(appRealm, fullnameUser);
         });
     }
 }

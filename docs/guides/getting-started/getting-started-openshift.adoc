@@ -55,7 +55,7 @@ oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/la
 | oc create -f -
 ----
 +
-In this example, the user name and and password are `admin`.
+In this example, the user name and password are `admin`.
 
 . Once the command above completes, look for a message similar to this:
 +

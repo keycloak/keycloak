@@ -166,6 +166,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
           >
             <Tr>
               <Td
+                data-testid={`expand-${resource.name}`}
                 expand={
                   !isShared
                     ? {
