@@ -9,6 +9,7 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { extract } from "tar-fs";
+import { parseArgs } from "node:util";
 
 const DIR_NAME = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.resolve(DIR_NAME, "../server");
@@ -20,25 +21,29 @@ const ADMIN_PASSWORD = "admin";
 const AUTH_DELAY = 5000;
 const AUTH_RETRY_LIMIT = 3;
 
+const options = {
+  local: {
+    type: "boolean",
+  },
+};
+
 await startServer();
 
 async function startServer() {
-  var local = false;
-  if (process.argv[2] && process.argv[2] === "--local") {
-    local = true;
-  }
-  await downloadServer(local);
+  let { values: scriptArgs, args: keycloakArgs } = handleArgs(
+    process.argv.slice(2),
+  );
+
+  await downloadServer(scriptArgs.local);
 
   console.info("Starting server…");
-
-  const args = local ? process.argv.slice(3) : process.argv.slice(2);
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
       "--http-port=8180",
       "--features=account3,admin-fine-grained-authz,declarative-user-profile",
-      ...args,
+      ...keycloakArgs,
     ],
     {
       env: {
@@ -54,6 +59,26 @@ async function startServer() {
 
   await wait(AUTH_DELAY);
   await importClient();
+}
+
+function handleArgs(args) {
+  const { values, tokens } = parseArgs({
+    args,
+    options,
+    strict: false,
+    tokens: true,
+  });
+  // we need to remove the args that belong to the script so that we can pass the rest through to keycloak
+  tokens
+    .filter((token) => options.hasOwn(token.name))
+    .forEach((token) => {
+      let tokenRaw = token.rawName;
+      if (token.value) {
+        tokenRaw += `=${token.value}`;
+      }
+      args.splice(args.indexOf(tokenRaw), 1);
+    });
+  return { values, args };
 }
 
 async function downloadServer(local) {

@@ -13,12 +13,6 @@
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
-    },
-    "local": {
-      "command": "./scripts/start-server.js --local",
-      "dependencies": [
-        "../../libs/keycloak-admin-client:build"
-      ]
     }
   },
   "dependencies": {
