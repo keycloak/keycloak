@@ -18,7 +18,7 @@ pnpm run start
 
 This will download the [Nightly version](https://github.com/keycloak/keycloak/releases/tag/nightly) of the Keycloak server and run it locally on port `8180`. If a previously downloaded version was found in the `server/` directory then that one will be used instead. If you want to download the latest Nightly version you can remove the server directory before running the command to start the server.
 
-If you want to run with a local quarkus distribution of keycloak for development purposes, you can do so by running this command instead: 
+If you want to run with a local Quarkus distribution of Keycloak for development purposes, you can do so by running this command instead: 
 
 ```bash
 pnpm run start -- --local
