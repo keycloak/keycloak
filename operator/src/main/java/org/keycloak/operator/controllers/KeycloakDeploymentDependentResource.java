@@ -65,6 +65,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
+    static final String JGROUPS_DNS_QUERY_PARAM = "-Djgroups.dns.query=";
+
     public static final String OPTIMIZED_ARG = "--optimized";
 
     @Inject
@@ -209,6 +211,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (customImage.isPresent()) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
+        containerBuilder.addToArgs(0, getJGroupsParameter(keycloakCR));
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
@@ -269,6 +272,10 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             .endContainer().endSpec().endTemplate().endSpec().build();
 
         return baseDeployment;
+    }
+
+    private static String getJGroupsParameter(Keycloak keycloakCR) {
+        return JGROUPS_DNS_QUERY_PARAM + KeycloakDiscoveryServiceDependentResource.getName(keycloakCR) +"." + keycloakCR.getMetadata().getNamespace();
     }
 
     private void addEnvVarsAndWatchSecrets(StatefulSet baseDeployment, Keycloak keycloakCR) {
@@ -349,12 +356,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .withOptional(false)
                         .endSecretKeyRef()
                         .endValueFrom()
-                        .build());
-
-        envVars.add(
-                new EnvVarBuilder()
-                        .withName("jgroups.dns.query")
-                        .withValue(getName(keycloakCR) + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + keycloakCR.getMetadata().getNamespace())
                         .build());
 
         return envVars;
