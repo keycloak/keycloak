@@ -66,7 +66,7 @@ export const toUpperCase = <T extends string>(name: T) =>
 const isAttributesObject = (value: any) => {
   return (
     Object.values(value).filter(
-      (value) => Array.isArray(value) && value.length === 1,
+      (value) => Array.isArray(value) && value.length >= 1,
     ).length !== 0
   );
 };
