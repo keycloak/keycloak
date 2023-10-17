@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL;
 
+import org.apache.http.client.methods.HttpGet;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -1014,11 +1015,14 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assert.assertNull("deviceAuthorizationEndpoint should be null", oidcConfigRep.getDeviceAuthorizationEndpoint());
         Assert.assertNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
 
+        try (var httpClient = oauth.getHttpClient().get()) {
+            Assert.assertEquals("Should return not found for device auth endpoint"
+                    , (long) 404
+                    , (long) httpClient.execute(new HttpGet(oauth.getDeviceAuthorizationUrl()), r -> r.getStatusLine().getStatusCode()));
+        }
+
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP_PUBLIC);
-        OAuthClient.DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
-        Assert.assertEquals(404, response.getStatusCode());
-
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, "dummy");
         Assert.assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, tokenResponse.getError());
     }
