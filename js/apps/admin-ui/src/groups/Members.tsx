@@ -90,9 +90,9 @@ export const Members = () => {
 
   // this queries the subgroups using the new search paradigm but doesn't
   // account for pagination and therefore isn't going to scale well
-  const getSubGroups = async (groupId: string, count = 0) => {
+  const getSubGroups = async (groupId?: string, count = 0) => {
     let nestedGroups: GroupRepresentation[] = [];
-    if (!count) {
+    if (!count || !groupId) {
       return nestedGroups;
     }
     const args: SubGroupQuery = {
@@ -103,12 +103,12 @@ export const Members = () => {
     const subGroups: GroupRepresentation[] =
       await adminClient.groups.listSubGroups(args);
     nestedGroups = nestedGroups.concat(subGroups);
-    for (const g of subGroups) {
-      if (g.id) {
-        const additionalGroups = await getSubGroups(g.id, g.subGroupCount);
-        nestedGroups = nestedGroups.concat(additionalGroups);
-      }
-    }
+
+    await Promise.all(
+      subGroups.map((g) => getSubGroups(g.id, g.subGroupCount)),
+    ).then((values: GroupRepresentation[][]) => {
+      values.forEach((groups) => (nestedGroups = nestedGroups.concat(groups)));
+    });
     return nestedGroups;
   };
 
@@ -128,11 +128,11 @@ export const Members = () => {
         currentGroup.id,
         currentGroup.subGroupCount,
       );
-      for (const group of subGroups) {
-        members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! }),
-        );
-      }
+      await Promise.all(
+        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+      ).then((values: UserRepresentation[][]) => {
+        values.forEach((users) => (members = members.concat(users)));
+      });
       members = uniqBy(members, (member) => member.username);
     }
 
