@@ -59,12 +59,12 @@ public class HttpOptions {
             .defaultValue("TLSv1.3,TLSv1.2")
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a server certificate or certificate chain in PEM format.")
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a private key in PEM format.")
             .build();
