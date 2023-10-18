@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   AlertVariant,
   Button,
@@ -31,7 +32,6 @@ import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 
 type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
@@ -95,13 +95,13 @@ export const Members = () => {
     if (!count) {
       return nestedGroups;
     }
-    const params: Record<string, string> = {
-      first: "0",
-      max: count.toString(),
+    const args: SubGroupQuery = {
+      parentId: groupId,
+      first: 0,
+      max: count,
     };
-    const subGroups: GroupRepresentation[] = await fetchAdminUI<
-      GroupRepresentation[]
-    >(`groups/${groupId}/children`, { ...params });
+    const subGroups: GroupRepresentation[] =
+      await adminClient.groups.listSubGroups(args);
     nestedGroups = nestedGroups.concat(subGroups);
     for (const g of subGroups) {
       if (g.id) {
@@ -113,6 +113,10 @@ export const Members = () => {
   };
 
   const loader = async (first?: number, max?: number) => {
+    if (!id) {
+      return [];
+    }
+
     let members = await adminClient.groups.listMembers({
       id: id!,
       first,

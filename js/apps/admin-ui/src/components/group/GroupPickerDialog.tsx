@@ -1,5 +1,9 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import {
   Breadcrumb,
   BreadcrumbItem,
   Button,
@@ -17,7 +21,6 @@ import { AngleRightIcon } from "@patternfly/react-icons";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { adminClient } from "../../admin-client";
-import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
@@ -73,18 +76,17 @@ export const GroupPickerDialog = ({
       let group;
       let groups;
       let existingUserGroups;
+      let count = 0;
+
       if (!groupId) {
-        groups = await fetchAdminUI<GroupRepresentation[]>(
-          "groups",
-          Object.assign(
-            {
-              first: `${first}`,
-              max: `${max + 1}`,
-              global: "false",
-            },
-            isSearching ? { search: filter, global: "true" } : null,
-          ),
-        );
+        const args: GroupQuery = {
+          first: first,
+          max: max + 1,
+        };
+        if (isSearching) {
+          args.search = filter;
+        }
+        groups = await adminClient.groups.find(args);
       } else {
         if (!navigation.map(({ id }) => id).includes(groupId)) {
           group = await adminClient.groups.findOne({ id: groupId });
@@ -92,13 +94,14 @@ export const GroupPickerDialog = ({
             throw new Error(t("common:notFound"));
           }
         }
-        groups = await fetchAdminUI<GroupRepresentation[]>(
-          `groups/${groupId}/children`,
-          {
-            first: `${first}`,
-            max: `${max + 1}`,
-          },
-        );
+        if (group?.id) {
+          const args: SubGroupQuery = {
+            first: first,
+            max: max + 1,
+            parentId: group.id,
+          };
+          groups = await adminClient.groups.listSubGroups(args);
+        }
       }
 
       count = (
