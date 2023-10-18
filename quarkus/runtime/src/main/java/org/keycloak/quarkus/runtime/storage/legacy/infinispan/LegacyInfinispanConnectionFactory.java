@@ -29,11 +29,12 @@ public class LegacyInfinispanConnectionFactory extends DefaultInfinispanConnecti
         implements EnvironmentDependentProviderFactory {
 
     @Override
-    protected void initContainerManaged(EmbeddedCacheManager cacheManager) {
-        super.initContainerManaged(cacheManager);
+    protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {
+        EmbeddedCacheManager result = super.initContainerManaged(cacheManager);
         // force closing the cache manager when stopping the provider
         // we probably want to refactor the default impl a bit to support this use case
         containerManaged = false;
+        return result;
     }
 
     @Override
