@@ -176,12 +176,16 @@ export default function NewAttributeSettings() {
     [],
   );
 
-  const save = async (formFields: UserProfileAttributeFormFields) => {
-    if (!formFields.hasSelector) {
+  const save = async ({
+    hasSelector,
+    hasRequiredScopes,
+    ...formFields
+  }: UserProfileAttributeFormFields) => {
+    if (!hasSelector) {
       delete formFields.selector;
     }
 
-    if (!formFields.hasRequiredScopes) {
+    if (!hasRequiredScopes) {
       delete formFields.required?.scopes;
     }
 
