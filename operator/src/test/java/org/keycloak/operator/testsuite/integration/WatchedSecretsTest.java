@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -207,10 +212,33 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         List<String> podsToBeRestarted = getPodNamesForCrs(crsToBeRestarted);
         List<String> podsNotToBeRestarted = getPodNamesForCrs(crsNotToBeRestarted);
 
+        CompletableFuture<?> restartsCompleted = null;
+        ConcurrentSkipListSet<String> names = new ConcurrentSkipListSet<>(crsToBeRestarted.stream().map(k -> k.getMetadata().getName()).collect(Collectors.toSet()));
+        if (restartExpected) {
+            restartsCompleted = k8sclient.resources(Keycloak.class).informOnCondition(keycloaks -> {
+                for (Keycloak kc : keycloaks) {
+                    if (!names.contains(kc.getMetadata().getName())) {
+                        continue;
+                    }
+                    try {
+                        assertKeycloakStatusCondition(kc.getStatus(), KeycloakStatusCondition.ROLLING_UPDATE, true, null, null);
+                        names.remove(kc.getMetadata().getName());
+                    } catch (Throwable e) {
+                        // not rolling
+                    }
+                }
+                return names.isEmpty();
+            });
+        }
+
         action.run();
 
-        if (restartExpected) {
-            assertRollingUpdate(crsToBeRestarted, true);
+        if (restartsCompleted != null) {
+            try {
+                restartsCompleted.get(5, TimeUnit.MINUTES);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                throw new RuntimeException(names + " did not restart before an exception occurred", e);
+            }
         }
 
         Set<Keycloak> allCrs = new HashSet<>(crsToBeRestarted);
