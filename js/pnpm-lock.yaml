@@ -330,8 +330,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       '@types/chai':
-        specifier: ^4.3.8
-        version: 4.3.8
+        specifier: ^4.3.9
+        version: 4.3.9
       '@types/lodash-es':
         specifier: ^4.17.9
         version: 4.17.9
@@ -1741,15 +1741,15 @@ packages:
   /@types/chai-subset@1.3.3:
     resolution: {integrity: sha512-frBecisrNGz+F4T6bcc+NLeolfiojh5FxW2klu669+8BARtyQv2C/GkNW6FUodVe4BroGMP/wER/YDGc7rEllw==}
     dependencies:
-      '@types/chai': 4.3.8
-    dev: true
-
-  /@types/chai@4.3.7:
-    resolution: {integrity: sha512-/k+vesl92vMvMygmQrFe9Aimxi6oQXFUX9mA5HanTrKUSAMoLauSi6PNFOdRw0oeqilaW600GNx2vSaT2f8aIQ==}
+      '@types/chai': 4.3.9
     dev: true
 
   /@types/chai@4.3.8:
     resolution: {integrity: sha512-yW/qTM4mRBBcsA9Xw9FbcImYtFPY7sgr+G/O5RDYVmxiy9a+pE5FyoFUi8JYCZY5nicj8atrr1pcfPiYpeNGOA==}
+    dev: true
+
+  /@types/chai@4.3.9:
+    resolution: {integrity: sha512-69TtiDzu0bcmKQv3yg1Zx409/Kd7r0b5F1PfpYJfSHzLGtB53547V4u+9iqKYsTu/O2ai6KTb0TInNpvuQ3qmg==}
     dev: true
 
   /@types/d3-array@3.0.7:
@@ -7176,7 +7176,7 @@ packages:
       webdriverio:
         optional: true
     dependencies:
-      '@types/chai': 4.3.8
+      '@types/chai': 4.3.9
       '@types/chai-subset': 1.3.3
       '@types/node': 20.8.6
       '@vitest/expect': 0.34.6
@@ -7241,7 +7241,7 @@ packages:
       webdriverio:
         optional: true
     dependencies:
-      '@types/chai': 4.3.7
+      '@types/chai': 4.3.8
       '@types/chai-subset': 1.3.3
       '@types/node': 20.8.5
       '@vitest/expect': 0.34.6
