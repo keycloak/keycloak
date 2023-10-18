@@ -41,8 +41,12 @@ export default function Page() {
     [],
   );
 
-  //This doesn't work, we want a different way to know what endpoint to call
   const onSubmit = async (component: ComponentRepresentation) => {
+    if (component.config)
+      Object.entries(component.config).forEach(
+        ([key, value]) =>
+          (component.config![key] = Array.isArray(value) ? value : [value]),
+      );
     try {
       const updatedComponent = {
         ...component,

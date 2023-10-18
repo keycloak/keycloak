@@ -1,19 +1,29 @@
 package org.keycloak.admin.ui.rest.test;
 
 import org.keycloak.Config;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ui.extend.UiPageProvider;
 import org.keycloak.services.ui.extend.UiPageProviderFactory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Test implementation this is should be removed.
  */
-public class AdminUiPage implements UiPageProvider, UiPageProviderFactory {
+public class AdminUiPage implements UiPageProvider, UiPageProviderFactory<ComponentModel> {
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        System.out.println("save model = " + model);
+    }
+
     @Override
     public UiPageProvider create(KeycloakSession session) {
         return this;
