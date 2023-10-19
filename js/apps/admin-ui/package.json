@@ -94,7 +94,7 @@
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^14.0.0",
     "@types/dagre": "^0.7.50",
-    "@types/file-saver": "^2.0.5",
+    "@types/file-saver": "^2.0.6",
     "@types/lodash-es": "^4.17.9",
     "@types/react": "^18.2.28",
     "@types/react-dom": "^18.2.13",
