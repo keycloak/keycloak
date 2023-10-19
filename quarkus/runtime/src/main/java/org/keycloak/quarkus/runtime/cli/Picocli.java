@@ -138,6 +138,9 @@ public final class Picocli {
     }
 
     public static boolean requiresReAugmentation(CommandLine cmdCommand) {
+        if (cmdCommand == null) {
+            return false; // possible if using --version or the user made a mistake
+        }
         if (hasConfigChanges(cmdCommand)) {
             if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
