@@ -62,7 +62,7 @@ keytool -genkeypair -sigalg SHA512withRSA -keyalg RSA -storepass passwordpasswor
   -dname CN=localhost -keypass passwordpassword
 ----
 
-When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore you can store PBE (password-based encryption) keys simply via the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
+When the system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in the PKCS12 keystore, you can store PBE (password-based encryption) keys simply by using the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
 
 === BCFKS keystore
 
