@@ -39,32 +39,6 @@ export const AttributesTab = () => {
   const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] = useState("");
 
-  const executeMove = async (
-    attribute: UserProfileAttribute,
-    newIndex: number,
-  ) => {
-    const fromIndex = config?.attributes!.findIndex((attr) => {
-      return attr.name === attribute.name;
-    });
-
-    let movedAttribute: movedAttributeType = {};
-    movedAttribute = config?.attributes![fromIndex!]!;
-    config?.attributes!.splice(fromIndex!, 1);
-    config?.attributes!.splice(newIndex, 0, movedAttribute);
-
-    save(
-      { attributes: config?.attributes!, groups: config?.groups },
-      {
-        successMessageKey: "updatedUserProfileSuccess",
-        errorMessageKey: "updatedUserProfileError",
-      },
-    );
-  };
-
-  const updatedAttributes = config?.attributes!.filter(
-    (attribute) => attribute.name !== attributeToDelete,
-  );
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
     messageKey: t("deleteAttributeConfirm", {
@@ -73,8 +47,14 @@ export const AttributesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
+      if (!config?.attributes) return;
+
+      const updatedAttributes = config.attributes.filter(
+        (attribute) => attribute.name !== attributeToDelete,
+      );
+
       save(
-        { attributes: updatedAttributes!, groups: config?.groups },
+        { attributes: updatedAttributes!, groups: config.groups },
         {
           successMessageKey: "deleteAttributeSuccess",
           errorMessageKey: "deleteAttributeError",
@@ -83,6 +63,35 @@ export const AttributesTab = () => {
       setAttributeToDelete("");
     },
   });
+
+  if (!config) {
+    return <KeycloakSpinner />;
+  }
+
+  const attributes = config.attributes ?? [];
+  const groups = config.groups ?? [];
+
+  const executeMove = async (
+    attribute: UserProfileAttribute,
+    newIndex: number,
+  ) => {
+    const fromIndex = attributes.findIndex((attr) => {
+      return attr.name === attribute.name;
+    });
+
+    let movedAttribute: movedAttributeType = {};
+    movedAttribute = attributes[fromIndex];
+    attributes.splice(fromIndex, 1);
+    attributes.splice(newIndex, 0, movedAttribute);
+
+    save(
+      { attributes, groups },
+      {
+        successMessageKey: "updatedUserProfileSuccess",
+        errorMessageKey: "updatedUserProfileError",
+      },
+    );
+  };
 
   const cellFormatter = (row: UserProfileAttribute) => (
     <Link
@@ -95,10 +104,6 @@ export const AttributesTab = () => {
       {row.name}
     </Link>
   );
-
-  if (!config?.attributes) {
-    return <KeycloakSpinner />;
-  }
 
   return (
     <>
@@ -117,10 +122,8 @@ export const AttributesTab = () => {
                 setFilter(filter);
                 setData(
                   filter === "allGroups"
-                    ? config.attributes
-                    : config.attributes?.filter(
-                        (attr) => attr.group === filter,
-                      ),
+                    ? attributes
+                    : attributes.filter((attr) => attr.group === filter),
                 );
                 toggleIsFilterTypeDropdownOpen();
               }}
@@ -135,7 +138,7 @@ export const AttributesTab = () => {
                   {t("allGroups")}
                 </SelectOption>,
                 ...uniqBy(
-                  config.attributes!.filter((attr) => !!attr.group),
+                  attributes.filter((attr) => !!attr.group),
                   "group",
                 ).map((attr) => (
                   <SelectOption
@@ -165,10 +168,10 @@ export const AttributesTab = () => {
       <DraggableTable
         keyField="name"
         onDragFinish={async (nameDragged, items) => {
-          const keys = config.attributes!.map((e) => e.name);
+          const keys = attributes.map((e) => e.name);
           const newIndex = items.indexOf(nameDragged);
           const oldIndex = keys.indexOf(nameDragged);
-          const dragged = config.attributes![oldIndex];
+          const dragged = attributes[oldIndex];
           if (!dragged.name) return;
 
           executeMove(dragged, newIndex);
@@ -209,7 +212,7 @@ export const AttributesTab = () => {
             displayKey: t("attributeGroup"),
           },
         ]}
-        data={data || config.attributes}
+        data={data ?? attributes}
       />
     </>
   );
