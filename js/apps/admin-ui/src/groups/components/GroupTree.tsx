@@ -52,6 +52,8 @@ const GroupTreeContextMenu = ({
   const [createOpen, toggleCreateOpen] = useToggle();
   const [moveOpen, toggleMoveOpen] = useToggle();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
+  const navigate = useNavigate();
+  const { realm } = useRealm();
 
   return (
     <>
@@ -60,6 +62,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
+            navigate(toGroups({ realm }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -79,7 +82,10 @@ const GroupTreeContextMenu = ({
         show={deleteOpen}
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
-        refresh={refresh}
+        refresh={() => {
+          navigate(toGroups({ realm }));
+          refresh();
+        }}
       />
       <Dropdown
         toggle={<KebabToggle onToggle={toggleOpen} />}
