@@ -16,7 +16,7 @@
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@octokit/rest": "^20.0.2",
-    "@types/gunzip-maybe": "^1.4.0",
+    "@types/gunzip-maybe": "^1.4.1",
     "@types/tar-fs": "^2.0.2",
     "gunzip-maybe": "^1.4.2",
     "tar-fs": "^3.0.4"
