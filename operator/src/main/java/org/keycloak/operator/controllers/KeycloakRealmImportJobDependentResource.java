@@ -120,11 +120,8 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
-        String jgroupsDNSQuery = keycloakContainer.getArgs().stream()
-                .filter(s -> s.startsWith(KeycloakDeploymentDependentResource.JGROUPS_DNS_QUERY_PARAM))
-                .reduce((s1, s2) -> s2).map(" "::concat).orElse("");
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override + jgroupsDNSQuery);
+                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
 
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);
