@@ -11,10 +11,10 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
+import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -134,15 +134,16 @@ export const AttributesTab = () => {
                 >
                   {t("allGroups")}
                 </SelectOption>,
-                ...config
-                  .attributes!.filter((attr) => !!attr.group)
-                  .map((attr) => (
-                    <SelectOption
-                      key={attr.group}
-                      data-testid={`${attr.group}-option`}
-                      value={attr.group}
-                    />
-                  )),
+                ...uniqBy(
+                  config.attributes!.filter((attr) => !!attr.group),
+                  "group",
+                ).map((attr) => (
+                  <SelectOption
+                    key={attr.group}
+                    data-testid={`${attr.group}-option`}
+                    value={attr.group}
+                  />
+                )),
               ]}
             </Select>
           </ToolbarItem>
