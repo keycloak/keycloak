@@ -45,13 +45,16 @@ const GroupTreeContextMenu = ({
   group,
   refresh,
 }: GroupTreeContextMenuProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
 
   const [isOpen, toggleOpen] = useToggle();
   const [renameOpen, toggleRenameOpen] = useToggle();
   const [createOpen, toggleCreateOpen] = useToggle();
   const [moveOpen, toggleMoveOpen] = useToggle();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
+
+  const navigate = useNavigate();
+  const { realm } = useRealm();
 
   return (
     <>
@@ -60,6 +63,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
+            navigate(toGroups({ realm }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -79,7 +83,10 @@ const GroupTreeContextMenu = ({
         show={deleteOpen}
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
-        refresh={refresh}
+        refresh={() => {
+          navigate(toGroups({ realm }));
+          refresh();
+        }}
       />
       <Dropdown
         toggle={<KebabToggle onToggle={toggleOpen} />}
@@ -98,7 +105,7 @@ const GroupTreeContextMenu = ({
           </DropdownItem>,
           <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
-            {t("delete")}
+            {t("common:delete")}
           </DropdownItem>,
         ]}
       />
@@ -117,7 +124,7 @@ export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("groups");
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();
@@ -275,7 +282,7 @@ export const GroupTree = ({
         setMax(max);
       }}
       inputGroupName="searchForGroups"
-      inputGroupPlaceholder={t("searchForGroups")}
+      inputGroupPlaceholder={t("groups:searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
         <InputGroup className="pf-u-pt-sm">
@@ -322,3 +329,4 @@ export const GroupTree = ({
     <KeycloakSpinner />
   );
 };
+
