@@ -1000,7 +1000,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     @EnableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
-    public void ensureDeviceFlowConfigNotPresentWhenDeviceFlowEnabled() {
+    public void ensureDeviceFlowConfigPresentWhenDeviceFlowEnabled() {
 
         OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
         Assert.assertNotNull("deviceAuthorizationEndpoint should be not null", oidcConfigRep.getDeviceAuthorizationEndpoint());
