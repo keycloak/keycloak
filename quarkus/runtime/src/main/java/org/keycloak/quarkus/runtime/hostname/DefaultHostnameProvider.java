@@ -314,6 +314,15 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
             throw new RuntimeException("You can not set both '" + HostnameOptions.HOSTNAME_ADMIN.getKey() + "' and '" + HostnameOptions.HOSTNAME_ADMIN_URL.getKey() + "' options");
         }
 
+        final boolean adminShouldBeSameAsFrontend = hostnameEnabled && adminHostName == null && adminBaseUri == null;
+        if (adminShouldBeSameAsFrontend) {
+            if (frontEndBaseUri != null) {
+                adminBaseUri = frontEndBaseUri;
+            } else if (frontEndHostName != null) {
+                adminHostName = frontEndHostName;
+            }
+        }
+
         if (adminBaseUri != null) {
             adminHostName = adminBaseUri.getHost();
         }

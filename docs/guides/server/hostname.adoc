@@ -73,8 +73,9 @@ Otherwise, leave this parameter as `false` to allow client-server communication 
 
 The server exposes the administration console and static resources using a specific URL.
 
-By default, the URLs for the administration console are also based on the incoming request. However, you can set a specific host or base URL if you want
-to restrict access to the administration console using a specific URL. Similarly to how you set the frontend URLs, you can use the `hostname-admin` and `hostname-admin-url` options to achieve that.
+You can set a specific host or base URL by using the `hostname-admin` and `hostname-admin-url` options to restrict access to the administration console.
+If the options are not specified, the frontend URLs are used.
+Otherwise, the URLs for the administration console are based on the incoming request.
 Note that if HTTPS is enabled (`http-enabled` configuration option is set to false, which is the default setting for the production mode), the Keycloak server automatically assumes you want to use HTTPS URLs. The admin console then tries to contact Keycloak over HTTPS and HTTPS URLs are also used for its configured redirect/web origin URLs. It is not recommended for production, but you can use HTTP URL as `hostname-admin-url` to override this behaviour.
 
 Most of the time, it should be enough to set the `hostname-admin` option in order to change only the *host* of the administration console URLs:

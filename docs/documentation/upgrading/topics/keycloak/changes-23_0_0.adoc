@@ -79,6 +79,15 @@ When running on OpenShift, with ingress enabled, and with the spec.ingress.class
 The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
 If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.
 
+= Changes to the hostname behavior for the Administration console
+
+In previous versions of Keycloak, when the `hostname-admin` or `hostname-admin-url` were not specified, the URL for the administration console was based on the incoming request.
+
+In this release, the case is slightly different, as we encountered an inconsistency in claimed behavior in the documentation and CLI options description.
+
+When the `hostname-admin` or `hostname-admin-url` are not specified, the **frontend URLs** are used for the administration console.
+If there is a case when the frontend URLs are not specified, then the URL for the administration console is based on the incoming request.
+
 = The deprecated `auto-build` CLI option was removed
 
 The `auto-build` CLI option has been marked as deprecated for a long time.

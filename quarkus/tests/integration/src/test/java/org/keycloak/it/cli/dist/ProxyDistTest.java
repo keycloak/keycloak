@@ -46,7 +46,7 @@ public class ProxyDistTest {
         assertFrontEndUrl("http://mykeycloak.org:8080", "http://mykeycloak.org:8080/");
         assertFrontEndUrl("http://localhost:8080", "http://mykeycloak.org:8080/");
         assertFrontEndUrl("https://localhost:8443", "https://mykeycloak.org:8443/");
-        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://mykeycloak.org:8080/admin"));
     }
 
     @Test
@@ -57,8 +57,14 @@ public class ProxyDistTest {
 
     @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge" })
+    public void testForwardedHeadersWithEdgeAndHostname() {
+        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://mykeycloak.org:1234/admin"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--proxy=edge" })
     public void testForwardedHeadersWithEdge() {
-        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://test:1234/admin"));
+        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://localhost:8080").then().body(containsString("https://test:1234/admin"));
     }
 
     @Test
@@ -75,12 +81,12 @@ public class ProxyDistTest {
     }
 
     private void assertXForwardedHeaders() {
-        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().body(containsString("https://test:8443/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://mykeycloak.org:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://mykeycloak.org:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().body(containsString("https://mykeycloak.org:8443/admin"));
         //given().header("X-Forwarded-Host", "mykeycloak.org").when().get("https://localhost:8443/admin/master/console").then().body(containsString("<script src=\"/js/keycloak.js?version="));
-        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("https://localhost/admin"));
-        given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().body(containsString("https://localhost:8443/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("https://mykeycloak.org/admin"));
+        given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().body(containsString("https://mykeycloak.org:8443/admin"));
     }
 
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {

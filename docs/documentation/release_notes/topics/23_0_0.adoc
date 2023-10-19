@@ -13,3 +13,10 @@ the latest FAPI 2 draft specifications when communicating with your clients. Tha
 
 Keycloak has preview for support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP). Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions.
+
+= Changes to the hostname behavior for the Administration console
+
+The hostname behavior for the Administration console has slightly changed.
+When the `hostname-admin` or `hostname-admin-url` are not specified, the frontend URLs are used for the administration console.
+
+See the migration guide for more details.

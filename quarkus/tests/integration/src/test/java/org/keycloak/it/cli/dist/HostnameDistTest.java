@@ -32,6 +32,7 @@ import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsReso
 import java.util.function.Consumer;
 
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @DistributionTest(keepAlive = true, enableTls = true, defaultOptions = { "--http-enabled=true" })
@@ -116,8 +117,12 @@ public class HostnameDistTest {
     public void testWelcomePageAdminUrl() {
         when().get("http://mykeycloak.org:8080").then().body(Matchers.containsString("http://mykeycloak.org:8080/admin/"));
         when().get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org:8443/admin/"));
-        when().get("http://localhost:8080").then().body(Matchers.containsString("http://localhost:8080/admin/"));
-        when().get("https://localhost:8443").then().body(Matchers.containsString("https://localhost:8443/admin/"));
+
+        when().get("http://localhost:8080").then().body(not(Matchers.containsString("http://localhost:8080/admin/")));
+        when().get("https://localhost:8443").then().body(not(Matchers.containsString("https://localhost:8443/admin/")));
+
+        when().get("http://localhost:8080").then().body(Matchers.containsString("http://mykeycloak.org:8080/admin/"));
+        when().get("https://localhost:8443").then().body(Matchers.containsString("https://mykeycloak.org:8443/admin/"));
     }
 
     @Test
@@ -162,18 +167,18 @@ public class HostnameDistTest {
     }
 
     @Test
-    @Launch({"start", "--hostname=mykeycloak.org", "--hostname-debug=true"})
-    public void testHostnameAdminFromHeaders() {
-        when().get("https://mykeycloak.org:8443/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"https://mykeycloak.org:8443\""));
-        when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloak.org:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+    @Launch({"start", "--hostname-url=http://mykeycloak.org:1234", "--hostname-debug=true"})
+    public void testAdminHostnameSameAsFrontend() {
+        final String HOSTNAME_URL = "http://mykeycloak.org:1234";
 
-        // Admin URL should be resolved from headers
-        when().get("http://localhost:8080/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"http://localhost:8080\""));
-        when().get("http://localhost:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=http://localhost:8080/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+        when().get("http://mykeycloak.org:8080/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"" + HOSTNAME_URL + "\""));
+        when().get("https://mykeycloak.org:8443/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"" + HOSTNAME_URL + "\""));
 
-        Consumer<String> assertDebugAdmin = (url) -> {
-            final var body = StringUtils.deleteWhitespace(when().get(url + "/realms/master/hostname-debug").then().extract().response().body().asString());
-            assertThat(body, Matchers.containsString("<td>Admin</td><td>" + url));
+        when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=" + HOSTNAME_URL + "/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
+
+        Consumer<String> assertDebugAdmin = (requestUrl) -> {
+            final var body = StringUtils.deleteWhitespace(when().get(requestUrl + "/realms/master/hostname-debug").then().extract().response().body().asString());
+            assertThat(body, Matchers.containsString("<td>Admin</td><td>" + HOSTNAME_URL));
         };
 
         assertDebugAdmin.accept("https://mykeycloak.org:8443");
