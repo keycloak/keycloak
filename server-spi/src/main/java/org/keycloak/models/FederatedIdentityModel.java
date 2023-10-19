@@ -27,12 +27,12 @@ public class FederatedIdentityModel {
     private final String identityProvider;
     private final String userName;
 
-    public FederatedIdentityModel(String identityProvider, String userId, String userName) {
-        this(identityProvider, userId, userName, null);
+    public FederatedIdentityModel(String providerAlias, String userId, String userName) {
+        this(providerAlias, userId, userName, null);
     }
 
-    public FederatedIdentityModel(String providerId, String userId, String userName, String token) {
-        this.identityProvider = providerId;
+    public FederatedIdentityModel(String providerAlias, String userId, String userName, String token) {
+        this.identityProvider = providerAlias;
         this.userId = userId;
         this.userName = userName;
         this.token = token;

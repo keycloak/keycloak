@@ -82,15 +82,8 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             return !realm.isRegistrationEmailAsUsername();
         }
 
-        if (USER_API.equals(c.getContext())) {
-            if (realm.isRegistrationEmailAsUsername()) {
-                return false;
-            }
-
-            if (isNewUser(c)) {
-                // when creating a user the username is always editable
-                return true;
-            }
+        if (realm.isRegistrationEmailAsUsername()) {
+            return false;
         }
 
         return realm.isEditUsernameAllowed();

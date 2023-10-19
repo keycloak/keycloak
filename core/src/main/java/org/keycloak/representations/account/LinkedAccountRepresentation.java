@@ -61,8 +61,8 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
         return providerAlias;
     }
 
-    public void setProviderAlias(String providerId) {
-        this.providerAlias = providerId;
+    public void setProviderAlias(String providerAlias) {
+        this.providerAlias = providerAlias;
     }
 
     public String getProviderName() {
