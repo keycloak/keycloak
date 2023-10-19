@@ -190,7 +190,7 @@ public class UserSyncTest extends KeycloakModelTest {
             LDAPObject user1LdapObject = ldapFedProvider.loadLDAPUserByUsername(realm, "user1");
             LDAPOperationManager ldapOperationManager = new LDAPOperationManager(session, ldapFedProvider.getLdapIdentityStore().getConfig());
 
-            ldapOperationManager.removeAttribute(user1LdapObject.getDn().toString(), new BasicAttribute(LDAPConstants.STREET));
+            ldapOperationManager.removeAttribute(user1LdapObject.getDn().getLdapName(), new BasicAttribute(LDAPConstants.STREET));
             return null;
         });
 

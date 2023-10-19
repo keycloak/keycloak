@@ -183,9 +183,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             RealmModel realm = session.getContext().getRealm();
 
             if (UserModel.USERNAME.equals(name)
-                    && UserProfileContext.USER_API.equals(context)
                     && realm.isRegistrationEmailAsUsername()) {
-                    continue;
+                continue;
             }
 
             if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {

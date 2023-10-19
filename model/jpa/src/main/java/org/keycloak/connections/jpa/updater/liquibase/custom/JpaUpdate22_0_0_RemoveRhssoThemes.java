@@ -43,10 +43,11 @@ public class JpaUpdate22_0_0_RemoveRhssoThemes extends CustomKeycloakTask {
                 .addWhereParameter("rh-sso"));
         // remove account theme for realms
         statements.add(new UpdateStatement(null, null, database.correctObjectName("REALM", Table.class))
-                .addNewColumnValue("ACCOUNT_THEME", null)
-                .setWhereClause("ACCOUNT_THEME=? OR ACCOUNT_THEME=?")
+                .addNewColumnValue("ACCOUNT_THEME", "keycloak.v2")
+                .setWhereClause("ACCOUNT_THEME=? OR ACCOUNT_THEME=? OR ACCOUNT_THEME=?")
                 .addWhereParameter("rh-sso")
-                .addWhereParameter("rh-sso.v2"));
+                .addWhereParameter("rh-sso.v2")
+                .addWhereParameter("keycloak"));
         // remove login_theme for clients
         if ("oracle".equals(database.getShortName())) {
             statements.add(new DeleteStatement(null, null, database.correctObjectName("CLIENT_ATTRIBUTES", Table.class))

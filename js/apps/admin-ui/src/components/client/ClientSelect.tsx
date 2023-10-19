@@ -15,8 +15,7 @@ import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
-type ClientSelectProps = ComponentProps & {
-};
+type ClientSelectProps = ComponentProps & {};
 
 export const ClientSelect = ({
   name,

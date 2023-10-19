@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 import javax.naming.directory.AttributeInUseException;
 import javax.naming.directory.NoSuchAttributeException;
 import javax.naming.directory.SchemaViolationException;
+import javax.naming.ldap.LdapName;
 
 /**
  * An IdentityStore implementation backed by an LDAP directory
@@ -97,18 +98,17 @@ public class LDAPIdentityStore implements IdentityStore {
             throw new ModelException("Can't add object with already assigned uuid");
         }
 
-        String entryDN = ldapObject.getDn().toString();
         BasicAttributes ldapAttributes = extractAttributesForSaving(ldapObject, true);
-        this.operationManager.createSubContext(entryDN, ldapAttributes);
+        this.operationManager.createSubContext(ldapObject.getDn().getLdapName(), ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
         if (logger.isDebugEnabled()) {
-            logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), entryDN);
+            logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), ldapObject.getDn());
         }
     }
 
     @Override
-    public void addMemberToGroup(String groupDn, String memberAttrName, String value) {
+    public void addMemberToGroup(LdapName groupDn, String memberAttrName, String value) {
         // do not check EMPTY_MEMBER_ATTRIBUTE_VALUE, we save one useless query
         // the value will be there forever for objectclasses that enforces the attribute as MUST
         BasicAttribute attr = new BasicAttribute(memberAttrName, value);
@@ -123,7 +123,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public void removeMemberFromGroup(String groupDn, String memberAttrName, String value) {
+    public void removeMemberFromGroup(LdapName groupDn, String memberAttrName, String value) {
         BasicAttribute attr = new BasicAttribute(memberAttrName, value);
         ModificationItem item = new ModificationItem(DirContext.REMOVE_ATTRIBUTE, attr);
         try {
@@ -152,17 +152,16 @@ public class LDAPIdentityStore implements IdentityStore {
         BasicAttributes updatedAttributes = extractAttributesForSaving(ldapObject, false);
         NamingEnumeration<Attribute> attributes = updatedAttributes.getAll();
 
-        String entryDn = ldapObject.getDn().toString();
-        this.operationManager.modifyAttributes(entryDn, attributes);
+        this.operationManager.modifyAttributes(ldapObject.getDn().getLdapName(), attributes);
 
         if (logger.isDebugEnabled()) {
-            logger.debugf("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), entryDn);
+            logger.debugf("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), ldapObject.getDn());
         }
     }
 
     protected void checkRename(LDAPObject ldapObject) {
         LDAPDn.RDN firstRdn = ldapObject.getDn().getFirstRdn();
-        String oldDn = ldapObject.getDn().toString();
+        LdapName oldDn = ldapObject.getDn().getLdapName();
 
         // Detect which keys will need to be updated in RDN, which are new keys to be added, and which are to be removed
         List<String> toUpdateKeys = firstRdn.getAllKeys();
@@ -218,20 +217,20 @@ public class LDAPIdentityStore implements IdentityStore {
             LDAPDn newLdapDn = ldapObject.getDn().getParentDn();
             newLdapDn.addFirst(firstRdn);
 
-            String newDn = newLdapDn.toString();
+            LdapName newDn = newLdapDn.getLdapName();
 
             logger.debugf("Renaming LDAP Object. Old DN: [%s], New DN: [%s]", oldDn, newDn);
 
             // In case, that there is conflict (For example already existing "CN=John Anthony"), the different DN is returned
             newDn = this.operationManager.renameEntry(oldDn, newDn, true);
 
-            ldapObject.setDn(LDAPDn.fromString(newDn));
+            ldapObject.setDn(LDAPDn.fromLdapName(newDn));
         }
     }
 
     @Override
     public void remove(LDAPObject ldapObject) {
-        this.operationManager.removeEntry(ldapObject.getDn().toString());
+        this.operationManager.removeEntry(ldapObject.getDn().getLdapName());
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Type with identifier [%s] and DN [%s] successfully removed from LDAP store.", ldapObject.getUuid(), ldapObject.getDn().toString());
@@ -248,7 +247,7 @@ public class LDAPIdentityStore implements IdentityStore {
         List<LDAPObject> results = new ArrayList<>();
 
         try {
-            String baseDN = identityQuery.getSearchDn();
+            LdapName baseDN = identityQuery.getSearchDn();
 
             for (Condition condition : identityQuery.getConditions()) {
 
@@ -281,7 +280,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
             for (SearchResult result : search) {
                 // don't add the branch in subtree search
-                if (identityQuery.getSearchScope() != SearchControls.SUBTREE_SCOPE || !result.getNameInNamespace().equalsIgnoreCase(baseDN)) {
+                if (identityQuery.getSearchScope() != SearchControls.SUBTREE_SCOPE || !baseDN.equals(new LdapName(result.getNameInNamespace()))) {
                     results.add(populateAttributedType(result, identityQuery));
                 }
             }
@@ -314,7 +313,7 @@ public class LDAPIdentityStore implements IdentityStore {
             attrs.add("supportedExtension");
             attrs.add("supportedFeatures");
             List<SearchResult> searchResults = operationManager
-                .search("", "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
+                .search(new LdapName(Collections.emptyList()), "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
             if (searchResults.size() != 1) {
                 throw new ModelException("Could not query root DSE: unexpected result size");
             }
@@ -343,36 +342,32 @@ public class LDAPIdentityStore implements IdentityStore {
 
     @Override
     public void validatePassword(LDAPObject user, String password) throws AuthenticationException {
-        String userDN = user.getDn().toString();
-
         if (logger.isTraceEnabled()) {
-            logger.tracef("Using DN [%s] for authentication of user", userDN);
+            logger.tracef("Using DN [%s] for authentication of user", user.getDn());
         }
 
-        operationManager.authenticate(userDN, password);
+        operationManager.authenticate(user.getDn().getLdapName(), password);
     }
 
     @Override
     public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
-        String userDN = user.getDn().toString();
-
         if (logger.isDebugEnabled()) {
-            logger.debugf("Using DN [%s] for updating LDAP password of user", userDN);
+            logger.debugf("Using DN [%s] for updating LDAP password of user", user.getDn());
         }
 
         if (getConfig().isActiveDirectory()) {
-            updateADPassword(userDN, password, passwordUpdateDecorator);
+            updateADPassword(user.getDn().getLdapName(), password, passwordUpdateDecorator);
             return;
         }
 
         try {
             if (config.useExtendedPasswordModifyOp()) {
-                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
+                operationManager.passwordModifyExtended(user.getDn().getLdapName(), password, passwordUpdateDecorator);
             } else {
                 ModificationItem[] mods = new ModificationItem[1];
                 BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
-                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
+                operationManager.modifyAttributes(user.getDn().getLdapName(), mods, passwordUpdateDecorator);
             }
         } catch (ModelException me) {
             throw me;
@@ -381,7 +376,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
     }
 
-    private void updateADPassword(String userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
+    private void updateADPassword(LdapName userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         try {
             // Replace the "unicdodePwd" attribute with a new value
             // Password must be both Unicode and a quoted string
@@ -617,7 +612,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
             String rdn = ldapObject.getDn().getFirstRdn().toString(false);
             String filter = "(" + EscapeStrategy.DEFAULT.escape(rdn) + ")";
-            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(), filter, Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
+            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().getLdapName(), filter, Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
             Attribute id = search.get(0).getAttributes().get(getConfig().getUuidLDAPAttributeName());
 
             if (id == null) {

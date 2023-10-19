@@ -81,8 +81,8 @@ importers:
         specifier: ^4.113.0
         version: 4.113.0(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^23.5.1
-        version: 23.5.1
+        specifier: ^23.6.0
+        version: 23.6.0
       i18next-http-backend:
         specifier: ^2.2.2
         version: 2.2.2
@@ -106,7 +106,7 @@ importers:
         version: 7.47.0(react@18.2.0)
       react-i18next:
         specifier: ^13.3.0
-        version: 13.3.0(i18next@23.5.1)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.3.0(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.15.0
         version: 6.15.0(react-dom@18.2.0)(react@18.2.0)
@@ -131,16 +131,16 @@ importers:
         version: 18.2.13
       '@vitejs/plugin-react-swc':
         specifier: ^3.4.0
-        version: 3.4.0(vite@4.4.10)
+        version: 3.4.0(vite@4.5.0)
       lightningcss:
         specifier: ^1.22.0
         version: 1.22.0
       vite:
-        specifier: ^4.4.10
-        version: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.4.10)
+        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.5.0)
 
   apps/admin-ui:
     dependencies:
@@ -181,8 +181,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       i18next:
-        specifier: ^23.5.1
-        version: 23.5.1
+        specifier: ^23.6.0
+        version: 23.6.0
       i18next-http-backend:
         specifier: ^2.2.2
         version: 2.2.2
@@ -212,7 +212,7 @@ importers:
         version: 7.47.0(react@18.2.0)
       react-i18next:
         specifier: ^13.3.0
-        version: 13.3.0(i18next@23.5.1)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.3.0(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.15.0
         version: 6.15.0(react-dom@18.2.0)(react@18.2.0)
@@ -228,10 +228,10 @@ importers:
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: ^2.2.5
-        version: 2.2.5(cypress@13.3.1)
+        version: 2.2.5(cypress@13.3.2)
       '@testing-library/cypress':
         specifier: ^10.0.1
-        version: 10.0.1(cypress@13.3.1)
+        version: 10.0.1(cypress@13.3.2)
       '@testing-library/jest-dom':
         specifier: ^6.1.4
         version: 6.1.4(vitest@0.34.6)
@@ -242,8 +242,8 @@ importers:
         specifier: ^0.7.50
         version: 0.7.50
       '@types/file-saver':
-        specifier: ^2.0.5
-        version: 2.0.5
+        specifier: ^2.0.6
+        version: 2.0.6
       '@types/lodash-es':
         specifier: ^4.17.9
         version: 4.17.9
@@ -254,17 +254,17 @@ importers:
         specifier: ^18.2.13
         version: 18.2.13
       '@types/uuid':
-        specifier: ^9.0.5
-        version: 9.0.5
+        specifier: ^9.0.6
+        version: 9.0.6
       '@vitejs/plugin-react-swc':
         specifier: ^3.4.0
-        version: 3.4.0(vite@4.4.10)
+        version: 3.4.0(vite@4.5.0)
       cypress:
-        specifier: ^13.3.1
-        version: 13.3.1
+        specifier: ^13.3.2
+        version: 13.3.2
       cypress-axe:
         specifier: ^1.5.0
-        version: 1.5.0(axe-core@4.7.2)(cypress@13.3.1)
+        version: 1.5.0(axe-core@4.7.2)(cypress@13.3.2)
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -281,11 +281,11 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       vite:
-        specifier: ^4.4.10
-        version: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.4.10)
+        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.5.0)
       vitest:
         specifier: ^0.34.6
         version: 0.34.6(jsdom@22.1.0)(lightningcss@1.22.0)
@@ -299,8 +299,8 @@ importers:
         specifier: ^20.0.2
         version: 20.0.2
       '@types/gunzip-maybe':
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^1.4.1
+        version: 1.4.1
       '@types/tar-fs':
         specifier: ^2.0.2
         version: 2.0.2
@@ -330,14 +330,14 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       '@types/chai':
-        specifier: ^4.3.8
-        version: 4.3.8
+        specifier: ^4.3.9
+        version: 4.3.9
       '@types/lodash-es':
         specifier: ^4.17.9
         version: 4.17.9
       '@types/mocha':
-        specifier: ^10.0.2
-        version: 10.0.2
+        specifier: ^10.0.3
+        version: 10.0.3
       '@types/node':
         specifier: ^20.8.6
         version: 20.8.6
@@ -411,19 +411,19 @@ importers:
         version: 18.2.13
       '@vitejs/plugin-react-swc':
         specifier: ^3.4.0
-        version: 3.4.0(vite@4.4.10)
+        version: 3.4.0(vite@4.5.0)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.1.4)
       vite:
-        specifier: ^4.4.10
-        version: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.4.10)
+        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.5.0)
       vite-plugin-dts:
         specifier: ^3.6.0
-        version: 3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.4.10)
+        version: 3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.5.0)
 
   libs/ui-shared:
     dependencies:
@@ -451,31 +451,31 @@ importers:
         version: 18.2.13
       '@vitejs/plugin-react-swc':
         specifier: ^3.4.0
-        version: 3.4.0(vite@4.4.10)
+        version: 3.4.0(vite@4.5.0)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.1.4)
       vite:
-        specifier: ^4.4.10
-        version: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+        specifier: ^4.5.0
+        version: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.4.10)
+        version: 0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.5.0)
       vite-plugin-dts:
         specifier: ^3.6.0
-        version: 3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.4.10)
+        version: 3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.5.0)
       vitest:
         specifier: ^0.34.6
         version: 0.34.6
 
 packages:
 
-  /@4tw/cypress-drag-drop@2.2.5(cypress@13.3.1):
+  /@4tw/cypress-drag-drop@2.2.5(cypress@13.3.2):
     resolution: {integrity: sha512-3ghTmzhOmUqeN6U3QmUnKRUxI7OMLbJA4hHUY/eS/FhWJgxbiGgcaELbolWnBAOpajPXcsNQGYEj9brd59WH6A==}
     peerDependencies:
       cypress: 2 - 13
     dependencies:
-      cypress: 13.3.1
+      cypress: 13.3.2
     dev: true
 
   /@aashutoshrathi/word-wrap@1.2.6:
@@ -1641,7 +1641,7 @@ packages:
     resolution: {integrity: sha512-myfUej5naTBWnqOCc/MdVOLVjXUXtIA+NpDrDBKJtLLg2shUjBu3cZmB/85RyitKc55+lUUyl7oRfLOvkr2hsw==}
     dev: true
 
-  /@testing-library/cypress@10.0.1(cypress@13.3.1):
+  /@testing-library/cypress@10.0.1(cypress@13.3.2):
     resolution: {integrity: sha512-e8uswjTZIBhaIXjzEcrQQ8nHRWHgZH7XBxKuIWxZ/T7FxfWhCR48nFhUX5nfPizjVOKSThEfOSv67jquc1ASkw==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -1649,7 +1649,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.11
       '@testing-library/dom': 9.3.1
-      cypress: 13.3.1
+      cypress: 13.3.2
     dev: true
 
   /@testing-library/dom@9.3.1:
@@ -1741,15 +1741,15 @@ packages:
   /@types/chai-subset@1.3.3:
     resolution: {integrity: sha512-frBecisrNGz+F4T6bcc+NLeolfiojh5FxW2klu669+8BARtyQv2C/GkNW6FUodVe4BroGMP/wER/YDGc7rEllw==}
     dependencies:
-      '@types/chai': 4.3.8
-    dev: true
-
-  /@types/chai@4.3.7:
-    resolution: {integrity: sha512-/k+vesl92vMvMygmQrFe9Aimxi6oQXFUX9mA5HanTrKUSAMoLauSi6PNFOdRw0oeqilaW600GNx2vSaT2f8aIQ==}
+      '@types/chai': 4.3.9
     dev: true
 
   /@types/chai@4.3.8:
     resolution: {integrity: sha512-yW/qTM4mRBBcsA9Xw9FbcImYtFPY7sgr+G/O5RDYVmxiy9a+pE5FyoFUi8JYCZY5nicj8atrr1pcfPiYpeNGOA==}
+    dev: true
+
+  /@types/chai@4.3.9:
+    resolution: {integrity: sha512-69TtiDzu0bcmKQv3yg1Zx409/Kd7r0b5F1PfpYJfSHzLGtB53547V4u+9iqKYsTu/O2ai6KTb0TInNpvuQ3qmg==}
     dev: true
 
   /@types/d3-array@3.0.7:
@@ -1939,18 +1939,18 @@ packages:
     resolution: {integrity: sha512-LG4opVs2ANWZ1TJoKc937iMmNstM/d0ae1vNbnBvBhqCSezgVUOzcLCqbI5elV8Vy6WKwKjaqR+zO9VKirBBCA==}
     dev: true
 
-  /@types/file-saver@2.0.5:
-    resolution: {integrity: sha512-zv9kNf3keYegP5oThGLaPk8E081DFDuwfqjtiTzm6PoxChdJ1raSuADf2YGCVIyrSynLrgc8JWv296s7Q7pQSQ==}
+  /@types/file-saver@2.0.6:
+    resolution: {integrity: sha512-Mw671DVqoMHbjw0w4v2iiOro01dlT/WhWp5uwecBa0Wg8c+bcZOjgF1ndBnlaxhtvFCgTRBtsGivSVhrK/vnag==}
     dev: true
 
   /@types/geojson@7946.0.10:
     resolution: {integrity: sha512-Nmh0K3iWQJzniTuPRcJn5hxXkfB1T1pgB89SBig5PlJQU5yocazeu4jATJlaA0GYFKWMqDdvYemoSnF2pXgLVA==}
     dev: false
 
-  /@types/gunzip-maybe@1.4.0:
-    resolution: {integrity: sha512-dFP9GrYAR9KhsjTkWJ8q8Gsfql75YIKcg9DuQOj/IrlPzR7W+1zX+cclw1McV82UXAQ+Lpufvgk3e9bC8+HzgA==}
+  /@types/gunzip-maybe@1.4.1:
+    resolution: {integrity: sha512-FAxzVI4EbR3bsvsvtNsJ6kqaxQftN1wD/F6A+51m85oo1oRoZn15rQwbedJY2GmzyUKl6EjG9wKkgShwcTQgTA==}
     dependencies:
-      '@types/node': 20.8.5
+      '@types/node': 20.8.6
     dev: false
 
   /@types/json-schema@7.0.12:
@@ -1971,8 +1971,8 @@ packages:
     resolution: {integrity: sha512-BMVOiWs0uNxHVlHBgzTIqJYmj+PgCo4euloGF+5m4okL3rEYzM2EEv78mw8zWSMM57dM7kVIgJ2QDvwHSoCI5g==}
     dev: true
 
-  /@types/mocha@10.0.2:
-    resolution: {integrity: sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==}
+  /@types/mocha@10.0.3:
+    resolution: {integrity: sha512-RsOPImTriV/OE4A9qKjMtk2MnXiuLLbcO3nCXK+kvq4nr0iMfFgpjaX3MPLb6f7+EL1FGSelYvuJMV6REH+ZPQ==}
     dev: true
 
   /@types/node@18.17.15:
@@ -2037,8 +2037,8 @@ packages:
       '@types/node': 20.8.6
     dev: false
 
-  /@types/uuid@9.0.5:
-    resolution: {integrity: sha512-xfHdwa1FMJ082prjSJpoEI57GZITiQz10r3vEJCHa2khEFQjKy91aWKz6+zybzssCvXUwE1LQWgWVwZ4nYUvHQ==}
+  /@types/uuid@9.0.6:
+    resolution: {integrity: sha512-BT2Krtx4xaO6iwzwMFUYvWBWkV2pr37zD68Vmp1CDV196MzczBRxuEpD6Pr395HAgebC/co7hOphs53r8V7jew==}
     dev: true
 
   /@types/yauzl@2.10.0:
@@ -2180,13 +2180,13 @@ packages:
       eslint-visitor-keys: 3.4.3
     dev: true
 
-  /@vitejs/plugin-react-swc@3.4.0(vite@4.4.10):
+  /@vitejs/plugin-react-swc@3.4.0(vite@4.5.0):
     resolution: {integrity: sha512-m7UaA4Uvz82N/0EOVpZL4XsFIakRqrFKeSNxa1FBLSXGvWrWRBwmZb4qxk+ZIVAZcW3c3dn5YosomDgx62XWcQ==}
     peerDependencies:
       vite: ^4
     dependencies:
       '@swc/core': 1.3.88
-      vite: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
     transitivePeerDependencies:
       - '@swc/helpers'
     dev: true
@@ -2995,7 +2995,7 @@ packages:
   /csstype@3.1.2:
     resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
 
-  /cypress-axe@1.5.0(axe-core@4.7.2)(cypress@13.3.1):
+  /cypress-axe@1.5.0(axe-core@4.7.2)(cypress@13.3.2):
     resolution: {integrity: sha512-Hy/owCjfj+25KMsecvDgo4fC/781ccL+e8p+UUYoadGVM2ogZF9XIKbiM6KI8Y3cEaSreymdD6ZzccbI2bY0lQ==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -3003,11 +3003,11 @@ packages:
       cypress: ^10 || ^11 || ^12 || ^13
     dependencies:
       axe-core: 4.7.2
-      cypress: 13.3.1
+      cypress: 13.3.2
     dev: true
 
-  /cypress@13.3.1:
-    resolution: {integrity: sha512-g4mJLZxYN+UAF2LMy3Znd4LBnUmS59Vynd81VES59RdW48Yt+QtR2cush3melOoVNz0PPbADpWr8DcUx6mif8Q==}
+  /cypress@13.3.2:
+    resolution: {integrity: sha512-ArLmZObcLC+xxCp7zJZZbhby9FUf5CueLej9dUM4+5j37FTS4iMSgHxQLDu01PydFUvDXcNoIVRCYrHHxD7Ybg==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
     requiresBuild: true
@@ -4448,8 +4448,8 @@ packages:
       - encoding
     dev: false
 
-  /i18next@23.5.1:
-    resolution: {integrity: sha512-JelYzcaCoFDaa+Ysbfz2JsGAKkrHiMG6S61+HLBUEIPaF40WMwW9hCPymlQGrP+wWawKxKPuSuD71WZscCsWHg==}
+  /i18next@23.6.0:
+    resolution: {integrity: sha512-z0Cxr0MGkt+kli306WS4nNNM++9cgt2b2VCMprY92j+AIab/oclgPxdwtTZVLP1zn5t5uo8M6uLsZmYrcjr3HA==}
     dependencies:
       '@babel/runtime': 7.22.11
     dev: false
@@ -5920,7 +5920,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@13.3.0(i18next@23.5.1)(react-dom@18.2.0)(react@18.2.0):
+  /react-i18next@13.3.0(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-FlR9xjYHSPIJfQspEmkN0yOlxgRyNuiJKJ8gCaZH08UJ7SZHG+VrptEPcpEMEchjNoCOZdKcvJ3PnmHEZhkeXg==}
     peerDependencies:
       i18next: '>= 23.2.3'
@@ -5935,7 +5935,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.11
       html-parse-stringify: 3.0.1
-      i18next: 23.5.1
+      i18next: 23.6.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -6960,7 +6960,7 @@ packages:
       mlly: 1.4.1
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.4.10(@types/node@20.8.5)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.5)(lightningcss@1.22.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -6982,7 +6982,7 @@ packages:
       mlly: 1.4.1
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -6994,7 +6994,7 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-checker@0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.4.10):
+  /vite-plugin-checker@0.6.2(eslint@8.51.0)(typescript@5.2.2)(vite@4.5.0):
     resolution: {integrity: sha512-YvvvQ+IjY09BX7Ab+1pjxkELQsBd4rPhWNw8WLBeFVxu/E7O+n6VYAqNsKdK/a2luFlX/sMpoWdGFfg4HvwdJQ==}
     engines: {node: '>=14.16'}
     peerDependencies:
@@ -7040,14 +7040,14 @@ packages:
       strip-ansi: 6.0.1
       tiny-invariant: 1.3.1
       typescript: 5.2.2
-      vite: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vscode-languageclient: 7.0.0
       vscode-languageserver: 7.0.0
       vscode-languageserver-textdocument: 1.0.8
       vscode-uri: 3.0.7
     dev: true
 
-  /vite-plugin-dts@3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.4.10):
+  /vite-plugin-dts@3.6.0(@types/node@20.8.6)(rollup@4.1.4)(typescript@5.2.2)(vite@4.5.0):
     resolution: {integrity: sha512-doxhDRFJCZD2sGjIp4V800nm8Y19GvmwckjG5vYPuiqJ7OBjc9NlW1Vp9Gkyh2aXlUs1jTDRH/lxWfcsPLOQHg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -7063,7 +7063,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       kolorist: 1.8.0
       typescript: 5.2.2
-      vite: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vue-tsc: 1.8.8(typescript@5.2.2)
     transitivePeerDependencies:
       - '@types/node'
@@ -7071,8 +7071,8 @@ packages:
       - supports-color
     dev: true
 
-  /vite@4.4.10(@types/node@20.8.5)(lightningcss@1.22.0):
-    resolution: {integrity: sha512-TzIjiqx9BEXF8yzYdF2NTf1kFFbjMjUSV0LFZ3HyHoI3SGSPLnnFUKiIQtL3gl2AjHvMrprOvQ3amzaHgQlAxw==}
+  /vite@4.5.0(@types/node@20.8.5)(lightningcss@1.22.0):
+    resolution: {integrity: sha512-ulr8rNLA6rkyFAlVWw2q5YJ91v098AFQ2R0PRFwPzREXOUJQPtFUG0t+/ZikhaOCDqFoDhN6/v8Sq0o4araFAw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -7108,8 +7108,8 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vite@4.4.10(@types/node@20.8.6)(lightningcss@1.22.0):
-    resolution: {integrity: sha512-TzIjiqx9BEXF8yzYdF2NTf1kFFbjMjUSV0LFZ3HyHoI3SGSPLnnFUKiIQtL3gl2AjHvMrprOvQ3amzaHgQlAxw==}
+  /vite@4.5.0(@types/node@20.8.6)(lightningcss@1.22.0):
+    resolution: {integrity: sha512-ulr8rNLA6rkyFAlVWw2q5YJ91v098AFQ2R0PRFwPzREXOUJQPtFUG0t+/ZikhaOCDqFoDhN6/v8Sq0o4araFAw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -7176,7 +7176,7 @@ packages:
       webdriverio:
         optional: true
     dependencies:
-      '@types/chai': 4.3.8
+      '@types/chai': 4.3.9
       '@types/chai-subset': 1.3.3
       '@types/node': 20.8.6
       '@vitest/expect': 0.34.6
@@ -7197,7 +7197,7 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.0
       tinypool: 0.7.0
-      vite: 4.4.10(@types/node@20.8.6)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.6)(lightningcss@1.22.0)
       vite-node: 0.34.6(@types/node@20.8.6)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
@@ -7241,7 +7241,7 @@ packages:
       webdriverio:
         optional: true
     dependencies:
-      '@types/chai': 4.3.7
+      '@types/chai': 4.3.8
       '@types/chai-subset': 1.3.3
       '@types/node': 20.8.5
       '@vitest/expect': 0.34.6
@@ -7263,7 +7263,7 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.0
       tinypool: 0.7.0
-      vite: 4.4.10(@types/node@20.8.5)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.5)(lightningcss@1.22.0)
       vite-node: 0.34.6(@types/node@20.8.5)(lightningcss@1.22.0)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
@@ -7639,7 +7639,7 @@ packages:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 6.0.1
-      i18next: 23.5.1
+      i18next: 23.6.0
       i18next-http-backend: 2.2.2
       keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
@@ -7649,7 +7649,7 @@ packages:
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
       react-hook-form: 7.47.0(react@18.2.0)
-      react-i18next: 13.3.0(i18next@23.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 13.3.0(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.15.0(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.9.4(@types/react@18.2.28)(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared
