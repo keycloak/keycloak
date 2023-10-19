@@ -135,7 +135,12 @@ public interface UserSessionModel {
         }
     }
 
-    SessionPersistenceState getPersistenceState();
+    /**
+     * @return Persistence state of the session
+     */
+    default SessionPersistenceState getPersistenceState() {
+        return SessionPersistenceState.PERSISTENT;
+    }
 
     /**
      * Flag used when creating user session
