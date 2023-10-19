@@ -52,7 +52,7 @@ You can create either `pkcs12` or `bcfks` keystore to be used for the Keycloak s
 
 The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. For instance the following command can be used to generate the keystore:
+PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. For instance,  the following command can be used to generate the keystore:
 
 [source,bash]
 ----
