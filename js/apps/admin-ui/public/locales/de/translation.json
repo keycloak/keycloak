@@ -189,7 +189,7 @@
   },
   "syncModeOverride": "Überschriebene Synchronisation",
   "syncModeHelp": "Standardsyncmodus für alle Mapper. Mögliche Werte sind: 'Legacy' um das alte Verhalten beizubehalten, 'Importieren' um den Nutzer einmalig zu importieren, 'Erzwingen' um den Nutzer immer zu importieren.",
-  "syncModeOverrideHelp": "Überschreibt den normalen Synchronisationsmodus des IDP für diesen Mapper. Were sind 'Legacy' um das alte Verhalten beizubehalten, 'Importieren' um den Nutzer einmalig zu importieren, 'Erzwingen' um den Nutzer immer zu updaten.",
+  "syncModeOverrideHelp": "Überschreibt den normalen Synchronisationsmodus des IDP für diesen Mapper. Werte sind 'Legacy' um das alte Verhalten beizubehalten, 'Importieren' um den Nutzer einmalig zu importieren, 'Erzwingen' um den Nutzer immer zu updaten.",
   "usermodel": {
     "clientRoleMapping": {
       "client": {
