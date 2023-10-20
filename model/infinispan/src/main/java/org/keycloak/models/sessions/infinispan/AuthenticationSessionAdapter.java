@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
@@ -289,7 +291,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
             return null;
         }
 
-        if (getUserSessionNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+        if (Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && getUserSessionNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
             LightweightUserAdapter cachedUser = session.getAttribute("authSession.user." + parent.getId(), LightweightUserAdapter.class);
 
             if (cachedUser != null) {

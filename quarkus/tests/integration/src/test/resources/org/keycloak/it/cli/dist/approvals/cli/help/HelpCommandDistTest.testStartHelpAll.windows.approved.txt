@@ -139,7 +139,7 @@ Feature:
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
                        impersonation, js-adapter, kerberos, linkedin-oauth, map-storage, par,
                        preview, recovery-codes, scripts, step-up-authentication, token-exchange,
-                       update-email, web-authn.
+                       transient-users, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
@@ -147,7 +147,7 @@ Feature:
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
                        impersonation, js-adapter, kerberos, linkedin-oauth, map-storage, par,
                        preview, recovery-codes, scripts, step-up-authentication, token-exchange,
-                       update-email, web-authn.
+                       transient-users, update-email, web-authn.
 
 Hostname:
 

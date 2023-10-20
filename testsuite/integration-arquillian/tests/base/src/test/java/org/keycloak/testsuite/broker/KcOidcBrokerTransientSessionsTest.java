@@ -20,6 +20,7 @@ import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.HardcodedRoleMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -50,6 +51,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -92,6 +94,7 @@ import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.CONSUMER_B
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
  */
+@EnableFeature(value = Profile.Feature.TRANSIENT_USERS, skipRestart = true)
 public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBrokerTest {
     private final static String USER_ATTRIBUTE_NAME = "user-attribute";
     private final static String USER_ATTRIBUTE_VALUE = "attribute-value";

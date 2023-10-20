@@ -25,6 +25,8 @@ import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -752,7 +754,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
         UserModel user = null;
-        if (entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+        if (Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
             LightweightUserAdapter lua = LightweightUserAdapter.fromString(session, realm, entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
             final UserSessionAdapter us = wrap(realm, entity, offline, lua);
             lua.setUpdateHandler(lua1 -> {

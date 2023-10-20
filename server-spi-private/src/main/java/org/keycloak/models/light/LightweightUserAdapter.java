@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.light;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Base64;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -61,11 +63,11 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
     public static final String ID_PREFIX = "lightweight-";
 
     public static boolean isLightweightUser(UserModel user) {
-        return user instanceof LightweightUserAdapter;
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && user instanceof LightweightUserAdapter;
     }
 
     public static boolean isLightweightUser(String id) {
-        return id != null && id.startsWith(ID_PREFIX);
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && id != null && id.startsWith(ID_PREFIX);
     }
 
     public static String getLightweightUserId(String id) {

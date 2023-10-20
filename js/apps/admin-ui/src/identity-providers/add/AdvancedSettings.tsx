@@ -15,6 +15,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
@@ -106,12 +107,14 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
     defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
-  const transientSessions = useWatch({
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
+  const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
     defaultValue: "false",
   });
-  const syncModeAvailable = transientSessions === "false";
+  const syncModeAvailable = transientUsers === "false";
   return (
     <>
       {!isOIDC && !isSAML && (
@@ -238,28 +241,30 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         defaultValue=""
       />
 
-      <FormGroupField label="doNotStoreUsers">
-        <Controller
-          name="config.doNotStoreUsers"
-          defaultValue="false"
-          control={control}
-          render={({ field }) => (
-            <Switch
-              id="doNotStoreUsers"
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={field.value === "true"}
-              onChange={(value) => {
-                field.onChange(value.toString());
-                // if field is checked, set sync mode to import
-                if (value) {
-                  setValue("config.syncMode", "IMPORT");
-                }
-              }}
-            />
-          )}
-        />
-      </FormGroupField>
+      {isTransientUsersEnabled && (
+        <FormGroupField label="doNotStoreUsers">
+          <Controller
+            name="config.doNotStoreUsers"
+            defaultValue="false"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="doNotStoreUsers"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={field.value === "true"}
+                onChange={(value) => {
+                  field.onChange(value.toString());
+                  // if field is checked, set sync mode to import
+                  if (value) {
+                    setValue("config.syncMode", "IMPORT");
+                  }
+                }}
+              />
+            )}
+          />
+        </FormGroupField>
+      )}
       {syncModeAvailable && (
         <FormGroup
           className="pf-u-pb-3xl"
