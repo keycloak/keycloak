@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "start": "wireit",
-    "clear-data": "rm -r ./server/data"
+    "delete-data": "rm -r ./server/data",
+    "delete-server": "rm -r ./server"
   },
   "wireit": {
     "start": {
