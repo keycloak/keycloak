@@ -4,7 +4,7 @@ import { UserProfileFieldProps } from "../UserProfileFields";
 import { fieldName, label } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
 
-export const DefaultComponent = ({
+export const MultiInputComponent = ({
   form,
   attribute,
 }: UserProfileFieldProps) => {
