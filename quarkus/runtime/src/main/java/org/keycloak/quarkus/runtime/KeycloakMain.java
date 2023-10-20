@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import picocli.CommandLine.ExitCode;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
@@ -40,6 +41,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.NonCliPropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -75,6 +77,15 @@ public class KeycloakMain implements QuarkusApplication {
 
             if (isDevProfileNotAllowed()) {
                 errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
+                System.exit(ExitCode.USAGE);
+                return;
+            }
+
+            try {
+                Picocli.validateNonCliConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
+            } catch (NonCliPropertyException e) {
+                errorHandler.error(errStream, e.getMessage(), null);
+                System.exit(ExitCode.USAGE);
                 return;
             }
 
