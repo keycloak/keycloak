@@ -319,6 +319,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               logFailed(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus);
           }
           logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
+          k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems().stream()
+                  .forEach(pod -> logFailed(k8sclient.pods().resource(pod), Pod::getStatus));
       } finally {
           cleanup();
       }

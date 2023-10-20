@@ -38,6 +38,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 
@@ -76,7 +77,9 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var cacheEnvVarName = getKeycloakOptionEnvVarName("cache");
         var healthEnvVarName = getKeycloakOptionEnvVarName("health-enabled");
-        envvars.removeIf(e -> e.getName().equals(cacheEnvVarName) || e.getName().equals(healthEnvVarName));
+        var cacheStackEnvVarName = getKeycloakOptionEnvVarName("cache-stack");
+        var toRemove = Set.of(cacheEnvVarName, healthEnvVarName, cacheStackEnvVarName);
+        envvars.removeIf(e -> toRemove.contains(e.getName()));
 
         // The Job should not connect to the cache
         envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
