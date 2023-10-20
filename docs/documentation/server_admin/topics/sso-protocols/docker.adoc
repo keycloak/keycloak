@@ -4,10 +4,10 @@
 
 NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 
-link:https://docs.docker.com/registry/spec/auth/[Docker Registry V2 Authentication] is an OIDC-Like protocol used to authenticate users against a Docker registry.  {project_name}'s implementation of this protocol allows for a {project_name} authentication server to be used by a Docker client to authenticate against a registry.  While this protocol uses fairly standard token and signature mechanisms, it has a few wrinkles that prevent it from being treated as a true OIDC implementation.  The largest deviations include a very specific JSON format for requests and responses as well as the ability to understand how to map repository names and permissions to the OAuth scope mechanism.
+link:https://distribution.github.io/distribution/spec/auth/[Docker Registry V2 Authentication] is an OIDC-Like protocol used to authenticate users against a Docker registry.  {project_name}'s implementation of this protocol allows for a {project_name} authentication server to be used by a Docker client to authenticate against a registry.  While this protocol uses fairly standard token and signature mechanisms, it has a few wrinkles that prevent it from being treated as a true OIDC implementation.  The largest deviations include a very specific JSON format for requests and responses as well as the ability to understand how to map repository names and permissions to the OAuth scope mechanism.
 
 ==== Docker Auth Flow
-The link:https://docs.docker.com/registry/spec/auth/token/[Docker API documentation] best describes and illustrates this process, however a brief summary will be given below from the perspective of the {project_name} authentication server.
+The link:https://distribution.github.io/distribution/spec/auth/token/[Docker API documentation] best describes and illustrates this process, however a brief summary will be given below from the perspective of the {project_name} authentication server.
 
 NOTE: This flow assumes that a `docker login` command has already been performed
 
