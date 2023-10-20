@@ -5,7 +5,7 @@ import type {
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
 import { useMemo } from "react";
-import { FieldPath, UseFormReturn } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
@@ -14,7 +14,8 @@ import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
 import { UserFormFields } from "./form-state";
-import { fieldName, isRootAttribute } from "./utils";
+import { isRootAttribute } from "./utils";
+import { DefaultComponent } from "./components/DefaultComponent";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -50,6 +51,7 @@ const INPUT_TYPES = [
   "html5-date",
   "html5-month",
   "html5-time",
+  "default",
 ] as const;
 
 export type InputType = (typeof INPUT_TYPES)[number];
@@ -79,6 +81,7 @@ export const FIELDS: {
   "html5-date": TextComponent,
   "html5-month": TextComponent,
   "html5-time": TextComponent,
+  default: DefaultComponent,
 } as const;
 
 export type UserProfileFieldsProps = {
@@ -165,8 +168,7 @@ type FormFieldProps = {
 };
 
 const FormField = ({ form, attribute, roles }: FormFieldProps) => {
-  const value = form.watch(fieldName(attribute) as FieldPath<UserFormFields>);
-  const inputType = determineInputType(attribute, value);
+  const inputType = determineInputType(attribute);
   const Component = FIELDS[inputType];
 
   return (
@@ -179,11 +181,10 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
   );
 };
 
-const DEFAULT_INPUT_TYPE = "multiselect" satisfies InputType;
+const DEFAULT_INPUT_TYPE = "default" satisfies InputType;
 
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
-  value: string | string[],
 ): InputType {
   // Always treat the root attributes as a text field.
   if (isRootAttribute(attribute.name)) {
@@ -194,11 +195,6 @@ function determineInputType(
 
   // If the attribute has no valid input type, it is always multi-valued.
   if (!isValidInputType(inputType)) {
-    return DEFAULT_INPUT_TYPE;
-  }
-
-  // An attribute with multiple values is always multi-valued, even if an input type is provided.
-  if (Array.isArray(value) && value.length > 1) {
     return DEFAULT_INPUT_TYPE;
   }
 
