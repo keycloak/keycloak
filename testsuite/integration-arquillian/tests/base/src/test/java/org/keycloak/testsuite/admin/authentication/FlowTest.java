@@ -361,6 +361,15 @@ public class FlowTest extends AbstractAuthenticationTest {
         } catch (ClientErrorException exception){
             //expoected
         }
+
+        //try to update old flow with an alias with illegal characters
+        testFlow.setAlias("New(Flow");
+        try {
+            authMgmtResource.updateFlow(found.getId(), testFlow);
+        } catch (ClientErrorException exception){
+            //expected
+        }
+
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow
