@@ -212,8 +212,6 @@ public class RealmRepresentation {
 
     protected Boolean userManagedAccessAllowed;
 
-    protected List<String> claimsSupported;
-
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -1406,13 +1404,5 @@ public class RealmRepresentation {
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
         return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
-    }
-
-    public List<String> getClaimsSupported() {
-        return claimsSupported;
-    }
-
-    public void setClaimsSupported(List<String> claimsSupported) {
-        this.claimsSupported = claimsSupported;
     }
 }

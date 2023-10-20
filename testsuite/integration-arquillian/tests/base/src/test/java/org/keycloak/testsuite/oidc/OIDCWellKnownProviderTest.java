@@ -31,6 +31,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.Constants;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProvider;
@@ -410,14 +411,14 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         RealmResource testRealm = adminClient.realm("test");
         RealmRepresentation realmRep = testRealm.toRepresentation();
         try {
-            realmRep.setClaimsSupported(Stream.of("aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR,"email_verified").collect(Collectors.toList()));
+            realmRep.getAttributes().put(RealmAttributes.CLAIMS_SUPPORTED,Stream.of("aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR,"email_verified").collect(Collectors.joining(",")));
             testRealm.update(realmRep);
 
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
             Assert.assertNames(oidcConfig.getClaimsSupported(), "aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR,"email_verified");
 
         } finally {
-            realmRep.setClaimsSupported(OIDCWellKnownProvider.DEFAULT_CLAIMS_SUPPORTED.stream().collect(Collectors.toList()));
+            realmRep.getAttributes().put(RealmAttributes.CLAIMS_SUPPORTED,OIDCWellKnownProvider.DEFAULT_CLAIMS_SUPPORTED.stream().collect(Collectors.joining(",")));
             testRealm.update(realmRep);
             client.close();
         }

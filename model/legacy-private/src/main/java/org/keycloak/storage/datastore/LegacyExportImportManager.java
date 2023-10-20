@@ -257,8 +257,6 @@ public class LegacyExportImportManager implements ExportImportManager {
             newRealm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         else newRealm.setActionTokenGeneratedByUserLifespan(newRealm.getAccessCodeLifespanUserAction());
 
-        if (rep.getClaimsSupported() != null && !rep.getClaimsSupported().isEmpty()) newRealm.setClaimsSupported(rep.getClaimsSupported());
-
         // OAuth 2.0 Device Authorization Grant
         OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
 
@@ -763,8 +761,6 @@ public class LegacyExportImportManager implements ExportImportManager {
             realm.setActionTokenGeneratedByAdminLifespan(rep.getActionTokenGeneratedByAdminLifespan());
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
-
-        if (rep.getClaimsSupported() != null && !rep.getClaimsSupported().isEmpty()) realm.setClaimsSupported(rep.getClaimsSupported());
 
         OAuth2DeviceConfig deviceConfig = realm.getOAuth2DeviceConfig();
 
