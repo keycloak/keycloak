@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -266,7 +268,7 @@ public class IdentityProviderModel implements Serializable {
      * @return
      */
     public boolean isTransientUsers() {
-        return Boolean.valueOf(getConfig().get(DO_NOT_STORE_USERS));
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && Boolean.valueOf(getConfig().get(DO_NOT_STORE_USERS));
     }
 
     /**
