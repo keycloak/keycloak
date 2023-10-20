@@ -108,7 +108,7 @@ public class UserProfileAdminTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testUsernameRequiredIfEmailAsUsernameDisabled() {
+    public void testUsernameRequiredAndWritableIfEmailAsUsernameDisabledAndEditUsernameAllowed() {
         RealmResource realm = testRealm();
         RealmRepresentation realmRep = realm.toRepresentation();
         Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
@@ -118,9 +118,41 @@ public class UserProfileAdminTest extends AbstractAdminTest {
             realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.update(realmRep);
         });
+        Boolean editUsernameAllowed = realmRep.isEditUsernameAllowed();
+        realmRep.setEditUsernameAllowed(true);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setEditUsernameAllowed(editUsernameAllowed);
+            realm.update(realmRep);
+        });
         UserProfileResource userProfile = realm.users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
+        assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isReadOnly());
+    }
+
+    @Test
+    public void testUsernameRequiredAndWritableIfEmailAsUsernameDisabledAndEditUsernameDisabled() {
+        RealmResource realm = testRealm();
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            realm.update(realmRep);
+        });
+        Boolean editUsernameAllowed = realmRep.isEditUsernameAllowed();
+        realmRep.setEditUsernameAllowed(false);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setEditUsernameAllowed(editUsernameAllowed);
+            realm.update(realmRep);
+        });
+        UserProfileResource userProfile = realm.users().userProfile();
+        UserProfileMetadata metadata = userProfile.getMetadata();
+        assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
+        assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isReadOnly());
     }
 
     @Test
@@ -137,6 +169,7 @@ public class UserProfileAdminTest extends AbstractAdminTest {
         UserProfileResource userProfile = realm.users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
+        assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isReadOnly());
     }
 
     @Test

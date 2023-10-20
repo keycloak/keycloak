@@ -77,7 +77,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
-        if (REGISTRATION.equals(c.getContext()) || IDP_REVIEW.equals(c.getContext())) {
+        if (REGISTRATION.equals(c.getContext())
+                || IDP_REVIEW.equals(c.getContext())
+                || isNewUser(c)) {
             return !realm.isRegistrationEmailAsUsername();
         }
 
