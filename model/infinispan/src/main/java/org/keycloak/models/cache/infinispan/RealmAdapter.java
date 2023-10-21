@@ -642,6 +642,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public List<String> getClaimsSupported() {
+        if (isUpdated()) return updated.getClaimsSupported();
+        return cached.getClaimsSupported();
+    }
+
+    @Override
+    public void setClaimsSupported(List<String> claimsSupported) {
+        getDelegateForUpdate();
+        updated.setClaimsSupported(claimsSupported);
+    }
+
+    @Override
     public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
         if (isUpdated()) return updated.getRequiredCredentialsStream();
         return cached.getRequiredCredentials().stream();

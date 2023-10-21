@@ -24,6 +24,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -238,6 +239,10 @@ public interface RealmModel extends RoleContainerModel {
     int getAccessCodeLifespanUserAction();
 
     void setAccessCodeLifespanUserAction(int seconds);
+
+    List<String> getClaimsSupported();
+
+    void setClaimsSupported(List<String> claimsSupported);
 
     OAuth2DeviceConfig getOAuth2DeviceConfig();
 

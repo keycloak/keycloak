@@ -54,4 +54,6 @@ public interface RealmAttributes {
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 
+    String CLAIMS_SUPPORTED = "claimsSupported";
+
 }
