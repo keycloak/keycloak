@@ -1117,6 +1117,25 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
     }
 
+    @Test
+    public void testConfigurationRemainsAfterReset() {
+        String customConfig = "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", " + VALIDATIONS_LENGTH + "}"
+                + "]}";
+
+        setUserProfileConfiguration(customConfig);
+
+        RealmResource realmRes = testRealm();
+        disableDynamicUserProfile(realmRes, false);
+        RealmRepresentation realm = realmRes.toRepresentation();
+        enableDynamicUserProfile(realm);
+        testRealm().update(realm);
+
+        Assert.assertEquals(customConfig, realmRes.users().userProfile().getConfiguration());
+    }
+
     protected UserRepresentation getUser(String userId) {
         return getUser(testRealm(), userId);
     }
@@ -1145,12 +1164,19 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     public static void disableDynamicUserProfile(RealmResource realm) {
+        disableDynamicUserProfile(realm, true);
+    }
+
+    public static void disableDynamicUserProfile(RealmResource realm, boolean reset) {
         RealmRepresentation realmRep = realm.toRepresentation();
         if (realmRep.getAttributes() == null) {
             realmRep.setAttributes(new HashMap<>());
         }
         realmRep.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.FALSE.toString());
         realm.update(realmRep);
+        if (reset) {
+            setUserProfileConfiguration(realm, null);
+        }
     }
 
 
