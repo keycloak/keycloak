@@ -78,6 +78,7 @@ import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
@@ -477,14 +478,17 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
 
+            TokenVerifier<RefreshToken> tokenVerifier = TokenVerifier.createWithoutSignature(refreshToken)
+                    .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
+
             if (checkExpiration) {
-                try {
-                    TokenVerifier.createWithoutSignature(refreshToken)
-                            .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
-                            .verify();
-                } catch (VerificationException e) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
-                }
+                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE);
+            }
+
+            try {
+                tokenVerifier.verify();
+            } catch (VerificationException e) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
             }
 
             if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
