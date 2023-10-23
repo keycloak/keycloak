@@ -101,3 +101,9 @@ Use a single escape:
 ```
 bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30" --db-password keycloak --hostname localhost
 ```
+
+= Removed RegistrationProfile form action
+
+The form action `RegistrationProfile` (displayed in the UI of authentication flows as `Profile Validation`) was removed from the codebase and also from all authentication flows. By default, it was in
+the built-in registration flow of every realm. The validation of user attributes as well as creation of the user including all his attributes is handled by `RegistrationUserCreation` form action and
+hence `RegistrationProfile` is not needed anymore. There is usually no further action needed in relation to this change, unless you used `RegistrationProfile` class in your own providers.
