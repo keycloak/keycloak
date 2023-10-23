@@ -58,4 +58,9 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
     public boolean includeRuntime() {
         return true;
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
 }

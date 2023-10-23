@@ -175,7 +175,6 @@ describe("User profile tabs", () => {
       cy.get(".pf-c-form__label-text")
         .contains("newAttribute1")
         .should("not.exist");
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -218,7 +217,6 @@ describe("User profile tabs", () => {
       cy.findByTestId("email").type("testuser9@gmail.com");
       cy.findByTestId("save-user").click();
       masthead.checkNotificationMessage("The user has been saved");
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -251,7 +249,6 @@ describe("User profile tabs", () => {
       cy.get(".pf-c-form__label-text")
         .contains("newAttribute3")
         .should("exist");
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -282,7 +279,6 @@ describe("User profile tabs", () => {
       masthead.checkNotificationMessage(
         "Could not create user: Please specify attribute newAttribute4.",
       );
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -317,7 +313,6 @@ describe("User profile tabs", () => {
         .click();
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -345,7 +340,6 @@ describe("User profile tabs", () => {
       cy.get("h1#personalinfo").should("have.text", "personalInfo");
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
-
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
@@ -353,7 +347,6 @@ describe("User profile tabs", () => {
       cy.get("#kc-attributeGroup").click();
       cy.get("button.pf-c-select__menu-item").contains("None").click();
       userProfileTab.saveAttributeCreation();
-
       getAttributesGroupTab();
       listingPage.deleteItem("personalInfo");
       modalUtils.confirmModal();
@@ -395,7 +388,6 @@ describe("User profile tabs", () => {
         .click();
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
-
       cy.get("div.pf-c-select__toggle.pf-m-typeahead")
         .find(".pf-c-chip-group__list-item")
         .should("have.length", 2);

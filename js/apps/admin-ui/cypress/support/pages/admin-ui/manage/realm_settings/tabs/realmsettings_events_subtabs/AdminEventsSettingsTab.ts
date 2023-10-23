@@ -6,12 +6,12 @@ const masthead = new Masthead();
 const modal = new ModalUtils();
 
 export default class AdminEventsSettingsTab extends PageObject {
-  private saveEventsSwitch = "#adminEventsEnabled-switch";
-  private clearAdminEventsBtn = "#clear-admin-events";
-  private saveBtn = "#save-admin";
+  #saveEventsSwitch = "#adminEventsEnabled-switch";
+  #clearAdminEventsBtn = "#clear-admin-events";
+  #saveBtn = "#save-admin";
 
   clearAdminEvents() {
-    cy.get(this.clearAdminEventsBtn).click();
+    cy.get(this.#clearAdminEventsBtn).click();
     modal.checkModalTitle("Clear events");
     cy.intercept("/admin/realms/*/admin-events").as("clearEvents");
     modal.confirmModal();
@@ -21,18 +21,18 @@ export default class AdminEventsSettingsTab extends PageObject {
   }
 
   disableSaveEvents() {
-    super.assertSwitchStateOn(cy.get(this.saveEventsSwitch));
-    cy.get(this.saveEventsSwitch).parent().click();
+    super.assertSwitchStateOn(cy.get(this.#saveEventsSwitch));
+    cy.get(this.#saveEventsSwitch).parent().click();
     modal.checkModalTitle("Unsave events?");
     modal.confirmModal();
-    super.assertSwitchStateOff(cy.get(this.saveEventsSwitch));
+    super.assertSwitchStateOff(cy.get(this.#saveEventsSwitch));
     return this;
   }
 
   enableSaveEvents() {
-    super.assertSwitchStateOff(cy.get(this.saveEventsSwitch));
-    cy.get(this.saveEventsSwitch).parent().click();
-    super.assertSwitchStateOn(cy.get(this.saveEventsSwitch));
+    super.assertSwitchStateOff(cy.get(this.#saveEventsSwitch));
+    cy.get(this.#saveEventsSwitch).parent().click();
+    super.assertSwitchStateOn(cy.get(this.#saveEventsSwitch));
     return this;
   }
 
@@ -46,7 +46,7 @@ export default class AdminEventsSettingsTab extends PageObject {
     waitForConfig &&
       cy.intercept("/admin/realms/*/events/config").as("saveConfig");
 
-    cy.get(this.saveBtn).click();
+    cy.get(this.#saveBtn).click();
 
     waitForRealm && cy.wait("@saveRealm");
     waitForConfig && cy.wait("@saveConfig");

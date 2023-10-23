@@ -291,6 +291,8 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Failed to update flow with empty alias name");
         }
 
+        ReservedCharValidator.validate(flow.getAlias());
+
         //check if updating a correct flow
         AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(id);
         if (checkFlow == null) {

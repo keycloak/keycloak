@@ -4,13 +4,13 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export default class ProviderBaseGeneralSettingsPage extends PageObject {
-  private redirectUriGroup = ".pf-c-clipboard-copy__group";
+  #redirectUriGroup = ".pf-c-clipboard-copy__group";
   protected clientIdInput = "#kc-client-id";
   protected clientSecretInput = "#kc-client-secret";
-  private displayOrderInput = "#kc-display-order";
-  private addBtn = "createProvider";
-  private cancelBtn = "cancel";
-  private requiredFieldErrorMsg = ".pf-c-form__helper-text.pf-m-error";
+  #displayOrderInput = "#kc-display-order";
+  #addBtn = "createProvider";
+  #cancelBtn = "cancel";
+  #requiredFieldErrorMsg = ".pf-c-form__helper-text.pf-m-error";
   protected requiredFields: string[] = [
     this.clientIdInput,
     this.clientSecretInput,
@@ -32,7 +32,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public typeDisplayOrder(displayOrder: string) {
-    cy.get(this.displayOrderInput).type(displayOrder).blur();
+    cy.get(this.#displayOrderInput).type(displayOrder).blur();
 
     return this;
   }
@@ -43,22 +43,22 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public clickCopyToClipboard() {
-    cy.get(this.redirectUriGroup).find("button").click();
+    cy.get(this.#redirectUriGroup).find("button").click();
     return this;
   }
 
   public clickAdd() {
-    cy.findByTestId(this.addBtn).click();
+    cy.findByTestId(this.#addBtn).click();
     return this;
   }
 
   public clickCancel() {
-    cy.findByTestId(this.cancelBtn).click();
+    cy.findByTestId(this.#cancelBtn).click();
     return this;
   }
 
   public assertRedirectUriInputEqual(value: string) {
-    cy.get(this.redirectUriGroup).find("input").should("have.value", value);
+    cy.get(this.#redirectUriGroup).find("input").should("have.value", value);
     return this;
   }
 
@@ -88,13 +88,13 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
         cy.get(elementLocator)
           .parent()
           .parent()
-          .find(this.requiredFieldErrorMsg)
+          .find(this.#requiredFieldErrorMsg)
           .should("exist");
       } else {
         cy.findByTestId(elementLocator)
           .parent()
           .parent()
-          .find(this.requiredFieldErrorMsg)
+          .find(this.#requiredFieldErrorMsg)
           .should("exist");
       }
     });
@@ -125,7 +125,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       this.testData["ClientId"] + idpName,
     );
     cy.get(this.clientSecretInput).should("contain.value", "****");
-    cy.get(this.displayOrderInput).should(
+    cy.get(this.#displayOrderInput).should(
       "have.value",
       this.testData["DisplayOrder"],
     );

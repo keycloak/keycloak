@@ -6,10 +6,8 @@ enum mapperType {
 }
 
 export default class DedicatedScopesMappersTab extends CommonPage {
-  private addPredefinedMapperEmptyStateBtn =
-    "add-predefined-mapper-empty-action";
-  private configureNewMapperEmptyStateBtn =
-    "configure-a-new-mapper-empty-action";
+  #addPredefinedMapperEmptyStateBtn = "add-predefined-mapper-empty-action";
+  #configureNewMapperEmptyStateBtn = "configure-a-new-mapper-empty-action";
 
   addMapperFromPredefinedMappers() {
     this.emptyState().checkIfExists(false);
@@ -29,13 +27,13 @@ export default class DedicatedScopesMappersTab extends CommonPage {
 
   addPredefinedMapper() {
     this.emptyState().checkIfExists(true);
-    cy.findByTestId(this.addPredefinedMapperEmptyStateBtn).click();
+    cy.findByTestId(this.#addPredefinedMapperEmptyStateBtn).click();
     return this;
   }
 
   configureNewMapper() {
     this.emptyState().checkIfExists(true);
-    cy.findByTestId(this.configureNewMapperEmptyStateBtn).click({
+    cy.findByTestId(this.#configureNewMapperEmptyStateBtn).click({
       force: true,
     });
     return this;

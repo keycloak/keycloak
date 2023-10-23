@@ -54,6 +54,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
+import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -381,6 +382,31 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = getUser(userId);
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
+    }
+
+    @Test
+    public void testIgnoreCustomAttributeWhenUserProfileIsDisabled() {
+        try {
+            disableDynamicUserProfile(testRealm());
+            testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
+            testDefaultProfile();
+        } finally {
+            RealmRepresentation realm = testRealm().toRepresentation();
+            enableDynamicUserProfile(realm);
+            testRealm().update(realm);
+        }
+    }
+
+    private static RunOnServer setEmptyFirstNameAndCustomAttribute() {
+        return session -> {
+            UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "login-test");
+
+            // need to set directly to the model because user profile does not allow empty values
+            // an empty value should fail validation and force rendering the verify profile page
+            user.setFirstName("");
+            // this attribute does not exist in the default user profile configuration
+            user.setAttribute("test", List.of("test"));
+        };
     }
 
     @Test

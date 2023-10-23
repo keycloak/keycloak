@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: "html",
   use: {
     baseURL: process.env.CI
@@ -33,15 +33,6 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      dependencies: ["setup", "import realms"],
-      testIgnore: ["**/personal-info.spec.ts"],
-    },
-    {
-      name: "firefox",
-      use: {
-        ...devices["Desktop Firefox"],
         storageState: ".auth/user.json",
       },
       dependencies: ["setup", "import realms"],

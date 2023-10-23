@@ -22,46 +22,46 @@ export enum ClientsDetailsTab {
 }
 
 export default class ClientDetailsPage extends CommonPage {
-  private settingsTab = new SettingsTab();
-  private keysTab = new KeysTab();
-  private credentialsTab = new CredentialsTab();
-  private rolesTab = new RolesTab();
-  private clientScopesTab = new ClientScopesTab();
-  private authorizationTab = new AuthorizationTab();
-  private advancedTab = new AdvancedTab();
+  #settingsTab = new SettingsTab();
+  #keysTab = new KeysTab();
+  #credentialsTab = new CredentialsTab();
+  #rolesTab = new RolesTab();
+  #clientScopesTab = new ClientScopesTab();
+  #authorizationTab = new AuthorizationTab();
+  #advancedTab = new AdvancedTab();
 
   goToSettingsTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Settings);
-    return this.settingsTab;
+    return this.#settingsTab;
   }
 
   goToKeysTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Keys);
-    return this.keysTab;
+    return this.#keysTab;
   }
 
   goToCredentials() {
     this.tabUtils().clickTab(ClientsDetailsTab.Credentials);
-    return this.credentialsTab;
+    return this.#credentialsTab;
   }
 
   goToRolesTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Roles);
-    return this.rolesTab;
+    return this.#rolesTab;
   }
 
   goToClientScopesTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.ClientScopes);
-    return this.clientScopesTab;
+    return this.#clientScopesTab;
   }
 
   goToAuthorizationTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Authorization);
-    return this.authorizationTab;
+    return this.#authorizationTab;
   }
 
   goToAdvancedTab() {
     this.tabUtils().clickTab(ClientsDetailsTab.Advanced);
-    return this.advancedTab;
+    return this.#advancedTab;
   }
 }

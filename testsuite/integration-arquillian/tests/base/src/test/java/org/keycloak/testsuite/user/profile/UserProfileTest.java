@@ -57,7 +57,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
@@ -753,27 +752,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    public void testConfigurationChunks() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testConfigurationChunks);
-    }
-
-    private static void testConfigurationChunks(KeycloakSession session) throws IOException {
-        ComponentModel component = setAndGetDefaultConfiguration(session).orElse(null);
-        assertNotNull(component);
-
-        String newConfig = generateLargeProfileConfig();
-        UserProfileProvider provider = getUserProfileProvider(session);
-
-        provider.setConfiguration(newConfig);
-        component = getComponentModel(session).orElse(null);
-
-        // assert config is persisted in 2 pieces
-        Assert.assertEquals("2", component.get(DeclarativeUserProfileProvider.UP_PIECES_COUNT_COMPONENT_CONFIG_KEY));
-        // assert config is returned correctly
-        Assert.assertEquals(newConfig, provider.getConfiguration());
-    }
-
-    @Test
     public void testResetConfiguration() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testResetConfiguration);
     }
@@ -1156,7 +1134,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
 
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         try {
             profile.validate();
             fail("Should fail validation");
@@ -1212,7 +1190,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         profile.validate();
 
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         profile.validate();
 
         // fail on User API
@@ -1451,9 +1429,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile.validate();
 
         // no fail on auth flow scopes when scope is not required
-        profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
-        profile.validate();
-        profile = provider.create(UserProfileContext.REGISTRATION_USER_CREATION, attributes);
+        profile = provider.create(UserProfileContext.REGISTRATION, attributes);
         profile.validate();
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
         profile.validate();
@@ -1478,7 +1454,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
         }
         try {
-            profile = provider.create(UserProfileContext.REGISTRATION_PROFILE, attributes);
+            profile = provider.create(UserProfileContext.REGISTRATION, attributes);
             profile.validate();
             fail("Should fail validation");
         } catch (ValidationException ve) {

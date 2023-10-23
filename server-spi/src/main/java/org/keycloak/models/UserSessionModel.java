@@ -83,7 +83,7 @@ public interface UserSessionModel {
 
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
-     * @return 
+     * @return
      */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
     /**
@@ -133,6 +133,13 @@ public interface UserSessionModel {
         public static State valueOfInteger(Integer id) {
             return id == null ? null : BY_ID.get(id);
         }
+    }
+
+    /**
+     * @return Persistence state of the session
+     */
+    default SessionPersistenceState getPersistenceState() {
+        return SessionPersistenceState.PERSISTENT;
     }
 
     /**

@@ -64,7 +64,7 @@ public class HealthDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true --metrics-enabled=true" })
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true" })
     void testNonBlockingProbes() {
         when().get("/health/live").then()
                 .statusCode(200);
@@ -75,7 +75,7 @@ public class HealthDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true --metrics-enabled=true --health-classic-probes-enabled=true" })
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--health-classic-probes-enabled=true" })
     void testBlockingProbes() {
         when().get("/health/live").then()
                 .statusCode(200);

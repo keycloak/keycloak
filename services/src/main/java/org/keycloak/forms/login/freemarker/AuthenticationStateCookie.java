@@ -67,15 +67,10 @@ public class AuthenticationStateCookie {
         this.remainingTabs = remainingTabs;
     }
 
-    public static void generateAndSetCookie(KeycloakSession session, RealmModel realm, RootAuthenticationSessionModel rootAuthSession) {
+    public static void generateAndSetCookie(KeycloakSession session, RealmModel realm, RootAuthenticationSessionModel rootAuthSession, int cookieMaxAge) {
         UriInfo uriInfo = session.getContext().getHttpRequest().getUri();
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(session.getContext().getConnection());
-
-        // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
-        // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediatelly by JS script
-        // and login user automatically. No need to have cookie living any further
-        int cookieMaxAge = realm.getAccessCodeLifespan();
 
         AuthenticationStateCookie cookie = new AuthenticationStateCookie();
         cookie.setAuthSessionId(rootAuthSession.getId());

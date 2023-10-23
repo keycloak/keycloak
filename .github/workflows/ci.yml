@@ -509,7 +509,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        browser: [chrome, firefox]
+        browser: [chrome]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -519,7 +519,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()

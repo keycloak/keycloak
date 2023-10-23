@@ -13,7 +13,7 @@ import { mainPageContentId } from "../../App";
 import { FormPanel } from "./FormPanel";
 import { ScrollPanel } from "./ScrollPanel";
 
-import "./scroll-form.css";
+import style from "./scroll-form.module.css";
 
 type ScrollSection = {
   title: string;
@@ -53,7 +53,7 @@ export const ScrollForm = ({
                 <FormPanel
                   scrollId={scrollId}
                   title={title}
-                  className="kc-form-panel__panel"
+                  className={style.panel}
                 >
                   {panel}
                 </FormPanel>
@@ -67,7 +67,7 @@ export const ScrollForm = ({
         })}
       </GridItem>
       <GridItem md={4} sm={12} order={{ default: "-1", md: "1" }}>
-        <PageSection className="kc-scroll-form--sticky">
+        <PageSection className={style.sticky}>
           <JumpLinks
             isVertical
             // scrollableSelector has to point to the id of the element whose scrollTop changes

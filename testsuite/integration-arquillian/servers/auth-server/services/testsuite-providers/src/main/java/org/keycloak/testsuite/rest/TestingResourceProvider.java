@@ -69,6 +69,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 import org.keycloak.testsuite.components.TestProvider;
@@ -817,7 +818,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             clientScopeModel.setIncludeInTokenScope(true);
 
             // Add audience protocol mapper
-            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false);
+            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null,true, false, true );
             clientScopeModel.addProtocolMapper(audienceMapper);
 
             return clientScopeModel.getId();
@@ -1105,5 +1106,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
         FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
         factory.setProvider(this.factory.truststoreProvider);
     }
+
+    @GET
+    @Path("/get-authentication-session-tabs-count")
+    @NoCache
+    public Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realmName, @QueryParam("authSessionId") String authSessionId) {
+        RealmModel realm = getRealmByName(realmName);
+        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        if (rootAuthSession == null) {
+            return 0;
+        }
+
+        return rootAuthSession.getAuthenticationSessions().size();
+    }
+
 
 }

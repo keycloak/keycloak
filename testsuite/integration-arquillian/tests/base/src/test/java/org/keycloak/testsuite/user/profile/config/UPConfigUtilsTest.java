@@ -20,7 +20,6 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -42,8 +41,7 @@ public class UPConfigUtilsTest {
         Assert.assertFalse(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.USER_API));
 
         Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.IDP_REVIEW));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_PROFILE));
-        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION_USER_CREATION));
+        Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.REGISTRATION));
         Assert.assertTrue(UPConfigUtils.canBeAuthFlowContext(UserProfileContext.UPDATE_PROFILE));
     }
 
@@ -63,43 +61,14 @@ public class UPConfigUtilsTest {
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
+        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION, roles));
 
         // both in roles
         roles.add(ROLE_ADMIN);
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.IDP_REVIEW, roles));
-        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION_PROFILE, roles));
-    }
-
-    @Test
-    public void breakString() {
-        List<String> ret = UPConfigUtils.getChunks(null, 2);
-        Assert.assertEquals(0, ret.size());
-
-        ret = UPConfigUtils.getChunks("", 2);
-        assertListContent(ret, "");
-
-        ret = UPConfigUtils.getChunks("1234567", 3);
-        assertListContent(ret, "123", "456", "7");
-
-        ret = UPConfigUtils.getChunks("12345678", 3);
-        assertListContent(ret, "123", "456", "78");
-
-        ret = UPConfigUtils.getChunks("123456789", 3);
-        assertListContent(ret, "123", "456", "789");
-    }
-
-    /**
-     * Assert list exactly contains all expected parts in given order
-     */
-    private void assertListContent(List<String> actual, String... expectedParts) {
-        int i = 0;
-        Assert.assertEquals(expectedParts.length, actual.size());
-        for (String ep : expectedParts) {
-            Assert.assertEquals(ep, actual.get(i++));
-        }
+        Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.REGISTRATION, roles));
     }
 
     @Test
