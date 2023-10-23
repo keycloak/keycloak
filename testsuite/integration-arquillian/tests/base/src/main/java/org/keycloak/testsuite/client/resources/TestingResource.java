@@ -344,6 +344,16 @@ public interface TestingResource {
     Set<Profile.Feature> disableFeature(@PathParam("feature") String feature);
 
     /**
+     * Resets the given feature to it's default state.
+     *
+     * @param feature
+     */
+    @POST
+    @Path("/reset-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void resetFeature(@PathParam("feature") String feature);
+
+    /**
      * If property-value is null, the system property will be unset (removed) on the server
      */
     @GET

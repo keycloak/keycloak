@@ -48,13 +48,12 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -68,16 +67,15 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.Cookie;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.LinkedList;
 
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
-@EnableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
 public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     private static String userId;
@@ -1000,7 +998,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void ensureDeviceFlowConfigPresentWhenDeviceFlowEnabled() {
+    public void ensureDeviceFlowConfigPresentWhenDeviceFlowIsEnabled() {
 
         OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
         Assert.assertNotNull("deviceAuthorizationEndpoint should be not null", oidcConfigRep.getDeviceAuthorizationEndpoint());
@@ -1008,23 +1006,32 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
-    public void ensureDeviceFlowConfigNotPresentWhenDeviceFlowDisabled() throws Exception {
+    // @DisableFeature(value = Profile.Feature.DEVICE_FLOW, executeAsLast = false, skipRestart = true)
+    public void ensureDeviceFlowConfigNotPresentWhenDeviceFlowIsDisabled() throws Exception {
 
-        OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
-        Assert.assertNull("deviceAuthorizationEndpoint should be null", oidcConfigRep.getDeviceAuthorizationEndpoint());
-        Assert.assertNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
+        // this test currently does not work with -Pauth-server-quarkus
+        ContainerAssume.assumeAuthServerUndertow();
 
-        try (var httpClient = oauth.getHttpClient().get()) {
-            Assert.assertEquals("Should return not found for device auth endpoint"
-                    , (long) 404
-                    , (long) httpClient.execute(new HttpGet(oauth.getDeviceAuthorizationUrl()), r -> r.getStatusLine().getStatusCode()));
+        testingClient.disableFeature(Profile.Feature.DEVICE_FLOW);
+
+        try {
+            OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
+            Assert.assertNull("deviceAuthorizationEndpoint should be null", oidcConfigRep.getDeviceAuthorizationEndpoint());
+            Assert.assertNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
+
+            try (var httpClient = oauth.getHttpClient().get()) {
+                Assert.assertEquals("Should return not found for device auth endpoint"
+                        , (long) 404
+                        , (long) httpClient.execute(new HttpGet(oauth.getDeviceAuthorizationUrl()), r -> r.getStatusLine().getStatusCode()));
+            }
+
+            oauth.realm(REALM_NAME);
+            oauth.clientId(DEVICE_APP_PUBLIC);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, "dummy");
+            Assert.assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, tokenResponse.getError());
+        } finally {
+            testingClient.resetFeature(Profile.Feature.DEVICE_FLOW);
         }
-
-        oauth.realm(REALM_NAME);
-        oauth.clientId(DEVICE_APP_PUBLIC);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, "dummy");
-        Assert.assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, tokenResponse.getError());
     }
 
     private void openVerificationPage(String verificationUri) {

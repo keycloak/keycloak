@@ -90,6 +90,15 @@ public class KeycloakTestingClient implements AutoCloseable {
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
+    /**
+     * Resets the feature to it's default setting.
+     *
+     * @param feature
+     */
+    public void resetFeature(Profile.Feature feature) {
+        testing().resetFeature(feature.toString());
+    }
+
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
 
     public TestSamlApplicationResource testSamlApp() { return target.proxy(TestSamlApplicationResource.class); }

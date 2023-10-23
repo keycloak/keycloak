@@ -113,8 +113,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -124,6 +127,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.UUID;
@@ -881,6 +885,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+        doWithProperties(file, props -> {
+            props.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+        });
+    }
+
+    private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
+        doWithProperties(file, props -> {
+            props.remove("feature." + featureProfile.toString().toLowerCase());
+        });
+    }
+
+    private void doWithProperties(File file, Consumer<Properties> callback) {
+
         Properties properties = new Properties();
         if (file.isFile() && file.exists()) {
             try (FileInputStream fis = new FileInputStream(file)) {
@@ -890,7 +907,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
             }
         }
 
-        properties.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+        callback.accept(properties);
+
+        if (file.isFile() && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
 
         try (FileOutputStream fos = new FileOutputStream(file)) {
             properties.store(fos, null);
@@ -920,6 +941,30 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Set<Profile.Feature> disableFeature(@PathParam("feature") String feature) {
         return updateFeature(feature, false);
+    }
+
+    @POST
+    @Path("/reset-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void resetFeature(@PathParam("feature") String featureKey) {
+
+        Profile.Feature feature;
+
+        try {
+            feature = Profile.Feature.valueOf(featureKey);
+        } catch (IllegalArgumentException e) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
+            throw new BadRequestException();
+        }
+
+        FeatureDeployerUtil.initBeforeChangeFeature(feature);
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            File file = new File(jbossServerConfigDir, "profile.properties");
+            unsetFeatureInProfileFile(file, feature);
+        }
     }
 
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
