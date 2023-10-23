@@ -141,3 +141,7 @@ Relying on RESTEasy Classic is not longer an option because it is not available 
 = Partial export requires manage-realm permission
 
 The endpoint `POST {keycloak server}/realms/{realm}/partial-export` and the corresponding action in the admin console now require `manage-realm` permission for execution instead of `view-realm`. This endpoint exports the realm configuration into a JSON file and the new permission is more appropriate. The parameters `exportGroupsAndRoles` and `exportClients`, which include the realm groups/roles and clients in the export respectively, continue managing the same permissions (`query-groups` and `view-clients`).
+
+= Removal of the options to trim the event's details length
+
+Since this release, Keycloak supports long value for `EventEntity` details column. Therefore, it no longer supports options for trimming event detail length `--spi-events-store-jpa-max-detail-length` and `--spi-events-store-jpa-max-field-length`.

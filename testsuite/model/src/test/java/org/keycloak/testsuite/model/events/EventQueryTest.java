@@ -27,9 +27,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -130,6 +134,38 @@ public class EventQueryTest extends KeycloakModelTest {
             assertThat(eventsDesc.get(0).getUserId(), is("u2"));
             assertThat(eventsDesc.get(1).getUserId(), is("u1"));
 
+            return null;
+        });
+    }
+
+    @Test
+    public void testEventDetailsLongValue() {
+        String v1 = RandomStringUtils.random(1000, true, true);
+        String v2 = RandomStringUtils.random(1000, true, true);
+        String v3 = RandomStringUtils.random(1000, true, true);
+        String v4 = RandomStringUtils.random(1000, true, true);
+
+        withRealm(realmId, (session, realm) -> {
+
+            Map<String, String> details = Map.of("k1", v1, "k2", v2, "k3", v3, "k4", v4);
+
+            Event event = createAuthEventForUser(session, realm, "u1");
+            event.setDetails(details);
+
+            session.getProvider(EventStoreProvider.class).onEvent(event);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            List<Event> events = session.getProvider(EventStoreProvider.class).createQuery().realm(realmId).getResultStream().collect(Collectors.toList());
+            assertThat(events, hasSize(1));
+            Map<String, String> details = events.get(0).getDetails();
+
+            assertThat(details.get("k1"), equalTo(v1));
+            assertThat(details.get("k2"), equalTo(v2));
+            assertThat(details.get("k3"), equalTo(v3));
+            assertThat(details.get("k4"), equalTo(v4));
             return null;
         });
     }
