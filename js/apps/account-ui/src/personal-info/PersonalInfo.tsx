@@ -9,7 +9,6 @@ import {
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   UserProfileFields,
@@ -82,31 +81,30 @@ const PersonalInfo = () => {
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
-        <FormProvider {...form}>
-          <UserProfileFields
-            metaData={userProfileMetadata}
-            supportedLocales={supportedLocales}
-            t={(key: TFuncKey) => t(key)}
-            renderer={(attribute) =>
-              attribute.name === "email" &&
-              updateEmailFeatureEnabled &&
-              updateEmailActionEnabled &&
-              (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
-                <Button
-                  id="update-email-btn"
-                  variant="link"
-                  onClick={() =>
-                    keycloak?.keycloak.login({ action: "UPDATE_EMAIL" })
-                  }
-                  icon={<ExternalLinkSquareAltIcon />}
-                  iconPosition="right"
-                >
-                  {t("updateEmail")}
-                </Button>
-              ) : undefined
-            }
-          />
-        </FormProvider>
+        <UserProfileFields
+          form={form}
+          userProfileMetadata={userProfileMetadata}
+          supportedLocales={supportedLocales}
+          t={(key: TFuncKey) => t(key)}
+          renderer={(attribute) =>
+            attribute.name === "email" &&
+            updateEmailFeatureEnabled &&
+            updateEmailActionEnabled &&
+            (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
+              <Button
+                id="update-email-btn"
+                variant="link"
+                onClick={() =>
+                  keycloak?.keycloak.login({ action: "UPDATE_EMAIL" })
+                }
+                icon={<ExternalLinkSquareAltIcon />}
+                iconPosition="right"
+              >
+                {t("updateEmail")}
+              </Button>
+            ) : undefined
+          }
+        />
         <ActionGroup>
           <Button
             data-testid="save"

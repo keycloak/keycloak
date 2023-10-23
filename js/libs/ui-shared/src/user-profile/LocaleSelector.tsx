@@ -1,5 +1,5 @@
 import { SelectControl } from "../controls/SelectControl";
-import { UserProfileFieldsProps } from "./UserProfileGroup";
+import { UserProfileFieldProps } from "./UserProfileFields";
 
 const localeToDisplayName = (locale: string) => {
   try {
@@ -9,7 +9,7 @@ const localeToDisplayName = (locale: string) => {
   }
 };
 
-type LocaleSelectorProps = UserProfileFieldsProps & {
+type LocaleSelectorProps = Omit<UserProfileFieldProps, "inputType"> & {
   supportedLocales: string[];
 };
 

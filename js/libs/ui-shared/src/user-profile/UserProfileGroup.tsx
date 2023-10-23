@@ -1,43 +1,46 @@
 import { FormGroup, InputGroup } from "@patternfly/react-core";
 import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
-import { useFormContext } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import { HelpItem } from "../controls/HelpItem";
-import { FormFieldProps } from "./UserProfileFields";
-import { UserProfileAttribute } from "./userProfileConfig";
-import { fieldName, label } from "./utils";
+import {
+  UserFormFields,
+  UserProfileAttributeMetadata,
+} from "./userProfileConfig";
+import {
+  TranslationFunction,
+  fieldName,
+  isRequiredAttribute,
+  label,
+} from "./utils";
 
-export type UserProfileFieldsProps = Omit<FormFieldProps, "attribute"> &
-  UserProfileAttribute;
-
-type LengthValidator =
-  | {
-      min: number;
-    }
-  | undefined;
-
-const isRequired = (attribute: UserProfileAttribute) =>
-  !!attribute.required ||
-  (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
+export type UserProfileGroupProps = {
+  t: TranslationFunction;
+  form: UseFormReturn<UserFormFields>;
+  attribute: UserProfileAttributeMetadata;
+  renderer?: (
+    attribute: UserProfileAttributeMetadata,
+  ) => JSX.Element | undefined;
+};
 
 export const UserProfileGroup = ({
-  children,
+  t,
+  form,
+  attribute,
   renderer,
-  ...attribute
-}: PropsWithChildren<UserProfileFieldsProps>) => {
-  const { t } = attribute;
+  children,
+}: PropsWithChildren<UserProfileGroupProps>) => {
   const helpText = attribute.annotations?.["inputHelperTextBefore"] as string;
-
   const {
     formState: { errors },
-  } = useFormContext();
+  } = form;
 
   return (
     <FormGroup
       key={attribute.name}
-      label={label(attribute) || ""}
+      label={label(attribute, t) || ""}
       fieldId={attribute.name}
-      isRequired={isRequired(attribute)}
+      isRequired={isRequiredAttribute(attribute)}
       validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
       helperTextInvalid={t(get(errors, fieldName(attribute.name))?.message)}
       labelIcon={

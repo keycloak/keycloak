@@ -33,17 +33,33 @@ export interface UserProfileGroup {
 }
 
 export interface UserProfileAttributeMetadata {
-  name: string;
-  displayName: string;
-  required: boolean;
-  readOnly: boolean;
-  annotations?: { [index: string]: any };
-  validators: { [index: string]: { [index: string]: any } };
+  name?: string;
+  displayName?: string;
+  required?: boolean;
+  readOnly?: boolean;
+  group?: string;
+  annotations?: Record<string, unknown>;
+  validators?: Record<string, Record<string, unknown>>;
+}
+
+export interface UserProfileAttributeGroupMetadata {
+  name?: string;
+  displayHeader?: string;
+  displayDescription?: string;
+  annotations?: Record<string, unknown>;
 }
 
 export interface UserProfileMetadata {
-  attributes: UserProfileAttributeMetadata[];
+  attributes?: UserProfileAttributeMetadata[];
+  groups?: UserProfileAttributeGroupMetadata[];
 }
+
+export type UserFormFields = Omit<
+  UserRepresentation,
+  "attributes" | "userProfileMetadata"
+> & {
+  attributes?: KeyValueType[] | Record<string, string | string[]>;
+};
 
 export interface UserRepresentation {
   id: string;

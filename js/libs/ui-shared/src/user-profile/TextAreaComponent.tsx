@@ -1,20 +1,22 @@
-import { useFormContext } from "react-hook-form";
 import { KeycloakTextArea } from "../controls/keycloak-text-area/KeycloakTextArea";
-import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
-import { fieldName } from "./utils";
+import { UserProfileFieldProps } from "./UserProfileFields";
+import { UserProfileGroup } from "./UserProfileGroup";
+import { fieldName, isRequiredAttribute } from "./utils";
 
-export const TextAreaComponent = (attr: UserProfileFieldsProps) => {
-  const { register } = useFormContext();
+export const TextAreaComponent = (props: UserProfileFieldProps) => {
+  const { form, attribute } = props;
+  const isRequired = isRequiredAttribute(attribute);
 
   return (
-    <UserProfileGroup {...attr}>
+    <UserProfileGroup {...props}>
       <KeycloakTextArea
-        id={attr.name}
-        data-testid={attr.name}
-        {...register(fieldName(attr.name))}
-        cols={attr.annotations?.["inputTypeCols"] as number}
-        rows={attr.annotations?.["inputTypeRows"] as number}
-        readOnly={attr.readOnly}
+        id={attribute.name}
+        data-testid={attribute.name}
+        {...form.register(fieldName(attribute.name))}
+        cols={attribute.annotations?.["inputTypeCols"] as number}
+        rows={attribute.annotations?.["inputTypeRows"] as number}
+        readOnly={attribute.readOnly}
+        isRequired={isRequired}
       />
     </UserProfileGroup>
   );
