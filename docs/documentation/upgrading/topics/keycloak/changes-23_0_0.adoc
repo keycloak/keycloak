@@ -107,3 +107,23 @@ bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql:/
 The form action `RegistrationProfile` (displayed in the UI of authentication flows as `Profile Validation`) was removed from the codebase and also from all authentication flows. By default, it was in
 the built-in registration flow of every realm. The validation of user attributes as well as creation of the user including all that user's attributes is handled by `RegistrationUserCreation` form action and
 hence `RegistrationProfile` is not needed anymore. There is usually no further action needed in relation to this change, unless you used `RegistrationProfile` class in your own providers.
+
+= Deprecated methods from data providers and models
+
+* `RealmModel#getTopLevelGroupsStream()` and overloaded methods are now deprecated
+
+= `GroupProvider` and `GroupLookupProvider` changes
+
+Methods have been added to allow for searching and paging through groups and subgroups.
+If you implement these interfaces you will need to implement the new method `GroupLookupProvider#searchForSubgroupsByParentIdNameStream()`
+
+= `GroupRepresentation` changes
+
+* new field `subGroupCount` added to inform client how many subgroups are on any given group
+* `subGroups` list is now only populated on queries that request hierarchy data
+  * This field is populated from the "bottom up" so can't be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm}/groups/{group_id}/children`
+
+= New endpoint for Group Admin API
+
+Endpoint `GET {keycloak server}/realms/{realm}/groups/{group_id}/children` added as a way to get subgroups of specific groups that support pagination
+

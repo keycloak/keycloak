@@ -653,28 +653,23 @@ public interface RealmModel extends RoleContainerModel {
     Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
 
+    @Deprecated
     /**
+     * @deprecated It is now preferable to use {@link GroupProvider} from a {@link KeycloakSession}
      * Returns top level groups as a stream.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream();
 
+    @Deprecated
     /**
+     * @deprecated It is now preferable to use {@link GroupProvider} from a {@link KeycloakSession}
      * Returns top level groups as a stream.
      * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
      * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
-
-    /**
-     * Returns top level groups as a stream.
-     * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
-     * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
-     * @param search {@code String} The name of the group that should be search
-     * @return Stream of {@link GroupModel}. Never returns {@code null}.
-     */
-    Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max);
 
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);

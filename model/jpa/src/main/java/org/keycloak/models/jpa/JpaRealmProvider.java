@@ -183,7 +183,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
-        adapter.getTopLevelGroupsStream().forEach(adapter::removeGroup);
+        session.groups().getTopLevelGroupsStream(adapter).forEach(adapter::removeGroup);
 
         num = em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();

@@ -1447,11 +1447,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max) {
-        return cacheSession.getTopLevelGroupsStream(this, search, exact, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return cacheSession.removeGroup(this, group);
     }

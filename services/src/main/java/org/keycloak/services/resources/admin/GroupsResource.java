@@ -101,9 +101,9 @@ public class GroupsResource {
         } else if (Objects.nonNull(search)) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            stream = realm.getTopLevelGroupsStream(firstResult, maxResults);
+            stream = session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         } else {
-            stream = realm.getTopLevelGroupsStream();
+            stream = session.groups().getTopLevelGroupsStream(realm);
         }
 
         if(populateHierarchy) {

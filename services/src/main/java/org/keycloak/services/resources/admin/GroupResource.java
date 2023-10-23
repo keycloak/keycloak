@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.admin;
 
 import jakarta.ws.rs.DefaultValue;
-import javax.swing.GroupLayout.Group;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -38,7 +37,6 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
@@ -137,7 +135,7 @@ public class GroupResource {
     
     private Stream<GroupModel> siblings() {
         if (group.getParentId() == null) {
-            return realm.getTopLevelGroupsStream();
+            return session.groups().getTopLevelGroupsStream(realm);
         } else {
             return group.getParent().getSubGroupsStream();
         }

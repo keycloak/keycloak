@@ -156,11 +156,13 @@ public class ModelToRepresentation {
         return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
     }
 
-    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
-        return realm.getTopLevelGroupsStream()
+    @Deprecated
+    public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
+        return session.groups().getTopLevelGroupsStream(realm, null, null)
                 .map(g -> toGroupHierarchy(g, full));
     }
 
+    @Deprecated
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
         return toGroupHierarchy(group, full, (String) null);
     }
@@ -170,6 +172,11 @@ public class ModelToRepresentation {
         return toGroupHierarchy(group, full, search, false);
     }
 
+    @Deprecated
+    /**
+     * @deprecated This function is left in place to serve mostly for a full export of all groups.
+     * There is a GroupUtil class in the keycloak-services module to handle normal search operations
+     */
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
@@ -490,7 +497,7 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(session, realm, rep);
             exportRequiredActions(realm, rep);
-            exportGroups(realm, rep);
+            exportGroups(session, realm, rep);
         }
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
@@ -522,8 +529,8 @@ public class ModelToRepresentation {
 
         return a;
     }
-    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
-        rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
+    public static void exportGroups(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
+        rep.setGroups(toGroupHierarchy(session, realm, true).collect(Collectors.toList()));
     }
 
     public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {

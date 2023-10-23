@@ -1938,11 +1938,6 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().getTopLevelGroupsStream(this, search, exact, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return session.groups().removeGroup(this, group);
     }

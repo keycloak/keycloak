@@ -41,8 +41,13 @@ public interface GroupLookupProvider {
      * @return GroupModel with the corresponding name.
      */
     default GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
-        return (parent == null ? realm.getTopLevelGroupsStream() : parent.getSubGroupsStream())
-                .filter(groupModel -> groupModel.getName().equals(name)).findFirst().orElse(null);
+        Stream<GroupModel> groupResults;
+        if(parent == null) {
+            groupResults = searchForGroupByNameStream(realm, name, true, null, null);
+        } else {
+            groupResults = searchForSubgroupsByParentIdStream(realm, parent.getId(), null, null);
+        }
+        return groupResults.findFirst().orElse(null);
     }
 
     /**
@@ -103,5 +108,15 @@ public interface GroupLookupProvider {
         return searchForSubgroupsByParentIdNameStream(realm, id, "", false, firstResult, maxResults);
     }
 
+    /**
+     * Returns the subgroups of a given group id
+     * @param realm Realm
+     * @param id the id of parent group to be used to load subgroups with
+     * @param search The search text that you want to match by group name
+     * @param exact Whether the search text should fuzzy match or not
+     * @param firstResult First result to return, Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return A Stream of groups that all have the given parent group as their parent.
+     */
     Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults);
 }
