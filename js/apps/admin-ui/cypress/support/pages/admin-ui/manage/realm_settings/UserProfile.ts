@@ -20,6 +20,11 @@ export default class UserProfile {
   private newAttributeAnnotationBtn = "annotations-add-row";
   private newAttributeAnnotationKey = "annotations.0.key";
   private newAttributeAnnotationValue = "annotations.0.value";
+  private newAttributeRequiredField = "input#kc-required.pf-c-switch__input";
+  private newAttributeUserEdit = "user-edit";
+  private newAttributeAdminEdit = "admin-edit";
+  private newAttributeUserView = "user-view";
+  private newAttributeAdminView = "admin-view";
   private validatorRolesList = "#validator";
   private validatorsList = 'tbody [data-label="name"]';
   private saveNewAttributeBtn = "attribute-create";
@@ -30,6 +35,10 @@ export default class UserProfile {
   private cancelAddingValidatorBtn = "cancel-validator-role-button";
   private cancelRemovingValidatorBtn = "cancel";
   private validatorDialogCloseBtn = 'button[aria-label="Close"]';
+  private newAttributesGroupNameInput = "input#kc-name";
+  private newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
+  private saveNewAttributesGroupBtn = "saveGroupBtn";
+  private newAnnotationsAddRowBtn = "annotations-remove";
 
   goToTab() {
     cy.findByTestId(this.userProfileTab).click();
@@ -89,6 +98,52 @@ export default class UserProfile {
 
   saveAttributeCreation() {
     cy.findByTestId(this.saveNewAttributeBtn).click();
+    return this;
+  }
+
+  createAttributeNotRequiredWithPermissions(name: string, displayName: string) {
+    cy.findByTestId(this.newAttributeNameInput).type(name);
+    cy.findByTestId(this.newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.newAttributeEnabledWhen).first().check();
+    cy.findByTestId(this.newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.newAttributeAdminEdit).first().check({ force: true });
+    cy.findByTestId(this.newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.newAttributeAdminView).first().check({ force: true });
+    return this;
+  }
+
+  createAttributeNotRequiredWithoutPermissions(
+    name: string,
+    displayName: string,
+  ) {
+    cy.findByTestId(this.newAttributeNameInput).type(name);
+    cy.findByTestId(this.newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.newAttributeEnabledWhen).first().check();
+    return this;
+  }
+
+  createAttributeRequiredWithPermissions(name: string, displayName: string) {
+    cy.findByTestId(this.newAttributeNameInput).type(name);
+    cy.findByTestId(this.newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.newAttributeEnabledWhen).first().check();
+    cy.get(this.newAttributeRequiredField).first().check({ force: true });
+    cy.get(this.newAttributeRequiredWhen).first().check({ force: true });
+    cy.findByTestId(this.newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.newAttributeAdminEdit).first().check({ force: true });
+    cy.findByTestId(this.newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.newAttributeAdminView).first().check({ force: true });
+    return this;
+  }
+
+  createAttributeGroup(name: string, displayName: string) {
+    cy.get(this.newAttributesGroupNameInput).type(name);
+    cy.get(this.newAttributesGroupDisplayNameInput).type(displayName);
+    cy.findAllByTestId(this.newAnnotationsAddRowBtn).click();
+    return this;
+  }
+
+  saveAttributesGroupCreation() {
+    cy.findByTestId(this.saveNewAttributesGroupBtn).click();
     return this;
   }
 
