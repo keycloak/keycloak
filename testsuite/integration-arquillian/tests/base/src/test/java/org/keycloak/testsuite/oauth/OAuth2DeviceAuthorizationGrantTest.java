@@ -77,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
+@EnableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
 public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     private static String userId;
@@ -999,7 +1000,6 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DEVICE_FLOW, skipRestart = true)
     public void ensureDeviceFlowConfigPresentWhenDeviceFlowEnabled() {
 
         OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
