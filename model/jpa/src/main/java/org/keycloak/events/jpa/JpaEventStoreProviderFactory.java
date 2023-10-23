@@ -32,21 +32,15 @@ import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, InvalidationHandler {
 
     public static final String ID = "jpa";
-    private int maxDetailLength;
-    private int maxFieldLength;
 
     @Override
     public EventStoreProvider create(KeycloakSession session) {
         JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventStoreProvider(session, connection.getEntityManager(), maxDetailLength, maxFieldLength);
+        return new JpaEventStoreProvider(session, connection.getEntityManager());
     }
 
     @Override
     public void init(Config.Scope config) {
-        maxDetailLength = config.getInt("max-detail-length", -1);
-        maxFieldLength = config.getInt("max-field-length", -1);
-        if (maxDetailLength != -1 && maxDetailLength < 3) throw new IllegalArgumentException("max-detail-length cannot be less that 3.");
-        if (maxFieldLength != -1 && maxFieldLength < 3) throw new IllegalArgumentException("max-field-length cannot be less that 3.");
     }
 
     @Override
