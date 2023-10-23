@@ -10,22 +10,22 @@ enum RealmSettingsEventsSubTab {
 }
 
 export default class RealmSettingsEventsTab extends CommonPage {
-  private eventListenersTab = new EventListenersTab();
-  private userEventsSettingsTab = new UserEventsSettingsTab();
-  private adminEventsSettingsTab = new AdminEventsSettingsTab();
+  #eventListenersTab = new EventListenersTab();
+  #userEventsSettingsTab = new UserEventsSettingsTab();
+  #adminEventsSettingsTab = new AdminEventsSettingsTab();
 
   goToEventListenersSubTab() {
     this.tabUtils().clickTab(RealmSettingsEventsSubTab.EventListeners, 1);
-    return this.eventListenersTab;
+    return this.#eventListenersTab;
   }
 
   goToUserEventsSettingsSubTab() {
     this.tabUtils().clickTab(RealmSettingsEventsSubTab.UserEventsSettings, 1);
-    return this.userEventsSettingsTab;
+    return this.#userEventsSettingsTab;
   }
 
   goToAdminEventsSettingsSubTab() {
     this.tabUtils().clickTab(RealmSettingsEventsSubTab.AdminEventsSettings, 1);
-    return this.adminEventsSettingsTab;
+    return this.#adminEventsSettingsTab;
   }
 }

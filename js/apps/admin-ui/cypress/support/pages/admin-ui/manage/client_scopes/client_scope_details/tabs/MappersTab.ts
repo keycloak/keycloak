@@ -1,19 +1,19 @@
 import CommonPage from "../../../../../CommonPage";
 
 export default class MappersTab extends CommonPage {
-  private addMapperBtn = "#mapperAction";
-  private fromPredefinedMappersBtn =
+  #addMapperBtn = "#mapperAction";
+  #fromPredefinedMappersBtn =
     'ul[aria-labelledby="mapperAction"] > li:nth-child(1) a';
-  private byConfigurationBtn =
+  #byConfigurationBtn =
     'ul[aria-labelledby="mapperAction"] > li:nth-child(2) a';
-  private mapperConfigurationList =
+  #mapperConfigurationList =
     'ul[aria-label="Add predefined mappers"] > li:not([id=header])';
 
-  private mapperNameInput = "#name";
+  #mapperNameInput = "#name";
 
   addPredefinedMappers(mappersNames: string[]) {
-    cy.get(this.addMapperBtn).click();
-    cy.get(this.fromPredefinedMappersBtn).click();
+    cy.get(this.#addMapperBtn).click();
+    cy.get(this.#fromPredefinedMappersBtn).click();
 
     this.tableUtils().setTableInModal(true);
     for (const mapperName of mappersNames) {
@@ -34,12 +34,14 @@ export default class MappersTab extends CommonPage {
   }
 
   addMappersByConfiguration(predefinedMapperName: string, mapperName: string) {
-    cy.get(this.addMapperBtn).click();
-    cy.get(this.byConfigurationBtn).click();
+    cy.get(this.#addMapperBtn).click();
+    cy.get(this.#byConfigurationBtn).click();
 
-    cy.get(this.mapperConfigurationList).contains(predefinedMapperName).click();
+    cy.get(this.#mapperConfigurationList)
+      .contains(predefinedMapperName)
+      .click();
 
-    cy.get(this.mapperNameInput).type(mapperName);
+    cy.get(this.#mapperNameInput).type(mapperName);
 
     this.formUtils().save();
     this.masthead().checkNotificationMessage("Mapping successfully created");

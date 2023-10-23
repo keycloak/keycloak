@@ -8,11 +8,11 @@ enum ClientRolesTabItems {
 }
 
 export default class ClientRolesTab extends CommonPage {
-  private createRoleBtn = "create-role";
-  private createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
-  private hideInheritedRolesChkBox = "#hideInheritedRoles";
-  private rolesTab = "rolesTab";
-  private associatedRolesTab = "associatedRolesTab";
+  #createRoleBtn = "create-role";
+  #createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
+  #hideInheritedRolesChkBox = "#hideInheritedRoles";
+  #rolesTab = "rolesTab";
+  #associatedRolesTab = "associatedRolesTab";
 
   goToDetailsTab() {
     this.tabUtils().clickTab(ClientRolesTabItems.Details);
@@ -35,32 +35,32 @@ export default class ClientRolesTab extends CommonPage {
   }
 
   goToRolesTab() {
-    cy.findByTestId(this.rolesTab).click();
+    cy.findByTestId(this.#rolesTab).click();
     return this;
   }
 
   goToAssociatedRolesTab() {
-    cy.findByTestId(this.associatedRolesTab).click();
+    cy.findByTestId(this.#associatedRolesTab).click();
     return this;
   }
 
   goToCreateRoleFromToolbar() {
-    cy.findByTestId(this.createRoleBtn).click();
+    cy.findByTestId(this.#createRoleBtn).click();
     return this;
   }
 
   goToCreateRoleFromEmptyState() {
-    cy.findByTestId(this.createRoleEmptyStateBtn).click();
+    cy.findByTestId(this.#createRoleEmptyStateBtn).click();
     return this;
   }
 
   fillClientRoleData() {
-    cy.findByTestId(this.createRoleBtn).click();
+    cy.findByTestId(this.#createRoleBtn).click();
     return this;
   }
 
   hideInheritedRoles() {
-    cy.get(this.hideInheritedRolesChkBox).check();
+    cy.get(this.#hideInheritedRolesChkBox).check();
     return this;
   }
 }

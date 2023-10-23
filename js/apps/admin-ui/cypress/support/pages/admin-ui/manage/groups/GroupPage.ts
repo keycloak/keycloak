@@ -13,15 +13,15 @@ const sidebarPage = new SidebarPage();
 
 export default class GroupPage extends PageObject {
   protected createGroupEmptyStateBtn = "no-groups-in-this-realm-empty-action";
-  private createGroupBtn = "openCreateGroupModal";
+  #createGroupBtn = "openCreateGroupModal";
   protected actionDrpDwnButton = "action-dropdown";
-  private searchField = "[data-testid='group-search']";
+  #searchField = "[data-testid='group-search']";
 
   public openCreateGroupModal(emptyState: boolean) {
     if (emptyState) {
       cy.findByTestId(this.createGroupEmptyStateBtn).click();
     } else {
-      cy.findByTestId(this.createGroupBtn).click();
+      cy.findByTestId(this.#createGroupBtn).click();
     }
     return this;
   }
@@ -37,7 +37,7 @@ export default class GroupPage extends PageObject {
   }
 
   public searchGroup(searchValue: string, wait: boolean = false) {
-    this.search(this.searchField, searchValue, wait);
+    this.search(this.#searchField, searchValue, wait);
 
     return this;
   }
