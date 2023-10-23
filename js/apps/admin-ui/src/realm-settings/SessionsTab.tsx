@@ -9,10 +9,8 @@ import {
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { FormPanel, HelpItem } from "ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { convertToFormValues } from "../util";
 
