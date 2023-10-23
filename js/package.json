@@ -22,7 +22,7 @@
     "prettier": "^3.0.3",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
-    "wireit": "^0.14.0"
+    "wireit": "^0.14.1"
   },
   "packageManager": "pnpm@8.6.12",
   "lint-staged": {
