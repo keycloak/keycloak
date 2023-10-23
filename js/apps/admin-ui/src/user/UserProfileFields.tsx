@@ -15,6 +15,7 @@ import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
 import { UserFormFields } from "./form-state";
 import { fieldName, isRootAttribute } from "./utils";
+import { MultiInputComponent } from "./components/MultiInputComponent";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -50,6 +51,7 @@ const INPUT_TYPES = [
   "html5-date",
   "html5-month",
   "html5-time",
+  "multi-input",
 ] as const;
 
 export type InputType = (typeof INPUT_TYPES)[number];
@@ -79,6 +81,7 @@ export const FIELDS: {
   "html5-date": TextComponent,
   "html5-month": TextComponent,
   "html5-time": TextComponent,
+  "multi-input": MultiInputComponent,
 } as const;
 
 export type UserProfileFieldsProps = {
@@ -179,7 +182,7 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
   );
 };
 
-const DEFAULT_INPUT_TYPE = "multiselect" satisfies InputType;
+const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
@@ -199,7 +202,7 @@ function determineInputType(
 
   // An attribute with multiple values is always multi-valued, even if an input type is provided.
   if (Array.isArray(value) && value.length > 1) {
-    return DEFAULT_INPUT_TYPE;
+    return "multi-input";
   }
 
   return inputType;
