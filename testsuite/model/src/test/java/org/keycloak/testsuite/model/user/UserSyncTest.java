@@ -130,7 +130,7 @@ public class UserSyncTest extends KeycloakModelTest {
         long start = System.currentTimeMillis();
         SynchronizationResult res = withRealm(realmId, (session, realm) -> {
             UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
-            return new UserStorageSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
         });
         long end = System.currentTimeMillis();
         long timeNeeded = end - start;
@@ -140,6 +140,32 @@ public class UserSyncTest extends KeycloakModelTest {
                 (float)(timeNeeded) / NUMBER_OF_USERS), timeNeeded, Matchers.lessThan((long) (18 * NUMBER_OF_USERS)));
         assertThat(res.getAdded(), is(NUMBER_OF_USERS));
         assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(NUMBER_OF_USERS));
+    }
+
+    @Test
+    public void testRemovedLDAPUserShouldNotFailGetUserByEmail() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            // disable cache
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(providerModel);
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user", "UserFN", "UserLN", "user@email.org", "userStreet", "1450");
+            return null;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user@email.org")), is(notNullValue()));
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, realm, ldapFedProvider.getLdapIdentityStore().getConfig(), "user");
+            return null;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user@email.org")), is(nullValue()));
     }
 
     @Test
