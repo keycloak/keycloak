@@ -79,9 +79,9 @@ public class KeycloakTestingClient implements AutoCloseable {
     }
 
     public void enableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> disabledFeatures = testing().enableFeature(feature.toString());
-        Assert.assertFalse(disabledFeatures.contains(feature));
-        ProfileAssume.updateDisabledFeatures(disabledFeatures);
+        Set<Profile.Feature> enabledFeatures = testing().enableFeature(feature.toString());
+        Assert.assertFalse(enabledFeatures.contains(feature));
+        ProfileAssume.updateDisabledFeatures(enabledFeatures);
     }
 
     public void disableFeature(Profile.Feature feature) {
