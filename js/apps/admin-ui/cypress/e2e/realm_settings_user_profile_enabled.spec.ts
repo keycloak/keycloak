@@ -51,7 +51,6 @@ describe("User profile tabs", () => {
     realmSettingsPage.goToLoginTab();
     cy.findByTestId("email-as-username-switch").uncheck({ force: true });
     cy.findByTestId("edit-username-switch").uncheck({ force: true });
-    cy.findByTestId("user-reg-switch").uncheck({ force: true });
   });
 
   describe("Attributes sub tab tests", () => {
@@ -305,12 +304,7 @@ describe("User profile tabs", () => {
       cy.get(".pf-c-form__label-text")
         .contains("newAttribute5")
         .should("exist");
-      cy.get("#newAttribute5-select-multi-typeahead-typeahead").type(
-        "MyAttribute",
-      );
-      cy.contains("button", 'Create "MyAttribute"')
-        .should("have.class", "pf-c-select__menu-item")
-        .click();
+      cy.findByTestId("newAttribute5").type("MyAttribute");
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
       sidebarPage.goToRealmSettings();
@@ -378,19 +372,17 @@ describe("User profile tabs", () => {
       cy.findByTestId("username").type("testuser13");
       cy.get("h1#contact").should("have.text", "contact");
       cy.get(".pf-c-form__label-text").contains("address").should("exist");
-      cy.get("#address-select-multi-typeahead-typeahead").type("MyNewAddress1");
-      cy.contains("button", 'Create "MyNewAddress1"')
-        .should("have.class", "pf-c-select__menu-item")
-        .click();
-      cy.get("#address-select-multi-typeahead-typeahead").type("MyNewAddress2");
-      cy.contains("button", 'Create "MyNewAddress2"')
-        .should("have.class", "pf-c-select__menu-item")
-        .click();
+      cy.findByTestId("address").type("MyNewAddress1");
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
-      cy.get("div.pf-c-select__toggle.pf-m-typeahead")
-        .find(".pf-c-chip-group__list-item")
-        .should("have.length", 2);
+      cy.findByTestId("address").should("have.value", "MyNewAddress1");
+
+      // Edit attribute
+      cy.findByTestId("address").clear();
+      cy.findByTestId("address").type("MyNewAddress2");
+      cy.findByTestId("save-user").click();
+      masthead.checkNotificationMessage("The user has been saved");
+      cy.findByTestId("address").should("have.value", "MyNewAddress2");
     });
   });
 });

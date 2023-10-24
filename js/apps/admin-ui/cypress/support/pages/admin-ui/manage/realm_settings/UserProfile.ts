@@ -105,7 +105,6 @@ export default class UserProfile {
     cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
     cy.get(this.#newAttributeEnabledWhen).first().check();
     cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeAdminEdit).first().check({ force: true });
     cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
     cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
     return this;
@@ -118,6 +117,10 @@ export default class UserProfile {
     cy.findByTestId(this.#newAttributeNameInput).type(name);
     cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
     cy.get(this.#newAttributeEnabledWhen).first().check();
+    cy.findByTestId(this.#newAttributeAdminEdit)
+      .first()
+      .uncheck({ force: true });
+
     return this;
   }
 
@@ -128,7 +131,6 @@ export default class UserProfile {
     cy.get(this.#newAttributeRequiredField).first().check({ force: true });
     cy.get(this.#newAttributeRequiredWhen).first().check({ force: true });
     cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
-    cy.findByTestId(this.#newAttributeAdminEdit).first().check({ force: true });
     cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
     cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
     return this;
@@ -137,7 +139,6 @@ export default class UserProfile {
   createAttributeGroup(name: string, displayName: string) {
     cy.get(this.#newAttributesGroupNameInput).type(name);
     cy.get(this.#newAttributesGroupDisplayNameInput).type(displayName);
-    cy.findAllByTestId(this.#newAnnotationsAddRowBtn).click();
     return this;
   }
 
