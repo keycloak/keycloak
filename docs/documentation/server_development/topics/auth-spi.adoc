@@ -1066,7 +1066,7 @@ If any of these validations fail, an error message is queued up for rendering. I
 
 NOTE: As you can see, the user profile makes sure that registration form contains all the needed user profile fields. User profile also makes sure that correct validations
 are used, attributes are correctly grouped on the page.  There is a correct type used for each field (such as if a user needs to choose from predefined values), fields
-are "conditionally" rendered just for some scopes (Progressive profiling) and others. So usually you won't need to implement new `FormAction` or registration fields, but
+are "conditionally" rendered just for some scopes (Progressive profiling) and others. So usually you will not need to implement new `FormAction` or registration fields, but
 you can just properly configure user-profile to reflect this. For more details, see link:{adminguide_link}#user-profile[User Profile documentation] for more details.
 In general, new FormAction might be useful for instance if you want to add new credentials to the registration form (like ReCaptcha support as mentioned here) rather than new user profile fields.
 
