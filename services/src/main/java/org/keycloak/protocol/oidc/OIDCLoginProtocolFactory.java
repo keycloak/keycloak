@@ -133,29 +133,29 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
     void initBuiltIns() {
-                ProtocolMapperModel model;
+        ProtocolMapperModel model;
         model = UserAttributeMapper.createClaimMapper(USERNAME,
                 "username",
                 "preferred_username", String.class.getSimpleName(),
-                true, true);
+                true, true, true);
         builtins.put(USERNAME, model);
 
         model = UserAttributeMapper.createClaimMapper(EMAIL,
                 "email",
                 "email", "String",
-                true, true);
+                true, true, true);
         builtins.put(EMAIL, model);
 
         model = UserAttributeMapper.createClaimMapper(GIVEN_NAME,
                 "firstName",
                 "given_name", "String",
-                true, true);
+                true, true, true);
         builtins.put(GIVEN_NAME, model);
 
         model = UserAttributeMapper.createClaimMapper(FAMILY_NAME,
                 "lastName",
                 "family_name", "String",
-                true, true);
+                true, true, true);
         builtins.put(FAMILY_NAME, model);
 
         createUserAttributeMapper(MIDDLE_NAME, "middleName", IDToken.MIDDLE_NAME, "String");
@@ -175,10 +175,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserPropertyMapper.createClaimMapper(EMAIL_VERIFIED,
                 "emailVerified",
                 "email_verified", "boolean",
-                true, true);
+                true, true, true);
         builtins.put(EMAIL_VERIFIED, model);
 
-        ProtocolMapperModel fullName = FullNameMapper.create(FULL_NAME, true, true, true);
+        ProtocolMapperModel fullName = FullNameMapper.create(FULL_NAME, true, true, true, true);
         builtins.put(FULL_NAME, fullName);
 
         ProtocolMapperModel address = AddressMapper.createAddressMapper();
@@ -187,19 +187,19 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         model = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, false);
+                true, false, true);
         builtins.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, model);
 
-        model = UserRealmRoleMappingMapper.create(null, REALM_ROLES, "realm_access.roles", true, false, true);
+        model = UserRealmRoleMappingMapper.create(null, REALM_ROLES, "realm_access.roles", true, false, true, true);
         builtins.put(REALM_ROLES, model);
 
-        model = UserClientRoleMappingMapper.create(null, null, CLIENT_ROLES, "resource_access.${client_id}.roles", true, false, true);
+        model = UserClientRoleMappingMapper.create(null, null, CLIENT_ROLES, "resource_access.${client_id}.roles", true, false, true, true);
         builtins.put(CLIENT_ROLES, model);
 
-        model = AudienceResolveProtocolMapper.createClaimMapper(AUDIENCE_RESOLVE);
+        model = AudienceResolveProtocolMapper.createClaimMapper(AUDIENCE_RESOLVE, true, true);
         builtins.put(AUDIENCE_RESOLVE, model);
 
-        model = AllowedWebOriginsProtocolMapper.createClaimMapper(ALLOWED_WEB_ORIGINS);
+        model = AllowedWebOriginsProtocolMapper.createClaimMapper(ALLOWED_WEB_ORIGINS, true, true);
         builtins.put(ALLOWED_WEB_ORIGINS, model);
 
         builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
@@ -207,14 +207,14 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         model = UserAttributeMapper.createClaimMapper(UPN, "username",
                 "upn", "String",
-                true, true);
+                true, true, true);
         builtins.put(UPN, model);
 
-        model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true);
+        model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true, true);
         builtins.put(GROUPS, model);
 
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
-            model = AcrProtocolMapper.create(ACR, true, true);
+            model = AcrProtocolMapper.create(ACR, true, true, true);
             builtins.put(ACR, model);
         }
     }
@@ -223,7 +223,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         ProtocolMapperModel model = UserAttributeMapper.createClaimMapper(name,
                 attrName,
                 claimName, type,
-                true, true, false);
+                true, true, true, false);
         builtins.put(name, model);
     }
 

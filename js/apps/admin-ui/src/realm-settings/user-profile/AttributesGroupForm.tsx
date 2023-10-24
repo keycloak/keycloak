@@ -48,7 +48,7 @@ type FormFields = Required<Omit<UserProfileGroup, "annotations">> & {
 };
 
 const defaultValues: FormFields = {
-  annotations: [{ key: "", value: "" }],
+  annotations: [],
   displayDescription: "",
   displayHeader: "",
   name: "",

@@ -22,7 +22,12 @@ type IdKeyValueType = KeyValueType & {
   id: number;
 };
 
-export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
+export const MapComponent = ({
+  name,
+  label,
+  helpText,
+  required,
+}: ComponentProps) => {
   const { t } = useTranslation();
 
   const { getValues, setValue, register } = useFormContext();
@@ -65,6 +70,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Flex direction={{ default: "column" }}>
         <Flex>

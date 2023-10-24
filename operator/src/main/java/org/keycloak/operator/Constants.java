@@ -39,6 +39,7 @@ public final class Constants {
     public static final String KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION = "operator.keycloak.org/watched-secret-hash";
     public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
     public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
+    public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
 

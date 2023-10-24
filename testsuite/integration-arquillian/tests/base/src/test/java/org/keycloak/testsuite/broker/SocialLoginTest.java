@@ -84,6 +84,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
@@ -126,6 +127,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         TWITTER("twitter", TwitterConsentLoginPage.class),
         LINKEDIN("linkedin-openid-connect", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
+        MICROSOFT_SINGLE_TENANT("microsoft", "microsoft-single-tenant", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
@@ -248,7 +250,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void openshiftLogin() {
         setTestProvider(OPENSHIFT);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -409,6 +411,15 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void microsoftSingleTenantLogin() {
+        setTestProvider(MICROSOFT_SINGLE_TENANT);
+        navigateToLoginPage();
+        assertTrue(driver.getCurrentUrl().contains("/" + getConfig(MICROSOFT_SINGLE_TENANT, "tenantId") + "/"));
+        doLogin();
+        appPage.assertCurrent();
+    }
+
+    @Test
     public void paypalLogin() {
         setTestProvider(PAYPAL);
         performLogin();
@@ -448,6 +459,13 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         }
         if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
+        }
+        if (provider == MICROSOFT_SINGLE_TENANT) {
+            final String tenantId = getConfig(provider, "tenantId");
+            if (tenantId == null) {
+                throw new IllegalArgumentException("'tenantId' for Microsoft IdP must be specified");
+            }
+            idp.getConfig().put("tenantId", tenantId);
         }
         if (provider == PAYPAL) {
             idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));

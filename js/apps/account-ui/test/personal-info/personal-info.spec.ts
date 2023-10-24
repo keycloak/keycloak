@@ -1,10 +1,10 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { expect, test } from "@playwright/test";
 import {
-  enableLocalization,
-  importUserProfile,
   createUser,
   deleteUser,
+  enableLocalization,
+  importUserProfile,
 } from "../admin-client";
 import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };

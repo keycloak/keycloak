@@ -82,7 +82,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
+    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
@@ -144,14 +144,14 @@ public class LoggingDistTest {
     void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
         CLIResult cliResult = dist.run("start-dev");
-        cliResult.assertMessage("Invalid values in list for key: log Values: foo,console. Possible values are a combination of: console,file,gelf");
+        cliResult.assertError("Invalid value for option 'kc.log': foo,console. Expected values are: console, file, gelf.");
     }
 
     @Test
     void failEmptyLogErrorFromConfFileError(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
         CLIResult cliResult = dist.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
-        cliResult.assertMessage("Value for configuration key 'log' is empty.");
+        cliResult.assertError("Invalid value for option 'kc.log': . Expected values are: console, file, gelf.");
     }
 
     @Test

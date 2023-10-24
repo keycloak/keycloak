@@ -44,8 +44,11 @@ DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
 
-CONFIG_ARGS=${CONFIG_ARGS:-""}
+esceval() {
+    printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
+}
 
+PRE_BUILD=true
 while [ "$#" -gt 0 ]
 do
     case "$1" in
@@ -61,10 +64,16 @@ do
           break
           ;;
       *)
+          OPT=$(esceval "$1")
           case "$1" in
             start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
-            -D*) SERVER_OPTS="$SERVER_OPTS $1";;
-            *) CONFIG_ARGS="$CONFIG_ARGS $1";;
+            -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
+            *) case "$1" in
+                 --optimized | --help | --help-all | -h) PRE_BUILD=false;;
+                 build) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
+               esac 
+               CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
+               ;;
           esac
           ;;
     esac
@@ -115,19 +124,25 @@ if [ "$DEBUG_MODE" = "true" ]; then
     fi
 fi
 
-JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+esceval_args() {
+  while IFS= read -r entry; do
+    result="$result $(esceval "$entry")"
+  done
+  echo $result
+}
+
+JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
+
+JAVA_RUN_OPTS="$JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_OPTS: $JAVA_OPTS"
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-case "$CONFIG_ARGS" in
-  " build"* | *--optimized* | *-h | *--help*) ;;
-  *)
-    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
-    JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-    ;;
-esac
+if [ "$PRE_BUILD" = "true" ]; then
+  eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+  JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
+fi
 
 eval exec "'$JAVA'" $JAVA_RUN_OPTS

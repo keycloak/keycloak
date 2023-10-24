@@ -53,6 +53,10 @@ public class AppPage extends AbstractPage {
         clickLink(accountLink);
     }
 
+    public WebElement getAccountLink() {
+        return accountLink;
+    }
+
     public enum RequestType {
         AUTH_RESPONSE, LOGOUT_REQUEST, APP_REQUEST
     }

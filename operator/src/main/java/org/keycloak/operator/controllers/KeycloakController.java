@@ -16,10 +16,15 @@
  */
 package org.keycloak.operator.controllers;
 
+import io.fabric8.kubernetes.api.model.ContainerState;
+import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -35,8 +40,10 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
@@ -44,6 +51,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +60,7 @@ import jakarta.inject.Inject;
 
 @ControllerConfiguration(
     dependents = {
+        @Dependent(type = KeycloakDeploymentDependentResource.class),
         @Dependent(type = KeycloakAdminSecretDependentResource.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
@@ -62,41 +71,30 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     public static final String OPENSHIFT_DEFAULT = "openshift-default";
 
     @Inject
-    KubernetesClient client;
-
-    @Inject
     Config config;
 
     @Inject
     WatchedSecrets watchedSecrets;
 
+    @Inject
+    KeycloakDistConfigurator distConfigurator;
+
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
         var namespaces = context.getControllerConfiguration().getNamespaces();
-
-        InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
-                .from(StatefulSet.class)
-                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespaces)
-                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
-                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
-                .build();
 
         InformerConfiguration<Service> servicesIC = InformerConfiguration
                 .from(Service.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
-                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
-        EventSource statefulSetEvent = new InformerEventSource<>(statefulSetIC, context);
         EventSource servicesEvent = new InformerEventSource<>(servicesIC, context);
 
         Map<String, EventSource> sources = new HashMap<>();
         sources.put("serviceSource", servicesEvent);
-        sources.putAll(EventSourceInitializer.nameEventSources(statefulSetEvent,
-                watchedSecrets.getWatchedSecretsEventSource()));
+        sources.putAll(EventSourceInitializer.nameEventSources(watchedSecrets.getWatchedSecretsEventSource()));
         return sources;
     }
 
@@ -131,11 +129,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
-        var kcDeployment = new KeycloakDeployment(context.getClient(), config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), KeycloakAdminSecretDependentResource.getName(kc));
-        kcDeployment.setWatchedSecrets(watchedSecrets);
-        kcDeployment.createOrUpdateReconciled();
-        kcDeployment.updateStatus(statusAggregator);
-
+        updateStatus(kc, context.getSecondaryResource(StatefulSet.class).orElse(null), statusAggregator, context);
         var status = statusAggregator.build();
 
         Log.info("--- Reconciliation finished successfully");
@@ -181,4 +175,97 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                         .withName("cluster").get())
                 .map(i -> Optional.ofNullable(i.getSpec().getAppsDomain()).orElse(i.getSpec().getDomain()));
     }
+
+    public void updateStatus(Keycloak keycloakCR, StatefulSet existingDeployment, KeycloakStatusAggregator status, Context<Keycloak> context) {
+        status.apply(b -> b.withSelector(Utils.toSelectorString(Utils.allInstanceLabels(keycloakCR))));
+        validatePodTemplate(keycloakCR, status);
+        if (existingDeployment == null) {
+            status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
+            return;
+        }
+
+        if (existingDeployment.getStatus() == null) {
+            status.addNotReadyMessage("Waiting for deployment status");
+        } else {
+            status.apply(b -> b.withInstances(existingDeployment.getStatus().getReadyReplicas()));
+            if (Optional.ofNullable(existingDeployment.getStatus().getReadyReplicas()).orElse(0) < keycloakCR.getSpec().getInstances()) {
+                checkForPodErrors(status, keycloakCR, existingDeployment, context);
+                status.addNotReadyMessage("Waiting for more replicas");
+            }
+        }
+
+        if (Optional
+                .ofNullable(existingDeployment.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MIGRATING_ANNOTATION))
+                .map(Boolean::valueOf).orElse(false)) {
+            status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
+        } else if (existingDeployment.getStatus() != null
+                && existingDeployment.getStatus().getCurrentRevision() != null
+                && existingDeployment.getStatus().getUpdateRevision() != null
+                && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision())) {
+            status.addRollingUpdateMessage("Rolling out deployment update");
+        }
+
+        distConfigurator.validateOptions(keycloakCR, status);
+    }
+
+    public void validatePodTemplate(Keycloak keycloakCR, KeycloakStatusAggregator status) {
+        var spec = KeycloakDeploymentDependentResource.getPodTemplateSpec(keycloakCR);
+        if (spec.isEmpty()) {
+            return;
+        }
+        var overlayTemplate = spec.orElseThrow();
+
+        if (overlayTemplate.getMetadata() != null) {
+            if (overlayTemplate.getMetadata().getName() != null) {
+                status.addWarningMessage("The name of the podTemplate cannot be modified");
+            }
+            if (overlayTemplate.getMetadata().getNamespace() != null) {
+                status.addWarningMessage("The namespace of the podTemplate cannot be modified");
+            }
+        }
+
+        Optional.ofNullable(overlayTemplate.getSpec()).map(PodSpec::getContainers).flatMap(l -> l.stream().findFirst())
+                .ifPresent(container -> {
+                    if (container.getName() != null) {
+                        status.addWarningMessage("The name of the keycloak container cannot be modified");
+                    }
+                    if (container.getImage() != null) {
+                        status.addWarningMessage(
+                                "The image of the keycloak container cannot be modified using podTemplate");
+                    }
+                });
+
+        if (overlayTemplate.getSpec() != null &&
+            CollectionUtil.isNotEmpty(overlayTemplate.getSpec().getImagePullSecrets())) {
+            status.addWarningMessage("The imagePullSecrets of the keycloak container cannot be modified using podTemplate");
+        }
+    }
+
+    private void checkForPodErrors(KeycloakStatusAggregator status, Keycloak keycloak, StatefulSet existingDeployment, Context<Keycloak> context) {
+        context.getClient().pods().inNamespace(existingDeployment.getMetadata().getNamespace())
+                .withLabel("controller-revision-hash", existingDeployment.getStatus().getUpdateRevision())
+                .withLabels(Utils.allInstanceLabels(keycloak))
+                .list().getItems().stream()
+                .filter(p -> !Readiness.isPodReady(p)
+                        && Optional.ofNullable(p.getStatus()).map(PodStatus::getContainerStatuses).isPresent())
+                .sorted((p1, p2) -> p1.getMetadata().getName().compareTo(p2.getMetadata().getName()))
+                .forEachOrdered(p -> {
+                    Optional.of(p.getStatus()).map(s -> s.getContainerStatuses()).stream().flatMap(List::stream)
+                            .filter(cs -> !Boolean.TRUE.equals(cs.getReady()))
+                            .sorted((cs1, cs2) -> cs1.getName().compareTo(cs2.getName())).forEachOrdered(cs -> {
+                                if (Optional.ofNullable(cs.getState()).map(ContainerState::getWaiting)
+                                        .map(ContainerStateWaiting::getReason).map(String::toLowerCase)
+                                        .filter(s -> s.contains("err") || s.equals("crashloopbackoff")).isPresent()) {
+                                    Log.infof("Found unhealthy container on pod %s/%s: %s",
+                                            p.getMetadata().getNamespace(), p.getMetadata().getName(),
+                                            Serialization.asYaml(cs));
+                                    status.addErrorMessage(
+                                            String.format("Waiting for %s/%s due to %s: %s", p.getMetadata().getNamespace(),
+                                                    p.getMetadata().getName(), cs.getState().getWaiting().getReason(),
+                                                    cs.getState().getWaiting().getMessage()));
+                                }
+                            });
+                });
+    }
+
 }

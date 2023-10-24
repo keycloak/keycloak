@@ -82,12 +82,13 @@ export const ResetCredentialDialog = ({
         isHorizontal
         data-testid="credential-reset-modal"
       >
+        <RequiredActionMultiSelect
+          control={control}
+          name="actions"
+          label="resetAction"
+          help="resetActions"
+        />
         <FormProvider {...form}>
-          <RequiredActionMultiSelect
-            name="actions"
-            label="resetAction"
-            help="resetActions"
-          />
           <LifespanField />
         </FormProvider>
       </Form>

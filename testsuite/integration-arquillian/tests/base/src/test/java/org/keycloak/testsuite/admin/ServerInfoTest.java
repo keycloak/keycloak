@@ -56,8 +56,8 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getProviders().get("authenticator"));
 
         assertNotNull(info.getThemes());
-        // Not checking account themes for now as old account console is going to be removed soon, which would remove "keycloak" theme. So that is just to avoid another "test to update" when it is removed :)
         assertNotNull(info.getThemes().get("account"));
+        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v2", "custom-account-provider");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
         Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");

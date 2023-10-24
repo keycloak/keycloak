@@ -8,16 +8,16 @@ export enum DedicatedScopesTab {
 }
 
 export default class DedicatedScopesPage extends CommonPage {
-  private mappersTab = new DedicatedScopesMappersTab();
-  private scopeTab = new DedicatedScopesScopeTab();
+  #mappersTab = new DedicatedScopesMappersTab();
+  #scopeTab = new DedicatedScopesScopeTab();
 
   goToMappersTab() {
     this.tabUtils().clickTab(DedicatedScopesTab.Mappers);
-    return this.mappersTab;
+    return this.#mappersTab;
   }
 
   goToScopeTab() {
     this.tabUtils().clickTab(DedicatedScopesTab.Scope);
-    return this.scopeTab;
+    return this.#scopeTab;
   }
 }

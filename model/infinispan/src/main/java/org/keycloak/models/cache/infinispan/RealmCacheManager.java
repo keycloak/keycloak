@@ -133,7 +133,7 @@ public class RealmCacheManager extends CacheManager {
      * Instead of each request loading the realm in parallel, this lets the first request load the realm, and all
      * other requests will use the cached realm, which is much more efficient.
      */
-    public RealmAdapter computeSerialized(KeycloakSession session, String id, BiFunction<String, KeycloakSession, RealmAdapter> compute) {
+    public <T> T computeSerialized(KeycloakSession session, String id, BiFunction<String, KeycloakSession, T> compute) {
         // this locking is only to ensure that if there is a computation for the same id in the "synchronized" block below,
         // it will have the same object instance to lock the current execution until the other is finished.
         Object lock = cacheInteractions.computeIfAbsent(id, s -> id);

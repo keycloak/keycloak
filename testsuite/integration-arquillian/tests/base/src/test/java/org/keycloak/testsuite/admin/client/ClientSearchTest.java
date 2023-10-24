@@ -27,7 +27,6 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -142,13 +141,10 @@ public class ClientSearchTest extends AbstractClientTest {
             System.setProperty(SEARCHABLE_ATTRS_PROP, String.join(",", searchableAttributes));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            searchableAttributes = Arrays.stream(searchableAttributes)
-                    .map(a -> a.replace(" ", "\\ ").replace("\"", "\\\\\\\""))
-                    .toArray(String[]::new);
             String s = String.join(",",searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes="+ s));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");

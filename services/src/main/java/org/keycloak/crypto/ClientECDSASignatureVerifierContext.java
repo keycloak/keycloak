@@ -34,12 +34,8 @@ public class ClientECDSASignatureVerifierContext extends AsymmetricSignatureVeri
     @Override
     public boolean verify(byte[] data, byte[] signature) throws VerificationException {
         try {
-            /*
-            Fallback for backwards compatibility of ECDSA signed tokens which were issued in previous versions.
-            TODO remove by https://issues.jboss.org/browse/KEYCLOAK-11911
-             */
-            int expectedSize = ECDSASignatureProvider.ECDSA.valueOf(getAlgorithm()).getSignatureLength();
-            byte[] derSignature = expectedSize != signature.length && signature[0] == 0x30 ? signature : ECDSASignatureProvider.concatenatedRSToASN1DER(signature, expectedSize);
+            int expectedSize = ECDSAAlgorithm.getSignatureLength(getAlgorithm());
+            byte[] derSignature = ECDSAAlgorithm.concatenatedRSToASN1DER(signature, expectedSize);
             return super.verify(data, derSignature);
         } catch (Exception e) {
             throw new VerificationException("Signing failed", e);

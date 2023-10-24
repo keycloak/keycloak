@@ -167,7 +167,42 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             MatcherAssert.assertThat(Arrays.asList("one", "two", "three"),
                 Matchers.containsInAnyOrder(fullnameUser.getAttributeStream("myAttrThreeValues").toArray(String[]::new)));
 
-            // Remove "fullnameUser" to assert he is removed from LDAP.
+            // Remove "fullnameUser" to prevent conflicts with other tests
+            session.users().removeUser(appRealm, fullnameUser);
+        });
+    }
+
+    // Test for bug https://github.com/keycloak/keycloak/issues/22091
+    @Test
+    public void testMultiValuedAttributes() {
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James", "Dee", "fullname@email.org", null, "4578");
+        });
+
+        // Add multi-attribute value to the user while fullname mapper is used.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
+            fullnameUser.setAttribute("roles", Arrays.asList("role1", "role2"));
+        });
+
+        // Assert that multi-valued attribute is set.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
+            Assert.assertEquals(Arrays.asList("role1", "role2"), fullnameUser.getAttributeStream("roles").collect(Collectors.toList()));
+
+            // Remove "fullnameUser" to prevent conflicts with other tests
             session.users().removeUser(appRealm, fullnameUser);
         });
     }

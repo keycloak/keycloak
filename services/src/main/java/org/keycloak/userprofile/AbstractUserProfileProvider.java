@@ -21,16 +21,15 @@ package org.keycloak.userprofile;
 
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
-import static org.keycloak.userprofile.UserProfileContext.ACCOUNT_OLD;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
-import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_PROFILE;
-import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_USER_CREATION;
+import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,15 +77,14 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
-        if (REGISTRATION_PROFILE.equals(c.getContext()) || REGISTRATION_USER_CREATION.equals(c.getContext())
-                || IDP_REVIEW.equals(c.getContext())) {
+        if (REGISTRATION.equals(c.getContext())
+                || IDP_REVIEW.equals(c.getContext())
+                || isNewUser(c)) {
             return !realm.isRegistrationEmailAsUsername();
         }
 
-        if (USER_API.equals(c.getContext())) {
-            if (realm.isRegistrationEmailAsUsername()) {
-                return false;
-            }
+        if (realm.isRegistrationEmailAsUsername()) {
+            return false;
         }
 
         return realm.isEditUsernameAllowed();
@@ -98,7 +96,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         RealmModel realm = context.getRealm();
 
         switch (c.getContext()) {
-            case REGISTRATION_PROFILE:
+            case REGISTRATION:
             case IDP_REVIEW:
                 return !realm.isRegistrationEmailAsUsername();
             case UPDATE_PROFILE:
@@ -116,23 +114,15 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean editEmailCondition(AttributeContext c) {
         RealmModel realm = c.getSession().getContext().getRealm();
 
-        if (REGISTRATION_PROFILE.equals(c.getContext())) {
+        if (REGISTRATION.equals(c.getContext()) || USER_API.equals(c.getContext())) {
             return true;
-        }
-
-        if (USER_API.equals(c.getContext())) {
-            if (realm.isRegistrationEmailAsUsername()) {
-                return true;
-            }
         }
 
         if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
             return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
         }
 
-        UserModel user = c.getUser();
-
-        if (user != null && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+        if (!isNewUser(c) && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
             return false;
         }
 
@@ -142,7 +132,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean readEmailCondition(AttributeContext c) {
         UserProfileContext context = c.getContext();
 
-        if (REGISTRATION_PROFILE.equals(context)) {
+        if (REGISTRATION.equals(context) || USER_API.equals(c.getContext())) {
             return true;
         }
 
@@ -181,6 +171,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private static boolean isInternationalizationEnabled(AttributeContext context) {
         RealmModel realm = context.getSession().getContext().getRealm();
         return realm.isInternationalizationEnabled();
+    }
+
+    private static boolean isNewUser(AttributeContext c) {
+        return c.getUser() == null;
     }
 
     /**
@@ -238,13 +232,11 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
-        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(ACCOUNT_OLD, readOnlyValidator)));
-        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(REGISTRATION_PROFILE, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
             addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
         }
-        addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile()));
+        addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
     }
     
@@ -348,14 +340,14 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         }
     }
 
-    private UserProfileMetadata createRegistrationUserCreationProfile() {
-        UserProfileMetadata metadata = new UserProfileMetadata(REGISTRATION_USER_CREATION);
+    private UserProfileMetadata createRegistrationUserCreationProfile(AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata metadata = createDefaultProfile(REGISTRATION, readOnlyValidator);
 
-        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID), new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
+        metadata.getAttribute(UserModel.USERNAME).get(0).addValidators(Arrays.asList(
+                new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID), new AttributeValidatorMetadata(UsernameHasValueValidator.ID)));
 
-        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
-
-        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
+        metadata.getAttribute(UserModel.EMAIL).get(0).addValidators(Collections.singletonList(
+                new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID)));
 
         return metadata;
     }

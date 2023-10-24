@@ -20,6 +20,7 @@ package org.keycloak.representations.idm;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
@@ -137,6 +138,7 @@ public class RealmRepresentation {
     protected Integer webAuthnPolicyCreateTimeout;
     protected Boolean webAuthnPolicyAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyAcceptableAaguids;
+    protected List<String> webAuthnPolicyExtraOrigins;
 
     // WebAuthn passwordless properties below
 
@@ -150,13 +152,16 @@ public class RealmRepresentation {
     protected Integer webAuthnPolicyPasswordlessCreateTimeout;
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
+    protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
 
     // Client Policies/Profiles
 
     @JsonProperty("clientProfiles")
+    @Schema(implementation = ClientProfilesRepresentation.class)
     protected JsonNode clientProfiles;
 
     @JsonProperty("clientPolicies")
+    @Schema(implementation = ClientPoliciesRepresentation.class)
     protected JsonNode clientPolicies;
 
     protected List<UserRepresentation> users;
@@ -1124,6 +1129,14 @@ public class RealmRepresentation {
         this.webAuthnPolicyAcceptableAaguids = webAuthnPolicyAcceptableAaguids;
     }
 
+    public List<String> getWebAuthnPolicyExtraOrigins(){
+        return webAuthnPolicyExtraOrigins;
+    }
+
+    public void setWebAuthnPolicyExtraOrigins(List<String> extraOrigins) {
+        this.webAuthnPolicyExtraOrigins = extraOrigins;
+    }
+
     // WebAuthn passwordless properties below
 
 
@@ -1205,6 +1218,14 @@ public class RealmRepresentation {
 
     public void setWebAuthnPolicyPasswordlessAcceptableAaguids(List<String> webAuthnPolicyPasswordlessAcceptableAaguids) {
         this.webAuthnPolicyPasswordlessAcceptableAaguids = webAuthnPolicyPasswordlessAcceptableAaguids;
+    }
+
+    public List<String> getWebAuthnPolicyPasswordlessExtraOrigins(){
+        return webAuthnPolicyPasswordlessExtraOrigins;
+    }
+
+    public void setWebAuthnPolicyPasswordlessExtraOrigins(List<String> extraOrigins) {
+        this.webAuthnPolicyPasswordlessExtraOrigins = extraOrigins;
     }
 
     // Client Policies/Profiles

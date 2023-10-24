@@ -266,8 +266,8 @@ public class MapExportImportManager implements ExportImportManager {
         // OAuth 2.0 Device Authorization Grant
         OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
 
-        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+        deviceConfig.setOAuth2DeviceCodeLifespan(newRealm, rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(newRealm, rep.getOAuth2DevicePollingInterval());
 
         if (rep.getSslRequired() != null)
             newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
@@ -414,11 +414,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
             if (rep.getDefaultGroups() != null) {
-                for (String path : rep.getDefaultGroups()) {
-                    GroupModel found = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
-                    if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
-                    newRealm.addDefaultGroup(found);
-                }
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
             }
         }
 
@@ -1018,6 +1014,9 @@ public class MapExportImportManager implements ExportImportManager {
             }
         }
 
+        if (rep.getDefaultGroups() != null) {
+            KeycloakModelUtils.setDefaultGroups(session, realm, rep.getDefaultGroups().stream());
+        }
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
@@ -1054,8 +1053,8 @@ public class MapExportImportManager implements ExportImportManager {
 
         OAuth2DeviceConfig deviceConfig = realm.getOAuth2DeviceConfig();
 
-        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+        deviceConfig.setOAuth2DeviceCodeLifespan(realm, rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(realm, rep.getOAuth2DevicePollingInterval());
 
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
@@ -1420,6 +1419,9 @@ public class MapExportImportManager implements ExportImportManager {
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
         if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
+        List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyExtraOrigins();
+        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
         return webAuthnPolicy;
     }
 
@@ -1471,6 +1473,9 @@ public class MapExportImportManager implements ExportImportManager {
 
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyPasswordlessAcceptableAaguids();
         if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+
+        List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyPasswordlessExtraOrigins();
+        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
 
         return webAuthnPolicy;
     }

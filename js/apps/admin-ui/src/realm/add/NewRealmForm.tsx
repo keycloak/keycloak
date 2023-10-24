@@ -88,10 +88,6 @@ export default function NewRealmForm() {
               validated={errors.realm ? "error" : "default"}
               {...register("realm", {
                 required: { value: true, message: t("required") },
-                pattern: {
-                  value: /^[a-zA-Z0-9-_]+$/,
-                  message: t("invalidRealmName"),
-                },
               })}
             />
           </FormGroup>

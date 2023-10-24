@@ -10,17 +10,15 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    target: "ES2022",
-    // Code splitting results in broken CSS for production builds.
-    // This is due to an unknown bug, presumably in Rollup.
-    // TODO: Revisit if we can re-enable this in the future.
-    cssCodeSplit: false,
+    target: "esnext",
+    modulePreload: false,
+    cssMinify: "lightningcss",
   },
+  plugins: [react(), checker({ typescript: true })],
   resolve: {
     // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
     mainFields: ["module"],
   },
-  plugins: [react(), checker({ typescript: true })],
   test: {
     setupFiles: "vitest.setup.ts",
     watch: false,

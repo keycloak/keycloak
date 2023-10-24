@@ -1062,9 +1062,9 @@ public final class KeycloakModelUtils {
 
     /**
      * Returns <code>true</code> if given realm has attribute {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE}
-     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting 
+     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting
      * can be seen at {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT}.
-     * 
+     *
      * @param realm
      * @return See the description
      * @throws NullPointerException if <code>realm</code> is <code>null</code>
@@ -1072,4 +1072,21 @@ public final class KeycloakModelUtils {
     public static boolean isUsernameCaseSensitive(RealmModel realm) {
         return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
     }
+
+    /**
+     * Sets the default groups on the realm
+     * @param session
+     * @param realm
+     * @param groups
+     * @throws RuntimeException if a group does not exist
+     */
+    public static void setDefaultGroups(KeycloakSession session, RealmModel realm, Stream<String> groups) {
+        realm.getDefaultGroupsStream().collect(Collectors.toList()).forEach(realm::removeDefaultGroup);
+        groups.forEach(path -> {
+            GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
+            if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
+            realm.addDefaultGroup(found);
+        });
+    }
+
 }

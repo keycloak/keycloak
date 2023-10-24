@@ -57,7 +57,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
@@ -398,7 +398,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private void testECDSASignatureLength(String clientSignedToken, String alg) {
         String encodedSignature = clientSignedToken.split("\\.",3)[2];
         byte[] signature = Base64Url.decode(encodedSignature);
-        assertEquals(ECDSASignatureProvider.ECDSA.valueOf(alg).getSignatureLength(), signature.length);
+        assertEquals(ECDSAAlgorithm.getSignatureLength(alg), signature.length);
     }
 
     private String getClientSignedToken(String alg) throws Exception {
