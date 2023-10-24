@@ -6,7 +6,9 @@ test.describe("Account security page", () => {
     await login(page, "jdoe", "jdoe", "photoz");
     await page.getByRole("button", { name: "Account security" }).click();
     const element = page.getByTestId("account-security/linked-accounts");
-    const textContent = await element.innerText();
-    expect(textContent).toContain("Linked accounts");
+    if (element) {
+      const textContent = await element.innerText();
+      expect(textContent).toContain("Linked accounts");
+    }
   });
 });
