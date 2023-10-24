@@ -11,14 +11,14 @@ test("Check page heading", async ({ page }) => {
   await page.waitForSelector(
     '[data-testid="account-security/linked-accounts"]',
   );
-  const linkedAccountsElement = page.getByTestId(
+  const linkedAccountsElement = await page.getByTestId(
     "account-security/linked-accounts",
   );
   await linkedAccountsElement.click();
 
   // Check the page heading
   await page.waitForSelector('[data-testid="page-heading"]');
-  const pageHeadingElement = page.getByTestId("page-heading");
+  const pageHeadingElement = await page.getByTestId("page-heading");
   const textContent = await pageHeadingElement.innerText();
   expect(textContent).toContain("Linked accounts");
 });
