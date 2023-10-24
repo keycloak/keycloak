@@ -76,7 +76,6 @@ export const GroupPickerDialog = ({
       let group;
       let groups;
       let existingUserGroups;
-      let count = 0;
 
       if (!groupId) {
         const args: GroupQuery = {
@@ -103,10 +102,6 @@ export const GroupPickerDialog = ({
           groups = await adminClient.groups.listSubGroups(args);
         }
       }
-
-      count = (
-        await adminClient.groups.count({ search: filter, top: !groupId })
-      ).count;
 
       if (id) {
         existingUserGroups = await adminClient.users.listGroups({
