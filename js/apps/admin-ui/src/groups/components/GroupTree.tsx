@@ -316,6 +316,7 @@ export const GroupTree = ({
 
             if (canViewDetails || subGroups.at(-1)?.access?.view) {
               navigate(toGroups({ realm, id: item.id }));
+              refresh();
             } else {
               addAlert(t("noViewRights"), AlertVariant.warning);
               navigate(toGroups({ realm }));
