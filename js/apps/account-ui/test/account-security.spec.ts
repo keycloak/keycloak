@@ -1,14 +1,24 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./login";
 
-test.describe("Account security page", () => {
-  test("Check linked accounts available", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", "photoz");
-    await page.getByRole("button", { name: "Account security" }).click();
-    const element = page.getByTestId("account-security/linked-accounts");
-    if (element) {
-      const textContent = await element.innerText();
-      expect(textContent).toContain("Linked accounts");
-    }
+test("Check page heading", async ({ page }) => {
+  await login(page, "jdoe", "jdoe", "photoz");
+  const securityButton = await page.getByRole("button", {
+    name: "Account security",
   });
+  await securityButton.click();
+
+  await page.waitForSelector(
+    '[data-testid="account-security/linked-accounts"]',
+  );
+  const linkedAccountsElement = page.getByTestId(
+    "account-security/linked-accounts",
+  );
+  await linkedAccountsElement.click();
+
+  // Check the page heading
+  await page.waitForSelector('[data-testid="page-heading"]');
+  const pageHeadingElement = page.getByTestId("page-heading");
+  const textContent = await pageHeadingElement.innerText();
+  expect(textContent).toContain("Linked accounts");
 });
