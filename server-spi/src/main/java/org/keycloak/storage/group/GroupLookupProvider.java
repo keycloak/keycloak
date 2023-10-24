@@ -16,10 +16,11 @@
  */
 package org.keycloak.storage.group;
 
-import java.util.Map;
-import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
+
+import java.util.Map;
+import java.util.stream.Stream;
 
 public interface GroupLookupProvider {
 
@@ -41,13 +42,8 @@ public interface GroupLookupProvider {
      * @return GroupModel with the corresponding name.
      */
     default GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
-        Stream<GroupModel> groupResults;
-        if(parent == null) {
-            groupResults = searchForGroupByNameStream(realm, name, true, null, null);
-        } else {
-            groupResults = searchForSubgroupsByParentIdStream(realm, parent.getId(), null, null);
-        }
-        return groupResults.findFirst().orElse(null);
+        return (parent == null ? realm.getTopLevelGroupsStream() : parent.getSubGroupsStream())
+                .filter(groupModel -> groupModel.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
@@ -57,7 +53,7 @@ public interface GroupLookupProvider {
      * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
-     * @param search Case insensitive searched string.
+     * @param search Case sensitive searched string.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
@@ -87,8 +83,8 @@ public interface GroupLookupProvider {
      * This is done until the group node does not have a parent (root group)
      *
      * @param realm Realm.
-     * @param search searched string.
-     * @param exact Boolean which defines wheather search param should be matched exactly (including case).
+     * @param search Case sensitive searched string.
+     * @param exact Boolean which defines wheather search param should be matched exactly.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of root groups that have the given string in their name themself or a group in their child-collection has.
@@ -96,27 +92,4 @@ public interface GroupLookupProvider {
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
 
-    /**
-     * Returns the subgroups of a given group id
-     * @param realm Realm
-     * @param id the id of parent group to be used to load subgroups with
-     * @param firstResult First result to return, Ignored if negative or {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return A Stream of groups that all have the given parent group as their parent.
-     */
-    default Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
-        return searchForSubgroupsByParentIdNameStream(realm, id, "", false, firstResult, maxResults);
-    }
-
-    /**
-     * Returns the subgroups of a given group id
-     * @param realm Realm
-     * @param id the id of parent group to be used to load subgroups with
-     * @param search The search text that you want to match by group name
-     * @param exact Whether the search text should fuzzy match or not
-     * @param firstResult First result to return, Ignored if negative or {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return A Stream of groups that all have the given parent group as their parent.
-     */
-    Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults);
 }

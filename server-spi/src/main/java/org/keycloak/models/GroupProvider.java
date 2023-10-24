@@ -100,15 +100,6 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     /**
-     * Returns the number of groups contained beneath the parent group. This is a shallow search and does not
-     * include the count of subgroups past a depth of one.
-     * @param realm Realm
-     * @param parentId ID of the group that should have its subgroups counted
-     * @return The number of root groups beneath the parent group
-     */
-    Long getSubGroupsCount(RealmModel realm, String parentId);
-
-    /**
      * Returns the number of top level groups containing groups with the given string in name for the given realm.
      *
      * @param realm Realm.

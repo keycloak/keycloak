@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -47,13 +48,11 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
-    protected KeycloakSession session;
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
 
-    public GroupAdapter(KeycloakSession session, RealmModel realm, EntityManager em, GroupEntity group) {
-        this.session = session;
+    public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
         this.em = em;
         this.group = group;
         this.realm = realm;
@@ -124,15 +123,35 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
-        return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), -1, -1);
+        return getSubGroupsStream("", false, -1, -1);
     }
 
     @Override
     public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        if(search == null || search.isEmpty()) {
-            return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), firstResult, maxResults);
+        TypedQuery<String> query;
+        if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
         }
-        return session.groups().searchForSubgroupsByParentIdNameStream(realm, group.getId(), search, exact, firstResult, maxResults);
+        query.setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .setParameter("search", search);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
+                .map(realm::getGroupById)
+                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+                .filter(Objects::nonNull)
+                .sorted(GroupModel.COMPARE_BY_NAME)
+        );
+    }
+
+    @Override
+    public Long getSubGroupsCount() {
+        return em.createNamedQuery("getGroupCountByParent", Long.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .getSingleResult();
     }
 
     @Override

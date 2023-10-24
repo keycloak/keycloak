@@ -104,11 +104,6 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public Long getSubGroupsCount(RealmModel realm, String parentId) {
-        return localStorage().getSubGroupsCount(realm, parentId);
-    }
-
-    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return localStorage().getGroupsCountByNameContaining(realm, search);
     }
@@ -121,11 +116,6 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         return localStorage().getTopLevelGroupsStream(realm, search, exact, firstResult, maxResults);
-    }
-
-    @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        return localStorage().searchForSubgroupsByParentIdNameStream(realm, id, search, exact, firstResult, maxResults);
     }
 
     @Override

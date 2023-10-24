@@ -64,9 +64,9 @@ public class MapGroupProviderFactory extends AbstractMapProviderFactory<MapGroup
 
             // TODO: Should the batch size be a config option?
             // batch and remove subgroups to avoid grinding server to a halt at scale
-            long batches = (long) Math.ceil(create(session).getSubGroupsCount(realm, group.getId()) / 1000.0);
+            long batches = (long) Math.ceil(group.getSubGroupsCount() / 1000.0);
             for(int i = 0; i < batches; i++) {
-                create(session).searchForSubgroupsByParentIdStream(realm, group.getId(), i * 1000, 1000)
+                group.getSubGroupsStream(i * 1000, 1000)
                     .forEach(subGroup -> create(session).removeGroup(realm, subGroup));
             }
         } else if (type == GROUP_AFTER_REMOVE) {

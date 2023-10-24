@@ -19,7 +19,6 @@ package org.keycloak.testsuite.util;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.keycloak.representations.idm.GroupRepresentation;
 
 /**

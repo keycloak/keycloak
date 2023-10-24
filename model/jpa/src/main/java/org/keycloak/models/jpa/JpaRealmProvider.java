@@ -431,7 +431,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
         if (!groupEntity.getRealm().equals(realm.getId())) return null;
-        GroupAdapter adapter =  new GroupAdapter(session, realm, em, groupEntity);
+        GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
         return adapter;
     }
 
@@ -578,14 +578,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public Long getSubGroupsCount(RealmModel realm, String parentId) {
-        return em.createNamedQuery("getGroupCountByParent", Long.class)
-            .setParameter("realm", realm.getId())
-            .setParameter("parent", parentId)
-            .getSingleResult();
-    }
-
-    @Override
     public long getClientsCount(RealmModel realm) {
         final Long res = em.createNamedQuery("getRealmClientsCount", Long.class)
           .setParameter("realm", realm.getId())
@@ -606,7 +598,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
 
         return closing(results
-        		.map(g -> (GroupModel) new GroupAdapter(session, realm, em, g))
+        		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
                 .sorted(GroupModel.COMPARE_BY_NAME));
     }
 
@@ -659,7 +651,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         realm.removeDefaultGroup(group);
 
-        session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), -1, -1).forEach(realm::removeGroup);
+        group.getSubGroupsStream().forEach(realm::removeGroup);
 
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
@@ -689,7 +681,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         em.persist(groupEntity);
         em.flush();
 
-        return new GroupAdapter(session, realm, em, groupEntity);
+        return new GroupAdapter(realm, em, groupEntity);
     }
 
     @Override
@@ -1030,26 +1022,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        TypedQuery<String> query;
-        if (Boolean.TRUE.equals(exact)) {
-            query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
-        } else {
-            query = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
-        }
-        query.setParameter("realm", realm.getId())
-            .setParameter("parent", id)
-            .setParameter("search", search);
-
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
-            .map(realm::getGroupById)
-            // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
-            .filter(Objects::nonNull)
-            .sorted(GroupModel.COMPARE_BY_NAME)
-        );
-    }
-
-    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Map<String, String> filteredAttributes = groupSearchableAttributes == null || groupSearchableAttributes.isEmpty()
                 ? attributes
@@ -1083,7 +1055,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(g -> new GroupAdapter(session, realm, em, g));
+                .map(g -> new GroupAdapter(realm, em, g));
     }
 
     @Override

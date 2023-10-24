@@ -17,7 +17,6 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import java.util.stream.Stream;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -79,9 +78,5 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
 
     public Set<String> getSubGroups(Supplier<GroupModel> group) {
         return subGroups.get(group);
-    }
-
-    public Stream<GroupModel> getSubGroups(Supplier<GroupModel> group, String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        return group.get().getSubGroupsStream(search, exact, firstResult, maxResults);
     }
 }

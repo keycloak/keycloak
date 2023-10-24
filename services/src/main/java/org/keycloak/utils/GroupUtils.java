@@ -31,7 +31,7 @@ public class GroupUtils {
             if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
 
             GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
-            populateSubGroupCount(realm, session, currGroup);
+            populateSubGroupCount(group, currGroup);
             groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
 
             while(currGroup.getParentId() != null) {
@@ -45,7 +45,7 @@ public class GroupUtils {
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
                     id -> toRepresentation(groupEvaluator, parentModel, full));
-                populateSubGroupCount(realm, session, parent);
+                populateSubGroupCount(parentModel, parent);
                 GroupRepresentation finalCurrGroup = currGroup;
 
                 // check the parent for existing subgroups that match the group we're currently operating on and merge them if needed
@@ -67,13 +67,13 @@ public class GroupUtils {
      * This method's purpose is to look up the subgroup count of a Group and populate it on the representation. This has been kept separate from
      * {@link #toRepresentation} in order to keep database lookups separate from a function that aims to only convert objects
      * A way of cohesively ensuring that a GroupRepresentation always has a group count should be considered
-     * @param realm
-     * @param session
-     * @param representation
+     *
+     * @param group model
+     * @param representation group representation
      * @return
      */
-    public static GroupRepresentation populateSubGroupCount(RealmModel realm, KeycloakSession session, GroupRepresentation representation) {
-        representation.setSubGroupCount(session.groups().getSubGroupsCount(realm, representation.getId()));
+    public static GroupRepresentation populateSubGroupCount(GroupModel group, GroupRepresentation representation) {
+        representation.setSubGroupCount(group.getSubGroupsCount());
         return representation;
     }
 

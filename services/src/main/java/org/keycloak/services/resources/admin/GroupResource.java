@@ -99,7 +99,7 @@ public class GroupResource {
 
         rep.setAccess(auth.groups().getAccess(group));
 
-        return GroupUtils.populateSubGroupCount(realm, session, rep);
+        return GroupUtils.populateSubGroupCount(group, rep);
     }
 
     /**
@@ -162,10 +162,10 @@ public class GroupResource {
         @QueryParam("briefRepresentation") @DefaultValue("false") Boolean full) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
-        return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), first, max)
+        return group.getSubGroupsStream(first, max)
             .filter(g -> canViewGlobal || auth.groups().canView(g))
             .map(g -> GroupUtils.toRepresentation(auth.groups(), g, full))
-            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
+            .map(g -> GroupUtils.populateSubGroupCount(group, g));
     }
 
     /**

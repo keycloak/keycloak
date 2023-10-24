@@ -112,8 +112,7 @@ public class GroupsResource {
         boolean canViewGlobal = groupsEvaluator.canView();
         return stream
             .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
-            .map(g -> GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation))
-            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 
     /**

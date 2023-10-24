@@ -815,7 +815,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             parentGroup = getKcGroupsPathGroup(realm);
         }
         return parentGroup == null ? session.groups().getTopLevelGroupsStream(realm) :
-            session.groups().searchForSubgroupsByParentIdStream(realm, parentGroup.getId(), null, null);
+            parentGroup.getSubGroupsStream();
     }
 
     /**

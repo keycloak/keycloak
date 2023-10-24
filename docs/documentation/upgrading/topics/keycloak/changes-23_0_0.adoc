@@ -112,10 +112,18 @@ hence `RegistrationProfile` is not needed anymore. There is usually no further a
 
 * `RealmModel#getTopLevelGroupsStream()` and overloaded methods are now deprecated
 
-= `GroupProvider` and `GroupLookupProvider` changes
+= `GroupProvider` changes
 
-Methods have been added to allow for searching and paging through groups and subgroups.
-If you implement these interfaces you will need to implement the new method `GroupLookupProvider#searchForSubgroupsByParentIdNameStream()`
+A new method has been added to allow for searching and paging through top level groups.
+If you implement this interface you will need to implement the following method:
+[source,java]
+----
+Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm,
+                                           String search,
+                                           Boolean exact,
+                                           Integer firstResult,
+                                           Integer maxResults)
+----
 
 = `GroupRepresentation` changes
 
