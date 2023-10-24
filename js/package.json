@@ -11,7 +11,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-cypress": "^2.15.1",
-    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-mocha": "^10.2.0",
     "eslint-plugin-prettier": "^5.0.1",
