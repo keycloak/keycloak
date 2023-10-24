@@ -164,8 +164,7 @@ public class GroupResource {
         boolean canViewGlobal = auth.groups().canView();
         return group.getSubGroupsStream(first, max)
             .filter(g -> canViewGlobal || auth.groups().canView(g))
-            .map(g -> GroupUtils.toRepresentation(auth.groups(), g, full))
-            .map(g -> GroupUtils.populateSubGroupCount(group, g));
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, full)));
     }
 
     /**

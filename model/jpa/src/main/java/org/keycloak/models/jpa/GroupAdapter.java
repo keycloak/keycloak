@@ -136,7 +136,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         }
         query.setParameter("realm", realm.getId())
                 .setParameter("parent", group.getId())
-                .setParameter("search", search);
+                .setParameter("search", search == null ? "" : search);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
                 .map(realm::getGroupById)
