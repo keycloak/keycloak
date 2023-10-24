@@ -27,6 +27,7 @@ import {
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { convertToFormValues, sortProviders } from "../util";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 import "./realm-settings-section.css";
 
@@ -43,6 +44,7 @@ export const RealmSettingsTokensTab = ({
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation();
   const serverInfo = useServerInfo();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
@@ -127,77 +129,81 @@ export const RealmSettingsTokensTab = ({
             />
           </FormGroup>
 
-          <FormGroup
-            label={t("oAuthDeviceCodeLifespan")}
-            fieldId="oAuthDeviceCodeLifespan"
-            labelIcon={
-              <HelpItem
-                helpText={t("oAuthDeviceCodeLifespanHelp")}
-                fieldLabelId="oAuthDeviceCodeLifespan"
-              />
-            }
-          >
-            <Controller
-              name="oauth2DeviceCodeLifespan"
-              defaultValue={0}
-              control={form.control}
-              render={({ field }) => (
-                <TimeSelector
-                  id="oAuthDeviceCodeLifespan"
-                  data-testid="oAuthDeviceCodeLifespan"
-                  value={field.value || 0}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+          {isFeatureEnabled(Feature.DeviceFlow) && (
+            <>
+              <FormGroup
+                label={t("oAuthDeviceCodeLifespan")}
+                fieldId="oAuthDeviceCodeLifespan"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("oAuthDeviceCodeLifespanHelp")}
+                    fieldLabelId="oAuthDeviceCodeLifespan"
+                  />
+                }
+              >
+                <Controller
+                  name="oauth2DeviceCodeLifespan"
+                  defaultValue={0}
+                  control={form.control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      id="oAuthDeviceCodeLifespan"
+                      data-testid="oAuthDeviceCodeLifespan"
+                      value={field.value || 0}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("oAuthDevicePollingInterval")}
-            fieldId="oAuthDevicePollingInterval"
-            labelIcon={
-              <HelpItem
-                helpText={t("oAuthDevicePollingIntervalHelp")}
-                fieldLabelId="oAuthDevicePollingInterval"
-              />
-            }
-          >
-            <Controller
-              name="oauth2DevicePollingInterval"
-              defaultValue={0}
-              control={form.control}
-              render={({ field }) => (
-                <NumberInput
-                  id="oAuthDevicePollingInterval"
-                  value={field.value}
-                  min={0}
-                  onPlus={() => field.onChange(field.value || 0 + 1)}
-                  onMinus={() => field.onChange(field.value || 0 - 1)}
-                  onChange={(event) => {
-                    const newValue = Number(event.currentTarget.value);
-                    field.onChange(!isNaN(newValue) ? newValue : 0);
-                  }}
-                  placeholder={t("oAuthDevicePollingInterval")}
+              </FormGroup>
+              <FormGroup
+                label={t("oAuthDevicePollingInterval")}
+                fieldId="oAuthDevicePollingInterval"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("oAuthDevicePollingIntervalHelp")}
+                    fieldLabelId="oAuthDevicePollingInterval"
+                  />
+                }
+              >
+                <Controller
+                  name="oauth2DevicePollingInterval"
+                  defaultValue={0}
+                  control={form.control}
+                  render={({ field }) => (
+                    <NumberInput
+                      id="oAuthDevicePollingInterval"
+                      value={field.value}
+                      min={0}
+                      onPlus={() => field.onChange(field.value || 0 + 1)}
+                      onMinus={() => field.onChange(field.value || 0 - 1)}
+                      onChange={(event) => {
+                        const newValue = Number(event.currentTarget.value);
+                        field.onChange(!isNaN(newValue) ? newValue : 0);
+                      }}
+                      placeholder={t("oAuthDevicePollingInterval")}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("shortVerificationUri")}
-            fieldId="shortVerificationUri"
-            labelIcon={
-              <HelpItem
-                helpText={t("shortVerificationUriTooltipHelp")}
-                fieldLabelId="shortVerificationUri"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="shortVerificationUri"
-              placeholder={t("shortVerificationUri")}
-              {...form.register("attributes.shortVerificationUri")}
-            />
-          </FormGroup>
+              </FormGroup>
+              <FormGroup
+                label={t("shortVerificationUri")}
+                fieldId="shortVerificationUri"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("shortVerificationUriTooltipHelp")}
+                    fieldLabelId="shortVerificationUri"
+                  />
+                }
+              >
+                <KeycloakTextInput
+                  id="shortVerificationUri"
+                  placeholder={t("shortVerificationUri")}
+                  {...form.register("attributes.shortVerificationUri")}
+                />
+              </FormGroup>
+            </>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel

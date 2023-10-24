@@ -125,6 +125,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      */
     @Path("device")
     public Object authorizeDevice() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
+            return null;
+        }
         return new DeviceEndpoint(session, event);
     }
 
