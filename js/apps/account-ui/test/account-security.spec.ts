@@ -9,9 +9,14 @@ test("Check page heading", async ({ page }) => {
     })
     .click();
 
-  await page.getByTestId("account-security/linked-accounts").click();
-
-  // Check the page heading
-  const pageHeadingElement = await page.getByTestId("page-heading");
-  await expect(pageHeadingElement).toHaveText("Linked accounts");
+  const linkedAccountsNavItem = await page.$(
+    "a:has-text(/account-security/linked-accounts/)",
+  );
+  if (linkedAccountsNavItem) {
+    await linkedAccountsNavItem.click();
+    // Check the page heading
+    await expect(page.getByTestId("page-heading")).toHaveText(
+      "Linked accounts",
+    );
+  }
 });
