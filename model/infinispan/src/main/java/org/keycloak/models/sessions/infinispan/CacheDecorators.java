@@ -25,6 +25,9 @@ import org.infinispan.context.Flag;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CacheDecorators {
+    // Patch:Begin
+    private static final boolean IGNORE_SKIP_CACHE_STORE = Boolean.getBoolean("keycloak.infinispan.ignoreSkipCacheStore");
+    // Patch:End
 
     /**
      * Adds {@link Flag#CACHE_MODE_LOCAL} flag to the cache.
@@ -50,6 +53,11 @@ public class CacheDecorators {
      * @return Cache with the flags applied.
      */
     public static <K, V> AdvancedCache<K, V> skipCacheStore(Cache<K, V> cache) {
+        // Patch:Begin
+        if (IGNORE_SKIP_CACHE_STORE) {
+            return cache.getAdvancedCache();
+        }
+        // Patch:End
         return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE);
     }
 
