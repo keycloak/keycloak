@@ -995,11 +995,6 @@ public class MapExportImportManager implements ExportImportManager {
             renameRealm(realm, rep.getRealm());
         }
 
-        if (!Boolean.parseBoolean(rep.getAttributesOrEmpty().get("userProfileEnabled"))) {
-            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-            provider.setConfiguration(null);
-        }
-
         // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
         if (rep.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(realm.getAttributes().keySet());
