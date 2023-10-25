@@ -160,6 +160,13 @@ The old behavior to preload them at startup is now deprecated, as pre-loading th
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Configuration option for offline session lifespan override in memory
+
+To reduce memory requirements, we introduced a configuration option to shorten lifespan for offline sessions imported into the Infinispan caches. Currently, the offline session lifespan override is disabled by default.
+
+For more details, check the
+link:{adminguide_link}#_offline-access[{adminguide_name}].
+
 = Infinispan metrics use labels for cache manager and cache names
 
 When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
