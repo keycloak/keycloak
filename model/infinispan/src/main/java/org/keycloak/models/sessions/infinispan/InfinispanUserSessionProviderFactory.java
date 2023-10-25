@@ -63,13 +63,16 @@ import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
-public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, EnvironmentDependentProviderFactory {
+public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
 
@@ -83,9 +86,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     private boolean preloadOfflineSessionsFromDatabase;
 
-    private int offlineSessionCacheEntryLifespanOverride;
+    private long offlineSessionCacheEntryLifespanOverride;
 
-    private int offlineClientSessionCacheEntryLifespanOverride;
+    private long offlineClientSessionCacheEntryLifespanOverride;
 
     private Config.Scope config;
 
@@ -336,20 +339,38 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     protected Long deriveOfflineSessionCacheEntryLifespanMs(RealmModel realm, ClientModel client, UserSessionEntity entity) {
 
-        if (offlineSessionCacheEntryLifespanOverride != -1) {
-            return Long.valueOf(offlineSessionCacheEntryLifespanOverride);
+        long configuredOfflineSessionLifespan = SessionTimeouts.getOfflineSessionLifespanMs(realm, client, entity);
+
+        if (offlineSessionCacheEntryLifespanOverride == -1) {
+            // override not configured -> take the value from realm settings
+            return configuredOfflineSessionLifespan;
         }
 
-        return SessionTimeouts.getOfflineSessionLifespanMs(realm, client, entity);
+        if (configuredOfflineSessionLifespan == -1) {
+            // "Offline Session Max Limited" is "off"
+            return offlineSessionCacheEntryLifespanOverride;
+        }
+
+        // both values are configured, Offline Session Max could be smaller than the override, so we use the minimum of both
+        return Math.min(configuredOfflineSessionLifespan, offlineSessionCacheEntryLifespanOverride);
     }
 
     protected Long deriveOfflineClientSessionCacheEntryLifespanOverrideMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity) {
 
-        if (offlineClientSessionCacheEntryLifespanOverride != -1) {
-            return Long.valueOf(offlineClientSessionCacheEntryLifespanOverride);
+        long configuredOfflineClientSessionLifespan = SessionTimeouts.getOfflineClientSessionLifespanMs(realm, client, entity);
+
+        if (offlineClientSessionCacheEntryLifespanOverride == -1) {
+            // override not configured -> take the value from realm settings
+            return configuredOfflineClientSessionLifespan;
         }
 
-        return SessionTimeouts.getOfflineClientSessionLifespanMs(realm, client, entity);
+        if (configuredOfflineClientSessionLifespan == -1) {
+            // "Offline Session Max Limited" is "off"
+            return offlineClientSessionCacheEntryLifespanOverride;
+        }
+
+        // both values are configured, Offline Session Max could be smaller than the override, so we use the minimum of both
+        return Math.min(offlineClientSessionCacheEntryLifespanOverride, configuredOfflineClientSessionLifespan);
     }
 
 
@@ -402,6 +423,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public boolean isSupported() {
         return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    }
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> info = new HashMap<>();
+        info.put("preloadOfflineSessionsFromDatabase", Boolean.toString(preloadOfflineSessionsFromDatabase));
+        info.put("offlineSessionCacheEntryLifespanOverride", Long.toString(offlineSessionCacheEntryLifespanOverride));
+        info.put("offlineClientSessionCacheEntryLifespanOverride", Long.toString(offlineClientSessionCacheEntryLifespanOverride));
+        return info;
     }
 }
 
