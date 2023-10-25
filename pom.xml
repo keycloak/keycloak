@@ -50,6 +50,14 @@
 
         <project.build-time>${timestamp}</project.build-time>
 
+        <!-- Following properties are used for downstream build to alter final distribution archive file name and internal base directory of the archive. -->
+        <dist.archive.file.prefix>keycloak</dist.archive.file.prefix>
+        <dist.archive.dir.prefix>${dist.archive.file.prefix}</dist.archive.dir.prefix>
+        <dist.archive.file.version>${project.version}</dist.archive.file.version>
+        <dist.archive.dir.version>${project.version}</dist.archive.dir.version>
+        <dist.archive.file>${dist.archive.file.prefix}-${dist.archive.file.version}</dist.archive.file>
+        <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
+
         <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
         <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
 
@@ -190,6 +198,7 @@
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
+        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1930,6 +1939,11 @@
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
                     <version>${asciidoctor.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
