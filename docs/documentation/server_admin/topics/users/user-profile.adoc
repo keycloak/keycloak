@@ -202,7 +202,8 @@ image:images/user-profile-validation.png[]
 
 |email
 |Check if the value has a valid e-mail format.
-| None
+|
+*max-local-length*: an integer to define the maximum length for the local part of the email. It defaults to 64 per specification.
 
 |local-date
 |Check if the value has a valid format based on the realm and/or user locale.
@@ -293,7 +294,9 @@ The JSON schema is defined as follows:
         "edit": [ "admin", "user" ]
       },
       "validations": {
-        "email": {},
+        "email": {
+          "max-local-length": 64
+        },
         "length": {
           "max": 255
         }
