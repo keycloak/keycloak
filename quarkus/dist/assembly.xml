@@ -24,6 +24,7 @@
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>${dist.archive.dir}</baseDirectory>
 
     <fileSets>
         <fileSet>
