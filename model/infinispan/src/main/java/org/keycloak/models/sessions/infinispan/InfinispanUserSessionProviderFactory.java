@@ -83,6 +83,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     private boolean preloadOfflineSessionsFromDatabase;
 
+    private int offlineUserSessionCacheEntryTtlOverride;
+
+    private int offlineClientSessionCacheEntryTtlOverride;
+
     private Config.Scope config;
 
     private RemoteCacheInvoker remoteCacheInvoker;
@@ -99,14 +103,29 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
-        return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore,
-                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, !preloadOfflineSessionsFromDatabase);
+        return new InfinispanUserSessionProvider( //
+                session, //
+                remoteCacheInvoker, //
+                lastSessionRefreshStore, //
+                offlineLastSessionRefreshStore, //
+                persisterLastSessionRefreshStore, //
+                keyGenerator, //
+                cache, //
+                offlineSessionsCache, //
+                clientSessionCache, //
+                offlineClientSessionsCache, //
+                !preloadOfflineSessionsFromDatabase, //
+                this::deriveOfflineSessionLifespanMs, //
+                this::deriveOfflineClientSessionLifespanMs //
+        );
     }
 
     @Override
     public void init(Config.Scope config) {
         this.config = config;
         preloadOfflineSessionsFromDatabase = config.getBoolean("preloadOfflineSessionsFromDatabase", false);
+        offlineUserSessionCacheEntryTtlOverride = config.getInt("offlineUserSessionCacheEntryTtlOverride", -1);
+        offlineClientSessionCacheEntryTtlOverride = config.getInt("offlineClientSessionCacheEntryTtlOverride", -1);
     }
 
     @Override
@@ -279,7 +298,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
         RemoteCache offlineSessionsRemoteCache = checkRemoteCache(session, offlineSessionsCache, (RealmModel realm) -> {
             return Time.toMillis(realm.getOfflineSessionIdleTimeout());
-        }, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+        }, this::deriveOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
 
         if (offlineSessionsRemoteCache != null) {
             offlineLastSessionRefreshStore = new CrossDCLastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, true);
@@ -288,7 +307,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
         checkRemoteCache(session, offlineClientSessionsCache, (RealmModel realm) -> {
             return Time.toMillis(realm.getOfflineSessionIdleTimeout());
-        }, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+        }, this::deriveOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
     }
 
     private <K, V extends SessionEntity> RemoteCache checkRemoteCache(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> ispnCache, RemoteCacheInvoker.MaxIdleTimeLoader maxIdleLoader,
@@ -313,6 +332,24 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             remoteCache.addClientListener(hotrodListener);
             return remoteCache;
         }
+    }
+
+    protected Long deriveOfflineSessionLifespanMs(RealmModel realm, ClientModel client, UserSessionEntity entity) {
+
+        if (offlineUserSessionCacheEntryTtlOverride != -1) {
+            return Long.valueOf(offlineUserSessionCacheEntryTtlOverride);
+        }
+
+        return SessionTimeouts.getOfflineSessionLifespanMs(realm, client, entity);
+    }
+
+    protected Long deriveOfflineClientSessionLifespanMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity) {
+
+        if (offlineClientSessionCacheEntryTtlOverride != -1) {
+            return Long.valueOf(offlineClientSessionCacheEntryTtlOverride);
+        }
+
+        return SessionTimeouts.getOfflineClientSessionLifespanMs(realm, client, entity);
     }
 
 
