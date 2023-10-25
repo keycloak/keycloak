@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.validate.validators.DoubleValidator;
+import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.IntegerValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.OptionsValidator;
@@ -138,6 +139,18 @@ public class BuiltinValidatorsTest {
 
         Assert.assertFalse(validator.validate(" ", "email").isValid());
         Assert.assertFalse(validator.validate("adminATexample.org", "email").isValid());
+
+        Assert.assertTrue(validator.validate("username@keycloak.org", "email", (ValidatorConfig) null).isValid());
+        Assert.assertTrue(validator.validate("abcd012345678901234567890123456789012345678901234567890123456789@keycloak.org", "email").isValid());
+        Assert.assertFalse(validator.validate("abcde012345678901234567890123456789012345678901234567890123456789@keycloak.org", "email").isValid());
+        Assert.assertTrue(validator.validate("abcdef0123456789@keycloak.org", "email",
+                new ValidatorConfig(ImmutableMap.of(EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "16"))).isValid());
+        Assert.assertFalse(validator.validate("abcdefg0123456789@keycloak.org", "email",
+                new ValidatorConfig(ImmutableMap.of(EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, 16))).isValid());
+        Assert.assertTrue(validator.validate("ab012345678901234567890123456789@keycloak.org", "email",
+                new ValidatorConfig(ImmutableMap.of(EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "32"))).isValid());
+        Assert.assertFalse(validator.validate("abc012345678901234567890123456789@keycloak.org", "email",
+                new ValidatorConfig(ImmutableMap.of(EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, 32))).isValid());
     }
 
     @Test
