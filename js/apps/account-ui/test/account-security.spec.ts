@@ -9,15 +9,11 @@ test("Check page heading", async ({ page }) => {
     })
     .click();
 
-  const linkedAccountsNavItem = page.locator(
-    "//a[contains(@href, '/account-security/linked-accounts/') and text()='Linked accounts']",
+  const linkedAccountsNavItem = await page.getByTestId(
+    "account-security/linked-accounts",
   );
 
-  if (await linkedAccountsNavItem.isVisible()) {
-    await linkedAccountsNavItem.click();
-    // Check the page heading
-    await expect(page.getByTestId("page-heading")).toHaveText(
-      "Linked accounts",
-    );
-  }
+  await linkedAccountsNavItem.isVisible();
+  await linkedAccountsNavItem.click();
+  await expect(page.getByTestId("page-heading")).toHaveText("Linked accounts");
 });
