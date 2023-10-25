@@ -8,6 +8,7 @@ export enum Feature {
   DynamicScopes = "DYNAMIC_SCOPES",
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
+  TransientUsers = "TRANSIENT_USERS",
 }
 
 export default function useIsFeatureEnabled() {

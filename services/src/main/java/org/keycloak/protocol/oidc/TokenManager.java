@@ -56,6 +56,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
@@ -78,6 +79,7 @@ import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
@@ -111,6 +113,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -477,14 +480,17 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
 
+            TokenVerifier<RefreshToken> tokenVerifier = TokenVerifier.createWithoutSignature(refreshToken)
+                    .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
+
             if (checkExpiration) {
-                try {
-                    TokenVerifier.createWithoutSignature(refreshToken)
-                            .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
-                            .verify();
-                } catch (VerificationException e) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
-                }
+                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE);
+            }
+
+            try {
+                tokenVerifier.verify();
+            } catch (VerificationException e) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
             }
 
             if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
@@ -1230,8 +1236,11 @@ public class TokenManager {
 
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
-            if (userNotBefore > notBefore) notBefore = userNotBefore;
+            final UserModel user = userSession.getUser();
+            if (! isLightweightUser(user)) {
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (userNotBefore > notBefore) notBefore = userNotBefore;
+            }
             res.setNotBeforePolicy(notBefore);
 
             res = transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
@@ -1303,7 +1312,9 @@ public class TokenManager {
         }
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
-            return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+            return isLightweightUser(userModel)
+              ? new NotBeforeCheck(((LightweightUserAdapter) userModel).getCreatedTimestamp().intValue())
+              : new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
         }
     }
 

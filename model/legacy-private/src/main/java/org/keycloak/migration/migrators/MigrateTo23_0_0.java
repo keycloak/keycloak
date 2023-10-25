@@ -20,6 +20,9 @@
 package org.keycloak.migration.migrators;
 
 import java.util.Optional;
+
+import org.jboss.logging.Logger;
+import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +31,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.userprofile.UserProfileProvider;
 
 public class MigrateTo23_0_0 implements Migration {
+
+    private static final Logger LOG = Logger.getLogger(MigrateTo23_0_0.class);
 
     public static final ModelVersion VERSION = new ModelVersion("23.0.0");
 
@@ -38,12 +43,17 @@ public class MigrateTo23_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(this::updateUserProfileConfig);
+        session.realms().getRealmsStream().forEach(this::migrateRealm);
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateRealm(realm);
+    }
+
+    private void migrateRealm(RealmModel realm) {
         updateUserProfileConfig(realm);
+        removeRegistrationProfileFormExecution(realm);
     }
 
     private void updateUserProfileConfig(RealmModel realm) {
@@ -72,6 +82,20 @@ public class MigrateTo23_0_0 implements Migration {
                 realm.updateComponent(userProfileComponent);
             }
         }
+    }
+
+    private void removeRegistrationProfileFormExecution(RealmModel realm) {
+        realm.getAuthenticationFlowsStream()
+                .filter(flow -> AuthenticationFlow.FORM_FLOW.equals(flow.getProviderId()))
+                .forEach(registrationFlow -> {
+                    realm.getAuthenticationExecutionsStream(registrationFlow.getId())
+                            .filter(authExecution -> "registration-profile-action".equals(authExecution.getAuthenticator()))
+                            .forEach(registrationProfileExecution -> {
+                                realm.removeAuthenticatorExecution(registrationProfileExecution);
+                                LOG.debugf("Removed 'registration-profile-action' form action from authentication flow '%s' in the realm '%s'.", registrationFlow.getAlias(), realm.getName());
+                            });
+                });
+
     }
 
     @Override
