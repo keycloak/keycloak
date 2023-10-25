@@ -45,6 +45,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
@@ -85,6 +86,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 
 /**
  * Default token exchange implementation
@@ -535,12 +537,15 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
-                context.getUsername(), context.getToken());
+        UserModel user = null;
+        if (! context.getIdpConfig().isTransientUsers()) {
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                    context.getUsername(), context.getToken());
 
-        UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+        }
 
-        if (user == null) {
+        if (user == null || context.getIdpConfig().isTransientUsers()) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
@@ -570,17 +575,22 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
             }
 
-
-            user = session.users().addUser(realm, username);
+            if (context.getIdpConfig().isTransientUsers()) {
+                user = new LightweightUserAdapter(session, UUID.randomUUID().toString());
+            } else {
+                user = session.users().addUser(realm, username);
+            }
             user.setEnabled(true);
             user.setEmail(context.getEmail());
             user.setFirstName(context.getFirstName());
             user.setLastName(context.getLastName());
 
 
-            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            if (! context.getIdpConfig().isTransientUsers()) {
+                FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                        context.getUsername(), context.getToken());
+                session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            }
 
             context.getIdp().importNewUser(session, realm, user, context);
 

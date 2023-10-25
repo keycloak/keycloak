@@ -152,4 +152,6 @@ public final class Constants {
     public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
     public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
 
+    public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
+
 }

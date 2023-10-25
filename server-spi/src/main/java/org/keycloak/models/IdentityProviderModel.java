@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
+    public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
 
     private String internalId;
 
@@ -257,6 +260,23 @@ public class IdentityProviderModel implements Serializable {
 
     public void setHideOnLogin(boolean hideOnLogin) {
         getConfig().put(HIDE_ON_LOGIN, String.valueOf(hideOnLogin));
+    }
+
+    /**
+     * Returns flag whether the users withing this IdP should be transient, ie. not stored in Keycloak database.
+     * Default value: {@code false}.
+     * @return
+     */
+    public boolean isTransientUsers() {
+        return Profile.isFeatureEnabled(Feature.TRANSIENT_USERS) && Boolean.valueOf(getConfig().get(DO_NOT_STORE_USERS));
+    }
+
+    /**
+     * Configures the IdP to not store users in Keycloak database. Default value: {@code false}.
+     * @return
+     */
+    public void setTransientUsers(boolean transientUsers) {
+        getConfig().put(DO_NOT_STORE_USERS, String.valueOf(transientUsers));
     }
 
     public boolean isFilteredByClaims() {

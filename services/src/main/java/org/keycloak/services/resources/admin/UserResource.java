@@ -53,6 +53,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
@@ -615,7 +616,9 @@ public class UserResource {
     public void logout() {
         auth.users().requireManage(user);
 
-        session.users().setNotBeforeForUser(realm, user, Time.currentTime());
+        if (! LightweightUserAdapter.isLightweightUser(user)) {
+            session.users().setNotBeforeForUser(realm, user, Time.currentTime());
+        }
 
         session.sessions().getUserSessionsStream(realm, user)
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.

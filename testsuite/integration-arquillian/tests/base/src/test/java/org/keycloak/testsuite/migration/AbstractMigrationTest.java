@@ -81,6 +81,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -191,6 +192,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertThat(component.getProviderId(), equalTo("declarative-user-profile"));
         assertThat(component.getConfig().size(), equalTo(1));
         assertThat(component.getConfig().getList(UP_COMPONENT_CONFIG_KEY), not(empty()));
+    }
+
+    protected void testRegistrationProfileFormActionRemoved(RealmResource realm) {
+        AuthenticationFlowRepresentation registrationFlow = realm.flows().getFlows().stream()
+                .filter(flowRep -> DefaultAuthenticationFlows.REGISTRATION_FLOW.equals(flowRep.getAlias()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("No registration flow in realm " + realm.toRepresentation().getRealm()));
+
+        Assert.assertFalse(realm.flows().getExecutions(registrationFlow.getAlias())
+                .stream()
+                .anyMatch(execution -> "registration-profile-action".equals(execution.getProviderId())));
     }
 
     /**
@@ -382,6 +393,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
      */
     protected void testMigrationTo23_0_0(boolean testUserProfileMigration) {
         if (testUserProfileMigration) testUserProfile(migrationRealm2);
+        testRegistrationProfileFormActionRemoved(migrationRealm2);
     }
 
     protected void testDeleteAccount(RealmResource realm) {
