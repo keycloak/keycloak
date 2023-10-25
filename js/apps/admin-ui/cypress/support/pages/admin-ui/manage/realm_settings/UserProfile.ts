@@ -13,8 +13,6 @@ export default class UserProfile {
   #newAttributeNameInput = "attribute-name";
   #newAttributeDisplayNameInput = "attribute-display-name";
   #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
-  #newAttributeCheckboxes = 'input[type="checkbox"]';
-  #newAttributeRequiredFor = 'input[name="roles"]';
   #newAttributeRequiredWhen = 'input[name="requiredWhen"]';
   #newAttributeEmptyValidators = ".kc-emptyValidators";
   #newAttributeAnnotationBtn = "annotations-add-row";
@@ -37,7 +35,6 @@ export default class UserProfile {
   #newAttributesGroupNameInput = "input#kc-name";
   #newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
   #saveNewAttributesGroupBtn = "saveGroupBtn";
-  #newAnnotationsAddRowBtn = "annotations-remove";
 
   goToTab() {
     cy.findByTestId(this.#userProfileTab).click();
@@ -158,9 +155,6 @@ export default class UserProfile {
       .clear()
       .type(displayName);
     cy.get(this.#newAttributeEnabledWhen).first().check();
-    cy.get(this.#newAttributeCheckboxes).check({ force: true });
-    cy.get(this.#newAttributeRequiredFor).first().check({ force: true });
-    cy.get(this.#newAttributeRequiredWhen).first().check();
     cy.get(this.#newAttributeEmptyValidators).contains("No validators.");
     cy.findByTestId(this.#newAttributeAnnotationBtn).click();
     cy.findByTestId(this.#newAttributeAnnotationKey).type("test");

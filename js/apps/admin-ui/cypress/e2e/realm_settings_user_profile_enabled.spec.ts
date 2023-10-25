@@ -179,6 +179,7 @@ describe("User profile tabs", () => {
       getAttributesTab();
       listingPage.deleteItem("newAttribute1");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attribute deleted");
     });
     it("Checks that not required attribute is not present when user is created/edited with email as username enabled", () => {
       getUserProfileTab();
@@ -221,6 +222,7 @@ describe("User profile tabs", () => {
       getAttributesTab();
       listingPage.deleteItem("newAttribute2");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attribute deleted");
     });
     it("Checks that not required attribute with permissions to view/edit is present when user is created", () => {
       getUserProfileTab();
@@ -253,6 +255,7 @@ describe("User profile tabs", () => {
       getAttributesTab();
       listingPage.deleteItem("newAttribute3");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attribute deleted");
     });
     it("Checks that required attribute with permissions to view/edit is present and required when user is created", () => {
       getUserProfileTab();
@@ -283,6 +286,7 @@ describe("User profile tabs", () => {
       getAttributesTab();
       listingPage.deleteItem("newAttribute4");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attribute deleted");
     });
     it("Checks that required attribute with permissions to view/edit is accepted when user is created", () => {
       getUserProfileTab();
@@ -312,6 +316,7 @@ describe("User profile tabs", () => {
       getAttributesTab();
       listingPage.deleteItem("newAttribute5");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attribute deleted");
     });
     it("Checks that attribute group is visible when user with existing attribute is created", () => {
       getUserProfileTab();
@@ -344,6 +349,7 @@ describe("User profile tabs", () => {
       getAttributesGroupTab();
       listingPage.deleteItem("personalInfo");
       modalUtils.confirmModal();
+      masthead.checkNotificationMessage("Attributes group deleted.");
     });
     it("Checks that attribute group is visible when user with a new attribute is created", () => {
       getUserProfileTab();
