@@ -48,6 +48,7 @@ describe("User profile tabs", () => {
 
   afterEach(() => {
     sidebarPage.goToRealmSettings();
+    sidebarPage.waitForPageLoad();
     realmSettingsPage.goToLoginTab();
     cy.findByTestId("email-as-username-switch").uncheck({ force: true });
     cy.findByTestId("edit-username-switch").uncheck({ force: true });
@@ -324,8 +325,9 @@ describe("User profile tabs", () => {
       cy.findAllByTestId("no-attributes-groups-empty-action").click();
       userProfileTab.createAttributeGroup("personalInfo", "personalInfo");
       userProfileTab.saveAttributesGroupCreation();
+
       getAttributesTab();
-      userProfileTab.selectElementInList("firstName");
+      userProfileTab.selectElementInList("username");
       cy.get("#kc-attributeGroup").click();
       cy.get("button.pf-c-select__menu-item").contains("personalInfo").click();
       userProfileTab.saveAttributeCreation();
@@ -339,17 +341,22 @@ describe("User profile tabs", () => {
       cy.get("h1#personalinfo").should("have.text", "personalInfo");
       cy.findByTestId("create-user").click();
       masthead.checkNotificationMessage("The user has been created");
+
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
-      userProfileTab.selectElementInList("firstName");
+      userProfileTab.selectElementInList("username");
       cy.get("#kc-attributeGroup").click();
       cy.get("button.pf-c-select__menu-item").contains("None").click();
       userProfileTab.saveAttributeCreation();
+      masthead.checkNotificationMessage(
+        "Success! User Profile configuration has been saved.",
+      );
+
       getAttributesGroupTab();
       listingPage.deleteItem("personalInfo");
       modalUtils.confirmModal();
-      masthead.checkNotificationMessage("Attributes group deleted.");
+      listingPage.checkEmptyList();
     });
     it("Checks that attribute group is visible when user with a new attribute is created", () => {
       getUserProfileTab();
@@ -389,6 +396,22 @@ describe("User profile tabs", () => {
       cy.findByTestId("save-user").click();
       masthead.checkNotificationMessage("The user has been saved");
       cy.findByTestId("address").should("have.value", "MyNewAddress2");
+
+      sidebarPage.goToRealmSettings();
+      getUserProfileTab();
+      getAttributesTab();
+      userProfileTab.selectElementInList("address");
+      cy.get("#kc-attributeGroup").click();
+      cy.get("button.pf-c-select__menu-item").contains("None").click();
+      userProfileTab.saveAttributeCreation();
+      masthead.checkNotificationMessage(
+        "Success! User Profile configuration has been saved.",
+      );
+
+      getAttributesGroupTab();
+      listingPage.deleteItem("contact");
+      modalUtils.confirmModal();
+      listingPage.checkEmptyList();
     });
   });
 });
