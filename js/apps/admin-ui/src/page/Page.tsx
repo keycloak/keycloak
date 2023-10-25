@@ -6,25 +6,25 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
-import { useAlerts } from "../components/alert/Alerts";
 import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
+import { PAGE_PROVIDER } from "./PageList";
+import { PageParams, toPage } from "./routes";
 
 export default function Page() {
   const { t } = useTranslation();
   const { componentTypes } = useServerInfo();
-  const pages =
-    componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
+  const pages = componentTypes?.[PAGE_PROVIDER];
+  const { id, providerId } = useParams<PageParams>();
 
-  // Here the pageId should be used instead
-  const page = pages?.[0];
+  const page = pages?.find((p) => p.id === providerId);
   const form = useForm<ComponentTypeRepresentation>();
   const { realm: realmName } = useRealm();
-  const { id } = useParams<{ id: string }>();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { addAlert, addError } = useAlerts();
 
@@ -50,8 +50,8 @@ export default function Page() {
     try {
       const updatedComponent = {
         ...component,
-        providerId: "admin-ui-page",
-        providerType: "org.keycloak.services.ui.extend.UiPageProvider",
+        providerId,
+        providerType: PAGE_PROVIDER,
         parentId: realm?.id,
       };
       if (id) {
@@ -67,7 +67,7 @@ export default function Page() {
 
   return (
     <PageSection variant="light">
-      <ViewHeader titleKey={page?.id || "page"} subKey={page?.helpText} />
+      <ViewHeader titleKey={id || t("createItem")} />
       <PageSection variant="light">
         <Form isHorizontal onSubmit={form.handleSubmit(onSubmit)}>
           <FormProvider {...form}>
@@ -80,7 +80,12 @@ export default function Page() {
             </Button>
             <Button
               variant="link"
-              component={(props) => <Link {...props} to=""></Link>}
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toPage({ realm: realmName, providerId: providerId! })}
+                ></Link>
+              )}
             >
               {t("cancel")}
             </Button>

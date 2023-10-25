@@ -6,8 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 public interface UiPageProviderFactory<T> extends ComponentFactory<T, UiPageProvider> {
-    default
-    public T create(KeycloakSession session, ComponentModel model) {
+    default T create(KeycloakSession session, ComponentModel model) {
         return null;
     }
 }
