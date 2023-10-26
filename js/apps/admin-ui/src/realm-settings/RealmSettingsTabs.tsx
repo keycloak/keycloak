@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useAccess } from "../context/access/Access";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
@@ -71,6 +72,9 @@ const RealmSettingsHeader = ({
   const [partialImportOpen, setPartialImportOpen] = useState(false);
   const [partialExportOpen, setPartialExportOpen] = useState(false);
 
+  const { hasAccess } = useAccess();
+  const canManageRealm = hasAccess("manage-realm");
+
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "disableConfirmTitle",
     messageKey: "disableConfirmRealm",
@@ -120,6 +124,7 @@ const RealmSettingsHeader = ({
           <DropdownItem
             key="import"
             data-testid="openPartialImportModal"
+            isDisabled={!canManageRealm}
             onClick={() => {
               setPartialImportOpen(true);
             }}
@@ -129,16 +134,22 @@ const RealmSettingsHeader = ({
           <DropdownItem
             key="export"
             data-testid="openPartialExportModal"
+            isDisabled={!canManageRealm}
             onClick={() => setPartialExportOpen(true)}
           >
             {t("partialExport")}
           </DropdownItem>,
           <DropdownSeparator key="separator" />,
-          <DropdownItem key="delete" onClick={toggleDeleteDialog}>
+          <DropdownItem
+            key="delete"
+            isDisabled={!canManageRealm}
+            onClick={toggleDeleteDialog}
+          >
             {t("delete")}
           </DropdownItem>,
         ]}
         isEnabled={value}
+        isReadOnly={!canManageRealm}
         onToggle={(value) => {
           if (!value) {
             toggleDisableDialog();
@@ -181,7 +192,7 @@ export const RealmSettingsTabs = ({
     convertToFormValues(r, setValue);
   };
 
-  useEffect(setupForm, []);
+  useEffect(setupForm, [setValue, realm]);
 
   const save = async (r: RealmRepresentation) => {
     r = convertFormValuesToObject(r);

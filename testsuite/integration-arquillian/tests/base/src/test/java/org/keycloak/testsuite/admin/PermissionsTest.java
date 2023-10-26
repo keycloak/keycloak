@@ -125,7 +125,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         builder.user(UserBuilder.create()
                 .username("multi")
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM)
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS)
                 .addPassword("password"));
 
@@ -1335,6 +1335,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.groups().groups();
             }
         }, Resource.USER, false);
+        invoke(realm -> realm.groups().count(), Resource.USER, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 GroupRepresentation group = new GroupRepresentation();
@@ -1790,31 +1791,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
         // re-enable as part of https://github.com/keycloak/keycloak/issues/14291
         ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
 
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.partialExport(false, false);
-            }
-        }, clients.get("view-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.partialExport(true, true);
-            }
-        }, clients.get("multi"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.partialExport(true, false);
-            }
-        }, clients.get("view-realm"), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.partialExport(false, true);
-            }
-        }, clients.get("view-realm"), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.partialExport(false, false);
-            }
-        }, clients.get("none"), false);
+        invoke(realm -> realm.partialExport(false, false), clients.get("view-realm"), false);
+        invoke(realm -> realm.partialExport(false, false), clients.get("manage-realm"), true);
+        invoke(realm -> realm.partialExport(true, false), clients.get("manage-realm"), false);
+        invoke(realm -> realm.partialExport(false, true), clients.get("manage-realm"), false);
+        invoke(realm -> realm.partialExport(true, true), clients.get("multi"), true);
+        invoke(realm -> realm.partialExport(false, false), clients.get("none"), false);
     }
 
     @Test
