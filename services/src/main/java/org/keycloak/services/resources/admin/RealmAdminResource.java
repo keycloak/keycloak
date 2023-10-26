@@ -1160,7 +1160,7 @@ public class RealmAdminResource {
     @Operation( summary = "Partial export of existing realm into a JSON file.")
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {
-        auth.realm().requireViewRealm();
+        auth.realm().requireManageRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
