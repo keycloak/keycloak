@@ -12,6 +12,7 @@ Keycloak is currently a CNCF incubating project. This document provides useful i
 * [DevStats](https://keycloak.devstats.cncf.io/)
 * [Slack](https://cloud-native.slack.com/) (current channels #keycloak, #keycloak-dev, and #keycloak-maintainers)
 * [Services for CNCF Projects](https://www.cncf.io/services-for-projects/)
+* [Schedule time with the CNCF Projects Team](http://project-meetings.cncf.io/)
 
 ## Maintainers
 
