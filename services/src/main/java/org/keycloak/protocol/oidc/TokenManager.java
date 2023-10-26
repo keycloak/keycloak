@@ -1313,7 +1313,7 @@ public class TokenManager {
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
             return isLightweightUser(userModel)
-              ? new NotBeforeCheck(((LightweightUserAdapter) userModel).getCreatedTimestamp().intValue())
+              ? new NotBeforeCheck((int) (((LightweightUserAdapter) userModel).getCreatedTimestamp() / 1000L))
               : new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
         }
     }
