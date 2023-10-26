@@ -106,7 +106,10 @@ const PersonalInfo = () => {
           </Button>
         </ActionGroup>
         {environment.features.deleteAccountAllowed && (
-          <ExpandableSection toggleText={t("deleteAccount")}>
+          <ExpandableSection
+            data-testid="delete-account"
+            toggleText={t("deleteAccount")}
+          >
             <Alert
               isInline
               title={t("deleteAccount")}
