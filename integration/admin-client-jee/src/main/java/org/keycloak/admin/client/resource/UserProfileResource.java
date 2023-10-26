@@ -19,9 +19,12 @@ package org.keycloak.admin.client.resource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.UserProfileMetadata;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -33,6 +36,11 @@ public interface UserProfileResource {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     String getConfiguration();
+
+    @GET
+    @Path("/metadata")
+    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    UserProfileMetadata getMetadata();
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)

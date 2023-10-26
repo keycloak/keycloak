@@ -26,13 +26,10 @@ import jakarta.ws.rs.ApplicationPath;
 import org.keycloak.config.HostnameOptions;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.platform.Platform;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.quarkus.runtime.services.resources.QuarkusWelcomeResource;
-import org.keycloak.services.resources.WelcomeResource;
 
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -73,9 +70,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> classes = new HashSet<>(super.getClasses());
-
-        classes.remove(WelcomeResource.class);
-        classes.add(QuarkusWelcomeResource.class);
 
         classes.add(QuarkusObjectMapperResolver.class);
         classes.add(CloseSessionHandler.class);

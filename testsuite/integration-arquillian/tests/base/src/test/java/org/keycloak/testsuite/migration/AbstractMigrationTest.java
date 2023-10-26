@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -80,20 +81,24 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -106,6 +111,7 @@ import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -161,7 +167,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         RealmRepresentation rep = realm.toRepresentation();
         Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
         Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
-        Assert.assertNull("Account theme was not modified", rep.getAccountTheme());
+        // there should be either new default or left null if not set
+        assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
         // check the client theme is also removed
         List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
         Assert.assertNotNull("migration-saml-client client is missing", client);
@@ -174,6 +181,27 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertFalse(realm.flows().getFlows()
                 .stream()
                 .anyMatch(authFlow -> authFlow.getAlias().equalsIgnoreCase("http challenge")));
+    }
+
+    protected void testUserProfile(RealmResource realm) {
+        // check user profile config
+        List<ComponentRepresentation> userProfileComponents = realm.components().query(null, "org.keycloak.userprofile.UserProfileProvider");
+        assertThat(userProfileComponents, hasSize(1));
+
+        ComponentRepresentation component = userProfileComponents.get(0);
+        assertThat(component.getProviderId(), equalTo("declarative-user-profile"));
+        assertThat(component.getConfig().size(), equalTo(1));
+        assertThat(component.getConfig().getList(UP_COMPONENT_CONFIG_KEY), not(empty()));
+    }
+
+    protected void testRegistrationProfileFormActionRemoved(RealmResource realm) {
+        AuthenticationFlowRepresentation registrationFlow = realm.flows().getFlows().stream()
+                .filter(flowRep -> DefaultAuthenticationFlows.REGISTRATION_FLOW.equals(flowRep.getAlias()))
+                .findFirst().orElseThrow(() -> new NoSuchElementException("No registration flow in realm " + realm.toRepresentation().getRealm()));
+
+        Assert.assertFalse(realm.flows().getExecutions(registrationFlow.getAlias())
+                .stream()
+                .anyMatch(execution -> "registration-profile-action".equals(execution.getProviderId())));
     }
 
     /**
@@ -358,6 +386,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo22_0_0() {
         testRhssoThemes(migrationRealm);
         testHttpChallengeFlow(migrationRealm);
+    }
+
+    /**
+     * @param testUserProfileMigration whether a migrated realm contains a user profile component or not.
+     */
+    protected void testMigrationTo23_0_0(boolean testUserProfileMigration) {
+        if (testUserProfileMigration) testUserProfile(migrationRealm2);
+        testRegistrationProfileFormActionRemoved(migrationRealm2);
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -1038,6 +1074,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo22_x() {
         testMigrationTo22_0_0();
+    }
+
+    protected void testMigrationTo23_x(boolean testUserProfileMigration) {
+        testMigrationTo23_0_0(testUserProfileMigration);
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

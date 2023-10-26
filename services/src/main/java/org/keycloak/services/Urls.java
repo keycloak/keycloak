@@ -44,13 +44,13 @@ public class Urls {
         return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
     }
 
-    public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
+    public static URI identityProviderAuthnResponse(URI baseUri, String providerAlias, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "getEndpoint")
-                .build(realmName, providerId);
+                .build(realmName, providerAlias);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseUri, String providerId, String realmName, String accessCode, String clientId, String tabId) {
+    public static URI identityProviderAuthnRequest(URI baseUri, String providerAlias, String realmName, String accessCode, String clientId, String tabId) {
         UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "performLogin");
 
@@ -64,25 +64,25 @@ public class Urls {
             uriBuilder.replaceQueryParam(Constants.TAB_ID, tabId);
         }
 
-        return uriBuilder.build(realmName, providerId);
+        return uriBuilder.build(realmName, providerAlias);
     }
 
-    public static URI identityProviderLinkRequest(URI baseUri, String providerId, String realmName) {
+    public static URI identityProviderLinkRequest(URI baseUri, String providerAlias, String realmName) {
         UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .replaceQuery(null)
                 .path(IdentityBrokerService.class, "clientInitiatedAccountLinking");
 
-        return uriBuilder.build(realmName, providerId);
+        return uriBuilder.build(realmName, providerAlias);
     }
 
-    public static URI identityProviderRetrieveToken(URI baseUri, String providerId, String realmName) {
+    public static URI identityProviderRetrieveToken(URI baseUri, String providerAlias, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "retrieveToken")
-                .build(realmName, providerId);
+                .build(realmName, providerAlias);
     }
 
-    public static URI identityProviderAuthnRequest(URI baseURI, String providerId, String realmName) {
-        return identityProviderAuthnRequest(baseURI, providerId, realmName, null, null, null);
+    public static URI identityProviderAuthnRequest(URI baseURI, String providerAlias, String realmName) {
+        return identityProviderAuthnRequest(baseURI, providerAlias, realmName, null, null, null);
     }
 
     public static URI identityProviderAfterFirstBrokerLogin(URI baseUri, String realmName, String accessCode, String clientId, String tabId) {
@@ -160,8 +160,9 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate").build(realmName);
     }
 
-    public static URI realmLoginRestartPage(URI baseUri, String realmId) {
+    public static URI realmLoginRestartPage(URI baseUri, String realmId, boolean skipLogout) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
+                .queryParam(Constants.SKIP_LOGOUT, String.valueOf(skipLogout))
                 .build(realmId);
     }
 

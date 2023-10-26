@@ -11,6 +11,7 @@ fi
 
 # Maven
 mvn versions:set -DnewVersion=$NEW_VERSION -DgenerateBackupPoms=false -DgroupId=org.keycloak* -DartifactId=*
+mvn versions:set-property --non-recursive -Dproperty=project.version.npm -DnewVersion="$NEW_NPM_VERSION"
 
 # Docker
 sed -i "s/ENV KEYCLOAK_VERSION .*/ENV KEYCLOAK_VERSION $NEW_VERSION/" quarkus/container/Dockerfile
@@ -29,3 +30,6 @@ echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-js/package.
 
 # Keycloak Admin Client
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-admin-client/package.json)" > js/libs/keycloak-admin-client/package.json
+
+echo "New Mvn Version: $NEW_VERSION" >&2
+echo "New NPM Version: $NEW_NPM_VERSION" >&2

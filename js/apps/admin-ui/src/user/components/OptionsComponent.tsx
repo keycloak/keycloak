@@ -1,23 +1,27 @@
-import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { Checkbox, Radio } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
-import { UserProfileGroup } from "./UserProfileGroup";
-import { Options } from "../UserProfileFields";
+import { Controller, FieldPath } from "react-hook-form";
+import { isRequiredAttribute } from "../utils/user-profile";
+
+import { Options, UserProfileFieldProps } from "../UserProfileFields";
+import { UserFormFields } from "../form-state";
 import { fieldName } from "../utils";
+import { UserProfileGroup } from "./UserProfileGroup";
 
-export const OptionComponent = (attr: UserProfileAttribute) => {
-  const { control } = useFormContext();
-  const type = attr.annotations?.["inputType"] as string;
-  const isMultiSelect = type.includes("multiselect");
+export const OptionComponent = ({
+  form,
+  inputType,
+  attribute,
+}: UserProfileFieldProps) => {
+  const isRequired = isRequiredAttribute(attribute);
+  const isMultiSelect = inputType.startsWith("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
-
-  const options = (attr.validators?.options as Options).options || [];
+  const options = (attribute.validators?.options as Options).options || [];
 
   return (
-    <UserProfileGroup {...attr}>
+    <UserProfileGroup form={form} attribute={attribute}>
       <Controller
-        name={fieldName(attr)}
-        control={control}
+        name={fieldName(attribute) as FieldPath<UserFormFields>}
+        control={form.control}
         defaultValue=""
         render={({ field }) => (
           <>
@@ -42,7 +46,8 @@ export const OptionComponent = (attr: UserProfileAttribute) => {
                     field.onChange([option]);
                   }
                 }}
-                readOnly={attr.readOnly}
+                readOnly={attribute.readOnly}
+                isRequired={isRequired}
               />
             ))}
           </>

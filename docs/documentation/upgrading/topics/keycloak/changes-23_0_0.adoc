@@ -86,3 +86,24 @@ In this release, it was completely removed, and it is no longer supported.
 
 When executing the `start` command, the server is automatically built based on the configuration.
 In order to prevent this behavior, set the `--optimized` flag.
+
+
+= kc.sh and shell metacharacters
+
+The kc.sh no longer uses an additional shell eval on parameters and the environment variables JAVA_OPTS_APPEND and JAVA_ADD_OPENS, thus the continued use of double escaping/quoting will result in the parameter being misunderstood.  For example instead of 
+
+```
+bin/kc.sh start --db postgres --db-username keycloak --db-url "\"jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30\"" --db-password keycloak --hostname localhost
+```
+
+Use a single escape:
+
+```
+bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30" --db-password keycloak --hostname localhost
+```
+
+= Removed RegistrationProfile form action
+
+The form action `RegistrationProfile` (displayed in the UI of authentication flows as `Profile Validation`) was removed from the codebase and also from all authentication flows. By default, it was in
+the built-in registration flow of every realm. The validation of user attributes as well as creation of the user including all that user's attributes is handled by `RegistrationUserCreation` form action and
+hence `RegistrationProfile` is not needed anymore. There is usually no further action needed in relation to this change, unless you used `RegistrationProfile` class in your own providers.

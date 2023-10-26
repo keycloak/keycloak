@@ -866,8 +866,8 @@
   "authorizationEncryptedResponseAlgHelp": "JWA Algorithm used for key management in encrypting the authorization response when the response mode is jwt. This option is needed if you want encrypted authorization response. If left empty, the authorization response is just signed, but not encrypted.",
   "authorizationEncryptedResponseEncHelp": "JWA Algorithm used for content encryption in encrypting the authorization response when the response mode is jwt. This option is needed if you want encrypted authorization response. If left empty, the authorization response is just signed, but not encrypted.",
   "openIdConnectCompatibilityModesHelp": "This section is used to configure settings for backward compatibility with older OpenID Connect / OAuth 2 adaptors. It's useful especially if your client uses older version of Keycloak / RH-SSO adapter.",
-  "excludeSessionStateFromAuthenticationResponseHelp": "If this is on, the parameter 'session_state' will not be included in OpenID Connect Authentication Response. It is useful if your client uses older OIDC / OAuth2 adapter, which does not support 'session_state' parameter.",
-  "excludeIssuerFromAuthenticationResponseHelp": "If this is on, the parameter 'iss' will not be included in OpenID Connect Authentication Response. It is useful if your client uses older OIDC / OAuth2 adapter, which does not support 'session_state' parameter.",
+  "excludeSessionStateFromAuthenticationResponseHelp": "If this is on, the parameter 'session_state' will not be included in OpenID Connect Authentication Response. It is useful if the client uses an older OIDC / OAuth2 adapter, which does not support the 'session_state' parameter.",
+  "excludeIssuerFromAuthenticationResponseHelp": "If this is on, the parameter 'iss' will not be included in OpenID Connect Authentication Response. It is useful if the client uses an older OIDC / OAuth2 adapter, which does not support the 'iss' parameter.",
   "useRefreshTokensHelp": "If this is on, a refresh_token will be created and added to the token response. If this is off then no refresh_token will be generated.",
   "useRefreshTokenForClientCredentialsGrantHelp": "If this is on, a refresh_token will be created and added to the token response if the client_credentials grant is used. The OAuth 2.0 RFC6749 Section 4.4.3 states that a refresh_token should not be generated when client_credentials grant is used. If this is off then no refresh_token will be generated and the associated user session will be removed.",
   "useLowerCaseBearerTypeHelp": "If this is on, token responses will be set the with the type \"bearer\" in lower-case. By default, the server sets the type as \"Bearer\" as defined by RFC6750.",
@@ -2386,7 +2386,9 @@
   "webAuthnPolicyCreateTimeoutHint": "Timeout needs to be between 0 seconds and 8 hours",
   "webAuthnPolicyAvoidSameAuthenticatorRegister": "Avoid same authenticator registration",
   "webAuthnPolicyAcceptableAaguids": "Acceptable AAGUIDs",
+  "webAuthnPolicyExtraOrigins": "Extra Origins",
   "addAaguids": "Add AAGUID",
+  "addOrigins": "Add Origin",
   "webAuthnUpdateSuccess": "Updated webauthn policies successfully",
   "webAuthnUpdateError": "Could not update webauthn policies due to {{error}}",
   "flowName": "Flow name",
@@ -2496,6 +2498,7 @@
   "webAuthnPolicyCreateTimeoutHelp": "Timeout value for creating user's public key credential in seconds. if set to 0, this timeout option is not adapted.",
   "webAuthnPolicyAvoidSameAuthenticatorRegisterHelp": "Avoid registering the authenticator that has already been registered.",
   "webAuthnPolicyAcceptableAaguidsHelp": "The list of AAGUID of which an authenticator can be registered.",
+  "webAuthnPolicyExtraOriginsHelp": "The list of extra origin for non-web application.",
   "passwordPoliciesHelp": {
     "forceExpiredPasswordChange": "The number of days the password is valid before a new password is required.",
     "hashIterations": "The number of times a password is hashed before storage or verification. Default: 27,500.",
@@ -2868,6 +2871,7 @@
   "disableUserInfo": "Disable user info",
   "isAccessTokenJWT": "Access Token is JWT",
   "userInfoUrl": "User Info URL",
+  "doNotStoreUsers": "Do not store users",
   "issuer": "Issuer",
   "prompt": "Prompt",
   "prompts": {
@@ -2951,6 +2955,7 @@
   "disableUserInfoHelp": "Disable usage of User Info service to obtain additional user information?  Default is to use this OIDC service.",
   "isAccessTokenJWTHelp": "The Access Token received from the Identity Provider is a JWT and its claims will be accessible for mappers.",
   "userInfoUrlHelp": "The User Info Url. This is optional.",
+  "doNotStoreUsersHelp": "When enabled, users from this broker are not persisted in internal database.",
   "issuerHelp": "The issuer identifier for the issuer of the response. If not provided, no validation will be performed.",
   "promptHelp": "Specifies whether the Authorization Server prompts the End-User for re-authentication and consent.",
   "acceptsPromptNoneHelp": "This is just used together with Identity Provider Authenticator or when kc_idp_hint points to this identity provider. In case that client sends a request with prompt=none and user is not yet authenticated, the error will not be directly returned to client, but the request with prompt=none will be forwarded to this identity provider.",
@@ -3092,6 +3097,10 @@
   "includeInUserInfo": {
     "label": "Add to userinfo",
     "tooltip": "Should the claim be added to the userinfo?"
+  },
+  "includeInIntrospection": {
+    "label": "Add to token introspection",
+    "tooltip": "Should the claim be added to the token introspection?"
   },
   "sectorIdentifierUri": {
     "label": "Sector Identifier URI",

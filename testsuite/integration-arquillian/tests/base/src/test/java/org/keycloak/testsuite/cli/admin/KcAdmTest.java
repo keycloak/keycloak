@@ -610,4 +610,30 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exec = execute("add-roles --uusername=testuser --rolename offline_access --target-realm=demorealm");
         Assert.assertEquals(0, exec.exitCode());
     }
+
+    @Test
+    public void testCsvFormat() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv");
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().startsWith("\""));
+    }
+
+    @Test
+    public void testCsvFormatWithMissingFields() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --fields foo");
+        // nothing valid was selected, should be blank
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().isBlank());
+    }
+
+    @Test
+    public void testCompressedCsv() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --compressed");
+        // should contain an error message
+        assertExitCodeAndStreamSizes(exec, 0, 0, 1);
+    }
+
 }

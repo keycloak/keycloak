@@ -102,7 +102,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
     @Test
     @Override
     public void testEditUsernameAllowed() throws IOException {
-
+        super.testEditUsernameAllowed();
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
         UserRepresentation user = getUser();
@@ -365,6 +365,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
     @Override
     public void testUpdateSingleField() throws IOException {
         setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");

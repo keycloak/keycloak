@@ -30,6 +30,8 @@ public class HotRodWebAuthnPolicyEntity extends AbstractHotRodEntity {
     public List<String> acceptableAaguids;
     @ProtoField(number = 10)
     public List<String> signatureAlgorithms;
+    @ProtoField(number = 11)
+    public List<String> extraOrigins;
     @Override
     public boolean equals(Object o) {
         return HotRodWebAuthnPolicyEntityDelegate.entityEquals(this, o);

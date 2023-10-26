@@ -25,26 +25,30 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.controllers.KeycloakDeployment;
-import org.keycloak.operator.controllers.OperatorManagedResource;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.WatchedSecretsController;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.mockito.Mockito;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import jakarta.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,30 +56,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class PodTemplateTest {
-    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
-        var config = new Config() {
-            @Override
-            public Keycloak keycloak() {
-                return new Keycloak() {
-                    @Override
-                    public String image() {
-                        return "dummy-image";
-                    }
 
-                    @Override
-                    public String imagePullPolicy() {
-                        return "Never";
-                    }
-                    @Override
-                    public Map<String, String> podLabels() {
-                        return Collections.emptyMap();
-                    }
-                };
-            }
-        };
+    @InjectMock
+    WatchedSecretsController watchedSecrets;
+
+    @Inject
+    KeycloakDeploymentDependentResource deployment;
+
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
         var kc = new KeycloakBuilder().withNewMetadata().withName("instance").endMetadata().build();
         existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
-                .addToMatchLabels(OperatorManagedResource.updateWithInstanceLabels(null, kc.getMetadata().getName()))
+                .withMatchLabels(Utils.allInstanceLabels(kc))
                 .endSelector().endSpec().build();
 
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
@@ -92,9 +83,10 @@ public class PodTemplateTest {
 
         kc.setSpec(keycloakSpecBuilder.build());
 
-        var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
+        Context<Keycloak> context = Mockito.mock(Context.class);
+        Mockito.when(context.getSecondaryResource(StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
 
-        return deployment.getReconciledResource().get();
+        return deployment.desired(kc, context);
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -202,8 +194,8 @@ public class PodTemplateTest {
         // Assert
         assertEquals(1, podTemplate.getSpec().getContainers().get(0).getCommand().size());
         assertEquals(command, podTemplate.getSpec().getContainers().get(0).getCommand().get(0));
-        assertEquals(1, podTemplate.getSpec().getContainers().get(0).getArgs().size());
-        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(0));
+        assertEquals(2, podTemplate.getSpec().getContainers().get(0).getArgs().size());
+        assertEquals(arg, podTemplate.getSpec().getContainers().get(0).getArgs().get(1));
     }
 
     @Test

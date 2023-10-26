@@ -76,6 +76,15 @@ module.exports = {
         ],
       },
     ],
+    // Prefer using the `#private` syntax for private class members, we want to keep this consistent and use the same syntax.
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector:
+          ':matches(PropertyDefinition, MethodDefinition)[accessibility="private"]',
+        message: "Use #private instead",
+      },
+    ],
   },
   overrides: [
     {

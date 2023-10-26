@@ -20,15 +20,19 @@ package org.keycloak.testsuite.admin;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
-import org.jetbrains.annotations.Nullable;
+import jakarta.ws.rs.WebApplicationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -71,7 +75,7 @@ public class UserTestWithUserProfile extends UserTest {
         assertNotNull(metadata);
 
         for (String name : managedAttributes) {
-            assertNotNull(getAttributeMetadata(metadata, name));
+            assertNotNull(metadata.getAttributeMetadata(name));
         }
     }
 
@@ -83,10 +87,10 @@ public class UserTestWithUserProfile extends UserTest {
         UserRepresentation user = realm.users().get(userId).toRepresentation(true);
         UserProfileMetadata metadata = user.getUserProfileMetadata();
         assertNotNull(metadata);
-        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
         assertNotNull(username);
         assertTrue(username.isReadOnly());
-        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
         assertNotNull(email);
         assertFalse(email.isReadOnly());
     }
@@ -101,24 +105,12 @@ public class UserTestWithUserProfile extends UserTest {
         UserRepresentation user = realm.users().get(userId).toRepresentation(true);
         UserProfileMetadata metadata = user.getUserProfileMetadata();
         assertNotNull(metadata);
-        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
         assertNotNull(username);
         assertTrue(username.isReadOnly());
-        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
         assertNotNull(email);
         assertFalse(email.isReadOnly());
-    }
-
-    @Nullable
-    private static UserProfileAttributeMetadata getAttributeMetadata(UserProfileMetadata metadata, String name) {
-        UserProfileAttributeMetadata attrMetadata = null;
-
-        for (UserProfileAttributeMetadata m : metadata.getAttributes()) {
-            if (name.equals(m.getName())) {
-                attrMetadata = m;
-            }
-        }
-        return attrMetadata;
     }
 
     private UPAttribute createAttributeMetadata(String name) {
@@ -129,6 +121,22 @@ public class UserTestWithUserProfile extends UserTest {
         attribute.setPermissions(permissions);
         this.managedAttributes.add(name);
         return attribute;
+    }
+
+    @Test
+    public void testDefaultCharacterValidationOnUsername() {
+        List<String> invalidNames = List.of("1user\\\\", "2user\\\\%", "3user\\\\*", "4user\\\\_");
+
+        for (String invalidName : invalidNames) {
+            try {
+                createUser(invalidName, "test@invalid.org");
+                fail("Should fail because the username contains invalid characters");
+            } catch (WebApplicationException bre) {
+                assertEquals(400, bre.getResponse().getStatus());
+                ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("username contains invalid character.", error.getErrorMessage());
+            }
+        }
     }
 
     @Override

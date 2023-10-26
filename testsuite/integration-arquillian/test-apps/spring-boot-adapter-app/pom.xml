@@ -16,6 +16,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <jetty.version>${jetty94.version}</jetty.version>
+        <undertow.version>${undertow-legacy.version}</undertow.version>
 
         <springboot-version>2.4</springboot-version>
 

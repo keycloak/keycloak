@@ -389,7 +389,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (user != null) {
             user = importValidation(realm, user);
             // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
-            if (email.equalsIgnoreCase(user.getEmail())) {
+            if (user != null && email.equalsIgnoreCase(user.getEmail())) {
                 return user;
             }
         }
@@ -422,6 +422,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
                 return ((UserQueryMethodsProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery);
+            }
+            else if (provider instanceof UserFederatedStorageProvider) {
+                return ((UserFederatedStorageProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery).
+                        map(id -> getUserById(realm, id));
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);

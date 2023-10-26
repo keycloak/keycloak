@@ -7,6 +7,8 @@ export enum Feature {
   Kerberos = "KERBEROS",
   DynamicScopes = "DYNAMIC_SCOPES",
   DPoP = "DPOP",
+  DeviceFlow = "DEVICE_FLOW",
+  TransientUsers = "TRANSIENT_USERS",
 }
 
 export default function useIsFeatureEnabled() {

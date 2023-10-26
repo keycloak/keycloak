@@ -28,7 +28,7 @@ set CONFIG_ARGS=
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
-set KEY=%~1
+set "KEY=%~1"
 if "%KEY%" == "" (
     goto MAIN
 )
@@ -55,14 +55,14 @@ if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
   shift
 )
 if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
-  set CONFIG_ARGS=%CONFIG_ARGS% %KEY%
+  set CONFIG_ARGS=%CONFIG_ARGS% %1
 )
 if not "%KEY:~0,2%"=="-D" (
   if "%KEY:~0,1%"=="-" (
       if "%~2"=="" (
-        set CONFIG_ARGS=%CONFIG_ARGS% %KEY%
+        set CONFIG_ARGS=%CONFIG_ARGS% %1
       ) else (
-        set CONFIG_ARGS=%CONFIG_ARGS% %KEY% %2%
+        set CONFIG_ARGS=%CONFIG_ARGS% %1 %2
       )
       shift
   )
@@ -119,26 +119,28 @@ if "%DEBUG_MODE%" == "true" (
 rem Setup Keycloak specific properties
 set JAVA_OPTS=-Dprogram.name=%PROGNAME% %JAVA_OPTS%
 
-if "x%JAVA_HOME%" == "x" (
-  set  JAVA=java
-  echo JAVA_HOME is not set. Unexpected results may occur.
-  echo Set JAVA_HOME to the directory of your local JDK to avoid this message.
-) else (
-  if not exist "%JAVA_HOME%" (
-    echo JAVA_HOME "%JAVA_HOME%" path doesn't exist
-    goto END
-   ) else (
-     if not exist "%JAVA_HOME%\bin\java.exe" (
-       echo "%JAVA_HOME%\bin\java.exe" does not exist
-       goto END
-     )
-    set "JAVA=%JAVA_HOME%\bin\java"
+if "x%JAVA%" == "x" (
+  if "x%JAVA_HOME%" == "x" (
+    set JAVA=java
+    echo JAVA_HOME is not set. Unexpected results may occur. 1>&2
+    echo Set JAVA_HOME to the directory of your local JDK to avoid this message. 1>&2
+  ) else (
+    if not exist "%JAVA_HOME%" (
+      echo JAVA_HOME "%JAVA_HOME%" path doesn't exist 1>&2
+      goto END
+    ) else (
+      if not exist "%JAVA_HOME%\bin\java.exe" (
+        echo "%JAVA_HOME%\bin\java.exe" does not exist 1>&2
+        goto END
+      )
+      set "JAVA=%JAVA_HOME%\bin\java"
+    )
   )
 )
 
-set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar"
+set CLASSPATH_OPTS="%DIRNAME%..\lib\quarkus-run.jar"
 
-set JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir=%DIRNAME%.. -Djboss.server.config.dir=%DIRNAME%..\conf -Dkeycloak.theme.dir=%DIRNAME%..\themes %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
+set JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
 
 SetLocal EnableDelayedExpansion
 
@@ -154,26 +156,25 @@ if not errorlevel == 1 (
 )
 
 if "%PRINT_ENV%" == "true" (
-  echo "Using JAVA_OPTS: %JAVA_OPTS%"
-  echo "Using JAVA_RUN_OPTS: %JAVA_RUN_OPTS%"
+  echo "Using JAVA_OPTS: !JAVA_OPTS!"
+  echo "Using JAVA_RUN_OPTS: !JAVA_RUN_OPTS!"
 )
 
 set START_SERVER=true
 
 if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
-    setlocal enabledelayedexpansion
 
-    "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+    "%JAVA%" -Dkc.config.build-and-exit=true !JAVA_RUN_OPTS!
 
     if not !errorlevel! == 0 (
         set START_SERVER=false
     )
 
-    set JAVA_RUN_OPTS=-Dkc.config.built=true %JAVA_RUN_OPTS%
+    set JAVA_RUN_OPTS=-Dkc.config.built=true !JAVA_RUN_OPTS!
 )
 
 if "%START_SERVER%" == "true" (
-    "%JAVA%" %JAVA_RUN_OPTS%
+    "%JAVA%" !JAVA_RUN_OPTS!
 )
 
 :END

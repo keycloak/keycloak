@@ -31,6 +31,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
@@ -61,7 +62,7 @@ public class StartCommandDistTest {
     @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
     void failBuildPropertyNotAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--db'");
+        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @Test
@@ -97,7 +98,15 @@ public class StartCommandDistTest {
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--cache'");
+        cliResult.assertError("Build time option: '--cache' not usable with pre-built image and --optimized");
+    }
+
+    @Test
+    @WithEnvVars({"KC_LOG", "invalid"})
+    @Launch({ "start", "--optimized" })
+    void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Invalid value for option 'kc.log': invalid. Expected values are: console, file, gelf. From ConfigSource KcEnvVarConfigSource");
     }
 
     @Test

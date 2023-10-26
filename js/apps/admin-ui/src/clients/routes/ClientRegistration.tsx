@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientRegistrationTab = "anonymous" | "authenticated";
@@ -24,5 +24,5 @@ export const ClientRegistrationRoute: AppRouteObject = {
 export const toClientRegistration = (
   params: ClientRegistrationParams,
 ): Partial<Path> => ({
-  pathname: generatePath(ClientRegistrationRoute.path, params),
+  pathname: generateEncodedPath(ClientRegistrationRoute.path, params),
 });

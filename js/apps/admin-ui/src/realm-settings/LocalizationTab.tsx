@@ -50,11 +50,17 @@ import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
   refresh: () => void;
   realm: RealmRepresentation;
+};
+
+type LocaleSpecificEntry = {
+  key: string;
+  value: string;
 };
 
 export enum RowEditAction {
@@ -90,7 +96,9 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
 
   const { setValue, getValues, control, handleSubmit, formState } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
-  const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
+  const [messageBundles, setMessageBundles] = useState<LocaleSpecificEntry[]>(
+    [],
+  );
   const [tableRows, setTableRows] = useState<IRow[]>([]);
 
   const themeTypes = useServerInfo().themes!;
@@ -104,6 +112,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
 
   const defaultSupportedLocales = realm.supportedLocales?.length
     ? realm.supportedLocales
@@ -167,21 +176,28 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       return { result };
     },
     ({ result }) => {
-      const bundles = Object.entries(result).slice(first, first + max + 1);
+      const bundles = localeSort(
+        Object.entries(result).map<LocaleSpecificEntry>(([key, value]) => ({
+          key,
+          value,
+        })),
+        mapByKey("key"),
+      ).slice(first, first + max + 1);
+
       setMessageBundles(bundles);
 
       const updatedRows = bundles.map<IRow>((messageBundle) => ({
         rowEditBtnAriaLabel: () =>
           t("rowEditBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         rowSaveBtnAriaLabel: () =>
           t("rowSaveBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         rowCancelBtnAriaLabel: () =>
           t("rowCancelBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         cells: [
           {
@@ -193,11 +209,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 props={props}
                 isDisabled
                 handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[0]}
+                inputAriaLabel={messageBundle.key}
               />
             ),
             props: {
-              value: messageBundle[0],
+              value: messageBundle.key,
             },
           },
           {
@@ -208,11 +224,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 cellIndex={cellIndex!}
                 props={props}
                 handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[1]}
+                inputAriaLabel={messageBundle.value}
               />
             ),
             props: {
-              value: messageBundle[1],
+              value: messageBundle.value,
             },
           },
         ],

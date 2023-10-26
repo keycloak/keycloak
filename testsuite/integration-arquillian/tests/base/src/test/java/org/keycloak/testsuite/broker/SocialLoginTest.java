@@ -84,6 +84,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
@@ -126,6 +127,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         TWITTER("twitter", TwitterConsentLoginPage.class),
         LINKEDIN("linkedin-openid-connect", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
+        MICROSOFT_SINGLE_TENANT("microsoft", "microsoft-single-tenant", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
@@ -248,7 +250,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void openshiftLogin() {
         setTestProvider(OPENSHIFT);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -387,6 +389,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
+        navigateToLoginPage();
+        assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
 
@@ -403,6 +407,15 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void microsoftLogin() {
         setTestProvider(MICROSOFT);
         performLogin();
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void microsoftSingleTenantLogin() {
+        setTestProvider(MICROSOFT_SINGLE_TENANT);
+        navigateToLoginPage();
+        assertTrue(driver.getCurrentUrl().contains("/" + getConfig(MICROSOFT_SINGLE_TENANT, "tenantId") + "/"));
+        doLogin();
         appPage.assertCurrent();
     }
 
@@ -446,6 +459,13 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         }
         if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
+        }
+        if (provider == MICROSOFT_SINGLE_TENANT) {
+            final String tenantId = getConfig(provider, "tenantId");
+            if (tenantId == null) {
+                throw new IllegalArgumentException("'tenantId' for Microsoft IdP must be specified");
+            }
+            idp.getConfig().put("tenantId", tenantId);
         }
         if (provider == PAYPAL) {
             idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));
@@ -514,7 +534,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
-        driver.navigate().to(oauth.getLoginFormUrl());
+
+        driver.navigate().to(
+                currentTestProvider.equals(PAYPAL)
+                        ? oauth.getLoginFormUrl("https://127.0.0.1:8543/auth")
+                        : oauth.getLoginFormUrl()
+        );
         loginPage.clickSocial(currentTestProvider.id());
 
         // Just to be sure there's no redirect in progress
@@ -540,7 +565,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(1, users.size());
         assertNotNull(users.get(0).getAttributes());
         assertNotNull(users.get(0).getAttributes().get(attrName));
-        assertEquals(expectedValue, users.get(0).getAttributes().get(attrName).get(0));
+        String attrValue = users.get(0).getAttributes().get(attrName).get(0);
+        if (currentTestProvider.equals(LINKEDIN) && attrName.equals("picture")) {
+            assertTrue(attrValue.contains(expectedValue));
+        } else {
+            assertEquals(expectedValue, attrValue);
+        }
     }
 
     private void assertUpdateProfile(boolean firstName, boolean lastName, boolean email) {

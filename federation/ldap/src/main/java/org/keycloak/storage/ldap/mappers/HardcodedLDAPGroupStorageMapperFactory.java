@@ -38,9 +38,12 @@ public class HardcodedLDAPGroupStorageMapperFactory extends AbstractLDAPStorageM
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty groupAttr = createConfigProperty(HardcodedLDAPGroupStorageMapper.GROUP, "Group",
+        ProviderConfigProperty groupAttr = createConfigProperty(HardcodedLDAPGroupStorageMapper.GROUP,
+                "Group",
                 "Group to add the user in. Fill the full path of the group including path. For example '/root-group/child-group'",
-                ProviderConfigProperty.STRING_TYPE, null);
+                ProviderConfigProperty.STRING_TYPE,
+                null,
+                true);
 
         configProperties.add(groupAttr);
     }

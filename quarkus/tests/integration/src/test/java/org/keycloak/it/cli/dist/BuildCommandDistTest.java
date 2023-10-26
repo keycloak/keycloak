@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.database.Database;
@@ -30,7 +31,10 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import java.nio.file.Paths;
 
 @DistributionTest
 class BuildCommandDistTest {
@@ -64,7 +68,22 @@ class BuildCommandDistTest {
     @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
     void testFailRuntimeOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--db-username'");
+        cliResult.assertError("Run time option: '--db-username' not usable with build");
+    }
+
+    @Test
+    @WithEnvVars({"KC_DB", "invalid"})
+    @Launch({ "build" })
+    void testFailInvalidOptionInEnv(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Invalid value for option 'kc.db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource KcEnvVarConfigSource");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
+    public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
+        CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
+        cliResult.assertError("Invalid value for option 'kc.db': foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource PropertiesConfigSource[source");
     }
 
     @Test

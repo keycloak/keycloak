@@ -2,13 +2,20 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Running Keycloak in a container"
 summary="Learn how to run Keycloak from a container image"
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
-Keycloak handles containerized environments such as Kubernetes or OpenShift as first-class citizens. This {section} describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
+This {section} describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
+
+<@profile.ifProduct>
+
+NOTE: The procedure in this chapter is intended for building an image that you run in a containerized environment such as OpenShift.  The image is not intended to be run in other Kubernetes distributions.
+
+</@profile.ifProduct>
 
 == Creating a customized and optimized container image
 The default Keycloak container image ships ready to be configured and optimized.
@@ -101,7 +108,9 @@ It is possible to install new RPMs if absolutely required, following this two-st
 ----
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
 RUN mkdir -p /mnt/rootfs
-RUN dnf install --installroot /mnt/rootfs <package names go here> --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
+RUN dnf install --installroot /mnt/rootfs <package names go here> --releasever 9 --setopt install_weak_deps=false --nodocs -y && \
+    dnf --installroot /mnt/rootfs clean all && \
+    rpm --root /mnt/rootfs -e --nodeps setup
 
 FROM quay.io/keycloak/keycloak
 COPY --from=ubi-micro-build /mnt/rootfs /
@@ -207,7 +216,7 @@ Keycloak only allows to create the initial admin user from a local network conne
 
 == Importing A Realm On Startup
 
-The https://quay.io/keycloak/keycloak[published Keycloak containers] have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
+The Keycloak containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
 
 [source, bash]
 ----

@@ -16,23 +16,49 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.Validators;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -54,17 +80,32 @@ public class UserProfileResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(description = "Get the configuration for the user profile")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
     public String getConfiguration() {
         auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
+    @GET
+    @Path("/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(description = "Get the UserProfileMetadata from the configuration")
+    public UserProfileMetadata getMetadata() {
+        auth.requireAnyAdminRole();
+        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
+        return createUserProfileMetadata(session, profile);
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
-    public Response update(String text) {
+    @Operation(description = "Set the configuration for the user profile")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
+    public Response update(
+            @RequestBody(content = @Content(schema = @Schema(implementation = UPConfig.class))) String text) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
 
@@ -78,4 +119,58 @@ public class UserProfileResource {
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
 
+    public static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
+        Map<String, List<String>> am = profile.getAttributes().getReadable();
+
+        if(am == null)
+            return null;
+
+        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
+                .map(name -> profile.getAttributes().getMetadata(name))
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
+                .map(sam -> toRestMetadata(sam, session, profile))
+                .collect(Collectors.toList());
+
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UPConfig config;
+
+        try {
+            config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to parse configuration", cause);
+        }
+
+        List<UserProfileAttributeGroupMetadata> groups = config.getGroups().stream().map(new Function<UPGroup, UserProfileAttributeGroupMetadata>() {
+            @Override
+            public UserProfileAttributeGroupMetadata apply(UPGroup upGroup) {
+                return new UserProfileAttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations());
+            }
+        }).collect(Collectors.toList());
+
+        return new UserProfileMetadata(attributes, groups);
+    }
+
+    private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {
+        String group = null;
+
+        if (am.getAttributeGroupMetadata() != null) {
+            group = am.getAttributeGroupMetadata().getName();
+        }
+
+        return new UserProfileAttributeMetadata(am.getName(),
+                am.getAttributeDisplayName(),
+                profile.getAttributes().isRequired(am.getName()),
+                profile.getAttributes().isReadOnly(am.getName()),
+                group,
+                am.getAnnotations(),
+                toValidatorMetadata(am, session));
+    }
+
+    private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){
+        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
+        return am.getValidators() == null ? null : am.getValidators().stream()
+                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
+    }
 }

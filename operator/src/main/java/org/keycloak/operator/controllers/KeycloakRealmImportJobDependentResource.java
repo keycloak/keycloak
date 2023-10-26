@@ -34,9 +34,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 
@@ -75,7 +77,9 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var cacheEnvVarName = getKeycloakOptionEnvVarName("cache");
         var healthEnvVarName = getKeycloakOptionEnvVarName("health-enabled");
-        envvars.removeIf(e -> e.getName().equals(cacheEnvVarName) || e.getName().equals(healthEnvVarName));
+        var cacheStackEnvVarName = getKeycloakOptionEnvVarName("cache-stack");
+        var toRemove = Set.of(cacheEnvVarName, healthEnvVarName, cacheStackEnvVarName);
+        envvars.removeIf(e -> toRemove.contains(e.getName()));
 
         // The Job should not connect to the cache
         envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
@@ -93,7 +97,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .withName(primary.getMetadata().getName())
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
-                .withLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .withLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)
@@ -117,7 +121,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var override = "--override=false";
 
-        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeployment.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
+        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
         var commandArgs = List.of("-c",
                 runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);

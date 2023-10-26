@@ -220,7 +220,8 @@ public class LoginActionsService {
     @GET
     public Response restartSession(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                    @QueryParam(Constants.CLIENT_ID) String clientId,
-                                   @QueryParam(Constants.TAB_ID) String tabId) {
+                                   @QueryParam(Constants.TAB_ID) String tabId,
+                                   @QueryParam(Constants.SKIP_LOGOUT) String skipLogout) {
         event.event(EventType.RESTART_AUTHENTICATION);
         SessionCodeChecks checks = new SessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, authSessionId, null, null, clientId,  tabId, null);
 
@@ -234,12 +235,14 @@ public class LoginActionsService {
             flowPath = AUTHENTICATE_PATH;
         }
 
-        // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
-        // We logout userSession in this case
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (userSession != null) {
-            logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
-            AuthenticationManager.backchannelLogout(session, userSession, false);
+        if (!Boolean.parseBoolean(skipLogout)) {
+            // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
+            // We logout userSession in this case
+            UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+            if (userSession != null) {
+                logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
+                AuthenticationManager.backchannelLogout(session, userSession, false);
+            }
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);

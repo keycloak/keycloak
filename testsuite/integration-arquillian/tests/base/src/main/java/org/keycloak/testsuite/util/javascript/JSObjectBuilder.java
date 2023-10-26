@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.util.JsonSerialization;
 
@@ -100,6 +101,12 @@ public class JSObjectBuilder {
 
     private JSObjectBuilder pkceMethod(String method) {
         arguments.put("pkceMethod", method);
+        return this;
+    }
+
+    public JSObjectBuilder acrValues(String value) {
+        Objects.requireNonNull(value, "value");
+        arguments.put("acrValues", value);
         return this;
     }
 

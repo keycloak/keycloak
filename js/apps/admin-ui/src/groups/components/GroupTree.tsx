@@ -13,13 +13,11 @@ import {
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
+import { AngleRightIcon } from "@patternfly/react-icons";
+import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { AngleRightIcon } from "@patternfly/react-icons";
-import { unionBy } from "lodash-es";
-import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
@@ -41,6 +39,16 @@ type GroupTreeContextMenuProps = {
   refresh: () => void;
 };
 
+export function countGroups(groups: GroupRepresentation[]) {
+  let count = groups.length;
+  for (const group of groups) {
+    if (group.subGroups) {
+      count += countGroups(group.subGroups);
+    }
+  }
+  return count;
+}
+
 const GroupTreeContextMenu = ({
   group,
   refresh,
@@ -52,6 +60,8 @@ const GroupTreeContextMenu = ({
   const [createOpen, toggleCreateOpen] = useToggle();
   const [moveOpen, toggleMoveOpen] = useToggle();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
+  const navigate = useNavigate();
+  const { realm } = useRealm();
 
   return (
     <>
@@ -60,6 +70,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
+            navigate(toGroups({ realm }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -79,7 +90,10 @@ const GroupTreeContextMenu = ({
         show={deleteOpen}
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
-        refresh={refresh}
+        refresh={() => {
+          navigate(toGroups({ realm }));
+          refresh();
+        }}
       />
       <Dropdown
         toggle={<KebabToggle onToggle={toggleOpen} />}
@@ -180,8 +194,6 @@ export const GroupTree = ({
           search === "" ? null : { search },
         ),
       );
-      const count = (await adminClient.groups.count({ search, top: true }))
-        .count;
       let subGroups: GroupRepresentation[] = [];
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
@@ -193,9 +205,9 @@ export const GroupTree = ({
           },
         );
       }
-      return { groups, count, subGroups };
+      return { groups, subGroups };
     },
-    ({ groups, count, subGroups }) => {
+    ({ groups, subGroups }) => {
       const found: TreeViewDataItem[] = [];
       if (activeItem) findGroup(data || [], activeItem.id!, [], found);
 
@@ -233,7 +245,7 @@ export const GroupTree = ({
           ),
         );
       }
-      setCount(count);
+      setCount(countGroups(groups));
       prefFirst.current = first;
       prefMax.current = max;
     },
@@ -265,7 +277,7 @@ export const GroupTree = ({
 
   return data ? (
     <PaginatingTableToolbar
-      count={count - first}
+      count={count}
       first={first}
       max={max}
       onNextClick={setFirst}
@@ -310,6 +322,7 @@ export const GroupTree = ({
 
             if (canViewDetails || subGroups.at(-1)?.access?.view) {
               navigate(toGroups({ realm, id: item.id }));
+              refresh();
             } else {
               addAlert(t("noViewRights"), AlertVariant.warning);
               navigate(toGroups({ realm }));

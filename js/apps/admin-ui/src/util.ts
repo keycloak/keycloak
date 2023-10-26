@@ -2,7 +2,6 @@ import { saveAs } from "file-saver";
 import { cloneDeep } from "lodash-es";
 import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 import { flatten } from "flat";
-
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
@@ -67,7 +66,7 @@ export const toUpperCase = <T extends string>(name: T) =>
 const isAttributesObject = (value: any) => {
   return (
     Object.values(value).filter(
-      (value) => Array.isArray(value) && value.length === 1,
+      (value) => Array.isArray(value) && value.length >= 1,
     ).length !== 0
   );
 };

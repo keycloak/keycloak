@@ -21,10 +21,12 @@ import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
@@ -42,8 +44,10 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,9 +64,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.junit.BeforeClass;
 
 /**
  *
@@ -71,6 +76,8 @@ import org.junit.BeforeClass;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ExportImportTest extends AbstractKeycloakTest {
+
+    private static final String TEST_REALM = "test-realm";
 
     @BeforeClass
     public static void checkNotMapStorage() {
@@ -109,7 +116,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testRealms.add(testRealm1);
 
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
-        testRealm2.setId("test-realm");
+        testRealm2.setId(TEST_REALM);
         setLocalizationTexts(testRealm2);
         testRealms.add(testRealm2);
     }
@@ -137,7 +144,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         Assert.assertTrue(config.isAdminEventsEnabled());
         Assert.assertTrue(config.isAdminEventsDetailsEnabled());
         Assert.assertEquals((Long) 600L, config.getEventsExpiration());
-        Assert.assertNames(new HashSet(config.getEnabledEventTypes()),"REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR");
+        Assert.assertNames(new HashSet<>(config.getEnabledEventTypes()),"REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR");
     }
 
     private UserRepresentation makeUser(String userName) {
@@ -172,7 +179,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         testFullExportImport();
 
-        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
         // There should be 6 files in target directory (3 realm, 3 user)
@@ -191,7 +198,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         testRealmExportImport();
 
-        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
         // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
@@ -221,7 +228,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
     @Test
     public void testSingleFileRealmWithoutBuiltinsImport() throws Throwable {
         // Remove test realm
-        removeRealm("test-realm");
+        removeRealm(TEST_REALM);
 
         // Set the realm, which doesn't have builtin clients/roles inside JSON
         testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
@@ -233,7 +240,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         testingClient.testing().exportImport().runImport();
 
-        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
 
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
     }
@@ -260,6 +267,44 @@ public class ExportImportTest extends AbstractKeycloakTest {
     public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
         importRealmFromFile("/import/testrealm-authenticator-config-null.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
+    }
+
+    @Test
+    public void testExportUserProfileConfig() {
+        //Enable user profile on realm
+        RealmResource realmRes = adminClient.realm(TEST_REALM);
+        RealmRepresentation realmRep = realmRes.toRepresentation();
+        Map<String, String> realmAttr = realmRep.getAttributesOrEmpty();
+        realmAttr.put(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
+        realmRep.setAttributes(realmAttr);
+        realmRes.update(realmRep);
+
+        //add some non-default config
+        VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
+        
+        //export
+        TestingExportImportResource exportImport = testingClient.testing().exportImport();
+        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
+        exportImport.setRealmName(TEST_REALM);
+        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "singleFile-userProfile.json";
+        exportImport.setFile(targetFilePath);
+        exportImport.runExport();
+
+        //remove realm
+        removeRealm(TEST_REALM);
+
+        //import
+        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
+        exportImport.runImport();
+
+        List<ComponentRepresentation> userProfileComponents = realmRes.components().query(TEST_REALM, "org.keycloak.userprofile.UserProfileProvider");
+        assertThat(userProfileComponents, 	notNullValue());
+        assertThat(userProfileComponents, hasSize(1));
+        MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
+        assertThat(config, notNullValue());
+        assertThat(config.size(), equalTo(1));
+        assertThat(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), equalTo(VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT));
     }
 
     @Test
@@ -330,7 +375,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().runExport();
 
         removeRealm("test");
-        removeRealm("test-realm");
+        removeRealm(TEST_REALM);
         Assert.assertNames(adminClient.realms().findAll(), "master");
 
         Map<String, RequiredActionProviderRepresentation> requiredActionsBeforeImport = new HashMap<>();
@@ -353,7 +398,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back
-        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");
@@ -402,7 +447,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
 
-        Assert.assertNames(adminClient.realms().findAll(), "test-realm", "master");
+        Assert.assertNames(adminClient.realms().findAll(), TEST_REALM, "master");
 
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
@@ -417,7 +462,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back, but just for "test" realm
-        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");

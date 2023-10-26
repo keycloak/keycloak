@@ -45,6 +45,7 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
       }}
       onClose={onClose}
       onConfirm={moveGroup}
+      isMove
     />
   );
 };

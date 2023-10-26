@@ -16,13 +16,19 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.GET;
@@ -30,8 +36,19 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Theme resource
@@ -86,4 +103,62 @@ public class ThemeResource {
         }
     }
 
+    @GET
+    @Path("{theme}/{locale}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<KeySource> getLocalizationTexts(@PathParam("theme") String theme, @PathParam("locale") String localeString,
+                                                @QueryParam("source") boolean showSource) throws IOException {
+        final RealmModel realm = session.getContext().getRealm();
+
+        Theme theTheme = session.theme().getTheme(Theme.Type.valueOf(theme.toUpperCase()));
+        final Locale locale = Locale.forLanguageTag(localeString);
+        if (showSource) {
+            Properties messagesByLocale = theTheme.getMessages("messages", locale);
+            Set<KeySource> result = messagesByLocale.entrySet().stream().map(e ->
+                    new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)).collect(toSet());
+
+            Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
+            for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
+                final List<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
+                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM)).collect(toList());
+                result.addAll(realmOverride);
+            }
+
+            return new ArrayList<>(result);
+        }
+        return theTheme.getEnhancedMessages(realm, locale).entrySet().stream().map(e ->
+                new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
+    }
+}
+
+enum Source {
+    THEME,
+    REALM
+}
+class KeySource {
+    private String key;
+    private String value;
+    private Source source;
+
+    public KeySource(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public KeySource(String key, String value, Source source) {
+        this(key, value);
+        this.source = source;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public Source getSource() {
+        return source;
+    }
 }

@@ -1,16 +1,16 @@
 import type { KeyValueType } from "../../../../../src/components/key-value-form/key-value-convert";
 
 export default class KeyValueInput {
-  private name: string;
+  #name: string;
 
   constructor(name: string) {
-    this.name = name;
+    this.#name = name;
   }
 
   fillKeyValue({ key, value }: KeyValueType) {
-    cy.findByTestId(`${this.name}-add-row`).click();
+    cy.findByTestId(`${this.#name}-add-row`).click();
 
-    cy.findAllByTestId(`${this.name}-key`)
+    cy.findAllByTestId(`${this.#name}-key`)
       .its("length")
       .then((length) => {
         this.keyInputAt(length - 1).type(key);
@@ -21,12 +21,12 @@ export default class KeyValueInput {
   }
 
   deleteRow(index: number) {
-    cy.findAllByTestId(`${this.name}-remove`).eq(index).click();
+    cy.findAllByTestId(`${this.#name}-remove`).eq(index).click();
     return this;
   }
 
   validateRows(numberOfRows: number) {
-    cy.findAllByTestId(`${this.name}-key`).should("have.length", numberOfRows);
+    cy.findAllByTestId(`${this.#name}-key`).should("have.length", numberOfRows);
     return this;
   }
 
@@ -36,10 +36,10 @@ export default class KeyValueInput {
   }
 
   keyInputAt(index: number) {
-    return cy.findAllByTestId(`${this.name}-key`).eq(index);
+    return cy.findAllByTestId(`${this.#name}-key`).eq(index);
   }
 
   valueInputAt(index: number) {
-    return cy.findAllByTestId(`${this.name}-value`).eq(index);
+    return cy.findAllByTestId(`${this.#name}-value`).eq(index);
   }
 }

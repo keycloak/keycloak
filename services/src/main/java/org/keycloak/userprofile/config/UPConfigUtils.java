@@ -250,36 +250,13 @@ public class UPConfigUtils {
     }
 
     /**
-     * Break string to substrings of given length.
-     * 
-     * @param src to break
-     * @param partLength
-     * @return list of string parts, never null (but can be empty if src is null)
-     */
-    public static List<String> getChunks(String src, int partLength) {
-        List<String> ret = new ArrayList<>();
-        if (src != null) {
-            int pieces = (src.length() / partLength) + 1;
-            for (int i = 0; i < pieces; i++) {
-                if ((i + 1) < pieces)
-                    ret.add(src.substring(i * partLength, (i + 1) * partLength));
-                else if (i == 0 || (i * partLength) < src.length())
-                    ret.add(src.substring(i * partLength));
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Check if context CAN BE part of the AuthenticationFlow.
      * 
      * @param context to check
      * @return true if context CAN BE part of the auth flow
      */
     public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT
-                && context != UserProfileContext.ACCOUNT_OLD;
+        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
     }
 
     /**

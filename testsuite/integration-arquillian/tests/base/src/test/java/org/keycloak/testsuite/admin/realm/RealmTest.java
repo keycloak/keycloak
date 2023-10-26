@@ -69,6 +69,7 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.BadRequestException;
@@ -87,6 +88,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
@@ -978,4 +980,21 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
     }
 
+    @Test
+    public void testNoUserProfileProviderComponentUponRealmChange() {
+        String realmName = "new-realm";
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmName);
+
+        adminClient.realms().create(rep);
+        getCleanup().addCleanup(() -> adminClient.realms().realm(realmName).remove());
+
+        assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+
+        rep.setDisplayName("displayName");
+        adminClient.realm(realmName).update(rep);
+
+        // this used to return non-empty collection
+        assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+    }
 }

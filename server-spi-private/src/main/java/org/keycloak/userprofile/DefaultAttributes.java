@@ -183,9 +183,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             RealmModel realm = session.getContext().getRealm();
 
             if (UserModel.USERNAME.equals(name)
-                    && UserProfileContext.USER_API.equals(context)
                     && realm.isRegistrationEmailAsUsername()) {
-                    continue;
+                continue;
             }
 
             if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {
@@ -232,11 +231,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
-        return new AttributeContext(context, session, attribute, user, metadata);
+        return new AttributeContext(context, session, attribute, user, metadata, this);
     }
 
     private AttributeContext createAttributeContext(String attributeName, AttributeMetadata metadata) {
-        return new AttributeContext(context, session, createAttribute(attributeName), user, metadata);
+        return new AttributeContext(context, session, createAttribute(attributeName), user, metadata, this);
     }
 
     protected AttributeContext createAttributeContext(AttributeMetadata metadata) {

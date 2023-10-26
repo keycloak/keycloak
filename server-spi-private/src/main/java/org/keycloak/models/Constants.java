@@ -79,6 +79,8 @@ public final class Constants {
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";
+
+    public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 
     public static final String KC_ACTION = "kc_action";
@@ -149,5 +151,7 @@ public final class Constants {
 
     public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
     public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+
+    public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
 }

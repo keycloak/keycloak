@@ -19,7 +19,7 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -55,7 +55,7 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
 
         if (args.isEmpty() || !isOptionValue(args.peek())) {
             throw new ParameterException(
-                    commandLine, "Missing required value for option '" + name + "' (" + argSpec.paramLabel() + ")." + getExpectedValuesMessage(argSpec, option));
+                    commandLine, "Missing required value for option '" + name + "' (" + argSpec.paramLabel() + ")." + getExpectedValuesMessage(argSpec.completionCandidates(), option.completionCandidates()));
         }
 
         // consumes the value
@@ -63,28 +63,29 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
 
         if (!args.isEmpty() && isOptionValue(args.peek())) {
             throw new ParameterException(
-                    commandLine, "Option '" + name + "' expects a single value (" + argSpec.paramLabel() + ")" + getExpectedValuesMessage(argSpec, option));
+                    commandLine, "Option '" + name + "' expects a single value (" + argSpec.paramLabel() + ")" + getExpectedValuesMessage(argSpec.completionCandidates(), option.completionCandidates()));
         }
 
-        if (isExpectedValue(option, value)) {
+        if (isExpectedValue(StreamSupport.stream(option.completionCandidates().spliterator(), false).collect(Collectors.toList()), value)) {
             return;
         }
 
-        throw new ParameterException(
-                commandLine, "Invalid value for option '" + name + "': " + value + "." + getExpectedValuesMessage(argSpec, option));
+        throw new ParameterException(commandLine, getErrorMessage(name, value, argSpec.completionCandidates(), option.completionCandidates()));
+    }
+
+    static String getErrorMessage(String name, String value, Iterable<String> specCandidates, Iterable<String> optionCandidates) {
+        return "Invalid value for option '" + name + "': " + value + "." + getExpectedValuesMessage(specCandidates, optionCandidates);
     }
 
     private boolean isOptionValue(String arg) {
         return !(arg.startsWith(ARG_PREFIX) || arg.startsWith(Picocli.ARG_SHORT_PREFIX));
     }
 
-    private String getExpectedValuesMessage(ArgSpec argSpec, OptionSpec option) {
-        return option.completionCandidates().iterator().hasNext() ? " Expected values are: " + String.join(", ", argSpec.completionCandidates()) : "";
+    static String getExpectedValuesMessage(Iterable<String> specCandidates, Iterable<String> optionCandidates) {
+        return optionCandidates.iterator().hasNext() ? " Expected values are: " + String.join(", ", specCandidates) : "";
     }
 
-    private boolean isExpectedValue(OptionSpec option, String value) {
-        List<String> expectedValues = StreamSupport.stream(option.completionCandidates().spliterator(), false).collect(Collectors.toList());
-
+    static boolean isExpectedValue(Collection<String> expectedValues, String value) {
         if (expectedValues.isEmpty()) {
             // accept any
             return true;

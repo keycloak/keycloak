@@ -72,6 +72,8 @@ public final class Build extends AbstractCommand implements Runnable {
         exitWithErrorIfDevProfileIsSetAndNotStartDev();
 
         System.setProperty("quarkus.launch.rebuild", "true");
+        validateNonCliConfig();
+
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
@@ -106,6 +108,7 @@ public final class Build extends AbstractCommand implements Runnable {
         return true;
     }
 
+    @Override
     public List<OptionCategory> getOptionCategories() {
         // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
         return super.getOptionCategories();
@@ -136,5 +139,10 @@ public final class Build extends AbstractCommand implements Runnable {
             // only needed for dev/testing purposes
             getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
         }
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

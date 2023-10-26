@@ -460,25 +460,32 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public RealmModel getRealmByName(String name) {
         String cacheKey = getRealmByNameCacheKey(name);
+        if (invalidations.contains(cacheKey)) {
+            return getRealmDelegate().getRealmByName(name);
+        }
         RealmListQuery query = cache.get(cacheKey, RealmListQuery.class);
         if (query != null) {
             logger.tracev("realm by name cache hit: {0}", name);
+            String realmId = query.getRealms().iterator().next();
+            return getRealm(realmId);
+        } else {
+            return cache.computeSerialized(session, cacheKey, (key, keycloakSession) -> prepareCachedRealmByName(name, key));
         }
+    }
+
+    private RealmModel prepareCachedRealmByName(String name, String cacheKey) {
+        RealmListQuery query = cache.get(cacheKey, RealmListQuery.class);
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
             RealmModel model = getRealmDelegate().getRealmByName(name);
-            if (model == null) return null;
-            if (invalidations.contains(model.getId())) return model;
+            if (model == null) {
+                return null;
+            }
             query = new RealmListQuery(loaded, cacheKey, model.getId());
             cache.addRevisioned(query, startupRevision);
             return model;
-        } else if (invalidations.contains(cacheKey)) {
-            return getRealmDelegate().getRealmByName(name);
         } else {
             String realmId = query.getRealms().iterator().next();
-            if (invalidations.contains(realmId)) {
-                return getRealmDelegate().getRealmByName(name);
-            }
             return getRealm(realmId);
         }
     }

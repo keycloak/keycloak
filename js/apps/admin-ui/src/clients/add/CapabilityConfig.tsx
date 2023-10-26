@@ -14,6 +14,7 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -29,6 +30,7 @@ export const CapabilityConfig = ({
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   return (
     <FormAccess
@@ -215,31 +217,33 @@ export const CapabilityConfig = ({
                   )}
                 />
               </GridItem>
-              <GridItem lg={8} sm={6}>
-                <Controller
-                  name={convertAttributeNameToForm<
-                    Required<ClientRepresentation["attributes"]>
-                  >("attributes.oauth2.device.authorization.grant.enabled")}
-                  defaultValue={false}
-                  control={control}
-                  render={({ field }) => (
-                    <InputGroup>
-                      <Checkbox
-                        data-testid="oauth-device-authorization-grant"
-                        label={t("oauthDeviceAuthorizationGrant")}
-                        id="kc-oauth-device-authorization-grant"
-                        name="oauth2.device.authorization.grant.enabled"
-                        isChecked={field.value.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("oauthDeviceAuthorizationGrantHelp")}
-                        fieldLabelId="oauthDeviceAuthorizationGrant"
-                      />
-                    </InputGroup>
-                  )}
-                />
-              </GridItem>
+              {isFeatureEnabled(Feature.DeviceFlow) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.oauth2.device.authorization.grant.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <Checkbox
+                          data-testid="oauth-device-authorization-grant"
+                          label={t("oauthDeviceAuthorizationGrant")}
+                          id="kc-oauth-device-authorization-grant"
+                          name="oauth2.device.authorization.grant.enabled"
+                          isChecked={field.value.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                        <HelpItem
+                          helpText={t("oauthDeviceAuthorizationGrantHelp")}
+                          fieldLabelId="oauthDeviceAuthorizationGrant"
+                        />
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               <GridItem lg={8} sm={6}>
                 <Controller
                   name={convertAttributeNameToForm<FormFields>(
