@@ -170,7 +170,7 @@ export default function AttributesGroupForm() {
             </FormProvider>
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-testid="saveGroupBtn">
               {t("save")}
             </Button>
             <Button

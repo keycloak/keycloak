@@ -93,7 +93,11 @@ export const ViewHeader = ({
             <Level>
               <LevelItem>
                 <TextContent className="pf-u-mr-sm">
-                  <Text className={className} component="h1">
+                  <Text
+                    className={className}
+                    component="h1"
+                    data-testid="view-header"
+                  >
                     {i18n.exists(titleKey) ? t(titleKey) : titleKey}
                   </Text>
                 </TextContent>

@@ -13,8 +13,6 @@ export default class UserProfile {
   #newAttributeNameInput = "attribute-name";
   #newAttributeDisplayNameInput = "attribute-display-name";
   #newAttributeEnabledWhen = 'input[name="enabledWhen"]';
-  #newAttributeCheckboxes = 'input[type="checkbox"]';
-  #newAttributeRequiredFor = 'input[name="roles"]';
   #newAttributeRequiredWhen = 'input[name="requiredWhen"]';
   #newAttributeEmptyValidators = ".kc-emptyValidators";
   #newAttributeAnnotationBtn = "annotations-add-row";
@@ -29,6 +27,14 @@ export default class UserProfile {
   #deleteValidatorBtn = "confirm";
   #cancelAddingValidatorBtn = "cancel-validator-role-button";
   #cancelRemovingValidatorBtn = "cancel";
+  #newAttributeRequiredField = "input#kc-required.pf-c-switch__input";
+  #newAttributeUserEdit = "user-edit";
+  #newAttributeAdminEdit = "admin-edit";
+  #newAttributeUserView = "user-view";
+  #newAttributeAdminView = "admin-view";
+  #newAttributesGroupNameInput = "input#kc-name";
+  #newAttributesGroupDisplayNameInput = 'input[name="displayHeader"]';
+  #saveNewAttributesGroupBtn = "saveGroupBtn";
 
   goToTab() {
     cy.findByTestId(this.#userProfileTab).click();
@@ -91,6 +97,53 @@ export default class UserProfile {
     return this;
   }
 
+  createAttributeNotRequiredWithPermissions(name: string, displayName: string) {
+    cy.findByTestId(this.#newAttributeNameInput).type(name);
+    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.#newAttributeEnabledWhen).first().check();
+    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+    return this;
+  }
+
+  createAttributeNotRequiredWithoutPermissions(
+    name: string,
+    displayName: string,
+  ) {
+    cy.findByTestId(this.#newAttributeNameInput).type(name);
+    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.#newAttributeEnabledWhen).first().check();
+    cy.findByTestId(this.#newAttributeAdminEdit)
+      .first()
+      .uncheck({ force: true });
+
+    return this;
+  }
+
+  createAttributeRequiredWithPermissions(name: string, displayName: string) {
+    cy.findByTestId(this.#newAttributeNameInput).type(name);
+    cy.findByTestId(this.#newAttributeDisplayNameInput).type(displayName);
+    cy.get(this.#newAttributeEnabledWhen).first().check();
+    cy.get(this.#newAttributeRequiredField).first().check({ force: true });
+    cy.get(this.#newAttributeRequiredWhen).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeUserEdit).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeUserView).first().check({ force: true });
+    cy.findByTestId(this.#newAttributeAdminView).first().check({ force: true });
+    return this;
+  }
+
+  createAttributeGroup(name: string, displayName: string) {
+    cy.get(this.#newAttributesGroupNameInput).type(name);
+    cy.get(this.#newAttributesGroupDisplayNameInput).type(displayName);
+    return this;
+  }
+
+  saveAttributesGroupCreation() {
+    cy.findByTestId(this.#saveNewAttributesGroupBtn).click();
+    return this;
+  }
+
   selectElementInList(name: string) {
     cy.get(this.#validatorsList).contains(name).click();
     return this;
@@ -102,9 +155,6 @@ export default class UserProfile {
       .clear()
       .type(displayName);
     cy.get(this.#newAttributeEnabledWhen).first().check();
-    cy.get(this.#newAttributeCheckboxes).check({ force: true });
-    cy.get(this.#newAttributeRequiredFor).first().check({ force: true });
-    cy.get(this.#newAttributeRequiredWhen).first().check();
     cy.get(this.#newAttributeEmptyValidators).contains("No validators.");
     cy.findByTestId(this.#newAttributeAnnotationBtn).click();
     cy.findByTestId(this.#newAttributeAnnotationKey).type("test");
