@@ -105,7 +105,7 @@ public class ExportUtils {
 
         // Groups and Roles
         if (options.isGroupsAndRolesIncluded()) {
-            ModelToRepresentation.exportGroups(realm, rep);
+            ModelToRepresentation.exportGroups(session, realm, rep);
 
             Map<String, List<RoleRepresentation>> clientRolesReps = new HashMap<>();
 

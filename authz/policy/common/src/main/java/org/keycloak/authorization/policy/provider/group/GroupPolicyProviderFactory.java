@@ -164,7 +164,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             config.put("groupsClaim", groupsClaim);
         }
 
-        List<GroupModel> topLevelGroups = authorization.getRealm().getTopLevelGroupsStream().collect(Collectors.toList());
+        List<GroupModel> topLevelGroups = authorization.getKeycloakSession().groups().getTopLevelGroupsStream(authorization.getRealm()).collect(Collectors.toList());
 
         for (GroupPolicyRepresentation.GroupDefinition definition : groups) {
             GroupModel group = null;

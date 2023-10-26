@@ -329,7 +329,7 @@ export default class PageObject {
     return this;
   }
 
-  protected assertEmptyStateExist(exist: boolean) {
+  assertEmptyStateExist(exist: boolean) {
     if (exist) {
       cy.get(this.#emptyStateDiv).should("exist").should("be.visible");
     } else {

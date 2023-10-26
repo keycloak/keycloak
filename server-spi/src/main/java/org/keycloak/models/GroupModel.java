@@ -111,6 +111,69 @@ public interface GroupModel extends RoleMapperModel {
     Stream<GroupModel> getSubGroupsStream();
 
     /**
+     * Returns all sub groups for the parent group matching the fuzzy search as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @param search searched string. If empty or {@code null} all subgroups are returned.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    default Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+       return getSubGroupsStream(search, false, firstResult, maxResults);
+    }
+
+    /**
+     * Returns all sub groups for the parent group as a stream, paginated.
+     *
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return
+     */
+    default Stream<GroupModel> getSubGroupsStream(Integer firstResult, Integer maxResults) {
+        return getSubGroupsStream(null, firstResult, maxResults);
+    }
+
+    /**
+     * Returns all subgroups for the parent group matching the search as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @param search search string. If empty or {@code null} all subgroups are returned.
+     * @param exact toggles fuzzy searching
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    default Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> allSubgorupsGroups = getSubGroupsStream().filter(group -> {
+            if (search == null || search.isEmpty()) return true;
+            if (Boolean.TRUE.equals(exact)) {
+                return group.getName().equals(search);
+            } else {
+                return group.getName().toLowerCase().contains(search.toLowerCase());
+            }
+        });
+
+        // Copied over from StreamsUtil from server-spi-private which is not available here
+        if (firstResult != null && firstResult > 0) {
+            allSubgorupsGroups = allSubgorupsGroups.skip(firstResult);
+        }
+
+        if (maxResults != null && maxResults >= 0) {
+            allSubgorupsGroups = allSubgorupsGroups.limit(maxResults);
+        }
+
+        return allSubgorupsGroups;
+    }
+
+    /**
+     * Returns the number of groups contained beneath this group.
+     *
+     * @return The number of groups beneath this group. Never returns {@code null}.
+     */
+    default Long getSubGroupsCount() {
+        return getSubGroupsStream().count();
+    }
+
+    /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
      *
      * @param group

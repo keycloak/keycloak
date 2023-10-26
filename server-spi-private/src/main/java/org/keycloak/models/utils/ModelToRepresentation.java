@@ -30,6 +30,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -48,7 +49,6 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
@@ -131,6 +131,7 @@ public class ModelToRepresentation {
         rep.setId(group.getId());
         rep.setName(group.getName());
         rep.setPath(buildGroupPath(group));
+        rep.setParentId(group.getParentId());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());
@@ -153,70 +154,17 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
-        Stream<GroupModel> groups = searchGroupModelsByAttributes(session, realm, full, populateHierarchy, attributes, first, max);
-        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
-        return groups.map(g -> toGroupHierarchy(g, full, attributes));
-
+    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, Map<String,String> attributes, Integer first, Integer max) {
+        return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
     }
 
-    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
-        Stream<GroupModel> groups = session.groups().searchGroupsByAttributes(realm, attributes, first, max);
-        if(populateHierarchy) {
-            groups = groups
-                // We need to return whole group hierarchy when any child group fulfills the attribute search,
-                // therefore for each group from the result, we need to find root group
-                .map(group -> {
-                    while (Objects.nonNull(group.getParentId())) {
-                        group = group.getParent();
-                    }
-                    return group;
-                })
-
-                // More child groups of one root can fulfill the search, so we need to filter duplicates
-                .filter(StreamsUtil.distinctByKey(GroupModel::getId));
-        }
-        return groups;
-    }
-
-    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return searchForGroupModelByName(session, realm, full, search, exact, first, max)
-            .map(g -> toGroupHierarchy(g, full, search, exact));
-    }
-
-    public static Stream<GroupModel> searchForGroupModelByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
-    }
-
-    public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
-        return user.getGroupsStream(search, first, max)
-                .map(group -> toRepresentation(group, full));
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return toGroupModelHierarchy(realm, full, first, max) 
-            .map(g -> toGroupHierarchy(g, full));
-    }
-
-    public static Stream<GroupModel> toGroupModelHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return realm.getTopLevelGroupsStream(first, max);
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
-        return user.getGroupsStream(null, first, max)
-                .map(group -> toRepresentation(group, full));
-    }
-
-    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
-        return realm.getTopLevelGroupsStream()
+    @Deprecated
+    public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
+        return session.groups().getTopLevelGroupsStream(realm, null, null)
                 .map(g -> toGroupHierarchy(g, full));
     }
 
-    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full) {
-        return user.getGroupsStream()
-                .map(group -> toRepresentation(group, full));
-    }
-
+    @Deprecated
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
         return toGroupHierarchy(group, full, (String) null);
     }
@@ -226,19 +174,16 @@ public class ModelToRepresentation {
         return toGroupHierarchy(group, full, search, false);
     }
 
+    @Deprecated
+    /**
+     * @deprecated This function is left in place to serve mostly for a full export of all groups.
+     * There is a GroupUtil class in the keycloak-services module to handle normal search operations
+     */
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
                 .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
                 .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());
-        rep.setSubGroups(subGroups);
-        return rep;
-    }
-
-    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, Map<String,String> attributes) {
-        GroupRepresentation rep = toRepresentation(group, full);
-        List<GroupRepresentation> subGroups = group.getSubGroupsStream()
-                .map(subGroup -> toGroupHierarchy(subGroup, full, attributes)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
@@ -554,7 +499,7 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(session, realm, rep);
             exportRequiredActions(realm, rep);
-            exportGroups(realm, rep);
+            exportGroups(session, realm, rep);
         }
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
@@ -586,9 +531,8 @@ public class ModelToRepresentation {
 
         return a;
     }
-
-    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
-        rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
+    public static void exportGroups(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
+        rep.setGroups(toGroupHierarchy(session, realm, true).collect(Collectors.toList()));
     }
 
     public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {

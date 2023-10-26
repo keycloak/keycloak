@@ -23,7 +23,7 @@ import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
+import { adminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { useFetch } from "../utils/useFetch";
@@ -84,12 +84,12 @@ export default function GroupsSection() {
       if (isNavigationStateInValid) {
         const groups: GroupRepresentation[] = [];
         for (const i of ids!) {
-          const group =
-            i !== "search"
-              ? await fetchAdminUI<GroupRepresentation | undefined>(
-                  "ui-ext/groups/" + i,
-                )
-              : { name: t("searchGroups"), id: "search" };
+          let group = undefined;
+          if (i !== "search") {
+            group = await adminClient.groups.findOne({ id: i });
+          } else {
+            group = { name: t("searchGroups"), id: "search" };
+          }
           if (group) {
             groups.push(group);
           } else {
