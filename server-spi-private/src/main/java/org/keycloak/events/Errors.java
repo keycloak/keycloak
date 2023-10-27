@@ -67,6 +67,8 @@ public interface Errors {
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
 
+    String TOKEN_INTROSPECTION_FAILED = "token_introspection_failed";
+
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
 
