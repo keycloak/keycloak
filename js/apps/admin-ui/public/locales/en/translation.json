@@ -172,6 +172,7 @@
   "missingAttributes": "No attributes have been defined yet. Click the below button to add attributes, key and value are required for a key pair.",
   "addAttribute": "Add an attribute",
   "removeAttribute": "Remove attribute",
+  "editUsernameHelp": "If enabled, the username field is editable, readonly otherwise.",
   "keyPlaceholder": "Type a key",
   "valuePlaceholder": "Type a value",
   "keyError": "A key must be provided.",
@@ -587,9 +588,13 @@
   "frontchannelUrlInvalid": "Front-channel logout URL is not a valid URL",
   "accessSettings": "Access settings",
   "rootUrl": "Root URL",
+  "rootURLHelp": "Root URL appended to relative URLs",
   "validRedirectUri": "Valid redirect URIs",
+  "validRedirectURIsHelp": "Valid URI pattern a browser can redirect to after a successful login. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used. For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.",
   "validPostLogoutRedirectUri": "Valid post logout redirect URIs",
+  "validPostLogoutRedirectURIsHelp": "Valid URI pattern a browser can redirect to after a successful logout. A value of '+' or an empty field will use the list of valid redirect uris. A value of '-' will not allow any post logout redirect uris. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used.",
   "idpInitiatedSsoUrlName": "IDP-Initiated SSO URL name",
+  "unsigned": "Unsigned",
   "idpInitiatedSsoUrlNameHelp": "URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: {server-root}/realms/{realm}/protocol/saml/clients/{client-url-name}",
   "idpInitiatedSsoRelayState": "IDP Initiated SSO Relay State",
   "masterSamlProcessingUrl": "Master SAML Processing URL",
@@ -2141,8 +2146,13 @@
     "PUSHED_AUTHORIZATION_REQUEST_ERROR": {
       "name": "Pushed authorization request error",
       "description": "Pushed authorization request error"
+    },
+    "USER_DISABLED_BY_PERMANENT_LOCKOUT": {
+      "name": "User disabled by permanent lockout",
+      "description": "User disabled by permanent lockout"
     }
   },
+  "userEventsRegistered": "User events registered",
   "eventConfigSuccessfully": "Successfully saved configuration",
   "eventConfigError": "Could not save event configuration {{error}}",
   "deleteEvents": "Clear events",
