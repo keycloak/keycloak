@@ -59,6 +59,7 @@ import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -67,6 +68,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
@@ -299,20 +301,28 @@ public class PermissionsTest extends AbstractKeycloakTest {
             }
         }, Resource.REALM, false, true);
 
-        {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
+                .setAttribute(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString())
+                .update()) {
             RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
             assertGettersEmpty(realm);
             assertNull(realm.isRegistrationEmailAsUsername());
+            assertNull(realm.getAttributes());
 
             realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
             assertNotNull(realm.isRegistrationEmailAsUsername());
+            assertNotNull(realm.getAttributes());
+            assertNotNull(realm.getAttributes().get(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED));
 
             realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
             assertNotNull(realm.isRegistrationEmailAsUsername());
+            assertNotNull(realm.getAttributes());
+            assertNotNull(realm.getAttributes().get(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED));
 
             // query users only if granted through fine-grained admin
             realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
             assertNull(realm.isRegistrationEmailAsUsername());
+            assertNull(realm.getAttributes());
         }
 
         // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
