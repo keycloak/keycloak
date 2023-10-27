@@ -16,7 +16,7 @@
  */
 import base64 from 'base64-js';
 import sha256 from 'js-sha256';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
