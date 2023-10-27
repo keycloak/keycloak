@@ -14,7 +14,7 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start Keycloak in production mode, by using the `start` command, caching is enabled and all Keycloak nodes in your network are discovered.
 
-By default, caches are using a `UDP` transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. Keycloak allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+By default, caches are using a UDP transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. Keycloak allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
@@ -156,7 +156,7 @@ To apply a specific cache stack, enter this command:
 
 <@kc.build parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `UDP` when distributed caches are enabled.
+The default stack is set to `udp` when distributed caches are enabled.
 
 === Available transport stacks
 
@@ -181,9 +181,9 @@ The following table shows transport stacks that are available using the `--cache
 
 === Additional transport stacks
 The following table shows transport stacks that are supported by Keycloak, but need some extra steps to work.
-Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the "google" stack if you want to run Keycloak on top of the Google Kubernetes engine.
+Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run Keycloak on top of the Google Kubernetes engine.
 In that case, use the `kubernetes` stack.
-Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as `UDP`.
+Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as UDP.
 
 [%autowidth]
 |===
@@ -197,7 +197,7 @@ Instead, when you have a distributed cache setup running on AWS EC2 instances, y
 Cloud vendor specific stacks have additional dependencies for Keycloak.
 For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
 
-To provide the dependencies to Keycloak, put the respective JAR in the `providers` directory and `build` Keycloak by entering this command:
+To provide the dependencies to Keycloak, put the respective JAR in the `providers` directory and build Keycloak by entering this command:
 
 <@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
 
