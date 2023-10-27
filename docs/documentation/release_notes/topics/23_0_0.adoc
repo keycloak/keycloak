@@ -23,3 +23,7 @@ Therefore, users of Keycloak can do passkey registration and authentication by e
 
 Both synced passkeys and device-bound passkeys can be used for both Same-Device and Cross-Device Authentication.
 However, passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+
+= RESTEasy Reactive
+
+Keycloak has switched to RESTEasy Reactive. Applications using `quarkus-resteasy-reactive` should still benefit from a better startup time, runtime performance, and memory footprint, even though not using reactive style/semantics. SPI's that depend directly on JAX-RS API should be compatible with this change. SPI's that depend on RESTEasy Classic including `ResteasyClientBuilder` will not be compatible and will require update, this will also be true for other implementation of the JAX-RS API like Jersey.
