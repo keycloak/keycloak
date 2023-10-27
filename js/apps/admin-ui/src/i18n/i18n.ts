@@ -6,15 +6,11 @@ import { joinPath } from "../utils/joinPath";
 import { OverridesBackend } from "./OverridesBackend";
 
 export const DEFAULT_LOCALE = "en";
-export const DEFAULT_NAMESPACE = "translation";
 export const KEY_SEPARATOR = ".";
 
 export const i18n = createInstance({
   fallbackLng: DEFAULT_LOCALE,
-  defaultNS: DEFAULT_NAMESPACE,
-  fallbackNS: DEFAULT_NAMESPACE,
   keySeparator: KEY_SEPARATOR,
-  ns: DEFAULT_NAMESPACE,
   interpolation: {
     escapeValue: false,
   },

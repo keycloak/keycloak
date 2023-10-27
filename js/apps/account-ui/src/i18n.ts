@@ -6,7 +6,6 @@ import { environment } from "./environment";
 import { joinPath } from "./utils/joinPath";
 
 const DEFAULT_LOCALE = "en";
-const DEFAULT_NAMESPACE = "translation";
 
 // This type is aliased to any, so that we can find all the places where we use it.
 // In the future all casts to this type should be removed from the code, so
@@ -14,9 +13,7 @@ const DEFAULT_NAMESPACE = "translation";
 export type TFuncKey = any;
 
 export const i18n = createInstance({
-  defaultNS: DEFAULT_NAMESPACE,
   fallbackLng: DEFAULT_LOCALE,
-  ns: [DEFAULT_NAMESPACE],
   interpolation: {
     escapeValue: false,
   },
