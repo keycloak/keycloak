@@ -247,9 +247,15 @@ public class TokenManager {
      * @param updateTimestamps
      * @return
      */
-    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps) {
+    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps, EventBuilder eventBuilder) {
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled()) {
+        if (client == null) {
+            logger.debugf("Introspection access token : client with clientId %s does not exist", token.getIssuedFor() );
+            eventBuilder.detail(Details.REASON, String.format("Could not find client for %s", token.getIssuedFor()));
+            return false;
+        } else if (!client.isEnabled()) {
+            logger.debugf("Introspection access token : client with clientId %s is disabled", token.getIssuedFor() );
+            eventBuilder.detail(Details.REASON, String.format("Client with clientId %s is disabled", token.getIssuedFor()));
             return false;
         }
 
@@ -258,7 +264,8 @@ public class TokenManager {
                     .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
-            logger.debugf("JWT check failed: %s", e.getMessage());
+            logger.debugf("Introspection access token for %s client: JWT check failed: %s", token.getIssuedFor(), e.getMessage());
+            eventBuilder.detail(Details.REASON, "Introspection access token for "+token.getIssuedFor() +" client: JWT check failed");
             return false;
         }
 
@@ -268,6 +275,8 @@ public class TokenManager {
         if (token.getSessionState() == null) {
             UserModel user = lookupUserFromStatelessToken(session, realm, token);
             valid = isUserValid(session, realm, token, user);
+            if (!valid)
+                eventBuilder.detail(Details.REASON, "Could not find valid transient user session");
         } else {
 
             UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
@@ -288,14 +297,23 @@ public class TokenManager {
                 }
             }
 
+            if (!valid) {
+                logger.debugf("Could not find valid user session for session_state = %s", token.getSessionState());
+                eventBuilder.detail(Details.REASON, String.format("Could not find valid user session for session_state = %s", token.getSessionState()));
+            }
+
             if (valid && (token.isIssuedBeforeSessionStart(userSession.getStarted()))) {
                 valid = false;
+                logger.debugf("Token is issued (%s) before session () has started", String.valueOf(token.getIat()), String.valueOf(userSession.getStarted()));
+                eventBuilder.detail(Details.REASON, String.format("Token is issued (%s) before user session () has started", String.valueOf(token.getIat()), String.valueOf(userSession.getStarted())));
             }
 
             AuthenticatedClientSessionModel clientSession = userSession == null ? null : userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
                 if (valid && (token.isIssuedBeforeSessionStart(clientSession.getStarted()))) {
                     valid = false;
+                    logger.debugf("Token is issued (%s) before session () has started", String.valueOf(token.getIat()), String.valueOf(clientSession.getStarted()));
+                    eventBuilder.detail(Details.REASON, String.format("Token is issued (%s) before client session () has started", String.valueOf(token.getIat()), String.valueOf(clientSession.getStarted())));
                 }
             }
 
@@ -303,7 +321,9 @@ public class TokenManager {
             if (realm.isRevokeRefreshToken()
                 && (tokenType.equals(TokenUtil.TOKEN_TYPE_REFRESH) || tokenType.equals(TokenUtil.TOKEN_TYPE_OFFLINE))
                 && !validateTokenReuseForIntrospection(session, realm, token)) {
-                return false;
+                 logger.debug("Introspection access token for "+token.getIssuedFor() +" client: failed to validate Token reuse for introspection");
+                 eventBuilder.detail(Details.REASON, "Realm revoke refresh token, token type is "+tokenType+ " and token is not eligible for introspection");
+                 return false;
             }
 
             if (updateTimestamps && valid) {
@@ -313,6 +333,7 @@ public class TokenManager {
                     clientSession.setTimestamp(currentTime);
                 }
             }
+            
         }
 
         return valid;
@@ -334,15 +355,18 @@ public class TokenManager {
             validateTokenReuse(session, realm, token, clientSession, false);
             return true;
         } catch (OAuthErrorException e) {
+            logger.debug("validateTokenReuseForIntrospection is false",e);
             return false;
         }
     }
 
     private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user) {
         if (user == null) {
+            logger.debugf("User does not exist for token introspection");
             return false;
         }
         if (!user.isEnabled()) {
+            logger.debugf("User is disable for token introspection");
             return false;
         }
         try {
