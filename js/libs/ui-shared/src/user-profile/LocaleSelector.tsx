@@ -1,3 +1,4 @@
+import { FormProvider } from "react-hook-form";
 import { SelectControl } from "../controls/SelectControl";
 import { UserProfileFieldProps } from "./UserProfileFields";
 
@@ -15,6 +16,7 @@ type LocaleSelectorProps = Omit<UserProfileFieldProps, "inputType"> & {
 
 export const LocaleSelector = ({
   t,
+  form,
   supportedLocales,
 }: LocaleSelectorProps) => {
   const locales = supportedLocales.map((locale) => ({
@@ -23,12 +25,14 @@ export const LocaleSelector = ({
   }));
 
   return (
-    <SelectControl
-      data-testid="locale-select"
-      name="attributes.locale"
-      label={t("selectALocale")}
-      controller={{ defaultValue: "" }}
-      options={locales}
-    />
+    <FormProvider {...form}>
+      <SelectControl
+        data-testid="locale-select"
+        name="attributes.locale"
+        label={t("selectALocale")}
+        controller={{ defaultValue: "" }}
+        options={locales}
+      />
+    </FormProvider>
   );
 };

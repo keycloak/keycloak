@@ -7076,7 +7076,7 @@ packages:
     dependencies:
       magic-string: 0.30.3
       picocolors: 1.0.0
-      vite: 4.5.0(@types/node@20.8.7)(lightningcss@1.22.0)
+      vite: 4.5.0(@types/node@20.8.9)(lightningcss@1.22.0)
     dev: true
 
   /vite@4.5.0(@types/node@20.8.10)(lightningcss@1.22.0):

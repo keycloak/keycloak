@@ -1,20 +1,20 @@
-import { useMemo } from "react";
-import { UseFormReturn, FieldPath } from "react-hook-form";
 import { Text } from "@patternfly/react-core";
+import { useMemo } from "react";
+import { FieldPath, UseFormReturn } from "react-hook-form";
 import { ScrollForm } from "../main";
+import { LocaleSelector } from "./LocaleSelector";
+import { MultiInputComponent } from "./MultiInputComponent";
 import { OptionComponent } from "./OptionsComponent";
 import { SelectComponent } from "./SelectComponent";
 import { TextAreaComponent } from "./TextAreaComponent";
 import { TextComponent } from "./TextComponent";
 import {
   UserFormFields,
+  UserProfileAttributeGroupMetadata,
   UserProfileAttributeMetadata,
   UserProfileMetadata,
-  UserProfileAttributeGroupMetadata,
 } from "./userProfileConfig";
 import { TranslationFunction, fieldName, isRootAttribute } from "./utils";
-import { MultiInputComponent } from "./MultiInputComponent";
-import { LocaleSelector } from "./LocaleSelector";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
