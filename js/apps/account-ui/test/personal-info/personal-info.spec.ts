@@ -14,7 +14,12 @@ const realm = "user-profile";
 test.describe("Personal info page", () => {
   test("sets basic information", async ({ page }) => {
     await login(page, "admin", "admin", "master");
-    await page.getByTestId("email").fill("edewit@somewhere.com");
+
+    await page.getByRole("button", { name: "Update email" }).click();
+    await page.getByLabel("Email").fill("edewit@somewhere.com");
+    await page.getByText("Sign out from other devices").click();
+    await page.getByRole("button", { name: "Submit" }).click();
+
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
@@ -55,7 +60,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await login(page, "jdoe", "jdoe", realm);
 
     await expect(page.locator("#select")).toBeVisible();
-    await expect(page.getByTestId("select-help")).toBeVisible();
+    await expect(page.getByTestId("help-label-select")).toBeVisible();
     expect(page.getByText("Alternative email")).toBeDefined();
   });
 
@@ -64,7 +69,7 @@ test.describe("Personal info with userprofile enabled", async () => {
 
     await page.locator("#select").click();
     await page.getByRole("option", { name: "two" }).click();
-    await page.getByTestId("email2").type("non-valid");
+    await page.getByTestId("email2").fill("non-valid");
     await page.getByTestId("save").click();
     await expect(page.getByTestId("alerts")).toHaveText(
       "Could not update account due to validation errors",
@@ -75,7 +80,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     );
 
     await page.getByTestId("email2").clear();
-    await page.getByTestId("email2").type("valid@email.com");
+    await page.getByTestId("email2").fill("valid@email.com");
     await page.getByTestId("save").click();
 
     await page.reload();

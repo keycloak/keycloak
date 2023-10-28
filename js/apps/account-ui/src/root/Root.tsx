@@ -9,7 +9,7 @@ import {
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useHref } from "react-router-dom";
-import { AlertProvider } from "ui-shared";
+import { AlertProvider, Help } from "ui-shared";
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
@@ -77,9 +77,11 @@ export const Root = () => {
         isManagedSidebar
       >
         <AlertProvider>
-          <Suspense fallback={<Spinner />}>
-            <Outlet />
-          </Suspense>
+          <Help>
+            <Suspense fallback={<Spinner />}>
+              <Outlet />
+            </Suspense>
+          </Help>
         </AlertProvider>
       </Page>
     </KeycloakProvider>
