@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
@@ -193,6 +194,24 @@ public class ValidatorTest {
         Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", null))).isValid());
         Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "a"))).isValid());
         Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap("min", "123"))).isValid());
+    }
+
+    @Test
+    public void validateEmailValidator() {
+        SimpleValidator validator = Validators.emailValidator();
+
+        Assert.assertTrue(validator.validateConfig(session, null).isValid());
+        Assert.assertTrue(validator.validateConfig(session, ValidatorConfig.EMPTY).isValid());
+        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+                EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, 128))).isValid());
+        Assert.assertTrue(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+                EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "128"))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+                EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, null))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+                EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, "a"))).isValid());
+        Assert.assertFalse(validator.validateConfig(session, configFromMap(Collections.singletonMap(
+                EmailValidator.MAX_LOCAL_PART_LENGTH_PROPERTY, ""))).isValid());
     }
 
     @Test

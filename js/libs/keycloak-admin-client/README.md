@@ -220,6 +220,7 @@ Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin
 - Count (`GET /{realm}/groups/count`)
 - List members (`GET /{realm}/groups/{id}/members`)
 - Set or create child (`POST /{realm}/groups/{id}/children`)
+- Get children (`GET /{realm}/groups/{id}/children`)
 
 ### Group role-mapping
 

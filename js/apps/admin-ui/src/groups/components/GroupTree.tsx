@@ -183,7 +183,7 @@ export const GroupTree = ({
   useFetch(
     async () => {
       const groups = await fetchAdminUI<GroupRepresentation[]>(
-        "ui-ext/groups",
+        "groups",
         Object.assign(
           {
             first: `${first}`,
@@ -197,9 +197,8 @@ export const GroupTree = ({
       let subGroups: GroupRepresentation[] = [];
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
-          "ui-ext/groups/subgroup",
+          `groups/${activeItem.id}/children`,
           {
-            id: activeItem.id!,
             first: `${firstSub}`,
             max: `${SUBGROUP_COUNT}`,
           },

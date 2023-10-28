@@ -40,11 +40,6 @@ public final class AdminExtResource {
         return new EffectiveRoleMappingResource(session, realm, auth);
     }
 
-    @Path("/groups")
-    public GroupsResource groups() {
-        return new GroupsResource(session, realm, auth);
-    }
-
     @Path("/sessions")
     public SessionsResource sessions() {
         return new SessionsResource(session, realm, auth);

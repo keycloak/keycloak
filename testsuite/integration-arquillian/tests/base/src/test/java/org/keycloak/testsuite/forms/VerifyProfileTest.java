@@ -362,6 +362,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     public void testDefaultProfile() {
         setUserProfileConfiguration(null);
 
+        testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
+
         loginPage.open();
         loginPage.login("login-test", "password");
 
@@ -719,13 +721,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testEMailRequiredInProfile() {
+    public void testEMailRequiredInProfileWithLocalPartLength() {
 
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_ONLY + "},"
-                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\":{\"roles\":[\"user\"]}}"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\":{\"roles\":[\"user\"]}, \"validations\": {\"email\": {\"max-local-length\": \"16\"}}}"
                 + "]}");
 
         loginPage.open();
@@ -734,8 +736,12 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         // no email is set => expect verify profile page to be displayed
         verifyProfilePage.assertCurrent();
 
+        // set e-mail with legth 17 => error
+        verifyProfilePage.updateEmail("abcdefg0123456789@bar.com", "HasNowMailFirst", "HasNowMailLast");
+        verifyProfilePage.assertCurrent();
+
         // set e-mail, update firstname/lastname and complete login
-        verifyProfilePage.updateEmail("foo@bar.com", "HasNowMailFirst", "HasNowMailLast");
+        verifyProfilePage.updateEmail("abcdef0123456789@bar.com", "HasNowMailFirst", "HasNowMailLast");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -743,7 +749,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = getUser(userWithoutEmailId);
         assertEquals("HasNowMailFirst", user.getFirstName());
         assertEquals("HasNowMailLast", user.getLastName());
-        assertEquals("foo@bar.com", user.getEmail());
+        assertEquals("abcdef0123456789@bar.com", user.getEmail());
     }
 
     @Test

@@ -16,7 +16,7 @@
  */
 import base64 from 'base64-js';
 import sha256 from 'js-sha256';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
@@ -148,6 +148,10 @@ function Keycloak (config) {
 
             if (typeof initOptions.scope === 'string') {
                 kc.scope = initOptions.scope;
+            }
+
+            if (typeof initOptions.acrValues === 'string') {
+                kc.acrValues = initOptions.acrValues;
             }
 
             if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
@@ -459,6 +463,10 @@ function Keycloak (config) {
         if (options && options.acr) {
             var claimsParameter = buildClaimsParameter(options.acr);
             url += '&claims=' + encodeURIComponent(claimsParameter);
+        }
+
+        if ((options && options.acrValues) || kc.acrValues) {
+            url += '&acr_values=' + encodeURIComponent(options.acrValues || kc.acrValues);
         }
 
         if (kc.pkceMethod) {

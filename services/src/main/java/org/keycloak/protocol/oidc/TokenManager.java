@@ -56,6 +56,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
@@ -112,6 +113,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -1234,8 +1236,11 @@ public class TokenManager {
 
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
-            if (userNotBefore > notBefore) notBefore = userNotBefore;
+            final UserModel user = userSession.getUser();
+            if (! isLightweightUser(user)) {
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (userNotBefore > notBefore) notBefore = userNotBefore;
+            }
             res.setNotBeforePolicy(notBefore);
 
             res = transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
@@ -1307,7 +1312,9 @@ public class TokenManager {
         }
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
-            return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+            return isLightweightUser(userModel)
+              ? new NotBeforeCheck((int) (((LightweightUserAdapter) userModel).getCreatedTimestamp() / 1000L))
+              : new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
         }
     }
 

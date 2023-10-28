@@ -90,10 +90,7 @@ const WebauthnSelect = ({
     <FormGroup
       label={t(label)}
       labelIcon={
-        <HelpItem
-          helpText={t(`${label}Help`)}
-          fieldLabelId={`authentication:${label}`}
-        />
+        <HelpItem helpText={t(`${label}Help`)} fieldLabelId={label!} />
       }
       fieldId={name}
     >
@@ -194,7 +191,7 @@ export const WebauthnPolicy = ({
   return (
     <PageSection variant="light">
       {enabled && (
-        <Popover bodyContent={t(`authentication-help:${namePrefix}FormHelp`)}>
+        <Popover bodyContent={t(`${namePrefix}FormHelp`)}>
           <TextContent className="keycloak__section_intro__help">
             <Text>
               <QuestionCircleIcon /> {t("webauthnIntro")}
