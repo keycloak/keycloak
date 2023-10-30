@@ -202,7 +202,7 @@ function determineInputType(
   // If the attribute has no valid input type, fall back to a default input type.
   // Depending on the length of the value, we either use a 'multi-input' or a 'text' input type so all values are always visible.
   if (!isValidInputType(inputType)) {
-    return value.length > 1 ? "multi-input" : "text";
+    return Array.isArray(value) && value.length > 1 ? "multi-input" : "text";
   }
 
   // If the input type is multi-valued, we don't have to do any further checks, as we know all values will always show up.
