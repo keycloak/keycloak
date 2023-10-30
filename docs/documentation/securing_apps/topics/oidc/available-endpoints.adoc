@@ -3,7 +3,7 @@
 As a fully-compliant OpenID Connect Provider implementation, {project_name} exposes a set of endpoints that applications
 and services can use to authenticate and authorize their users.
 
-This section describes some of the key endpoints that your application and service should be use when
+This section describes some of the key endpoints that your application and service should use when
 interacting with {project_name}.
 
 ==== Endpoints
