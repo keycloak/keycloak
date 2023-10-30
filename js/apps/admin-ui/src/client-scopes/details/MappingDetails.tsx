@@ -1,5 +1,4 @@
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -25,12 +24,12 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
+import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 
 export default function MappingDetails() {
   const { t } = useTranslation();
@@ -44,7 +43,7 @@ export default function MappingDetails() {
     formState: { errors },
     handleSubmit,
   } = form;
-  const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
+  const [mapping, setMapping] = useState<ComponentTypeRepresentation>();
   const [config, setConfig] = useState<{
     protocol?: string;
     protocolMapper?: string;
@@ -52,7 +51,6 @@ export default function MappingDetails() {
 
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
   const isUpdating = !!mapperId.match(isGuid);
 
@@ -80,11 +78,10 @@ export default function MappingDetails() {
         if (!data) {
           throw new Error(t("notFound"));
         }
-
-        const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
-        const mapping = mapperTypes.find(
-          (type) => type.id === data!.protocolMapper,
-        );
+        const mapping = await adminClient.components.metadata({
+          spiId: "protocol-mapper",
+          factoryId: data.protocolMapper!,
+        });
 
         return {
           config: {
@@ -101,11 +98,10 @@ export default function MappingDetails() {
         if (!model) {
           throw new Error(t("notFound"));
         }
-        const protocolMappers =
-          serverInfo.protocolMapperTypes![model.protocol!];
-        const mapping = protocolMappers.find(
-          (mapper) => mapper.id === mapperId,
-        );
+        const mapping = await adminClient.components.metadata({
+          spiId: "protocol-mapper",
+          factoryId: mapperId,
+        });
         if (!mapping) {
           throw new Error(t("notFound"));
         }
@@ -183,7 +179,7 @@ export default function MappingDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={isUpdating ? mapping?.name! : t("addMapper")}
+        titleKey={isUpdating ? mapping?.displayType! : t("addMapper")}
         subKey={isUpdating ? mapperId : "addMapperExplain"}
         dropdownItems={
           isUpdating
@@ -211,7 +207,7 @@ export default function MappingDetails() {
               id="mapperType"
               name="mapperType"
               isReadOnly
-              value={mapping?.name}
+              value={mapping?.displayType}
             />
           </FormGroup>
           <FormGroup

@@ -60,6 +60,12 @@ export class Components extends Resource<{ realm?: string }> {
     queryParamKeys: ["type"],
   });
 
+  public metadata = this.makeRequest<{ spiId: string; factoryId: string }>({
+    method: "GET",
+    path: "/{spiId}/{factoryId}/metadata",
+    urlParamKeys: ["spiId", "factoryId"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/components",

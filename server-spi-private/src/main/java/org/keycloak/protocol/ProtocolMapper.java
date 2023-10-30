@@ -31,8 +31,6 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper>,ConfiguredProvider {
     String getProtocol();
-    String getDisplayCategory();
-    String getDisplayType();
 
     /**
      * Priority of this protocolMapper implementation. Lower goes first.

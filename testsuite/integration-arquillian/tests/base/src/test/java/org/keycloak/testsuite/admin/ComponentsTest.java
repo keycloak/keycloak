@@ -28,14 +28,20 @@ import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperSpi;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.oidc.mapper.TestOIDCProtocolMapper;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -376,6 +382,36 @@ public class ComponentsTest extends AbstractAdminTest {
 
         ComponentRepresentation returned = components.component(id).toRepresentation();
         assertEquals(value, returned.getConfig().getFirst("val1"));
+    }
+
+    @Test
+    public void testGetDynamicOptionsFromComponentListType() {
+        ComponentTypeRepresentation metadata = components.getMetadata(ProtocolMapperSpi.ID, TestOIDCProtocolMapper.ID);
+        assertNotNull(metadata);
+        assertEquals(TestOIDCProtocolMapper.ID, metadata.getId());
+        assertEquals("My Display Type", metadata.getDisplayType());
+        assertEquals("My Display Category", metadata.getDisplayCategory());
+        assertEquals("My Help Text", metadata.getHelpText());
+        assertEquals(1, metadata.getProperties().size());
+        assertThat(metadata.getProperties(), Matchers.hasItems(
+                Matchers.hasProperty("name", Matchers.is(ProtocolMapperUtils.USER_ATTRIBUTE)),
+                Matchers.hasProperty("label", Matchers.is(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL)),
+                Matchers.hasProperty("helpText", Matchers.is(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT)),
+                Matchers.hasProperty("type", Matchers.is(ProviderConfigProperty.STRING_TYPE)),
+                Matchers.hasProperty("options", Matchers.empty())
+        ));
+
+        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
+        RealmRepresentation realm = realmResource.toRepresentation();
+        Map<String, String> attributes = Optional.ofNullable(realm.getAttributes()).orElse(new HashMap<>());
+        attributes.put("is-dynamic-options", Boolean.TRUE.toString());
+        realm.setAttributes(attributes);
+        realmResource.update(realm);
+        metadata = components.getMetadata(ProtocolMapperSpi.ID, TestOIDCProtocolMapper.ID);
+        assertThat(metadata.getProperties(), Matchers.hasItems(
+                Matchers.hasProperty("type", Matchers.is(ProviderConfigProperty.LIST_TYPE)),
+                Matchers.hasProperty("options", Matchers.containsInAnyOrder("dynamic-value"))
+        ));
     }
 
     private java.lang.String createComponent(ComponentRepresentation rep) {

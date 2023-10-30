@@ -5,6 +5,8 @@ import type { ConfigPropertyRepresentation } from "./configPropertyRepresentatio
  */
 export default interface ComponentTypeRepresentation {
   id: string;
+  displayType: string;
+  displayCategory: string;
   helpText: string;
   properties: ConfigPropertyRepresentation[];
   metadata: { [index: string]: any };

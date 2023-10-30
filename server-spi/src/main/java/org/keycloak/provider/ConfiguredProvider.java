@@ -24,6 +24,26 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface ConfiguredProvider {
+
+    /**
+     * Returns the category for this provider so that it can be used to group it together
+     * with others when rendering forms.
+     *
+     * @return the provider category. Can be {@code null}.
+     */
+    default String getDisplayCategory() {
+        return null;
+    }
+
+    /**
+     * Returns the user-friendly name for this provider when rendering forms.
+     *
+     * @return the name for this provider. Defaults to the full-qualified class name.
+     */
+    default String getDisplayType() {
+        return getClass().getName();
+    }
+
     String getHelpText();
 
     List<ProviderConfigProperty> getConfigProperties();

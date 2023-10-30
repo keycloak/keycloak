@@ -17,8 +17,14 @@
 
 package org.keycloak.provider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Configuration property metadata.  Used to render generic configuration pages for Keycloak extensions in the admin console.
@@ -66,9 +72,11 @@ public class ProviderConfigProperty {
     protected String name;
     protected String label;
     protected String helpText;
-    protected String type = STRING_TYPE;
+    protected String type;
+    protected Function<KeycloakSession, String> typeResolver;
     protected Object defaultValue;
     protected List<String> options;
+    protected Function<KeycloakSession, Set<String>> optionsResolver;
     protected boolean secret;
     protected boolean required;
     private boolean readOnly;
@@ -136,11 +144,43 @@ public class ProviderConfigProperty {
      * @return
      */
     public String getType() {
-        return type;
+        return Optional.ofNullable(type).orElse(STRING_TYPE);
+    }
+
+    /**
+     * Resolves the type based on the given {@code session}. If no type resolver was set via {@link #setTypeResolver(Function)} (Function)}
+     * any static type set via {@link #setType(String)} is returned.
+     *
+     * @param session the current (not null) session.
+     * @return the type for this property
+     * @throws IllegalArgumentException if the {@code session} is null
+     */
+    public String getType(KeycloakSession session) {
+        if (session == null) {
+            throw new IllegalArgumentException("session can not be null");
+        }
+
+        String defaultType = getType();
+
+        if (typeResolver == null) {
+            return defaultType;
+        }
+
+        return Optional.ofNullable(typeResolver.apply(session)).orElse(defaultType);
     }
 
     public void setType(String type) {
+        if (typeResolver != null) {
+            throw new IllegalArgumentException("Property is already set with a dynamic type");
+        }
         this.type = type;
+    }
+
+    public void setTypeResolver(Function<KeycloakSession, String> typeResolver) {
+        if (type != null) {
+            throw new IllegalArgumentException("Property is already set with a static type");
+        }
+        this.typeResolver = typeResolver;
     }
 
     /**
@@ -162,11 +202,41 @@ public class ProviderConfigProperty {
      * @return
      */
     public List<String> getOptions() {
-        return options;
+        return Optional.ofNullable(options).orElse(List.of());
+    }
+
+    /**
+     * Resolves the options based on the given {@code session}. If no option resolver was set via {@link #setOptionsResolver(Function)}
+     * any static option set via {@link #setOptions(List)} is returned.
+     *
+     * @param session the current (not null) session.
+     * @return the options for this property or an empty list if no options is set
+     * @throws IllegalArgumentException if the {@code session} is null
+     */
+    public List<String> getOptions(KeycloakSession session) {
+        if (session == null) {
+            throw new IllegalArgumentException("session can not be null");
+        }
+
+        if (optionsResolver == null) {
+            return getOptions();
+        }
+
+        return new ArrayList<>(Optional.ofNullable(optionsResolver.apply(session)).orElse(Set.of()));
     }
 
     public void setOptions(List<String> options) {
+        if (optionsResolver != null) {
+            throw new IllegalArgumentException("Property is already set with dynamic options");
+        }
         this.options = options;
+    }
+
+    public void setOptionsResolver(Function<KeycloakSession, Set<String>> resolver) {
+        if (options != null) {
+            throw new IllegalArgumentException("Property is already set with static options");
+        }
+        this.optionsResolver = resolver;
     }
 
     /**

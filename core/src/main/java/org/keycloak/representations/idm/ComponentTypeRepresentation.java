@@ -30,6 +30,8 @@ public class ComponentTypeRepresentation {
     protected List<ConfigPropertyRepresentation> properties;
 
     protected Map<String, Object> metadata = new HashMap<>();
+    private String displayType;
+    private String displayCategory;
 
 
     public String getId() {
@@ -68,5 +70,21 @@ public class ComponentTypeRepresentation {
 
     public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
+    }
+
+    public void setDisplayType(String displayType) {
+        this.displayType = displayType;
+    }
+
+    public String getDisplayType() {
+        return displayType;
+    }
+
+    public void setDisplayCategory(String displayCategory) {
+        this.displayCategory = displayCategory;
+    }
+
+    public String getDisplayCategory() {
+        return displayCategory;
     }
 }

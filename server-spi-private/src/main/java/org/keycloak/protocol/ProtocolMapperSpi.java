@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class ProtocolMapperSpi implements Spi {
 
+    public static final String ID = "protocol-mapper";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class ProtocolMapperSpi implements Spi {
 
     @Override
     public String getName() {
-        return "protocol-mapper";
+        return ID;
     }
 
     @Override

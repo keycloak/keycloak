@@ -17,6 +17,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -64,5 +65,8 @@ public interface ComponentsResource {
     @DELETE
     ComponentResource removeComponent(@PathParam("id") String id);
 
-
+    @GET
+    @Path("/{spiId}/{factoryId}/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    ComponentTypeRepresentation getMetadata(@PathParam("spiId") String spiId, @PathParam("factoryId") String factoryId);
 }

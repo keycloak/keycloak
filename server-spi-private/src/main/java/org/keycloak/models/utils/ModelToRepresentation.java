@@ -882,21 +882,41 @@ public class ModelToRepresentation {
     }
 
     public static List<ConfigPropertyRepresentation> toRepresentation(List<ProviderConfigProperty> configProperties) {
+        return toRepresentation(null, configProperties);
+    }
+
+    public static List<ConfigPropertyRepresentation> toRepresentation(KeycloakSession session, List<ProviderConfigProperty> configProperties) {
         List<ConfigPropertyRepresentation> propertiesRep = new LinkedList<>();
         for (ProviderConfigProperty prop : configProperties) {
-            ConfigPropertyRepresentation propRep = toRepresentation(prop);
+            ConfigPropertyRepresentation propRep = toRepresentation(session, prop);
             propertiesRep.add(propRep);
         }
         return propertiesRep;
     }
 
     public static ConfigPropertyRepresentation toRepresentation(ProviderConfigProperty prop) {
+        return toRepresentation(null, prop);
+    }
+
+    public static ConfigPropertyRepresentation toRepresentation(KeycloakSession session, ProviderConfigProperty prop) {
         ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
         propRep.setName(prop.getName());
         propRep.setLabel(prop.getLabel());
-        propRep.setType(prop.getType());
+
+        if (session == null) {
+            propRep.setType(prop.getType());
+        } else {
+            propRep.setType(prop.getType(session));
+        }
+
         propRep.setDefaultValue(prop.getDefaultValue());
-        propRep.setOptions(prop.getOptions());
+
+        if (session == null) {
+            propRep.setOptions(prop.getOptions());
+        } else {
+            propRep.setOptions(prop.getOptions(session));
+        }
+
         propRep.setHelpText(prop.getHelpText());
         propRep.setSecret(prop.isSecret());
         propRep.setRequired(prop.isRequired());
