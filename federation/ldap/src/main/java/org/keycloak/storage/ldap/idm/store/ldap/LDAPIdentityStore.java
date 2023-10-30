@@ -486,8 +486,13 @@ public class LDAPIdentityStore implements IdentityStore {
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
                         Object val = enumm.next();
-
-                        if (val instanceof byte[]) { // byte[]
+                        
+                        if(ldapAttributeName.toLowerCase().equals("objectsid"))
+                        {
+                            String attrVal = convertSidToStr((byte[]) val);
+                            attrValues.add(attrVal);
+                        }
+                        else if (val instanceof byte[]) { // byte[]
                             String attrVal = Base64.encodeBytes((byte[]) val);
                             attrValues.add(attrVal);
                         } else { // String
@@ -623,5 +628,20 @@ public class LDAPIdentityStore implements IdentityStore {
         } catch (NamingException ne) {
             throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");
         }
+    }
+
+    private String convertSidToStr(byte[] sid) {
+        if (sid==null) return null;
+        if (sid.length<8 || sid.length % 4 != 0) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("S-").append(sid[0]);
+        int c = sid[1];
+        ByteBuffer bb = ByteBuffer.wrap(sid);
+        sb.append("-").append((long)bb.getLong() & 0XFFFFFFFFFFFFL);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        for (int i=0; i<c; i++) {
+            sb.append("-").append((long)bb.getInt() & 0xFFFFFFFFL);
+        }
+        return sb.toString();
     }
 }
