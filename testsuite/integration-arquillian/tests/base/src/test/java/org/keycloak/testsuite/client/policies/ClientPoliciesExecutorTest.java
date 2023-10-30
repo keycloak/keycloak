@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -32,7 +33,9 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRequest
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureResponseTypeExecutor;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -85,10 +88,13 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
+import org.keycloak.services.clientpolicy.executor.CheckExactStringMatchingOfRedirectUrisExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.ConstrainRefreshTokenForPublicAccessTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
@@ -1356,6 +1362,166 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("not allowed signature algorithm.", response.getErrorDescription());
+    }
+
+    @Test
+    public void testOneTimeUseConstrainRefreshTokenForPublicAccessTypeExecutor() throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(true, false);
+        executeConstrainRefreshTokenForPublicAccessTypeExecutor();
+    }
+
+    @Test
+    public void testOneTimeUseWithOfflineSessionConstrainRefreshTokenForPublicAccessTypeExecutor() throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(true, false);
+        oauth.scope("openid offline_access");
+        executeConstrainRefreshTokenForPublicAccessTypeExecutor();
+    }
+
+    @Test
+    public void testSuccessSenderConstrainedConstrainRefreshTokenForPublicAccessTypeExecutor() throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(false, true, true);
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+    }
+
+    @Test
+    public void testFailSenderConstrainedConstrainRefreshTokenForPublicAccessTypeExecutor() throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(false, true, false);
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        Assert.assertEquals(400, tokenResponse.getStatusCode());
+        Assert.assertEquals("Not permitted to disable OAuth 2.0 Mutual TLS Certificate Bound Access Tokens.", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testOneTimeUseSenderConstrainedConstrainRefreshTokenForPublicAccessTypeExecutor() throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(true, true, false);
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        Assert.assertEquals(400, tokenResponse.getStatusCode());
+        Assert.assertEquals("Not permitted to disable OAuth 2.0 Mutual TLS Certificate Bound Access Tokens.", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testSuccessCheckExactStringMatchingOfRedirectUrisExecutor() throws Exception {
+        String validRedirectUriOfClient = APP_ROOT + "/auth";
+        String redirectUriOfAuthEndpoint = APP_ROOT + "/auth";
+        prepareCheckExactStringMatchingOfRedirectUrisExecutor(validRedirectUriOfClient, redirectUriOfAuthEndpoint);
+
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertNotNull(authsEndpointResponse.getCode());
+    }
+
+    @Test
+    public void testFailCheckExactStringMatchingOfRedirectUrisExecutor() throws Exception {
+        String validRedirectUriOfClient = APP_ROOT + "/*";
+        String redirectUriOfAuthEndpoint = APP_ROOT + "/auth";
+        prepareCheckExactStringMatchingOfRedirectUrisExecutor(validRedirectUriOfClient, redirectUriOfAuthEndpoint);
+
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        assertEquals("The redirect_uri did not exactly match the string to Valid redirect URIs.", errorPage.getError());
+    }
+
+    private void prepareConstrainRefreshTokenForPublicAccessTypeExecutor(boolean oneTimeUse, boolean senderConstrained) throws Exception {
+        prepareConstrainRefreshTokenForPublicAccessTypeExecutor(oneTimeUse, senderConstrained, false);
+    }
+
+    private void prepareConstrainRefreshTokenForPublicAccessTypeExecutor(boolean oneTimeUse, boolean senderConstrained, boolean isUseMtlsHokToken) throws Exception {
+        // register profiles
+        ClientPolicyExecutorConfigurationRepresentation config = new ClientPolicyExecutorConfigurationRepresentation();
+        if (oneTimeUse) {
+            config.setConfigAsMap(ConstrainRefreshTokenForPublicAccessTypeExecutorFactory.ONE_TIME_USE, Boolean.TRUE.booleanValue());
+        }
+        if (senderConstrained) {
+            config.setConfigAsMap(ConstrainRefreshTokenForPublicAccessTypeExecutorFactory.SENDER_CONSTRAINED, Boolean.TRUE.booleanValue());
+        }
+
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Constrain refresh token")
+                        .addExecutor(ConstrainRefreshTokenForPublicAccessTypeExecutorFactory.PROVIDER_ID, config)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Constrain refresh token Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(TEST_CLIENT_SECRET);
+            clientRep.setStandardFlowEnabled(true);
+            clientRep.setServiceAccountsEnabled(true);
+            clientRep.setPublicClient(true);
+            clientRep.setEnabled(true);
+            OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+            if (isUseMtlsHokToken) {
+                clientConfig.setUseMtlsHoKToken(true);
+            }
+            clientConfig.setRequestUris(Arrays.asList(TestApplicationResourceUrls.clientRequestUri()));
+        });
+        oauth.realm(REALM_NAME);
+
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        oauth.clientId(clientId);
+    }
+
+    private void prepareCheckExactStringMatchingOfRedirectUrisExecutor(String validRedirectUriOfClient, String redirectUriOfAuthEndpoint) throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Check redirect uri")
+                        .addExecutor(CheckExactStringMatchingOfRedirectUrisExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Check redirect uri Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(TEST_CLIENT_SECRET);
+            clientRep.setStandardFlowEnabled(true);
+            clientRep.setServiceAccountsEnabled(true);
+            clientRep.setPublicClient(true);
+            clientRep.setEnabled(true);
+            clientRep.setRedirectUris(Arrays.asList(validRedirectUriOfClient));
+        });
+        oauth.realm(REALM_NAME);
+
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        oauth.redirectUri(redirectUriOfAuthEndpoint);
+        oauth.clientId(clientId);
+    }
+
+    private void executeConstrainRefreshTokenForPublicAccessTypeExecutor() throws IOException {
+        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+        assertNull(refreshTokenResponse.getRefreshToken());
+        String introspectResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT, TEST_CLIENT_SECRET, refreshTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectResponse, TokenMetadataRepresentation.class);
+        assertTrue(rep.isActive());
+        OAuthClient.AccessTokenResponse refreshTokenResponse2 = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+        Assert.assertEquals(400, refreshTokenResponse2.getStatusCode());
+        Assert.assertEquals("Refresh token cannot be reused.", refreshTokenResponse2.getErrorDescription());
     }
 
     @Test

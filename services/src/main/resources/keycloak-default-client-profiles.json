@@ -284,6 +284,41 @@
           }
         }
       ]
+    },
+    {
+      "name": "OAuth 2.1",
+      "description": "Client profile, which enforce clients to conform 'OAuth 2.1' specification.",
+      "executors": [
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor" : "check-exact-string-matching-of-redirect-uris",
+          "configuration" : {}
+        },
+        {
+          "executor": "reject-implicit-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "reject-ropc-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor" : "constrain-refresh-token-for-public-access-type",
+          "configuration" : {
+            "one-time-use": true,
+            "sender-constrained": true
+          }
+        }
+      ]
     }
   ]
 }
