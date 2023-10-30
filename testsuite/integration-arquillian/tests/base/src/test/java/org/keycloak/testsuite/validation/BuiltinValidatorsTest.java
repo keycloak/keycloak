@@ -1,4 +1,23 @@
-package org.keycloak.validate;
+/*
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
+ *  and other contributors as indicated by the @author tags.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package org.keycloak.testsuite.validation;
 
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
@@ -11,6 +30,17 @@ import java.util.regex.Pattern;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.validate.AbstractSimpleValidator;
+import org.keycloak.validate.ValidationContext;
+import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidationResult;
+import org.keycloak.validate.Validator;
+import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.DoubleValidator;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.IntegerValidator;
@@ -21,14 +51,18 @@ import org.keycloak.validate.validators.UriValidator;
 
 import com.google.common.collect.ImmutableMap;
 
-public class BuiltinValidatorsTest {
+public class BuiltinValidatorsTest extends AbstractKeycloakTest {
 
     private static final ValidatorConfig valConfigIgnoreEmptyValues = ValidatorConfig.builder().config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build();
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    }
 
     @Test
     public void testLengthValidator() {
 
-        Validator validator = Validators.lengthValidator();
+        Validator validator = SimpleValidators.lengthValidator();
 
         // null and empty values handling
         Assert.assertFalse(validator.validate(null, "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
@@ -84,12 +118,13 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void testLengthValidator_ConfigValidation() {
+    @ModelTest
+    public void testLengthValidator_ConfigValidation(KeycloakSession session) {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, new Object(), LengthValidator.KEY_MAX, "invalid"));
 
-        ValidationResult result = Validators.validatorConfigValidator().validate(config, LengthValidator.ID).toResult();
+        ValidationResult result = SimpleValidators.validatorConfigValidator().validate(config, LengthValidator.ID, new ValidationContext(session)).toResult();
 
         Assert.assertFalse(result.isValid());
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
@@ -105,25 +140,25 @@ public class BuiltinValidatorsTest {
         Assert.assertEquals(LengthValidator.KEY_MAX, error1.getInputHint());
 
         // empty config
-        result = Validators.validatorConfigValidator().validate(null, LengthValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(null, LengthValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(2, result.getErrors().size());
-        result = Validators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, LengthValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, LengthValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(2, result.getErrors().size());
 
         // correct config
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10")), LengthValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MAX, "10")), LengthValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "10")), LengthValidator.ID).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10")), LengthValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MAX, "10")), LengthValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "10")), LengthValidator.ID, new ValidationContext(session)).toResult().isValid());
 
         // max is smaller than min
-        Assert.assertFalse(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "9")), LengthValidator.ID).toResult().isValid());
+        Assert.assertFalse(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, "10", LengthValidator.KEY_MAX, "9")), LengthValidator.ID, new ValidationContext(session)).toResult().isValid());
     }
 
     @Test
     public void testEmailValidator() {
         // this also validates StringFormatValidatorBase for simple values
 
-        Validator validator = Validators.emailValidator();
+        Validator validator = SimpleValidators.emailValidator();
 
         Assert.assertFalse(validator.validate(null, "email").isValid());
         Assert.assertFalse(validator.validate("", "email").isValid());
@@ -156,7 +191,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void testAbstractSimpleValidatorSupportForCollections() {
 
-        Validator validator = Validators.emailValidator();
+        Validator validator = SimpleValidators.emailValidator();
 
         List<String> valuesCollection = new ArrayList<>();
 
@@ -180,7 +215,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void testNotBlankValidator() {
 
-        Validator validator = Validators.notBlankValidator();
+        Validator validator = SimpleValidators.notBlankValidator();
 
         // simple String value
         Assert.assertTrue(validator.validate("tester", "username").isValid());
@@ -203,7 +238,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void testNotEmptyValidator() {
 
-        Validator validator = Validators.notEmptyValidator();
+        Validator validator = SimpleValidators.notEmptyValidator();
 
         Assert.assertTrue(validator.validate("tester", "username").isValid());
         Assert.assertTrue(validator.validate(" ", "username").isValid());
@@ -221,7 +256,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void testDoubleValidator() {
 
-        Validator validator = Validators.doubleValidator();
+        Validator validator = SimpleValidators.doubleValidator();
 
         // null value and empty String
         Assert.assertFalse(validator.validate(null, "null").isValid());
@@ -285,12 +320,13 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void testDoubleValidator_ConfigValidation() {
+    @ModelTest
+    public void testDoubleValidator_ConfigValidation(KeycloakSession session) {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, new Object(), DoubleValidator.KEY_MAX, "invalid"));
 
-        ValidationResult result = Validators.validatorConfigValidator().validate(config, DoubleValidator.ID).toResult();
+        ValidationResult result = SimpleValidators.validatorConfigValidator().validate(config, DoubleValidator.ID, new ValidationContext(session)).toResult();
 
         Assert.assertFalse(result.isValid());
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
@@ -306,23 +342,23 @@ public class BuiltinValidatorsTest {
         Assert.assertEquals(DoubleValidator.KEY_MAX, error1.getInputHint());
 
         // empty config
-        result = Validators.validatorConfigValidator().validate(null, DoubleValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(null, DoubleValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(0, result.getErrors().size());
-        result = Validators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, DoubleValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, DoubleValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(0, result.getErrors().size());
 
         // correct config
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1")), DoubleValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MAX, "10.1")), DoubleValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1", DoubleValidator.KEY_MAX, "11")), DoubleValidator.ID).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1")), DoubleValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MAX, "10.1")), DoubleValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1", DoubleValidator.KEY_MAX, "11")), DoubleValidator.ID, new ValidationContext(session)).toResult().isValid());
 
         // max is smaller than min
-        Assert.assertFalse(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1", DoubleValidator.KEY_MAX, "10.1")), DoubleValidator.ID).toResult().isValid());
+        Assert.assertFalse(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, "10.1", DoubleValidator.KEY_MAX, "10.1")), DoubleValidator.ID, new ValidationContext(session)).toResult().isValid());
     }
 
     @Test
     public void testIntegerValidator() {
-        Validator validator = Validators.integerValidator();
+        Validator validator = SimpleValidators.integerValidator();
 
         // null value and empty String
         Assert.assertFalse(validator.validate(null, "null").isValid());
@@ -387,12 +423,13 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void testIntegerValidator_ConfigValidation() {
+    @ModelTest
+    public void testIntegerValidator_ConfigValidation(KeycloakSession session) {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, new Object(), IntegerValidator.KEY_MAX, "invalid"));
 
-        ValidationResult result = Validators.validatorConfigValidator().validate(config, IntegerValidator.ID).toResult();
+        ValidationResult result = SimpleValidators.validatorConfigValidator().validate(config, IntegerValidator.ID, new ValidationContext(session)).toResult();
 
         Assert.assertFalse(result.isValid());
         ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
@@ -408,24 +445,24 @@ public class BuiltinValidatorsTest {
         Assert.assertEquals(IntegerValidator.KEY_MAX, error1.getInputHint());
 
         // empty config
-        result = Validators.validatorConfigValidator().validate(null, IntegerValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(null, IntegerValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(0, result.getErrors().size());
-        result = Validators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, IntegerValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, IntegerValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertEquals(0, result.getErrors().size());
 
         // correct config
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10")), IntegerValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MAX, "10")), IntegerValidator.ID).toResult().isValid());
-        Assert.assertTrue(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10", IntegerValidator.KEY_MAX, "11")), IntegerValidator.ID).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10")), IntegerValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MAX, "10")), IntegerValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10", IntegerValidator.KEY_MAX, "11")), IntegerValidator.ID, new ValidationContext(session)).toResult().isValid());
 
         // max is smaller than min
-        Assert.assertFalse(Validators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10", IntegerValidator.KEY_MAX, "10")), IntegerValidator.ID).toResult().isValid());
+        Assert.assertFalse(SimpleValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, "10", IntegerValidator.KEY_MAX, "10")), IntegerValidator.ID, new ValidationContext(session)).toResult().isValid());
     }
 
     @Test
     public void testPatternValidator() {
 
-        Validator validator = Validators.patternValidator();
+        Validator validator = SimpleValidators.patternValidator();
 
         // Pattern object in the configuration
         ValidatorConfig config = configFromMap(Collections.singletonMap(PatternValidator.CFG_PATTERN, Pattern.compile("^start-.*-end$")));
@@ -456,7 +493,7 @@ public class BuiltinValidatorsTest {
     @Test
     public void testUriValidator() throws Exception {
 
-        Validator validator = Validators.uriValidator();
+        Validator validator = SimpleValidators.uriValidator();
 
         Assert.assertTrue(validator.validate(null, "baseUrl").isValid());
         Assert.assertTrue(validator.validate("", "baseUrl").isValid());
@@ -472,14 +509,14 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate("https://localhost:3000/#someFragment", "baseUrl", config).isValid());
 
         // it is also possible to call dedicated validation methods on a built-in validator
-        Assert.assertTrue(Validators.uriValidator().validateUri(new URI("https://customurl"), Collections.singleton("https"), true, true));
+        Assert.assertTrue(SimpleValidators.uriValidator().validateUri(new URI("https://customurl"), Collections.singleton("https"), true, true));
 
-        Assert.assertFalse(Validators.uriValidator().validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
+        Assert.assertFalse(SimpleValidators.uriValidator().validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
     }
     
     @Test
     public void testOptionsValidator(){
-        Validator validator = Validators.optionsValidator();
+        Validator validator = SimpleValidators.optionsValidator();
         
         // options not configured - always invalid
         Assert.assertFalse(validator.validate(null, "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).build()).isValid());
@@ -517,16 +554,17 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void testOptionsValidator_Config_Validation() {
+    @ModelTest
+    public void testOptionsValidator_Config_Validation(KeycloakSession session) {
         
-        ValidationResult result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().build(), OptionsValidator.ID).toResult();
+        ValidationResult result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.builder().build(), OptionsValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertFalse(result.isValid());
 
         // invalid type of the config value
-        result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, "a").build(), OptionsValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, "a").build(), OptionsValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertFalse(result.isValid());
         
-        result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, Arrays.asList("opt1")).build(), OptionsValidator.ID).toResult();
+        result = SimpleValidators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, Arrays.asList("opt1")).build(), OptionsValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertTrue(result.isValid());
 
     }
