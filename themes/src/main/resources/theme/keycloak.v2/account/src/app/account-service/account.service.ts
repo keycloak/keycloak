@@ -22,7 +22,7 @@ declare const baseUrl: string;
 
 type ConfigResolve = (config: RequestInit) => void;
 
-export interface HttpResponse<T = {}> extends Response {
+export interface HttpResponse<T = unknown> extends Response {
     data?: T;
 }
 

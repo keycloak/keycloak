@@ -1,0 +1,456 @@
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  jquery:
+    specifier: ^3.7.1
+    version: 3.7.1
+  patternfly:
+    specifier: ^3.59.5
+    version: 3.59.5
+
+packages:
+
+  /@types/c3@0.6.4:
+    resolution: {integrity: sha512-W7i7oSmHsXYhseZJsIYexelv9HitGsWdQhx3mcy4NWso+GedpCYr02ghpkNvnZ4oTIjNeISdrOnM70s7HiuV+g==}
+    requiresBuild: true
+    dependencies:
+      '@types/d3': 4.13.13
+    dev: false
+    optional: true
+
+  /@types/d3-array@1.2.10:
+    resolution: {integrity: sha512-b47UQ8RWEDdWdpxTdeppAZ1pyy64PMiLawItciimtvqBS1+FqUi3tk7iG0UT/6vQKMhuHpsMVVOadj71Q7vUcQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-axis@1.0.17:
+    resolution: {integrity: sha512-sQEfX7/mokx3ncUs6mpuicw+XFc6Drt/H9Axwc73KcCAmUdrdnexvBZGeZiyTjYw7RnA0DpOwrUwWfz8OfiS5Q==}
+    dependencies:
+      '@types/d3-selection': 1.4.4
+    dev: false
+    optional: true
+
+  /@types/d3-brush@1.1.6:
+    resolution: {integrity: sha512-eAqaEzE6zA1JbslrEHvDXMjADV5LyrIfK00YkgmxVKodvrPiw6JxVBseySO3YE3UNIZ/jBplE9NDIlpY7t5pwQ==}
+    dependencies:
+      '@types/d3-selection': 1.4.4
+    dev: false
+    optional: true
+
+  /@types/d3-chord@1.0.12:
+    resolution: {integrity: sha512-JVjVlm+XxkScLWTogtELXPX/to9G9UOs6NIs9mNZI9e4AHIpA3K3vNCESoZd049iBQEGF+wAf1wGnByyv/kXVw==}
+    dev: false
+    optional: true
+
+  /@types/d3-collection@1.0.11:
+    resolution: {integrity: sha512-PN9XeRw8FyadFGrmK1f6VDo95sbJ1cKqGy9nyUzdC2xUdYSYmvJGLBcg/DUfS2a1Zh4tTqgE10HebuN/r8qSpw==}
+    dev: false
+    optional: true
+
+  /@types/d3-color@1.4.3:
+    resolution: {integrity: sha512-jcHMwBcuuQ1LPt43jdbOhdOFczfDfhzvAZ1+1L0KiXPv4VqGsWAltxfxUDvtSuIMsvTZ2eeua+tOtxI6qqxYUg==}
+    dev: false
+    optional: true
+
+  /@types/d3-dispatch@1.0.10:
+    resolution: {integrity: sha512-QDjKymeWL+SNmHVlLO7e9/zgR59I1uKC+FockA7EifxfpzmkBnqapzOUGDgi5bt8WBUg10mhTzWAyqruuixSGQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-drag@1.2.6:
+    resolution: {integrity: sha512-vG4mVNCKKYee3+C0p/Qk4q0W0zBU4tG9ub1DltjZ2edLK/5SKssu3f1IqzuDSPnAMs5oFYLsI6yd4phUZ1KAlg==}
+    dependencies:
+      '@types/d3-selection': 1.4.4
+    dev: false
+    optional: true
+
+  /@types/d3-dsv@1.2.5:
+    resolution: {integrity: sha512-ds8/wXUEuLxRubqhr0ksAv7eVBTWiW74rSf4w2BAb+FmaFAKj3j7BFU38Lp9H/uWfrFsTvEAC6c2GfqQgrb/Yw==}
+    dev: false
+    optional: true
+
+  /@types/d3-ease@1.0.11:
+    resolution: {integrity: sha512-wUigPL0kleGZ9u3RhzBP07lxxkMcUjL5IODP42mN/05UNL+JJCDnpEPpFbJiPvLcTeRKGIRpBBJyP/1BNwYsVA==}
+    dev: false
+    optional: true
+
+  /@types/d3-force@1.2.5:
+    resolution: {integrity: sha512-1TB2IqtkPXsr7zUgPORayl2xsl28X4WMwlpaw2BLKTQpJ5ePO1t6TkM4spbTwoqc6dWipVTwg0gdOVrbzGQPNQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-format@1.4.3:
+    resolution: {integrity: sha512-Rp3dUYGqPSn4RY+GDW1GfY++JoFvnXU2E+5pU0/4iYLVgdwt029lRlAsAeHk9lJvq3UXl10l09Cmmj2G1wnNlA==}
+    dev: false
+    optional: true
+
+  /@types/d3-geo@1.12.5:
+    resolution: {integrity: sha512-YRqBbphH5XZuNtsVsjWKDZZYparpwxDlEiQSdROePXJYZ+Ibi4UwCkSA3hIH484c/kvUv8Dpx5ViefKTLsC1Ow==}
+    dependencies:
+      '@types/geojson': 7946.0.11
+    dev: false
+    optional: true
+
+  /@types/d3-hierarchy@1.1.9:
+    resolution: {integrity: sha512-OmR+pfqnz0qd+gaDJUoJBBzhvZQOwtNAjhXSztBbBDtyUXkzGsPlEv4KSGJ2zm5lNPtxG7v8Zifixk0jpFPlCQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-interpolate@1.4.3:
+    resolution: {integrity: sha512-eosrP1F0BPnpok+3/dK12/ZusskELe2mZBJfuynIhTw6oCpNcBsVHEJ2dyfTMkm1mv+OX7vQ4G89sYqh9+jHWg==}
+    dependencies:
+      '@types/d3-color': 1.4.3
+    dev: false
+    optional: true
+
+  /@types/d3-path@1.0.9:
+    resolution: {integrity: sha512-NaIeSIBiFgSC6IGUBjZWcscUJEq7vpVu7KthHN8eieTV9d9MqkSOZLH4chq1PmcKy06PNe3axLeKmRIyxJ+PZQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-polygon@1.0.8:
+    resolution: {integrity: sha512-1TOJPXCBJC9V3+K3tGbTqD/CsqLyv/YkTXAcwdsZzxqw5cvpdnCuDl42M4Dvi8XzMxZNCT9pL4ibrK2n4VmAcw==}
+    dev: false
+    optional: true
+
+  /@types/d3-quadtree@1.0.10:
+    resolution: {integrity: sha512-mtSpFuOo7ZzOpZlGok8jyaPIqLYm3yKwipnXWKp3g0Oq6locFNQEDgkWytIrALWuoZezTAER31jHDbee6V5XJg==}
+    dev: false
+    optional: true
+
+  /@types/d3-queue@3.0.8:
+    resolution: {integrity: sha512-1FWOiI/MYwS5Z1Sa9EvS1Xet3isiVIIX5ozD6iGnwHonGcqL+RcC1eThXN5VfDmAiYt9Me9EWNEv/9J9k9RIKQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-random@1.1.3:
+    resolution: {integrity: sha512-XXR+ZbFCoOd4peXSMYJzwk0/elP37WWAzS/DG+90eilzVbUSsgKhBcWqylGWe+lA2ubgr7afWAOBaBxRgMUrBQ==}
+    dev: false
+    optional: true
+
+  /@types/d3-request@1.0.7:
+    resolution: {integrity: sha512-iuCiazM5ssApxydw58Ev5Ew9/mI6aaxenxh/6S1s/r2kRTr9bJHP78b5bFShqL4ksli1i+cm0NdWp08D1oGg7A==}
+    dependencies:
+      '@types/d3-dsv': 1.2.5
+    dev: false
+    optional: true
+
+  /@types/d3-scale@1.0.19:
+    resolution: {integrity: sha512-Rvx9TqN/FZyRaZMd3hWWTDJzbGOhPZahtrhZxKvTSpq/cvUYggj+pO4aQdtlF11Vyo1D6ZNXltBgtg8TuU2aGw==}
+    dependencies:
+      '@types/d3-time': 1.1.2
+    dev: false
+    optional: true
+
+  /@types/d3-selection@1.4.4:
+    resolution: {integrity: sha512-nbt9x1vP2C1Wz0JxZ2aSYFvJQIukc1QdL1zGHe5O989bDHpgrVz1mgmA/8n+vapb7g3mjUPe2YoLrqEalmtxKA==}
+    dev: false
+    optional: true
+
+  /@types/d3-shape@1.3.9:
+    resolution: {integrity: sha512-NX8FSlYqN4MPjiOwJAu5a3y6iEj7lS8nb8zP5dQpHOWh24vMJLTXno7c7wm72SfTFNAalfvZVsatMUrEa686gg==}
+    dependencies:
+      '@types/d3-path': 1.0.9
+    dev: false
+    optional: true
+
+  /@types/d3-time-format@2.3.2:
+    resolution: {integrity: sha512-H1j8FCj8t2EU9+Ndv4jTIqXcPID1UZJpyw3O/W1cZWFl2lj3fSyYqXeTZ9Nhv4nP4XCzRId4C73F0rCBEnuBDg==}
+    dev: false
+    optional: true
+
+  /@types/d3-time@1.1.2:
+    resolution: {integrity: sha512-CHxXBqjSFt/w7OiGIy84L2nbzNwWhBaK6xyeAAWqKLgKlHY38vg33BMFMTCT8YOYeinNIQIQPjGvZLO8Z9M8WA==}
+    dev: false
+    optional: true
+
+  /@types/d3-timer@1.0.10:
+    resolution: {integrity: sha512-ZnAbquVqy+4ZjdW0cY6URp+qF/AzTVNda2jYyOzpR2cPT35FTXl78s15Bomph9+ckOiI1TtkljnWkwbIGAb6rg==}
+    dev: false
+    optional: true
+
+  /@types/d3-transition@1.3.3:
+    resolution: {integrity: sha512-G6/XOldxri7B6RlfbtZObrMfxnUUKAIoxxo4E/dlYclX9Zhs7HtHuWrf/iIsrQGYGmqYk2BMqziHvm9gQTBwdQ==}
+    dependencies:
+      '@types/d3-selection': 1.4.4
+    dev: false
+    optional: true
+
+  /@types/d3-voronoi@1.1.10:
+    resolution: {integrity: sha512-OOnVvmmth88o/MM3hCrGGBPtwKuU5vj0XLdL5GXtda1JgzyORb43nAUw/tA0ifkijvrXS/vy4Faw8Iy6dpmbWg==}
+    dev: false
+    optional: true
+
+  /@types/d3-zoom@1.8.5:
+    resolution: {integrity: sha512-h79/ayrjJUaXNuTvO1L4pAwBCe1kzLywoE1zjRmHsFftxtHzWco5od9Lv7FCtcwuhSOp1SKS2q3RWolcdJhLOw==}
+    dependencies:
+      '@types/d3-interpolate': 1.4.3
+      '@types/d3-selection': 1.4.4
+    dev: false
+    optional: true
+
+  /@types/d3@4.13.13:
+    resolution: {integrity: sha512-mE36wbr1+ynofS/hv4AOmvnLnfi982vNQ84YFabHeUKqyCPsUR73uLjLCZNFQrHEELZ1HVzwW7QwMp5nZyKSOQ==}
+    dependencies:
+      '@types/d3-array': 1.2.10
+      '@types/d3-axis': 1.0.17
+      '@types/d3-brush': 1.1.6
+      '@types/d3-chord': 1.0.12
+      '@types/d3-collection': 1.0.11
+      '@types/d3-color': 1.4.3
+      '@types/d3-dispatch': 1.0.10
+      '@types/d3-drag': 1.2.6
+      '@types/d3-dsv': 1.2.5
+      '@types/d3-ease': 1.0.11
+      '@types/d3-force': 1.2.5
+      '@types/d3-format': 1.4.3
+      '@types/d3-geo': 1.12.5
+      '@types/d3-hierarchy': 1.1.9
+      '@types/d3-interpolate': 1.4.3
+      '@types/d3-path': 1.0.9
+      '@types/d3-polygon': 1.0.8
+      '@types/d3-quadtree': 1.0.10
+      '@types/d3-queue': 3.0.8
+      '@types/d3-random': 1.1.3
+      '@types/d3-request': 1.0.7
+      '@types/d3-scale': 1.0.19
+      '@types/d3-selection': 1.4.4
+      '@types/d3-shape': 1.3.9
+      '@types/d3-time': 1.1.2
+      '@types/d3-time-format': 2.3.2
+      '@types/d3-timer': 1.0.10
+      '@types/d3-transition': 1.3.3
+      '@types/d3-voronoi': 1.1.10
+      '@types/d3-zoom': 1.8.5
+    dev: false
+    optional: true
+
+  /@types/geojson@7946.0.11:
+    resolution: {integrity: sha512-L7A0AINMXQpVwxHJ4jxD6/XjZ4NDufaRlUJHjNIFKYUFBH1SvOW+neaqb0VTRSLW5suSrSu19ObFEFnfNcr+qg==}
+    dev: false
+    optional: true
+
+  /bootstrap-datepicker@1.10.0:
+    resolution: {integrity: sha512-lWxtSYddAQOpbAO8UhYhHLcK6425eWoSjb5JDvZU3ePHEPF6A3eUr51WKaFy4PccU19JRxUG6wEU3KdhtKfvpg==}
+    requiresBuild: true
+    dependencies:
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /bootstrap-sass@3.4.3:
+    resolution: {integrity: sha512-vPgFnGMp1jWZZupOND65WS6mkR8rxhJxndT/AcMbqcq1hHMdkcH4sMPhznLzzoHOHkSCrd6J9F8pWBriPCKP2Q==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /bootstrap-select@1.12.2:
+    resolution: {integrity: sha512-Fj1VstB55LigEEYQb6ZOi/ok+uaqnslRxS8Qo9Q+F46WWDhhXAeNpjBhjEMlxQjPs9yqYZf2hf/mxVRWab8sow==}
+    requiresBuild: true
+    dependencies:
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /bootstrap-slider@9.10.0:
+    resolution: {integrity: sha512-a9MtENtt4r3ttPW5mpIpOFmCaIsm37EGukOgw5cfHlxKvsUSN8AN9JtwKrKuqgEnxs86kUSsMvMn8kqewMorKw==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /bootstrap-switch@3.3.4(bootstrap@3.4.1)(jquery@3.4.1):
+    resolution: {integrity: sha512-7YQo+Ir6gCUqC36FFp1Zvec5dRF/+obq+1drMtdIMi9Xc84Kx63Evi0kdcp4HfiGsZpiz6IskyYDNlSKcxsL7w==}
+    requiresBuild: true
+    peerDependencies:
+      bootstrap: ^3.1.1
+      jquery: '>=1.9.0'
+    dependencies:
+      bootstrap: 3.4.1
+      jquery: 3.4.1
+    dev: false
+    optional: true
+
+  /bootstrap-touchspin@3.1.1:
+    resolution: {integrity: sha512-o5pgzdr8Ma5hQKS3JE1uNq/jkx8qCG+KhJXSlvYCmX2wTxva2sS2Kq3idGN+tP5e1bZJQgkbqwP9TdEEx+R+6Q==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /bootstrap@3.4.1:
+    resolution: {integrity: sha512-yN5oZVmRCwe5aKwzRj6736nSmKDX7pLYwsXiCj/EYmo16hODaBiT4En5btW/jhBF/seV+XMx3aYwukYC3A49DA==}
+    engines: {node: '>=6'}
+    dev: false
+
+  /c3@0.4.24:
+    resolution: {integrity: sha512-mVCFtN5ZWUT5UE7ilFQ7KBQ7TUCdKIq6KsDt1hH/1m6gC1tBjvzFTO7fqhaiWHfhNOjjM7makschdhg6DkWQMA==}
+    requiresBuild: true
+    dependencies:
+      d3: 3.5.17
+    dev: false
+    optional: true
+
+  /d3@3.5.17:
+    resolution: {integrity: sha512-yFk/2idb8OHPKkbAL8QaOaqENNoMhIaSHZerk3oQsECwkObkCpJyjYwCe+OHiq6UEdhe1m8ZGARRRO3ljFjlKg==}
+    dev: false
+    optional: true
+
+  /datatables.net-bs@1.13.6:
+    resolution: {integrity: sha512-ohESuDtcrrNH56vGTErMUQklkzOVvKC5wyuaDApMruYc542IvESfalMOWKOChcAhGkhyXP9P9ZEr0AaDqQ7+Qw==}
+    dependencies:
+      datatables.net: 1.13.6
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /datatables.net-colreorder-bs@1.3.3:
+    resolution: {integrity: sha512-+DPim/DhbSIqr2rhRvYNrAMFNZgl372PiKEAv5YeyjYMzc8+6kX8Vinpb3Bg0PDgEdPqEWqJ6H18pBCKhXppgg==}
+    requiresBuild: true
+    dependencies:
+      datatables.net-bs: 1.13.6
+      datatables.net-colreorder: 1.7.0
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /datatables.net-colreorder@1.7.0:
+    resolution: {integrity: sha512-Vyysfxe2kfjeuPJJMGRQ2jHVOfoadyBYKzizbOHzR2bhTVsIYjrbEhUA1H24TISE17SdR77X0RmcUvS/h/Bifw==}
+    dependencies:
+      datatables.net: 1.13.6
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /datatables.net-select@1.2.7:
+    resolution: {integrity: sha512-C3XDi7wpruGjDXV36dc9hN/FrAX9GOFvBZ7+KfKJTBNkGFbbhdzHS91SMeGiwRXPYivAyxfPTcVVndVaO83uBQ==}
+    requiresBuild: true
+    dependencies:
+      datatables.net: 1.13.6
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /datatables.net@1.13.6:
+    resolution: {integrity: sha512-rHNcnW+yEP9me82/KmRcid5eKrqPqW3+I/p1TwqCW3c/7GRYYkDyF6aJQOQ9DNS/pw+nyr4BVpjyJ3yoZXiFPg==}
+    dependencies:
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /drmonty-datatables-colvis@1.1.2:
+    resolution: {integrity: sha512-1kL4fbsBEkQQTl83eQ8G/vRGcCiM6Hn3O8Tp473tG4YSsBDcxETDDSxb8qC+fQjHZ3jUCptWj3lG/L8rI6NBNw==}
+    requiresBuild: true
+    dependencies:
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /eonasdan-bootstrap-datetimepicker@4.17.49(bootstrap@3.4.1)(jquery@3.4.1)(moment-timezone@0.4.1)(moment@2.29.4):
+    resolution: {integrity: sha512-7KZeDpkj+A6AtPR3XjX8gAnRPUkPSfW0OmMANG1dkUOPMtLSzbyoCjDIdEcfRtQPU5X0D9Gob7wWKn0h4QWy7A==}
+    requiresBuild: true
+    peerDependencies:
+      bootstrap: ^3.3
+      jquery: ^1.8.3 || ^2.0 || ^3.0
+      moment: ^2.10
+      moment-timezone: ^0.4.0 || ^0.5.0
+    dependencies:
+      bootstrap: 3.4.1
+      jquery: 3.4.1
+      moment: 2.29.4
+      moment-timezone: 0.4.1
+    dev: false
+    optional: true
+
+  /font-awesome-sass@4.7.0:
+    resolution: {integrity: sha512-apO2Nw3XP/Zv7fLxa+MnPnvJ/GdkH6qWrLrtN5oQrFL7RPprzHKROjN94jgyoxM+T7PQBhY9F/SwOKbBaLyXxg==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /font-awesome@4.7.0:
+    resolution: {integrity: sha512-U6kGnykA/6bFmg1M/oT9EkFeIYv7JlX3bozwQJWiiLz6L0w3F5vBVPxHlwyX/vtNq1ckcpRKOB9f2Qal/VtFpg==}
+    engines: {node: '>=0.10.3'}
+    dev: false
+
+  /google-code-prettify@1.0.5:
+    resolution: {integrity: sha512-Y47Bw63zJKCuqTuhTZC1ct4e/0ADuMssxXhnrP8QHq71tE2aYBKG6wQwXr8zya0zIUd0mKN3XTlI5AME4qm6NQ==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /jquery-match-height@0.7.2:
+    resolution: {integrity: sha512-qSyC0GBc4zUlgBcxfyyumJSVUm50T6XuJEIz59cKaI28VXMUT95mZ6KiIjhMIMbG8IiJhh65FtQO1XD42TAcwg==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /jquery@3.4.1:
+    resolution: {integrity: sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==}
+    dev: false
+
+  /jquery@3.7.1:
+    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
+    dev: false
+
+  /moment-timezone@0.4.1:
+    resolution: {integrity: sha512-5cNPVUwaVJDCe9JM8m/qz17f9SkaI8rpnRUyDJi2K5HAd6EwhuQ3n5nLclZkNC/qJnomKgQH2TIu70Gy2dxFKA==}
+    requiresBuild: true
+    dependencies:
+      moment: 2.29.4
+    dev: false
+    optional: true
+
+  /moment@2.29.4:
+    resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
+    dev: false
+    optional: true
+
+  /patternfly-bootstrap-combobox@1.1.7:
+    resolution: {integrity: sha512-6KptS6UnS8jOwLuqsjokiNUYjOf3G4bSahiSHhkQMdfvG0b4sZkUgOFWdMJ8zBXaZGVe8T324GQoXqiJdJxMuw==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /patternfly-bootstrap-treeview@2.1.10:
+    resolution: {integrity: sha512-P9+iFu34CwX+R5Fd7/EWbxTug0q9mDj53PnZIIh5ie54KX2kD0+54lCWtpD9SVylDwDtDv3n3A6gbFVkx7HsuA==}
+    engines: {node: '>= 0.10.0'}
+    requiresBuild: true
+    dependencies:
+      bootstrap: 3.4.1
+      jquery: 3.7.1
+    dev: false
+    optional: true
+
+  /patternfly@3.59.5:
+    resolution: {integrity: sha512-SMQynv9eFrWWG0Ujta5+jPjxHdQB3xkTLiDW5VP8XXc0nGUxXb4EnZh21qiMeGGJYaKpu9CzaPEpCvuBxgYWHQ==}
+    dependencies:
+      bootstrap: 3.4.1
+      font-awesome: 4.7.0
+      jquery: 3.4.1
+    optionalDependencies:
+      '@types/c3': 0.6.4
+      bootstrap-datepicker: 1.10.0
+      bootstrap-sass: 3.4.3
+      bootstrap-select: 1.12.2
+      bootstrap-slider: 9.10.0
+      bootstrap-switch: 3.3.4(bootstrap@3.4.1)(jquery@3.4.1)
+      bootstrap-touchspin: 3.1.1
+      c3: 0.4.24
+      d3: 3.5.17
+      datatables.net: 1.13.6
+      datatables.net-colreorder: 1.7.0
+      datatables.net-colreorder-bs: 1.3.3
+      datatables.net-select: 1.2.7
+      drmonty-datatables-colvis: 1.1.2
+      eonasdan-bootstrap-datetimepicker: 4.17.49(bootstrap@3.4.1)(jquery@3.4.1)(moment-timezone@0.4.1)(moment@2.29.4)
+      font-awesome-sass: 4.7.0
+      google-code-prettify: 1.0.5
+      jquery-match-height: 0.7.2
+      moment: 2.29.4
+      moment-timezone: 0.4.1
+      patternfly-bootstrap-combobox: 1.1.7
+      patternfly-bootstrap-treeview: 2.1.10
+    dev: false

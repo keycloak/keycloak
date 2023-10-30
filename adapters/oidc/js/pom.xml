@@ -63,7 +63,7 @@
                             <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --frozen-lockfile --ignore-scripts</arguments>
+                            <arguments>${pnpm.args.install}</arguments>
                         </configuration>
                     </execution>
                     <execution>
@@ -77,9 +77,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>${node.version}</nodeVersion>
-                    <pnpmVersion>${pnpm.version}</pnpmVersion>
-                    <installDirectory>${js.projectDir}</installDirectory>
                     <workingDirectory>${js.projectDir}/libs/keycloak-js</workingDirectory>
                 </configuration>
             </plugin>

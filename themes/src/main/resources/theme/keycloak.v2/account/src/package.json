@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "keycloak account management written in React",
   "scripts": {
-    "build": "snowpack --optimize && npm run check-types && npm run babel && npm run move-web_modules && npm run copy-pf-resources",
+    "build": "snowpack --optimize && pnpm run check-types && pnpm run babel && pnpm run move-web_modules && pnpm run copy-pf-resources",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
-    "babel:watch": "npm run babel -- --watch",
+    "babel:watch": "pnpm run babel -- --watch",
     "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
-    "check-types:watch": "npm run check-types -- -w",
+    "check-types:watch": "pnpm run check-types -- -w",
     "lint": "eslint ./app/**/*.ts*",
     "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources",
-    "copy-pf-resources": "npm run move-app-css && npm run copy-base-css && npm run copy-fonts && npm run copy-pficon && npm run copy-addons",
+    "copy-pf-resources": "pnpm run move-app-css && pnpm run copy-base-css && pnpm run copy-fonts && pnpm run copy-pficon && pnpm run copy-addons",
     "move-app-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx mv app.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
     "copy-base-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx cp node_modules/@patternfly/react-core/dist/styles/base.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
     "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts && shx cp -r node_modules/@patternfly/react-core/dist/styles/assets/fonts/* ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/",
@@ -53,5 +53,5 @@
     "snowpack": "^1.7.1",
     "typescript": "^4.7.4"
   },
-  "repository": {}
+  "packageManager": "pnpm@8.10.0"
 }

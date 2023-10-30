@@ -92,5 +92,8 @@ quarkus/data/*.db
 # Node.js for frontend-maven-plugin #
 node
 
+# NPM
+node_modules
+
 # SDKMAM environment file
 .sdkmanrc

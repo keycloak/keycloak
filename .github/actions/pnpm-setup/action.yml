@@ -29,7 +29,7 @@ runs:
       id: pnpm-cache
       shell: bash
       run: |
-        echo "store-path=$(pnpm store path)" >> $GITHUB_OUTPUT
+        echo "store-path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
     - uses: actions/cache@v3
       name: Setup PNPM cache
@@ -45,4 +45,4 @@ runs:
     - name: Install dependencies
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pnpm install --frozen-lockfile
+      run: pnpm install --prefer-offline --frozen-lockfile
