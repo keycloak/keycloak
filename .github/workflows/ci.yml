@@ -25,7 +25,6 @@ defaults:
 jobs:
   build:
     name: Build
-    if: needs.conditional.outputs.ci == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
