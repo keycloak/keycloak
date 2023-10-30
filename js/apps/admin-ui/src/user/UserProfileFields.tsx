@@ -196,17 +196,18 @@ function determineInputType(
   const inputType = attribute.annotations?.inputType;
 
   // If the attribute has no valid input type, it is always multi-valued.
-  if (!isValidInputType(inputType)) {
+  if (!isValidInputType(inputType) && !isMultiValue(value)) {
     return DEFAULT_INPUT_TYPE;
+  } else if (isValidInputType(inputType)) {
+    return inputType;
   }
 
-  // An attribute with multiple values is always multi-valued, even if an input type is provided.
-  if (Array.isArray(value) && value.length > 1) {
-    return "multi-input";
-  }
-
-  return inputType;
+  // An attribute with multiple values is always multi-valued, only not if an input type is provided.
+  return "multi-input";
 }
 
 const isValidInputType = (value: unknown): value is InputType =>
   typeof value === "string" && value in FIELDS;
+
+const isMultiValue = (value: unknown): boolean =>
+  Array.isArray(value) && value.length > 1;
