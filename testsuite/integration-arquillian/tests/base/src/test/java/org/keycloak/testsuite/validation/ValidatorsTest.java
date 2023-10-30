@@ -1,4 +1,23 @@
-package org.keycloak.validate;
+/*
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
+ *  and other contributors as indicated by the @author tags.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+package org.keycloak.testsuite.validation;
 
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
@@ -14,28 +33,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.validate.SimpleValidator;
+import org.keycloak.validate.ValidationContext;
+import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidationResult;
+import org.keycloak.validate.Validator;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.Validators;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
 
-public class ValidatorTest {
+public class ValidatorsTest extends AbstractKeycloakTest {
 
-    KeycloakSession session = null;
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    }
 
     @Test
     public void simpleValidation() {
 
-        Validator validator = Validators.notEmptyValidator();
+        Validator validator = SimpleValidators.notEmptyValidator();
 
         Assert.assertTrue(validator.validate("a").isValid());
         Assert.assertFalse(validator.validate("").isValid());
     }
 
     @Test
-    public void simpleValidationWithContext() {
+    @ModelTest
+    public void simpleValidationWithContext(KeycloakSession session) {
 
-        Validator validator = Validators.lengthValidator();
+        Validator validator = SimpleValidators.lengthValidator();
 
         ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
@@ -45,17 +77,19 @@ public class ValidatorTest {
     }
 
     @Test
-    public void simpleValidationFluent() {
+    @ModelTest
+    public void simpleValidationFluent(KeycloakSession session) {
 
         ValidationContext context = new ValidationContext(session);
 
-        ValidationResult result = Validators.lengthValidator().validate("a", "username", context).toResult();
+        ValidationResult result = SimpleValidators.lengthValidator().validate("a", "username", context).toResult();
 
         Assert.assertTrue(result.isValid());
     }
 
     @Test
-    public void simpleValidationLookup() {
+    @ModelTest
+    public void simpleValidationLookup(KeycloakSession session) {
 
         // later: session.validators().validator(LengthValidator.ID);
         Validator validator = Validators.validator(session, LengthValidator.ID);
@@ -68,7 +102,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void simpleValidationError() {
+    @ModelTest
+    public void simpleValidationError(KeycloakSession session) {
 
         Validator validator = LengthValidator.INSTANCE;
 
@@ -104,20 +139,21 @@ public class ValidatorTest {
     public void acceptOnError() {
 
         AtomicBoolean bool1 = new AtomicBoolean();
-        Validators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
+        SimpleValidators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
         Assert.assertFalse(bool1.get());
 
         AtomicBoolean bool2 = new AtomicBoolean();
-        Validators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
+        SimpleValidators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
         Assert.assertTrue(bool2.get());
     }
 
     @Test
-    public void forEachError() {
+    @ModelTest
+    public void forEachError(KeycloakSession session) {
 
         List<String> errors = new ArrayList<>();
         MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
-        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e -> {
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address", new ValidationContext(session)).toResult().forEachError(e -> {
             errors.add(e.getMessage());
         });
 
@@ -125,7 +161,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void formatError() {
+    @ModelTest
+    public void formatError(KeycloakSession session) {
 
         Map<String, String> miniResourceBundle = new HashMap<>();
         miniResourceBundle.put("error-invalid-blank", "{0} is blank: <{1}>");
@@ -133,7 +170,7 @@ public class ValidatorTest {
 
         List<String> errors = new ArrayList<>();
         MockAddress faultyAddress = new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany");
-        MockAddressValidator.INSTANCE.validate(faultyAddress, "address").toResult().forEachError(e -> {
+        MockAddressValidator.INSTANCE.validate(faultyAddress, "address", new ValidationContext(session)).toResult().forEachError(e -> {
             errors.add(e.formatMessage((message, args) -> MessageFormat.format(miniResourceBundle.getOrDefault(message, message), args)));
         });
 
@@ -141,15 +178,16 @@ public class ValidatorTest {
     }
 
     @Test
-    public void multipleValidations() {
+    @ModelTest
+    public void multipleValidations(KeycloakSession session) {
 
         ValidationContext context = new ValidationContext(session);
 
         String input = "aaa";
         String inputHint = "username";
 
-        Validators.lengthValidator().validate(input, inputHint, context);
-        Validators.notEmptyValidator().validate(input, inputHint, context);
+        SimpleValidators.lengthValidator().validate(input, inputHint, context);
+        SimpleValidators.notEmptyValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -157,15 +195,16 @@ public class ValidatorTest {
     }
 
     @Test
-    public void multipleValidationsError() {
+    @ModelTest
+    public void multipleValidationsError(KeycloakSession session) {
 
         ValidationContext context = new ValidationContext(session);
 
         String input = " ";
         String inputHint = "username";
 
-        Validators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap(LengthValidator.KEY_MIN, 1)));
-        Validators.notBlankValidator().validate(input, inputHint, context);
+        SimpleValidators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap(LengthValidator.KEY_MIN, 1)));
+        SimpleValidators.notBlankValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -184,7 +223,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateValidatorConfigSimple() {
+    @ModelTest
+    public void validateValidatorConfigSimple(KeycloakSession session) {
 
         SimpleValidator validator = LengthValidator.INSTANCE;
 
@@ -197,8 +237,9 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateEmailValidator() {
-        SimpleValidator validator = Validators.emailValidator();
+    @ModelTest
+    public void validateEmailValidator(KeycloakSession session) {
+        SimpleValidator validator = SimpleValidators.emailValidator();
 
         Assert.assertTrue(validator.validateConfig(session, null).isValid());
         Assert.assertTrue(validator.validateConfig(session, ValidatorConfig.EMPTY).isValid());
@@ -215,7 +256,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateValidatorConfigMultipleOptions() {
+    @ModelTest
+    public void validateValidatorConfigMultipleOptions(KeycloakSession session) {
 
         SimpleValidator validator = LengthValidator.INSTANCE;
 
@@ -229,7 +271,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateValidatorConfigMultipleOptionsInvalidValues() {
+    @ModelTest
+    public void validateValidatorConfigMultipleOptionsInvalidValues(KeycloakSession session) {
 
         SimpleValidator validator = LengthValidator.INSTANCE;
 
@@ -253,7 +296,8 @@ public class ValidatorTest {
     }
 
     @Test
-    public void validateValidatorConfigViaValidatorFactory() {
+    @ModelTest
+    public void validateValidatorConfigViaValidatorFactory(KeycloakSession session) {
 
         Map<String, Object> config = new HashMap<>();
         config.put("min", "a");
@@ -275,15 +319,16 @@ public class ValidatorTest {
     }
 
     @Test
-    public void nestedValidation() {
+    @ModelTest
+    public void nestedValidation(KeycloakSession session) {
 
         Assert.assertTrue(MockAddressValidator.INSTANCE.validate(
                 new MockAddress("4848 Arcu St.", "Saint-Maur-des-Fossés", "02206", "Germany")
-                , "address").isValid());
+                , "address", new ValidationContext(session)).isValid());
 
         ValidationResult result = MockAddressValidator.INSTANCE.validate(
                 new MockAddress("", "Saint-Maur-des-Fossés", null, "Germany")
-                , "address").toResult();
+                , "address", new ValidationContext(session)).toResult();
         Assert.assertFalse(result.isValid());
         Assert.assertEquals(2, result.getErrors().size());
 
