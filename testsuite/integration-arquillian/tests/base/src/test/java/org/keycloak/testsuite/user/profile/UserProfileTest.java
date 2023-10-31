@@ -1665,4 +1665,44 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertNull(user.getEmail());
         assertEquals(upAttributes.getFirstValue(UserModel.FIRST_NAME), attributes.get(UserModel.FIRST_NAME).get(0));
     }
+
+    @Test
+    public void testRemoveOptionalAttributesFromDefaultConfigIfNotSet() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRemoveOptionalAttributesFromDefaultConfigIfNotSet);
+    }
+
+    private static void testRemoveOptionalAttributesFromDefaultConfigIfNotSet(KeycloakSession session) throws IOException {
+        UPConfig config = new UPConfig();
+        UPAttribute attribute = new UPAttribute();
+
+        attribute.setName("foo");
+
+        config.addAttribute(attribute);
+
+        UserProfileProvider provider = getUserProfileProvider(session);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("foo", "foo");
+
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        UserModel user = profile.create();
+
+        assertFalse(profile.getAttributes().contains(UserModel.FIRST_NAME));
+        assertFalse(profile.getAttributes().contains(UserModel.LAST_NAME));
+
+        UPAttribute firstName = new UPAttribute();
+        firstName.setName(UserModel.FIRST_NAME);
+        config.addAttribute(firstName);
+        UPAttribute lastName = new UPAttribute();
+        lastName.setName(UserModel.LAST_NAME);
+        config.addAttribute(lastName);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        assertTrue(profile.getAttributes().contains(UserModel.FIRST_NAME));
+        assertTrue(profile.getAttributes().contains(UserModel.LAST_NAME));
+    }
 }
