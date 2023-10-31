@@ -27,7 +27,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
@@ -38,6 +37,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +52,8 @@ import javax.security.auth.x500.X500Principal;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class FileTruststoreProviderFactory implements TruststoreProviderFactory {
+
+    private static final String PKCS12 = "PKCS12";
 
     private static final Logger log = Logger.getLogger(FileTruststoreProviderFactory.class);
 
@@ -74,6 +76,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         String pass = config.get("password");
         String policy = config.get("hostname-verification-policy");
         String configuredType = config.get("type");
+        boolean includeDefault = config.getBoolean("include-default", Boolean.FALSE);
+        String[] additionalFiles = config.getArray("additional-files");
 
         // if "truststore" . "file" is not configured then it is disabled
         if (storepath == null && pass == null && policy == null) {
@@ -91,10 +95,12 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         }
 
         String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
-        try {
+
+        if ("PEM".equals(configuredType)) {
+            truststore = createPkcs12KeyStore();
+            mergePem(truststore, storepath);
+        } else {
             truststore = loadStore(storepath, type, pass == null ? null :pass.toCharArray());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize TruststoreProviderFactory: " + new File(storepath).getAbsolutePath() + ", truststore type: " + type, e);
         }
         if (policy == null) {
             verificationPolicy = HostnameVerificationPolicy.WILDCARD;
@@ -106,6 +112,29 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
 
+        if (includeDefault) {
+            truststore = ensureTrustStoreIsWritable(storepath, truststore);
+            File defaultTrustStore = getDefaultTrustStoreFile();
+            if (defaultTrustStore.exists()) {
+                String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", KeyStore.getDefaultType());
+                String path = defaultTrustStore.getAbsolutePath();
+                mergeTrustStore(truststore, path, loadStore(path, trustStoreType, null));
+            } else {
+                log.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore, type);
+            }
+        }
+
+        if (additionalFiles != null && additionalFiles.length > 0) {
+            truststore = ensureTrustStoreIsWritable(storepath, truststore);
+            for (String file : additionalFiles) {
+                if (file.endsWith(".p12") || file.endsWith(".pfx")) {
+                    mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
+                } else {
+                    mergePem(truststore, file);
+                }
+            }
+        }
+
         TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
         provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts)
                 , Collections.unmodifiableMap(certsLoader.intermediateCerts));
@@ -113,17 +142,64 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
     }
 
-    private KeyStore loadStore(String path, String type, char[] password) throws Exception {
-        KeyStore ks = KeyStore.getInstance(type);
-        InputStream is = new FileInputStream(path);
+    private KeyStore createPkcs12KeyStore() {
         try {
+            KeyStore truststore = KeyStore.getInstance(PKCS12);
+            truststore.load(null, null);
+            return truststore;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize TruststoreProviderFactory: cannot create a PKCS12 keystore", e);
+        }
+    }
+
+    private KeyStore ensureTrustStoreIsWritable(String storepath, KeyStore truststore) {
+        if (Arrays.asList(PKCS12, "JKS").contains(truststore.getType().toUpperCase())) {
+            return truststore;
+        }
+        KeyStore newStore = createPkcs12KeyStore();
+        mergeTrustStore(newStore, storepath, truststore);
+        return newStore;
+    }
+
+    private static void mergePem(KeyStore truststore, String file) {
+        try (FileInputStream pemInputStream = new FileInputStream(file)) {
+            CertificateFactory certFactory = CertificateFactory.getInstance("X509");
+            while (pemInputStream.available() > 0) {
+                try {
+                    X509Certificate cert = (X509Certificate) certFactory.generateCertificate(pemInputStream);
+                    String alias = cert.getSubjectX500Principal().getName() + "_" + cert.getSerialNumber().toString(16);
+                    truststore.setCertificateEntry(alias, cert);
+                } catch (CertificateException e) {
+                    if (pemInputStream.available() > 0) {
+                        // any remaining input means there is an actual problem with the key contents or
+                        // file format
+                        throw e;
+                    }
+                    log.debugf(e, "The trailing entry for %s generated a certificate exception, assuming instead that the file ends with comments",  new File(file).getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize TruststoreProviderFactory, could not merge: " + new File(file).getAbsolutePath(), e);
+        }
+    }
+
+    private static void mergeTrustStore(KeyStore truststore, String file, KeyStore additionalStore) {
+        try {
+            for (String alias : Collections.list(additionalStore.aliases())) {
+                truststore.setCertificateEntry(alias, additionalStore.getCertificate(alias));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize TruststoreProviderFactory, could not merge: " + new File(file).getAbsolutePath(), e);
+        }
+    }
+
+    private static KeyStore loadStore(String path, String type, char[] password) {
+        try (InputStream is = new FileInputStream(path)) {
+            KeyStore ks = KeyStore.getInstance(type);
             ks.load(is, password);
             return ks;
-        } finally {
-            try {
-                is.close();
-            } catch (IOException ignored) {
-            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize TruststoreProviderFactory: " + new File(path).getAbsolutePath() + ", truststore type: " + type, e);
         }
     }
 
@@ -163,7 +239,17 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 .property()
                 .name("type")
                 .type("string")
-                .helpText("Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type.")
+                .helpText("Type of the truststore. If not provided, the type would be detected based on the truststore file extension or platform default type. PEM may be used to indicate a PEM file.")
+                .add()
+                .property()
+                .name("include-default")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .helpText("If the Java system default truststore should also be trusted.")
+                .add()
+                .property()
+                .name("additional-files")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .helpText("List of additional PEM or PKCS12 (.p12 or .pfx) files to be trusted.")
                 .add()
                 .build();
     }
@@ -243,4 +329,18 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             return false;
         }
     }
+
+    static File getDefaultTrustStoreFile() {
+        String trustStorePath = System.getProperty("javax.net.ssl.trustStore");
+        if (trustStorePath != null) {
+          return new File(trustStorePath);
+        }
+        String securityDirectory = System.getProperty("java.home") + File.separator + "lib" + File.separator + "security"
+                + File.separator;
+        File jssecacertsFile = new File(securityDirectory + "jssecacerts");
+        if (jssecacertsFile.exists() && jssecacertsFile.isFile()) {
+          return jssecacertsFile;
+        }
+        return new File(securityDirectory + "cacerts");
+      }
 }
