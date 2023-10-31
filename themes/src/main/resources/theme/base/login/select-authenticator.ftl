@@ -15,7 +15,7 @@
         <form id="kc-select-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcSelectAuthListClass!}">
                 <#list auth.authenticationSelections as authenticationSelection>
-                    <div class="${properties.kcSelectAuthListItemClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')">
+                    <button class="${properties.kcSelectAuthListItemClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')">
 
                         <div class="${properties.kcSelectAuthListItemIconClass!}">
                             <i class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
@@ -32,7 +32,7 @@
                         <div class="${properties.kcSelectAuthListItemArrowClass!}">
                             <i class="${properties.kcSelectAuthListItemArrowIconClass!}"></i>
                         </div>
-                    </div>
+                    </button>
                 </#list>
                 <input type="hidden" id="authexec-hidden-input" name="authenticationExecution" />
             </div>

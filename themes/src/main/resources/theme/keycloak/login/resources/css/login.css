@@ -465,6 +465,13 @@ ul#kc-totp-supported-apps {
     padding-top: 1rem;
     padding-bottom: 1rem;
     cursor: pointer;
+    text-align: left;
+    align-items: unset;
+    background-color: unset;
+    border-right: unset;
+    border-bottom: unset;
+    border-left: unset;
+    width: 100%;
 }
 
 .select-auth-box-parent:hover{
