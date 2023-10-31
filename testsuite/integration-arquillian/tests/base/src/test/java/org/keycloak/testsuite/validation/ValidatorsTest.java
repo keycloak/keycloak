@@ -46,6 +46,7 @@ import org.keycloak.validate.Validators;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
+import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
 
 public class ValidatorsTest extends AbstractKeycloakTest {
@@ -57,7 +58,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
     @Test
     public void simpleValidation() {
 
-        Validator validator = SimpleValidators.notEmptyValidator();
+        Validator validator = BuiltinValidators.notEmptyValidator();
 
         Assert.assertTrue(validator.validate("a").isValid());
         Assert.assertFalse(validator.validate("").isValid());
@@ -67,7 +68,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
     @ModelTest
     public void simpleValidationWithContext(KeycloakSession session) {
 
-        Validator validator = SimpleValidators.lengthValidator();
+        Validator validator = BuiltinValidators.lengthValidator();
 
         ValidationContext context = new ValidationContext(session);
         validator.validate("a", "username", context);
@@ -82,7 +83,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
 
         ValidationContext context = new ValidationContext(session);
 
-        ValidationResult result = SimpleValidators.lengthValidator().validate("a", "username", context).toResult();
+        ValidationResult result = BuiltinValidators.lengthValidator().validate("a", "username", context).toResult();
 
         Assert.assertTrue(result.isValid());
     }
@@ -139,11 +140,11 @@ public class ValidatorsTest extends AbstractKeycloakTest {
     public void acceptOnError() {
 
         AtomicBoolean bool1 = new AtomicBoolean();
-        SimpleValidators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
+        BuiltinValidators.notEmptyValidator().validate("a").toResult().ifNotValidAccept(r -> bool1.set(true));
         Assert.assertFalse(bool1.get());
 
         AtomicBoolean bool2 = new AtomicBoolean();
-        SimpleValidators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
+        BuiltinValidators.notEmptyValidator().validate("").toResult().ifNotValidAccept(r -> bool2.set(true));
         Assert.assertTrue(bool2.get());
     }
 
@@ -186,8 +187,8 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         String input = "aaa";
         String inputHint = "username";
 
-        SimpleValidators.lengthValidator().validate(input, inputHint, context);
-        SimpleValidators.notEmptyValidator().validate(input, inputHint, context);
+        BuiltinValidators.lengthValidator().validate(input, inputHint, context);
+        BuiltinValidators.notEmptyValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -203,8 +204,8 @@ public class ValidatorsTest extends AbstractKeycloakTest {
         String input = " ";
         String inputHint = "username";
 
-        SimpleValidators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap(LengthValidator.KEY_MIN, 1)));
-        SimpleValidators.notBlankValidator().validate(input, inputHint, context);
+        BuiltinValidators.lengthValidator().validate(input, inputHint, context, configFromMap(Collections.singletonMap(LengthValidator.KEY_MIN, 1)));
+        BuiltinValidators.notBlankValidator().validate(input, inputHint, context);
 
         ValidationResult result = context.toResult();
 
@@ -239,7 +240,7 @@ public class ValidatorsTest extends AbstractKeycloakTest {
     @Test
     @ModelTest
     public void validateEmailValidator(KeycloakSession session) {
-        SimpleValidator validator = SimpleValidators.emailValidator();
+        SimpleValidator validator = BuiltinValidators.emailValidator();
 
         Assert.assertTrue(validator.validateConfig(session, null).isValid());
         Assert.assertTrue(validator.validateConfig(session, ValidatorConfig.EMPTY).isValid());

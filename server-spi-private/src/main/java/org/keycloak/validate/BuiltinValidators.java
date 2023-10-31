@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.validation;
+package org.keycloak.validate;
 
 import org.keycloak.validate.validators.DoubleValidator;
 import org.keycloak.validate.validators.EmailValidator;
@@ -34,7 +34,7 @@ import org.keycloak.validate.validators.ValidatorConfigValidator;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SimpleValidators {
+public class BuiltinValidators {
 
     public static NotBlankValidator notBlankValidator() {
         return NotBlankValidator.INSTANCE;
