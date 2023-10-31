@@ -17,12 +17,14 @@
 
 package org.keycloak.representations.account;
 
+import java.util.Map;
+
 public class ConsentScopeRepresentation {
 
     private String id;
-
     private String name;
-
+    private String description;
+    private String protocol;
     private String displayTest;
 
     public ConsentScopeRepresentation() {
@@ -32,6 +34,13 @@ public class ConsentScopeRepresentation {
         this.id = id;
         this.name = name;
         this.displayTest = displayTest;
+    }
+
+    public ConsentScopeRepresentation(String id, String name, String description, String protocol) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.protocol = protocol;
     }
 
     public String getId() {
@@ -48,6 +57,22 @@ public class ConsentScopeRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public String getDisplayTest() {
