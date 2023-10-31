@@ -17,6 +17,7 @@
 package org.keycloak.userprofile.validator;
 
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +31,6 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.NotBlankValidator;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
@@ -62,7 +62,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         List<String> values = (List<String>) input;
 
         if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
-            if (currentValue.isEmpty() && !NotBlankValidator.INSTANCE.validate(values).isValid()) {
+            if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
                 return context;
             }
 
