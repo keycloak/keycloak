@@ -52,13 +52,13 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPAttributeRequired;
-import org.keycloak.userprofile.config.UPAttributeSelector;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPAttributeSelector;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
@@ -214,11 +214,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    public String getConfiguration() {
+    public UPConfig getConfiguration() {
         RealmModel realm = session.getContext().getRealm();
 
         if (!isEnabled(realm)) {
-            return defaultRawConfig;
+            return getParsedConfig(defaultRawConfig);
         }
 
         Optional<ComponentModel> component = getComponentModel();
@@ -227,13 +227,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             String cfg = getConfigJsonFromComponentModel(component.get());
 
             if (isBlank(cfg)) {
-                return defaultRawConfig;
+                return getParsedConfig(defaultRawConfig);
             }
 
-            return cfg;
+            return getParsedConfig(cfg);
         }
 
-        return defaultRawConfig;
+        return getParsedConfig(defaultRawConfig);
     }
 
     @Override
@@ -241,9 +241,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         RealmModel realm = session.getContext().getRealm();
         Optional<ComponentModel> optionalComponent = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
 
-        if (isBlank(configuration) && !optionalComponent.isPresent()) {
-            return;
-        }
+        // Avoid creating componentModel and then removing it right away
+        if (!optionalComponent.isPresent() && isBlank(configuration)) return;
 
         ComponentModel component = optionalComponent.isPresent() ? optionalComponent.get() : createComponentModel();
 

@@ -7,7 +7,7 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 import java.util.Map;
 

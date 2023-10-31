@@ -55,8 +55,8 @@ import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.Validators;
 
@@ -81,8 +81,7 @@ public class UserProfileResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Get the configuration for the user profile")
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
-    public String getConfiguration() {
+    public UPConfig getConfiguration() {
         auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
@@ -133,13 +132,7 @@ public class UserProfileResource {
                 .collect(Collectors.toList());
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UPConfig config;
-
-        try {
-            config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to parse configuration", cause);
-        }
+        UPConfig config = provider.getConfiguration();
 
         List<UserProfileAttributeGroupMetadata> groups = config.getGroups().stream().map(new Function<UPGroup, UserProfileAttributeGroupMetadata>() {
             @Override

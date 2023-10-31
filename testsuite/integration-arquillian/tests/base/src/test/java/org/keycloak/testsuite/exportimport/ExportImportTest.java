@@ -40,14 +40,18 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -270,7 +274,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testExportUserProfileConfig() {
+    public void testExportUserProfileConfig() throws IOException {
         //Enable user profile on realm
         RealmResource realmRes = adminClient.realm(TEST_REALM);
         RealmRepresentation realmRep = realmRes.toRepresentation();
@@ -304,7 +308,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());
         assertThat(config.size(), equalTo(1));
-        assertThat(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), equalTo(VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT));
+        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT, UPConfig.class);
     }
 
     @Test

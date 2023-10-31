@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -56,11 +58,13 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
+import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 
 /**
@@ -1150,7 +1154,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testConfigurationRemainsAfterReset() {
+    public void testConfigurationRemainsAfterReset() throws IOException {
         String customConfig = "{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
@@ -1165,7 +1169,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         enableDynamicUserProfile(realm);
         testRealm().update(realm);
 
-        Assert.assertEquals(customConfig, realmRes.users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(customConfig, realmRes.users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
@@ -1213,10 +1217,11 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
 
     public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
-        try (Response r = testRealm.users().userProfile().update(configuration)) {
-            if (r.getStatus() != 200) {
-                Assert.fail("UserProfile Configuration not set due to error: " + r.readEntity(String.class));
-            }
+        try {
+            UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
+            testRealm.users().userProfile().update(config);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to read configuration", ioe);
         }
     }
 
