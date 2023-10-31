@@ -54,6 +54,12 @@ const INPUT_TYPES = [
   "multi-input",
 ] as const;
 
+const MULTI_VALUED_INPUT_TYPES: readonly string[] = [
+  "multiselect",
+  "multiselect-checkboxes",
+  "multi-input",
+] satisfies InputType[];
+
 export type InputType = (typeof INPUT_TYPES)[number];
 
 export type UserProfileFieldProps = {
@@ -182,8 +188,6 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
   );
 };
 
-const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
-
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
   value: string | string[],
@@ -195,12 +199,19 @@ function determineInputType(
 
   const inputType = attribute.annotations?.inputType;
 
-  // If the attribute has no valid input type, it is always multi-valued.
+  // If the attribute has no valid input type, fall back to a default input type.
+  // Depending on the length of the value, we either use a 'multi-input' or a 'text' input type so all values are always visible.
   if (!isValidInputType(inputType)) {
-    return DEFAULT_INPUT_TYPE;
+    return Array.isArray(value) && value.length > 1 ? "multi-input" : "text";
   }
 
-  // An attribute with multiple values is always multi-valued, even if an input type is provided.
+  // If the input type is multi-valued, we don't have to do any further checks, as we know all values will always show up.
+  if (MULTI_VALUED_INPUT_TYPES.includes(inputType)) {
+    return inputType;
+  }
+
+  // An attribute with multiple values is always as a 'multi-input', even if a singular input type is provided.
+  // This is done so that the user can edit the attribute without accidentally truncating the other values that would otherwise be hidden.
   if (Array.isArray(value) && value.length > 1) {
     return "multi-input";
   }
