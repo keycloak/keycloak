@@ -39,9 +39,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.util.JsonSerialization;
 
 @EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
@@ -58,7 +58,7 @@ public class UserTestWithUserProfile extends UserTest {
         realm.update(realmRep);
         assertAdminEvents.poll();
         VerifyProfileTest.setUserProfileConfiguration(realm, null);
-        UPConfig upConfig = JsonSerialization.readValue(realm.users().userProfile().getConfiguration(), UPConfig.class);
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
 
         for (String name : managedAttributes) {
             upConfig.addAttribute(createAttributeMetadata(name));

@@ -35,6 +35,8 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
@@ -107,7 +109,9 @@ public class UPConfigUtils {
 
     private static List<String> validateAttributes(KeycloakSession session, UPConfig config) {
         List<String> errors = new ArrayList<>();
-        Set<String> groups = config.getGroups().stream().map(g -> g.getName()).collect(Collectors.toSet()); 
+        Set<String> groups = config.getGroups().stream()
+                .map(g -> g.getName())
+                .collect(Collectors.toSet());
         
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
