@@ -1,10 +1,25 @@
+import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { FieldPath } from "react-hook-form";
-import {
-  FieldError,
-  UserFormFields,
-  UserProfileAttributeMetadata,
-  UserProfileError,
-} from "./userProfileConfig";
+
+export type KeyValueType = { key: string; value: string };
+
+export type UserFormFields = Omit<
+  UserRepresentation,
+  "attributes" | "userProfileMetadata"
+> & {
+  attributes?: KeyValueType[] | Record<string, string | string[]>;
+};
+
+type FieldError = {
+  field: string;
+  errorMessage: string;
+  params?: string[];
+};
+
+export type UserProfileError = {
+  responseData?: { errors?: FieldError[] };
+};
 
 export const isBundleKey = (displayName?: string) =>
   displayName?.includes("${");

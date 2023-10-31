@@ -1,14 +1,12 @@
+import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { FormGroup, InputGroup } from "@patternfly/react-core";
 import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { HelpItem } from "../controls/HelpItem";
 import {
-  UserFormFields,
-  UserProfileAttributeMetadata,
-} from "./userProfileConfig";
-import {
   TranslationFunction,
+  UserFormFields,
   fieldName,
   isRequiredAttribute,
   label,

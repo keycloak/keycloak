@@ -1,3 +1,4 @@
+import type { UserFormFields } from "ui-shared";
 import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
 import { parseResponse } from "./parse-response";
@@ -36,9 +37,7 @@ export async function getSupportedLocales({
   return parseResponse<string[]>(response);
 }
 
-export async function savePersonalInfo(
-  info: UserRepresentation,
-): Promise<void> {
+export async function savePersonalInfo(info: UserFormFields): Promise<void> {
   const response = await request("/", { body: info, method: "POST" });
   if (!response.ok) {
     const { errors } = await response.json();

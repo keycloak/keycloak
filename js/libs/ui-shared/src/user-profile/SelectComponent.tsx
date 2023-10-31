@@ -3,8 +3,12 @@ import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
 import { Options, UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { UserFormFields } from "./userProfileConfig";
-import { fieldName, isRequiredAttribute, unWrap } from "./utils";
+import {
+  UserFormFields,
+  fieldName,
+  isRequiredAttribute,
+  unWrap,
+} from "./utils";
 
 type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = (props: UserProfileFieldProps) => {

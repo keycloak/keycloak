@@ -1,3 +1,8 @@
+import {
+  UserProfileAttributeGroupMetadata,
+  UserProfileAttributeMetadata,
+  UserProfileMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
 import { useMemo } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
@@ -9,12 +14,11 @@ import { SelectComponent } from "./SelectComponent";
 import { TextAreaComponent } from "./TextAreaComponent";
 import { TextComponent } from "./TextComponent";
 import {
+  TranslationFunction,
   UserFormFields,
-  UserProfileAttributeGroupMetadata,
-  UserProfileAttributeMetadata,
-  UserProfileMetadata,
-} from "./userProfileConfig";
-import { TranslationFunction, fieldName, isRootAttribute } from "./utils";
+  fieldName,
+  isRootAttribute,
+} from "./utils";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -181,7 +185,10 @@ const FormField = ({
   const value = form.watch(
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
-  const inputType = determineInputType(attribute, value);
+  const inputType = useMemo(
+    () => determineInputType(attribute, value),
+    [attribute],
+  );
   const Component = FIELDS[inputType];
 
   if (attribute.name === "locale")
@@ -217,18 +224,22 @@ function determineInputType(
 
   const inputType = attribute.annotations?.inputType;
 
-  // If the attribute has no valid input type, it is always multi-valued.
-  if (!isValidInputType(inputType)) {
-    return DEFAULT_INPUT_TYPE;
+  // if we have an valid input type use that to render
+  if (isValidInputType(inputType)) {
+    return inputType;
   }
 
-  // An attribute with multiple values is always multi-valued, even if an input type is provided.
-  if (Array.isArray(value) && value.length > 1) {
+  // If the attribute has no valid input type and it's multi value use "multi-input"
+  if (isMultiValue(value)) {
     return "multi-input";
   }
 
-  return inputType;
+  // In all other cases use the default
+  return DEFAULT_INPUT_TYPE;
 }
 
 const isValidInputType = (value: unknown): value is InputType =>
   typeof value === "string" && value in FIELDS;
+
+const isMultiValue = (value: unknown): boolean =>
+  Array.isArray(value) && value.length > 1;

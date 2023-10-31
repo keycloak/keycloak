@@ -427,6 +427,9 @@ importers:
 
   libs/ui-shared:
     dependencies:
+      '@keycloak/keycloak-admin-client':
+        specifier: workspace:*
+        version: link:../keycloak-admin-client
       '@patternfly/react-core':
         specifier: ^4.276.8
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)

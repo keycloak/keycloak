@@ -19,6 +19,9 @@
   "wireit": {
     "build": {
       "command": "vite build",
+      "dependencies": [
+        "../keycloak-admin-client:build"
+      ],
       "files": [
         "src/**",
         "package.json",
@@ -36,6 +39,7 @@
   "dependencies": {
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
+    "@keycloak/keycloak-admin-client": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

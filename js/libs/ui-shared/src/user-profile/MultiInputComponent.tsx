@@ -9,9 +9,8 @@ import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useEffect, useMemo } from "react";
 import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
 import { UserProfileFieldProps } from "./UserProfileFields";
-import { TranslationFunction, fieldName, label } from "./utils";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { UserFormFields } from "./userProfileConfig";
+import { TranslationFunction, UserFormFields, fieldName, label } from "./utils";
 
 export const MultiInputComponent = ({
   t,

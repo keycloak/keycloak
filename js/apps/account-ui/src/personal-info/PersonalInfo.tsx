@@ -11,6 +11,7 @@ import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import type { UserFormFields } from "ui-shared";
 import {
   UserProfileFields,
   setUserProfileServerError,
@@ -21,10 +22,7 @@ import {
   getSupportedLocales,
   savePersonalInfo,
 } from "../api/methods";
-import {
-  UserProfileMetadata,
-  UserRepresentation,
-} from "../api/representations";
+import { UserProfileMetadata } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
@@ -36,7 +34,7 @@ const PersonalInfo = () => {
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
-  const form = useForm<UserRepresentation>({ mode: "onChange" });
+  const form = useForm<UserFormFields>({ mode: "onChange" });
   const { handleSubmit, reset, setError } = form;
   const { addAlert, addError } = useAlerts();
 
@@ -53,7 +51,7 @@ const PersonalInfo = () => {
     },
   );
 
-  const onSubmit = async (user: UserRepresentation) => {
+  const onSubmit = async (user: UserFormFields) => {
     try {
       await savePersonalInfo(user);
       keycloak?.updateToken();
