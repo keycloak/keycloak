@@ -6,6 +6,12 @@
                 document.getElementById('authexec-hidden-input').value = authExecId;
                 document.getElementById('kc-select-credential-form').submit();
             }
+            function onKeyDown(event, authExecId) {
+                event.preventDefault();
+                if (event.key === 'Enter' || event.key === ' ') {
+                    fillAndSubmit(authExecId)
+                }
+            }
         </script>
         <#if section = "header">
             ${msg("loginChooseAuthenticator")}
@@ -15,7 +21,7 @@
         <form id="kc-select-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcSelectAuthListClass!}">
                 <#list auth.authenticationSelections as authenticationSelection>
-                    <div class="${properties.kcSelectAuthListItemClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')">
+                    <div class="${properties.kcSelectAuthListItemClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')" role="button" tabIndex="0" onKeyDown="onKeyDown(event, '${authenticationSelection.authExecId}')">
 
                         <div class="${properties.kcSelectAuthListItemIconClass!}">
                             <i class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
