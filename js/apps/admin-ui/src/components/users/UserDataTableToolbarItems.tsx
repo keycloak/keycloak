@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   ButtonVariant,

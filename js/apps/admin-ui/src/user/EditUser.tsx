@@ -126,7 +126,7 @@ export default function EditUser() {
     } catch (error) {
       if (isUserProfileError(error)) {
         setUserProfileServerError(
-          error.responseData.errors,
+          error.responseData!.errors,
           form.setError,
           (key, param) => t(key as string, { ...param }),
         );
