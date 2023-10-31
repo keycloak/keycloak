@@ -46,6 +46,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
@@ -256,7 +257,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     @Override
-    public String getConfiguration() {
+    public UPConfig getConfiguration() {
         return null;
     }
 

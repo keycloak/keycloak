@@ -41,10 +41,10 @@ import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPGroup;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.testsuite.util.JsonTestUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -62,17 +62,17 @@ public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Test
     public void testDefaultConfigIfNoneSet() {
-        assertEquals(readDefaultConfig(), testRealm().users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(readDefaultConfig(), testRealm().users().userProfile().getConfiguration());
     }
 
     @Test
     public void testSetDefaultConfig() {
-        String rawConfig = "{\"attributes\": [{\"name\": \"test\"}]}";
+        UPConfig config = new UPConfig().addAttribute(new UPAttribute("test"));
         UserProfileResource userProfile = testRealm().users().userProfile();
-        userProfile.update(rawConfig);
+        userProfile.update(config);
         getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));
 
-        assertEquals(rawConfig, userProfile.getConfiguration());
+        JsonTestUtils.assertJsonEquals(config, userProfile.getConfiguration());
     }
 
     @Test
@@ -173,8 +173,8 @@ public class UserProfileAdminTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testGroupsMetadata() throws IOException {
-        UPConfig config = JsonSerialization.readValue(testRealm().users().userProfile().getConfiguration(), UPConfig.class);
+    public void testGroupsMetadata() {
+        UPConfig config = testRealm().users().userProfile().getConfiguration();
 
         for (int i = 0; i < 3; i++) {
             UPGroup group = new UPGroup();
@@ -188,7 +188,7 @@ public class UserProfileAdminTest extends AbstractAdminTest {
         UPAttribute firstName = config.getAttribute(UserModel.FIRST_NAME);
         firstName.setGroup(config.getGroups().get(0).getName());
         UserProfileResource userProfile = testRealm().users().userProfile();
-        userProfile.update(JsonSerialization.writeValueAsString(config));
+        userProfile.update(config);
         getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));
 
         UserProfileMetadata metadata = testRealm().users().userProfile().getMetadata();

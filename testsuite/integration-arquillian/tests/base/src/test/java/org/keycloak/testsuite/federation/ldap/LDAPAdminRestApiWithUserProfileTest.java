@@ -18,13 +18,10 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.disableDynamicUserProfile;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.setUserProfileConfiguration;
-import static org.keycloak.util.JsonSerialization.readValue;
 import static org.keycloak.util.JsonSerialization.writeValueAsString;
 
 import jakarta.ws.rs.BadRequestException;
@@ -39,7 +36,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
@@ -47,9 +43,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -101,7 +97,7 @@ public class LDAPAdminRestApiWithUserProfileTest extends LDAPAdminRestApiTest {
 
         testRealm().update(realmRep);
 
-        UPConfig upConfig = readValue(testRealm().users().userProfile().getConfiguration(), UPConfig.class);
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
         UPAttribute attribute = new UPAttribute();
 
         attribute.setName(LDAPConstants.LDAP_ID);

@@ -30,7 +30,6 @@ import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,11 +56,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPAttributeRequired;
-import org.keycloak.userprofile.config.UPAttributeSelector;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPAttributeSelector;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.userprofile.Attributes;
@@ -235,7 +234,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             realm.setRegistrationEmailAsUsername(false);
         }
 
-        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        UPConfig config = provider.getConfiguration();
 
         UPAttribute email = config.getAttribute("email");
 
@@ -439,7 +438,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     private static void testCreateAndUpdateUser(KeycloakSession session) throws IOException {
         UserProfileProvider provider = getUserProfileProvider(session);
 
-        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        UPConfig config = provider.getConfiguration();
         UPAttribute attribute = new UPAttribute();
         attribute.setName("address");
         UPAttributePermissions permissions = new UPAttributePermissions();
@@ -895,7 +894,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.hasError(Messages.INVALID_USERNAME));
         }
 
-        UPConfig config = UPConfigUtils.readConfig(new ByteArrayInputStream(provider.getConfiguration().getBytes()));
+        UPConfig config = provider.getConfiguration();
 
         for (UPAttribute attribute : config.getAttributes()) {
             if (UserModel.USERNAME.equals(attribute.getName())) {
@@ -1509,7 +1508,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testUsernameAndEmailPermissionNotSetIfEmpty(KeycloakSession session) throws IOException {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+        UPConfig config = provider.getConfiguration();
 
         for (UPAttribute attribute : config.getAttributes()) {
             if (attribute.getName().equals(UserModel.USERNAME) || attribute.getName().equals(UserModel.EMAIL)) {

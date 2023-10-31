@@ -37,12 +37,12 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPAttributeRequired;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.representations.userprofile.config.UPGroup;
 
 /**
  * Unit test for {@link UPConfigUtils} functionality

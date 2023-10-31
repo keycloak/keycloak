@@ -22,6 +22,7 @@ import java.util.Map;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 /**
  * <p>The provider responsible for creating {@link UserProfile} instances.
@@ -70,13 +71,12 @@ public interface UserProfileProvider extends Provider {
     UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user);
 
     /**
-     * Get current UserProfile configuration. JSON formatted file is expected, but
-     * depends on the implementation.
+     * Get current UserProfile configuration.
      *
      * @return current UserProfile configuration
      * @see #setConfiguration(String)
      */
-    String getConfiguration();
+    UPConfig getConfiguration();
 
     /**
      * Set new UserProfile configuration. It is persisted inside of the provider.
