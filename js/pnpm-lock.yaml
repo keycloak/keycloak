@@ -422,8 +422,8 @@ importers:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.52.0)(typescript@5.2.2)(vite@4.5.0)
       vite-plugin-dts:
-        specifier: ^3.6.2
-        version: 3.6.2(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0)
+        specifier: ^3.6.3
+        version: 3.6.3(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0)
 
   libs/ui-shared:
     dependencies:
@@ -462,8 +462,8 @@ importers:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.52.0)(typescript@5.2.2)(vite@4.5.0)
       vite-plugin-dts:
-        specifier: ^3.6.2
-        version: 3.6.2(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0)
+        specifier: ^3.6.3
+        version: 3.6.3(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0)
       vitest:
         specifier: ^0.34.6
         version: 0.34.6
@@ -7113,8 +7113,8 @@ packages:
       vscode-uri: 3.0.7
     dev: true
 
-  /vite-plugin-dts@3.6.2(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0):
-    resolution: {integrity: sha512-P2o3IJtQLJZP1aSbiAzQM35QWOucrEH7ZQlfE9cWZYetTgP0apEgd/ZxaNQGPBCWEuTYNjWWHUW9MyIlweRiRQ==}
+  /vite-plugin-dts@3.6.3(@types/node@20.8.9)(rollup@4.1.5)(typescript@5.2.2)(vite@4.5.0):
+    resolution: {integrity: sha512-NyRvgobl15rYj65coi/gH7UAEH+CpSjh539DbGb40DfOTZSvDLNYTzc8CK4460W+LqXuMK7+U3JAxRB3ksrNPw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       typescript: '*'
