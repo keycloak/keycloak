@@ -82,6 +82,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
@@ -965,7 +966,7 @@ public class LoginActionsService {
         UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.addConsent(session, realm, user, grantedConsent);
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)

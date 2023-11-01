@@ -55,6 +55,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -271,7 +272,7 @@ public class CibaGrantType {
         UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.addConsent(session, realm, user, grantedConsent);
             if (logger.isTraceEnabled()) {
                 grantedConsent.getGrantedClientScopes().forEach(i->logger.tracef("CIBA Grant :: Consent granted. %s", i.getName()));
             }

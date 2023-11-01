@@ -20,7 +20,9 @@ package org.keycloak.services.managers;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -47,5 +49,18 @@ public class UserConsentManager {
         }
 
         return revokedConsent || revokedOfflineToken;
+    }
+
+    /**
+     * Add user consent for the user.
+     *
+     * @param realm a reference to the realm
+     * @param userId id of the user
+     * @param consent all details corresponding to the granted consent
+     *
+     * @throws ModelException If there is no user with userId
+     */
+    public static void addConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
+        session.users().addConsent(realm, user.getId(), consent);
     }
 }

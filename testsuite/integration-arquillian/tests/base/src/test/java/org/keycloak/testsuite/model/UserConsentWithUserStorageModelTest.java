@@ -35,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -124,7 +125,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
 
             UserConsentModel johnFooGrant = new UserConsentModel(fooClient);
             johnFooGrant.addGrantedClientScope(fooScope);
-            realmManager.getSession().users().addConsent(realm, john.getId(), johnFooGrant);
+            UserConsentManager.addConsent(realmManager.getSession(), realm, john, johnFooGrant);
 
             UserConsentModel johnBarGrant = new UserConsentModel(barClient);
             johnBarGrant.addGrantedClientScope(barScope);
@@ -136,11 +137,11 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             } catch (ModelException expected) {
             }
 
-            realmManager.getSession().users().addConsent(realm, john.getId(), johnBarGrant);
+            UserConsentManager.addConsent(realmManager.getSession(), realm, john, johnBarGrant);
 
             UserConsentModel maryFooGrant = new UserConsentModel(fooClient);
             maryFooGrant.addGrantedClientScope(fooScope);
-            realmManager.getSession().users().addConsent(realm, mary.getId(), maryFooGrant);
+            UserConsentManager.addConsent(realmManager.getSession(), realm, mary, maryFooGrant);
 
             ClientStorageProviderModel clientStorage = new ClientStorageProviderModel();
             clientStorage.setProviderId(HardcodedClientStorageProviderFactory.PROVIDER_ID);
@@ -155,7 +156,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             Assert.assertNotNull(hardcodedClient);
 
             UserConsentModel maryHardcodedGrant = new UserConsentModel(hardcodedClient);
-            realmManager.getSession().users().addConsent(realm, mary.getId(), maryHardcodedGrant);
+            UserConsentManager.addConsent(realmManager.getSession(), realm, mary, maryHardcodedGrant);
         });
     }
 

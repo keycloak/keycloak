@@ -404,7 +404,7 @@ public class AccountRestService {
         try {
             UserConsentModel grantedConsent = createConsent(client, consent);
             if (session.users().getConsentByClient(realm, user.getId(), client.getId()) == null) {
-                session.users().addConsent(realm, user.getId(), grantedConsent);
+                UserConsentManager.addConsent(session, realm, user, grantedConsent);
                 event.event(EventType.GRANT_CONSENT);
             } else {
                 session.users().updateConsent(realm, user.getId(), grantedConsent);
