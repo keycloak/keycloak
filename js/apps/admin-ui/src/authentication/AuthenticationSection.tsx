@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
@@ -101,7 +102,7 @@ export default function AuthenticationSection() {
   ]);
 
   const loader = async () => {
-    const flowsRequest = await fetch(
+    const flowsRequest = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
