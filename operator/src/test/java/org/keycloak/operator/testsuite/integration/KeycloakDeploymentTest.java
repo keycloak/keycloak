@@ -107,7 +107,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
         Resource<Keycloak> keycloakResource = k8sclient.resources(Keycloak.class).withName(deploymentName);
         // expect no errors and not ready, which means we'll keep reconciling
-        Awaitility.await().untilAsserted(() -> {
+        Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             assertThat(stsResource.get()).isNotNull();
             Keycloak keycloak = keycloakResource.get();
             CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
