@@ -90,4 +90,17 @@ public class UserConsentManager {
         return session.users().getConsentsStream(realm, user.getId());
     }
 
+    /**
+     * Update client scopes in the stored user consent
+     *
+     * @param realm a reference to the realm
+     * @param user user. Must not be {@code null}
+     * @param consent new details of the user consent
+     *
+     * @throws ModelException when consent doesn't exist for the userId
+     */
+    public static void updateConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
+        session.users().updateConsent(realm, user.getId(), consent);
+    }
+
 }

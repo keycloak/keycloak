@@ -985,7 +985,7 @@ public class LoginActionsService {
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.updateConsent(session, realm, user, grantedConsent);
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

@@ -132,7 +132,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
 
             // Update should fail as grant doesn't yet exists
             try {
-                currentSession.users().updateConsent(realm, john.getId(), johnBarGrant);
+                UserConsentManager.updateConsent(currentSession, realm, john, johnBarGrant);
                 Assert.fail("Not expected to end here");
             } catch (ModelException expected) {
             }
@@ -257,7 +257,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             ClientScopeModel fooScope = KeycloakModelUtils.getClientScopeByName(realm, "foo");
             johnConsent.getGrantedClientScopes().remove(fooScope);
 
-            currentSession.users().updateConsent(realm, john.getId(), johnConsent);
+            UserConsentManager.updateConsent(currentSession, realm, john, johnConsent);
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionScopeRemoval2) -> {

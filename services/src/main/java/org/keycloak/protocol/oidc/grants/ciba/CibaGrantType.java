@@ -289,7 +289,7 @@ public class CibaGrantType {
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.updateConsent(session, realm, user, grantedConsent);
             if (logger.isTraceEnabled()) {
                 grantedConsent.getGrantedClientScopes().forEach(i->logger.tracef("CIBA Grant :: Consent updated. %s", i.getName()));
             }

@@ -407,7 +407,7 @@ public class AccountRestService {
                 UserConsentManager.addConsent(session, realm, user, grantedConsent);
                 event.event(EventType.GRANT_CONSENT);
             } else {
-                session.users().updateConsent(realm, user.getId(), grantedConsent);
+                UserConsentManager.updateConsent(session, realm, user, grantedConsent);
                 event.event(EventType.UPDATE_CONSENT);
             }
             event.detail(Details.GRANTED_CLIENT,client.getClientId());
