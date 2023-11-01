@@ -490,7 +490,7 @@ public class AccountRestService {
                 .collect(Collectors.toSet()));
 
         Map<String, UserConsentModel> consentModels = new HashMap<>();
-        clients.addAll(session.users().getConsentsStream(realm, user.getId())
+        clients.addAll(UserConsentManager.getConsentsStream(session, realm, user)
                 .peek(consent -> consentModels.put(consent.getClient().getClientId(), consent))
                 .map(UserConsentModel::getClient)
                 .collect(Collectors.toSet()));

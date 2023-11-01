@@ -216,11 +216,11 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             UserModel john = currentSessionACT.users().getUserByUsername(realm, "john");
             UserModel mary = currentSessionACT.users().getUserByUsername(realm, "mary");
 
-            Assert.assertEquals(2, currentSession.users().getConsentsStream(realm, john.getId()).count());
+            Assert.assertEquals(2, UserConsentManager.getConsentsStream(currentSession, realm, john).count());
 
             ClientModel hardcodedClient = currentSessionACT.clients().getClientByClientId(realm, "hardcoded-client");
 
-            List<UserConsentModel> maryConsents = currentSession.users().getConsentsStream(realm, mary.getId())
+            List<UserConsentModel> maryConsents = UserConsentManager.getConsentsStream(currentSession, realm, mary)
                     .collect(Collectors.toList());
             Assert.assertEquals(2, maryConsents.size());
             UserConsentModel maryConsent = maryConsents.get(0);
@@ -399,7 +399,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             Assert.assertNull(hardcodedClient);
 
             UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
-            Assert.assertEquals(1, currentSession.users().getConsentsStream(realm, mary.getId()).count());
+            Assert.assertEquals(1, UserConsentManager.getConsentsStream(currentSession, realm, mary).count());
         });
     }
 

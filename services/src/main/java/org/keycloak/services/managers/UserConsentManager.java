@@ -24,6 +24,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,7 +56,7 @@ public class UserConsentManager {
      * Add user consent for the user.
      *
      * @param realm a reference to the realm
-     * @param userId id of the user
+     * @param user user. Must not be {@code null}
      * @param consent all details corresponding to the granted consent
      *
      * @throws ModelException If there is no user with userId
@@ -68,7 +69,7 @@ public class UserConsentManager {
      * Returns UserConsentModel given by a user for the client with clientInternalId
      *
      * @param realm a reference to the realm
-     * @param userId id of the user
+     * @param user user. Must not be {@code null}
      * @param clientInternalId id of the client
      * @return consent given by the user to the client or {@code null} if no consent or user exists
      *
@@ -76,6 +77,17 @@ public class UserConsentManager {
      */
     public static UserConsentModel getConsentByClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
         return session.users().getConsentByClient(realm, user.getId(), clientInternalId);
+    }
+
+    /**
+     * Obtains the consents associated with the user
+     *
+     * @param realm a reference to the realm.
+     * @param user user. Must not be {@code null}
+     * @return a non-null {@link Stream} of consents associated with the user.
+     */
+    public static Stream<UserConsentModel> getConsentsStream(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().getConsentsStream(realm, user.getId());
     }
 
 }
