@@ -87,7 +87,7 @@ export interface UserProfileMetadata {
   attributes: UserProfileAttributeMetadata[];
 }
 
-export type UserRepresentation = {
+export type UserRepresentation = any & {
   userProfileMetadata: UserProfileMetadata;
 };
 

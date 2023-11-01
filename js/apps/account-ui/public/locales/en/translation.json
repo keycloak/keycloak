@@ -5,6 +5,7 @@
   "accountUpdatedError": "Could not update account due to validation errors",
   "accountUpdatedMessage": "Your account has been updated.",
   "add": "Add",
+  "addMultivaluedLabel": "Add {{fieldLabel}}",
   "aliasHelp": "Name of the configuration",
   "application": "Application",
   "applicationDetails": "Application details for {{clientId}}",

@@ -4,7 +4,7 @@ import {
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
-import { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 import { ScrollForm } from "../main";
 import { LocaleSelector } from "./LocaleSelector";
@@ -54,9 +54,7 @@ export type UserProfileFieldProps = {
   form: UseFormReturn<UserFormFields>;
   inputType: InputType;
   attribute: UserProfileAttributeMetadata;
-  renderer?: (
-    attribute: UserProfileAttributeMetadata,
-  ) => JSX.Element | undefined;
+  renderer?: (attribute: UserProfileAttributeMetadata) => ReactNode;
 };
 
 export const FIELDS: {
