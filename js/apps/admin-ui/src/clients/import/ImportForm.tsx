@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { Language } from "@patternfly/react-code-editor";
 import {
@@ -61,7 +62,7 @@ export default function ImportForm() {
       return JSON.parse(contents);
     }
 
-    const response = await fetch(
+    const response = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realm}/client-description-converter`,
