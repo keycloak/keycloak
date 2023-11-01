@@ -41,7 +41,7 @@ public class UserConsentManager {
      */
     public static boolean revokeConsentToClient(KeycloakSession session, ClientModel client, UserModel user) {
         RealmModel realm = session.getContext().getRealm();
-        boolean revokedConsent = session.users().revokeConsentForClient(realm, user.getId(), client.getId());
+        boolean revokedConsent = revokeConsentForClient(session, realm, user, client.getId());
         boolean revokedOfflineToken = new UserSessionManager(session).revokeOfflineToken(user, client);
 
         if (revokedConsent) {
@@ -101,6 +101,20 @@ public class UserConsentManager {
      */
     public static void updateConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
         session.users().updateConsent(realm, user.getId(), consent);
+    }
+
+    /**
+     * Remove a user consent given by the user and client id
+     *
+     * @param realm a reference to the realm
+     * @param user user. Must not be {@code null}
+     * @param clientInternalId id of the client
+     * @return {@code true} if the consent was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
+     */
+    public static boolean revokeConsentForClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
+        return session.users().revokeConsentForClient(realm, user.getId(), clientInternalId);
     }
 
 }

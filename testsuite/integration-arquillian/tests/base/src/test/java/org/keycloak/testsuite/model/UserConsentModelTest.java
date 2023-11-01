@@ -285,9 +285,9 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
             UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
 
-            currentSession.users().revokeConsentForClient(realm, john.getId(), fooClient.getId());
+            UserConsentManager.revokeConsentForClient(currentSession, realm, john, fooClient.getId());
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
-            currentSession.users().revokeConsentForClient(realm, mary.getId(), hardcodedClient.getId());
+            UserConsentManager.revokeConsentForClient(currentSession, realm, mary, hardcodedClient.getId());
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRT2) -> {
