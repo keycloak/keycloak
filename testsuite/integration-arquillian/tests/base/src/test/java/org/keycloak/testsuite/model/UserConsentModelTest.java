@@ -174,32 +174,32 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
             UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
 
-            UserConsentModel johnFooConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
+            UserConsentModel johnFooConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId());
             Assert.assertEquals(johnFooConsent.getGrantedClientScopes().size(), 1);
             Assert.assertTrue(isClientScopeGranted(realm, "foo", johnFooConsent));
             Assert.assertNotNull("Created Date should be set", johnFooConsent.getCreatedDate());
             Assert.assertNotNull("Last Updated Date should be set", johnFooConsent.getLastUpdatedDate());
 
-            UserConsentModel johnBarConsent = currentSession.users().getConsentByClient(realm, john.getId(), barClient.getId());
+            UserConsentModel johnBarConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, barClient.getId());
             Assert.assertEquals(johnBarConsent.getGrantedClientScopes().size(), 1);
             Assert.assertTrue(isClientScopeGranted(realm, "bar", johnBarConsent));
             Assert.assertNotNull("Created Date should be set", johnBarConsent.getCreatedDate());
             Assert.assertNotNull("Last Updated Date should be set", johnBarConsent.getLastUpdatedDate());
 
-            UserConsentModel maryConsent = currentSession.users().getConsentByClient(realm, mary.getId(), fooClient.getId());
+            UserConsentModel maryConsent = UserConsentManager.getConsentByClient(currentSession, realm, mary, fooClient.getId());
             Assert.assertEquals(maryConsent.getGrantedClientScopes().size(), 1);
             Assert.assertTrue(isClientScopeGranted(realm, "foo", maryConsent));
             Assert.assertNotNull("Created Date should be set", maryConsent.getCreatedDate());
             Assert.assertNotNull("Last Updated Date should be set", maryConsent.getLastUpdatedDate());
 
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
-            UserConsentModel maryHardcodedConsent = currentSession.users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId());
+            UserConsentModel maryHardcodedConsent = UserConsentManager.getConsentByClient(currentSession, realm, mary, hardcodedClient.getId());
             Assert.assertEquals(maryHardcodedConsent.getGrantedClientScopes().size(), 0);
             Assert.assertNotNull("Created Date should be set", maryHardcodedConsent.getCreatedDate());
             Assert.assertNotNull("Last Updated Date should be set", maryHardcodedConsent.getLastUpdatedDate());
 
-            Assert.assertNull(currentSession.users().getConsentByClient(realm, mary.getId(), barClient.getId()));
-            Assert.assertNull(currentSession.users().getConsentByClient(realm, john.getId(), hardcodedClient.getId()));
+            Assert.assertNull(UserConsentManager.getConsentByClient(currentSession, realm, mary, barClient.getId()));
+            Assert.assertNull(UserConsentManager.getConsentByClient(currentSession, realm, john, hardcodedClient.getId()));
         });
     }
 
@@ -250,7 +250,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
 
-            UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
+            UserConsentModel johnConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId());
             Assert.assertEquals(1, johnConsent.getGrantedClientScopes().size());
 
             // Remove foo protocol mapper from johnConsent
@@ -266,7 +266,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
-            UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
+            UserConsentModel johnConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId());
 
             Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
             Assert.assertTrue("Created date should be less than last updated date", johnConsent.getCreatedDate() < johnConsent.getLastUpdatedDate());
@@ -298,9 +298,9 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
 
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
-            Assert.assertNull(currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId()));
+            Assert.assertNull(UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId()));
             UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
-            Assert.assertNull(currentSession.users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId()));
+            Assert.assertNull(UserConsentManager.getConsentByClient(currentSession, realm, mary, hardcodedClient.getId()));
         });
     }
 
@@ -338,7 +338,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel fooClient = realm.getClientByClientId("foo-client");
 
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
-            UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
+            UserConsentModel johnConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId());
 
             Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
         });
@@ -370,11 +370,11 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             UserModel john = currentSession.users().getUserByUsername(realm, "john");
             ClientModel barClient = realm.getClientByClientId("bar-client");
 
-            UserConsentModel johnFooConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
+            UserConsentModel johnFooConsent = UserConsentManager.getConsentByClient(currentSession, realm, john, fooClient.getId());
             Assert.assertEquals(johnFooConsent.getGrantedClientScopes().size(), 1);
             Assert.assertTrue(isClientScopeGranted(realm, "foo", johnFooConsent));
 
-            Assert.assertNull(currentSession.users().getConsentByClient(realm, john.getId(), barClientID.get()));
+            Assert.assertNull(UserConsentManager.getConsentByClient(currentSession, realm, john, barClientID.get()));
         });
     }
 

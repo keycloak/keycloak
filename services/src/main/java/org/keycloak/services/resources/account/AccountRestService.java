@@ -314,7 +314,7 @@ public class AccountRestService {
             throw ErrorResponse.error("No client with clientId: " + clientId + " found.", Response.Status.NOT_FOUND);
         }
 
-        UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel consent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (consent == null) {
             return Response.noContent().build();
         }
@@ -403,7 +403,7 @@ public class AccountRestService {
 
         try {
             UserConsentModel grantedConsent = createConsent(client, consent);
-            if (session.users().getConsentByClient(realm, user.getId(), client.getId()) == null) {
+            if (UserConsentManager.getConsentByClient(session, realm, user, client.getId()) == null) {
                 UserConsentManager.addConsent(session, realm, user, grantedConsent);
                 event.event(EventType.GRANT_CONSENT);
             } else {
@@ -413,7 +413,7 @@ public class AccountRestService {
             event.detail(Details.GRANTED_CLIENT,client.getClientId());
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
-            grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+            grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
             return Response.ok(modelToRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);

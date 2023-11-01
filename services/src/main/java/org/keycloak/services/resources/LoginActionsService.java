@@ -963,7 +963,7 @@ public class LoginActionsService {
             return response;
         }
 
-        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
             UserConsentManager.addConsent(session, realm, user, grantedConsent);

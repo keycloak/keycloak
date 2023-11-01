@@ -63,4 +63,19 @@ public class UserConsentManager {
     public static void addConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
         session.users().addConsent(realm, user.getId(), consent);
     }
+
+    /**
+     * Returns UserConsentModel given by a user for the client with clientInternalId
+     *
+     * @param realm a reference to the realm
+     * @param userId id of the user
+     * @param clientInternalId id of the client
+     * @return consent given by the user to the client or {@code null} if no consent or user exists
+     *
+     * @throws ModelException when there are more consents fulfilling specified parameters
+     */
+    public static UserConsentModel getConsentByClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
+        return session.users().getConsentByClient(realm, user.getId(), clientInternalId);
+    }
+
 }
