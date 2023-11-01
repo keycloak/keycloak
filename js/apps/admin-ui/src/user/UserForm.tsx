@@ -215,7 +215,7 @@ export const UserForm = ({
           </FormGroup>
           <UserProfileFields
             form={form}
-            userProfileMetadata={user?.userProfileMetadata}
+            userProfileMetadata={userProfileMetadata}
             hideReadOnly={!user}
             supportedLocales={realm.supportedLocales || []}
             t={(key: unknown, params) => t(key as string, { ...params })}

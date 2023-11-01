@@ -15,11 +15,7 @@ test.describe("Personal info page", () => {
   test("sets basic information", async ({ page }) => {
     await login(page, "admin", "admin", "master");
 
-    await page.getByRole("button", { name: "Update email" }).click();
-    await page.getByLabel("Email").fill("edewit@somewhere.com");
-    await page.getByText("Sign out from other devices").click();
-    await page.getByRole("button", { name: "Submit" }).click();
-
+    await page.getByTestId("email").fill("edewit@somewhere.com");
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
@@ -60,7 +56,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await login(page, "jdoe", "jdoe", realm);
 
     await expect(page.locator("#select")).toBeVisible();
-    await expect(page.getByTestId("help-label-select")).toBeVisible();
+    await expect(page.getByTestId("select-help")).toBeVisible();
     expect(page.getByText("Alternative email")).toBeDefined();
   });
 
