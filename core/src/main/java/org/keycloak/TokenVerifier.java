@@ -33,7 +33,10 @@ import org.keycloak.util.TokenUtil;
 import javax.crypto.SecretKey;
 
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
