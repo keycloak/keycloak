@@ -24,7 +24,9 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import java.util.stream.Stream;
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -62,7 +64,12 @@ public class UserConsentManager {
      * @throws ModelException If there is no user with userId
      */
     public static void addConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
-        session.users().addConsent(realm, user.getId(), consent);
+        if (isLightweightUser(user)) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) user;
+            lua.addConsent(consent);
+        } else {
+            session.users().addConsent(realm, user.getId(), consent);
+        }
     }
 
     /**
@@ -76,7 +83,12 @@ public class UserConsentManager {
      * @throws ModelException when there are more consents fulfilling specified parameters
      */
     public static UserConsentModel getConsentByClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
-        return session.users().getConsentByClient(realm, user.getId(), clientInternalId);
+        if (isLightweightUser(user)) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) user;
+            return lua.getConsentByClient(clientInternalId);
+        } else {
+            return session.users().getConsentByClient(realm, user.getId(), clientInternalId);
+        }
     }
 
     /**
@@ -87,7 +99,12 @@ public class UserConsentManager {
      * @return a non-null {@link Stream} of consents associated with the user.
      */
     public static Stream<UserConsentModel> getConsentsStream(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().getConsentsStream(realm, user.getId());
+        if (isLightweightUser(user)) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) user;
+            return lua.getConsentsStream();
+        } else {
+            return session.users().getConsentsStream(realm, user.getId());
+        }
     }
 
     /**
@@ -100,7 +117,12 @@ public class UserConsentManager {
      * @throws ModelException when consent doesn't exist for the userId
      */
     public static void updateConsent(KeycloakSession session, RealmModel realm, UserModel user, UserConsentModel consent) {
-        session.users().updateConsent(realm, user.getId(), consent);
+        if (isLightweightUser(user)) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) user;
+            lua.updateConsent(consent);
+        } else {
+            session.users().updateConsent(realm, user.getId(), consent);
+        }
     }
 
     /**
@@ -114,7 +136,12 @@ public class UserConsentManager {
      * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
      */
     public static boolean revokeConsentForClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
-        return session.users().revokeConsentForClient(realm, user.getId(), clientInternalId);
+        if (isLightweightUser(user)) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) user;
+            return lua.revokeConsentForClient(clientInternalId);
+        } else {
+            return session.users().revokeConsentForClient(realm, user.getId(), clientInternalId);
+        }
     }
 
 }
