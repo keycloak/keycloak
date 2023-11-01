@@ -187,11 +187,40 @@ export const UserForm = ({
         </FormGroup>
       )}
       {userProfileMetadata ? (
-        <UserProfileFields
-          form={form}
-          userProfileMetadata={userProfileMetadata}
-          hideReadOnly={!user}
-        />
+        <>
+          <FormGroup
+            label={t("emailVerified")}
+            fieldId="kc-email-verified"
+            helperTextInvalid={t("required")}
+            labelIcon={
+              <HelpItem
+                helpText={t("emailVerifiedHelp")}
+                fieldLabelId="emailVerified"
+              />
+            }
+          >
+            <Controller
+              name="emailVerified"
+              defaultValue={false}
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  data-testid="email-verified-switch"
+                  id="kc-user-email-verified"
+                  onChange={(value) => field.onChange(value)}
+                  isChecked={field.value}
+                  label={t("yes")}
+                  labelOff={t("no")}
+                />
+              )}
+            />
+          </FormGroup>
+          <UserProfileFields
+            form={form}
+            userProfileMetadata={userProfileMetadata}
+            hideReadOnly={!user}
+          />
+        </>
       ) : (
         <>
           {!realm.registrationEmailAsUsername && (
