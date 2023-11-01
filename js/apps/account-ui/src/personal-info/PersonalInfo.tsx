@@ -89,7 +89,7 @@ const PersonalInfo = () => {
             attribute.name === "email" &&
             updateEmailFeatureEnabled &&
             updateEmailActionEnabled &&
-            (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
+            (!isRegistrationEmailAsUsername || isEditUserNameAllowed) && (
               <Button
                 id="update-email-btn"
                 variant="link"
@@ -101,7 +101,7 @@ const PersonalInfo = () => {
               >
                 {t("updateEmail")}
               </Button>
-            ) : undefined
+            )
           }
         />
         <ActionGroup>

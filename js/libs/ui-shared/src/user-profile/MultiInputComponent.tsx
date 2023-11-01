@@ -31,14 +31,6 @@ export const MultiInputComponent = ({
   </UserProfileGroup>
 );
 
-function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" ? value.split("##") : [];
-}
-
-function toStringValue(formValue: string[]): string {
-  return formValue.join("##");
-}
-
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   t: TranslationFunction;
   name: FieldPath<UserFormFields>;
@@ -46,7 +38,6 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   addButtonLabel?: string;
   isDisabled?: boolean;
   defaultValue?: string[];
-  stringify?: boolean;
 };
 
 const MultiLineInput = ({
@@ -56,7 +47,6 @@ const MultiLineInput = ({
   addButtonLabel,
   isDisabled = false,
   defaultValue,
-  stringify = false,
   id,
   ...rest
 }: MultiLineInputProps) => {
@@ -68,20 +58,9 @@ const MultiLineInput = ({
   });
 
   const fields = useMemo<string[]>(() => {
-    let values = stringify
-      ? stringToMultiline(
-          Array.isArray(value) && value.length === 1 ? value[0] : value,
-        )
-      : value;
-
-    values =
-      Array.isArray(values) && values.length !== 0
-        ? values
-        : (stringify
-            ? stringToMultiline(defaultValue as string)
-            : defaultValue) || [""];
-
-    return values;
+    return Array.isArray(value) && value.length !== 0
+      ? value
+      : defaultValue || [""];
   }, [value]);
 
   const remove = (index: number) => {
@@ -98,7 +77,7 @@ const MultiLineInput = ({
 
   const update = (values: string[]) => {
     const fieldValue = values.flatMap((field) => field);
-    setValue(name, stringify ? toStringValue(fieldValue) : fieldValue, {
+    setValue(name, fieldValue, {
       shouldDirty: true,
     });
   };

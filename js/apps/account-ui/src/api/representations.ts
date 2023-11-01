@@ -1,5 +1,4 @@
 // Generated using typescript-generator version 2.37.1128 on 2022-09-16 15:57:05.
-import type { UserFormFields } from "ui-shared";
 
 export interface AccountLinkUriRepresentation {
   accountLinkUri: string;
@@ -88,7 +87,7 @@ export interface UserProfileMetadata {
   attributes: UserProfileAttributeMetadata[];
 }
 
-export type UserRepresentation = UserFormFields & {
+export type UserRepresentation = {
   userProfileMetadata: UserProfileMetadata;
 };
 
