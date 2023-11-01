@@ -30,7 +30,7 @@
 
                         <div class="${properties.kcFormClass!}">
                             <#list authenticators.authenticators as authenticator>
-                                <button id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
+                                <div id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
                                     <div class="${properties.kcSelectAuthListItemIconClass!}">
                                         <i class="${(properties['${authenticator.transports.iconClass}'])!'${properties.kcWebAuthnDefaultIcon!}'} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
                                     </div>
@@ -62,7 +62,7 @@
                                         </div>
                                     </div>
                                     <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
-                                </button>
+                                </div>
                             </#list>
                         </div>
                     </#if>
