@@ -134,7 +134,6 @@ describe("i18n tests", () => {
 
     goToUserFederationPage();
 
-    // check key "user-federation:addProvider_other"
     providersPage.assertCardContainsText("ldap", "Add Ldap providers");
   });
 

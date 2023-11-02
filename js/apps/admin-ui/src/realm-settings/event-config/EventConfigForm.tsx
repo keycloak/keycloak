@@ -161,7 +161,7 @@ export const EventConfigForm = ({
         labelIcon={
           <HelpItem
             helpText={t(`${type}-clearEventsHelp`)}
-            fieldLabelId={`realm-settings:clear-${type}-events`}
+            fieldLabelId={`clear-${type}-events`}
           />
         }
       >

@@ -184,7 +184,7 @@ export default function PermissionDetails() {
         titleKey={
           permissionId
             ? permission.name!
-            : `clients:create${toUpperCase(permissionType)}BasedPermission`
+            : `create${toUpperCase(permissionType)}BasedPermission`
         }
         dropdownItems={
           permissionId

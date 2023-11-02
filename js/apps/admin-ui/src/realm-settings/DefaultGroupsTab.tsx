@@ -132,7 +132,7 @@ export const DefaultsGroupsTab = () => {
       {enabled && (
         <Popover
           bodyContent={
-            <Trans i18nKey="realm-settings-help:defaultGroups">
+            <Trans i18nKey="defaultGroups">
               {" "}
               <Link to={toUserFederation({ realm })} />.
             </Trans>
