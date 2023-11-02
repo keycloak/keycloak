@@ -264,7 +264,7 @@ earlier. If you prefer to avoid this option, you can for instance ask all your u
 
 == Keycloak FIPS mode on the non-fips system
 
-Keycloak is tested on a FIPS enabled RHEL 8 system and `ubi8` image. It is supported with RHEL 9 (and `ubi9` image) as well. Running on
+Keycloak is supported and tested on a FIPS enabled RHEL 8 system and `ubi8` image. It is supported with RHEL 9 (and `ubi9` image) as well. Running on
 the non-RHEL compatible platform or on the non-FIPS enabled platform, the FIPS compliance cannot be strictly guaranteed and cannot be officially supported.
 
 If you are still restricted to running Keycloak on such a system, you can at least update your security providers configured in `java.security` file. This update does not amount to FIPS compliance, but
