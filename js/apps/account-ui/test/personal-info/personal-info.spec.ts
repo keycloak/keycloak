@@ -56,7 +56,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await login(page, "jdoe", "jdoe", realm);
 
     await expect(page.locator("#select")).toBeVisible();
-    await expect(page.getByTestId("select-help")).toBeVisible();
+    await expect(page.getByTestId("help-label-select")).toBeVisible();
     expect(page.getByText("Alternative email")).toBeDefined();
   });
 
