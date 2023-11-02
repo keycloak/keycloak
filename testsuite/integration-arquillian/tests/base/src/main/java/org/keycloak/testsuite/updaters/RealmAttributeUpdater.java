@@ -174,4 +174,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.getSmtpServer().put(name, value);
         return this;
     }
+
+    public RealmAttributeUpdater setBrowserSecurityHeader(String name, String value) {
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
 }
