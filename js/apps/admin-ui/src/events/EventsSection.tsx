@@ -312,7 +312,7 @@ export default function EventsSection() {
                                 );
                               }}
                             >
-                              {t(`realm-settings:eventTypes.${chip}.name`)}
+                              {t(`eventTypes.${chip}.name`)}
                             </Chip>
                           ))}
                         </ChipGroup>
@@ -320,7 +320,7 @@ export default function EventsSection() {
                     >
                       {events?.enabledEventTypes?.map((option) => (
                         <SelectOption key={option} value={option}>
-                          {t(`realm-settings:eventTypes.${option}.name`)}
+                          {t(`eventTypes.${option}.name`)}
                         </SelectOption>
                       ))}
                     </Select>
@@ -437,7 +437,7 @@ export default function EventsSection() {
                           key={entry}
                           onClick={() => removeFilterValue(key, entry)}
                         >
-                          {t(`realm-settings:eventTypes.${entry}.name`)}
+                          {t(`eventTypes.${entry}.name`)}
                         </Chip>
                       ))
                     )}
