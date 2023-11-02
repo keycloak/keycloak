@@ -94,7 +94,7 @@ export const RealmSettingsGeneralTab = ({
               required: { value: true, message: t("required") },
               pattern: {
                 value: /^[a-zA-Z0-9-_]+$/,
-                message: t("realm:invalidRealmName"),
+                message: t("invalidRealmName"),
               },
             }}
             defaultValue=""

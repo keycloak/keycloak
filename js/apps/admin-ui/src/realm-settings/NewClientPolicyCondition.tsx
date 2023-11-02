@@ -229,9 +229,7 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       selected={condition.id === field.value}
                       description={t(
-                        `realm-settings-help:${camelCase(
-                          condition.id.replace(/-/g, " "),
-                        )}`,
+                        camelCase(condition.id.replace(/-/g, " ")),
                       )}
                       key={condition.id}
                       value={condition}
