@@ -99,6 +99,36 @@ class AdminClient {
     }
   }
 
+  async deleteMultipleUsers(userList: string[]) {
+    await this.login();
+    const targetUserName = userList[0];
+    const userObjectList = await this.client.users.find({ targetUserName });
+    await Promise.all(
+      userObjectList.map(async (userObj) => {
+        if (userList.includes(<string>userObj.username)) {
+          this.client.users.del({ id: userObj.id! });
+        }
+      }),
+    );
+  }
+
+  /**
+   * Clears the entire user list aside from the admin. This is intended to run before testing to insure that the run
+   * doesnt encounter an interference from a previous failed execution.
+   */
+  async deleteAllUsers() {
+    await this.login();
+    const targetUser = "";
+    const userObjectList = await this.client.users.find({ targetUser });
+    await Promise.all(
+      userObjectList.map(async (userObj) => {
+        if (<string>userObj.username !== "admin") {
+          this.client.users.del({ id: userObj.id! });
+        }
+      }),
+    );
+  }
+
   async createUser(user: UserRepresentation) {
     await this.#login();
 

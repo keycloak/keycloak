@@ -30,11 +30,14 @@ describe("Group test", () => {
   let groupName: string;
   const groupNames: string[] = [];
   const predefinedGroups = ["level", "level1", "level2", "level3"];
+  const createdUsers: string[] = [];
   const emptyGroup = "empty-group";
   let users: { id: string; username: string }[] = [];
   const username = "test-user";
 
   before(async () => {
+    // clear all users to prevent 409 return response.
+    await adminClient.deleteAllUsers();
     users = await Promise.all(
       range(5).map((index) => {
         const user = adminClient
@@ -45,12 +48,26 @@ describe("Group test", () => {
           .then((user) => {
             return { id: user.id!, username: username + index };
           });
+        createdUsers.push(username + index);
         return user;
       }),
     );
+    const createdGroups = await adminClient.createSubGroups(predefinedGroups);
+    await Promise.all([
+      range(5).map((index) => {
+        adminClient.addUserToGroup(
+          users[index].id!,
+          createdGroups[index % 3].id,
+        );
+      }),
+      adminClient.createGroup(emptyGroup),
+    ]);
   });
 
-  after(() => adminClient.deleteGroups());
+  after(() => {
+    adminClient.deleteGroups();
+    adminClient.deleteMultipleUsers(createdUsers);
+  });
 
   beforeEach(() => {
     loginPage.logIn();
@@ -61,6 +78,9 @@ describe("Group test", () => {
   });
 
   describe("List", () => {
+    before(() => {
+      adminClient.deleteGroups();
+    });
     it("Create group from empty option", () => {
       groupPage
         .assertNoGroupsInThisRealmEmptyStateMessageExist(true)
@@ -142,6 +162,18 @@ describe("Group test", () => {
         .assertNotificationGroupsDeleted()
         .assertNoGroupsInThisRealmEmptyStateMessageExist(true);
     });
+    after(async () => {
+      const createdGroups = await adminClient.createSubGroups(predefinedGroups);
+      await Promise.all([
+        range(5).map((index) => {
+          adminClient.addUserToGroup(
+            users[index].id!,
+            createdGroups[index % 3].id,
+          );
+        }),
+        adminClient.createGroup(emptyGroup),
+      ]);
+    });
   });
 
   describe("Search group under current group", () => {
@@ -154,7 +186,6 @@ describe("Group test", () => {
             createdGroups[index % 3].id,
           );
         }),
-        adminClient.createUser({ username: "new", enabled: true }),
       ]);
     });
 
@@ -312,16 +343,8 @@ describe("Group test", () => {
 
   describe("Members", () => {
     before(async () => {
-      const createdGroups = await adminClient.createSubGroups(predefinedGroups);
-      await Promise.all([
-        range(5).map((index) => {
-          adminClient.addUserToGroup(
-            users[index].id!,
-            createdGroups[index % 3].id,
-          );
-        }),
-        adminClient.createGroup(emptyGroup),
-      ]);
+      createdUsers.push("new");
+      await adminClient.createUser({ username: "new", enabled: true });
     });
 
     beforeEach(() => {
