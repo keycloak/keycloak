@@ -109,6 +109,7 @@ export function UserDataTableToolbarItems({
           }}
           onClear={() => {
             setSearchUser("");
+            refresh();
           }}
         />
       </ToolbarItem>

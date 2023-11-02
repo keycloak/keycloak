@@ -323,7 +323,7 @@ export function UserDataTable() {
       <DeleteConfirm />
       <UnlockUsersConfirm />
       <KeycloakDataTable
-        isSearching
+        isSearching={searchUser !== "" || activeFilters.length !== 0}
         key={key}
         loader={loader}
         isPaginated
