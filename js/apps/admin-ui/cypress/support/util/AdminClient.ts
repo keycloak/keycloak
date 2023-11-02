@@ -100,13 +100,13 @@ class AdminClient {
   }
 
   async deleteMultipleUsers(userList: string[]) {
-    await this.login();
+    await this.#login();
     const targetUserName = userList[0];
-    const userObjectList = await this.client.users.find({ targetUserName });
+    const userObjectList = await this.#client.users.find({ targetUserName });
     await Promise.all(
       userObjectList.map(async (userObj) => {
         if (userList.includes(<string>userObj.username)) {
-          this.client.users.del({ id: userObj.id! });
+          this.#client.users.del({ id: userObj.id! });
         }
       }),
     );
@@ -117,13 +117,13 @@ class AdminClient {
    * doesnt encounter an interference from a previous failed execution.
    */
   async deleteAllUsers() {
-    await this.login();
+    await this.#login();
     const targetUser = "";
-    const userObjectList = await this.client.users.find({ targetUser });
+    const userObjectList = await this.#client.users.find({ targetUser });
     await Promise.all(
       userObjectList.map(async (userObj) => {
         if (<string>userObj.username !== "admin") {
-          this.client.users.del({ id: userObj.id! });
+          this.#client.users.del({ id: userObj.id! });
         }
       }),
     );
