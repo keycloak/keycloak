@@ -145,3 +145,12 @@ The endpoint `POST {keycloak server}/realms/{realm}/partial-export` and the corr
 = Removal of the options to trim the event's details length
 
 Since this release, Keycloak supports long value for `EventEntity` details column. Therefore, it no longer supports options for trimming event detail length `--spi-events-store-jpa-max-detail-length` and `--spi-events-store-jpa-max-field-length`.
+
+= User Profile updates
+
+This release includes many fixes and updates that are related to user profile as we are working on promoting this feature from preview to officially supported.
+Minor changes exist for the SPI such as the newly added method `boolean isEnabled(RealmModel realm)` on `UserProfileProvider` interface. Also
+some user profile classes and some validator related classes (but not builtin validator implementations) were moved from `keycloak-server-spi-private` to
+`keycloak-server-spi` module. However, the packages for java classes remain the same. You might be affected in some corner cases, such as when you
+are overriding the built-in implementation with your own `UserProfileProvider` implementation However, note that `UserProfileProvider` is an unsupported SPI.
+
