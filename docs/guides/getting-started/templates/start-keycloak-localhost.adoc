@@ -1,6 +1,6 @@
 <#import "/templates/profile.adoc" as profile>
 
-== Start Keycloak
+== Start {project_name}
 
 . From a terminal, open the keycloak-{version} directory.
 . Enter the following command:
@@ -28,5 +28,5 @@ bin\kc.bat start-dev
 ----
 </@profile.ifCommunity>
 
-Using the `start-dev` option, you are starting Keycloak development mode. In this mode, you can try out Keycloak for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new Keycloak theme.
+Using the `start-dev` option, you are starting {project_name} development mode. In this mode, you can try out {project_name} for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new {project_name} theme.
 
