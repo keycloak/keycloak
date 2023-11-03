@@ -29,11 +29,17 @@ minikube addons enable ingress
 
 The Keycloak QuickStarts repository includes some example files to help deploy Keycloak to Kubernetes.
 
-As a first step, create the Keycloak deployment and service by entering the following command:
+Before you apply the Keycloak deployment and service to your cluster, you need to replace the placeholder for the Keycloak version with the actual version number. 
+
+To fetch the latest version of Keycloak and apply the deployment, run the following commands:
 
 [source,bash,subs="attributes+"]
 ----
-kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak.yaml
+# Fetch the latest version of Keycloak
+KEYCLOAK_VERSION=$(curl -s https://api.github.com/repos/keycloak/keycloak/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
+
+# Replace the version placeholder in the deployment file and apply it to your cluster
+curl -s https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak.yaml | sed 's/\$\$VERSION\$\$/'"$KEYCLOAK_VERSION"'/g' | kubectl apply -f -
 ----
 
 This command starts Keycloak on Kubernetes and creates an initial admin user with the username `admin` and password
