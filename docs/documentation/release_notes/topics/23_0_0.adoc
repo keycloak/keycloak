@@ -60,3 +60,9 @@ If you find any issues or have any improvements in mind,  you are welcome to cre
 ideally with the label `area/user-profile`. It is also recommended to check the link:{upgradingguide_link}[{upgradingguide_name}]  with the migration changes for this
 release for some additional informations related to the migration.
 
+= Removal of the Map Store
+
+The Map Store has been an experimental feature in previous releases.
+Starting with this release, it is removed and users should continue to use the current JPA store.
+See the migration guide for details.
+
