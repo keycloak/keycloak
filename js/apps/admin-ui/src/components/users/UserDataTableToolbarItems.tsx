@@ -146,6 +146,7 @@ export function UserDataTableToolbarItems({
           icon={<ArrowRightIcon />}
           variant="control"
           onClick={searchUserWithAttributes}
+          aria-label={t("searchAttributes")}
         />
       </>
     );

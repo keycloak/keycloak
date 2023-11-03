@@ -1149,6 +1149,8 @@
   "searchType.attribute": "Attribute search",
   "selectAttribute": "Select attribute",
   "selectAttributes": "Select attributes",
+  "searchAttributes": "Search attributes",
+  "addToFilter": "Add to filter",
   "searchUserByAttributeMissingKeyError": "Specify a attribute key",
   "searchUserByAttributeKeyAlreadyInUseError": "Attribute key already in use",
   "searchUserByAttributeMissingValueError": "Specify a attribute value",
