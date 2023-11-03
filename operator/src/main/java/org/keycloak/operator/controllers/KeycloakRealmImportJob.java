@@ -62,7 +62,8 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        if (existingDeployment == null) {
+        if (existingDeployment == null || existingDeployment.getStatus() == null 
+            || existingDeployment.getStatus().getReadyReplicas() == null || existingDeployment.getStatus().getReadyReplicas().intValue() < 1) {
             return Optional.empty(); // handled in the status
         } else if (existingJob == null) {
             Log.info("Creating a new Job");
@@ -169,6 +170,11 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
     public void updateStatus(KeycloakRealmImportStatusBuilder status) {
         if (existingDeployment == null) {
             status.addErrorMessage("No existing Deployment found, waiting for it to be created");
+            return;
+        }
+        if (existingDeployment.getStatus() == null || existingDeployment.getStatus().getReadyReplicas() == null 
+            || existingDeployment.getStatus().getReadyReplicas().intValue() < 1) {
+            status.addErrorMessage("Deployment not yet ready, waiting for it to be ready");
             return;
         }
 
