@@ -41,7 +41,7 @@ public class BuildAndStartDistTest {
     void testBuildAndStart(KeycloakDistribution dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         // start using based on the build options set via CLI
-        CLIResult cliResult = rawDist.run("build", "--http-relative-path=/auth");
+        CLIResult cliResult = rawDist.run("build");
         cliResult.assertBuild();
         cliResult = rawDist.run("start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
         cliResult.assertNoBuild();

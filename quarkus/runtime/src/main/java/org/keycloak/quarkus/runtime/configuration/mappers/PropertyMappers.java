@@ -36,7 +36,6 @@ public final class PropertyMappers {
         MAPPERS.addAll(FeaturePropertyMappers.getMappers());
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
         MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
-        MAPPERS.addAll(StoragePropertyMappers.getMappers());
         MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
         MAPPERS.addAll(SecurityPropertyMappers.getMappers());
         MAPPERS.addAll(ExportPropertyMappers.getMappers());
