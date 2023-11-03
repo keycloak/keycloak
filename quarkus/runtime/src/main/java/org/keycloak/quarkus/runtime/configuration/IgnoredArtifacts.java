@@ -17,13 +17,10 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import org.keycloak.common.Profile;
-import org.keycloak.config.StorageOptions;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Collections.emptySet;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
 /**
@@ -34,7 +31,6 @@ public class IgnoredArtifacts {
     public static Set<String> getDefaultIgnoredArtifacts() {
         return new Builder()
                 .append(fips())
-                .append(storage())
                 .build();
     }
 
@@ -58,21 +54,6 @@ public class IgnoredArtifacts {
         boolean isFipsEnabled = profile.getFeatures().get(Profile.Feature.FIPS);
 
         return isFipsEnabled ? FIPS_ENABLED : FIPS_DISABLED;
-    }
-
-    // Map Store
-    public static final Set<String> MAP_STORE = Set.of(
-            "org.keycloak:keycloak-model-map-jpa",
-            "org.keycloak:keycloak-model-map-hot-rod",
-            "org.keycloak:keycloak-model-map",
-            "org.keycloak:keycloak-model-map-file"
-    );
-
-    private static Set<String> storage() {
-        Optional<String> storage = Configuration.getOptionalValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + StorageOptions.STORAGE.getKey());
-
-        return storage.isEmpty() ? MAP_STORE : emptySet();
     }
 
     /**

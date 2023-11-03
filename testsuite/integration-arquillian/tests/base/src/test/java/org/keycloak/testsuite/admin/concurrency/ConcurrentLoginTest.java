@@ -52,9 +52,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
-import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
@@ -94,12 +91,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     public void beforeTest() {
         // userSessionProvider is used only to prevent tests from running in certain configs, should be removed once GHI #15410 is resolved.
         userSessionProvider = testingClient.server().fetch(session -> Config.getProvider(UserSessionSpi.NAME), String.class);
-        if (userSessionProvider.equals(MapUserSessionProviderFactory.PROVIDER_ID)) {
-            // append the storage provider in case of map
-            String mapStorageProvider = testingClient.server().fetch(session -> Config.scope(UserSessionSpi.NAME,
-                    MapUserSessionProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider"), String.class);
-            if (mapStorageProvider != null) userSessionProvider = userSessionProvider + "-" + mapStorageProvider;
-        }
         createClients();
     }
 
@@ -126,11 +117,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
     @Test
     public void concurrentLoginSingleUser() throws Throwable {
-        // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
-                userSessionProvider,
-                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
-
         log.info("*********************************************");
         long start = System.currentTimeMillis();
 
@@ -195,11 +181,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
     @Test
     public void concurrentLoginMultipleUsers() throws Throwable {
-        // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
-                userSessionProvider,
-                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
-
         log.info("*********************************************");
         long start = System.currentTimeMillis();
 
@@ -227,10 +208,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
     @Test
     public void concurrentCodeReuseShouldFail() throws Throwable {
-        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
-                userSessionProvider,
-                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
-        
         log.info("*********************************************");
         long start = System.currentTimeMillis();
 

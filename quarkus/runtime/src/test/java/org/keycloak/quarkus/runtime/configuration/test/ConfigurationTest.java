@@ -44,7 +44,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
@@ -133,11 +132,6 @@ public class ConfigurationTest {
         assertEquals("warn", createConfig().getRawValue("kc.log-level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
-    }
-
-    @Test
-    public void testSanitizeKey() {
-        assertEquals("string", initConfig("map-storage", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).get("keyType.realms"));
     }
 
     @Test
@@ -510,30 +504,6 @@ public class ConfigurationTest {
         assertEquals("true", config4.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config4.getConfigValue("quarkus.log.file.enable").getValue());
         assertEquals("true", config4.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
-    }
-
-    @Test
-    public void testStorageMixedStorageOptions() {
-        System.setProperty(CLI_ARGS, "--storage=jpa" + ARG_SEPARATOR + "--storage-area-realm=chm");
-        SmallRyeConfig config = createConfig();
-        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
-        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
-        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
-        assertEquals("concurrenthashmap", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
-        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
-        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
-    }
-
-    @Test
-    public void testStoragePureJpa() {
-        System.setProperty(CLI_ARGS, "--storage=jpa");
-        SmallRyeConfig config = createConfig();
-        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
-        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
-        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
-        assertEquals("jpa", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
-        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
-        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
     }
 
     @Test
