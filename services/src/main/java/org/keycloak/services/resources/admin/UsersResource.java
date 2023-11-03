@@ -230,8 +230,10 @@ public class UsersResource {
     public UserResource user(final @PathParam("id") String id) {
         UserModel user = null;
         if (LightweightUserAdapter.isLightweightUser(id)) {
-            UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, LightweightUserAdapter.getLightweightUserId(id));
-            user = userSession.getUser();
+            UserSessionModel userSession = session.sessions().getUserSession(realm, LightweightUserAdapter.getLightweightUserId(id));
+            if (userSession != null) {
+                user = userSession.getUser();
+            }
         } else {
             user = session.users().getUserById(realm, id);
         }

@@ -75,7 +75,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             logger.debugf("Transient brokering requested. Recording user details for account '%s' and from identity provider '%s' .",
                     username, brokerContext.getIdpConfig().getAlias());
 
-            federatedUser = new LightweightUserAdapter(session, brokerContext.getBrokerSessionId());
+            federatedUser = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             federatedUser.setUsername(username);
         } else if (duplication == null) {
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",

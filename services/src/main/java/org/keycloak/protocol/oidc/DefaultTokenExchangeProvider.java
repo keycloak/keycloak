@@ -576,7 +576,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             }
 
             if (context.getIdpConfig().isTransientUsers()) {
-                user = new LightweightUserAdapter(session, UUID.randomUUID().toString());
+                user = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             } else {
                 user = session.users().addUser(realm, username);
             }
