@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -192,6 +193,36 @@ public class RealmImportTest extends BaseOperatorTest {
                     CRAssert.assertKeycloakRealmImportStatusCondition(cr, DONE, false);
                     CRAssert.assertKeycloakRealmImportStatusCondition(cr, STARTED, false);
                     CRAssert.assertKeycloakRealmImportStatusCondition(cr, HAS_ERRORS, true);
+                });
+    }
+
+    @Test
+    public void testFailedRealmImportWhenKeycloakNotAvailable() {
+        // Arrange
+        Keycloak kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setInstances(0);
+
+        // don't wait for Keycloak being available, since it has no instances
+        deployKeycloak(k8sclient, kc, false);
+
+        // Act
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
+
+        var crSelector = k8sclient
+                .resources(KeycloakRealmImport.class)
+                .inNamespace(namespace)
+                .withName("example-count0-kc");
+
+        // Assert
+        Awaitility.await()
+                .atMost(3, MINUTES)
+                .pollDelay(5, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    KeycloakRealmImport keycloak = crSelector.get();
+                    CRAssert.assertKeycloakRealmImportStatusCondition(keycloak, DONE, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(keycloak, STARTED, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(keycloak, HAS_ERRORS, true);
                 });
     }
 
