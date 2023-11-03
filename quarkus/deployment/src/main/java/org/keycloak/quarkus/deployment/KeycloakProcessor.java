@@ -68,7 +68,6 @@ import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -236,7 +235,7 @@ class KeycloakProcessor {
      *
      * @param ignore used for changing build items execution order with regards to AgroalProcessor
      */
-    @BuildStep(onlyIf = IsJpaStoreEnabled.class)
+    @BuildStep
     @Produce(CheckJdbcBuildStep.class)
     void checkJdbcDriver(BuildProducer<JdbcDriverBuildItem> ignore) {
         final Optional<String> dbDriver = Configuration.getOptionalValue("quarkus.datasource.jdbc.driver");
@@ -256,8 +255,7 @@ class KeycloakProcessor {
     /**
      * <p>Configures the persistence unit for Quarkus.
      *
-     * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa}
-     * module, the same used by the Wildfly distribution. The {@code hibernate-orm} extension expects that the dialect is statically
+     * <p>The {@code hibernate-orm} extension expects that the dialect is statically
      * set to the persistence unit if there is any from the classpath and we use this method to obtain the dialect from the configuration
      * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be 
      * allowed to set any additional defaults that we think that makes sense.
@@ -265,7 +263,7 @@ class KeycloakProcessor {
      * @param config
      * @param descriptors
      */
-    @BuildStep(onlyIf = {IsJpaStoreEnabled.class})
+    @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
     void configurePersistenceUnits(HibernateOrmConfig config,
             List<PersistenceXmlDescriptorBuildItem> descriptors,
@@ -301,20 +299,11 @@ class KeycloakProcessor {
         configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, indexBuildItem, userManagedEntities);
     }
 
-    @BuildStep(onlyIf = IsJpaStoreEnabled.class)
+    @BuildStep
     @Consume(CheckJdbcBuildStep.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
-        String storage = Configuration.getRawValue(
-                NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
-        ParsedPersistenceXmlDescriptor descriptor;
-
-        if (storage == null) {
-            descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
-                    Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
-        } else {
-            descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
-                    Thread.currentThread().getContextClassLoader().getResource("default-map-jpa-persistence.xml"));
-        }
+        ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
+                Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
 
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
     }
@@ -335,9 +324,6 @@ class KeycloakProcessor {
 
         unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
         descriptor.setTransactionType(PersistenceUnitTransactionType.JTA);
-
-        final Optional<String> lockTimeoutConfigValue = getOptionalValue("spi-map-storage-jpa-lock-timeout");
-        lockTimeoutConfigValue.ifPresent(v -> unitProperties.setProperty(AvailableSettings.JAKARTA_LOCK_TIMEOUT, v));
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
 
@@ -431,7 +417,7 @@ class KeycloakProcessor {
                 // make sure theme resources are loaded using a flat classpath. if no resources are available the provider is not registered
                 factories.computeIfAbsent(spi, key -> new HashMap<>()).computeIfAbsent(spi.getProviderClass(), aClass -> new HashMap<>()).put(FlatClasspathThemeResourceProviderFactory.ID, FlatClasspathThemeResourceProviderFactory.class);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException("Failed to install default theme resource provider", e);
         }
     }
@@ -442,16 +428,13 @@ class KeycloakProcessor {
         descriptors.stream()
                 .map(PersistenceXmlDescriptorBuildItem::getDescriptor)
                 .map(ParsedPersistenceXmlDescriptor::getName)
-                .filter(Predicate.not("keycloak-default"::equals)).forEach(new Consumer<String>() {
-                    @Override
-                    public void accept(String unitName) {
-                        NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
-
-                        factory.setUnitName(unitName);
-
-                        factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
-                        preConfiguredProviders.put(unitName, factory);
-                    }
+                .filter(Predicate.not("keycloak-default"::equals)).forEach((String unitName) -> {
+                    NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
+                    
+                    factory.setUnitName(unitName);
+                    
+                    factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
+                    preConfiguredProviders.put(unitName, factory);
                 });
     }
 
@@ -579,15 +562,9 @@ class KeycloakProcessor {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
     }
 
-    @BuildStep(onlyIf = IsJpaStoreEnabled.class, onlyIfNot = IsLegacyStoreEnabled.class)
+    @BuildStep
     @Consume(CheckJdbcBuildStep.class)
-    void indexNewJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
-        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-map-jpa"));
-    }
-
-    @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
-    @Consume(CheckJdbcBuildStep.class)
-    void indexLegacyJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
+    void indexJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-jpa"));
     }
 
@@ -816,8 +793,8 @@ class KeycloakProcessor {
         if (!scope.getBoolean("enabled", true)) {
             return false;
         }
-        if (factory instanceof EnvironmentDependentProviderFactory) {
-            return ((EnvironmentDependentProviderFactory) factory).isSupported(scope);
+        if (factory instanceof EnvironmentDependentProviderFactory environmentDependentProviderFactory) {
+            return environmentDependentProviderFactory.isSupported(scope);
         }
         return true;
     }
