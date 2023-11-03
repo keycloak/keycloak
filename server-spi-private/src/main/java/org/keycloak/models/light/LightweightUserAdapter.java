@@ -18,11 +18,10 @@ package org.keycloak.models.light;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.Base64;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
@@ -35,11 +34,11 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -80,17 +79,18 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
     }
 
     public static String getLightweightUserId(String id) {
-        try {
-            return id == null || id.length() < ID_PREFIX.length()
-              ? null
-              : new String(Base64.decode(id.substring(ID_PREFIX.length())), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            return null;
-        }
+        return id == null || id.length() < ID_PREFIX.length()
+          ? null
+          : id.substring(ID_PREFIX.length());
     }
 
     public LightweightUserAdapter(KeycloakSession session, String id) {
-        super(session, null, ID_PREFIX + Base64.encodeBytes(id.getBytes(StandardCharsets.UTF_8)));
+        super(session, null, ID_PREFIX + (id == null ? SecretGenerator.getInstance().randomString(16) : id));
+    }
+
+    public void setOwningUserSessionId(String id) {
+        this.id = ID_PREFIX + (id == null ? UUID.randomUUID().toString() : id);
+        update();
     }
 
     protected LightweightUserAdapter() {
