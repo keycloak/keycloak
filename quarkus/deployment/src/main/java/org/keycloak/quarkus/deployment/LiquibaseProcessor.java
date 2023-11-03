@@ -28,7 +28,6 @@ import liquibase.parser.ChangeLogParser;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
 import liquibase.sqlgenerator.SqlGenerator;
-import org.keycloak.models.map.storage.jpa.liquibase.lockservice.KeycloakLockService;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 import static org.keycloak.config.StorageOptions.STORAGE;
@@ -80,11 +79,7 @@ class LiquibaseProcessor {
             }
         }
 
-        if (StorageOptions.StorageType.jpa.name().equals(getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).orElse(null))) {
-            services.put(LockService.class.getName(), Collections.singletonList(KeycloakLockService.class.getName()));
-        } else {
-            services.put(LockService.class.getName(), Collections.singletonList(DummyLockService.class.getName()));
-        }
+        services.put(LockService.class.getName(), Collections.singletonList(DummyLockService.class.getName()));
         services.put(ChangeLogParser.class.getName(), Collections.singletonList(XMLChangeLogSAXParser.class.getName()));
 
         recorder.configureLiquibase(services);

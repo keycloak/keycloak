@@ -20,12 +20,9 @@ package org.keycloak.quarkus.runtime.configuration.test;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Properties;
-import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,27 +48,5 @@ public class IgnoredArtifactsTest {
 
         var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
         assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.FIPS_ENABLED), is(true));
-    }
-
-    @Test
-    public void ignoredMapStorage() {
-        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.MAP_STORE), is(true));
-
-        Consumer<String> assertStorage = (storage) -> {
-            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + StorageOptions.STORAGE.getKey(), storage);
-
-            try {
-                final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
-                assertThat(artifacts.containsAll(IgnoredArtifacts.MAP_STORE), is(false));
-            } finally {
-                System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + StorageOptions.STORAGE.getKey(), "");
-            }
-        };
-
-        assertStorage.accept("jpa");
-        assertStorage.accept("hotrod");
-        assertStorage.accept("file");
-        assertStorage.accept("chm");
     }
 }
