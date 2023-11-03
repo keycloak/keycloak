@@ -45,7 +45,7 @@ public class CacheBuildSteps {
 
     @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
-    @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
+    @BuildStep
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
         String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
 
