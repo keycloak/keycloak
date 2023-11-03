@@ -154,6 +154,10 @@ some user profile classes and some validator related classes (but not builtin va
 `keycloak-server-spi` module. However, the packages for java classes remain the same. You might be affected in some corner cases, such as when you
 are overriding the built-in implementation with your own `UserProfileProvider` implementation However, note that `UserProfileProvider` is an unsupported SPI.
 
-= Removal of the `storage` configuration setting
+= Removal of the Map Store
 
-Since this release, it is no longer possible to use `--storage` related CLI options due to the announced discontinuation of the Map Store.
+The Map Store has been an experimental feature in previous releases.
+Starting with this release, it is removed and users should continue to use the current JPA store.
+
+Since this release, it is no longer possible to use `--storage` related CLI options.
+The modules `keycloak-model-map*` have been removed.
