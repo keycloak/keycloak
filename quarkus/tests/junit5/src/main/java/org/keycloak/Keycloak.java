@@ -33,7 +33,6 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -117,10 +116,6 @@ public class Keycloak {
             addOptionIfNotSet(args, HttpOptions.HTTP_ENABLED, true);
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
             addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
-
-            if (getOptionValue(args, DatabaseOptions.DB) == null) {
-                addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
-            }
 
             boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.DISABLED).isFipsEnabled();
 

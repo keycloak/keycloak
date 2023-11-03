@@ -4,18 +4,13 @@ import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.DatabaseOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
 
 import static java.util.Optional.of;
-import static org.keycloak.config.StorageOptions.STORAGE;
-import static org.keycloak.config.StorageOptions.STORAGE_JPA_DB;
 import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawValue;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
@@ -98,9 +93,6 @@ final class DatabasePropertyMappers {
         Optional<String> url = Database.getDefaultUrl(value.get());
 
         if (url.isPresent()) {
-            if (isJpaStore()) {
-                return Database.getDefaultUrl(getJpaStoreDbVendor().name().toLowerCase());
-            }
             return url;
         }
 
@@ -108,11 +100,6 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            // always use XA driver with jpa map store
-            return Database.getDriver(getJpaStoreDbVendor().name().toLowerCase(), true);
-        }
-
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
         boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
 
@@ -126,26 +113,18 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return Database.getDatabaseKind(getJpaStoreDbVendor().name().toLowerCase());
-        }
-
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isPresent()) {
             return databaseKind;
         }
 
-        addInitializationException(invalidDatabaseVendor(db.get(), Database.getLegacyStoreAliases()));
+        addInitializationException(invalidDatabaseVendor(db.get(), Database.getDatabaseAliases()));
 
         return of("h2");
     }
 
     private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return Optional.of(getJpaStoreDbVendor().name().toLowerCase());
-        }
-
         if (db.isEmpty()) {
             return of("dev-file");
         }
@@ -170,19 +149,11 @@ final class DatabasePropertyMappers {
     }
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return false;
-        }
-
         String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
     }
 
     private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (isJpaStore()) {
-            return Database.getDialect(getJpaStoreDbVendor().name().toLowerCase());
-        }
-
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isEmpty()) {
@@ -198,13 +169,4 @@ final class DatabasePropertyMappers {
         return Database.getDialect("dev-file");
     }
 
-    private static boolean isJpaStore() {
-        String storage = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
-        return storage != null && StorageOptions.StorageType.jpa.name().equals(storage);
-    }
-
-    private static Database.Vendor getJpaStoreDbVendor() {
-        String storageJpaDb = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE_JPA_DB.getKey()));
-        return StorageOptions.getDatabaseVendor(storageJpaDb).orElse(Database.Vendor.POSTGRES);
-    }
 }

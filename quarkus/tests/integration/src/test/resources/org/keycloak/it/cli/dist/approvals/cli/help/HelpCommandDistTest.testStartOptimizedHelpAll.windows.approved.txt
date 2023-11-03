@@ -15,25 +15,6 @@ Options:
 --optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
 
-Storage (Experimental):
-
---storage-deployment-state-version-seed <type>
-                     Experimental: Secret that serves as a seed to mask the version number of
-                       Keycloak in URLs. Need to be identical across all servers in the cluster.
-                       Will default to a random number generated when starting the server which is
-                       secure but will lead to problems when a loadbalancer without sticky sessions
-                       is used or nodes are restarted.
---storage-file-dir <dir>
-                     Experimental: Root directory for file map store.
---storage-hotrod-host <host>
-                     Experimental: Sets the host of the Infinispan server.
---storage-hotrod-password <password>
-                     Experimental: Sets the password of the Infinispan user.
---storage-hotrod-port <port>
-                     Experimental: Sets the port of the Infinispan server.
---storage-hotrod-username <username>
-                     Experimental: Sets the username of the Infinispan user.
-
 Database:
 
 --db-password <password>

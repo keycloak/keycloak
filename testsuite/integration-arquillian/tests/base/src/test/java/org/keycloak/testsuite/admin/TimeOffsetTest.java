@@ -52,11 +52,7 @@ public class TimeOffsetTest extends AbstractAdminTest {
 
         setTimeOffset(5);
 
-        // legacy store requires manual trigger of expired events removal
-        String eventStoreProvider = testingClient.server().fetch(session -> Config.getProvider(EventStoreSpi.NAME), String.class);
-        if (eventStoreProvider.equals(JpaEventStoreProviderFactory.ID)) {
-            testingClient.testing().clearExpiredEvents();
-        }
+        testingClient.testing().clearExpiredEvents();
 
         testingClient.server().run(session -> {
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
