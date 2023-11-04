@@ -83,7 +83,7 @@
     "react-error-boundary": "^3.1.4",
     "react-hook-form": "^7.47.0",
     "react-i18next": "^13.3.1",
-    "react-router-dom": "^6.15.0",
+    "react-router-dom": "^6.18.0",
     "reactflow": "^11.9.4",
     "ui-shared": "workspace:*",
     "use-react-router-breadcrumbs": "^4.0.1"
@@ -96,7 +96,7 @@
     "@types/dagre": "^0.7.51",
     "@types/file-saver": "^2.0.6",
     "@types/lodash-es": "^4.17.10",
-    "@types/react": "^18.2.33",
+    "@types/react": "^18.2.34",
     "@types/react-dom": "^18.2.14",
     "@types/uuid": "^9.0.6",
     "@vitejs/plugin-react-swc": "^3.4.1",

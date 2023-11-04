@@ -90,7 +90,7 @@ export const GroupPickerDialog = ({
         if (!navigation.map(({ id }) => id).includes(groupId)) {
           group = await adminClient.groups.findOne({ id: groupId });
           if (!group) {
-            throw new Error(t("common:notFound"));
+            throw new Error(t("notFound"));
           }
         }
         if (group?.id) {

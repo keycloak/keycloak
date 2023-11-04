@@ -95,10 +95,7 @@ const KeySection = ({
         <FormAccess role="manage-clients" isHorizontal>
           <FormGroup
             labelIcon={
-              <HelpItem
-                helpText={t(`${key}Help`)}
-                fieldLabelId={`clients:${key}`}
-              />
+              <HelpItem helpText={t(`${key}Help`)} fieldLabelId={key} />
             }
             label={t(key)}
             fieldId={key}

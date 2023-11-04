@@ -213,7 +213,6 @@ describe("User profile tabs", () => {
       cy.get(".pf-c-form__label-text")
         .contains("newAttribute2")
         .should("not.exist");
-      cy.findByTestId("firstName").type("testuser9");
       cy.findByTestId("email").clear();
       cy.findByTestId("email").type("testuser9@gmail.com");
       cy.findByTestId("save-user").click();

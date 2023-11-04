@@ -27,12 +27,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
       hasNoPaddingTop
       label={t(label)}
       fieldId={label}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${label}Help`)}
-          fieldLabelId={`clients:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
     >
       <Controller
         name={name}

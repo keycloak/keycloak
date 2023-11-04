@@ -91,7 +91,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       addAlert(t(`${message}Success`), AlertVariant.success);
       return data;
     } catch (error) {
-      addError(`clients:${message}Error`, error);
+      addError(`${message}Error`, error);
     }
   }
 

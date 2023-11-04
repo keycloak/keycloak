@@ -78,7 +78,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
       } catch (error) {
-        addError(`realm-settings:${type}-events-cleared-error`, error);
+        addError(`${type}-events-cleared-error`, error);
       }
     },
   });
