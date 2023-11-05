@@ -6,7 +6,7 @@
         <p class="instruction">${msg("emailAlreadySentInstruction1",user.email)}</p> 
     <#elseif section = "info">
         <p class="instruction">
-            ${msg("emailAlreadySentInstruction2")}
+            ${msg("emailAlreadySentInstruction2", numberOfSecondsRemaining)}
         </p>
     </#if>
 </@layout.registrationLayout>

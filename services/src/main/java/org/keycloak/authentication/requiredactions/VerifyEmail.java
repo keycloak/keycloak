@@ -94,29 +94,25 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent,
         // it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
-            if (isAllowedToSendMailAgain(email)) {
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime lastEmailSendingTime = emailSendingTime.getOrDefault(email, now);
+            Duration duration = Duration.between(lastEmailSendingTime, now);
+
+            boolean canSendMail = duration.getSeconds() > 120 || duration.getSeconds() == 0;
+            if (canSendMail) {
                 authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
                 EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
                 challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(),
                         context.getAuthenticationSession(), event);
-                emailSendingTime.put(email, LocalDateTime.now());
+                emailSendingTime.put(email, now);
             } else {
-                challenge = loginFormsProvider.createForm("email-already-sent.ftl");
+                long numberOfSecondsRemaining = 120 - duration.getSeconds();
+                challenge = loginFormsProvider.setAttribute("numberOfSecondsRemaining", numberOfSecondsRemaining)
+                        .createForm("email-already-sent.ftl");
             }
         }
-
         context.challenge(challenge);
-    }
-
-    private boolean isAllowedToSendMailAgain(String email) {
-        logger.infof("verifying if %s is allowed to send mail again", email);
-        LocalDateTime lastTimeEmailSent = emailSendingTime.get(email);
-        if (lastTimeEmailSent == null) {
-            return true;
-        }
-
-        Duration duration = Duration.between(lastTimeEmailSent, LocalDateTime.now());
-        return duration.getSeconds() > 60;
     }
 
     @Override
