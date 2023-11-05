@@ -136,7 +136,7 @@ public class ComponentResource {
     @Operation()
     public Response create(ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+        return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
             try {
                 ComponentModel model = RepresentationToModel.toModel(kcSession, rep);
@@ -151,7 +151,7 @@ public class ComponentResource {
             } catch (IllegalArgumentException e) {
                 throw new BadRequestException(e);
             }
-        }, 10, 100);
+        });
     }
 
     @GET
@@ -177,7 +177,7 @@ public class ComponentResource {
     @Operation()
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+        return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
             try {
                 ComponentModel model = realmModel.getComponent(id);
@@ -193,7 +193,7 @@ public class ComponentResource {
             } catch (IllegalArgumentException e) {
                 throw new BadRequestException();
             }
-        }, 10, 100);
+        });
     }
     @DELETE
     @Path("{id}")
@@ -201,7 +201,7 @@ public class ComponentResource {
     @Operation()
     public void removeComponent(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
-        KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+        KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), kcSession -> {
             RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
 
             ComponentModel model = realmModel.getComponent(id);
@@ -211,7 +211,7 @@ public class ComponentResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(kcSession.getContext().getUri()).success();
             realmModel.removeComponent(model);
             return null;
-        }, 10 , 100);
+        });
     }
 
     private Response localizedErrorResponse(ComponentValidationException cve) {

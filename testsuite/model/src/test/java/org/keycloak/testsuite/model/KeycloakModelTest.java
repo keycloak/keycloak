@@ -116,8 +116,6 @@ import org.keycloak.models.DeploymentStateProviderFactory;
  * @author hmlnarik
  */
 public abstract class KeycloakModelTest {
-    public static final String KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS = "keycloak.modeltests.retry-transactions";
-
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
     protected final Logger log = Logger.getLogger(getClass());
@@ -571,37 +569,20 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
-        if (Boolean.parseBoolean(System.getProperty(KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS, "false"))) {
-            return KeycloakModelUtils.runJobInRetriableTransaction(getFactory(), session -> {
-                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
-                    @Override
-                    protected void commitImpl() {
-                        if (onCommit != null) { onCommit.accept(session, parameter); }
-                    }
+        return KeycloakModelUtils.runJobInTransactionWithResult(getFactory(), session -> {
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    if (onCommit != null) { onCommit.accept(session, parameter); }
+                }
 
-                    @Override
-                    protected void rollbackImpl() {
-                        if (onRollback != null) { onRollback.accept(session, parameter); }
-                    }
-                });
-                return what.apply(session, parameter);
-            }, 5, 100);
-        } else {
-            return KeycloakModelUtils.runJobInTransactionWithResult(getFactory(), session -> {
-                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
-                    @Override
-                    protected void commitImpl() {
-                        if (onCommit != null) { onCommit.accept(session, parameter); }
-                    }
-
-                    @Override
-                    protected void rollbackImpl() {
-                        if (onRollback != null) { onRollback.accept(session, parameter); }
-                    }
-                });
-                return what.apply(session, parameter);
+                @Override
+                protected void rollbackImpl() {
+                    if (onRollback != null) { onRollback.accept(session, parameter); }
+                }
             });
-        }
+            return what.apply(session, parameter);
+        });
     }
 
     /**

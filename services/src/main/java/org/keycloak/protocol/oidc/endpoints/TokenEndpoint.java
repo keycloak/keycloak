@@ -179,9 +179,7 @@ public class TokenEndpoint {
     @POST
     public Response processGrantRequest() {
         if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
-            // exceptions on DBs with SERIALIZABLE isolation level.
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
                 @Override
                 public Response runInternal(KeycloakSession session) {
                     // create another instance of the endpoint to isolate each run.
@@ -190,7 +188,7 @@ public class TokenEndpoint {
                     // process the request in the created instance.
                     return other.processGrantRequestInternal();
                 }
-            }, 10, 100);
+            });
         } else {
             return processGrantRequestInternal();
         }

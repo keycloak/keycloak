@@ -39,7 +39,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -47,7 +46,6 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
@@ -828,14 +826,6 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
-            }
-
-        } else if (KeycloakModelUtils.isExceptionRetriable(failure)) {
-            // let calling code decide if whole action should be retried.
-            if (failure instanceof RuntimeException) {
-                throw (RuntimeException) failure;
-            } else {
-                throw new RuntimeException(failure);
             }
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
