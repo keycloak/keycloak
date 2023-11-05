@@ -56,6 +56,7 @@ public class GeneratedRsaKeyProviderFactory extends AbstractGeneratedRsaKeyProvi
         return AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
                 .property(Attributes.KEY_SIZE_PROPERTY.get())
                 .property(Attributes.RS_ALGORITHM_PROPERTY)
+                .property(Attributes.KID_PROPERTY)
                 .build();
     }
 

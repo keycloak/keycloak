@@ -46,6 +46,7 @@ import java.security.PublicKey;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.PKCS12;
@@ -106,20 +107,29 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA);
     }
 
+    @Test
+    public void createBcfksCustomKid() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA, "my-custom-kid");
+    }
+
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
+        createSuccess(keystoreType, algorithmType, null);
+    }
+
+    private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String kid) throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType);
 
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", priority, keyAlgorithm);
+        ComponentRepresentation rep = createRep("valid", priority, keyAlgorithm, kid);
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         getCleanup().addComponentId(id);
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
-        assertEquals(6, createdRep.getConfig().size());
+        assertEquals(kid == null ? 6 : 7, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keystorePassword"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keyPassword"));
@@ -145,6 +155,12 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         }
 
         assertEquals(priority, key.getProviderPriority());
+        if (kid != null) {
+            assertEquals(kid, key.getKid());
+        } else {
+            assertFalse(key.getKid().isBlank());
+        }
+        assertEquals(generatedKeystore.getCertificateInfo().getPublicKey(), key.getPublicKey());
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
     }
 
@@ -210,6 +226,10 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     protected ComponentRepresentation createRep(String name, long priority, String algorithm) {
+        return createRep(name, priority, algorithm, null);
+    }
+
+    protected ComponentRepresentation createRep(String name, long priority, String algorithm, String kid) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
         rep.setParentId(adminClient.realm("test").toRepresentation().getId());
@@ -217,6 +237,9 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
+        if (kid != null) {
+            rep.getConfig().putSingle("kid", kid);
+        }
         rep.getConfig().putSingle("keystore", generatedKeystore.getKeystoreFile().getAbsolutePath());
         rep.getConfig().putSingle("keystorePassword", "password");
         rep.getConfig().putSingle("keyAlias", "selfsigned");
