@@ -67,8 +67,6 @@ public class Profile {
 
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
 
-        MAP_STORAGE("New store", Type.EXPERIMENTAL),
-
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
         DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),

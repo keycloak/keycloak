@@ -82,7 +82,6 @@ public class ProfileTest {
             Profile.Feature.RECOVERY_CODES,
             Profile.Feature.SCRIPTS,
             Profile.Feature.TOKEN_EXCHANGE,
-            Profile.Feature.MAP_STORAGE,
             Profile.Feature.DECLARATIVE_USER_PROFILE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
             Profile.Feature.UPDATE_EMAIL,
