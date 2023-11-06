@@ -37,6 +37,7 @@ describe("User profile disabled", () => {
   afterEach(() => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.goToLoginTab();
+    cy.wait(1000);
     cy.findByTestId("email-as-username-switch").uncheck({ force: true });
     cy.findByTestId("edit-username-switch").uncheck({ force: true });
   });
