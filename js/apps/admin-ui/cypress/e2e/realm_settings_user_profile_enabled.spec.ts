@@ -50,6 +50,7 @@ describe("User profile tabs", () => {
     sidebarPage.goToRealmSettings();
     sidebarPage.waitForPageLoad();
     realmSettingsPage.goToLoginTab();
+    cy.wait(1000);
     cy.findByTestId("email-as-username-switch").uncheck({ force: true });
     cy.findByTestId("edit-username-switch").uncheck({ force: true });
   });
@@ -164,6 +165,7 @@ describe("User profile tabs", () => {
       );
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
+      cy.wait(1000);
       cy.findByTestId("email-as-username-switch").should("have.value", "off");
       cy.findByTestId("edit-username-switch").should("have.value", "off");
       // Create user
@@ -197,6 +199,7 @@ describe("User profile tabs", () => {
       );
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
+      cy.wait(1000);
       cy.findByTestId("email-as-username-switch").check({ force: true });
       cy.findByTestId("email-as-username-switch").should("have.value", "on");
       cy.findByTestId("edit-username-switch").should("have.value", "off");
@@ -239,6 +242,7 @@ describe("User profile tabs", () => {
       );
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
+      cy.wait(1000);
       cy.findByTestId("email-as-username-switch").should("have.value", "off");
       cy.findByTestId("edit-username-switch").should("have.value", "off");
       // Create user
