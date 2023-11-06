@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.keycloak.models.dblock.DBLockGlobalLockProviderFactory;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
-import org.keycloak.models.locking.NoneGlobalLockProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -45,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 @RequireProvider(value = GlobalLockProvider.class,
-        exclude = { NoneGlobalLockProviderFactory.PROVIDER_ID, DBLockGlobalLockProviderFactory.PROVIDER_ID }
+        exclude = { DBLockGlobalLockProviderFactory.PROVIDER_ID }
 )
 public class GlobalLocksTest extends KeycloakModelTest {
 
