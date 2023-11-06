@@ -17,11 +17,9 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.logging.Logger;
@@ -45,6 +43,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.VerifyMailUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -59,9 +58,16 @@ import jakarta.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
-    private static final Logger logger = Logger.getLogger(VerifyEmail.class);
 
-    private final Map<String, LocalDateTime> emailSendingTime = new ConcurrentHashMap<>();
+    /**
+     *
+     */
+    private static final String REMAINING_SECONDS = "remainingSeconds";
+    /**
+     *
+     */
+    private static final String REMAINING_MINUTES = "remainingMinutes";
+    private static final Logger logger = Logger.getLogger(VerifyEmail.class);
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -95,21 +101,17 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         // it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
 
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime lastEmailSendingTime = emailSendingTime.getOrDefault(email, now);
-            Duration duration = Duration.between(lastEmailSendingTime, now);
-
-            boolean canSendMail = duration.getSeconds() > 120 || duration.getSeconds() == 0;
+            boolean canSendMail = VerifyMailUtil.canSendMail(email);
             if (canSendMail) {
                 authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
                 EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
                 challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(),
                         context.getAuthenticationSession(), event);
-                emailSendingTime.put(email, now);
+                VerifyMailUtil.store(email);
             } else {
-                long numberOfSecondsRemaining = 120 - duration.getSeconds();
-                challenge = loginFormsProvider.setAttribute("numberOfSecondsRemaining", numberOfSecondsRemaining)
-                        .createForm("email-already-sent.ftl");
+                long numberOfSecondsRemaining = VerifyMailUtil.getNumberOfSecondsRemaining(email);
+                challenge = loginFormsProvider.setAttribute(REMAINING_MINUTES, numberOfSecondsRemaining / 60)
+                        .setAttribute(REMAINING_SECONDS, numberOfSecondsRemaining % 60).createForm("email-already-sent.ftl");
             }
         }
         context.challenge(challenge);

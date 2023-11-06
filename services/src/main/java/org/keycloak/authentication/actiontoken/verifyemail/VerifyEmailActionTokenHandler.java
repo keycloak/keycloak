@@ -30,6 +30,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.VerifyMailUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
@@ -39,28 +40,21 @@ import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Action token handler for verification of e-mail address.
+ * 
  * @author hmlnarik
  */
 public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<VerifyEmailActionToken> {
 
     public VerifyEmailActionTokenHandler() {
-        super(
-          VerifyEmailActionToken.TOKEN_TYPE,
-          VerifyEmailActionToken.class,
-          Messages.STALE_VERIFY_EMAIL_LINK,
-          EventType.VERIFY_EMAIL,
-          Errors.INVALID_TOKEN
-        );
+        super(VerifyEmailActionToken.TOKEN_TYPE, VerifyEmailActionToken.class, Messages.STALE_VERIFY_EMAIL_LINK,
+                EventType.VERIFY_EMAIL, Errors.INVALID_TOKEN);
     }
 
     @Override
     public Predicate<? super VerifyEmailActionToken>[] getVerifiers(ActionTokenContext<VerifyEmailActionToken> tokenContext) {
-        return TokenUtils.predicates(
-          TokenUtils.checkThat(
-            t -> Objects.equals(t.getEmail(), tokenContext.getAuthenticationSession().getAuthenticatedUser().getEmail()),
-            Errors.INVALID_EMAIL, getDefaultErrorMessage()
-          )
-        );
+        return TokenUtils.predicates(TokenUtils.checkThat(
+                t -> Objects.equals(t.getEmail(), tokenContext.getAuthenticationSession().getAuthenticatedUser().getEmail()),
+                Errors.INVALID_EMAIL, getDefaultErrorMessage()));
     }
 
     @Override
@@ -85,28 +79,24 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
                     authSession.getClient().getClientId(), authSession.getTabId());
             String confirmUri = builder.build(realm.getName()).toString();
 
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
+            return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                     .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
-                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
-                    .createInfoPage();
+                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri).createInfoPage();
         }
 
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
         user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
         authSession.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
-
+        VerifyMailUtil.remove(user.getEmail());
         event.success();
 
         if (token.getCompoundOriginalAuthenticationSessionId() != null) {
             AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 
-            return tokenContext.getSession().getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.EMAIL_VERIFIED)
-                    .createInfoPage();
+            return tokenContext.getSession().getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                    .setSuccess(Messages.EMAIL_VERIFIED).createInfoPage();
         }
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
