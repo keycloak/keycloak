@@ -101,6 +101,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
+import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -253,8 +259,14 @@ public class SAMLEndpoint {
         }
 
         protected KeyLocator getIDPKeyLocator() {
-            List<Key> keys = new LinkedList<>();
+            if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
+                String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
+                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+                return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
+            }
 
+            List<Key> keys = new LinkedList<>();
             for (String signingCertificate : config.getSigningCertificates()) {
                 X509Certificate cert = null;
                 try {
