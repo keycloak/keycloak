@@ -18,14 +18,12 @@
 package org.keycloak.models.dblock;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.GlobalLockProviderFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class DBLockGlobalLockProviderFactory implements GlobalLockProviderFactory, EnvironmentDependentProviderFactory {
+public class DBLockGlobalLockProviderFactory implements GlobalLockProviderFactory {
 
     public static final String PROVIDER_ID = "dblock";
 
@@ -48,10 +46,5 @@ public class DBLockGlobalLockProviderFactory implements GlobalLockProviderFactor
     @Override
     public String getId() {
         return PROVIDER_ID;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

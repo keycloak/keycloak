@@ -145,7 +145,6 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     @Test
     @Ignore // Ignore should be removed by https://github.com/keycloak/keycloak/issues/20441
     public void testAccountLinkWithUserStorageProvider() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
 
         String childUsername = PassThroughFederatedUserStorageProvider.PASSTHROUGH_USERNAME;
         String childPassword = PassThroughFederatedUserStorageProvider.INITIAL_PASSWORD;
