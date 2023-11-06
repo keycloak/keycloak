@@ -65,3 +65,5 @@ Before contributing to Keycloak, please read our [contributing guidelines](CONTR
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+Changes for testing purposes
