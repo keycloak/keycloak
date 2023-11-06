@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -448,6 +449,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName);
     }
 
+    private boolean isOptionalBuiltInAttribute(String attributeName) {
+        return UserModel.FIRST_NAME.equals(attributeName) || UserModel.LAST_NAME.equals(attributeName);
+    }
+
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
             Set<String> viewRoles) {
         return ac -> UPConfigUtils.isRoleForContext(ac.getContext(), viewRoles) || canEdit.test(ac);
@@ -521,7 +526,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid: " + errors.toString());
             }
 
-            for (AttributeMetadata metadata : decoratedMetadata.getAttributes()) {
+            Iterator<AttributeMetadata> attributes = decoratedMetadata.getAttributes().iterator();
+
+            while (attributes.hasNext()) {
+                AttributeMetadata metadata = attributes.next();
+
                 String attributeName = metadata.getName();
 
                 if (isBuiltInAttribute(attributeName)) {
@@ -534,6 +543,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                         // user-defined configuration will add its own validators
                         validators.removeIf(m -> m.getValidatorId().equals(id));
                     }
+                } else if (isOptionalBuiltInAttribute(attributeName)) {
+                    // removes optional default attributes in favor of user-defined configuration
+                    // make sure any attribute other than username and email are removed from the metadata
+                    attributes.remove();
                 }
             }
 

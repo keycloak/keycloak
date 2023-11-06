@@ -60,7 +60,7 @@ public class AdminEventEntity {
     @Column(name="RESOURCE_PATH")
     private String resourcePath;
 
-    @Column(name="REPRESENTATION", length = 25500)
+    @Column(name="REPRESENTATION")
     private String representation;
 
     @Column(name="ERROR")

@@ -19,7 +19,43 @@ https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[
 Keycloak has preview support for https://fidoalliance.org/passkeys/[Passkeys].
 
 Passkey registration and authentication are realized by the features of WebAuthn.
-Therefore, users of Keycloak can do passkey registration and authentication by existing WebAuthn registraton and authentication.
+Therefore, users of Keycloak can do passkey registration and authentication by existing WebAuthn registration and authentication.
 
 Both synced passkeys and device-bound passkeys can be used for both Same-Device and Cross-Device Authentication.
 However, passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution and thanks to https://github.com/thomasdarimont[Thomas Darimont] for the help with the
+ideas and testing of this feature.
+
+= WebAuthn improvements
+
+WebAuthn policy now includes a new field: `Extra Origins`.  It provides better interoperability with non-Web platforms (for example, native mobile applications).
+Thanks to https://github.com/akunzai[Charley Wu] for the contribution.
+
+= RESTEasy Reactive
+
+Keycloak has switched to RESTEasy Reactive. Applications using `quarkus-resteasy-reactive` should still benefit from a better startup time, runtime performance, and memory footprint, even though not using reactive style/semantics. SPI's that depend directly on JAX-RS API should be compatible with this change. SPI's that depend on RESTEasy Classic including `ResteasyClientBuilder` will not be compatible and will require update, this will also be true for other implementation of the JAX-RS API like Jersey.
+
+= More flexibility for introspection endpoint
+
+In previous versions, introspection endpoint  automatically returned most claims, which were available in the access token. Now there is new
+switch `Add to token introspection` on most of protocol mappers. This addition allows more flexibility as introspection endpoint can return different
+claims than access token. This is first step towards "Lightweight access tokens" support as access tokens can omit lots of the claims, which would be still returned
+by the introspection endpoint. When migrating from previous versions, the introspection endpoint should return same claims, which are returned from access token,
+so the behavior should be effectively the same by default after the migration. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution.
+
+= Feature flag for OAuth 2.0 device authorization grant flow
+
+The OAuth 2.0 device authorization grant flow now includes a feature flag, so you can easily disable this feature. This feature is still enabled by default.
+Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
+= Group scalability improvements
+
+Performance around searching of groups is improved for the use-cases with many groups and subgroups. There are improvements, which allow
+paginated lookup of subgroups. Thanks to https://github.com/alice-wondered[Alice] for the contribution.
+
+= User profile improvements
+
+Declarative user profile is still a preview feature in this release, but we are working hard on promoting it to a supported feature. Feedback is welcome.
+If you find any issues or have any improvements in mind,  you are welcome to create https://github.com/keycloak/keycloak/issues/new/choose[Github issue],
+ideally with label `area/user-profile`.
+

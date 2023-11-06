@@ -96,7 +96,7 @@ public class Profile {
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
-        TRANSIENT_USERS("Transient users for brokering", Type.PREVIEW),
+        TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
         ;
 
         private final Type type;

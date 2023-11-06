@@ -132,12 +132,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
     <FormGroup
       label={t(name)}
       fieldId={name}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${name}Help`)}
-          fieldLabelId={`clients:${name}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${name}Help`)} fieldLabelId={name} />}
     >
       <Split hasGutter>
         <SplitItem>

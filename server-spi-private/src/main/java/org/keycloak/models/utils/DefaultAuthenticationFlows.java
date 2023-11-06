@@ -24,7 +24,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.LinkedList;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

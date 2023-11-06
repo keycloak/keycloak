@@ -30,4 +30,11 @@
         <dropColumn tableName="COMPONENT_CONFIG" columnName="VALUE"/>
         <renameColumn tableName="COMPONENT_CONFIG" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
     </changeSet>
+
+    <changeSet author="keycloak" id="23.0.0-17258">
+        <addColumn tableName="EVENT_ENTITY">
+            <column name="DETAILS_JSON_LONG_VALUE" type="NCLOB" />
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

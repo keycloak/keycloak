@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import {
   Form,
   FormGroup,
@@ -11,8 +12,8 @@ import {
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem, useHelp } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -61,7 +62,7 @@ export const DownloadDialog = ({
   useFetch(
     async () => {
       if (selectedConfig?.mediaType === "application/zip") {
-        const response = await fetch(
+        const response = await fetchWithError(
           `${addTrailingSlash(
             adminClient.baseUrl,
           )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,

@@ -466,7 +466,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
             links = realm.users().get(childUserId).getFederatedIdentity();
             assertThat(links, is(empty()));
 
-            pause(500)
+            pause(500);
 
             logoutAll();
 

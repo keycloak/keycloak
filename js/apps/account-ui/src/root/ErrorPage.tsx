@@ -50,7 +50,7 @@ function getErrorMessage(error: unknown): string | null {
   }
 
   if (isRouteErrorResponse(error)) {
-    return error.error ? getErrorMessage(error.error) : null;
+    return error.statusText;
   }
 
   if (error instanceof Error) {
