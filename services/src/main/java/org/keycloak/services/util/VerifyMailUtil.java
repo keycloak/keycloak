@@ -34,7 +34,7 @@ public class VerifyMailUtil {
     private static final Map<String, Long> mailSendingTime = new HashMap<>();
 
     public static void store(String email) {
-        Integer retries = numberOfRetries.getOrDefault(email, 1);
+        Integer retries = numberOfRetries.getOrDefault(email, 0);
         if (retries < MAX_NUMBER_RETRIES) {
             retries = retries + 1;
             numberOfRetries.put(email, retries);
