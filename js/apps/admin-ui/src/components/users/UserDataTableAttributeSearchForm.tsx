@@ -186,20 +186,21 @@ export function UserDataTableAttributeSearchForm({
   return (
     <Form className="user-attribute-search-form">
       <TextContent className="user-attribute-search-form-headline">
-        <Text component={TextVariants.h6}>{t("selectAttributes")}</Text>
+        <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
       </TextContent>
       <Alert
         isInline
         className="user-attribute-search-form-alert"
         variant="info"
         title={t("searchUserByAttributeDescription")}
+        component="h3"
       />
       <TextContent className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h6}>{t("key")}</Text>
+          <Text component={TextVariants.h3}>{t("key")}</Text>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h6}>{t("value")}</Text>
+          <Text component={TextVariants.h3}>{t("value")}</Text>
         </div>
       </TextContent>
       <div className="user-attribute-search-form-left">
@@ -226,6 +227,7 @@ export function UserDataTableAttributeSearchForm({
             variant="control"
             icon={<CheckIcon />}
             onClick={addToFilter}
+            aria-label={t("addToFilter")}
           />
         </InputGroup>
       </div>
