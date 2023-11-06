@@ -20,6 +20,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -146,4 +147,12 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
             || compatibleIdps.contains(getConfig().getProviderId());
     }
 
+    /**
+     * Reload keys for the identity provider if permitted in it.For example OIDC or
+     * SAML providers will reload the keys from the jwks or metadata endpoint.
+     * @return true if reloaded, false if not
+     */
+    default boolean reloadKeys() {
+        return false;
+    }
 }

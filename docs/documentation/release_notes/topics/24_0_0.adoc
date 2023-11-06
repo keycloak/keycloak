@@ -1,3 +1,9 @@
 = Keycloak JS using `exports` field
 
 The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+== Automatic certificate management for SAML identity providers
+
+The SAML identity providers can now be configured to automatically download the signing certificates from the IDP entity metadata descriptor endpoint. In order to use the new feature the option `Metadata descriptor URL` should be configured in the provider (URL where the IDP metadata information with the certificates is published) and `Use metadata descriptor URL` needs to be `ON`. The certificates are automatically downloaded and cached in the `public-key-storage` SPI from that URL. The certificates can also be reloaded or imported from the admin console, using the action combo in the provider page.
+
+See the https://www.keycloak.org/docs/latest/server_admin/index.html#saml-v2-0-identity-providers[documentation] for more details about the new options.
