@@ -87,7 +87,7 @@ export const RealmOverrides = ({
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
-  const [kebabOpen1, setKebabOpen1] = useState(false);
+  const [kebabOpen, setKebabOpen] = useState(false);
   const { getValues, handleSubmit, control } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
@@ -101,8 +101,9 @@ export const RealmOverrides = ({
   const { whoAmI } = useWhoAmI();
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [areAllRowsSelected, setAreAllRowsSelected] = useState(false);
-  const [isBundleMessageValueEdit, setIsBundleMessageValueEdit] =
-    useState(false);
+  const [isBundleMessageValueEdit, setIsBundleMessageValueEdit] = useState(
+    new Array(tableRows.length).fill(false),
+  );
   const refreshTable = () => {
     setTableKey(tableKey + 1);
   };
@@ -188,6 +189,7 @@ export const RealmOverrides = ({
         ],
         isSelected: false,
       }));
+      console.log("updatedRows ", updatedRows);
       setTableRows(updatedRows);
 
       return bundles;
@@ -204,22 +206,20 @@ export const RealmOverrides = ({
     setTableRows((prev) => {
       const newRows = cloneDeep(prev);
 
-      // Add a check for undefined values
       if (!newRows[rowIndex]?.cells?.[cellIndex]) {
         console.error(
           "Undefined rowIndex, cell or cellIndex:",
           rowIndex,
           cellIndex,
         );
-        return prev; // return the previous state
+        return prev;
       }
 
-      const textCell = newRows[rowIndex].cells[cellIndex] as
-        | IEditableTextCell
-        | undefined;
+      const textCell = newRows[rowIndex]?.cells?.[
+        cellIndex
+      ] as IEditableTextCell;
 
-      // Check if textCell is undefined
-      textCell?.props.onChange?.(newValue, evt, rowIndex, cellIndex);
+      textCell.props.onChange?.(newValue, evt, rowIndex, cellIndex);
       return newRows;
     });
   };
@@ -315,14 +315,12 @@ export const RealmOverrides = ({
     return selectedRowKeys.includes(key);
   };
 
-  const onSubmit = (messageBundle: BundleForm) => {
-    console.log("onSubmit ", messageBundle);
+  const onSubmit = (value: string) => {
+    console.log("onSubmit ", value);
     // setValue(messageBundle);
-    // setIsBundleMessageValueEdit(false);
-  };
 
-  const toggleKebab1 = () => {
-    setKebabOpen1(!kebabOpen1);
+    console.log(">>> isBundleMessageValueEdit ", isBundleMessageValueEdit);
+    // setIsBundleMessageValueEdit(false);
   };
 
   return (
@@ -330,10 +328,9 @@ export const RealmOverrides = ({
       {addMessageBundleModalOpen && (
         <AddMessageBundleModal
           handleModalToggle={handleModalToggle}
-          save={(pair: any, e) => {
+          save={(pair: any) => {
             addKeyValue(pair);
             handleModalToggle();
-            e.preventDefault();
           }}
           form={bundleForm}
         />
@@ -366,15 +363,17 @@ export const RealmOverrides = ({
               </Button>
               <ToolbarItem>
                 <Dropdown
-                  toggle={<KebabToggle onToggle={toggleKebab1} />}
-                  isOpen={kebabOpen1}
+                  toggle={
+                    <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
+                  }
+                  isOpen={kebabOpen}
                   isPlain
                   dropdownItems={[
                     <DropdownItem
-                      key="action1"
+                      key="action"
                       component="button"
                       isDisabled={messageBundles.length === 0}
-                      onClick={() => setKebabOpen1(false)}
+                      onClick={() => setKebabOpen(false)}
                     >
                       {t("delete")}
                     </DropdownItem>,
@@ -471,8 +470,8 @@ export const RealmOverrides = ({
                       <Form
                         isHorizontal
                         className="kc-form-bundleValue"
-                        onSubmit={handleSubmit((bundleValue) => {
-                          onSubmit(bundleValue.value);
+                        onSubmit={handleSubmit(() => {
+                          onSubmit((row.cells?.[1] as IRowCell).props.value);
                         })}
                       >
                         <FormGroup
@@ -480,7 +479,7 @@ export const RealmOverrides = ({
                           className="kc-bundleValue-row"
                         >
                           <div className="kc-form-group-bundleValue">
-                            {isBundleMessageValueEdit && (
+                            {isBundleMessageValueEdit[rowIndex] && (
                               <>
                                 <Controller
                                   name="value"
@@ -503,28 +502,52 @@ export const RealmOverrides = ({
                                   className="kc-editUserLabelAcceptBtn"
                                   type="submit"
                                   icon={<CheckIcon />}
+                                  onClick={() => {
+                                    const updatedEditState = [
+                                      ...isBundleMessageValueEdit,
+                                    ];
+                                    updatedEditState[rowIndex] = true;
+                                    setIsBundleMessageValueEdit(
+                                      updatedEditState,
+                                    );
+                                  }}
                                 />
+
                                 <Button
                                   data-testid="editUserLabelCancelBtn"
                                   variant="link"
                                   className="kc-editBundleValue-cancelBtn"
                                   icon={<TimesIcon />}
-                                  onClick={() =>
-                                    setIsBundleMessageValueEdit(false)
-                                  }
+                                  onClick={() => {
+                                    const updatedEditState = [
+                                      ...isBundleMessageValueEdit,
+                                    ];
+                                    updatedEditState[rowIndex] = false;
+                                    setIsBundleMessageValueEdit(
+                                      updatedEditState,
+                                    );
+                                  }}
                                 />
                               </>
                             )}
-                            {!isBundleMessageValueEdit && (
+                            {!isBundleMessageValueEdit[rowIndex] && (
                               <>
                                 {(row.cells?.[1] as IRowCell).props.value}
+
                                 <Button
                                   aria-label={t("editUserLabel")}
                                   variant="link"
                                   className="kc-editBundleValue-btn"
-                                  onClick={() =>
-                                    setIsBundleMessageValueEdit(true)
-                                  }
+                                  onClick={() => {
+                                    const updatedEditState = [
+                                      ...isBundleMessageValueEdit,
+                                      true,
+                                    ];
+                                    updatedEditState[rowIndex] = true;
+                                    setIsBundleMessageValueEdit(
+                                      updatedEditState,
+                                    );
+                                  }}
                                   data-testid="editUserLabelBtn"
                                   icon={<PencilAltIcon />}
                                 />
