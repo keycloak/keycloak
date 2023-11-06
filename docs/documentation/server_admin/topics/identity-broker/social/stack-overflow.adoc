@@ -22,9 +22,10 @@ image:images/stack-overflow-app-register.png[Register Application]
 .Settings
 image:images/stack-overflow-app-settings.png[Settings]
 +
-. Note the *Client ID* and *Client Secret*.
-. In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
-. In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+. Note the `Client Id`, `Client Secret`, and `Key`.
+. In {project_name}, paste the value of the `Client Id` into the *Client ID* field.
+. In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+. In {project_name}, paste the value of the `Key` into the *Key* field.
 . Click *Add*.
 
 

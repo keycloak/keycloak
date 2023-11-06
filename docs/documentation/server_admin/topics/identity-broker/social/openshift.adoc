@@ -3,7 +3,7 @@
 
 .Procedure
 . Click *Identity Providers* in the menu.
-. From the `Add provider` list, select `Openshift`.
+. From the `Add provider` list, select `Openshift v3`.
 +
 .Add identity provider
 image:images/openshift-add-identity-provider.png[Add Identity Provider]

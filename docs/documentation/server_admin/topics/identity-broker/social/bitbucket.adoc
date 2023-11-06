@@ -15,6 +15,6 @@ image:images/bitbucket-add-identity-provider.png[Add Identity Provider]
 .. Paste the value of *Redirect URI* into the *Callback URL* field.
 .. Ensure you select *Email* and *Read* in the *Account* section to permit your application to read email.
 . Note the `Key` and `Secret` values Bitbucket displays when you create your consumer.
-. In {project_name}, paste the value of the `Key` into the *Consumer Key* field.
-. In {project_name}, paste the value of the `Secret` into the *Consumer Secret* field.
+. In {project_name}, paste the value of the `Key` into the *Client ID* field.
+. In {project_name}, paste the value of the `Secret` into the *Client Secret* field.
 . Click *Add*.
