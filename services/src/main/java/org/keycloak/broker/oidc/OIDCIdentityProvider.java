@@ -44,11 +44,15 @@ import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.OIDCIdentityProviderPublicKeyLoader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -953,5 +957,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!nonce.equals(expectedNonce)) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid nonce", Response.Status.BAD_REQUEST);
         }
+    }
+
+    @Override
+    public boolean reloadKeys() {
+        if (getConfig().isEnabled() && getConfig().isUseJwksUrl()) {
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
+            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+            return keyStorage.reloadKeys(modelKey, new OIDCIdentityProviderPublicKeyLoader(session, getConfig()));
+        }
+        return false;
     }
 }
