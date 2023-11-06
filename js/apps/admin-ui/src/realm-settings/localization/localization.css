@@ -2,3 +2,12 @@
 .kc-editBundleValue-cancelBtn {
   color: var(--pf-global--Color--200) !important;
 }
+
+.kc-realmOverrides-kebabToggle {
+  color: var(--pf-c-dropdown__toggle--m-plain--Color);
+  --pf-c-dropdown__toggle--before--BorderWidth: none;
+}
+
+.kc-realmOverrides-kebabToggle:hover {
+  color: var(--pf-c-dropdown__toggle--Color);
+}

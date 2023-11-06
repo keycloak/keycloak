@@ -87,7 +87,7 @@ export const RealmOverrides = ({
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
-  const [kebabOpen, setKebabOpen] = useState(false);
+  const [kebabOpen1, setKebabOpen1] = useState(false);
   const { getValues, handleSubmit, control } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
@@ -321,14 +321,19 @@ export const RealmOverrides = ({
     // setIsBundleMessageValueEdit(false);
   };
 
+  const toggleKebab1 = () => {
+    setKebabOpen1(!kebabOpen1);
+  };
+
   return (
     <>
       {addMessageBundleModalOpen && (
         <AddMessageBundleModal
           handleModalToggle={handleModalToggle}
-          save={(pair: any) => {
+          save={(pair: any, e) => {
             addKeyValue(pair);
             handleModalToggle();
+            e.preventDefault();
           }}
           form={bundleForm}
         />
@@ -361,17 +366,15 @@ export const RealmOverrides = ({
               </Button>
               <ToolbarItem>
                 <Dropdown
-                  toggle={<KebabToggle onToggle={setKebabOpen} />}
-                  isOpen={kebabOpen}
+                  toggle={<KebabToggle onToggle={toggleKebab1} />}
+                  isOpen={kebabOpen1}
                   isPlain
                   dropdownItems={[
                     <DropdownItem
-                      key="action"
+                      key="action1"
                       component="button"
                       isDisabled={messageBundles.length === 0}
-                      onClick={() => {
-                        setKebabOpen(false);
-                      }}
+                      onClick={() => setKebabOpen1(false)}
                     >
                       {t("delete")}
                     </DropdownItem>,
@@ -532,13 +535,14 @@ export const RealmOverrides = ({
                       </Form>
                     </Td>
                     <Td isActionCell>
-                      <Button
+                      <Dropdown
+                        toggle={
+                          <KebabToggle className="kc-realmOverrides-kebabToggle" />
+                        }
                         onClick={() => {
                           deleteKey((row.cells?.[0] as IRowCell).props.value);
                         }}
-                      >
-                        {t("deleteBtn")}
-                      </Button>
+                      />
                     </Td>
                   </Tr>
                 ))}
