@@ -463,11 +463,6 @@ declare class Keycloak {
 	/**
 	* @private Undocumented.
 	*/
-	clientSecret?: string;
-
-	/**
-	* @private Undocumented.
-	*/
 	redirectUri?: string;
 
 	/**
