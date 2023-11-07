@@ -14,7 +14,7 @@ import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
 import { UserFormFields } from "./form-state";
-import { fieldName, isRootAttribute } from "./utils";
+import { fieldName, isRootAttribute, label } from "./utils";
 import { MultiInputComponent } from "./components/MultiInputComponent";
 
 export type UserProfileError = {
@@ -146,11 +146,13 @@ export const UserProfileFields = ({
       sections={groupsWithAttributes
         .filter((group) => group.attributes.length > 0)
         .map(({ group, attributes }) => ({
-          title: group.displayHeader || group.name || t("general"),
+          title: label(group.displayHeader, group.name, t) || t("general"),
           panel: (
             <div className="pf-c-form">
               {group.displayDescription && (
-                <Text className="pf-u-pb-lg">{group.displayDescription}</Text>
+                <Text className="pf-u-pb-lg">
+                  {label(group.displayDescription, "", t)}
+                </Text>
               )}
               {attributes.map((attribute) => (
                 <FormField

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { UserFormFields } from "../form-state";
-import { label } from "../utils";
+import { labelAttribute } from "../utils";
 import { isRequiredAttribute } from "../utils/user-profile";
 
 export type UserProfileGroupProps = {
@@ -28,7 +28,7 @@ export const UserProfileGroup = ({
   return (
     <FormGroup
       key={attribute.name}
-      label={label(attribute, t) || ""}
+      label={labelAttribute(attribute, t) || ""}
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}
       validated={errors.username ? "error" : "default"}

@@ -5,10 +5,16 @@ export const isBundleKey = (displayName?: string) =>
   displayName?.includes("${");
 export const unWrap = (key: string) => key.substring(2, key.length - 1);
 
-export const label = (attribute: UserProfileAttributeMetadata, t: TFunction) =>
-  (isBundleKey(attribute.displayName)
-    ? t(unWrap(attribute.displayName!))
-    : attribute.displayName) || attribute.name;
+export const label = (
+  text: string | undefined,
+  fallback: string | undefined,
+  t: TFunction,
+) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+
+export const labelAttribute = (
+  attribute: UserProfileAttributeMetadata,
+  t: TFunction,
+) => label(attribute.displayName, attribute.name, t);
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
 

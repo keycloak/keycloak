@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { UserProfileFieldProps } from "../UserProfileFields";
-import { fieldName, label } from "../utils";
+import { fieldName, labelAttribute } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
 
 export const MultiInputComponent = ({
@@ -13,10 +13,10 @@ export const MultiInputComponent = ({
   return (
     <UserProfileGroup form={form} attribute={attribute}>
       <MultiLineInput
-        aria-label={label(attribute, t)}
+        aria-label={labelAttribute(attribute, t)}
         name={fieldName(attribute)!}
         addButtonLabel={t("addMultivaluedLabel", {
-          fieldLabel: label(attribute, t),
+          fieldLabel: labelAttribute(attribute, t),
         })}
       />
     </UserProfileGroup>
