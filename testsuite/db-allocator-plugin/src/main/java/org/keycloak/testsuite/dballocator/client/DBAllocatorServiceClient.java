@@ -25,8 +25,6 @@ import org.jboss.logging.Logger;
 
 public class DBAllocatorServiceClient {
 
-    private static final int TIMEOUT = 10_000;
-
     private final Client restClient;
     private final URI allocatorServletURI;
     private final BackoffRetryPolicy retryPolicy;
@@ -42,9 +40,9 @@ public class DBAllocatorServiceClient {
 
     private final ApacheHttpClient43Engine createEngine() {
         RequestConfig reqConfig = RequestConfig.custom()
-                .setConnectTimeout(TIMEOUT)
-                .setSocketTimeout(TIMEOUT)
-                .setConnectionRequestTimeout(TIMEOUT)
+                .setConnectTimeout(10_000)
+                .setSocketTimeout(30_000) // how long to wait for data 
+                .setConnectionRequestTimeout(10_000)
                 .build();
         CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setDefaultRequestConfig(reqConfig)
