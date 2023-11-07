@@ -10,6 +10,7 @@ import { CubesIcon } from "@patternfly/react-icons";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
@@ -25,7 +26,9 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { keycloak } from "../keycloak";
-import { toUser } from "../user/routes/User";
+import { toUser, UserRoute } from "../user/routes/User";
+import { toUsers } from "../user/routes/Users";
+import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
 
 export type ColumnName =
@@ -80,11 +83,13 @@ export default function SessionsTable({
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey((value) => value + 1);
+  const isOnUserPage = !!useMatch(UserRoute.path);
 
   const columns = useMemo(() => {
     const defaultColumns: Field<UserSessionRepresentation>[] = [
@@ -130,7 +135,11 @@ export default function SessionsTable({
     onConfirm: async () => {
       try {
         await adminClient.users.logout({ id: logoutUser! });
-        refresh();
+        if (isOnUserPage && isLightweightUser(logoutUser)) {
+          navigate(toUsers({ realm: realm }));
+        } else {
+          refresh();
+        }
       } catch (error) {
         addError("logoutAllSessionsError", error);
       }
@@ -142,6 +151,8 @@ export default function SessionsTable({
 
     if (session.userId === whoAmI.getUserId()) {
       await keycloak.logout({ redirectUri: "" });
+    } else if (isOnUserPage && isLightweightUser(session.userId)) {
+      navigate(toUsers({ realm: realm }));
     } else {
       refresh();
     }

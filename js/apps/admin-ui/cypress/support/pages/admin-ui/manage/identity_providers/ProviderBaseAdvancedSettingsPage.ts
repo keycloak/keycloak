@@ -65,6 +65,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #promptSelect = "#prompt";
   #disableUserInfoSwitch = "#disableUserInfo";
   #trustEmailSwitch = "#trustEmail";
+  #doNotStoreUsers = "#doNotStoreUsers";
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
   #firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
@@ -146,6 +147,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public clickEssentialClaimSwitch() {
     cy.get(this.#essentialClaimSwitch).parent().click();
+    return this;
+  }
+
+  public clickdoNotStoreUsersSwitch() {
+    cy.get(this.#doNotStoreUsers).parent().click();
     return this;
   }
 
@@ -273,6 +279,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     return this;
   }
 
+  public assertDoNotImportUsersSwitchTurnedOn(isOn: boolean) {
+    super.assertSwitchStateOn(cy.get(this.#doNotStoreUsers).parent(), isOn);
+    return this;
+  }
+
   public assertEssentialClaimSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.#essentialClaimSwitch).parent(),
@@ -307,6 +318,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertSyncModeSelectOptionEqual(syncModeOption: SyncModeOption) {
     cy.get(this.#syncModeSelect).should("have.text", syncModeOption);
+    return this;
+  }
+
+  public assertSyncModeShown(isShown: boolean) {
+    cy.get(this.#syncModeSelect).should(isShown ? "exist" : "not.exist");
     return this;
   }
 

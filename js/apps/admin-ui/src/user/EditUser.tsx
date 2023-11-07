@@ -5,10 +5,13 @@ import {
   AlertVariant,
   ButtonVariant,
   DropdownItem,
+  Label,
   PageSection,
   Tab,
   TabTitleText,
+  Tooltip,
 } from "@patternfly/react-core";
+import { InfoCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -44,6 +47,7 @@ import {
 } from "./form-state";
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
+import { isLightweightUser } from "./utils";
 
 import "./user-section.css";
 
@@ -63,6 +67,7 @@ export default function EditUser() {
     useState<UserProfileMetadata>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
+  const lightweightUser = isLightweightUser(user?.id);
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -141,7 +146,11 @@ export default function EditUser() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.users.del({ id: user!.id! });
+        if (lightweightUser) {
+          await adminClient.users.logout({ id: user!.id! });
+        } else {
+          await adminClient.users.del({ id: user!.id! });
+        }
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
         navigate(toUsers({ realm: realmName }));
       } catch (error) {
@@ -183,6 +192,24 @@ export default function EditUser() {
         titleKey={user.username!}
         className="kc-username-view-header"
         divider={false}
+        badges={
+          lightweightUser
+            ? [
+                {
+                  text: (
+                    <Tooltip content={t("transientUserTooltip")}>
+                      <Label
+                        data-testid="user-details-label-transient-user"
+                        icon={<InfoCircleIcon />}
+                      >
+                        {t("transientUser")}
+                      </Label>
+                    </Tooltip>
+                  ),
+                },
+              ]
+            : []
+        }
         dropdownItems={[
           <DropdownItem
             key="impersonate"
