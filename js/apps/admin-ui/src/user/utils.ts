@@ -25,3 +25,6 @@ export const fieldName = (attribute: UserProfileAttributeMetadata) =>
   isRootAttribute(attribute.name)
     ? attribute.name
     : `attributes.${attribute.name}`;
+
+export const isLightweightUser = (userId?: string) =>
+  userId?.startsWith("lightweight-");

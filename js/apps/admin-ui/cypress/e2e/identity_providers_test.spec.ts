@@ -337,6 +337,15 @@ describe("Identity provider test", () => {
       advancedSettings.clickTrustEmailSwitch();
       advancedSettings.clickAccountLinkingOnlySwitch();
       advancedSettings.clickHideOnLoginPageSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(false);
+      advancedSettings.assertSyncModeShown(true);
+      advancedSettings.clickdoNotStoreUsersSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(true);
+      advancedSettings.assertSyncModeShown(false);
+      advancedSettings.clickdoNotStoreUsersSwitch();
+      advancedSettings.assertDoNotImportUsersSwitchTurnedOn(false);
+      advancedSettings.assertSyncModeShown(true);
+
       advancedSettings.clickEssentialClaimSwitch();
       advancedSettings.typeClaimNameInput("claim-name");
       advancedSettings.typeClaimValueInput("claim-value");
