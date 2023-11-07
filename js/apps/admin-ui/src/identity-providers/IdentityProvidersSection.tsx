@@ -42,6 +42,7 @@ import { useFetch } from "../utils/useFetch";
 import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
+import { IdentityProvidersQuery } from "libs/keycloak-admin-client/lib/resources/identityProviders";
 
 const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
   const { t } = useTranslation();
@@ -92,17 +93,30 @@ export default function IdentityProvidersSection() {
 
   useFetch(
     async () => {
-      const provider = await adminClient.realms.findOne({ realm });
-      if (!provider) {
-        throw new Error(t("notFound"));
+      const providers = await adminClient.identityProviders.find();
+      if (!providers) {
+        throw new Error(t("common:notFound"));
       }
-      return provider.identityProviders!;
+      return providers;
     },
     (providers) => {
       setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
     },
-    [key],
+    [],
   );
+
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const params: IdentityProvidersQuery = {
+      first: first!,
+      max: max!,
+    };
+    if (search) {
+      params.search = search;
+    }
+    const providers = await adminClient.identityProviders.find({ ...params });
+    setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
+    return providers;
+  };
 
   const navigateToCreate = (providerId: string) =>
     navigate(
@@ -218,7 +232,9 @@ export default function IdentityProvidersSection() {
         )}
         {providers.length !== 0 && (
           <KeycloakDataTable
-            loader={providers}
+            key={key}
+            loader={loader}
+            isPaginated
             ariaLabelKey="identityProviders"
             searchPlaceholderKey="searchForProvider"
             toolbarItem={
