@@ -31,6 +31,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
@@ -198,4 +199,45 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         });
     }
 
+    @Test
+    public void test04_loginWithSpecialCharacterUsingSameUUIDThanUsernameAttribute() {
+        // remove users from the ldap to use the new UUID attribute
+        adminClient.realm(TEST_REALM_NAME).userStorage().removeImportedUsers(ldapModelId);
+
+        // change the UUID attribute to be the username attribute
+        String origUuidAttrName = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+
+            String uidAttrName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            String origUuidAttrNamee = ctx.getLdapModel().get(LDAPConstants.UUID_LDAP_ATTRIBUTE);
+            ctx.getLdapModel().put(LDAPConstants.UUID_LDAP_ATTRIBUTE, uidAttrName);
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+
+            return origUuidAttrNamee;
+        }, String.class);
+
+        try {
+            // assert the user is found and UUID is the name
+            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("jamees,key*cložak)ppp", true);
+            Assert.assertEquals("User not found", 1, users.size());
+            UserRepresentation jamees = users.iterator().next();
+            Assert.assertEquals("Incorrect user", "jamees,key*cložak)ppp", jamees.getUsername());
+            Assert.assertEquals("Incorrect UUID attribute", "jamees,key*cložak)ppp", jamees.firstAttribute(LDAPConstants.LDAP_ID));
+
+            // Fail login with wildcard
+            loginPage.open();
+            loginPage.login("jamees*", "Password1");
+            Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+            // Success login as username exactly match
+            loginPage.login("jamees,key*cložak)ppp", "Password1");
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        } finally {
+            // Revert config changes to be back to previous UUID attribute
+            ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+            ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
+            testRealm().components().component(ldapModelId).update(ldapRep);
+        }
+    }
 }

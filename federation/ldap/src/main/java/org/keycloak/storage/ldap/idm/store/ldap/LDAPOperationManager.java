@@ -24,6 +24,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
@@ -386,7 +387,7 @@ public class LDAPOperationManager {
                 ).append(LDAPUtil.convertGUIDToEdirectoryHexString(id)).append(")");
         } else {
             filter.append("(objectClass=*)(").append(getUuidAttributeName()).append(LDAPConstants.EQUAL)
-                .append(id).append(")");
+                .append(EscapeStrategy.DEFAULT.escape(id)).append(")");
         }
 
         if (config.getCustomUserSearchFilter() != null) {
