@@ -9,7 +9,7 @@ import {
   UserFormFields,
   fieldName,
   isRequiredAttribute,
-  label,
+  labelAttribute,
 } from "./utils";
 
 export type UserProfileGroupProps = {
@@ -35,7 +35,7 @@ export const UserProfileGroup = ({
   return (
     <FormGroup
       key={attribute.name}
-      label={label(attribute, t) || ""}
+      label={labelAttribute(t, attribute) || ""}
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}
       validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}

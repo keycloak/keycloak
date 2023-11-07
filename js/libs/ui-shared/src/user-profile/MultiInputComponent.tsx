@@ -10,7 +10,12 @@ import { Fragment, useEffect, useMemo } from "react";
 import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { TranslationFunction, UserFormFields, fieldName, label } from "./utils";
+import {
+  TranslationFunction,
+  UserFormFields,
+  fieldName,
+  labelAttribute,
+} from "./utils";
 
 export const MultiInputComponent = ({
   t,
@@ -22,10 +27,10 @@ export const MultiInputComponent = ({
     <MultiLineInput
       t={t}
       form={form}
-      aria-label={label(attribute, t)}
+      aria-label={labelAttribute(t, attribute)}
       name={fieldName(attribute.name)!}
       addButtonLabel={t("addMultivaluedLabel", {
-        fieldLabel: label(attribute, t),
+        fieldLabel: labelAttribute(t, attribute),
       })}
     />
   </UserProfileGroup>

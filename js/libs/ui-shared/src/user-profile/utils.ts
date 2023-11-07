@@ -26,12 +26,15 @@ export const isBundleKey = (displayName?: string) =>
 export const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
-  attribute: UserProfileAttributeMetadata,
   t: TranslationFunction,
-) =>
-  (isBundleKey(attribute.displayName)
-    ? t(unWrap(attribute.displayName!))
-    : attribute.displayName) || attribute.name;
+  text: string | undefined,
+  fallback: string | undefined,
+) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
+
+export const labelAttribute = (
+  t: TranslationFunction,
+  attribute: UserProfileAttributeMetadata,
+) => label(t, attribute.displayName, attribute.name);
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
 

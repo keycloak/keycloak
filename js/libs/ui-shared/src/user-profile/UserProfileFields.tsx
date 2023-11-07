@@ -18,6 +18,7 @@ import {
   UserFormFields,
   fieldName,
   isRootAttribute,
+  label,
 } from "./utils";
 
 export type UserProfileError = {
@@ -140,11 +141,13 @@ export const UserProfileFields = ({
       sections={groupsWithAttributes
         .filter((group) => group.attributes.length > 0)
         .map(({ group, attributes }) => ({
-          title: group.displayHeader || group.name || t("general"),
+          title: label(t, group.displayHeader, group.name) || t("general"),
           panel: (
             <div className="pf-c-form">
               {group.displayDescription && (
-                <Text className="pf-u-pb-lg">{group.displayDescription}</Text>
+                <Text className="pf-u-pb-lg">
+                  {label(t, group.displayDescription, "")}
+                </Text>
               )}
               {attributes.map((attribute) => (
                 <FormField
