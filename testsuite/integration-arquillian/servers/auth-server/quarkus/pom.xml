@@ -13,7 +13,7 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/${dist.archive.dir}</auth.server.home>
         <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
