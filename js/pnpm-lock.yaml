@@ -299,8 +299,8 @@ importers:
         specifier: ^20.0.2
         version: 20.0.2
       '@types/gunzip-maybe':
-        specifier: ^1.4.1
-        version: 1.4.1
+        specifier: ^1.4.2
+        version: 1.4.2
       '@types/tar-fs':
         specifier: ^2.0.3
         version: 2.0.3
@@ -1929,8 +1929,8 @@ packages:
     resolution: {integrity: sha512-uK2z1ZHJyC0nQRbuovXFt4mzXDwf27vQeUWNhfKGwRcWW429GOhP8HxUHlM6TLH4bzmlv/HlEjpvJh3JfmGsAA==}
     dev: false
 
-  /@types/gunzip-maybe@1.4.1:
-    resolution: {integrity: sha512-FAxzVI4EbR3bsvsvtNsJ6kqaxQftN1wD/F6A+51m85oo1oRoZn15rQwbedJY2GmzyUKl6EjG9wKkgShwcTQgTA==}
+  /@types/gunzip-maybe@1.4.2:
+    resolution: {integrity: sha512-2uqXZg1jTCKE1Pjbab8qb74+f2+i9h/jz8rQ+jRR+zaNJF75zWwrpbX8/TjF4m56m3KFOg9umHdCJ074KwiVxg==}
     dependencies:
       '@types/node': 20.8.10
     dev: false
