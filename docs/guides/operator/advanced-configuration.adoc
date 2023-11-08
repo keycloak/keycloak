@@ -9,11 +9,11 @@ title="Advanced configuration"
 summary="How to tune advanced aspects of the Keycloak CR">
 
 == Advanced configuration
-This {section} describes how to use Custom Resources (CRs) for advanced configuration of your Keycloak deployment.
+This {section} describes how to use Custom Resources (CRs) for advanced configuration of your {project_name} deployment.
 
 === Server configuration details
 
-Many server options are exposed as first-class citizen fields in the Keycloak CR. The structure of the CR is based on the configuration structure of Keycloak. For example, to configure the `https-port` of the server, follow a 
+Many server options are exposed as first-class citizen fields in the Keycloak CR. The structure of the CR is based on the configuration structure of {project_name}. For example, to configure the `https-port` of the server, follow a
 similar pattern in the CR and use the `httpsPort` field. The following example is a complex server configuration; however, it illustrates the relationship between server options and the Keycloak CR:
 
 [source,yaml]
@@ -65,7 +65,7 @@ For a list of options, see the Keycloak CRD. For details on configuring options,
 
 Some expert server options are unavailable as dedicated fields in the Keycloak CR. The following are examples of omitted fields:
 
-* Fields that require deep understanding of the underlying Keycloak implementation 
+* Fields that require deep understanding of the underlying {project_name} implementation
 * Fields that are not relevant to
 <@profile.ifCommunity>
 a Kubernetes
@@ -76,7 +76,7 @@ an OpenShift
 environment
 * Fields for provider configuration because they are dynamic based on the used provider implementation
 
-The `additionalOptions` field of the Keycloak CR enables Keycloak to accept any available configuration in the form of key-value pairs.
+The `additionalOptions` field of the Keycloak CR enables {project_name} to accept any available configuration in the form of key-value pairs.
 You can use this field to include any option that is omitted in the Keycloak CR.
 For details on configuring options, see <@links.server id="all-config"/>.
 
@@ -104,9 +104,9 @@ spec:
 Secret References are used by some dedicated options in the Keycloak CR, such as `tlsSecret`, or as a value in `additionalOptions`.
 
 When specifying a Secret Reference, make sure that a Secret containing the referenced keys is present in the same namespace as the CR referencing it.
-Along with the Keycloak Server Deployment, the Operator adds special labels to the referenced Secrets to watch for changes.
+Along with the {project_name} Server Deployment, the Operator adds special labels to the referenced Secrets to watch for changes.
 
-When a referenced Secret is modified, the Operator performs a rolling restart of the Keycloak Deployment to pick up the changes.
+When a referenced Secret is modified, the Operator performs a rolling restart of the {project_name} Deployment to pick up the changes.
 
 === Unsupported features
 
@@ -148,7 +148,7 @@ spec:
 
 === Disabling required options
 
-Keycloak and the Keycloak Operator provide the best production-ready experience with security in mind.
+{project_name} and the {project_name} Operator provide the best production-ready experience with security in mind.
 However, during the development phase, you can disable key security features.
 
 Specifically, you can disable the hostname and TLS as shown in the following example:
