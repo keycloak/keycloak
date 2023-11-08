@@ -1,6 +1,7 @@
 package org.keycloak.encoding;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import org.apache.commons.io.IOUtils;
@@ -29,6 +30,14 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
         StringBuilder sb = new StringBuilder();
         sb.append(cacheDir.getAbsolutePath());
         for (String p : path) {
+            String previous = "";
+            while(!p.equals(previous)) {
+                previous = p;
+                p = URLDecoder.decode(p);
+            }
+            if (p.contains("..")) {
+                throw new IllegalArgumentException("Invalid path: " + p);
+            }
             sb.append(File.separatorChar);
             sb.append(p);
         }
