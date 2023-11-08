@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ChangeEvent, useState, useEffect } from "react";
 import {
   AlertVariant,
   Button,
@@ -16,12 +16,9 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useFetch } from "../../utils/useFetch";
 import { adminClient } from "../../admin-client";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
-  EditableTextCell,
-  IEditableTextCell,
   IRow,
   IRowCell,
   Table,
@@ -54,6 +51,8 @@ type RealmOverridesProps = {
   watchSupportedLocales: string[];
   realm: RealmRepresentation;
 };
+
+type EditStatesType = { [key: number]: boolean };
 
 export type BundleForm = {
   key: string;
@@ -88,7 +87,7 @@ export const RealmOverrides = ({
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
   const [kebabOpen, setKebabOpen] = useState(false);
-  const { getValues, handleSubmit, control } = useForm();
+  const { getValues, handleSubmit } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
   const [tableKey, setTableKey] = useState(0);
@@ -101,17 +100,16 @@ export const RealmOverrides = ({
   const { whoAmI } = useWhoAmI();
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [areAllRowsSelected, setAreAllRowsSelected] = useState(false);
-  const [isBundleMessageValueEdit, setIsBundleMessageValueEdit] = useState(
-    new Array(tableRows.length).fill(false),
-  );
+  const [editStates, setEditStates] = useState<EditStatesType>({});
+  const [formValue, setFormValue] = useState("");
   const refreshTable = () => {
     setTableKey(tableKey + 1);
   };
 
-  useFetch(
-    async () => {
-      let result = await adminClient.realms
-        .getRealmLocalizationTexts({
+  useEffect(() => {
+    const fetchLocalizationTexts = async () => {
+      try {
+        let result = await adminClient.realms.getRealmLocalizationTexts({
           first,
           max,
           realm: realm.realm!,
@@ -119,110 +117,67 @@ export const RealmOverrides = ({
             selectMenuLocale ||
             getValues("defaultLocale") ||
             whoAmI.getLocale(),
-        })
-        .catch(() => []);
+        });
 
-      const searchInBundles = (idx: number) => {
-        return Object.entries(result).filter((i) => i[idx].includes(filter));
-      };
+        if (filter) {
+          const searchInBundles = (idx: number) => {
+            return Object.entries(result).filter((i) =>
+              i[idx].includes(filter),
+            );
+          };
 
-      if (filter) {
-        const filtered = uniqWith(
-          searchInBundles(0).concat(searchInBundles(1)),
-          isEqual,
-        );
+          const filtered = uniqWith(
+            searchInBundles(0).concat(searchInBundles(1)),
+            isEqual,
+          );
 
-        result = Object.fromEntries(filtered);
+          result = Object.fromEntries(filtered);
+        }
+
+        return Object.entries(result).slice(first, first + max);
+      } catch (error) {
+        console.error("Error fetching localization texts:", error);
+        return [];
       }
+    };
 
-      return { result };
-    },
-    ({ result }) => {
-      const bundles = Object.entries(result).slice(first, first + max + 1);
+    fetchLocalizationTexts().then((bundles) => {
       setMessageBundles(bundles);
 
-      const updatedRows = bundles.map<IRow>((messageBundle) => ({
-        rowEditBtnAriaLabel: () =>
-          t("rowEditBtnAriaLabel", {
-            messageBundle: messageBundle[1],
-          }),
-        rowSaveBtnAriaLabel: () =>
-          t("rowSaveBtnAriaLabel", {
-            messageBundle: messageBundle[1],
-          }),
-        rowCancelBtnAriaLabel: () =>
-          t("rowCancelBtnAriaLabel", {
-            messageBundle: messageBundle[1],
-          }),
-        cells: [
-          {
-            title: (value, rowIndex, cellIndex, props) => (
-              <EditableTextCell
-                value={value!}
-                rowIndex={rowIndex!}
-                cellIndex={cellIndex!}
-                props={props}
-                isDisabled
-                handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[0]}
-              />
-            ),
-            props: {
-              value: messageBundle[0],
+      const updatedRows: IRow[] = bundles.map(
+        (messageBundle): IRow => ({
+          rowEditBtnAriaLabel: () =>
+            t("rowEditBtnAriaLabel", {
+              messageBundle: messageBundle[1],
+            }),
+          rowSaveBtnAriaLabel: () =>
+            t("rowSaveBtnAriaLabel", {
+              messageBundle: messageBundle[1],
+            }),
+          rowCancelBtnAriaLabel: () =>
+            t("rowCancelBtnAriaLabel", {
+              messageBundle: messageBundle[1],
+            }),
+          cells: [
+            {
+              title: messageBundle[0],
+              props: {
+                value: messageBundle[0],
+              },
             },
-          },
-          {
-            title: (value, rowIndex, cellIndex, props) => (
-              <EditableTextCell
-                value={value!}
-                rowIndex={rowIndex!}
-                cellIndex={cellIndex!}
-                props={props}
-                handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[1]}
-              />
-            ),
-            props: {
-              value: messageBundle[1],
+            {
+              title: messageBundle[1],
+              props: {
+                value: messageBundle[1],
+              },
             },
-          },
-        ],
-        isSelected: false,
-      }));
-      console.log("updatedRows ", updatedRows);
+          ],
+        }),
+      );
+
       setTableRows(updatedRows);
-
-      return bundles;
-    },
-    [tableKey, filter, first, max],
-  );
-
-  const handleTextInputChange = (
-    newValue: string,
-    evt: any,
-    rowIndex: number,
-    cellIndex: number,
-  ) => {
-    setTableRows((prev) => {
-      const newRows = cloneDeep(prev);
-
-      if (!newRows[rowIndex]?.cells?.[cellIndex]) {
-        console.error(
-          "Undefined rowIndex, cell or cellIndex:",
-          rowIndex,
-          cellIndex,
-        );
-        return prev;
-      }
-
-      const textCell = newRows[rowIndex]?.cells?.[
-        cellIndex
-      ] as IEditableTextCell;
-
-      textCell.props.onChange?.(newValue, evt, rowIndex, cellIndex);
-      return newRows;
     });
-  };
+  });
 
   const handleModalToggle = () => {
     setAddMessageBundleModalOpen(!addMessageBundleModalOpen);
@@ -281,7 +236,7 @@ export const RealmOverrides = ({
   };
 
   const handleRowSelect = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>,
     rowIndex: number,
   ) => {
     const selectedKey = (tableRows[rowIndex].cells?.[0] as IRowCell).props
@@ -315,12 +270,38 @@ export const RealmOverrides = ({
     return selectedRowKeys.includes(key);
   };
 
-  const onSubmit = (value: string) => {
-    console.log("onSubmit ", value);
-    // setValue(messageBundle);
+  const onSubmit = async (inputValue: string, rowIndex: number) => {
+    const newRows = cloneDeep(tableRows);
 
-    console.log(">>> isBundleMessageValueEdit ", isBundleMessageValueEdit);
-    // setIsBundleMessageValueEdit(false);
+    const newRow = cloneDeep(newRows[rowIndex]);
+    (newRow.cells?.[1] as IRowCell).props.value = inputValue;
+    newRows[rowIndex] = newRow;
+
+    try {
+      const key = (newRow.cells?.[0] as IRowCell).props.value;
+      const value = (newRow.cells?.[1] as IRowCell).props.value;
+
+      await adminClient.realms.addLocalization(
+        {
+          realm: realm.realm!,
+          selectedLocale:
+            selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
+          key,
+        },
+        value,
+      );
+
+      addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
+
+      setTableRows(newRows);
+    } catch (error) {
+      addAlert(t("updateMessageBundleError"), AlertVariant.danger);
+    }
+
+    setEditStates((prevEditStates) => ({
+      ...prevEditStates,
+      [rowIndex]: false,
+    }));
   };
 
   return (
@@ -455,7 +436,7 @@ export const RealmOverrides = ({
                         rowIndex,
                         onSelect: (event) =>
                           handleRowSelect(
-                            event as React.ChangeEvent<HTMLInputElement>,
+                            event as ChangeEvent<HTMLInputElement>,
                             rowIndex,
                           ),
                         isSelected: isRowSelected(
@@ -466,12 +447,12 @@ export const RealmOverrides = ({
                     <Td dataLabel={t("key")}>
                       {(row.cells?.[0] as IRowCell).props.value}
                     </Td>
-                    <Td dataLabel={t("value")}>
+                    <Td dataLabel={t("value")} key={rowIndex}>
                       <Form
                         isHorizontal
                         className="kc-form-bundleValue"
                         onSubmit={handleSubmit(() => {
-                          onSubmit((row.cells?.[1] as IRowCell).props.value);
+                          onSubmit(formValue, rowIndex);
                         })}
                       >
                         <FormGroup
@@ -479,22 +460,18 @@ export const RealmOverrides = ({
                           className="kc-bundleValue-row"
                         >
                           <div className="kc-form-group-bundleValue">
-                            {isBundleMessageValueEdit[rowIndex] && (
+                            {editStates[rowIndex] ? (
                               <>
-                                <Controller
-                                  name="value"
-                                  control={control}
-                                  defaultValue={
-                                    (row.cells?.[1] as IRowCell).props.value
-                                  }
-                                  render={({ field }) => (
-                                    <KeycloakTextInput
-                                      {...field}
-                                      data-testid="userLabelFld"
-                                      className="kc-bundleValue"
-                                      aria-label={t("bundleValue")}
-                                    />
-                                  )}
+                                <KeycloakTextInput
+                                  aria-label={t("editUserLabel")}
+                                  type="text"
+                                  value={formValue}
+                                  onChange={(
+                                    event: ChangeEvent<HTMLInputElement>,
+                                  ) => {
+                                    setFormValue(event.target.value);
+                                  }}
+                                  key={`edit-input-${rowIndex}`}
                                 />
                                 <Button
                                   data-testid="editUserLabelAcceptBtn"
@@ -502,55 +479,44 @@ export const RealmOverrides = ({
                                   className="kc-editUserLabelAcceptBtn"
                                   type="submit"
                                   icon={<CheckIcon />}
-                                  onClick={() => {
-                                    const updatedEditState = [
-                                      ...isBundleMessageValueEdit,
-                                    ];
-                                    updatedEditState[rowIndex] = true;
-                                    setIsBundleMessageValueEdit(
-                                      updatedEditState,
-                                    );
-                                  }}
                                 />
-
                                 <Button
                                   data-testid="editUserLabelCancelBtn"
                                   variant="link"
                                   className="kc-editBundleValue-cancelBtn"
                                   icon={<TimesIcon />}
                                   onClick={() => {
-                                    const updatedEditState = [
-                                      ...isBundleMessageValueEdit,
-                                    ];
-                                    updatedEditState[rowIndex] = false;
-                                    setIsBundleMessageValueEdit(
-                                      updatedEditState,
-                                    );
+                                    setEditStates((prevEditStates) => ({
+                                      ...prevEditStates,
+                                      [rowIndex]: false,
+                                    }));
                                   }}
                                 />
                               </>
-                            )}
-                            {!isBundleMessageValueEdit[rowIndex] && (
+                            ) : (
                               <>
-                                {(row.cells?.[1] as IRowCell).props.value}
-
+                                <span>
+                                  {(row.cells?.[1] as IRowCell).props.value}
+                                </span>
                                 <Button
+                                  onClick={() => {
+                                    const currentValue = (
+                                      tableRows[rowIndex].cells?.[1] as IRowCell
+                                    ).props.value;
+                                    setFormValue(currentValue);
+                                    setEditStates((prevState) => ({
+                                      ...prevState,
+                                      [rowIndex]: true,
+                                    }));
+                                  }}
+                                  key={`edit-button-${rowIndex}`}
                                   aria-label={t("editUserLabel")}
                                   variant="link"
                                   className="kc-editBundleValue-btn"
-                                  onClick={() => {
-                                    const updatedEditState = [
-                                      ...isBundleMessageValueEdit,
-                                      true,
-                                    ];
-                                    updatedEditState[rowIndex] = true;
-                                    setIsBundleMessageValueEdit(
-                                      updatedEditState,
-                                    );
-                                  }}
                                   data-testid="editUserLabelBtn"
-                                  icon={<PencilAltIcon />}
-                                />
+                                >
+                                  <PencilAltIcon />
+                                </Button>
                               </>
                             )}
                           </div>
