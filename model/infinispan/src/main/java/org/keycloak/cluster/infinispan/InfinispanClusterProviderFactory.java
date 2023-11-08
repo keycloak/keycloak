@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
@@ -230,7 +231,11 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                             Tracked in https://github.com/keycloak/keycloak/issues/9871
                         */
                         synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                            workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                            if (workCache.getStatus() == ComponentStatus.RUNNING) {
+                                workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                            } else {
+                                logger.warn("work cache is not running, ignoring event");
+                            }
                         }
                     }
                 } catch (Throwable t) {
