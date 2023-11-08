@@ -10,7 +10,7 @@ To configure _mod_auth_openidc_ you'll need
 * The client_id.
 * The client_secret.
 * The redirect_uri to your application.
-* The Keycloak openid-configuration url
+* The {project_name} openid-configuration url
 * _mod_auth_openidc_ specific Apache HTTPD module config.
 
 An example configuration would look like the following.
