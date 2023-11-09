@@ -44,6 +44,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-hot-rod</artifactId>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

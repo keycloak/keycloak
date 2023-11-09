@@ -45,10 +45,7 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
-                        <!-- As of 3.3.0, if there is no phase specified, it will not execute.
-                        Even if there is a phase specified, it will always execute in phase process-resources,
-                        thereby executing before the keycloak-guides-maven-plugin -->
+                        <id>copy-images</id>
                         <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -58,6 +55,24 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/images</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-attributes</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/generated-guides/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/</directory>
+                                    <includes>
+                                        <include>attributes.adoc</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>

@@ -3,17 +3,17 @@
 
 <@tmpl.guide
 title="Configuring trusted certificates for outgoing requests"
-summary="How to configure the Keycloak Truststore to communicate with external services through TLS."
+summary="How to configure the {project_name} Truststore to communicate with external services through TLS."
 includedOptions="">
 
-When Keycloak communicates with external services through TLS, it has to validate the remote server’s certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks. The certificates of these remote server’s or the CA that signed these certificates must be put in a truststore. This truststore is managed by the Keycloak server.
+When {project_name} communicates with external services through TLS, it has to validate the remote server’s certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks. The certificates of these remote server’s or the CA that signed these certificates must be put in a truststore. This truststore is managed by the Keycloak server.
 
 The truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications. It is also useful
 when you want to change the policy on how host names are verified and trusted by the server.
 
 By default, a truststore provider is not configured, and any TLS/HTTPS connections fall back to standard Java Truststore configuration. If there is no trust established, then these outgoing requests will fail.
 
-== Configuring the Keycloak Truststore
+== Configuring the {project_name} Truststore
 
 You can add your truststore configuration by entering this command:
 
