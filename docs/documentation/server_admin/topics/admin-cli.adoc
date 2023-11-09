@@ -948,7 +948,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID/client-secre
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh get clients/$CID/client-secret
+$ kcadm.sh get clients/$CID/client-secret -r demorealm
 ----
 
 [discrete]
@@ -959,7 +959,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID/client-secre
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh create clients/$CID/client-secret
+$ kcadm.sh create clients/$CID/client-secret -r demorealm
 ----
 
 [discrete]
@@ -970,7 +970,7 @@ Use the client ID to construct an endpoint URI, such as `clients/ID`.
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh update clients/$CID -s "secret=newSecret"
+$ kcadm.sh update clients/$CID -s "secret=newSecret" -r demorealm
 ----
 
 [discrete]
@@ -1272,7 +1272,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$kcadm get users/6da5ab89-3397-4205-afaa-e201ff638f9e/sessions
+$ kcadm.sh get users/6da5ab89-3397-4205-afaa-e201ff638f9e/sessions -r demorealm
 ----
 
 [discrete]
@@ -1286,7 +1286,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh delete sessions/d0eaa7cc-8c5d-489d-811a-69d3c4ec84d1
+$ kcadm.sh delete sessions/d0eaa7cc-8c5d-489d-811a-69d3c4ec84d1 -r demorealm
 ----
 
 [discrete]
@@ -1919,7 +1919,7 @@ $ kcadm.sh get authentication/flows/Copy%20of%20browser/executions -r demorealm
 For example:
 [options="nowrap"]
 ----
-$ kcadm create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/config" -r examplerealm -b '{"config":{"x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.crl-checking-enabled":"","x509-cert-auth.crldp-checking-enabled":false,"x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.ocsp-checking-enabled":"","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.keyusage":"","x509-cert-auth.extendedkeyusage":"","x509-cert-auth.confirmation-page-disallowed":""},"alias":"my_otp_config"}'
+$ kcadm.sh create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/config" -r demorealm -b '{"config":{"x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.crl-checking-enabled":"","x509-cert-auth.crldp-checking-enabled":false,"x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.ocsp-checking-enabled":"","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.keyusage":"","x509-cert-auth.extendedkeyusage":"","x509-cert-auth.confirmation-page-disallowed":""},"alias":"my_otp_config"}'
 ----
 
 
@@ -1933,7 +1933,7 @@ $ kcadm create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/c
 For example:
 [options="nowrap"]
 ----
-$ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+$ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm
 ----
 
 
@@ -1948,7 +1948,7 @@ $ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r exam
 For example:
 [options="nowrap"]
 ----
-$ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm -b '{"id":"dd91611a-d25c-421a-87e2-227c18421833","alias":"my_otp_config","config":{"x509-cert-auth.extendedkeyusage":"","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.crl-checking-enabled":"true","x509-cert-auth.confirmation-page-disallowed":"","x509-cert-auth.keyusage":"","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.crldp-checking-enabled":"false","x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.ocsp-checking-enabled":""}}'
+$ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm -b '{"id":"dd91611a-d25c-421a-87e2-227c18421833","alias":"my_otp_config","config":{"x509-cert-auth.extendedkeyusage":"","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.crl-checking-enabled":"true","x509-cert-auth.confirmation-page-disallowed":"","x509-cert-auth.keyusage":"","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.crldp-checking-enabled":"false","x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.ocsp-checking-enabled":""}}'
 ----
 
 
@@ -1963,5 +1963,5 @@ $ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r e
 For example:
 [options="nowrap"]
 ----
-$ kcadm delete "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+$ kcadm delete "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demorealm
 ----
