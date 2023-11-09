@@ -320,6 +320,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map</artifactId>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -330,6 +331,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-jpa</artifactId>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -340,6 +342,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-hot-rod</artifactId>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -350,6 +353,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map-file</artifactId>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

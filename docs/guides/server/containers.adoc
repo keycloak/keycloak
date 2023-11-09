@@ -5,11 +5,11 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Running Keycloak in a container"
-summary="Learn how to run Keycloak from a container image"
+title="Running {project_name} in a container"
+summary="Learn how to run {project_name} from a container image"
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
-This {section} describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
+This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a {project_name} container.
 
 <@profile.ifProduct>
 
@@ -18,13 +18,13 @@ NOTE: The procedure in this chapter is intended for building an image that you r
 </@profile.ifProduct>
 
 == Creating a customized and optimized container image
-The default Keycloak container image ships ready to be configured and optimized.
+The default {project_name} container image ships ready to be configured and optimized.
 
-For the best start up of your Keycloak container, build an image by running the `build` step during the container build.
+For the best start up of your {project_name} container, build an image by running the `build` step during the container build.
 This step will save time in every subsequent start phase of the container image.
 
-=== Writing your optimized Keycloak Dockerfile
-The following `Dockerfile` creates a pre-configured Keycloak image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
+=== Writing your optimized {project_name} Dockerfile
+The following `Dockerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Dockerfile:
 [source, dockerfile]
@@ -128,7 +128,7 @@ To build the actual docker image, run the following command from the directory c
 podman|docker build . -t mykeycloak
 ----
 
-=== Starting the optimized Keycloak docker image
+=== Starting the optimized {project_name} docker image
 To start the image, run:
 
 [source, bash]
@@ -139,7 +139,7 @@ podman|docker run --name mykeycloak -p 8443:8443 \
         start --optimized
 ----
 
-Keycloak starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
+{project_name} starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
 
 Health check endpoints are available at `https://localhost:8443/health`, `https://localhost:8443/health/ready` and `https://localhost:8443/health/live`.
 
@@ -162,8 +162,8 @@ podman|docker run --name mykeycloak -p 3000:8443 \
 
 By setting the `hostname-port` option you can now access the server at `https://localhost:3000`.
 
-== Trying Keycloak in development mode
-The easiest way to try Keycloak from a container for development or testing purposes is to use the Development mode.
+== Trying {project_name} in development mode
+The easiest way to try {project_name} from a container for development or testing purposes is to use the Development mode.
 You use the `start-dev` command:
 
 [source,bash]
@@ -174,15 +174,15 @@ podman|docker run --name mykeycloak -p 8080:8080 \
         start-dev
 ----
 
-Invoking this command starts the Keycloak server in development mode.
+Invoking this command starts the {project_name} server in development mode.
 
 This mode should be strictly avoided in production environments because it has insecure defaults.
-For more information about running Keycloak in production, see <@links.server id="configuration-production"/>.
+For more information about running {project_name} in production, see <@links.server id="configuration-production"/>.
 
-== Running a standard keycloak container
+== Running a standard {project_name} container
 In keeping with concepts such as immutable infrastructure, containers need to be re-provisioned routinely.
 In these environments, you need containers that start fast, therefore you need to create an optimized image as described in the preceding section.
-However, if your environment has different requirements, you can run a standard Keycloak image by just running the `start` command.
+However, if your environment has different requirements, you can run a standard {project_name} image by just running the `start` command.
 For example:
 
 [source, bash]
@@ -196,14 +196,14 @@ podman|docker run --name mykeycloak -p 8080:8080 \
         --https-key-store-file=<file> --https-key-store-password=<password>
 ----
 
-Running this command starts a Keycloak server that detects and applies the build options first.
+Running this command starts a {project_name} server that detects and applies the build options first.
 In the example, the line  `--db=postgres --features=token-exchange` sets the database vendor to PostgreSQL and enables the token exchange feature.
 
-Keycloak then starts up and applies the configuration for the specific environment.
+{project_name} then starts up and applies the configuration for the specific environment.
 This approach significantly increases startup time and creates an image that is mutable, which is not the best practice.
 
 == Provide initial admin credentials when running in a container
-Keycloak only allows to create the initial admin user from a local network connection. This is not the case when running in a container, so you have to provide the following environment variables when you run the image:
+{project_name} only allows to create the initial admin user from a local network connection. This is not the case when running in a container, so you have to provide the following environment variables when you run the image:
 
 [source, bash]
 ----
@@ -216,7 +216,7 @@ Keycloak only allows to create the initial admin user from a local network conne
 
 == Importing A Realm On Startup
 
-The Keycloak containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
+The {project_name} containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
 
 [source, bash]
 ----
