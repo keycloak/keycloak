@@ -74,6 +74,9 @@ HTTP/TLS:
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.

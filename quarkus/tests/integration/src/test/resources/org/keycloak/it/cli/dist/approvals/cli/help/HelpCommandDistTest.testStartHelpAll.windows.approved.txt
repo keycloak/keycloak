@@ -117,6 +117,9 @@ HTTP/TLS:
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a

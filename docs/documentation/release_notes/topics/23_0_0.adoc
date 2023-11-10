@@ -66,3 +66,7 @@ The Map Store has been an experimental feature in previous releases.
 Starting with this release, it is removed and users should continue to use the current JPA store.
 See the migration guide for details.
 
+= Load Shedding support
+
+Keycloak now features `http-max-queued-requests` option to allow proper rejecting of incoming requests under high load.
+For details refer to the https://www.keycloak.org/server/configuration-production[production guide].
