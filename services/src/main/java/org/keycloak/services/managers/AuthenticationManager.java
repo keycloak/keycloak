@@ -1150,7 +1150,7 @@ public class AuthenticationManager {
             final UserModel user = authSession.getAuthenticatedUser();
             final ClientModel client = authSession.getClient();
 
-            return session.users().getConsentByClient(realm, user.getId(), client.getId());
+            return UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         }
     }
 

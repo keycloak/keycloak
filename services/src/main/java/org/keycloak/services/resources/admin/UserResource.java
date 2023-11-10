@@ -525,7 +525,7 @@ public class UserResource {
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
-        List<UserConsentModel> userConsents = session.users().getConsentsStream(realm, user.getId())
+        List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());

@@ -314,7 +314,7 @@ public class AccountRestService {
             throw ErrorResponse.error("No client with clientId: " + clientId + " found.", Response.Status.NOT_FOUND);
         }
 
-        UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel consent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (consent == null) {
             return Response.noContent().build();
         }
@@ -403,17 +403,17 @@ public class AccountRestService {
 
         try {
             UserConsentModel grantedConsent = createConsent(client, consent);
-            if (session.users().getConsentByClient(realm, user.getId(), client.getId()) == null) {
-                session.users().addConsent(realm, user.getId(), grantedConsent);
+            if (UserConsentManager.getConsentByClient(session, realm, user, client.getId()) == null) {
+                UserConsentManager.addConsent(session, realm, user, grantedConsent);
                 event.event(EventType.GRANT_CONSENT);
             } else {
-                session.users().updateConsent(realm, user.getId(), grantedConsent);
+                UserConsentManager.updateConsent(session, realm, user, grantedConsent);
                 event.event(EventType.UPDATE_CONSENT);
             }
             event.detail(Details.GRANTED_CLIENT,client.getClientId());
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
-            grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+            grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
             return Response.ok(modelToRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
@@ -490,7 +490,7 @@ public class AccountRestService {
                 .collect(Collectors.toSet()));
 
         Map<String, UserConsentModel> consentModels = new HashMap<>();
-        clients.addAll(session.users().getConsentsStream(realm, user.getId())
+        clients.addAll(UserConsentManager.getConsentsStream(session, realm, user)
                 .peek(consent -> consentModels.put(consent.getClient().getClientId(), consent))
                 .map(UserConsentModel::getClient)
                 .collect(Collectors.toSet()));
