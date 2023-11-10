@@ -120,9 +120,9 @@ public class ClientScopesResource {
      * @param id id of client scope (not name)
      * @return
      */
-    @Path("{id}")
+    @Path("{client-scope-id}")
     @NoCache
-    public ClientScopeResource getClientScope(final @PathParam("id") String id) {
+    public ClientScopeResource getClientScope(final @PathParam("client-scope-id") String id) {
         auth.clients().requireListClientScopes();
         ClientScopeModel clientModel = realm.getClientScopeById(id);
         if (clientModel == null) {
