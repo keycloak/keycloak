@@ -17,8 +17,10 @@ type FieldError = {
   params?: string[];
 };
 
+type ErrorArray = { errors?: FieldError[] };
+
 export type UserProfileError = {
-  responseData?: { errors?: FieldError[] };
+  responseData: ErrorArray | FieldError;
 };
 
 export const isBundleKey = (displayName?: string) =>
@@ -47,14 +49,18 @@ export const fieldName = (name?: string) =>
   }${name}` as FieldPath<UserFormFields>;
 
 export function setUserProfileServerError<T>(
-  error: unknown,
+  error: UserProfileError,
   setError: (field: keyof T, params: object) => void,
   t: TranslationFunction,
 ) {
-  (error as FieldError[]).forEach((e) => {
+  (
+    ((error.responseData as ErrorArray).errors !== undefined
+      ? (error.responseData as ErrorArray).errors
+      : [error.responseData]) as FieldError[]
+  ).forEach((e) => {
     const params = Object.assign(
       {},
-      e.params?.map((p) => t(isBundleKey(p) ? unWrap(p) : p)),
+      e.params?.map((p) => t(isBundleKey(p.toString()) ? unWrap(p) : p)),
     );
     setError(fieldName(e.field) as keyof T, {
       message: t(e.errorMessage, {
@@ -99,7 +105,7 @@ function hasRequiredValidators(
 }
 
 export function isUserProfileError(error: unknown): error is UserProfileError {
-  return !!(error as UserProfileError).responseData?.errors;
+  return !!(error as UserProfileError).responseData;
 }
 
 export type TranslationFunction = (key: unknown, params?: object) => string;

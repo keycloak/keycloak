@@ -62,7 +62,7 @@ const PersonalInfo = () => {
       addError(t("accountUpdatedError").toString());
 
       setUserProfileServerError(
-        error,
+        { responseData: { errors: error as any } },
         (name: string | number, error: unknown) =>
           setError(name as string, error as ErrorOption),
         (key: TFuncKey, param?: object) => t(key, { ...param }),
