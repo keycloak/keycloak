@@ -226,8 +226,8 @@ public class UsersResource {
      * @param id User id
      * @return
      */
-    @Path("{id}")
-    public UserResource user(final @PathParam("id") String id) {
+    @Path("{user-id}")
+    public UserResource user(final @PathParam("user-id") String id) {
         UserModel user = null;
         if (LightweightUserAdapter.isLightweightUser(id)) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, LightweightUserAdapter.getLightweightUserId(id));

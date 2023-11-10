@@ -233,8 +233,8 @@ public class ClientsResource {
      * @param id id of client (not client-id)
      * @return
      */
-    @Path("{id}")
-    public ClientResource getClient(final @PathParam("id") String id) {
+    @Path("{client-uuid}")
+    public ClientResource getClient(final @PathParam("client-uuid") @Parameter(description = "id of client (not client-id!)") String id) {
 
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
