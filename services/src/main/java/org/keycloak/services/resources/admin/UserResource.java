@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -605,6 +606,7 @@ public class UserResource {
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation( summary = "Remove all user sessions associated with the user Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user.")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void logout() {
         auth.users().requireManage(user);
 
@@ -787,6 +789,7 @@ public class UserResource {
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation( summary = "Move a credential to a first position in the credentials list of the user")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void moveCredentialToFirst(final @Parameter(description = "The credential to move") @PathParam("credentialId") String credentialId){
         moveCredentialAfter(credentialId, null);
     }
@@ -800,6 +803,7 @@ public class UserResource {
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation( summary = "Move a credential to a position behind another credential")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void moveCredentialAfter(final @Parameter(description = "The credential to move") @PathParam("credentialId") String credentialId,
                                     final @Parameter(description = "The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.") @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
         auth.users().requireManage(user);
