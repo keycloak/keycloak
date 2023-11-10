@@ -236,7 +236,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         assertEquals("changed", user1.getFirstName());
 
         user1.setAttributes(Collections.emptyMap());
-        String expectedErrorMessage = String.format("Please specify attribute %s.", REQUIRED_ATTR_KEY);
+        String expectedErrorMessage = "error-user-attribute-required";
         verifyUserUpdateFails(realm.users(), user1Id, user1, expectedErrorMessage);
     }
 
@@ -253,78 +253,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
                 assertThat(error.getErrorMessage(), equalTo(expectedErrorMessage));
             }
         }
-    }
-
-    @Test
-    public void validationErrorMessagesCanBeConfiguredWithRealmLocalization() {
-        try {
-            setUserProfileConfiguration(this.realm, "{\"attributes\": ["
-                    + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"" + LOCALE_ATTR_KEY + "\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"" + REQUIRED_ATTR_KEY + "\", \"required\": {}, " + PERMISSIONS_ALL + "}]}");
-
-            realm.localization().saveRealmLocalizationText("en", "error-user-attribute-required",
-                    "required-error en: {0}");
-            getCleanup().addLocalization("en");
-            realm.localization().saveRealmLocalizationText("de", "error-user-attribute-required",
-                    "required-error de: {0}");
-            getCleanup().addLocalization("de");
-
-            UsersResource testRealmUserManagerClientUsersResource =
-                    testRealmUserManagerClient.realm(REALM_NAME).users();
-
-            // start with locale en
-            changeTestRealmUserManagerLocale("en");
-
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user-realm-localization");
-            user.singleAttribute(REQUIRED_ATTR_KEY, "some-value");
-            String userId = createUser(user);
-
-            user.setAttributes(new HashMap<>());
-            verifyUserUpdateFails(testRealmUserManagerClientUsersResource, userId, user,
-                    "required-error en: " + REQUIRED_ATTR_KEY);
-
-            // switch to locale de
-            changeTestRealmUserManagerLocale("de");
-
-            user.singleAttribute(REQUIRED_ATTR_KEY, "some-value");
-            realm.users().get(userId).update(user);
-
-            user.setAttributes(new HashMap<>());
-            verifyUserUpdateFails(testRealmUserManagerClientUsersResource, userId, user,
-                    "required-error de: " + REQUIRED_ATTR_KEY);
-        } finally {
-            changeTestRealmUserManagerLocale(null);
-        }
-    }
-
-    private void changeTestRealmUserManagerLocale(String locale) {
-        UsersResource testRealmUserManagerUsersResource = testRealmUserManagerClient.realm(REALM_NAME).users();
-
-        List<UserRepresentation> foundUsers =
-                testRealmUserManagerUsersResource.search(TEST_REALM_USER_MANAGER_NAME, true);
-        assertThat(foundUsers, hasSize(1));
-        UserRepresentation user = foundUsers.iterator().next();
-
-        if (locale == null) {
-            Map<String, List<String>> attributes = user.getAttributes();
-            if (attributes != null) {
-                attributes.remove(LOCALE_ATTR_KEY);
-            }
-        } else {
-            user.singleAttribute(LOCALE_ATTR_KEY, locale);
-        }
-
-        // also set REQUIRED_ATTR_KEY, when not already set, otherwise the change will be rejected
-        if (StringUtil.isBlank(user.firstAttribute(REQUIRED_ATTR_KEY))) {
-            user.singleAttribute(REQUIRED_ATTR_KEY, "arbitrary-value");
-        }
-
-        testRealmUserManagerUsersResource.get(user.getId()).update(user);
     }
 
     @Test

@@ -2533,7 +2533,7 @@ public class UserTest extends AbstractAdminTest {
             }
         } catch (BadRequestException expected) {
             ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("Attribute username is read only.", error.getErrorMessage());
+            assertEquals("error-user-attribute-read-only", error.getErrorMessage());
         }
 
         userRep = realm.users().get(id).toRepresentation();

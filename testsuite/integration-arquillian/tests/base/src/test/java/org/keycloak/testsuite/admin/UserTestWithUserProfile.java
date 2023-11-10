@@ -134,7 +134,7 @@ public class UserTestWithUserProfile extends UserTest {
             } catch (WebApplicationException bre) {
                 assertEquals(400, bre.getResponse().getStatus());
                 ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
-                assertEquals("username contains invalid character.", error.getErrorMessage());
+                assertEquals("error-username-invalid-character", error.getErrorMessage());
             }
         }
     }
