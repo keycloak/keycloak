@@ -22,6 +22,19 @@
         <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <resources>
             <resource>
