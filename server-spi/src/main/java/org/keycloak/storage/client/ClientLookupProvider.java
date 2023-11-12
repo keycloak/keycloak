@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface ClientLookupProvider {
-    
+
     /**
      * Exact search for a client by its internal ID.
      * @param realm Realm to limit the search.
@@ -61,7 +61,17 @@ public interface ClientLookupProvider {
 
     Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults);
 
-    Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults);
+    default Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+		Stream<ClientModel> clients = searchClientsByAttributes(realm, Map.of(), null, null)
+				.filter(client -> overrides.entrySet().stream().allMatch(override -> override.getValue().equals(client.getAuthenticationFlowBindingOverrides().get(override.getKey()))));
+		if (firstResult != null && firstResult >= 0) {
+			clients = clients.skip(firstResult);
+		}
+		if (maxResults != null && maxResults >= 0 ) {
+			clients = clients.limit(maxResults);
+		}
+		return clients;
+    }
 
     /**
      * Return all default scopes (if {@code defaultScope} is {@code true}) or all optional scopes (if {@code defaultScope} is {@code false}) linked with the client
