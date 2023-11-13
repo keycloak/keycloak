@@ -77,7 +77,7 @@ Read-only user attributes are now available.  Some of these user attributes are 
 * X.509 authenticator with a custom attribute for mapping the X.509 certificate to the user identity
 * Any other custom functionality where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather than simple user profile information.
 
-For more details, see the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+For more details, see the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 === No user session needed after Docker authentication  
 No user session is created after successful authentication with the Docker protocol. For details, please refer to the link:{adminguide_link}#_docker[{adminguide_name}].
