@@ -28,14 +28,14 @@ browser history. You can somewhat mitigate this problem by using short expiratio
 
 For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
-Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics-23#name-implicit-grant[OAuth 2.0 Security Best Current Practice], this flow should not be used.
+Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-implicit-grant[OAuth 2.0 Security Best Current Practice], this flow should not be used.
 This flow is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-09[OAuth 2.1 specification].
 
 [[_resource_owner_password_credentials_flow]]
 ==== Resource Owner Password Credentials
 
 Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens.
-Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics-23#name-resource-owner-password-cre[OAuth 2.0 Security Best Practices],
+Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-resource-owner-password-cre[OAuth 2.0 Security Best Practices],
 this flow should not be used, preferring alternative methods such as <<Device Authorization Grant>> or <<Authorization code>>.
 
 The limitations of using this flow include:
