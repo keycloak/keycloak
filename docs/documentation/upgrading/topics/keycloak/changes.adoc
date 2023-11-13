@@ -132,7 +132,7 @@ use:
 * Any other custom functionality, where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather
 than simple user profile information.
 
-See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 ==== Valid Request URIs
 
