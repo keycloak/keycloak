@@ -54,6 +54,8 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
          * is always checked for equality, and the value is checked per the operator.
          */
         public static final SearchableModelField<ClientModel> ATTRIBUTE          = new SearchableModelField<>("attribute", String[].class);
+
+        public static final SearchableModelField<ClientModel> AUTHENTICATION_FLOW_BINDING_OVERRIDE = new SearchableModelField<>("authenticationFlowBindingOverrides", String[].class);
     }
 
     interface ClientCreationEvent extends ProviderEvent {
