@@ -37,6 +37,8 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
@@ -822,6 +824,51 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
             } else {
                 attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            }
+
+            predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
+
+        TypedQuery<String> query = em.createQuery(queryBuilder);
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(id -> session.clients().getClientById(realm, id));
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+        queryBuilder.select(root.get("id"));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+
+        //noinspection resource
+        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+
+        for (Map.Entry<String, String> entry : overrides.entrySet()) {
+            String bindingName = entry.getKey();
+            String authenticationFlowId = entry.getValue();
+
+            MapJoin<ClientEntity, String, String> authFlowBindings = root.joinMap("authFlowBindings", JoinType.LEFT);
+
+            Predicate attrNamePredicate = builder.equal(authFlowBindings.key(), bindingName);
+
+            Predicate attrValuePredicate;
+            if (dbProductName.equals("Oracle")) {
+                // SELECT * FROM client_attributes WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+                // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+                attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, authFlowBindings.value(), builder.literal(authenticationFlowId)), 0);
+            } else {
+                attrValuePredicate = builder.equal(authFlowBindings.value(), authenticationFlowId);
             }
 
             predicates.add(builder.and(attrNamePredicate, attrValuePredicate));

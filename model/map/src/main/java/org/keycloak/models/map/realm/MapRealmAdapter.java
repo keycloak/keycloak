@@ -663,6 +663,11 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
+    public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAuthenticationFlowBindingOverrides(this, overrides, firstResult, maxResults);
+    }
+
+    @Override
     public Map<String, String> getSmtpConfig() {
         Map<String, String> sC = entity.getSmtpConfig();
         return sC == null ? Collections.emptyMap() : Collections.unmodifiableMap(sC);
