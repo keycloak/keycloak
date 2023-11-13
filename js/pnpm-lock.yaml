@@ -81,8 +81,8 @@ importers:
         specifier: ^4.113.0
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^23.6.0
-        version: 23.6.0
+        specifier: ^23.7.3
+        version: 23.7.3
       i18next-http-backend:
         specifier: ^2.3.1
         version: 2.3.1
@@ -106,7 +106,7 @@ importers:
         version: 7.47.0(react@18.2.0)
       react-i18next:
         specifier: ^13.3.1
-        version: 13.3.1(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.3.1(i18next@23.7.3)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.18.0
         version: 6.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -181,8 +181,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       i18next:
-        specifier: ^23.6.0
-        version: 23.6.0
+        specifier: ^23.7.3
+        version: 23.7.3
       i18next-http-backend:
         specifier: ^2.3.1
         version: 2.3.1
@@ -212,7 +212,7 @@ importers:
         version: 7.47.0(react@18.2.0)
       react-i18next:
         specifier: ^13.3.1
-        version: 13.3.1(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.3.1(i18next@23.7.3)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.18.0
         version: 6.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -4434,8 +4434,8 @@ packages:
       - encoding
     dev: false
 
-  /i18next@23.6.0:
-    resolution: {integrity: sha512-z0Cxr0MGkt+kli306WS4nNNM++9cgt2b2VCMprY92j+AIab/oclgPxdwtTZVLP1zn5t5uo8M6uLsZmYrcjr3HA==}
+  /i18next@23.7.3:
+    resolution: {integrity: sha512-XetHM9UCk5oeeIcE2hu6Os16mq/zPHi8v/janExQjbFtx4ndNg9ye5OyAz+f5aYums8A1WcnXa7QikaEjyELPg==}
     dependencies:
       '@babel/runtime': 7.23.2
     dev: false
@@ -5911,7 +5911,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@13.3.1(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0):
+  /react-i18next@13.3.1(i18next@23.7.3)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-JAtYREK879JXaN9GdzfBI4yJeo/XyLeXWUsRABvYXiFUakhZJ40l+kaTo+i+A/3cKIED41kS/HAbZ5BzFtq/Og==}
     peerDependencies:
       i18next: '>= 23.2.3'
@@ -5926,7 +5926,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.23.2
       html-parse-stringify: 3.0.1
-      i18next: 23.6.0
+      i18next: 23.7.3
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -7526,7 +7526,7 @@ packages:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 6.0.1
-      i18next: 23.6.0
+      i18next: 23.7.3
       i18next-http-backend: 2.3.1
       keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
@@ -7536,7 +7536,7 @@ packages:
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
       react-hook-form: 7.47.0(react@18.2.0)
-      react-i18next: 13.3.1(i18next@23.6.0)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 13.3.1(i18next@23.7.3)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.18.0(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.9.4(@types/react@18.2.34)(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared
