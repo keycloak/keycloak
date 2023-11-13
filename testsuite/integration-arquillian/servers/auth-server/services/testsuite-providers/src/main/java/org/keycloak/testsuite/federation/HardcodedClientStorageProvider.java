@@ -98,6 +98,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
+    public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScope) {
         if (defaultScope) {
                 ClientScopeModel rolesScope = KeycloakModelUtils.getClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE);

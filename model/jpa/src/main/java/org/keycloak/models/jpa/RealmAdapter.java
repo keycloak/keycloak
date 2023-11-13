@@ -765,6 +765,11 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
     }
 
+    @Override
+    public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAuthenticationFlowBindingOverrides(this, overrides, firstResult, maxResults);
+    }
+
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
 
     @Override
