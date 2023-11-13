@@ -10,7 +10,7 @@ Keycloak is currently a CNCF incubating project. This document provides useful i
 * [CNCF Online Programs Guidelines](https://github.com/cncf/foundation/blob/main/online-programs-guidelines.md)
 * [CNFC Service Desk](https://cncfservicedesk.atlassian.net/servicedesk/customer/portals)
 * [DevStats](https://keycloak.devstats.cncf.io/)
-* [Slack](https://cloud-native.slack.com/) (current channels #keycloak, #keycloak-dev, and #keycloak-maintainers)
+* [Slack](https://cloud-native.slack.com/) (current channels [#keycloak](https://cloud-native.slack.com/archives/C056HC17KK9), [#keycloak-dev](https://cloud-native.slack.com/archives/C056XU905S6), and [#keycloak-maintainers](https://cloud-native.slack.com/archives/C056HBTMJVD))
 * [Services for CNCF Projects](https://www.cncf.io/services-for-projects/)
 * [Schedule time with the CNCF Projects Team](http://project-meetings.cncf.io/)
 
