@@ -159,10 +159,6 @@ public class RealmLocalizationResource {
     @Operation()
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
             @Deprecated @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
-        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
-            throw new ForbiddenException();
-        }
-
         // this fallback is no longer needed since the fix for #15845, don't forget to remove it from the API
         if (useFallback != null && useFallback) {
             Map<String, String> realmLocalizationTexts = new HashMap<>();
