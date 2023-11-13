@@ -84,6 +84,14 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
 
         checkClientScopesAllowed(requestedDefaultScopeNames, allowedDefaultScopeNames);
         checkClientScopesAllowed(requestedOptionalScopeNames, allowedOptionalScopeNames);
+
+        // Add already presented scopes again, so we don't lose them in the update.
+        if (requestedDefaultScopeNames != null) {
+            requestedDefaultScopeNames.addAll(clientModel.getClientScopes(true).keySet());
+        }
+        if (requestedOptionalScopeNames != null) {
+            requestedOptionalScopeNames.addAll(clientModel.getClientScopes(false).keySet());
+        }
     }
 
     @Override

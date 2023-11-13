@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -622,6 +623,50 @@ public class ClientScopeTest extends AbstractClientTest {
         // Assert scopes are intact
         assertEquals(expectedDefScopes, getClientScopeNames(client.getDefaultClientScopes()));
         assertEquals(expectedOptScopes, getClientScopeNames(client.getOptionalClientScopes()));
+    }
+    
+    @Test
+    public void scopesUpdateWithClientUpdate() {
+        // Create a bunch of scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // Create a client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        ClientResource client = testRealmResource().clients().get(clientUuid);
+        getCleanup().addClientUuid(clientUuid);
+        
+        // Get scopes from client
+        List<String> expectedDefScopes = getClientScopeNames(client.getDefaultClientScopes());
+        List<String> expectedOptScopes = getClientScopeNames(client.getOptionalClientScopes());
+        
+        // Add some new scopes to the client representation
+        clientRep = client.toRepresentation();
+        
+        expectedDefScopes.add("scope-def");
+        expectedOptScopes.add("scope-opt");
+        clientRep.setDefaultClientScopes(expectedDefScopes);
+        clientRep.setOptionalClientScopes(expectedOptScopes);
+
+        // Update the client
+        clientRep.setDescription("desc"); // Make a small change
+        client.update(clientRep);
+
+        // Assert scopes are intact
+        assertTrue(CollectionUtil.collectionEquals(expectedDefScopes, getClientScopeNames(client.getDefaultClientScopes())));
+        assertTrue(CollectionUtil.collectionEquals(expectedOptScopes, getClientScopeNames(client.getOptionalClientScopes())));
     }
 
     // KEYCLOAK-5863

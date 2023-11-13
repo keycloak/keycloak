@@ -457,28 +457,7 @@ public class RepresentationToModel {
             addClientScopeToClient(realm, client, clientTemplateName, true);
         }
 
-        if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
-                client.removeClientScope(clientScope);
-            }
-
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
-                client.removeClientScope(clientScope);
-            }
-        }
-
-        if (resourceRep.getDefaultClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
-                addClientScopeToClient(realm, client, clientScopeName, true);
-            }
-        }
-        if (resourceRep.getOptionalClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
-                addClientScopeToClient(realm, client, clientScopeName, false);
-            }
-        }
+        updateClientScopes(resourceRep, client);
 
         if (resourceRep.isFullScopeAllowed() != null) {
             client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
@@ -580,6 +559,8 @@ public class RepresentationToModel {
             }
         }
 
+        updateClientScopes(rep, resource);
+
         if (resource.isPublicClient() || resource.isBearerOnly()) {
             resource.setSecret(null);
         } else {
@@ -620,6 +601,32 @@ public class RepresentationToModel {
             session.getKeycloakSessionFactory().publish(event);
         }
     }
+
+    private static void updateClientScopes(ClientRepresentation representation, ClientModel clientModelResource) {
+        if (representation.getDefaultClientScopes() != null || representation.getOptionalClientScopes() != null) {
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope :  clientModelResource.getClientScopes(true).values()) {
+                 clientModelResource.removeClientScope(clientScope);
+            }
+
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope :  clientModelResource.getClientScopes(false).values()) {
+                 clientModelResource.removeClientScope(clientScope);
+            }
+        }
+
+        if (representation.getDefaultClientScopes() != null) {
+            for (String clientScopeName : representation.getDefaultClientScopes()) {
+                addClientScopeToClient( clientModelResource.getRealm(),  clientModelResource, clientScopeName, true);
+            }
+        }
+        if (representation.getOptionalClientScopes() != null) {
+            for (String clientScopeName : representation.getOptionalClientScopes()) {
+                addClientScopeToClient( clientModelResource.getRealm(),  clientModelResource, clientScopeName, false);
+            }
+        }
+    }
+
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
