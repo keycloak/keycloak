@@ -29,7 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -50,6 +51,8 @@ import org.keycloak.validate.ValidationError;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class DefaultAttributes extends HashMap<String, List<String>> implements Attributes {
+
+    private static Logger logger = Logger.getLogger(DefaultAttributes.class);
 
     /**
      * To reference dynamic attributes that can be configured as read-only when setting up the provider.
@@ -139,6 +142,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 ValidationContext vc = validator.validate(attributeContext);
 
                 if (vc.isValid()) {
+                    continue;
+                }
+
+                if (user != null && metadata.isReadOnly(attributeContext)
+                        && CollectionUtil.collectionEquals(user.getAttributeStream(name).collect(Collectors.toList()), attribute.getValue())) {
+                    // allow update if the value was already wrong in the user and is read-only in this context
+                    logger.warnf("User '%s' attribute '%s' has previous validation errors %s but is read-only in context %s.",
+                            user.getUsername(), name, vc.getErrors(), attributeContext.getContext());
                     continue;
                 }
 

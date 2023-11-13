@@ -30,6 +30,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -53,6 +55,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
@@ -61,6 +64,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPAttributeSelector;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.userprofile.Attributes;
@@ -96,6 +100,55 @@ public class UserProfileTest extends AbstractUserProfileTest {
     @Test
     public void testIdempotentProfile() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testIdempotentProfile);
+    }
+
+    @Test
+    public void testReadOnlyAllowed() throws Exception {
+        // create a user with attribute foo value 123 allowed by the profile now but disallowed later
+        UPConfig config = JsonSerialization.readValue("{\"attributes\": [{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\"]}}]}", UPConfig.class);
+        RealmResource realmRes = testRealm();
+        realmRes.users().userProfile().update(config);
+
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername("profiled-user-foo-ro");
+        userRep.setFirstName("John");
+        userRep.setLastName("Doe");
+        userRep.setEmail(org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        userRep.setAttributes(Map.of("foo", Collections.singletonList("123")));
+        Response response = realmRes.users().create(userRep);
+        final String userId = ApiUtil.getCreatedId(response);
+        userRep = realmRes.users().get(userId).toRepresentation();
+        Assert.assertEquals(Collections.singletonList("123"), userRep.getAttributes().get("foo"));
+
+        // it should work if foo is read-only in the context
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserById(realm, userId);
+            UserProfileProvider provider = getUserProfileProvider(session);
+            provider.setConfiguration("{\"attributes\": [{\"name\": \"foo\", \"validations\": {\"length\": {\"min\": \"5\", \"max\": \"15\"}}, \"permissions\": {\"edit\": [\"admin\"]}}]}");
+
+            Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+            profile.validate();
+        });
+
+        // it should fail if foo can be modified
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserById(realm, userId);
+            UserProfileProvider provider = getUserProfileProvider(session);
+            provider.setConfiguration("{\"attributes\": [{\"name\": \"foo\", \"validations\": {\"length\": {\"min\": \"5\", \"max\": \"15\"}}, \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+
+            Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+            try {
+                profile.validate();
+                Assert.fail("Should fail validation on foo minimum length");
+            } catch (ValidationException ve) {
+                assertTrue(ve.isAttributeOnError("foo"));
+                assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
+            }
+        });
     }
 
     private static void testIdempotentProfile(KeycloakSession session) {
