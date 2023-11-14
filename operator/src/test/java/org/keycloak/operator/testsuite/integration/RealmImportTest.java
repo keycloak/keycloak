@@ -201,7 +201,7 @@ public class RealmImportTest extends BaseOperatorTest {
         kc.getSpec().setInstances(0);
 
         // don't wait for Keycloak being available, since it has no instances
-        deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), false);
+        deployKeycloak(k8sclient, kc, false);
 
         // Act
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
