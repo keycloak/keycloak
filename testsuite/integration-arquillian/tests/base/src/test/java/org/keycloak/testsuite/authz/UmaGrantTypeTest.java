@@ -464,6 +464,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessToken accessToken = toAccessToken(rpt);
         AccessToken.Authorization authorization = accessToken.getAuthorization();
 
+        assertEquals(1, accessToken.getAudience().length);
+        assertEquals("resource-server-test", accessToken.getAudience()[0]);
         assertNotNull(authorization);
 
         Collection<Permission> permissions = authorization.getPermissions();
@@ -495,6 +497,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
                 .post(Entity.form(parameters)).readEntity(AccessTokenResponse.class);
 
         assertNotNull(refreshTokenResponse.getToken());
+        rpt = refreshTokenResponse.getToken();
         refreshToken = refreshTokenResponse.getRefreshToken();
         refreshTokenToken = toAccessToken(refreshToken);
 
@@ -503,6 +506,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessToken refreshedToken = toAccessToken(rpt);
         authorization = refreshedToken.getAuthorization();
 
+        assertEquals(1, refreshedToken.getAudience().length);
+        assertEquals("resource-server-test", refreshedToken.getAudience()[0]);
         assertNotNull(authorization);
 
         permissions = authorization.getPermissions();
@@ -516,6 +521,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
                 .post(Entity.form(parameters)).readEntity(AccessTokenResponse.class);
 
         assertNotNull(refreshTokenResponse.getToken());
+        rpt = refreshTokenResponse.getToken();
         refreshToken = refreshTokenResponse.getRefreshToken();
         refreshTokenToken = toAccessToken(refreshToken);
 
@@ -524,6 +530,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         refreshedToken = toAccessToken(rpt);
         authorization = refreshedToken.getAuthorization();
 
+        assertEquals(1, refreshedToken.getAudience().length);
+        assertEquals("resource-server-test", refreshedToken.getAudience()[0]);
         assertNotNull(authorization);
 
         permissions = authorization.getPermissions();

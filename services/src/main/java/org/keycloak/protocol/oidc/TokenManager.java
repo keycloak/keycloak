@@ -68,6 +68,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -402,8 +403,11 @@ public class TokenManager {
         clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        if (refreshToken.getAuthorization() != null) {
-            validation.newToken.setAuthorization(refreshToken.getAuthorization());
+        Authorization authorization = refreshToken.getAuthorization();
+
+        if (authorization != null) {
+            validation.newToken.setAuthorization(authorization);
+            validation.newToken.addAudience(authorization.getAudience());
         }
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,

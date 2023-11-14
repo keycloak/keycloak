@@ -361,6 +361,7 @@ public class AuthorizationTokenService {
         AccessToken rpt = responseBuilder.getAccessToken();
         Authorization authorization = new Authorization();
 
+        authorization.setAudience(targetClient.getClientId());
         authorization.setPermissions(entitlements);
 
         rpt.setAuthorization(authorization);

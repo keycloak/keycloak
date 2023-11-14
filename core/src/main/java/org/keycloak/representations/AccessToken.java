@@ -90,12 +90,23 @@ public class AccessToken extends IDToken {
         @JsonProperty("permissions")
         private Collection<Permission> permissions;
 
+        @JsonProperty("aud")
+        private String audience;
+
         public Collection<Permission> getPermissions() {
             return permissions;
         }
 
         public void setPermissions(Collection<Permission> permissions) {
             this.permissions = permissions;
+        }
+
+        public void setAudience(String audience) {
+            this.audience = audience;
+        }
+
+        public String getAudience() {
+            return audience;
         }
     }
 
