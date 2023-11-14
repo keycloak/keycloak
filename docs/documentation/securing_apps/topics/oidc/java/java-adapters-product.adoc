@@ -17,7 +17,7 @@ For more information, see the https://access.redhat.com/documentation/en-us/red_
 Existing applications deployed to Red Hat JBoss Enterprise Application Platform 6.4 and 7.x can leverage adapters from
 Red Hat Single Sign-On 7.6 in combination with the {project_name} server.
 
-For more information refer to the
+For more information, see the
 https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/securing_applications_and_services_guide/oidc#jboss_adapter[Red Hat Single Sign-On documentation].
 
 
