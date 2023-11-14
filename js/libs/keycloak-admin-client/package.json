@@ -43,7 +43,7 @@
     "url-template": "^3.1.0"
   },
   "devDependencies": {
-    "@faker-js/faker": "^8.2.0",
+    "@faker-js/faker": "^8.3.1",
     "@types/chai": "^4.3.10",
     "@types/lodash-es": "^4.17.11",
     "@types/mocha": "^10.0.4",
