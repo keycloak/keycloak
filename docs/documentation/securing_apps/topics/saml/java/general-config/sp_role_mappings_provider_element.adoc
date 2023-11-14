@@ -94,5 +94,9 @@ role\u0020A=roleX,roleY
 
 ====== Adding your own role mappings provider
 
+ifeval::[{project_community}==true]
 To add a custom role mappings provider one simply needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider` SPI.
 For more details see the `SAML Role Mappings SPI` section in link:{developerguide_link}[{developerguide_name}].
+endif::[]
+
+
