@@ -14,19 +14,17 @@ import {
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../components/password-input/PasswordInput";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
 import useToggle from "../utils/useToggle";
-
 import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {

@@ -13,7 +13,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
+import { isUserProfileError, setUserProfileServerError } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -35,10 +35,6 @@ import { UserCredentials } from "./UserCredentials";
 import { BruteForced, UserForm } from "./UserForm";
 import { UserGroups } from "./UserGroups";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
-import {
-  isUserProfileError,
-  userProfileErrorToString,
-} from "./UserProfileFields";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import {
@@ -129,7 +125,9 @@ export default function EditUser() {
       refresh();
     } catch (error) {
       if (isUserProfileError(error)) {
-        addError(userProfileErrorToString(error), error);
+        setUserProfileServerError(error, form.setError, (key, param) =>
+          t(key as string, { ...param }),
+        );
       } else {
         addError("userCreateError", error);
       }

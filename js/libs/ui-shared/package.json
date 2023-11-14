@@ -19,6 +19,9 @@
   "wireit": {
     "build": {
       "command": "vite build",
+      "dependencies": [
+        "../keycloak-admin-client:build"
+      ],
       "files": [
         "src/**",
         "package.json",
@@ -30,17 +33,23 @@
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx"
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../keycloak-admin-client:build"
+      ]
     }
   },
   "dependencies": {
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
+    "@keycloak/keycloak-admin-client": "workspace:*",
+    "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "7.47.0"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.9",
     "@types/react": "^18.2.34",
     "@types/react-dom": "^18.2.14",
     "@vitejs/plugin-react-swc": "^3.4.1",
@@ -48,6 +57,7 @@
     "vite": "^4.5.0",
     "vite-plugin-checker": "^0.6.2",
     "vite-plugin-dts": "^3.6.3",
+    "vite-plugin-lib-inject-css": "^1.3.0",
     "vitest": "^0.34.6"
   }
 }

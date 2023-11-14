@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { ScrollForm } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -30,7 +31,6 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
-import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import {
   Action,
   KeycloakDataTable,
@@ -425,7 +425,11 @@ export default function DetailSettings() {
             title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
-            <ScrollForm className="pf-u-px-lg" sections={sections} />
+            <ScrollForm
+              label={t("jumpToSection")}
+              className="pf-u-px-lg"
+              sections={sections}
+            />
           </Tab>
           <Tab
             id="mappers"

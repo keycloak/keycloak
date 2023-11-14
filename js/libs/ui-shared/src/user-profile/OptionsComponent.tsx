@@ -1,23 +1,22 @@
 import { Checkbox, Radio } from "@patternfly/react-core";
-import { Controller, useFormContext } from "react-hook-form";
-import { UserProfileAttributeMetadata } from "../../api/representations";
-import { Options } from "../UserProfileFields";
-import { fieldName } from "../utils";
+import { Controller } from "react-hook-form";
+import { Options, UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
+import { fieldName, isRequiredAttribute } from "./utils";
 
-export const OptionComponent = (attr: UserProfileAttributeMetadata) => {
-  const { control } = useFormContext();
-  const type = attr.annotations?.["inputType"] as string;
-  const isMultiSelect = type.includes("multiselect");
+export const OptionComponent = (props: UserProfileFieldProps) => {
+  const { form, inputType, attribute } = props;
+  const isRequired = isRequiredAttribute(attribute);
+  const isMultiSelect = inputType.startsWith("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
-
-  const options = (attr.validators.options as Options).options || [];
+  const options =
+    (attribute.validators?.options as Options | undefined)?.options || [];
 
   return (
-    <UserProfileGroup {...attr}>
+    <UserProfileGroup {...props}>
       <Controller
-        name={fieldName(attr)}
-        control={control}
+        name={fieldName(attribute.name)}
+        control={form.control}
         defaultValue=""
         render={({ field }) => (
           <>
@@ -42,6 +41,8 @@ export const OptionComponent = (attr: UserProfileAttributeMetadata) => {
                     field.onChange([option]);
                   }
                 }}
+                readOnly={attribute.readOnly}
+                isRequired={isRequired}
               />
             ))}
           </>

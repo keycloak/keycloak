@@ -1,21 +1,18 @@
 import { Select, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, ControllerRenderProps, FieldPath } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-
-import { Options, UserProfileFieldProps } from "../UserProfileFields";
-import { UserFormFields } from "../form-state";
-import { fieldName, unWrap } from "../utils";
+import { Controller, ControllerRenderProps } from "react-hook-form";
+import { Options, UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { isRequiredAttribute } from "../utils/user-profile";
+import {
+  UserFormFields,
+  fieldName,
+  isRequiredAttribute,
+  unWrap,
+} from "./utils";
 
 type OptionLabel = Record<string, string> | undefined;
-export const SelectComponent = ({
-  form,
-  inputType,
-  attribute,
-}: UserProfileFieldProps) => {
-  const { t } = useTranslation();
+export const SelectComponent = (props: UserProfileFieldProps) => {
+  const { t, form, inputType, attribute } = props;
   const [open, setOpen] = useState(false);
   const isRequired = isRequiredAttribute(attribute);
   const isMultiValue = inputType === "multiselect";
@@ -45,9 +42,9 @@ export const SelectComponent = ({
     optionLabel ? t(unWrap(optionLabel[label])) : label;
 
   return (
-    <UserProfileGroup form={form} attribute={attribute}>
+    <UserProfileGroup {...props}>
       <Controller
-        name={fieldName(attribute) as FieldPath<UserFormFields>}
+        name={fieldName(attribute.name)}
         defaultValue=""
         control={form.control}
         render={({ field }) => (

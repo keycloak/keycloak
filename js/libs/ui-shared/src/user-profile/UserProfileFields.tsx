@@ -1,21 +1,25 @@
-import type {
+import {
   UserProfileAttributeGroupMetadata,
   UserProfileAttributeMetadata,
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
-import { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
-import { OptionComponent } from "./components/OptionsComponent";
-import { SelectComponent } from "./components/SelectComponent";
-import { TextAreaComponent } from "./components/TextAreaComponent";
-import { TextComponent } from "./components/TextComponent";
-import { UserFormFields } from "./form-state";
-import { fieldName, isRootAttribute, label } from "./utils";
-import { MultiInputComponent } from "./components/MultiInputComponent";
+import { ScrollForm } from "../main";
+import { LocaleSelector } from "./LocaleSelector";
+import { MultiInputComponent } from "./MultiInputComponent";
+import { OptionComponent } from "./OptionsComponent";
+import { SelectComponent } from "./SelectComponent";
+import { TextAreaComponent } from "./TextAreaComponent";
+import { TextComponent } from "./TextComponent";
+import {
+  TranslationFunction,
+  UserFormFields,
+  fieldName,
+  isRootAttribute,
+  label,
+} from "./utils";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -24,16 +28,6 @@ export type UserProfileError = {
 export type Options = {
   options?: string[];
 };
-
-export function isUserProfileError(error: unknown): error is UserProfileError {
-  return !!(error as UserProfileError).responseData.errors;
-}
-
-export function userProfileErrorToString(error: UserProfileError) {
-  return (
-    error.responseData["errors"]?.map((e) => e["errorMessage"]).join("\n") || ""
-  );
-}
 
 const INPUT_TYPES = [
   "text",
@@ -54,19 +48,14 @@ const INPUT_TYPES = [
   "multi-input",
 ] as const;
 
-const MULTI_VALUED_INPUT_TYPES: readonly string[] = [
-  "multiselect",
-  "multiselect-checkboxes",
-  "multi-input",
-] satisfies InputType[];
-
 export type InputType = (typeof INPUT_TYPES)[number];
 
 export type UserProfileFieldProps = {
+  t: TranslationFunction;
   form: UseFormReturn<UserFormFields>;
   inputType: InputType;
   attribute: UserProfileAttributeMetadata;
-  roles: string[];
+  renderer?: (attribute: UserProfileAttributeMetadata) => ReactNode;
 };
 
 export const FIELDS: {
@@ -91,10 +80,14 @@ export const FIELDS: {
 } as const;
 
 export type UserProfileFieldsProps = {
+  t: TranslationFunction;
   form: UseFormReturn<UserFormFields>;
   userProfileMetadata: UserProfileMetadata;
-  roles?: string[];
+  supportedLocales: string[];
   hideReadOnly?: boolean;
+  renderer?: (
+    attribute: UserProfileAttributeMetadata,
+  ) => JSX.Element | undefined;
 };
 
 type GroupWithAttributes = {
@@ -103,12 +96,13 @@ type GroupWithAttributes = {
 };
 
 export const UserProfileFields = ({
+  t,
   form,
   userProfileMetadata,
-  roles = ["admin"],
+  supportedLocales,
   hideReadOnly = false,
+  renderer,
 }: UserProfileFieldsProps) => {
-  const { t } = useTranslation();
   // Group attributes by group, for easier rendering.
   const groupsWithAttributes = useMemo(() => {
     // If there are no attributes, there is no need to group them.
@@ -143,23 +137,26 @@ export const UserProfileFields = ({
 
   return (
     <ScrollForm
+      label={t("jumpToSection")}
       sections={groupsWithAttributes
         .filter((group) => group.attributes.length > 0)
         .map(({ group, attributes }) => ({
-          title: label(group.displayHeader, group.name, t) || t("general"),
+          title: label(t, group.displayHeader, group.name) || t("general"),
           panel: (
             <div className="pf-c-form">
               {group.displayDescription && (
                 <Text className="pf-u-pb-lg">
-                  {label(group.displayDescription, "", t)}
+                  {label(t, group.displayDescription, "")}
                 </Text>
               )}
               {attributes.map((attribute) => (
                 <FormField
                   key={attribute.name}
+                  t={t}
                   form={form}
+                  supportedLocales={supportedLocales}
+                  renderer={renderer}
                   attribute={attribute}
-                  roles={roles}
                 />
               ))}
             </div>
@@ -170,25 +167,52 @@ export const UserProfileFields = ({
 };
 
 type FormFieldProps = {
+  t: TranslationFunction;
   form: UseFormReturn<UserFormFields>;
+  supportedLocales: string[];
   attribute: UserProfileAttributeMetadata;
-  roles: string[];
+  renderer?: (
+    attribute: UserProfileAttributeMetadata,
+  ) => JSX.Element | undefined;
 };
 
-const FormField = ({ form, attribute, roles }: FormFieldProps) => {
-  const value = form.watch(fieldName(attribute) as FieldPath<UserFormFields>);
-  const inputType = determineInputType(attribute, value);
+const FormField = ({
+  t,
+  form,
+  renderer,
+  supportedLocales,
+  attribute,
+}: FormFieldProps) => {
+  const value = form.watch(
+    fieldName(attribute.name) as FieldPath<UserFormFields>,
+  );
+  const inputType = useMemo(
+    () => determineInputType(attribute, value),
+    [attribute],
+  );
   const Component = FIELDS[inputType];
 
+  if (attribute.name === "locale")
+    return (
+      <LocaleSelector
+        form={form}
+        supportedLocales={supportedLocales}
+        t={t}
+        attribute={attribute}
+      />
+    );
   return (
     <Component
+      t={t}
       form={form}
       inputType={inputType}
       attribute={attribute}
-      roles={roles}
+      renderer={renderer}
     />
   );
 };
+
+const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
@@ -201,25 +225,22 @@ function determineInputType(
 
   const inputType = attribute.annotations?.inputType;
 
-  // If the attribute has no valid input type, fall back to a default input type.
-  // Depending on the length of the value, we either use a 'multi-input' or a 'text' input type so all values are always visible.
-  if (!isValidInputType(inputType)) {
-    return Array.isArray(value) && value.length > 1 ? "multi-input" : "text";
-  }
-
-  // If the input type is multi-valued, we don't have to do any further checks, as we know all values will always show up.
-  if (MULTI_VALUED_INPUT_TYPES.includes(inputType)) {
+  // if we have an valid input type use that to render
+  if (isValidInputType(inputType)) {
     return inputType;
   }
 
-  // An attribute with multiple values is always as a 'multi-input', even if a singular input type is provided.
-  // This is done so that the user can edit the attribute without accidentally truncating the other values that would otherwise be hidden.
-  if (Array.isArray(value) && value.length > 1) {
+  // If the attribute has no valid input type and it's multi value use "multi-input"
+  if (isMultiValue(value)) {
     return "multi-input";
   }
 
-  return inputType;
+  // In all other cases use the default
+  return DEFAULT_INPUT_TYPE;
 }
 
 const isValidInputType = (value: unknown): value is InputType =>
   typeof value === "string" && value in FIELDS;
+
+const isMultiValue = (value: unknown): boolean =>
+  Array.isArray(value) && value.length > 1;

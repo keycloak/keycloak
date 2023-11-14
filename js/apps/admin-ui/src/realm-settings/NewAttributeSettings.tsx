@@ -1,7 +1,5 @@
-import type {
-  UserProfileAttribute,
-  UserProfileConfig,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   AlertVariant,
   Button,
@@ -13,11 +11,10 @@ import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
+import { ScrollForm } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
@@ -94,6 +91,7 @@ const CreateAttributeFormContent = ({
   return (
     <UserProfileProvider>
       <ScrollForm
+        label={t("jumpToSection")}
         sections={[
           { title: t("generalSettings"), panel: <AttributeGeneralSettings /> },
           { title: t("permission"), panel: <AttributePermission /> },

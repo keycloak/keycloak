@@ -7,13 +7,12 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { Fragment, ReactNode, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-
-import { mainPageContentId } from "../../App";
 import { FormPanel } from "./FormPanel";
 import { ScrollPanel } from "./ScrollPanel";
 
 import style from "./scroll-form.module.css";
+
+export const mainPageContentId = "kc-main-content-page-container";
 
 type ScrollSection = {
   title: string;
@@ -22,6 +21,7 @@ type ScrollSection = {
 };
 
 type ScrollFormProps = GridProps & {
+  label: string;
   sections: ScrollSection[];
   borders?: boolean;
 };
@@ -31,11 +31,11 @@ const spacesToHyphens = (string: string): string => {
 };
 
 export const ScrollForm = ({
+  label,
   sections,
   borders = false,
   ...rest
 }: ScrollFormProps) => {
-  const { t } = useTranslation();
   const shownSections = useMemo(
     () => sections.filter(({ isHidden }) => !isHidden),
     [sections],
@@ -73,7 +73,7 @@ export const ScrollForm = ({
             // scrollableSelector has to point to the id of the element whose scrollTop changes
             // to scroll the entire main section, it has to be the pf-c-page__main
             scrollableSelector={`#${mainPageContentId}`}
-            label={t("jumpToSection")}
+            label={label}
             offset={100}
           >
             {shownSections.map(({ title }) => {

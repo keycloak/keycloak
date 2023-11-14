@@ -16,8 +16,7 @@ import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, UserProfileFields } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
@@ -27,7 +26,6 @@ import { useAccess } from "../context/access/Access";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
-import { UserProfileFields } from "./UserProfileFields";
 import { UserFormFields, toUserFormFields } from "./form-state";
 import { toUsers } from "./routes/Users";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
@@ -219,6 +217,8 @@ export const UserForm = ({
             form={form}
             userProfileMetadata={userProfileMetadata}
             hideReadOnly={!user}
+            supportedLocales={realm.supportedLocales || []}
+            t={(key: unknown, params) => t(key as string, { ...params })}
           />
         </>
       ) : (
