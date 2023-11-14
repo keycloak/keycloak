@@ -222,7 +222,7 @@
 
         <!-- WildFly Galleon Build related properties -->
         <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
         <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
 
         <!-- Galleon -->

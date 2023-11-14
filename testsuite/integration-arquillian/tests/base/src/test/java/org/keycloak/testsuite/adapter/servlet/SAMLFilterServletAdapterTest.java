@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.jboss.arquillian.test.spi.execution.SkippedTestExecutionException;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -9,7 +8,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
