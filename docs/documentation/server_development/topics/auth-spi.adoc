@@ -18,7 +18,7 @@ After the action is performed successfully, the user doesn't have to perform the
 You can write and plug in your own required actions.
 
 WARNING: If your authenticator or required action implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
-then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 === Terms
 
