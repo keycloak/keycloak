@@ -155,8 +155,8 @@ export const GroupPickerDialog = ({
               type === "selectMany"
                 ? selectedRows
                 : navigation.length
-                ? [currentGroup()]
-                : undefined,
+                  ? [currentGroup()]
+                  : undefined,
             );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}

@@ -121,8 +121,8 @@ export default function ClientScopesSection() {
       searchType === "name"
         ? nameFilter(search)
         : searchType === "type"
-        ? typeFilter(searchTypeType)
-        : protocolFilter(searchProtocol);
+          ? typeFilter(searchTypeType)
+          : protocolFilter(searchProtocol);
 
     const transformed = clientScopes
       .map((scope) => {
@@ -133,10 +133,10 @@ export default function ClientScopesSection() {
           )
             ? ClientScope.default
             : optionalScopes.find(
-                (optionalScope) => optionalScope.name === scope.name,
-              )
-            ? ClientScope.optional
-            : AllClientScopes.none,
+                  (optionalScope) => optionalScope.name === scope.name,
+                )
+              ? ClientScope.optional
+              : AllClientScopes.none,
         };
         return row;
       })
