@@ -69,16 +69,16 @@ importers:
   apps/account-ui:
     dependencies:
       '@patternfly/patternfly':
-        specifier: ^4.224.2
+        specifier: ^4.224.5
         version: 4.224.5
       '@patternfly/react-core':
-        specifier: ^4.276.8
+        specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.6
+        specifier: ^4.93.7
         version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-table':
-        specifier: ^4.113.0
+        specifier: ^4.113.6
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
       i18next:
         specifier: ^23.6.0
@@ -148,22 +148,22 @@ importers:
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
       '@patternfly/patternfly':
-        specifier: ^4.224.2
+        specifier: ^4.224.5
         version: 4.224.5
       '@patternfly/react-code-editor':
-        specifier: ^4.82.115
+        specifier: ^4.82.121
         version: 4.82.121(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0)
       '@patternfly/react-core':
-        specifier: ^4.276.8
+        specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.6
+        specifier: ^4.93.7
         version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
-        specifier: ^4.92.6
+        specifier: ^4.92.8
         version: 4.92.8
       '@patternfly/react-table':
-        specifier: ^4.113.0
+        specifier: ^4.113.6
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
       admin-ui:
         specifier: 'file:'
@@ -388,10 +388,10 @@ importers:
   libs/keycloak-masthead:
     dependencies:
       '@patternfly/react-core':
-        specifier: ^4.276.8
+        specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
-        specifier: ^4.11.8
+        specifier: ^4.92.8
         version: 4.92.8
       keycloak-js:
         specifier: workspace:*
@@ -431,10 +431,10 @@ importers:
         specifier: workspace:*
         version: link:../keycloak-admin-client
       '@patternfly/react-core':
-        specifier: ^4.276.8
+        specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.6
+        specifier: ^4.93.7
         version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
       lodash-es:
         specifier: ^4.17.21

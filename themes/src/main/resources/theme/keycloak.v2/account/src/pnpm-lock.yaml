@@ -6,16 +6,16 @@ settings:
 
 dependencies:
   '@patternfly/patternfly':
-    specifier: ^4.125.3
+    specifier: ^4.224.5
     version: 4.224.5
   '@patternfly/react-core':
-    specifier: ^4.147.0
-    version: 4.277.0(@pika/react-dom@16.13.1)(@pika/react@16.13.1)
+    specifier: ^4.278.0
+    version: 4.278.0(@pika/react-dom@16.13.1)(@pika/react@16.13.1)
   '@patternfly/react-icons':
-    specifier: ^4.11.8
+    specifier: ^4.93.7
     version: 4.93.7(@pika/react-dom@16.13.1)(@pika/react@16.13.1)
   '@patternfly/react-styles':
-    specifier: ^4.11.8
+    specifier: ^4.92.8
     version: 4.92.8
   react:
     specifier: npm:@pika/react@^16.13.1
@@ -1685,8 +1685,8 @@ packages:
     resolution: {integrity: sha512-io0huj+LCP5FgDZJDaLv1snxktTYs8iCFz/W1VDRneYoebNHLmGfQdF7Yn8bS6PF7qmN6oJKEBlq3AjmmE8vdA==}
     dev: false
 
-  /@patternfly/react-core@4.277.0(@pika/react-dom@16.13.1)(@pika/react@16.13.1):
-    resolution: {integrity: sha512-bA0hIYclQN7CebBahjTl8c1j1zEAa8uUY/KtFOq7aHBWQTZjf3+By0ue2GktHAUq8diseBj+8LirScDbzi1DvQ==}
+  /@patternfly/react-core@4.278.0(@pika/react-dom@16.13.1)(@pika/react@16.13.1):
+    resolution: {integrity: sha512-w+0WgSa5O64yi50PpkYuuIt5N5S9svkJKxrhV4LQzOhAtSRTtbraOBRwEKodppT/oUeKMlAdDUWep1O3QluF3Q==}
     peerDependencies:
       react: ^16.8 || ^17 || ^18
       react-dom: ^16.8 || ^17 || ^18
