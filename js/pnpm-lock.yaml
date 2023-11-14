@@ -121,8 +121,8 @@ importers:
         specifier: ^1.39.0
         version: 1.39.0
       '@types/lodash-es':
-        specifier: ^4.17.10
-        version: 4.17.10
+        specifier: ^4.17.11
+        version: 4.17.11
       '@types/react':
         specifier: ^18.2.37
         version: 18.2.37
@@ -245,8 +245,8 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7
       '@types/lodash-es':
-        specifier: ^4.17.10
-        version: 4.17.10
+        specifier: ^4.17.11
+        version: 4.17.11
       '@types/react':
         specifier: ^18.2.37
         version: 18.2.37
@@ -333,8 +333,8 @@ importers:
         specifier: ^4.3.10
         version: 4.3.10
       '@types/lodash-es':
-        specifier: ^4.17.10
-        version: 4.17.10
+        specifier: ^4.17.11
+        version: 4.17.11
       '@types/mocha':
         specifier: ^10.0.4
         version: 10.0.4
@@ -450,8 +450,8 @@ importers:
         version: 7.48.2(react@18.2.0)
     devDependencies:
       '@types/lodash-es':
-        specifier: ^4.17.9
-        version: 4.17.10
+        specifier: ^4.17.11
+        version: 4.17.11
       '@types/react':
         specifier: ^18.2.37
         version: 18.2.37
@@ -1959,8 +1959,8 @@ packages:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
     dev: true
 
-  /@types/lodash-es@4.17.10:
-    resolution: {integrity: sha512-YJP+w/2khSBwbUSFdGsSqmDvmnN3cCKoPOL7Zjle6s30ZtemkkqhjVfFqGwPN7ASil5VyjE2GtyU/yqYY6mC0A==}
+  /@types/lodash-es@4.17.11:
+    resolution: {integrity: sha512-eCw8FYAWHt2DDl77s+AMLLzPn310LKohruumpucZI4oOFJkIgnlaJcy23OKMJxx4r9PeTF13Gv6w+jqjWQaYUg==}
     dependencies:
       '@types/lodash': 4.14.200
     dev: true
