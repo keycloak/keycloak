@@ -1,7 +1,6 @@
 import { Links, parseLinks } from "./api/parse-links";
 import { Permission, Resource, Scope } from "./api/representations";
 import { environment } from "./environment";
-import { i18n } from "./i18n";
 import { keycloak } from "./keycloak";
 import { joinPath } from "./utils/joinPath";
 
@@ -104,11 +103,5 @@ async function getAccessToken() {
     keycloak.login();
   }
 
-  const locale = keycloak.tokenParsed?.locale;
-  i18n.changeLanguage(locale, (error) => {
-    if (error) {
-      console.warn("Error(s) loading locale", locale, error);
-    }
-  });
   return keycloak.token;
 }

@@ -11,6 +11,8 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
+  /** The locale of the user */
+  locale: string;
   /** Feature flags */
   features: {
     isRegistrationEmailAsUsername: boolean;
@@ -36,6 +38,7 @@ const defaultEnvironment: Environment = {
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
   logoUrl: "/",
+  locale: "en",
   features: {
     isRegistrationEmailAsUsername: false,
     isEditUserNameAllowed: true,

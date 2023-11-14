@@ -56,7 +56,7 @@ const PersonalInfo = () => {
   const onSubmit = async (user: UserRepresentation) => {
     try {
       await savePersonalInfo(user);
-      const locale = user.attributes["locale"].toString();
+      const locale = user.attributes?.["locale"]?.toString();
       i18n.changeLanguage(locale, (error) => {
         if (error) {
           console.warn("Error(s) loading locale", locale, error);
