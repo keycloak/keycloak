@@ -41,6 +41,7 @@ import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type PoliciesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 type ExpandablePolicyRepresentation = PolicyRepresentation & {
@@ -61,7 +62,10 @@ const DependentPoliciesRenderer = ({
   );
 };
 
-export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
+export const AuthorizationPolicies = ({
+  clientId,
+  isDisabled = false,
+}: PoliciesProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -201,7 +205,11 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                   />
                 </ToolbarItem>
                 <ToolbarItem>
-                  <Button data-testid="createPolicy" onClick={toggleDialog}>
+                  <Button
+                    data-testid="createPolicy"
+                    onClick={toggleDialog}
+                    isDisabled={isDisabled}
+                  >
                     {t("createPolicy")}
                   </Button>
                 </ToolbarItem>
@@ -254,26 +262,28 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                         <DependentPoliciesRenderer row={policy} />
                       </Td>
                       <Td>{policy.description}</Td>
-                      <Td
-                        actions={{
-                          items: [
-                            {
-                              title: t("delete"),
-                              onClick: async () => {
-                                setSelectedPolicy(policy);
-                                toggleDeleteDialog();
+                      {!isDisabled && (
+                        <Td
+                          actions={{
+                            items: [
+                              {
+                                title: t("delete"),
+                                onClick: () => {
+                                  setSelectedPolicy(policy);
+                                  toggleDeleteDialog();
+                                },
                               },
-                            },
-                          ],
-                        }}
-                      />
+                            ],
+                          }}
+                        />
+                      )}
                     </Tr>
                     <Tr
                       key={`child-${policy.id}`}
                       isExpanded={policy.isExpanded}
                     >
                       <Td />
-                      <Td colSpan={4}>
+                      <Td colSpan={3 + (isDisabled ? 0 : 1)}>
                         <ExpandableRowContent>
                           {policy.isExpanded && (
                             <DescriptionList
@@ -308,6 +318,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
+          isDisabled={isDisabled}
           message={t("noSearchResults")}
           instructions={t("noSearchResultsInstructions")}
         />
@@ -330,6 +341,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
           <ListEmptyState
             message={t("emptyPolicies")}
             instructions={t("emptyPoliciesInstructions")}
+            isDisabled={isDisabled}
             primaryActionText={t("createPolicy")}
             onPrimaryAction={toggleDialog}
           />

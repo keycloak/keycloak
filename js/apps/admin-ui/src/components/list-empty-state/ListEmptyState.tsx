@@ -26,6 +26,7 @@ export type ListEmptyStateProps = {
   icon?: ComponentClass<SVGIconProps>;
   isSearchVariant?: boolean;
   secondaryActions?: Action[];
+  isDisabled?: boolean;
 };
 
 export const ListEmptyState = ({
@@ -37,6 +38,7 @@ export const ListEmptyState = ({
   primaryActionText,
   secondaryActions,
   icon,
+  isDisabled = false,
 }: ListEmptyStateProps) => {
   return (
     <EmptyState data-testid="empty-state" variant="large">
@@ -56,6 +58,7 @@ export const ListEmptyState = ({
             .toLowerCase()}-empty-action`}
           variant="primary"
           onClick={onPrimaryAction}
+          isDisabled={isDisabled}
         >
           {primaryActionText}
         </Button>
@@ -70,6 +73,7 @@ export const ListEmptyState = ({
                 .toLowerCase()}-empty-action`}
               variant={action.type || ButtonVariant.secondary}
               onClick={action.onClick}
+              isDisabled={isDisabled}
             >
               {action.text}
             </Button>
