@@ -51,7 +51,7 @@ public final class CRLUtils {
      * @throws GeneralSecurityException if some error in validation happens. Typically certificate not valid, or CRL signature not valid
      */
     public static void check(X509Certificate[] certs, X509CRL crl, KeycloakSession session) throws GeneralSecurityException {
-        if (certs.length < 2) {
+        if (certs.length < 1) {
             throw new GeneralSecurityException("Not possible to verify signature on CRL. X509 certificate doesn't have CA chain available on it");
         }
 
@@ -59,7 +59,7 @@ public final class CRLUtils {
         X509Certificate crlSignatureCertificate = null;
 
         // Try to find the certificate in the CA chain, which was used to sign the CRL
-        for (int i=1 ; i<certs.length ; i++) {
+        for (int i=0 ; i<certs.length ; i++) {
             X509Certificate currentCACert = certs[i];
             if (crlIssuerPrincipal.equals(currentCACert.getSubjectX500Principal())) {
                 crlSignatureCertificate = currentCACert;
