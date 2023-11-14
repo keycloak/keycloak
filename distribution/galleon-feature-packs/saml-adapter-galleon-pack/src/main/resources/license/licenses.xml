@@ -73,7 +73,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
             <licenses>
                 <license>
                     <name>Apache License 2.0</name>
