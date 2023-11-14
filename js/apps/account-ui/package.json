@@ -28,7 +28,7 @@
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@playwright/test": "^1.39.0",
-    "@types/lodash-es": "^4.17.10",
+    "@types/lodash-es": "^4.17.11",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react-swc": "^3.4.1",
