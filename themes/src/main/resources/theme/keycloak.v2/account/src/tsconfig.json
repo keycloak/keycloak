@@ -12,7 +12,8 @@
     "strictNullChecks": true,
     "jsx": "react",
     "suppressImplicitAnyIndexErrors": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "ignoreDeprecations": "5.0"
   },
   "include": [
     "./app/**/*.ts?"

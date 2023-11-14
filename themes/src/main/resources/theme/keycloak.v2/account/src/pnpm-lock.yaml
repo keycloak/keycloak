@@ -74,8 +74,8 @@ devDependencies:
     specifier: ^1.7.1
     version: 1.7.1
   typescript:
-    specifier: ^4.7.4
-    version: 4.9.5
+    specifier: ^5.2.2
+    version: 5.2.2
 
 packages:
 
@@ -4588,9 +4588,9 @@ packages:
       is-typed-array: 1.1.12
     dev: true
 
-  /typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
+  /typescript@5.2.2:
+    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
+    engines: {node: '>=14.17'}
     hasBin: true
     dev: true
 
