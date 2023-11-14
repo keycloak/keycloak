@@ -32,6 +32,7 @@
     <description></description>
 
     <properties>
+        <arquillian.protocol.default>Servlet 3.0</arquillian.protocol.default>
         <cli.log.output>false</cli.log.output>
         <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
@@ -260,7 +261,39 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>                        
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>arquillian-default-protocol</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>src/test/resources</dir>
+                                    <includes>
+                                        <include>arquillian.xml</include>
+                                    </includes>
+                                    <stylesheet>src/test/resources/arquillian.xsl</stylesheet>
+                                    <outputDir>${project.build.directory}/dependency</outputDir>
+                                    <parameters>
+                                        <parameter>
+                                            <name>defaultProtocol</name>
+                                            <value>${arquillian.protocol.default}</value>
+                                        </parameter>
+                                    </parameters>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -295,14 +328,12 @@
                                 <resource>
                                     <directory>src/test/resources</directory>
                                     <includes>
-                                        <include>arquillian.xml</include>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
                                         <include>log4j.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>
-                                    <!--<filtering>true</filtering>-->
                                 </resource>
                             </resources>
                         </configuration>
@@ -570,6 +601,46 @@
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
                     <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <!--required by creaper-core-->
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-eap8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap8</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>eap8</app.server>
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
+                <arquillian.protocol.default>Servlet 5.0</arquillian.protocol.default>
+                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-jboss-galleon</artifactId>
                     <version>${project.version}</version>
                     <scope>runtime</scope>
                 </dependency>
