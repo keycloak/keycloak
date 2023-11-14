@@ -302,8 +302,8 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       '@types/tar-fs':
-        specifier: ^2.0.3
-        version: 2.0.3
+        specifier: ^2.0.4
+        version: 2.0.4
       gunzip-maybe:
         specifier: ^1.4.2
         version: 1.4.2
@@ -2019,8 +2019,8 @@ packages:
     resolution: {integrity: sha512-tAe4Q+OLFOA/AMD+0lq8ovp8t3ysxAOeaScnfNdZpUxaGl51ZMDEITxkvFl1STudQ58mz6gzVGl9VhMKhwRnZQ==}
     dev: true
 
-  /@types/tar-fs@2.0.3:
-    resolution: {integrity: sha512-ADS99HAnztB8MD+LSOdzDrDLcSe5oBIg+SUQwwsgnsOgZobWoSqYmg9ZJWdvLppoKV8R8kZinX6Om+LlsNuIlQ==}
+  /@types/tar-fs@2.0.4:
+    resolution: {integrity: sha512-ipPec0CjTmVDWE+QKr9cTmIIoTl7dFG/yARCM5MqK8i6CNLIG1P8x4kwDsOQY1ChZOZjH0wO9nvfgBvWl4R3kA==}
     dependencies:
       '@types/node': 20.8.10
       '@types/tar-stream': 3.1.2
