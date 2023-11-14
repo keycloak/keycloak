@@ -1,7 +1,7 @@
-:project_name: Keycloak
-:project_name_full: Keycloak
-:project_community: true
-:project_product: false
+:project_name: Red Hat build of Keycloak
+:project_name_full: Red Hat build of Keycloak
+:project_community: false
+:project_product: true
 :project_version: DEV
 :project_versionMvn: 999.0.0-SNAPSHOT
 :project_versionNpm: 999.0.0-SNAPSHOT
