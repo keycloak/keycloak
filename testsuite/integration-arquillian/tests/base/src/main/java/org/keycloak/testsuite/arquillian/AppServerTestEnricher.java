@@ -379,6 +379,10 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("eap");
     }
 
+    public static boolean isJBossJakartaAppServer() {
+        return CURRENT_APP_SERVER.equals("eap8");
+    }
+
     public static boolean isWASAppServer() {
         return CURRENT_APP_SERVER.equals("was");
     }
