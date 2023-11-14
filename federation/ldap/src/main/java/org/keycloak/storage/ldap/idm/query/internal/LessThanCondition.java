@@ -17,10 +17,6 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
-import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
-
-import java.util.Date;
-
 /**
  * @author Pedro Igor
  */
@@ -38,16 +34,6 @@ class LessThanCondition extends NamedParameterCondition {
 
     @Override
     public void applyCondition(StringBuilder filter) {
-        Comparable parameterValue = value;
-
-        if (Date.class.isInstance(parameterValue)) {
-            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
-        }
-
-        if (orEqual) {
-            filter.append("(").append(getParameterName()).append("<=").append(parameterValue).append(")");
-        } else {
-            filter.append("(").append(getParameterName()).append("<").append(parameterValue).append(")");
-        }
+        filter.append("(").append(getParameterName()).append(orEqual? "<=" : "<").append(escapeValue(value)).append(")");
     }
 }
