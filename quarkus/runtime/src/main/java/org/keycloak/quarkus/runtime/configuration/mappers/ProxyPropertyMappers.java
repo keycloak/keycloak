@@ -25,17 +25,17 @@ final class ProxyPropertyMappers {
                 fromOption(ProxyOptions.PROXY_FORWARDED_HOST)
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
-                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .transformer(ProxyPropertyMappers::getValidProxyModeValue)
                         .build(),
                 fromOption(ProxyOptions.PROXY_FORWARDED_HEADER_ENABLED)
                         .to("quarkus.http.proxy.allow-forwarded")
                         .mapFrom("proxy")
-                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .transformer(ProxyPropertyMappers::getValidProxyModeValue)
                         .build(),
                 fromOption(ProxyOptions.PROXY_X_FORWARDED_HEADER_ENABLED)
                         .to("quarkus.http.proxy.allow-x-forwarded")
                         .mapFrom("proxy")
-                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .transformer(ProxyPropertyMappers::getValidProxyModeValue)
                         .build()
         };
     }
@@ -54,10 +54,6 @@ final class ProxyPropertyMappers {
                 addInitializationException(Messages.invalidProxyMode(mode));
                 return of(Boolean.FALSE.toString());
         }
-    }
-
-    private static Optional<String> getResolveEnableForwardedHost(Optional<String> proxy, ConfigSourceInterceptorContext context) {
-        return of(String.valueOf(!ProxyOptions.Mode.none.name().equals(proxy)));
     }
 
 }
