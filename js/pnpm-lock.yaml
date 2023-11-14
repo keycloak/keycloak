@@ -254,8 +254,8 @@ importers:
         specifier: ^18.2.15
         version: 18.2.15
       '@types/uuid':
-        specifier: ^9.0.6
-        version: 9.0.6
+        specifier: ^9.0.7
+        version: 9.0.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.4.1
         version: 3.4.1(vite@4.5.0)
@@ -2032,8 +2032,8 @@ packages:
       '@types/node': 20.8.10
     dev: false
 
-  /@types/uuid@9.0.6:
-    resolution: {integrity: sha512-BT2Krtx4xaO6iwzwMFUYvWBWkV2pr37zD68Vmp1CDV196MzczBRxuEpD6Pr395HAgebC/co7hOphs53r8V7jew==}
+  /@types/uuid@9.0.7:
+    resolution: {integrity: sha512-WUtIVRUZ9i5dYXefDEAI7sh9/O7jGvHg7Df/5O/gtH3Yabe5odI3UWopVR1qbPXQtvOxWu3mM4XxlYeZtMWF4g==}
     dev: true
 
   /@types/yauzl@2.10.2:
