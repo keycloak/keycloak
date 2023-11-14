@@ -10,7 +10,7 @@ alternatives for existing applications deployed to Red Hat JBoss Enterprise Appl
 Red Hat Enterprise Application Platform 8.0 Beta provides a native OpenID Connect client through the Elytron OIDC client
 subsystem.
 
-For more information refer to the https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/8-beta/html/using_single_sign-on_with_jboss_eap/index[Red Hat JBoss Enterprise Application Platform documentation].
+For more information, see the https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/8-beta/html/using_single_sign-on_with_jboss_eap/index[Red Hat JBoss Enterprise Application Platform documentation].
 
 ===== 6.4 and 7.x
 
