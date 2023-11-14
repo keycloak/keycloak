@@ -81,7 +81,7 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
-    "react-hook-form": "^7.47.0",
+    "react-hook-form": "^7.48.2",
     "react-i18next": "^13.4.1",
     "react-router-dom": "^6.18.0",
     "reactflow": "^11.10.1",
