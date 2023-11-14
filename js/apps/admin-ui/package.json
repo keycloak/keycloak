@@ -92,7 +92,7 @@
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.1",
     "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^14.1.0",
     "@types/dagre": "^0.7.51",
     "@types/file-saver": "^2.0.6",
     "@types/lodash-es": "^4.17.10",
