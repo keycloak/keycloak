@@ -16,7 +16,8 @@ image:images/registration-form-with-required-tac.png[]
 * Terms and conditions required action is enabled.
 
 .Procedure
-. Click the *Flows* tab.
+. Click *Authentication* in the menu.
+Click the *Flows* tab.
 . Click the *registration* flow.
 . Select *Required* on the *Terms and Conditions* row.
 +
