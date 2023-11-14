@@ -53,8 +53,12 @@ ifeval::[{project_community}==true]
 * <<_saml_jboss_adapter,WildFly>>
 * <<_saml-tomcat-adapter,Tomcat>>
 endif::[]
+ifeval::[{project_community}==true]
 * <<_java-servlet-filter-adapter,Servlet filter>>
+endif::[]
 
+ifeval::[{project_community}==true]
 ===== Apache HTTP Server
 
 * <<_mod_auth_mellon,mod_auth_mellon>>
+endif::[]
