@@ -29,7 +29,7 @@ alternatives for existing applications built with Spring Boot.
 Spring Security provides comprehensive support for OAuth 2 and OpenID Connect. For more information refer to the
 https://spring.io/projects/spring-security[Spring Security documentation].
 
-Alternatively, the Spring Boot adapter from Red Hat Single Sign-On 7.6 can be used in combination with the {project_name} server. For more information refer to the
+Alternatively, for Spring Boot 2.x the Spring Boot adapter from Red Hat Single Sign-On 7.6 can be used in combination with the {project_name} server. For more information refer to the
 https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/securing_applications_and_services_guide/oidc#jboss_adapter[Red Hat Single Sign-On documentation].
 
 
