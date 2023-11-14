@@ -102,8 +102,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-hook-form:
-        specifier: ^7.47.0
-        version: 7.47.0(react@18.2.0)
+        specifier: ^7.48.2
+        version: 7.48.2(react@18.2.0)
       react-i18next:
         specifier: ^13.4.1
         version: 13.4.1(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
@@ -208,8 +208,8 @@ importers:
         specifier: ^3.1.4
         version: 3.1.4(react@18.2.0)
       react-hook-form:
-        specifier: ^7.47.0
-        version: 7.47.0(react@18.2.0)
+        specifier: ^7.48.2
+        version: 7.48.2(react@18.2.0)
       react-i18next:
         specifier: ^13.4.1
         version: 13.4.1(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
@@ -446,8 +446,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-hook-form:
-        specifier: 7.47.0
-        version: 7.47.0(react@18.2.0)
+        specifier: 7.48.2
+        version: 7.48.2(react@18.2.0)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.9
@@ -5960,8 +5960,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-hook-form@7.47.0(react@18.2.0):
-    resolution: {integrity: sha512-F/TroLjTICipmHeFlMrLtNLceO2xr1jU3CyiNla5zdwsGUGu2UOxxR4UyJgLlhMwLW/Wzp4cpJ7CPfgJIeKdSg==}
+  /react-hook-form@7.48.2(react@18.2.0):
+    resolution: {integrity: sha512-H0T2InFQb1hX7qKtDIZmvpU1Xfn/bdahWBN1fH19gSe4bBEqTfmlr7H3XWTaVtiK4/tpPaI1F3355GPMZYge+A==}
     engines: {node: '>=12.22.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18
@@ -7668,7 +7668,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
-      react-hook-form: 7.47.0(react@18.2.0)
+      react-hook-form: 7.48.2(react@18.2.0)
       react-i18next: 13.4.1(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.18.0(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.10.1(@types/react@18.2.34)(react-dom@18.2.0)(react@18.2.0)
