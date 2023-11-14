@@ -139,8 +139,8 @@ export const UserIdentityProviderLinks = ({
         {groupName === "User-defined"
           ? "Custom"
           : groupName! === "Social"
-          ? t("idpType.social")
-          : groupName!}
+            ? t("idpType.social")
+            : groupName!}
       </Label>
     );
   };

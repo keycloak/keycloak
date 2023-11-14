@@ -175,8 +175,8 @@ export const ViewHeader = ({
               {isValidElement(subKey)
                 ? subKey
                 : subKey
-                ? t(subKey as string)
-                : ""}
+                  ? t(subKey as string)
+                  : ""}
               {helpUrl && (
                 <FormattedLink
                   title={t("learnMore")}

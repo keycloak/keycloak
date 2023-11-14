@@ -117,8 +117,8 @@ export const DiscoveryEndpointField = ({
             errors.discoveryError || errors.discoveryEndpoint
               ? "error"
               : !discoveryResult
-              ? "default"
-              : "success"
+                ? "default"
+                : "success"
           }
           helperTextInvalid={
             errors.discoveryEndpoint
@@ -142,8 +142,8 @@ export const DiscoveryEndpointField = ({
               errors.discoveryError || errors.discoveryEndpoint
                 ? "error"
                 : !discoveryResult
-                ? "default"
-                : "success"
+                  ? "default"
+                  : "success"
             }
             customIconUrl={
               discovering

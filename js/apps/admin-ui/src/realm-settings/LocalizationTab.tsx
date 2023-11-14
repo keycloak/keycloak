@@ -477,10 +477,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                         field.value
                           ? localeToDisplayName(field.value)
                           : realm.defaultLocale !== ""
-                          ? localeToDisplayName(
-                              realm.defaultLocale || DEFAULT_LOCALE,
-                            )
-                          : t("placeholderText")
+                            ? localeToDisplayName(
+                                realm.defaultLocale || DEFAULT_LOCALE,
+                              )
+                            : t("placeholderText")
                       }
                       variant={SelectVariant.single}
                       aria-label={t("defaultLocale")}
@@ -567,8 +567,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       selectMenuValueSelected
                         ? localeToDisplayName(selectMenuLocale)
                         : realm.defaultLocale !== ""
-                        ? localeToDisplayName(DEFAULT_LOCALE)
-                        : t("placeholderText")
+                          ? localeToDisplayName(DEFAULT_LOCALE)
+                          : t("placeholderText")
                     }
                   >
                     {options}
