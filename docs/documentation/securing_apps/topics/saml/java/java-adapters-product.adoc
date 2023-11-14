@@ -3,6 +3,7 @@
 
 {project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.
 
+[[_saml_jboss_adapter]]
 ==== Red Hat JBoss Enterprise Application Platform
 
 ===== 8.0 Beta
