@@ -28,9 +28,9 @@ import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
@@ -270,13 +270,13 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
 
-            StringBuilder filter = createIdentityTypeSearchFilter(identityQuery);
+            Condition condition = createIdentityTypeSearchFilter(identityQuery);
 
             List<SearchResult> search;
             if (getConfig().isPagination() && identityQuery.getLimit() > 0) {
-                search = this.operationManager.searchPaginated(baseDN, filter.toString(), identityQuery);
+                search = this.operationManager.searchPaginated(baseDN, condition, identityQuery);
             } else {
-                search = this.operationManager.search(baseDN, filter.toString(), identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
+                search = this.operationManager.search(baseDN, condition, identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
             }
 
             for (SearchResult result : search) {
@@ -314,7 +314,9 @@ public class LDAPIdentityStore implements IdentityStore {
             attrs.add("supportedExtension");
             attrs.add("supportedFeatures");
             List<SearchResult> searchResults = operationManager
-                .search("", "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
+                    .search("",
+                            new LDAPQueryConditionsBuilder().present(LDAPConstants.OBJECT_CLASS),
+                            Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
             if (searchResults.size() != 1) {
                 throw new ModelException("Could not query root DSE: unexpected result size");
             }
@@ -403,36 +405,25 @@ public class LDAPIdentityStore implements IdentityStore {
 
     // ************ END CREDENTIALS AND USER SPECIFIC STUFF
 
-    protected StringBuilder createIdentityTypeSearchFilter(final LDAPQuery identityQuery) {
-        StringBuilder filter = new StringBuilder();
-
-        for (Condition condition : identityQuery.getConditions()) {
-            condition.applyCondition(filter);
-        }
-
-        filter.insert(0, "(&");
-        filter.append(getObjectClassesFilter(identityQuery.getObjectClasses()));
-        filter.append(")");
-
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Using filter for LDAP search: %s . Searching in DN: %s", filter, identityQuery.getSearchDn());
-        }
-        return filter;
+    protected Condition createIdentityTypeSearchFilter(final LDAPQuery identityQuery) {
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        Set<Condition> conditions = new LinkedHashSet<>(identityQuery.getConditions());
+        addObjectClassesConditions(conditionsBuilder, identityQuery.getObjectClasses(), conditions);
+        return conditionsBuilder.andCondition(conditions.toArray(Condition[]::new));
     }
 
 
-    private StringBuilder getObjectClassesFilter(Collection<String> objectClasses) {
-        StringBuilder builder = new StringBuilder();
-
+    private Set<Condition> addObjectClassesConditions(LDAPQueryConditionsBuilder conditionsBuilder,
+            Collection<String> objectClasses, Set<Condition> conditions) {
         if (!objectClasses.isEmpty()) {
             for (String objectClass : objectClasses) {
-                builder.append("(").append(LDAPConstants.OBJECT_CLASS).append(LDAPConstants.EQUAL).append(objectClass).append(")");
+                conditions.add(conditionsBuilder.equal(LDAPConstants.OBJECT_CLASS, objectClass));
             }
         } else {
-            builder.append("(").append(LDAPConstants.OBJECT_CLASS).append(LDAPConstants.EQUAL).append("*").append(")");
+            conditions.add(conditionsBuilder.present(LDAPConstants.OBJECT_CLASS));
         }
 
-        return builder;
+        return conditions;
     }
 
 
@@ -614,10 +605,9 @@ public class LDAPIdentityStore implements IdentityStore {
         try {
             // we need this to retrieve the entry's identifier from the ldap server
             String uuidAttrName = getConfig().getUuidLDAPAttributeName();
-
-            String rdn = ldapObject.getDn().getFirstRdn().toString(false);
-            String filter = "(" + EscapeStrategy.DEFAULT.escape(rdn) + ")";
-            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(), filter, Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
+            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(),
+                    new LDAPQueryConditionsBuilder().present(LDAPConstants.OBJECT_CLASS),
+                    Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
             Attribute id = search.get(0).getAttributes().get(getConfig().getUuidLDAPAttributeName());
 
             if (id == null) {
