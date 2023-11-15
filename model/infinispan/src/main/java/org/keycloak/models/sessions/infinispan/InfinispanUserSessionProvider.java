@@ -394,7 +394,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoaders(cache);
+        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
@@ -564,7 +564,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoaders(cache);
+        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
         return cache.entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()))
                 .map(Mappers.authClientSessionSetMapper())
@@ -603,7 +603,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
 
-        cache = CacheDecorators.skipCacheLoaders(cache);
+        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
 
         Iterator<UserSessionEntity> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.userSessionEntity()).iterator();
 
@@ -647,7 +647,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(clientSessionCache);
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
 
         final AtomicInteger userSessionsSize = new AtomicInteger();
 
@@ -906,7 +906,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
         // Directly put all entities to the infinispan cache
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoaders(getCache(offline));
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(getCache(offline));
 
         boolean importWithExpiration = sessionsById.size() == 1;
         if (importWithExpiration) {
@@ -951,7 +951,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // Import client sessions
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache =
-                CacheDecorators.skipCacheLoaders(offline ? offlineClientSessionCache : clientSessionCache);
+                CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(offline ? offlineClientSessionCache : clientSessionCache);
 
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,
