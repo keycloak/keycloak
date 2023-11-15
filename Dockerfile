@@ -14,7 +14,7 @@ ENV DB_NAME=$DB_NAME
 WORKDIR /app
 
 # Set the working directory
-COPY  / /app/
+COPY * /app/
 
 # Expose ports (adjust as needed)
 EXPOSE 8080
