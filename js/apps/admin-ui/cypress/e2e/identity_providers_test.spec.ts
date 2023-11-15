@@ -83,8 +83,8 @@ describe("Identity provider test", () => {
         { testName: "Google", displayName: "Google", alias: "google" },
         { testName: "Instagram", displayName: "Instagram", alias: "instagram" },
         {
-          testName: "LinkedIn OpenID Connect",
-          displayName: "LinkedIn OpenID Connect",
+          testName: "LinkedIn",
+          displayName: "LinkedIn",
           alias: "linkedin-openid-connect",
         },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
