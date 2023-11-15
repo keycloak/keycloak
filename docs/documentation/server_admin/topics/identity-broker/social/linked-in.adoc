@@ -5,7 +5,7 @@
 
 .Procedure
 . Click *Identity Providers* in the menu.
-. From the `Add provider` list, select `LinkedIn OpenID Connect`.
+. From the `Add provider` list, select `LinkedIn`.
 +
 .Add identity provider
 image:images/linked-in-add-identity-provider.png[Add Identity Provider]
