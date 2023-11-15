@@ -1,5 +1,6 @@
 # Use a base image with Java 20 and other dependencies
-FROM openjdk:20-jdk-slim
+#FROM openjdk:20-jdk-slim
+FROM alpine:3.14
 
 # Set the Keycloak version and other environment variables as needed
 ENV KC_HOSTNAME_STRICT=false
