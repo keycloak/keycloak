@@ -1,6 +1,6 @@
 # Use a base image with Java 20 and other dependencies
-#FROM openjdk:20-jdk-slim
-FROM alpine:3.14
+FROM openjdk:20-jdk-slim
+#FROM alpine:3.14
 
 # Set the Keycloak version and other environment variables as needed
 ENV KC_HOSTNAME_STRICT=false
@@ -21,4 +21,5 @@ COPY * /app/
 EXPOSE 8080
 
 # Command to start Keycloak
-# CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["sleep", "3600"]
