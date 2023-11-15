@@ -237,10 +237,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 </TextInput>
                                 {this.isUpdateEmailActionEnabled && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
                                     <KeycloakContext.Consumer>
-                                        { (keycloak: KeycloakService) => (
+                                        { (keycloak) => (
                                             <Button id="update-email-btn"
                                                     variant="link"
-                                                    onClick={() => this.handleEmailUpdate(keycloak)}
+                                                    onClick={() => this.handleEmailUpdate(keycloak!)}
                                                     icon={<ExternalLinkSquareAltIcon/>}
                                                     iconPosition="right">
                                                 <Msg msgKey="updateEmail" />
@@ -357,11 +357,11 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             </GridItem>
                             <GridItem span={4}>
                                 <KeycloakContext.Consumer>
-                                    {(keycloak: KeycloakService) => (
+                                    {(keycloak) => (
                                         <Button
                                             id="delete-account-btn"
                                             variant="danger"
-                                            onClick={() => this.handleDelete(keycloak)}
+                                            onClick={() => this.handleDelete(keycloak!)}
                                             className="delete-button"
                                         >
                                             <Msg msgKey="doDelete" />
