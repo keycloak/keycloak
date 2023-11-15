@@ -24,8 +24,9 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
+import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.truststore.TruststoreProvider;
@@ -245,10 +246,10 @@ public class LDAPOperationManager {
         return parentDn.toString();
     }
 
-
-    public List<SearchResult> search(final String baseDN, final String filter, Collection<String> returningAttributes, int searchScope) throws NamingException {
+    public List<SearchResult> search(final String baseDN, final Condition condition, Collection<String> returningAttributes, int searchScope) throws NamingException {
         final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(returningAttributes, searchScope);
+        final String filter = condition.toFilter();
 
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
@@ -285,9 +286,10 @@ public class LDAPOperationManager {
         }
     }
 
-    public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPQuery identityQuery) throws NamingException {
+    public List<SearchResult> searchPaginated(final String baseDN, final Condition condition, final LDAPQuery identityQuery) throws NamingException {
         final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
+        final String filter = condition.toFilter();
 
         // Very 1st page. Pagination context is not yet present
         if (identityQuery.getPaginationContext() == null) {
@@ -370,40 +372,29 @@ public class LDAPOperationManager {
         return cons;
     }
 
-    public String getFilterById(String id) {
-        StringBuilder filter = new StringBuilder();
-        filter.insert(0, "(&");
+    public Condition getFilterById(String id) {
+        LDAPQueryConditionsBuilder builder = new LDAPQueryConditionsBuilder();
+        Condition conditionId;
 
         if (this.config.isObjectGUID()) {
             byte[] objectGUID = LDAPUtil.encodeObjectGUID(id);
-            filter.append("(objectClass=*)(").append(
-                    getUuidAttributeName()).append(LDAPConstants.EQUAL)
-                .append(LDAPUtil.convertObjectGUIDToByteString(
-                    objectGUID)).append(")");
-
+            conditionId = builder.equal(getUuidAttributeName(), objectGUID);
         } else if (this.config.isEdirectoryGUID()) {
-            filter.append("(objectClass=*)(").append(getUuidAttributeName().toUpperCase())
-                .append(LDAPConstants.EQUAL
-                ).append(LDAPUtil.convertGUIDToEdirectoryHexString(id)).append(")");
+            byte[] objectGUID = LDAPUtil.encodeObjectEDirectoryGUID(id);
+            conditionId = builder.equal(getUuidAttributeName(), objectGUID);
         } else {
-            filter.append("(objectClass=*)(").append(getUuidAttributeName()).append(LDAPConstants.EQUAL)
-                .append(EscapeStrategy.DEFAULT.escape(id)).append(")");
+            conditionId = builder.equal(getUuidAttributeName(), id);
         }
 
         if (config.getCustomUserSearchFilter() != null) {
-            filter.append(config.getCustomUserSearchFilter());
+            return builder.andCondition(new Condition[]{conditionId, builder.addCustomLDAPFilter(config.getCustomUserSearchFilter())});
+        } else {
+            return conditionId;
         }
-
-        filter.append(")");
-        String ldapIdFilter = filter.toString();
-
-        logger.tracef("Using filter for lookup user by LDAP ID: %s", ldapIdFilter);
-
-        return ldapIdFilter;
     }
 
     public SearchResult lookupById(final String baseDN, final String id, final Collection<String> returningAttributes) {
-        final String filter = getFilterById(id);
+        final String filter = getFilterById(id).toFilter();
 
         try {
             final SearchControls cons = getSearchControls(returningAttributes, this.config.getSearchScope());
