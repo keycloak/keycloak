@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,41 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.storage.ldap.idm.query.internal;
 
-import org.keycloak.models.LDAPConstants;
-
 /**
- * @author Pedro Igor
+ * <p>Present LDAP condition <em>attrname=*</em> for filters</p>
+ *
+ * @author rmartinc
  */
-public class EqualCondition extends NamedParameterCondition {
+public class PresentCondition extends NamedParameterCondition {
 
-    private Object value;
-
-    public EqualCondition(String name, Object value) {
+    public PresentCondition(String name) {
         super(name);
-        this.value = value;
-    }
-
-    public Object getValue() {
-        return this.value;
-    }
-
-    public void setValue(Object value) {
-        this.value = value;
     }
 
     @Override
     public void applyCondition(StringBuilder filter) {
-        filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(escapeValue(value)).append(")");
+        filter.append("(").append(getParameterName()).append("=*)");
     }
 
     @Override
     public String toString() {
-        return "EqualCondition{" +
-                "paramName=" + getParameterName() +
-                ", value=" + value +
-                '}';
+        return "PresentCondition{"
+                + "paramName=" + getParameterName()
+                + '}';
     }
 }
