@@ -1,3 +1,3 @@
-sudo ./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install
+#!/usr/bin/env bash
 
-docker build . -t emeritus-insights-keycloak
+./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install | tee log-$(date +%H-%M-%y-%m-%d).txt
