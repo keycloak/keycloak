@@ -63,13 +63,9 @@ public abstract class NamedParameterCondition implements Condition {
     }
 
     public String escapeValue(Object value) {
-        return escapeValue(value, EscapeStrategy.DEFAULT);
-    }
-
-    public String escapeValue(Object value, EscapeStrategy strategy) {
         if (Date.class.isInstance(value)) {
             value = LDAPUtil.formatDate((Date) value);
         }
-        return new OctetStringEncoder(strategy).encode(value, isBinary());
+        return new OctetStringEncoder(EscapeStrategy.DEFAULT).encode(value, isBinary());
     }
 }
