@@ -31,7 +31,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -49,7 +48,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
@@ -178,25 +176,6 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
-            // exceptions on DBs with SERIALIZABLE isolation level.
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-                @Override
-                public Response runInternal(KeycloakSession session) {
-                    // create another instance of the endpoint to isolate each run.
-                    TokenEndpoint other = new TokenEndpoint(session, tokenManager,
-                            new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                    // process the request in the created instance.
-                    return other.processGrantRequestInternal();
-                }
-            }, 10, 100);
-        } else {
-            return processGrantRequestInternal();
-        }
-    }
-
-    private Response processGrantRequestInternal() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
