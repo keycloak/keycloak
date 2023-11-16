@@ -15,10 +15,6 @@ export default defineConfig({
     cssMinify: "lightningcss",
   },
   plugins: [react(), checker({ typescript: true })],
-  resolve: {
-    // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
-    mainFields: ["module"],
-  },
   test: {
     setupFiles: "vitest.setup.ts",
     watch: false,
