@@ -751,6 +751,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return getRoleDelegate().searchForClientRolesStream(realm, ids, search, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max) {
+        return getRoleDelegate().searchForClientRolesStream(realm, search, excludedIds, first, max);
+    }
+
+    @Override
     public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
         return getRoleDelegate().searchForRolesStream(realm, search, first, max);
     }
