@@ -21,8 +21,8 @@ tar -xzvf jdk.tar.gz
 echo "--2-- $(which javac)"
 echo "--3-- $(readlink -f $( which javac ))"
 
-#export JAVA_HOME=$(pwd)/jdk-20
+export JAVA_HOME=$(pwd)/jdk-20.0.2
 
-#export PATH=$JAVA_HOME/bin:$PATH
+export PATH=$JAVA_HOME/bin:$PATH
 
 ./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install | tee log-$(date +%H-%M-%y-%m-%d).txt
