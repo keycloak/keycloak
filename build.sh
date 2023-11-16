@@ -2,6 +2,8 @@
 
 echo "B_"
 
+cat /etc/os-release
+
 javac helloworld.java
 
 java HelloWorld
