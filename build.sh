@@ -16,7 +16,7 @@ echo "--1--"
 
 #dpkg -i java.deb
 
-tar -xzf jdk.tar.gz
+tar -xzvf jdk.tar.gz
 
 echo "--2-- $(which javac)"
 echo "--3-- $(readlink -f $( which javac ))"
