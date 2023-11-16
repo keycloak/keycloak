@@ -166,7 +166,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     private void updateClients(Policy policy, Set<String> clients, AuthorizationProvider authorization) {
         RealmModel realm = authorization.getRealm();
 
-        if (clients == null || clients.isEmpty()) {
+        if (clients == null) {
             throw new RuntimeException("No client provided.");
         }
 
