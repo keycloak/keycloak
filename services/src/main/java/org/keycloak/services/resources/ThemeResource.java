@@ -103,15 +103,23 @@ public class ThemeResource {
     }
 
     @GET
-    @Path("/{realm}/{theme}/{locale}")
+    @Path("/{realm}/{themeType}/{locale}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getLocalizationTexts(@PathParam("realm") String realmName, @PathParam("theme") String theme,
-                                         @PathParam("locale") String localeString, @QueryParam("source") boolean showSource) throws IOException {
+    public Response getLocalizationTexts(@PathParam("realm") String realmName, @QueryParam("theme") String theme,
+                                         @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
+                                         @QueryParam("source") boolean showSource) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
         session.getContext().setRealm(realm);
         List<KeySource> result;
 
-        Theme theTheme = session.theme().getTheme(Theme.Type.valueOf(theme.toUpperCase()));
+        Theme theTheme;
+        final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
+        if (theme == null) {
+            theTheme = session.theme().getTheme(type);
+        } else {
+            theTheme = session.theme().getTheme(theme, type);
+        }
+
         final Locale locale = Locale.forLanguageTag(localeString);
         if (showSource) {
             Properties messagesByLocale = theTheme.getMessages("messages", locale);
@@ -139,6 +147,7 @@ enum Source {
     THEME,
     REALM
 }
+
 class KeySource {
     private String key;
     private String value;
