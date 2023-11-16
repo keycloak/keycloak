@@ -8,6 +8,9 @@ curl -O https://download.java.net/java/GA/jdk20/GPL/openjdk-20_linux-x64_bin.tar
 
 #apt install -y libasound2 libc6-i386 libc6-x32 libfreetype6 libxi6 libxrender1 libxtst6
 
+echo "----"
+
+
 tar -xzf openjdk-20_linux-x64_bin.tar.gz 
 
 export JAVA_HOME=$(pwd)/jdk-20
