@@ -2,9 +2,13 @@
 
 echo "B_"
 
-which javac 
+which javac >> file1_ 2>&1
 
-which java
+echo "____" | tee file1_
+
+which java >> file1_ 2>&1
+
+cat file1_
 
 export JAVA_HOME=/usr/local/openjdk-20
 
