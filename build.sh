@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "B"
+echo "B_"
 
 which javac 
 
