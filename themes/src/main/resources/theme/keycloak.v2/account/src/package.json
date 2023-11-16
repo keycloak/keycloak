@@ -6,7 +6,7 @@
     "build": "snowpack --optimize && pnpm run check-types && pnpm run babel && pnpm run move-web_modules && pnpm run copy-pf-resources",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
     "babel:watch": "pnpm run babel -- --watch",
-    "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
+    "check-types": "tsc",
     "check-types:watch": "pnpm run check-types -- -w",
     "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources",
     "copy-pf-resources": "pnpm run move-app-css && pnpm run copy-base-css && pnpm run copy-fonts && pnpm run copy-pficon && pnpm run copy-addons",
