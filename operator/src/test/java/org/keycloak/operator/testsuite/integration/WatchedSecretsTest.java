@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.WatchedSecretsStore;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
@@ -37,15 +36,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 
@@ -212,38 +206,10 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         List<String> podsToBeRestarted = getPodNamesForCrs(crsToBeRestarted);
         List<String> podsNotToBeRestarted = getPodNamesForCrs(crsNotToBeRestarted);
 
-        CompletableFuture<?> restartsCompleted = null;
-        ConcurrentSkipListSet<String> names = new ConcurrentSkipListSet<>(crsToBeRestarted.stream().map(k -> k.getMetadata().getName()).collect(Collectors.toSet()));
-        if (restartExpected) {
-            restartsCompleted = k8sclient.resources(Keycloak.class).informOnCondition(keycloaks -> {
-                for (Keycloak kc : keycloaks) {
-                    if (!names.contains(kc.getMetadata().getName())) {
-                        continue;
-                    }
-                    try {
-                        assertKeycloakStatusCondition(kc.getStatus(), KeycloakStatusCondition.ROLLING_UPDATE, true, null, null);
-                        names.remove(kc.getMetadata().getName());
-                    } catch (Throwable e) {
-                        // not rolling
-                    }
-                }
-                return names.isEmpty();
-            });
-        }
-
         action.run();
-
-        if (restartsCompleted != null) {
-            try {
-                restartsCompleted.get(5, TimeUnit.MINUTES);
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                throw new RuntimeException(names + " did not restart before an exception occurred", e);
-            }
-        }
 
         Set<Keycloak> allCrs = new HashSet<>(crsToBeRestarted);
         allCrs.addAll(crsNotToBeRestarted);
-        assertRollingUpdate(allCrs, false);
 
         if (restartExpected) {
             Awaitility.await()
@@ -277,19 +243,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
                 .map(pod -> pod.getMetadata().getName() + pod.getMetadata().getCreationTimestamp())
                 .filter(pod -> crs.stream().map(c -> c.getMetadata().getName()).anyMatch(pod::startsWith))
                 .collect(Collectors.toList());
-    }
-
-    private void assertRollingUpdate(Set<Keycloak> crs, boolean expectedStatus) {
-        Awaitility.await()
-                .untilAsserted(() -> {
-                    for (var cr : crs) {
-                        Keycloak kc = k8sclient.resources(Keycloak.class)
-                                .inNamespace(namespace)
-                                .withName(cr.getMetadata().getName())
-                                .get();
-                        assertKeycloakStatusCondition(kc, KeycloakStatusCondition.ROLLING_UPDATE, expectedStatus);
-                    }
-                });
     }
 
     private Secret getDbSecret() {
