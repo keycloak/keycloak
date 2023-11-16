@@ -14,8 +14,12 @@ echo "----"
 
 dpkg -i java.deb
 
-export JAVA_HOME=$(pwd)/jdk-20
 
-export PATH=$JAVA_HOME/bin:$PATH
+echo "--- $(which java)"
+echo "--- $(readlink -f $( which java ))"
+
+#export JAVA_HOME=$(pwd)/jdk-20
+
+#export PATH=$JAVA_HOME/bin:$PATH
 
 ./mvnw -pl quarkus/deployment,quarkus/dist,themes, -am -DskipTests clean install | tee log-$(date +%H-%M-%y-%m-%d).txt
