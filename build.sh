@@ -8,7 +8,7 @@
 
 curl https://download.oracle.com/java/20/archive/jdk-20_linux-x64_bin.deb --output java.deb
 
-#apt install -y libasound2 libc6-i386 libc6-x32 libfreetype6 libxi6 libxrender1 libxtst6
+apt install -y libasound2 libc6-i386 libc6-x32 libfreetype6 libxi6 libxrender1 libxtst6
 
 echo "----"
 
