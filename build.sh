@@ -2,11 +2,9 @@
 
 echo "B_"
 
-which javac >> file1_ 2>&1
+javac helloworld.java
 
-echo "____" | tee file1_
-
-which java >> file1_ 2>&1
+java HelloWorld
 
 cat file1_
 
