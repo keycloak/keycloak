@@ -2,7 +2,8 @@
 
 echo "B_"
 
-curl https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb --output java.deb
+#curl https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb --output java.deb
+curl https://download.oracle.com/java/20/archive/jdk-20.0.2_linux-x64_bin.deb --output java.deb
 
 dpkg -i java.deb
 
