@@ -171,12 +171,10 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         user = users.search("User F").get(0);
         users.get(user.getId()).remove();
 
-        try {
-            authorization.policies().user().findById(representation.getId()).toRepresentation();
-            fail("User policy should be removed");
-        } catch (NotFoundException nfe) {
-            // ignore
-        }
+        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(0, representation.getUsers().size());
+        Assert.assertFalse(representation.getUsers().contains(user.getId()));
     }
 
     @Test
