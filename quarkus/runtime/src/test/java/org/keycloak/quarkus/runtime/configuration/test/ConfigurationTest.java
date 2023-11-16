@@ -209,6 +209,20 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testResolveTransformedValue() {
+        System.setProperty(CLI_ARGS, "");
+        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
+        System.setProperty(CLI_ARGS, "--proxy=none");
+        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
+        System.setProperty(CLI_ARGS, "");
+        assertEquals("none", createConfig().getConfigValue("kc.proxy").getValue());
+        System.setProperty(CLI_ARGS, "--proxy=none" + ARG_SEPARATOR + "--http-enabled=false");
+        assertEquals("false", createConfig().getConfigValue("kc.http-enabled").getValue());
+        System.setProperty(CLI_ARGS, "--proxy=none" + ARG_SEPARATOR + "--http-enabled=true");
+        assertEquals("true", createConfig().getConfigValue("kc.http-enabled").getValue());
+    }
+
+    @Test
     public void testPropertyNamesFromConfig() {
         System.setProperty(CLI_ARGS, "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         Config.Scope config = initConfig("client-registration", "openid-connect");
