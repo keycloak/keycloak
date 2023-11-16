@@ -16,8 +16,8 @@ dpkg -i java.deb
 
 
 echo "_-_ $(uname -p)"
-echo "--- $(which java)"
-echo "--- $(readlink -f $( which java ))"
+echo "--- $(which javac)"
+echo "--- $(readlink -f $( which javac ))"
 
 #export JAVA_HOME=$(pwd)/jdk-20
 
