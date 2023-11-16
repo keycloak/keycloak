@@ -52,7 +52,7 @@
     "@types/lodash-es": "^4.17.11",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
-    "@vitejs/plugin-react-swc": "^3.4.1",
+    "@vitejs/plugin-react-swc": "^3.5.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^4.5.0",
     "vite-plugin-checker": "^0.6.2",
