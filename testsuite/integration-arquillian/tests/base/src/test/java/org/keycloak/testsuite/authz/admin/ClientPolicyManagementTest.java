@@ -169,12 +169,10 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         client = clients.findByClientId("Client F").get(0);
         clients.get(client.getId()).remove();
 
-        try {
-            authorization.policies().client().findById(representation.getId()).toRepresentation();
-            fail("Client policy should be removed");
-        } catch (NotFoundException nfe) {
-            // ignore
-        }
+        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(0, representation.getClients().size());
+        Assert.assertFalse(representation.getClients().contains(client.getId()));
     }
 
     @Test

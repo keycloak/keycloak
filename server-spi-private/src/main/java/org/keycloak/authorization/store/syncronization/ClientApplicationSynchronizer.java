@@ -72,12 +72,7 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
 
             clients.remove(event.getClient().getId());
 
-            if (clients.isEmpty()) {
-                policyFactory.onRemove(policy, authorizationProvider);
-                authorizationProvider.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
-            } else {
-                policyFactory.onUpdate(policy, representation, authorizationProvider);
-            }
+            policyFactory.onUpdate(policy, representation, authorizationProvider);
         }
     }
 }
