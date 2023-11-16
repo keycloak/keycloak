@@ -88,7 +88,9 @@ public class PropertyMapper<T> {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
         }
 
-        if (isRebuild() && isRunTime() && name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+        boolean isKcProperty = name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX);
+        boolean transform = !isKcProperty || !from.equals(name);
+        if (isRebuild() && isRunTime() && isKcProperty) {
             // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
             return ConfigValue.builder().withName(name).build();
         }
@@ -111,10 +113,10 @@ public class PropertyMapper<T> {
                     }
                 }
 
-                return transformValue(ofNullable(parentValue == null ? null : parentValue.getValue()), context);
+                return transformValue(transform, ofNullable(parentValue == null ? null : parentValue.getValue()), context);
             }
 
-            ConfigValue defaultValue = transformValue(this.option.getDefaultValue().map(Objects::toString), context);
+            ConfigValue defaultValue = transformValue(transform, this.option.getDefaultValue().map(Objects::toString), context);
 
             if (defaultValue != null) {
                 return defaultValue;
@@ -124,7 +126,7 @@ public class PropertyMapper<T> {
             ConfigValue current = context.proceed(name);
 
             if (current != null) {
-                return transformValue(ofNullable(current.getValue()), context);
+                return transformValue(transform, ofNullable(current.getValue()), context);
             }
 
             return current;
@@ -136,7 +138,7 @@ public class PropertyMapper<T> {
             return config;
         }
 
-        ConfigValue transformedValue = transformValue(configValue, context);
+        ConfigValue transformedValue = transformValue(transform, configValue, context);
 
         // we always fallback to the current value from the property we are mapping
         if (transformedValue == null) {
@@ -196,12 +198,12 @@ public class PropertyMapper<T> {
         return mask;
     }
 
-    private ConfigValue transformValue(Optional<String> value, ConfigSourceInterceptorContext context) {
+    private ConfigValue transformValue(boolean transform, Optional<String> value, ConfigSourceInterceptorContext context) {
         if (value == null) {
             return null;
         }
 
-        if (mapper == null) {
+        if (mapper == null || !transform) {
             return ConfigValue.builder().withName(to).withValue(value.orElse(null)).build();
         }
 

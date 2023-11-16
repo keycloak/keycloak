@@ -247,11 +247,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
         HttpURLConnection connection;
         long startTime = System.currentTimeMillis();
+        Exception ex = null;
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 stop();
-                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
 
             try {
@@ -275,6 +276,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
                 connection.disconnect();
             } catch (Exception ignore) {
+                ex = ignore;
             }
         }
 
@@ -304,12 +306,15 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
         TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
             }

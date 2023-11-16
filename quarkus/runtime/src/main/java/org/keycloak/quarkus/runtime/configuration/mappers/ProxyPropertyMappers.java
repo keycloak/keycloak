@@ -4,14 +4,13 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import java.util.Optional;
 
-import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.Messages;
 
-final class ProxyPropertyMappers {
+public final class ProxyPropertyMappers {
 
     private ProxyPropertyMappers(){}
 
@@ -40,20 +39,23 @@ final class ProxyPropertyMappers {
         };
     }
 
-    private static Optional<String> getValidProxyModeValue(Optional<String> value, ConfigSourceInterceptorContext context) {
-        String mode = value.get();
-
-        switch (mode) {
-            case "none":
-            case "passthrough":
-                return of(Boolean.FALSE.toString());
-            case "edge":
-            case "reencrypt":
-                return of(Boolean.TRUE.toString());
-            default:
-                addInitializationException(Messages.invalidProxyMode(mode));
-                return of(Boolean.FALSE.toString());
+    public static boolean getValidProxyModeValue(String mode) {
+        try {
+            switch (ProxyOptions.Mode.valueOf(mode)) {
+                case none:
+                case passthrough:
+                    return false;
+                default:
+                    return true;
+            }
+        } catch (IllegalArgumentException e) {
+            addInitializationException(Messages.invalidProxyMode(mode));
+            return false;
         }
+    }
+
+    private static Optional<String> getValidProxyModeValue(Optional<String> value, ConfigSourceInterceptorContext context) {
+        return Optional.of(String.valueOf(getValidProxyModeValue(value.get())));
     }
 
 }

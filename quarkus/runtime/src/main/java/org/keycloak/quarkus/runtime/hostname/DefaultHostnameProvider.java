@@ -17,20 +17,6 @@
 
 package org.keycloak.quarkus.runtime.hostname;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-import static org.keycloak.urls.UrlType.ADMIN;
-import static org.keycloak.urls.UrlType.LOCAL_ADMIN;
-import static org.keycloak.urls.UrlType.BACKEND;
-import static org.keycloak.urls.UrlType.FRONTEND;
-import static org.keycloak.utils.StringUtil.isNotBlank;
-
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
@@ -39,9 +25,26 @@ import org.keycloak.config.HostnameOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.ProxyPropertyMappers;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import jakarta.ws.rs.core.UriInfo;
+
+import static org.keycloak.common.util.UriUtils.checkUrl;
+import static org.keycloak.urls.UrlType.ADMIN;
+import static org.keycloak.urls.UrlType.BACKEND;
+import static org.keycloak.urls.UrlType.FRONTEND;
+import static org.keycloak.urls.UrlType.LOCAL_ADMIN;
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory {
 
@@ -285,7 +288,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
-        noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
+        noProxy = ProxyPropertyMappers.getValidProxyModeValue(Configuration.getConfigValue("kc.proxy").getValue());
         defaultTlsPort = Integer.parseInt(httpPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
