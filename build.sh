@@ -15,6 +15,7 @@ echo "----"
 dpkg -i java.deb
 
 
+echo "_-_ $(uname -p)"
 echo "--- $(which java)"
 echo "--- $(readlink -f $( which java ))"
 
