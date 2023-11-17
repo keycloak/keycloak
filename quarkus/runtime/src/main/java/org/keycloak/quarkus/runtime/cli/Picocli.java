@@ -297,7 +297,7 @@ public final class Picocli {
                 }
 
                 if (!PropertyMapperParameterConsumer.isExpectedValue(mapper.getExpectedValues(), value)) {
-                    throw new NonCliPropertyException(PropertyMapperParameterConsumer.getErrorMessage(mapper.getFrom(),
+                    throw new PropertyException(PropertyMapperParameterConsumer.getErrorMessage(mapper.getFrom(),
                             value, mapper.getExpectedValues(), mapper.getExpectedValues()) + ". From ConfigSource " + configSource.getName());
                 }
             }
@@ -595,7 +595,7 @@ public final class Picocli {
         cmd.getOut().println(message);
     }
 
-    public static List<String> parseArgs(String[] rawArgs) {
+    public static List<String> parseArgs(String[] rawArgs) throws PropertyException {
         if (rawArgs.length == 0) {
             return List.of();
         }
@@ -615,6 +615,12 @@ public final class Picocli {
                 iterator.remove();
 
                 if (!arg.contains(ARG_KEY_VALUE_SEPARATOR)) {
+                    if (!iterator.hasNext()) {
+                        if (arg.startsWith("--spi")) {
+                            throw new PropertyException(String.format("spi argument %s requires a value.", arg));
+                        }
+                        return args;
+                    }
                     String next = iterator.next();
 
                     if (!next.startsWith("--")) {
