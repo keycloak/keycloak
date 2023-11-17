@@ -2,13 +2,16 @@
 FROM openjdk:20-jdk-slim
 
 # Set the Keycloak version and other environment variables as needed
-ENV KC_HOSTNAME_STRICT=false
-ENV KC_HOSTNAME_STRICT_HTTPS=false
-ENV KC_HTTP_ENABLED=true
+ENV KC_HOSTNAME_STRICT=$KC_HOSTNAME_STRICT
+ENV HOSTNAME=$HOSTNAME
+ENV KC_HOSTNAME_STRICT_HTTPS=$KC_HOSTNAME_STRICT_HTTPS
+ENV KC_HTTP_ENABLED=$KC_HTTP_ENABLED
 ENV DB_USERNAME=$DB_USERNAME
 ENV DB_PASSWORD=$DB_PASSWORD
 ENV DB_HOST=$DB_HOST
 ENV DB_NAME=$DB_NAME
+ENV KEYCLOAK_ADMIN=$KEYCLOAK_ADMIN
+ENV KEYCLOAK_ADMIN_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
 
 # Create a directory for Keycloak
 WORKDIR /app
@@ -31,5 +34,5 @@ EXPOSE 8080
 #RUN nohup cloud-sql-proxy --private-ip disco-ascent-395314:asia-southeast1:emeritus-insights-nprod-mysql &
 
 # Command to start Keycloak
-CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--hostname", "$HOSTNAME", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
 #CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "127.0.0.1", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
