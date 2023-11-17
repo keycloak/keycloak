@@ -46,7 +46,7 @@ public class GuideMojo extends AbstractMojo {
                     log.info("Guide dir: " + srcDir.getAbsolutePath());
                     log.info("Target dir: " + targetDir.getAbsolutePath());
 
-                    GuideBuilder g = new GuideBuilder(srcDir, targetDir, log, project);
+                    GuideBuilder g = new GuideBuilder(srcDir, targetDir, log, project.getProperties());
                     g.build();
                 }
             }
