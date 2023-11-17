@@ -20,7 +20,7 @@ COPY / /app/
 EXPOSE 8080
 
 # Installing relevant packages [ curl ping ]
-RUN apt install -y iputils-ping curl
+#RUN apt install -y iputils-ping curl
 
 # Downloading Cloud SQL Proxy
 #RUN curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.2/cloud-sql-proxy.linux.amd64
