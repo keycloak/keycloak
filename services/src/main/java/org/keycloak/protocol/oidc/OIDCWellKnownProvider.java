@@ -182,7 +182,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
             scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
-            config.setScopesSupported(scopeNames);
+            config.setScopesSupported(scopeNames.stream().distinct().collect(Collectors.toList()));
         }
 
         config.setRequestParameterSupported(true);
