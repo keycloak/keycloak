@@ -145,6 +145,8 @@ public class LDAPConstants {
 
     public static final String LDAP_MATCHING_RULE_IN_CHAIN = ":1.2.840.113556.1.4.1941:";
 
+    public static final String REFERRAL = "referral";
+
     public static String getUuidAttributeName(String vendor) {
         if (vendor != null) {
             switch (vendor) {
