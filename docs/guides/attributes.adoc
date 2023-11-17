@@ -1,1 +1,2 @@
 :project_name: Keycloak
+:archivebasename: keycloak
