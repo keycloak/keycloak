@@ -28,7 +28,8 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
-    <packaging>pom</packaging>
+    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class from an IDE for debugging -->
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -40,6 +41,9 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.3.0</version>
