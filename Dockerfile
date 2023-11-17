@@ -23,13 +23,13 @@ EXPOSE 8080
 RUN apt install -y iputils-ping curl
 
 # Downloading Cloud SQL Proxy
-RUN curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.2/cloud-sql-proxy.linux.amd64
-RUN chmod +x cloud-sql-proxy
-RUN mv cloud-sql-proxy /usr/local/bin
+#RUN curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.2/cloud-sql-proxy.linux.amd64
+#RUN chmod +x cloud-sql-proxy
+#RUN mv cloud-sql-proxy /usr/local/bin
 
 # Running SQL Proxy Local Tunnel
-RUN nohup cloud-sql-proxy --private-ip disco-ascent-395314:asia-southeast1:emeritus-insights-nprod-mysql &
+#RUN nohup cloud-sql-proxy --private-ip disco-ascent-395314:asia-southeast1:emeritus-insights-nprod-mysql &
 
 # Command to start Keycloak
-#CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
-CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "127.0.0.1", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+#CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "127.0.0.1", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
