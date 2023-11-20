@@ -2,7 +2,7 @@
 
 == Start {project_name}
 
-. From a terminal, open the keycloak-{version} directory.
+. From a terminal, open the `{archivebasename}-{version}` directory.
 . Enter the following command:
 <@profile.ifProduct> 
 +
