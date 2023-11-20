@@ -530,7 +530,6 @@ describe("Realms", () => {
     });
 
     it("list effective message bundles of a realm", async () => {
-      // @TODO: In order to test it, there have to be message bundles
       const messageBundles =
         await kcAdminClient.realms.findEffectiveMessageBundles({
           realm: currentRealmName,

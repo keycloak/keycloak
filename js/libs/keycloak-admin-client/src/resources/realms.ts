@@ -419,15 +419,7 @@ export class Realms extends Resource {
     method: "GET",
     path: "/{realm}/{themeType}/{locale}",
     urlParamKeys: ["realm", "themeType", "locale"],
-    queryParamKeys: [
-      "theme",
-      "themeType",
-      "local",
-      "hasWords",
-      "source",
-      "first",
-      "max",
-    ],
+    queryParamKeys: ["theme", "source"],
   });
 
   constructor(client: KeycloakAdminClient) {
