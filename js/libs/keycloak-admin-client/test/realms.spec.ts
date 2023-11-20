@@ -528,5 +528,15 @@ describe("Realms", () => {
       expect(locales).to.be.ok;
       expect(locales).to.be.deep.eq([]);
     });
+
+    it("list effective message bundles of a realm", async () => {
+      // @TODO: In order to test it, there have to be message bundles
+      const messageBundles =
+        await kcAdminClient.realms.findEffectiveMessageBundles({
+          realm: currentRealmName,
+        });
+
+      expect(messageBundles).to.be.ok;
+    });
   });
 });

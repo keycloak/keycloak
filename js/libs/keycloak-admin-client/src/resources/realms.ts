@@ -7,6 +7,7 @@ import type {
 } from "../defs/realmRepresentation.js";
 import type EventRepresentation from "../defs/eventRepresentation.js";
 import type EventType from "../defs/eventTypes.js";
+import type EffectiveMessageBundleRepresentation from "../defs/effectiveMessageBundleRepresentation.js";
 import type KeysMetadataRepresentation from "../defs/keyMetadataRepresentation.js";
 import type ClientInitialAccessPresentation from "../defs/clientInitialAccessPresentation.js";
 import type TestLdapConnectionRepresentation from "../defs/testLdapConnection.js";
@@ -401,6 +402,32 @@ export class Realms extends Resource {
     method: "DELETE",
     path: "/{realm}/localization/{selectedLocale}/{key}",
     urlParamKeys: ["realm", "selectedLocale", "key"],
+  });
+  public findEffectiveMessageBundles = this.makeRequest<
+    {
+      realm: string;
+      theme?: string;
+      themeType?: string;
+      local?: string;
+      hasWords?: string;
+      source?: boolean;
+      first?: number;
+      max?: number;
+    },
+    EffectiveMessageBundleRepresentation[]
+  >({
+    method: "GET",
+    path: "/{realm}/{themeType}/{locale}",
+    urlParamKeys: ["realm", "themeType", "locale"],
+    queryParamKeys: [
+      "theme",
+      "themeType",
+      "local",
+      "hasWords",
+      "source",
+      "first",
+      "max",
+    ],
   });
 
   constructor(client: KeycloakAdminClient) {
