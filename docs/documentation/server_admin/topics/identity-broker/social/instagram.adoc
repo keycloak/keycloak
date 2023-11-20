@@ -3,7 +3,7 @@
 
 .Procedure
 . Click *Identity Providers* in the menu.
-. From the `Add provider` list, select `Instagram`. {project_name} displays the configuration page for the Instagram identity provider.
+. From the *Add provider* list, select *Instagram*.
 +
 .Add identity provider
 image:images/instagram-add-identity-provider.png[Add Identity Provider]
@@ -15,12 +15,12 @@ image:images/instagram-add-identity-provider.png[Add Identity Provider]
 .Add a use case
 image:images/meta-add-use-case.png[Add a use case]
 +
-.. Select `Other`.
+.. Select *Other*.
 +
 .Select an app type
 image:images/meta-select-app-type.png[Select an app type]
 +
-.. Select `Consumer`.
+.. Select *Consumer*.
 +
 .Create an app
 image:images/meta-create-app.png[Create an app]
@@ -35,7 +35,7 @@ image:images/meta-create-app.png[Create an app]
 .Add a product
 image:images/meta-add-product.png[Add Product]
 +
-.. Select `Dashboard` from the menu.
+.. Select *Dashboard* from the menu.
 .. Click *Set Up* in the *Instagram Basic Display* box.
 .. Click *Create New App*.
 +
@@ -51,7 +51,7 @@ image:images/instagram-app-settings.png[Setup the App]
 .. Paste the *Redirect URL* from {project_name} into the *Deauthorize Callback URL* field.
 .. Paste the *Redirect URL* from {project_name} into the *Data Deletion Request URL* field.
 .. Click *Show* in the *Instagram App Secret* field.
-.. Note the `Instagram App ID` and the `Instagram App Secret`.
+.. Note the *Instagram App ID* and the *Instagram App Secret*.
 .. Click *App Review* - *Requests*.
 .. Follow the instructions on the screen.
 . In {project_name}, paste the value of the `Instagram App ID` into the *Client ID* field.
