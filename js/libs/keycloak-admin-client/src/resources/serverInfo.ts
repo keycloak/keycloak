@@ -1,7 +1,7 @@
 import Resource from "./resource.js";
 import type { ServerInfoRepresentation } from "../defs/serverInfoRepesentation.js";
 import type KeycloakAdminClient from "../index.js";
-import EffectiveMessageBundleRepresentation from "../defs/effectiveMessageBundleRepresentation.js";
+import type EffectiveMessageBundleRepresentation from "../defs/effectiveMessageBundleRepresentation.js";
 
 export class ServerInfo extends Resource {
   constructor(client: KeycloakAdminClient) {
