@@ -207,6 +207,16 @@
                                     <workingDirectory>${dir.common}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>pnpm-build-common</id>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                    <workingDirectory>${dir.common}</workingDirectory>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
