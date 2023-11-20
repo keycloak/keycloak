@@ -8,7 +8,7 @@
 
 .Procedure
 . Click *Identity Providers* in the menu.
-. From the `Add provider` list, select `Twitter`.
+. From the *Add provider* list, select *Twitter*.
 +
 .Add identity provider
 image:images/twitter-add-identity-provider.png[Add Identity Provider]
@@ -16,7 +16,7 @@ image:images/twitter-add-identity-provider.png[Add Identity Provider]
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, create an app in https://developer.twitter.com/apps/[Twitter Application Management].
 .. Enter App name and click *Next*.
-.. Note the value of `API Key` and `API Key Secret` and click *App settings*.
+.. Note the value of *API Key* and *API Key Secret* and click *App settings*.
 .. In the *User authentication settings* section click on the *Set up* button.
 .. Select *Web App* as the *Type of App*.
 .. Paste the value of the *Redirect URL* into the *Callback URI / Redirect URL* field.
