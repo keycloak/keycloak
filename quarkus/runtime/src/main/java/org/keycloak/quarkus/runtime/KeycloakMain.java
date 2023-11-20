@@ -41,7 +41,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.cli.NonCliPropertyException;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -64,7 +64,16 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION);
-        List<String> cliArgs = Picocli.parseArgs(args);
+        List<String> cliArgs = null;
+        try {
+            cliArgs = Picocli.parseArgs(args);
+        } catch (PropertyException e) {
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
+            errorHandler.error(errStream, e.getMessage(), null);
+            System.exit(ExitCode.USAGE);
+            return;
+        }
 
         if (cliArgs.isEmpty()) {
             cliArgs = new ArrayList<>(cliArgs);
@@ -83,7 +92,7 @@ public class KeycloakMain implements QuarkusApplication {
 
             try {
                 Picocli.validateNonCliConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
-            } catch (NonCliPropertyException e) {
+            } catch (PropertyException e) {
                 errorHandler.error(errStream, e.getMessage(), null);
                 System.exit(ExitCode.USAGE);
                 return;

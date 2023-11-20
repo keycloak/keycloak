@@ -17,9 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-public class NonCliPropertyException extends RuntimeException {
+public class PropertyException extends RuntimeException {
 
-    public NonCliPropertyException(String message) {
+    public PropertyException(String message) {
         super(message);
     }
 
