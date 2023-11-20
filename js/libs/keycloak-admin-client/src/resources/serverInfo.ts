@@ -6,14 +6,14 @@ import EffectiveMessageBundleRepresentation from "../defs/effectiveMessageBundle
 export class ServerInfo extends Resource {
   constructor(client: KeycloakAdminClient) {
     super(client, {
-      path: "/admin/serverinfo",
+      path: "/",
       getBaseUrl: () => client.baseUrl,
     });
   }
 
   public find = this.makeRequest<{}, ServerInfoRepresentation>({
     method: "GET",
-    path: "/",
+    path: "/admin/serverinfo",
   });
 
   public findEffectiveMessageBundles = this.makeRequest<
@@ -21,11 +21,9 @@ export class ServerInfo extends Resource {
       realm: string;
       theme?: string;
       themeType?: string;
-      local?: string;
+      locale?: string;
       hasWords?: string;
       source?: boolean;
-      first?: number;
-      max?: number;
     },
     EffectiveMessageBundleRepresentation[]
   >({

@@ -21,6 +21,8 @@ describe("Server Info", () => {
   it("list effective message bundles of a realm", async () => {
     const messageBundles = await client.serverInfo.findEffectiveMessageBundles({
       realm: "master",
+      themeType: "admin",
+      locale: "en",
     });
 
     expect(messageBundles).to.be.ok;
