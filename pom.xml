@@ -103,6 +103,7 @@
         <angus.mail.version>2.0.1</angus.mail.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
+        <transformer.cli.version>0.5.0</transformer.cli.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
@@ -199,6 +200,8 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <antrun.plugin.version>3.1.0</antrun.plugin.version>
+        <ant.contrib.version>1.0b3</ant.contrib.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1924,6 +1927,30 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
+                </plugin>
+
+                <!-- Jakarta Transformer Plugin -->
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${antrun.plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.eclipse.transformer</groupId>
+                            <artifactId>org.eclipse.transformer.cli</artifactId>
+                            <version>${transformer.cli.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>ant-contrib</groupId>
+                            <artifactId>ant-contrib</artifactId>
+                            <version>${ant.contrib.version}</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>ant</groupId>
+                                    <artifactId>ant</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>

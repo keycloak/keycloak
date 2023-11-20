@@ -76,9 +76,9 @@
 
     <build>
         <plugins>
+            <!-- Jakarta Transformer Plugin -->
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>transform</id>
@@ -89,7 +89,7 @@
                         <configuration>
                             <target>
                                 <property name="plugin_classpath" refid="maven.plugin.classpath" />
-                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer">
+                                <java classname="org.eclipse.transformer.cli.JakartaTransformerCLI">
                                     <arg value="-o" />
                                     <arg value="${jakarta-transformer-sources}" />
                                     <arg value="${jakarta-transformer-target}" />
@@ -101,24 +101,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.eclipse.transformer</groupId>
-                        <artifactId>org.eclipse.transformer.cli</artifactId>
-                        <version>0.2.0</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                        <version>1.0b3</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>ant</groupId>
-                                <artifactId>ant</artifactId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

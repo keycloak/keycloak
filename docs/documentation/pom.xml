@@ -23,7 +23,6 @@
         <version.plugin.assembly>3.0.0</version.plugin.assembly>
         <version.plugin.resources>3.0.2</version.plugin.resources>
         <version.plugin.dependency>3.0.1</version.plugin.dependency>
-        <version.plugin.antrun>1.8</version.plugin.antrun>
         <version.compiler.plugin>3.6.1</version.compiler.plugin>
         <version.jar.plugin>3.0.2</version.jar.plugin>
         <version.install.plugin>2.5.2</version.install.plugin>
@@ -85,7 +84,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>${version.plugin.antrun}</version>
                     <executions>
                         <execution>
                             <id>echo-output</id>
