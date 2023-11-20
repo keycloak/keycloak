@@ -33,11 +33,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class BasicAuthHelper {
     public static String createHeader(String username, String password) {
-        try {
-            return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8), Base64.DO_BREAK_LINES);
-        } catch (IOException e) {
-            return null;
-        }
+        return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8));
     }
 
     public static String[] parseHeader(String header) {
@@ -49,7 +45,7 @@ public class BasicAuthHelper {
 
         String val;
         try {
-            val = new String(Base64.decode(header.substring(6), Base64.DO_BREAK_LINES));
+            val = new String(Base64.decode(header.substring(6)));
         } catch (IOException e) {
             return null;
         }
