@@ -26,5 +26,6 @@ describe("Server Info", () => {
     });
 
     expect(messageBundles).to.be.ok;
+    expect(messageBundles.length).to.be.greaterThan(0);
   });
 });
