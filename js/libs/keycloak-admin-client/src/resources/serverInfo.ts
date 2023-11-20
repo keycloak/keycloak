@@ -22,7 +22,6 @@ export class ServerInfo extends Resource {
       theme?: string;
       themeType?: string;
       locale?: string;
-      hasWords?: string;
       source?: boolean;
     },
     EffectiveMessageBundleRepresentation[]
