@@ -34,5 +34,5 @@ EXPOSE 8080
 #RUN nohup cloud-sql-proxy --private-ip disco-ascent-395314:asia-southeast1:emeritus-insights-nprod-mysql &
 
 # Command to start Keycloak
-CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--hostname", "$HOSTNAME", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--db-url-host", "10.30.16.34", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
 #CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--http-enabled", "true", "--hostname-strict", "false", "--db-url-host", "127.0.0.1", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
