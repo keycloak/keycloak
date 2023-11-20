@@ -569,7 +569,7 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
-                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
+                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
