@@ -1,1 +1,3 @@
 :project_name: Keycloak
+:archivebasename: keycloak
+:archivedownloadurl: https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip
