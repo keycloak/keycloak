@@ -4,5 +4,4 @@ export default interface EffectiveMessageBundleRepresentation {
   locale?: string;
   hasWords?: string;
   source?: boolean;
-  error?: string;
 }
