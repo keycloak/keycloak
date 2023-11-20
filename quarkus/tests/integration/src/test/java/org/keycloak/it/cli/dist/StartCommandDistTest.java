@@ -45,6 +45,13 @@ public class StartCommandDistTest {
     }
 
     @Test
+    @Launch({ "start", "--spi-events-listener-jboss-logging-success-level" })
+    void failSpiArgMissingValue(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
+                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
     @Launch({ "--profile=dev", "start" })
     void failUsingDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
