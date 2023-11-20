@@ -13,6 +13,9 @@ export default defineConfig({
     target: "esnext",
     modulePreload: false,
     cssMinify: "lightningcss",
+    rollupOptions: {
+      external: ["react", "react/jsx-runtime", "react-dom"],
+    },
   },
   plugins: [react(), checker({ typescript: true })],
 });

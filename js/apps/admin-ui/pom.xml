@@ -132,7 +132,19 @@
                         </replacement>
                         <replacement>
                             <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
-                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak Administration UI"}</title>]]></value>
+                            <value xml:space="preserve">
+<![CDATA[
+    <title>${properties.title!"Keycloak Administration UI"}</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "${resourceCommonUrl}/vendor/react/react.production.min.js",
+          "react/jsx-runtime": "${resourceCommonUrl}/vendor/react/react-jsx-runtime.production.min.js",
+          "react-dom": "${resourceCommonUrl}/vendor/react-dom/react-dom.production.min.js"
+        }
+      }
+    </script>
+]]></value>
                         </replacement>
                         <replacement>
                             <token><![CDATA[</body>]]></token>
