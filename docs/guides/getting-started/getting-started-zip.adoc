@@ -11,20 +11,14 @@ summary="Get started with {project_name} on bare metal">
 
 == Before you start
 
-Make sure you have https://openjdk.java.net/[OpenJDK 17] installed.
+Make sure you have https://openjdk.java.net/[OpenJDK 17] installed. 
 
 == Download {project_name}
 
-Download and extract https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip[keycloak-{version}.zip]
+Download and extract {archivedownloadurl}[{archivebasename}-{version}.zip]
 from the {project_name} website.
 
-<@profile.ifCommunity>
-After extracting this file, you should have a directory with a name that starts with `keycloak-{version}`.
-</@profile.ifCommunity>
-
-<@profile.ifProduct>
-After extracting this file, you should have a directory with a name that starts with `rhbk-{version}`.
-</@profile.ifProduct>
+After extracting this file, you should have a directory that is named `{archivebasename}-{version}`.
 
 include::templates/start-keycloak-localhost.adoc[]
 
