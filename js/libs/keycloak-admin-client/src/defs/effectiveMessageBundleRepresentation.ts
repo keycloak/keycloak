@@ -1,8 +1,8 @@
 export default interface EffectiveMessageBundleRepresentation {
-  theme?: string | undefined;
-  themeType?: string | undefined;
-  local?: string | undefined;
-  hasWords?: string | undefined;
-  source?: boolean | undefined;
+  theme?: string;
+  themeType?: string;
+  local?: string;
+  hasWords?: string;
+  source?: boolean;
   error?: string;
 }
