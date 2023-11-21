@@ -7,6 +7,7 @@
 
 body {
   font-family: "Roboto", sans-serif;
+  height: fit-content;
 }
 
 /* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
@@ -20,7 +21,7 @@ body {
 .login-pf body {
   background: url("../img/keycloak-bg.png") no-repeat center center fixed;
   background-size: cover;
-  height: 100%;
+  height: fit-content;
 }
 
 .pf-c-button pf-m-control {
