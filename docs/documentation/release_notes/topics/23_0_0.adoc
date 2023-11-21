@@ -76,3 +76,10 @@ See the migration guide for details.
 
 Keycloak now features `http-max-queued-requests` option to allow proper rejecting of incoming requests under high load.
 For details refer to the https://www.keycloak.org/server/configuration-production[production guide].
+
+= Password policy for specify Maximum authentication time
+
+Keycloak supports new password policy, which allows to specify the maximum age of an authentication with which a password may be changed by user without re-authentication.
+When this password policy is set to 0, the user will be required to re-authenticate to change the  password in the Account Console or by other means.
+You can also specify a lower or higher value than the default value of 5 minutes. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+
