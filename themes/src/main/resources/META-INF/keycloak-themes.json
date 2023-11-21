@@ -8,5 +8,8 @@
     }, {
         "name" : "keycloak.v2",
         "types": [ "account", "admin" ]
+    },{
+        "name":"emeritus-theme",
+        "types": ["login","common"]
     }]
 }
