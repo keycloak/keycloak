@@ -1,3 +1,9 @@
+= OIDC and SAML adapter changes for WildFly and JBoss EAP
+
+OIDC adapter for the WildFly and JBoss EAP, which was deprecated in previous versions, is removed in this release. It is being replaced by the Elytron OIDC adapter,
+which is included in WildFly. The SAML adapter ZIP download for WildFly/EAP is removed as it is being replaced by the Galleon feature pack.
+See the link:{adapterguide_link}[{adapterguide_name}] for the details.
+
 = Localization files for themes default to UTF-8 encoding
 
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
