@@ -1,3 +1,14 @@
+@font-face {
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+}
+
 /* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
    This clashes with the "keycloak-bg.png' background defined on the body below.
    Therefore the Patternfly background must be set to none. */
@@ -125,13 +136,10 @@ div.kc-logo-text span {
   white-space: nowrap;
 }
 
-#kc-header-wrapper {
-  font-size: 29px;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  line-height: 1.2em;
-  padding: 62px 10px 20px;
-  white-space: normal;
+#kc-header-logo {
+  width: 145.333px;
+  height: 40px;
+  object-fit: contain;
 }
 
 #kc-content {
@@ -199,10 +207,6 @@ div.kc-logo-text span {
   font-size: 13px;
   background-color: #fff;
   border-radius: 8px;
-}
-
-.login-pf-page-header {
-  display: none;
 }
 
 #kc-form-options span {
@@ -419,14 +423,6 @@ ul#kc-totp-supported-apps {
     text-align: left;
   }
 
-  #kc-header-wrapper {
-    font-size: 16px;
-    font-weight: bold;
-    padding: 20px 60px 0 0;
-    color: #72767b;
-    letter-spacing: 0;
-  }
-
   div.kc-logo-text {
     margin: 0;
     width: 150px;
@@ -538,7 +534,7 @@ ul#kc-totp-supported-apps {
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   background: #fff;
-  margin-top: 24px;
+  margin-top: 0 !important;
   margin-bottom: 20px;
 }
 
@@ -548,9 +544,7 @@ ul#kc-totp-supported-apps {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
-    padding-top: 0;
-    border-top: 0;
-    box-shadow: 0 0;
+    padding: 0 1rem;
   }
 
   .kc-social-grid {
@@ -655,6 +649,23 @@ ul#kc-totp-supported-apps {
   border-radius: 4px;
   background: #00824b;
   padding: 15px 16px;
+}
+
+.headerImageClass {
+  width: 145.333px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.kc-header {
+  margin-bottom: 25px !important;
+}
+
+.login-pf-page {
+  padding-top: 0px !important;
+  margin-top: 100px !important;
+  padding-bottom: 2rem !important;
+  overflow: hidden;
 }
 
 /* End Recovery codes */
