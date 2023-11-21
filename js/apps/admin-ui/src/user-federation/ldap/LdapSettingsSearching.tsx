@@ -412,13 +412,12 @@ export const LdapSettingsSearching = ({
           fieldId="kc-referral"
         >
           <Controller
-            name="config.referral[0]"
+            name="config.referral.0"
             defaultValue=""
             control={form.control}
             render={({ field }) => (
               <Select
                 toggleId="kc-referral"
-                required
                 onToggle={() =>
                   setIsReferralDropdownOpen(!isReferralDropdownOpen)
                 }
