@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy Multi-Z AWS Aurora"
+title="Deploy AWS Aurora in multiple availability zones"
 summary="Building block for a database"
 preview="true"
 tileVisible="false" >

@@ -35,10 +35,6 @@ The service will be restored automatically.
 The system is degraded until the failures are detected and the backup cluster is promoted to service requests.
 
 * Once failures occur in the communication between the sites, manual steps are necessary to re-synchronize a degraded setup.
-////
-NOTE: we avoid references to future functionality because it locks us in.
-Future versions of {project_name} and {jdgserver_name} plan to reduce those manual operations.
-////
 
 * Degraded setups can lead to service or data loss if additional components fail.
 Monitoring is necessary to detect degraded setups.
@@ -131,10 +127,6 @@ Out-of-sync sites::
 * The sites can become out of sync when a synchronous {jdgserver_name} request fails.
 This situation is currently difficult to monitor, and it would need a full manual re-sync of {jdgserver_name} to recover.
 Monitoring the number of cache entries in both sites and the {project_name} log file can show when resynch would become necessary.
-
-////
-Future versions of {project_name} and {jdgserver_name} plan to automate this.
-////
 
 Manual operations::
 * Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system (network, CPU, Java heap in {jdgserver_name} and {project_name}).

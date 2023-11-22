@@ -45,12 +45,6 @@ See the <@links.ha id="concepts-threads" /> {section} for details.
 See the <@links.ha id="concepts-threads" /> {section} for details.
 * Adjust the memory settings for the heap.
 
-[NOTE]
-====
-Previous versions of this documentation recommended to disable the liveness and readiness probes.
-With https://github.com/keycloak/keycloak/issues/22109[keycloak#22109] being available in {project_name} 22.0.5, disabling these probes is no longer recommended.
-====
-
 == Verifying the deployment
 
 Confirm that the {project_name} deployment is ready.
