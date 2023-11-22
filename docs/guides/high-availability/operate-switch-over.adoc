@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Switch over to the secondary site"
-summary="This describes the operational procedures necessary"
+summary="This topic describes the operational procedures necessary"
 preview="true" >
 
 This procedure switches from the primary site to the secondary site when using a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
@@ -12,7 +12,7 @@ include::partials/infinispan/infinispan-attributes.adoc[]
 
 == When to use this procedure
 
-Use this to take the primary offline gracefully.
+Use this procedure to gracefully take the primary offline.
 
 Once the primary site is back online, use the {sections} <@links.ha id="operate-network-partition-recovery" /> and <@links.ha id="operate-switch-back" /> to return to the original state with the primary site being active.
 
@@ -24,12 +24,12 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 For the context of this {section}, `{site-a}` is the primary site and `{site-b}` is the secondary site.
 
-For taking a site offline, it is a good practice to disable the replication towards it.
-It prevents errors/delays when the channels are disconnected between the primary and the secondary site.
+When you are ready to take a site offline, a good practice is to disable the replication towards it.
+This action prevents errors or delays when the channels are disconnected between the primary and the secondary site.
 
 ==== Procedures to transfer state from secondary to primary site
 
-. Login into your secondary site
+. Log in into your secondary site
 
 include::partials/infinispan/infinispan-cli-connect.adoc[]
 
@@ -86,6 +86,6 @@ No action required.
 
 === Route53
 
-To force Route53 to mark the primary site as not available, edit the health check in AWS to point to a non-existent route (`health/down`) It will take some minutes for the clients to notice the change, and traffic will gradually move over to the secondary site.
+To force Route53 to mark the primary site as not available, edit the health check in AWS to point to a non-existent route (`health/down`).  After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
 
 </@tmpl.guide>

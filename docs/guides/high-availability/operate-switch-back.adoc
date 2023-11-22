@@ -22,7 +22,7 @@ include::partials/infinispan/infinispan-attributes.adoc[]
 These procedures bring the primary site back to operation when the secondary site is handling all the traffic.
 At the end of the {section}, the primary site is online again and handles the traffic.
 
-This is necessary when the primary site has lost its state in {ispn}, a network partition occurred between the primary and the secondary site while the secondary site was active, or the replication was disabled as described in the <@links.ha id="operate-switch-over"/> {section}.
+This procedure is necessary when the primary site has lost its state in {ispn}, a network partition occurred between the primary and the secondary site while the secondary site was active, or the replication was disabled as described in the <@links.ha id="operate-switch-over"/> {section}.
 
 If the data in {ispn} on both sites is still in sync, the procedure for {ispn} can be skipped.
 
@@ -34,7 +34,7 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 For the context of this {section}, `{site-a}` is the primary site, recovering back to operation, and `{site-b}` is the secondary site, running in production.
 
-After the {ispn} in the primary site is back online and joined the cross-site channel (see <@links.ha id="deploy-infinispan-kubernetes-crossdc" />#verifying-the-deployment on how to verify the {ispn} deployment), the state transfer must be manually started from the secondary site.
+After the {ispn} in the primary site is back online and has joined the cross-site channel (see <@links.ha id="deploy-infinispan-kubernetes-crossdc" />#verifying-the-deployment on how to verify the {ispn} deployment), the state transfer must be manually started from the secondary site.
 
 After clearing the state in the primary site, it transfers the full state from the secondary site to the primary site, and it must be completed before the primary site can start handling incoming requests.
 
@@ -42,10 +42,10 @@ WARNING: Transferring the full state may impact the {ispn} cluster perform by in
 
 The first procedure is to delete any stale data from the primary site.
 
-. Login to the primary site.
+. Log in to the primary site.
 
 . Shutdown {project_name}.
-This will clear all {project_name} caches, and it prevents the state of {project_name} from being out-of-sync with {ispn}.
+This action will clear all {project_name} caches and prevents the state of {project_name} from being out-of-sync with {ispn}.
 +
 When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
 
@@ -55,13 +55,13 @@ include::partials/infinispan/infinispan-cli-clear-caches.adoc[]
 
 Now we are ready to transfer the state from the secondary site to the primary site.
 
-. Login into your secondary site.
+. Log in into your secondary site.
 
 include::partials/infinispan/infinispan-cli-connect.adoc[]
 
 include::partials/infinispan/infinispan-cli-state-transfer.adoc[]
 
-. Login to the primary site.
+. Log in to the primary site.
 
 . Start {project_name}.
 +
@@ -76,6 +76,6 @@ include::partials/aurora/aurora-failover.adoc[]
 === Route53
 
 If switching over to the secondary site has been triggered by changing the health endpoint, edit the health check in AWS to point to a correct endpoint (`health/live`).
-It will take some minutes for the clients to notice the change, and traffic will gradually move over to the secondary site.
+After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
 
 </@tmpl.guide>

@@ -6,15 +6,15 @@ title="Multi-site deployments"
 summary="Connect multiple Keycloak deployments in different sites to increase the overall availability"
 preview="true" >
 
-{project_name} supports deployments which consists of multiple Keycloak instances that connect to each other using its embedded Infinispan, and load balancers can distribute the load evenly across those instances.
-Those setups intended for a transparent network with ultra-low latencies.
+{project_name} supports deployments that consist of multiple Keycloak instances that connect to each other using its embedded Infinispan; load balancers can distribute the load evenly across those instances.
+Those setups are intended for a transparent network with ultra-low latencies.
 They also do not assume any network topology of the deployed instances.
 
 The Keycloak high-availability guide goes one step further to describe setups across multiple sites.
-While this adds additional complexity and setup, this might add the extra bit of high availability needed for some setups.
+While this setup adds additional complexity, that extra amount of high availability may be needed for some enviroments.
 
 The different {sections} introduce the necessary concepts and building blocks.
-For each building block, there is also a blueprint on how to set a fully functional example.
+For each building block, a blueprint shows how to set a fully functional example.
 Additional performance tuning and security hardening are still recommended when preparing a production setup.
 
 == Concept and building block overview
