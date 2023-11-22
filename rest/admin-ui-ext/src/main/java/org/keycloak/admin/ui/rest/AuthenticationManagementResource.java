@@ -28,16 +28,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 
 public class AuthenticationManagementResource extends RoleMappingResource {
-    private final KeycloakSession session;
-
-    private RealmModel realm;
-    private AdminPermissionEvaluator auth;
-
     public AuthenticationManagementResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
-        super(realm, auth);
-        this.realm = realm;
-        this.auth = auth;
-        this.session = session;
+        super(session, realm, auth);
     }
 
     @GET

@@ -328,6 +328,53 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return searchForClientRolesStream(realm, ids, search, first, max, false);
+    }
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max) {
+        return searchForClientRolesStream(realm, excludedIds, search, first, max, true);
+    }
+
+    private Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max, boolean negateIds) {
+        List<String> idList = null;
+        if(ids != null) {
+            idList = ids.collect(Collectors.toList());
+            if(idList.isEmpty() && !negateIds)
+                return Stream.empty();
+        }
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<RoleEntity> query = cb.createQuery(RoleEntity.class);
+
+        Root<RoleEntity> roleRoot = query.from(RoleEntity.class);
+        Root<ClientEntity> clientRoot = query.from(ClientEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(roleRoot.get("realmId"), realm.getId()));
+        predicates.add(cb.isTrue(roleRoot.get("clientRole")));
+        predicates.add(cb.equal(roleRoot.get("clientId"),clientRoot.get("id")));
+        if(search != null && !search.isEmpty()) {
+            search = "%" + search.trim().toLowerCase() + "%";
+            predicates.add(cb.or(
+                    cb.like(cb.lower(roleRoot.get("name")), search),
+                    cb.like(cb.lower(clientRoot.get("clientId")), search)
+            ));
+        }
+        if(idList != null && !idList.isEmpty()) {
+            Predicate idFilter = roleRoot.get("id").in(idList);
+            if(negateIds) idFilter = cb.not(idFilter);
+            predicates.add(idFilter);
+        }
+        query.select(roleRoot).where(predicates.toArray(new Predicate[0]))
+                .orderBy(
+                        cb.asc(clientRoot.get("clientId")),
+                        cb.asc(roleRoot.get("name")));
+        return closing(paginateQuery(em.createQuery(query),first,max).getResultStream())
+                .map(roleEntity -> new RoleAdapter(session, realm, em, roleEntity));
+    }
+
+
+    @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
         TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
         query.setParameter("client", client.getId());
