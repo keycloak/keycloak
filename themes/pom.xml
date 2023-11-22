@@ -17,9 +17,8 @@
         <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
         <!-- ignore folders for incremental builds by the maven build cache plugin -->
         <maven.build.cache.exclude.1>${project.basedir}/src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.1>
-        <maven.build.cache.exclude.2>${project.basedir}/src/main/resources/theme/keycloak/common/resources/web_modules</maven.build.cache.exclude.2>
-        <maven.build.cache.exclude.3>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.3>
-        <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
+        <maven.build.cache.exclude.2>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.2>
+        <maven.build.cache.exclude.3>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.3>
     </properties>
 
     <dependencies>
