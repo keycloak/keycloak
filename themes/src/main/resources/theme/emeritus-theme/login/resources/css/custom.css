@@ -50,6 +50,7 @@ textarea.pf-c-form-control {
   padding-left: 14px;
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+  background-image: none !important;
 }
 
 .pf-c-alert__title {
