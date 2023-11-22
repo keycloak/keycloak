@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -107,7 +108,9 @@ public class ThemeResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLocalizationTexts(@PathParam("realm") String realmName, @QueryParam("theme") String theme,
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
-                                         @QueryParam("source") boolean showSource) throws IOException {
+                                         @QueryParam("source") boolean showSource, @QueryParam("hasWords") List<String> hasWords,
+                                         @QueryParam("first") @DefaultValue("0") long first,
+                                         @QueryParam("max") long max) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
         session.getContext().setRealm(realm);
         List<KeySource> result;
@@ -138,8 +141,17 @@ public class ThemeResource {
                     new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
         }
 
+        if (!hasWords.isEmpty()) {
+            result = result.stream().filter(keySource -> hasWords.stream()
+                    .anyMatch(w -> keySource.getValue().toUpperCase(locale).contains(w.toUpperCase(locale)))).collect(toList());
+        }
+
+        if (max != 0) {
+            result = result.stream().skip(first).limit(max).collect(toList());
+        }
+
         Response.ResponseBuilder responseBuilder = Response.ok(result);
-        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").auth().build();
+        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").preflight().build();
     }
 }
 
