@@ -28,7 +28,7 @@ The caller will receive a response with a 5xx HTTP status code indicating a serv
 
 With the number of threads in the executor pool being an order of magnitude larger than the number of database connections and with requests failing when no database connection is available within the https://quarkus.io/guides/all-config#quarkus-agroal_quarkus.datasource.jdbc.acquisition-timeout[`quarkus.datasource.jdbc.acquisition-timeout`] (5 seconds default), this is somewhat of a https://en.wikipedia.org/wiki/Demand_response#Load_shedding[load-shedding behavior] where it returns an error response instead of queueing requests for an indefinite amount of time.
 
-=== JGroup connection pool
+=== JGroups connection pool
 
 The combined number of executor threads in all {project_name} nodes in the cluster should not exceed the number of threads available in JGroups thread pool to avoid the error `org.jgroups.util.ThreadPool: thread pool is full`.
 To see the error the first time it happens, the system property `jgroups.thread_dumps_threshold` needs to be set to `1`, as otherwise the message appears only after 10000 threads have been rejected.
