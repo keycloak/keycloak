@@ -12,6 +12,8 @@ This describes the procedure required to configure DNS based failover for Multi-
 This is intended to be used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
 Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
 
+include::partials/blueprint-disclaimer.adoc[]
+
 == Architecture
 
 All {project_name} client requests are routed via a DNS name managed by Route53 records.

@@ -11,6 +11,8 @@ The following building blocks are needed to set up an active-passive deployment 
 The building blocks link to a blueprint with an example configuration.
 They are listed in the order in which they need to be installed.
 
+include::partials/blueprint-disclaimer.adoc[]
+
 == Prerequisites
 
 * Understanding the concepts laid out in the <@links.ha id="concepts-active-passive-sync"/> {section}.
