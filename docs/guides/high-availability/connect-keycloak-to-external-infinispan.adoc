@@ -30,6 +30,7 @@ include::examples/src/kcb-infinispan-cache-remote-store-config.xml[tag=keycloak-
 
 .. Prepare an {jdgserver_name} Cache configuration XML from the file `cache-ispn.xml` which is part of the {project_name} distribution:
 For each `replicated-cache` entry, add the tag `<persistence />` as shown below.
+For additional information on the infinispan configuration options, see the https://docs.jboss.org/infinispan/14.0/configdocs/infinispan-config-14.0.html[infinispan configuration schema reference].
 +
 [source,xml,indent=0]
 ----
