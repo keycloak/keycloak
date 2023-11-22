@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@ConfigMapping(prefix = "operator")
+@ConfigMapping(prefix = "kc-operator")
 public interface Config {
     Keycloak keycloak();
 

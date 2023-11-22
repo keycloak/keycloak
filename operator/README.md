@@ -30,13 +30,13 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 The Keycloak image can be configured, when starting the operator, using the Java property:
 
 ```
-operator.keycloak.image
+kc-operator.keycloak.image
 ```
 
 And the imagePullPolicy with:
 
 ```
-operator.keycloak.image-pull-policy
+kc-operator.keycloak.image-pull-policy
 ```
 
 ## Contributing
@@ -76,7 +76,7 @@ kubectl delete -k <previously-used-folder>
 
 ### Testing
 
-Testing allows 2 methods specified in the property `test.operator.deployment` : `local` & `remote`. 
+Testing allows 2 methods specified in the property `test.kc-operator.deployment` : `local` & `remote`. 
 
 `local` : resources will be deployed to the local cluster and the operator will run out of the cluster
 
@@ -87,12 +87,12 @@ mvn clean verify \
   -Dquarkus.container-image.build=true \
   -Dquarkus.container-image.tag=test \
   -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-  -Dtest.operator.deployment=remote
+  -Dtest.kc-operator.deployment=remote
 ```
 
 To run tests on Mac with `minikube` and the `docker` driver you should run `minikube tunnel` in a separate shell and configure the Java properties as follows:
 ```bash
--Dtest.operator.kubernetes.ip=localhost
+-Dtest.kc-operator.kubernetes.ip=localhost
 ```
 
 On Linux or on Mac using `minikube` on a VM, instead you should enable ingress:
@@ -109,7 +109,7 @@ To avoid skipping tests that are depending on custom Keycloak images, you need t
 And run the tests passing an extra Java property:
 
 ```bash
--Dtest.operator.custom.image=custom-keycloak:latest
+-Dtest.kc-operator.custom.image=custom-keycloak:latest
 ```
 
 ### Testing using a pre-built operator image from a remote registry
@@ -124,5 +124,5 @@ you want to use by setting `quarkus.container-image.image=<your-image>:<your-tag
  mvn clean verify \
       -Dquarkus.container-image.build=false \
       -Dquarkus.container-image.image=quay.io/keycloak/keycloak-operator:nightly \
-      -Dtest.operator.deployment=remote
+      -Dtest.kc-operator.deployment=remote
 ```

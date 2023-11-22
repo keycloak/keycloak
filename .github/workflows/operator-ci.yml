@@ -90,10 +90,10 @@ jobs:
         run: |
           ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ env.version_local }} \
-              -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
-              -Doperator.keycloak.image-pull-policy=Never \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              -Dkc-operator.keycloak.image=keycloak:${{ env.version_local }} \
+              -Dtest.kc-operator.custom.image=custom-keycloak:${{ env.version_local }} \
+              -Dkc-operator.keycloak.image-pull-policy=Never \
+              -Dtest.kc-operator.kubernetes.ip=$(minikube ip)
 
   test-remote:
     name: Test remote
@@ -137,11 +137,11 @@ jobs:
           ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Doperator.keycloak.image=keycloak:${{ env.version_remote }} \
+              -Dkc-operator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.kubernetes.env.vars.operator-keycloak-image-pull-policy=Never \
-              -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
-              --no-transfer-progress -Dtest.operator.deployment=remote \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              -Dtest.kc-operator.custom.image=custom-keycloak:${{ env.version_remote }} \
+              --no-transfer-progress -Dtest.kc-operator.deployment=remote \
+              -Dtest.kc-operator.kubernetes.ip=$(minikube ip)
 
   test-olm:
     name: Test OLM installation
