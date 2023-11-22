@@ -88,7 +88,7 @@ export function UserDataTable() {
     },
     ([storageProviders, realm, profile]) => {
       setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled[0] === "true"),
+        storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
       );
       setRealm(realm);
       setProfile(profile);
