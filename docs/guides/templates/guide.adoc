@@ -13,7 +13,7 @@ include::../attributes.adoc[]
 = ${title}
 
 ifeval::["${preview}" == "true"]
-WARNING: This guide is describing a feature which is currently in preview and is not fully supported.
+WARNING: This {section} is describing a feature which is currently in preview. Please provide your feedback while we’re continuing to work on this.
 endif::[]
 
 <#nested>
