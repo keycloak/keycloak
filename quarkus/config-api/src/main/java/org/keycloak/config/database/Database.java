@@ -18,7 +18,6 @@
 package org.keycloak.config.database;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -50,12 +49,6 @@ public final class Database {
         }
 
         return false;
-    }
-
-    public static Optional<Vendor> getVendorByDbKind(String dbKind) {
-        return Arrays.stream(Vendor.values())
-                .filter(v -> v.isOfKind(dbKind))
-                .findAny();
     }
 
     public static Optional<String> getDatabaseKind(String alias) {
