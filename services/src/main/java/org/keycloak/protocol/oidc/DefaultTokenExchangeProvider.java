@@ -515,6 +515,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
+        context.getClaims().forEach((k, v) -> userSession.setNote(k, v));
+
         return exchangeClientToClient(user, userSession, null, false);
     }
 

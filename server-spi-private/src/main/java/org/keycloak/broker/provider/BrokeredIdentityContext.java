@@ -48,6 +48,7 @@ public class BrokeredIdentityContext {
     private IdentityProviderModel idpConfig;
     private IdentityProvider idp;
     private Map<String, Object> contextData = new HashMap<>();
+    private Map<String, String> claims = new HashMap<>();
     private AuthenticationSessionModel authenticationSession;
 
     public BrokeredIdentityContext(String id) {
@@ -159,6 +160,14 @@ public class BrokeredIdentityContext {
 
     public void setContextData(Map<String, Object> contextData) {
         this.contextData = contextData;
+    }
+
+    public Map<String, String> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(Map<String, String> claims) {
+        this.claims = claims;
     }
 
     // Set the attribute, which will be available on "Update profile" page and in authenticators
