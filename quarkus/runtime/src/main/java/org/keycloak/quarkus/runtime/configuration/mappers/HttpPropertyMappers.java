@@ -162,7 +162,7 @@ public final class HttpPropertyMappers {
         config.keyStoreAliasPassword = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password");
         config.keyStoreAliasPasswordKey = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password-key");
         config.keyStoreKeyAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-key-alias");
-        
+
         config.keyFiles = Configuration.getOptionalKcValue(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE.getKey()).map(Paths::get).map(List::of);
         config.files = certFile.map(Paths::get).map(List::of);
 
