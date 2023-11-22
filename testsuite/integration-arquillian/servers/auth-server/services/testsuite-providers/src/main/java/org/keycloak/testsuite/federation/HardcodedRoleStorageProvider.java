@@ -81,6 +81,16 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     public class HardcodedRoleAdapter implements RoleModel {
 
         private final RealmModel realm;
