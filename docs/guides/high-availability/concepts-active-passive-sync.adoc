@@ -6,27 +6,23 @@ title="Concepts for active-passive deployments"
 summary="Understanding an active-passive deployment with synchronous replication"
 preview="true" >
 
-This concept describes a highly available active/passive setup and the behavior to expect.
-
-This outlines the requirements of the high availability active/passive architecture, before exploring its benefits and tradeoffs.
+This topic describes a highly available active/passive setup and the behavior to expect. It outlines the requirements of the high availability active/passive architecture and describes the benefits and tradeoffs.
 
 == When to use this setup
 
-Use this setup to be able to fail over automatically in the event of a site failure, and reduce the likelihood of losing data or sessions.
-
-Manual interactions are usually required to restore the redundancy after the failover.
+Use this setup to be able to fail over automatically in the event of a site failure, which reduces the likelihood of losing data or sessions. Manual interactions are usually required to restore the redundancy after the failover.
 
 == Deployment, data storage and caching
 
-Two independent {project_name} deployments running in different sites connected with a low latency network connection.
-Entities like users, realms and clients and also offline sessions are stored in a database which is replicated synchronously across the two sites.
-The data is also cached in {project_name}'s embedded {jdgserver_name} as local caches.
-When the data is changed in one {project_name} instance, it is updated in the database, and an invalidation message is sent to the other site using the replicated `work` cache.
+Two independent {project_name} deployments running in different sites are connected with a low latency network connection.
+Users, realms, clients, offline sessions, and other entities are stored in a database that is replicated synchronously across the two sites.
+The data is also cached in the {project_name} embedded {jdgserver_name} as local caches.
+When the data is changed in one {project_name} instance, that data is updated in the database, and an invalidation message is sent to the other site using the replicated `work` cache.
 
 Session-related data is stored in the replicated caches of the embedded {jdgserver_name} of {project_name}, and forwarded to the external {jdgserver_name}, which forwards information to the external {jdgserver_name} running synchronously in the other site.
 As session data of the external {jdgserver_name} is also cached in the embedded {jdgserver_name}, invalidation messages of the replicated `work` cache are needed for invalidation.
 
-In the following paragraphs and diagrams, when talking about deploying {jdgserver_name}, this always refers to the external {jdgserver_name}.
+In the following paragraphs and diagrams, references to deploying {jdgserver_name} apply to the external {jdgserver_name}.
 
 image::high-availability/active-passive-sync.dio.svg[]
 
@@ -39,7 +35,10 @@ The service will be restored automatically.
 The system is degraded until the failures are detected and the backup cluster is promoted to service requests.
 
 * Once failures occur in the communication between the sites, manual steps are necessary to re-synchronize a degraded setup.
+////
+NOTE: we avoid references to future functionality because it locks us in.
 Future versions of {project_name} and {jdgserver_name} plan to reduce those manual operations.
+////
 
 * Degraded setups can lead to service or data loss if additional components fail.
 Monitoring is necessary to detect degraded setups.
@@ -85,7 +84,7 @@ The setup is degraded until the connection is restored and the session data is r
 
 | Connectivity database
 | If the connectivity between the two sites is lost, the synchronous replication will fail, and it might take some time for the primary site to mark the secondary offline.
-Some requests might receive an error message or are delayed for some seconds.
+Some requests might receive an error message or be delayed for a few seconds.
 Manual operations might be necessary depending on the database.
 | No data loss^3^
 | Seconds to minutes (depending on the database)
@@ -93,7 +92,7 @@ Manual operations might be necessary depending on the database.
 | Primary site
 | If none of the {project_name} nodes are available, the loadbalancer will detect the outage and redirect the traffic to the secondary partials/infinispan/.
 Some requests might receive an error message while the loadbalancer has not detected the primary site failure.
-The setup will be degraded until the primary partials/infinispan/ is back up and the session state has been manually synced from the secondary to the primary partials/infinispan/.
+The setup will be degraded until the primary partials/infinispan/ is back up and the session state has been manually synchronized from the secondary to the primary partials/infinispan/.
 | No data loss^3^
 | Less than one minute
 
@@ -130,9 +129,12 @@ Use monitoring to ensure degradations are detected and handled in a timely manne
 
 Out-of-sync sites::
 * The sites can become out of sync when a synchronous {jdgserver_name} request fails.
-This is currently difficult to monitor, and it would need a full manual re-sync of {jdgserver_name} to recover.
-Monitoring the number of cache entries in both sites and {project_name}'s log file can show when this would become necessary.
+This situation is currently difficult to monitor, and it would need a full manual re-sync of {jdgserver_name} to recover.
+Monitoring the number of cache entries in both sites and the {project_name} log file can show when resynch would become necessary.
+
+////
 Future versions of {project_name} and {jdgserver_name} plan to automate this.
+////
 
 Manual operations::
 * Manual operations that re-synchronize the {jdgserver_name} state between the sites will issue a full state transfer which will put a stress on the system (network, CPU, Java heap in {jdgserver_name} and {project_name}).
@@ -162,17 +164,16 @@ For now, it has been tested and documented with blueprints only for two sites.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
 An asynchronous setup would handle network failures between the site gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to the secondary site.
-But as the secondary partials/infinispan/ would never be fully up-to-date with the primary partials/infinispan/, this could lead to data loss during failover.
+However, as the secondary partials/infinispan/ would never be fully up-to-date with the primary partials/infinispan/, this setup could lead to data loss during failover.
 This would include:
 +
 --
-* Lost logouts (sessions are still logged in the secondary site that logged out in the primary site at the point of failover when using an asynchronous {jdgserver_name} replication of sessions).
-* Lost changes leading to users being able to log in with their old password (database changes not replicated to secondary site at the point of failover when using an asynchronous database).
-* Invalid caches leading to users being able to log in with their old password (invalidations of caches are not propagated at the point of failover to the secondary site when using an asynchronous {jdgserver_name} replication).
+* Lost logouts, meaning sessions are logged in the secondary site although they are logged out in to the primary site at the point of failover when using an asynchronous {jdgserver_name} replication of sessions).
+* Lost changes leading to users being able to log in with an old password because database changes are not replicated to the secondary site at the point of failover when using an asynchronous database.
+* Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failover to the secondary site when using an asynchronous {jdgserver_name} replication.
 --
 +
-So there is effectively a tradeoff between availability and consistency.
-For now, we've considered to rank consistency higher than availability with {project_name}.
+Therefore, tradeoffs exist between high availability and consistency. The focus of this topic is to prioritize consistency over availability with {project_name}.
 
 == Next steps
 

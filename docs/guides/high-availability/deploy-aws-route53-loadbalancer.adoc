@@ -7,44 +7,42 @@ summary="Building block for a loadbalancer"
 preview="true"
 tileVisible="false" >
 
-This describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup.
-
-This is intended to be used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
+This topic describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup. These instructions are intended for used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
 Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
 
 == Architecture
 
-All {project_name} client requests are routed via a DNS name managed by Route53 records.
-It is the responsibility of Route53 to ensure that all client requests are routed to the Primary cluster when it is available and healthy, or to the backup cluster in the event of the primary availability-zone and/or {project_name} deployment failing.
+All {project_name} client requests are routed by a DNS name managed by Route53 records.
+Route53 is responsibile to ensure that all client requests are routed to the Primary cluster when it is available and healthy, or to the backup cluster in the event of the primary availability-zone or {project_name} deployment failing.
 
 If the primary site fails, the DNS changes will need to propagate to the clients.
-Depending on the client's settings, this may take some minutes and depends on the client's configuration.
-When using mobile connections, some internet providers might not respect the TTL of the DNS entries, which can lead to an extended time until the clients finally connect to the new site.
+Depending on the client's settings, the propagation may take some minutes based on the client's configuration.
+When using mobile connections, some internet providers might not respect the TTL of the DNS entries, which can lead to an extended time before the clients can connect to the new site.
 
 .AWS Global Accelerator Failover
 image::high-availability/route53-multi-az-failover.svg[]
 
 Two Openshift Routes are exposed on both the Primary and Backup ROSA cluster.
-The first Route utilizes the Route53 DNS name to service client requests, whereas the second Route is used by Route53 to monitor the health of the {project_name} cluster.
+The first Route uses the Route53 DNS name to service client requests, whereas the second Route is used by Route53 to monitor the health of the {project_name} cluster.
 
 == Prerequisites
 
-* Deployment of {project_name} as described in <@links.ha id="deploy-keycloak-kubernetes" /> on a ROSA cluster in two AWS availability zones in AWS one region.
+* Deployment of {project_name} as described in <@links.ha id="deploy-keycloak-kubernetes" /> on a ROSA cluster in two AWS availability zones in AWS one region
 * An owned domain for client requests to be routed through
 
 == Procedure
 
-. [[create-hosted-zone]]Create a https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html[Route53 Hosted Zone] using the root domain name that you want all {project_name} clients to connect through.
+. [[create-hosted-zone]]Create a https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html[Route53 Hosted Zone] using the root domain name through which you want all {project_name} clients to connect.
 +
-Take note of the "Hosted zone ID", as this will be required in later steps.
+Take note of the "Hosted zone ID", because this ID is required in later steps.
 
 . Retrieve the "Hosted zone ID" and DNS name associated with each ROSA cluster.
 +
-For both the Primary and Backup cluster, perform the following:
+For both the Primary and Backup cluster, perform the following steps:
 +
-.. Login to the ROSA cluster
+.. Log in to the ROSA cluster.
 +
-.. Obtain the cluster VPC ID
+.. Obtain the cluster VPC ID.
 +
 .Command:
 [source,bash]
@@ -231,9 +229,9 @@ aws route53 wait resource-record-sets-changed --id /change/C053410633T95FR9WN3YI
 +
 . Update or create the {project_name} deployment
 +
-For both the Primary and Backup cluster, perform the following:
+For both the Primary and Backup cluster, perform the following steps:
 +
-.. Login to the ROSA cluster
+.. Log in to the ROSA cluster
 +
 .. Ensure the {project_name} CR has the following configuration
 +
@@ -251,8 +249,8 @@ spec:
 ----
 <1> The domain clients used to connect to {project_name}
 +
-To ensure that request forwarding works, specify in the {project_name} CR the hostname through which clients will access the {project_name} instances.
-This must be the `$CLIENT_DOMAIN` used in the Route53 configuration.
+To ensure that request forwarding works, edit the {project_name} CR to specify the hostname through which clients will access the {project_name} instances.
+This hostname must be the `$CLIENT_DOMAIN` used in the Route53 configuration.
 +
 .. Create health check Route
 +
@@ -284,9 +282,9 @@ EOF
 
 == Verify
 
-Navigate to the chosen CLIENT_DOMAIN in your local browser and login to the {project_name} console.
+Navigate to the chosen CLIENT_DOMAIN in your local browser and log in to the {project_name} console.
 
-To test failover works as expected, login to the Primary cluster and scale the {project_name} deployment to zero Pods.
-This will cause the Primary's health checks to fail and Route53 should start routing traffic to the {project_name} Pods on the Backup cluster.
+To test failover works as expected, log in to the Primary cluster and scale the {project_name} deployment to zero Pods.
+Scaling will cause the Primary's health checks to fail and Route53 should start routing traffic to the {project_name} Pods on the Backup cluster.
 
 </@tmpl.guide>

@@ -9,8 +9,8 @@ tileVisible="false" >
 
 include::partials/infinispan/infinispan-attributes.adoc[]
 
-This describes the procedures required to deploy {jdgserver_name} in a multiple-cluster environment (cross-site).
-For simplicity, this guide uses the minimum configuration possible that allows {project_name} to be used with an external {jdgserver_name}.
+This {section} describes the procedures required to deploy {jdgserver_name} in a multiple-cluster environment (cross-site).
+For simplicity, this topic uses the minimum configuration possible that allows {project_name} to be used with an external {jdgserver_name}.
 
 This {section} assumes two {ocp} clusters named `{site-a}` and `{site-b}`.
 
@@ -19,8 +19,8 @@ See the <@links.ha id="introduction" /> {section} for an overview.
 
 == Architecture
 
-This deploys two synchronously replicating {jdgserver_name} clusters in two sites with a low-latency network connection.
-This could be, for example, two availability zones in one AWS region.
+This setup deploys two synchronously replicating {jdgserver_name} clusters in two sites with a low-latency network connection.
+An example of this scenario could be two availability zones in one AWS region.
 
 {project_name}, loadbalancer and database have been removed from the following diagram for simplicity.
 
@@ -42,7 +42,7 @@ These commands must be executed on both {ocp} clusters.
 A service account is required to establish a connection between clusters.
 The {ispn-operator} uses it to inspect the network configuration from the remote site and to configure the local {jdgserver_name} cluster accordingly.
 +
-For more details check {operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
+For more details, see the {operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
 +
 
 .. First, create the service account and generate an access token in both {ocp} clusters.
@@ -63,7 +63,7 @@ kubectl policy add-role-to-user view -n {ns} -z {sa}
 kubectl create token -n {ns} {sa} > {site-b}-token.txt
 ----
 +
-.. The next step is to deploy the token from `{site-a}` into `{site-b}` and vice-versa
+.. The next step is to deploy the token from `{site-a}` into `{site-b}` and the reverse:
 +
 .Deploy `{site-b}` token into `{site-a}`
 [source,bash,subs="+attributes"]
@@ -81,15 +81,15 @@ kubectl create secret generic -n {ns} {sa-secret} \
 
 . Create TLS secrets
 +
-In this {section} {jdgserver_name} uses an {ocp} Route for the cross-site communication.
+In this {section}, {jdgserver_name} uses an {ocp} Route for the cross-site communication.
 It uses the SNI extension of TLS to direct the traffic to the correct Pods.
 To achieve that, JGroups use TLS sockets, which require a Keystore and Truststore with the correct certificates.
 +
-For more information check {operator-docs}#securing-cross-site-connections_cross-site[Securing Cross Site Connections] documentation or this https://developers.redhat.com/learn/openshift/cross-site-and-cross-applications-red-hat-openshift-and-red-hat-data-grid[Red Hat Developer Guide].
+For more information, see the {operator-docs}#securing-cross-site-connections_cross-site[Securing Cross Site Connections] documentation or this https://developers.redhat.com/learn/openshift/cross-site-and-cross-applications-red-hat-openshift-and-red-hat-data-grid[Red Hat Developer Guide].
 +
 Upload the Keystore and the Truststore in an {ocp} Secret.
 The secret contains the file content, the password to access it, and the type of the store.
-How to create the certificates and the stores are out of the scope of this guide.
+Instructions for creating the certificates and the stores are beyond the scope of this guide.
 +
 To upload the Keystore as a Secret, use the following command:
 +
