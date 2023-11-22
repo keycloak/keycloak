@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Concepts for database connection pools"
 summary="Understand these concepts to avoid resource exhaustion and congestion"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 Read this page to understand considerations and best practices on how to configure database connection pools for {project_name}.
 For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-kubernetes" />.

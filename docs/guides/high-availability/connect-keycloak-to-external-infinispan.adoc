@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Connect {project_name} with an external {jdgserver_name}"
 summary="Building block for an Infinispan deployment on Kubernetes"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 This describes advanced {jdgserver_name} configurations for {project_name} on Kubernetes.
 

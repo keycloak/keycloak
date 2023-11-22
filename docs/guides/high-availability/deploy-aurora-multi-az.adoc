@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Deploy Multi-AZ AWS Aurora"
 summary="Building block for a database"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 This describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability-zones to tolerate one or more availability-zone failures in a given AWS region.
 

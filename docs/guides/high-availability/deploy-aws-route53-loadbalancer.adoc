@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Deploy an AWS Route 53 loadbalancer"
 summary="Building block for a loadbalancer"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 This describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup.
 

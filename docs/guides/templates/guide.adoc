@@ -1,10 +1,11 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 includedOptions="" preview="">
+<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true">
 :guide-id: ${id}
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
+:guide-tile-visible: ${tileVisible}
 :version: ${version}
 
 include::../attributes.adoc[]

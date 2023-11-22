@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Switch back from to the primary site"
+title="Switch back to the primary site"
 summary="This describes the operational procedures necessary"
 preview="true" >
 

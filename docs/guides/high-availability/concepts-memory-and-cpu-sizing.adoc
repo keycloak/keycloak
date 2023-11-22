@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Concepts for sizing CPU and memory resources"
 summary="Understand these concepts to avoid resource exhaustion and congestion"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 Use this as a starting point to size a product environment. 
 Adjust the values for your environment as needed based on your load tests.

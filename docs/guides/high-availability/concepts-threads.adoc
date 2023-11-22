@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Concepts for configuring thread pools"
 summary="Understand these concepts to avoid resource exhaustion and congestion"
-preview="true" >
+preview="true"
+tileVisible="false" >
 
 == Audience
 
