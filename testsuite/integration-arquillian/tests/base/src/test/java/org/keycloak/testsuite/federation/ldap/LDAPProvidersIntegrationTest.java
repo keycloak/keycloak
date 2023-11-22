@@ -1046,7 +1046,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username11", "John11", "Doel11", "user11@email.org", "124");
 
             // search by a string that has special characters. Should succeed with an empty set, but no exceptions.
-            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John)").count());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, Map.of(UserModel.SEARCH,"John)")).count());
         });
     }
 

@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;

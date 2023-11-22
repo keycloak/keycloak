@@ -76,6 +76,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -641,7 +642,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void convertOIDCClientDescription() throws IOException {
-        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/client-oidc.json"));
+        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/client-oidc.json"), Charset.defaultCharset());
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals(1, converted.getRedirectUris().size());
@@ -650,7 +651,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void convertSAMLClientDescription() throws IOException {
-        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/saml-entity-descriptor.xml"));
+        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/saml-entity-descriptor.xml"), Charset.defaultCharset());
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals("loadbalancer-9.siroe.com", converted.getClientId());

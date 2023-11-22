@@ -60,10 +60,10 @@ import java.util.regex.Pattern;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -180,7 +180,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(m.find(), is(true));
 
         String artifactB64 = m.group(1);
-        assertThat(artifactB64,not(isEmptyOrNullString()));
+        assertThat(artifactB64,not(is(emptyOrNullString())));
 
         byte[] artifact = Base64.getDecoder().decode(artifactB64);
         assertThat(artifact.length, is(44));
@@ -210,7 +210,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getSignature(), nullValue());
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
@@ -365,7 +365,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getSignature(), notNullValue());
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
 
@@ -388,7 +388,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         ArtifactResponseType artifactResponse = (ArtifactResponseType)response.getSamlObject();
         assertThat(artifactResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(artifactResponse.getAny(), instanceOf(ResponseType.class));
-        assertThat(artifactResponse.getInResponseTo(), not(isEmptyOrNullString()));
+        assertThat(artifactResponse.getInResponseTo(), not(is(emptyOrNullString())));
         ResponseType samlResponse = (ResponseType)artifactResponse.getAny();
         assertThat(samlResponse, isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
@@ -440,7 +440,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
         assertThat(true, is(m.find()));
 
         String artifactB64 = m.group(1);
-        assertThat(artifactB64, not(isEmptyOrNullString()));
+        assertThat(artifactB64, not(is(emptyOrNullString())));
 
         byte[] artifact = Base64.getDecoder().decode(artifactB64);
         assertThat(artifact.length, is(44));

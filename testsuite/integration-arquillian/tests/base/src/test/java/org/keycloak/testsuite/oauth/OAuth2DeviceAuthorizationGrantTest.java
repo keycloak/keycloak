@@ -67,7 +67,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.Cookie;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.LinkedList;
 
