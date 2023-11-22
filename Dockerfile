@@ -3,7 +3,7 @@ FROM openjdk:20-jdk-slim
 
 # Set the Keycloak version and other environment variables as needed
 ENV KC_HOSTNAME_STRICT=$KC_HOSTNAME_STRICT
-#ENV HOSTNAME=$HOSTNAME
+ENV HOSTNAME=$HOSTNAME
 ENV KC_HOSTNAME_STRICT_HTTPS=$KC_HOSTNAME_STRICT_HTTPS
 ENV KC_HTTP_ENABLED=$KC_HTTP_ENABLED
 ENV DB_USERNAME=$DB_USERNAME
@@ -23,5 +23,5 @@ COPY / /app/
 EXPOSE 8080
 
 # Command to start Keycloak
-CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
-#CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--hostname", "$HOSTNAME", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+#CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
+CMD ["java", "-jar", "/app/quarkus/server/target/lib/quarkus-run.jar", "start", "--db", "mysql", "--db-username", "$DB_USERNAME", "--db-password", "$DB_PASSWORD", "--hostname", "$HOSTNAME", "--db-url-host", "$DB_HOST", "--proxy", "edge", "--db-url-database", "$DB_NAME"]
