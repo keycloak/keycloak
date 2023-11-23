@@ -31,7 +31,7 @@ This action prevents errors or delays when the channels are disconnected between
 
 . Log in into your secondary site
 
-include::partials/infinispan/infinispan-cli-connect.adoc[]
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
 
 . Disable the replication to the primary site by running the following command:
 +

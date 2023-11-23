@@ -49,7 +49,7 @@ This action will clear all {project_name} caches and prevents the state of {proj
 +
 When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
 
-include::partials/infinispan/infinispan-cli-connect.adoc[]
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
 
 include::partials/infinispan/infinispan-cli-clear-caches.adoc[]
 
@@ -57,7 +57,7 @@ Now we are ready to transfer the state from the secondary site to the primary si
 
 . Log in into your secondary site.
 
-include::partials/infinispan/infinispan-cli-connect.adoc[]
+<#include "partials/infinispan/infinispan-cli-connect.adoc" />
 
 include::partials/infinispan/infinispan-cli-state-transfer.adoc[]
 
