@@ -21,6 +21,11 @@ The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-
 Depending on the available CPU cores, it can grow even larger.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down as needed.
 
+When running on Kubernetes, adjust the number of worker threads to avoid creating more load than what the CPU limit for the Pod to avoid throttling, which would lead to congestion.
+When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
+Congestion would result in longer response times and an increased memory usage, and eventually an unstable system.
+
+Ideally, you should start with a low limit of threads and adjust it accordingly to the target throughput and response time.
 When the load and the number of threads increases, the bottleneck will usually be the database connections.
 Once a request cannot acquire a database connection, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
 The caller will receive a response with a 5xx HTTP status code indicating a server side error.
@@ -46,7 +51,7 @@ By default, {project_name} will queue all incoming requests infinitely, even if 
 This will use additional memory in the Pod, can exhaust resources in the load balancers, and the requests will eventually time out on the client side without the client knowing if the request has been processed.
 To limit the number of queued requests in {project_name}, set an additional Quarkus configuration option.
 
-Configure `quarkus.thread-pool.queue-size` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded: {project_name} will return HTTP Status code 500 (server error).
+Configure `quarkus.thread-pool.queue-size` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded.
 Assuming a {project_name} Pod processes around 200 requests per second, a queue of 1000 would lead to maximum waiting times of around 5 seconds.
 
 // KC22.0.6 - this is still 500

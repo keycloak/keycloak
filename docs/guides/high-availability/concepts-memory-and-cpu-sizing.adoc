@@ -16,7 +16,9 @@ Adjust the values for your environment as needed based on your load tests.
 ====
 * Performance will be lowered when scaling to more Pods (due to additional overhead) and using a cross-datacenter setup (due to additional traffic and operations).
 
-* Increased cache sizes can improve the performance when {project_name} instances run for a longer time. Still, those caches need to be filled when an instance is restarted.
+* Increased cache sizes can improve the performance when {project_name} instances running for a longer time.
+This will decrease response times and reduce IOPS on the database.
+Still, those caches need to be filled when an instance is restarted, so do not set resources too tight based on the stable state measured once the caches have been filled.
 
 * Use these values as a starting point and perform your own load tests before going into production.
 ====
@@ -85,10 +87,12 @@ The following setup was used to retrieve the settings above to run tests of abou
 * OpenShift 4.13.x deployed on AWS via ROSA.
 * Machinepool with `m5.4xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods.
-* Default user password hashing with PBKDF2 27,500 hash iterations.
+* Default user password hashing with PBKDF2 27,500 hash iterations (which is the default).
+* Client credential grants don't use refresh tokens (which is the default).
 * Database seeded with 100,000 users and 100,000 clients.
 * Infinispan caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.
-* All sessions in distributed caches as per default, with two owners per entries, allowing one failing pod without losing data.
+* All sessions in distributed caches as per default, with two owners per entries, allowing one failing Pod without losing data.
+* OpenShift's reverse proxy running in passthrough mode were the TLS connection of the client is terminated at the Pod.
 * PostgreSQL deployed inside the same OpenShift with ephemeral storage.
 +
 Using a database with persistent storage will have longer database latencies, which might lead to longer response times; still, the throughput should be similar.
