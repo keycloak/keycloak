@@ -15,7 +15,7 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 
 === Quarkus executor pool
 
-{project_name} requests are handled on the Quarkus executor pool, as well as all probes.
+{project_name} requests, as well as all probes, are handled by the Quarkus executor pool.
 
 The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-config#quarkus-core_quarkus.thread-pool.max-threads[`quarkus.thread-pool.max-threads`] and has a maximum size of at least 200 threads.
 Depending on the available CPU cores, it can grow even larger.
