@@ -141,7 +141,7 @@ A synchronously replicated {jdgserver_name} ensures that sessions created, updat
 
 Why is a low-latency network between sites needed?::
 Synchronous replication defers the response to the caller until the data is received at the secondary site.
-For a synchronous database replication and a synchronous {jdgserver_name} replication, a low latency is necessary as each request can have potentially multiple interactions between the sites when data is updated which would amplify the latency.
+For synchronous database replication and synchronous {jdgserver_name} replication, a low latency is necessary as each request can have potentially multiple interactions between the sites when data is updated which would amplify the latency.
 
 Why active-passive?::
 Some databases support a single writer instance with a reader instance which is then promoted to be the new writer once the original writer fails.
