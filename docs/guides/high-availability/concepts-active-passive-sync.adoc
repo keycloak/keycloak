@@ -155,7 +155,7 @@ Therefore, such a deployment is expected to have worse performance and an inferi
 For now, it has been tested and documented with blueprints only for two sites.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
-An asynchronous setup would handle network failures between the site gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to the secondary site.
+An asynchronous setup would handle network failures between the sites gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to the secondary site.
 However, as the secondary site would never be fully up-to-date with the primary site, this setup could lead to data loss during failover.
 This would include:
 +
