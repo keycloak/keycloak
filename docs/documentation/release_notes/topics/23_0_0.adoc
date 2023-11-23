@@ -83,15 +83,10 @@ Keycloak supports new password policy, which allows to specify the maximum age o
 When this password policy is set to 0, the user will be required to re-authenticate to change the  password in the Account Console or by other means.
 You can also specify a lower or higher value than the default value of 5 minutes. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
 
-= New {project_name} high availability guide in preview
+= Preview support for multi-site active-passive deployments
 
-This new high availability guide describes how to set up {project_name} for high availability with multiple sites in active/passive mode.
-This replaces the cross-DC guide which was removed from the documentation in earlier versions.
+Deploying Keycloak to multiple independent sites is essential for some environments to provide high availability and a speedy recovery from failures.
+This release adds preview-support for active-passive deployments for Keycloak.
 
-While this is still in preview, it explains the concepts of an active-passive deployment spanning multiple sites, gives instructions on how to size a deployment, and provides blueprints for the different building blocks for setups in the public cloud.
-
-It comes with an up-to-date description on how to deploy to Kubernetes using Operators, and several improvements from load tests performed during the last months for both Keycloak and Infinispan.
-It also contains a first sizing guide, which can be a starting point for new deployments.
-
-The work continues to provide eventually a load tested active/active configuration.
-For the time being, we're looking for feedback for the current configuration.
+A lot of work has gone into testing and verifying a setup which can sustain load and recover from the failure scenarios.
+To get started, use the high-availability guide which also includes a comprehensive blueprint to deploy a highly available Keycloak to a cloud environment.
