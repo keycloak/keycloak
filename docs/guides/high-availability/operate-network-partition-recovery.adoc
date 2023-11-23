@@ -34,7 +34,7 @@ For the context of this {section}, `{site-a}` is the primary site and is active,
 Network partitions may happen between the site and the replication between the {ispn} cluster will stop.
 These procedures bring both sites back in sync.
 
-WARNING: Transferring the full state may impact the {ispn} cluster perform by increasing the response time and/or resources usage.
+WARNING: Transferring the full state may impact the {ispn} cluster performance by increasing the response time and/or resources usage.
 
 The first procedure is to delete the stale data from the secondary site.
 
