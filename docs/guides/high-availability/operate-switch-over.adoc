@@ -64,7 +64,7 @@ Output:
 site status --all-caches --site={site-a-cr}
 ----
 +
-Output:
+.Output:
 [source,bash,subs="+attributes"]
 ----
 {
