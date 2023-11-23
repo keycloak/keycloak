@@ -72,6 +72,20 @@ p.instruction {
   --pf-c-button--after--BorderColor: transparent;
 }
 
+.inputTermsCheckbox {
+  height: 20px;
+  width: 20px;
+  margin-right: 10px;
+  border-radius: 4px;
+}
+
+.kcInputErrorMessageClass {
+  color: #cc0000;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 5px;
+}
+
 h1#kc-page-title {
   font-size: 32px;
   font-style: normal;
