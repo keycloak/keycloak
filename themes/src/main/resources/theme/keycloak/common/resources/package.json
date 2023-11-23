@@ -6,7 +6,7 @@
     "build:clean": "shx rm -rf vendor"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.224.5",
+    "@patternfly/patternfly": "^5.1.0",
     "@patternfly/react-core": "^4.278.1",
     "jquery": "^3.7.1",
     "patternfly": "^3.59.5",
