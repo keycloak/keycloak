@@ -202,6 +202,6 @@ kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infi
 
 == Next steps
 
-After infinispan is deployed and running, use the procedure in the <links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
+After infinispan is deployed and running, use the procedure in the <@links.ha id="connect-keycloak-to-external-infinispan"/> {section} to connect your {project_name} cluster with the {jdgserver_name} cluster.
 
 </@tmpl.guide>
