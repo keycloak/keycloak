@@ -86,16 +86,16 @@ Manual operations might be necessary depending on the database.
 | Seconds to minutes (depending on the database)
 
 | Primary site
-| If none of the {project_name} nodes are available, the loadbalancer will detect the outage and redirect the traffic to the secondary partials/infinispan/.
+| If none of the {project_name} nodes are available, the loadbalancer will detect the outage and redirect the traffic to the secondary site.
 Some requests might receive an error message while the loadbalancer has not detected the primary site failure.
-The setup will be degraded until the primary partials/infinispan/ is back up and the session state has been manually synchronized from the secondary to the primary partials/infinispan/.
+The setup will be degraded until the primary site is back up and the session state has been manually synchronized from the secondary to the primary site.
 | No data loss^3^
 | Less than one minute
 
 | Secondary site
 | If the secondary site is not available, it will take a moment for the primary {jdgserver_name} and database to mark the secondary site offline.
 Some requests might receive an error message while the detection takes place.
-Once the secondary site is up again, the session state needs to be manually synced from the primary partials/infinispan/ to the secondary partials/infinispan/.
+Once the secondary site is up again, the session state needs to be manually synced from the primary site to the secondary site.
 | No data loss^3^
 | Less than one minute
 
@@ -156,7 +156,7 @@ For now, it has been tested and documented with blueprints only for two sites.
 
 Is a synchronous cluster less stable than an asynchronous cluster?::
 An asynchronous setup would handle network failures between the site gracefully, while the synchronous setup would delay requests and will throw errors to the caller where the asynchronous setup would have deferred the writes to {jdgserver_name} or the database to the secondary site.
-However, as the secondary partials/infinispan/ would never be fully up-to-date with the primary partials/infinispan/, this setup could lead to data loss during failover.
+However, as the secondary site would never be fully up-to-date with the primary site, this setup could lead to data loss during failover.
 This would include:
 +
 --

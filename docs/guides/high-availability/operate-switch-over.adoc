@@ -35,13 +35,13 @@ include::partials/infinispan/infinispan-cli-connect.adoc[]
 
 . Disable the replication to the primary site by running the following command:
 +
-Command:
+.Command:
 [source,bash,subs="+attributes"]
 ----
 site take-offline --all-caches --site={site-a-cr}
 ----
 +
-Output:
+.Output:
 [source,bash,subs="+attributes"]
 ----
 {
