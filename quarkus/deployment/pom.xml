@@ -144,6 +144,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.metadata</groupId>
+                    <artifactId>jboss-metadata-web</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

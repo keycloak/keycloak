@@ -6,6 +6,8 @@
     "build:clean": "shx rm -rf vendor"
   },
   "dependencies": {
+    "@patternfly/patternfly": "^4.224.5",
+    "@patternfly/react-core": "^4.278.1",
     "jquery": "^3.7.1",
     "patternfly": "^3.59.5",
     "react": "^18.2.0",
@@ -17,7 +19,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.5.0",
+    "rollup": "^4.5.1",
     "shx": "^0.3.4"
   }
 }

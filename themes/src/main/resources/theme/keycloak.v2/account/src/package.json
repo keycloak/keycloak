@@ -3,18 +3,12 @@
   "version": "1.0.0",
   "description": "keycloak account management written in React",
   "scripts": {
-    "build": "snowpack --optimize && pnpm run check-types && pnpm run babel && pnpm run move-web_modules && pnpm run copy-pf-resources",
+    "build": "snowpack --optimize && pnpm run check-types && pnpm run babel && pnpm run move-web_modules",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
     "babel:watch": "pnpm run babel -- --watch",
     "check-types": "tsc",
     "check-types:watch": "pnpm run check-types -- -w",
-    "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources",
-    "copy-pf-resources": "pnpm run move-app-css && pnpm run copy-base-css && pnpm run copy-fonts && pnpm run copy-pficon && pnpm run copy-addons",
-    "move-app-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx mv app.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
-    "copy-base-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx cp node_modules/@patternfly/react-core/dist/styles/base.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
-    "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts && shx cp -r node_modules/@patternfly/react-core/dist/styles/assets/fonts/* ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/",
-    "copy-pficon": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon && shx cp node_modules/@patternfly/react-core/dist/styles/assets/pficon/pficon.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon",
-    "copy-addons": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/patternfly && shx cp node_modules/@patternfly/patternfly/patternfly-addons.css ../../../keycloak/common/resources/web_modules/@patternfly/patternfly"
+    "move-web_modules": "shx mv web_modules ../resources"
   },
   "keywords": [],
   "author": "Stan Silvert",

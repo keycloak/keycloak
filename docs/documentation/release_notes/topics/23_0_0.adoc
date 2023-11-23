@@ -1,3 +1,9 @@
+= OIDC and SAML adapter changes for WildFly and JBoss EAP
+
+OIDC adapter for the WildFly and JBoss EAP, which was deprecated in previous versions, is removed in this release. It is being replaced by the Elytron OIDC adapter,
+which is included in WildFly. The SAML adapter ZIP download for WildFly/EAP is removed as it is being replaced by the Galleon feature pack.
+See the link:{adapterguide_link}[{adapterguide_name}] for the details.
+
 = Localization files for themes default to UTF-8 encoding
 
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
@@ -65,4 +71,15 @@ release for some additional informations related to the migration.
 The Map Store has been an experimental feature in previous releases.
 Starting with this release, it is removed and users should continue to use the current JPA store.
 See the migration guide for details.
+
+= Load Shedding support
+
+Keycloak now features `http-max-queued-requests` option to allow proper rejecting of incoming requests under high load.
+For details refer to the https://www.keycloak.org/server/configuration-production[production guide].
+
+= Password policy for specify Maximum authentication time
+
+Keycloak supports new password policy, which allows to specify the maximum age of an authentication with which a password may be changed by user without re-authentication.
+When this password policy is set to 0, the user will be required to re-authenticate to change the  password in the Account Console or by other means.
+You can also specify a lower or higher value than the default value of 5 minutes. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
 

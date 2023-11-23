@@ -245,6 +245,28 @@ public class RoleStorageManager implements RoleProvider {
     }
 
     @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        Stream<RoleModel> local = localStorage().searchForClientRolesStream(realm, ids, search, first, max);
+        Stream<RoleModel> ext = getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
+                .flatMap(ServicesUtils.timeBound(session,
+                        roleStorageProviderTimeout,
+                        p -> ((RoleLookupProvider) p).searchForClientRolesStream(realm, ids, search, first, max)));
+
+        return Stream.concat(local, ext);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max) {
+        Stream<RoleModel> local = localStorage().searchForClientRolesStream(realm, search, excludedIds, first, max);
+        Stream<RoleModel> ext = getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
+                .flatMap(ServicesUtils.timeBound(session,
+                        roleStorageProviderTimeout,
+                        p -> ((RoleLookupProvider) p).searchForClientRolesStream(realm, search, excludedIds, first, max)));
+
+        return Stream.concat(local, ext);
+    }
+
+    @Override
     public void close() {
     }
 }

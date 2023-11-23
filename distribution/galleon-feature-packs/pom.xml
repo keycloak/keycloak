@@ -32,6 +32,7 @@
 
     <modules>
         <module>saml-adapter-galleon-pack</module>
+        <module>saml-adapter-galleon-pack-layer-metadata-tests</module>
     </modules>
 </project>
 

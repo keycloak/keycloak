@@ -101,6 +101,10 @@ final class HttpPropertyMappers {
                         .mapFrom(SecurityOptions.FIPS_MODE.getKey())
                         .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
+                        .build(),
+                fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
+                        .to("quarkus.thread-pool.queue-size")
+                        .paramLabel("requests")
                         .build()
         };
     }

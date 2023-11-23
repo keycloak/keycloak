@@ -235,6 +235,12 @@ public class LogoutEndpoint {
             event.client(client);
         }
 
+        try {
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext());
+        } catch (ClientPolicyException cpe) {
+            return ErrorPage.error(session, null, cpe.getErrorStatus(), cpe.getErrorDetail());
+        }
+
         String validatedRedirectUri = null;
         if (redirectUri != null) {
             if (client != null) {
