@@ -133,7 +133,7 @@ Manual operations::
 
 == Questions and answers
 
-Why a synchronous database?::
+Why synchronous database replication?::
 A synchronously replicated database ensures that data written in the primary site is always available in the secondary site on failover and no data is lost.
 
 Why synchronous {jdgserver_name} replication?::
