@@ -121,8 +121,8 @@ public class GroupsResource {
      * @param id
      * @return
      */
-    @Path("{id}")
-    public GroupResource getGroupById(@PathParam("id") String id) {
+    @Path("{group-id}")
+    public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
         if (group == null) {
             throw new NotFoundException("Could not find group by id");

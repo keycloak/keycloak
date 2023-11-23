@@ -21,6 +21,7 @@ import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -152,6 +153,7 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
     @Operation(summary = "Create multiple mappers")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
 
