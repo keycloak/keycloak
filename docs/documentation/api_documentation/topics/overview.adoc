@@ -3,10 +3,16 @@ include::templates/making-open-source-more-inclusive.adoc[]
 
 == {project_name} API Documentation
 
+The links in this guide are to the upstream documentation as a temporary measure until the official documentation links exist.  However, the API documentation is identical to the upstream Keycloak documentation.  
+
 === JavaDocs Documentation
 
-{apidocs_javadocs_link}[{apidocs_javadocs_name}]
+// {apidocs_javadocs_link}[{apidocs_javadocs_name}]
+
+https://www.keycloak.org/docs-api/22.0.5/javadocs/index.html[JavaDocs Documentation]
 
 === Admin REST API Documentation
 
-{apidocs_adminrest_link}[{apidocs_adminrest_name}]
+// {apidocs_adminrest_link}[{apidocs_adminrest_name}]
+
+https://www.keycloak.org/docs-api/22.0.5/rest-api/index.html[Administration REST API]
