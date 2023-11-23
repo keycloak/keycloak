@@ -94,4 +94,4 @@ It comes with an up-to-date description on how to deploy to Kubernetes using Ope
 It also contains a first sizing guide, which can be a starting point for new deployments.
 
 The work continues to provide eventually a load tested active/active configuration.
-For the time being, we're looking for feedback for the current configuration, and we welcome additional blueprints from the community.
+For the time being, we're looking for feedback for the current configuration.
