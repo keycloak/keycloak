@@ -58,7 +58,7 @@ include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
 ====
 * The new `additionalOptions` entries starting with `remote-store` used here are not official {project_name} configurations.
 Instead, they provide their values to environment variables that are then referenced in the {jdgserver_name} XML configuration.
-* All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes.adoc" /> {section} already.
+* All the memory, resource and database configurations are skipped from the CR below as they have been described in <@links.ha id="deploy-keycloak-kubernetes" /> {section} already.
 Administrators should leave those configurations untouched.
 ====
 +

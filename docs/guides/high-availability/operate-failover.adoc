@@ -12,7 +12,7 @@ This {section} describes the steps to fail over from primary site to secondary s
 
 A failover from the primary site to the secondary site will happen automatically based on the checks configured in the loadbalancer.
 
-When the primary site loses its state in {ispn} or a network partition occurs that prevents the synchronization, manual procedures are necessary to recover the primary site before it can handle traffic again, see the <@links.ha id="operate-switch-back" /> {section}.
+When the primary site loses its state in {jdgserver_name} or a network partition occurs that prevents the synchronization, manual procedures are necessary to recover the primary site before it can handle traffic again, see the <@links.ha id="operate-switch-back" /> {section}.
 
 To prevent an automatic fallback to the primary site before those manual steps have been performed, configure the loadbalancer as described following to prevent this from happening automatically.
 

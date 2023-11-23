@@ -27,21 +27,21 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 == Procedures
 
-=== {ispn} Cluster
+=== {jdgserver_name} Cluster
 
 For the context of this {section}, `{site-a}` is the primary site and is active, and `{site-b}` is the secondary site and is passive.
 
-Network partitions may happen between the site and the replication between the {ispn} cluster will stop.
+Network partitions may happen between the site and the replication between the {jdgserver_name} cluster will stop.
 These procedures bring both sites back in sync.
 
-WARNING: Transferring the full state may impact the {ispn} cluster performance by increasing the response time and/or resources usage.
+WARNING: Transferring the full state may impact the {jdgserver_name} cluster performance by increasing the response time and/or resources usage.
 
 The first procedure is to delete the stale data from the secondary site.
 
 . Login into your secondary site.
 
 . Shutdown {project_name}.
-This will clear all {project_name} caches, and it prevents the state of {project_name} from being out-of-sync with {ispn}.
+This will clear all {project_name} caches, and it prevents the state of {project_name} from being out-of-sync with {jdgserver_name}.
 +
 When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to 0.
 

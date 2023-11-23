@@ -20,7 +20,7 @@ See the <@links.ha id="introduction" /> {section} for different operational proc
 
 == Procedures
 
-=== {ispn} Cluster
+=== {jdgserver_name} Cluster
 
 For the context of this {section}, `{site-a}` is the primary site and `{site-b}` is the secondary site.
 
@@ -74,7 +74,7 @@ site status --all-caches --site={site-a-cr}
 +
 If the status is not `offline`, repeat the previous step.
 
-The {ispn} cluster in the secondary site is ready to handle requests without trying to replicate to the primary site.
+The {jdgserver_name} cluster in the secondary site is ready to handle requests without trying to replicate to the primary site.
 
 === AWS Aurora Database
 
