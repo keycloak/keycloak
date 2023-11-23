@@ -136,7 +136,7 @@ Manual operations::
 Why a synchronous database?::
 A synchronously replicated database ensures that data written in the primary site is always available in the secondary site on failover and no data is lost.
 
-Why a synchronous {jdgserver_name} replication?::
+Why synchronous {jdgserver_name} replication?::
 A synchronously replicated {jdgserver_name} ensures that sessions created, updated and deleted in the primary site are always available in the secondary site on failover and no data is lost.
 
 Why is a low-latency network between sites needed?::
