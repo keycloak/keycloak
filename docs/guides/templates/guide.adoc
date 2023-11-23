@@ -1,16 +1,21 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 includedOptions="">
+<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true">
 :guide-id: ${id}
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
+:guide-tile-visible: ${tileVisible}
 :version: ${version}
 
 include::../attributes.adoc[]
 
 [[${id}]]
 = ${title}
+
+ifeval::["${preview}" == "true"]
+WARNING: This {section} is describing a feature which is currently in preview. Please provide your feedback while we’re continuing to work on this.
+endif::[]
 
 <#nested>
 
