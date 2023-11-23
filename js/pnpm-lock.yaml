@@ -108,8 +108,8 @@ importers:
         specifier: ^13.5.0
         version: 13.5.0(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
-        specifier: ^6.19.0
-        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.20.0
+        version: 6.20.0(react-dom@18.2.0)(react@18.2.0)
       ui-shared:
         specifier: workspace:*
         version: link:../../libs/ui-shared
@@ -214,8 +214,8 @@ importers:
         specifier: ^13.5.0
         version: 13.5.0(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
-        specifier: ^6.19.0
-        version: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^6.20.0
+        version: 6.20.0(react-dom@18.2.0)(react@18.2.0)
       reactflow:
         specifier: ^11.10.1
         version: 11.10.1(@types/react@18.2.37)(react-dom@18.2.0)(react@18.2.0)
@@ -224,7 +224,7 @@ importers:
         version: link:../../libs/ui-shared
       use-react-router-breadcrumbs:
         specifier: ^4.0.1
-        version: 4.0.1(react-router-dom@6.19.0)(react@18.2.0)
+        version: 4.0.1(react-router-dom@6.20.0)(react@18.2.0)
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: ^2.2.5
@@ -1276,8 +1276,8 @@ packages:
       - immer
     dev: false
 
-  /@remix-run/router@1.12.0:
-    resolution: {integrity: sha512-2hXv036Bux90e1GXTWSMfNzfDDK8LA8JYEWfyHxzvwdp6GyoWEovKc9cotb3KCKmkdwsIBuFGX7ScTWyiHv7Eg==}
+  /@remix-run/router@1.13.0:
+    resolution: {integrity: sha512-5dMOnVnefRsl4uRnAdoWjtVTdh8e6aZqgM4puy9nmEADH72ck+uXwzpJLEKE9Q6F8ZljNewLgmTfkxUrBdv4WA==}
     engines: {node: '>=14.0.0'}
     dev: false
 
@@ -6072,26 +6072,26 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-router-dom@6.19.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-N6dWlcgL2w0U5HZUUqU2wlmOrSb3ighJmtQ438SWbhB1yuLTXQ8yyTBMK3BSvVjp7gBtKurT554nCtMOgxCZmQ==}
+  /react-router-dom@6.20.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-CbcKjEyiSVpA6UtCHOIYLUYn/UJfwzp55va4yEfpk7JBN3GPqWfHrdLkAvNCcpXr8QoihcDMuk0dzWZxtlB/mQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
     dependencies:
-      '@remix-run/router': 1.12.0
+      '@remix-run/router': 1.13.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      react-router: 6.19.0(react@18.2.0)
+      react-router: 6.20.0(react@18.2.0)
     dev: false
 
-  /react-router@6.19.0(react@18.2.0):
-    resolution: {integrity: sha512-0W63PKCZ7+OuQd7Tm+RbkI8kCLmn4GPjDbX61tWljPxWgqTKlEpeQUwPkT1DRjYhF8KSihK0hQpmhU4uxVMcdw==}
+  /react-router@6.20.0(react@18.2.0):
+    resolution: {integrity: sha512-pVvzsSsgUxxtuNfTHC4IxjATs10UaAtvLGVSA1tbUE4GDaOSU1Esu2xF5nWLz7KPiMuW8BJWuPFdlGYJ7/rW0w==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
     dependencies:
-      '@remix-run/router': 1.12.0
+      '@remix-run/router': 1.13.0
       react: 18.2.0
     dev: false
 
@@ -7024,14 +7024,14 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
 
-  /use-react-router-breadcrumbs@4.0.1(react-router-dom@6.19.0)(react@18.2.0):
+  /use-react-router-breadcrumbs@4.0.1(react-router-dom@6.20.0)(react@18.2.0):
     resolution: {integrity: sha512-Zbcy0KvWt1JePFcUHJAnTr7Z+AeO9WxmPs6A5Q/xqOVoi8edPKzpqHF87WB2opXwie/QjCxrEyTB7kFg7fgXvQ==}
     peerDependencies:
       react: '>=16.8'
       react-router-dom: '>=6.0.0'
     dependencies:
       react: 18.2.0
-      react-router-dom: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+      react-router-dom: 6.20.0(react-dom@18.2.0)(react@18.2.0)
     dev: false
 
   /use-sync-external-store@1.2.0(react@18.2.0):
@@ -7836,10 +7836,10 @@ packages:
       react-error-boundary: 3.1.4(react@18.2.0)
       react-hook-form: 7.48.2(react@18.2.0)
       react-i18next: 13.5.0(i18next@23.7.6)(react-dom@18.2.0)(react@18.2.0)
-      react-router-dom: 6.19.0(react-dom@18.2.0)(react@18.2.0)
+      react-router-dom: 6.20.0(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.10.1(@types/react@18.2.37)(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared
-      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.19.0)(react@18.2.0)
+      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.20.0)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - encoding

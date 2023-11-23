@@ -22,7 +22,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-i18next": "^13.5.0",
-    "react-router-dom": "^6.19.0",
+    "react-router-dom": "^6.20.0",
     "ui-shared": "workspace:*"
   },
   "devDependencies": {
