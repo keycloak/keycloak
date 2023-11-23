@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -Pdistribution
+          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
