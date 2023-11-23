@@ -111,7 +111,7 @@ The statement "`No data loss`" depends on the setup not being degraded from prev
 == Known limitations
 
 Upgrades::
-* On {project_name} or {jdgserver_name} version upgrades ((major, minor and patch), all session data (except offline session) will be lost as neither supports zero downtime upgrades.
+* On {project_name} or {jdgserver_name} version upgrades (major, minor and patch), all session data (except offline session) will be lost as neither supports zero downtime upgrades.
 
 Failovers::
 * A successful failover requires a setup not degraded from previous failures.
