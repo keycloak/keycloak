@@ -41,7 +41,7 @@ public class GuideMojo extends AbstractMojo {
                 }
 
                 if (srcDir.getName().equals("images")) {
-                    FileUtils.copyDirectory(srcDir, targetDir);
+                    FileUtils.copyDirectoryStructure(srcDir, targetDir);
                 } else {
                     log.info("Guide dir: " + srcDir.getAbsolutePath());
                     log.info("Target dir: " + targetDir.getAbsolutePath());

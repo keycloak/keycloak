@@ -77,6 +77,25 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-included-files</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/generated-guides/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/</directory>
+                                    <includes>
+                                        <include>**/examples/**/*.*</include>
+                                        <include>**/partials/**/*.*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -111,8 +130,6 @@
                         <idseparator>-</idseparator>
                         <docinfo1>true</docinfo1>
                         <imagesdir>../images</imagesdir>
-                        <section>guide</section>
-                        <sections>guides</sections>
                         <attribute-missing>warn</attribute-missing>
                     </attributes>
                 </configuration>
@@ -159,6 +176,17 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/getting-started</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-docs/getting-started</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>high-availability-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
