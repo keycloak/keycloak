@@ -160,7 +160,7 @@ However, as the secondary site would never be fully up-to-date with the primary 
 This would include:
 +
 --
-* Lost logouts, meaning sessions are logged in the secondary site although they are logged out in to the primary site at the point of failover when using an asynchronous {jdgserver_name} replication of sessions).
+* Lost logouts, meaning sessions are logged in the secondary site although they are logged out in to the primary site at the point of failover when using an asynchronous {jdgserver_name} replication of sessions.
 * Lost changes leading to users being able to log in with an old password because database changes are not replicated to the secondary site at the point of failover when using an asynchronous database.
 * Invalid caches leading to users being able to log in with an old password because invalidating caches are not propagated at the point of failover to the secondary site when using an asynchronous {jdgserver_name} replication.
 --
