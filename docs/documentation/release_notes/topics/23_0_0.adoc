@@ -83,3 +83,10 @@ Keycloak supports new password policy, which allows to specify the maximum age o
 When this password policy is set to 0, the user will be required to re-authenticate to change the  password in the Account Console or by other means.
 You can also specify a lower or higher value than the default value of 5 minutes. Thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
 
+= Preview support for multi-site active-passive deployments
+
+Deploying Keycloak to multiple independent sites is essential for some environments to provide high availability and a speedy recovery from failures.
+This release adds preview-support for active-passive deployments for Keycloak.
+
+A lot of work has gone into testing and verifying a setup which can sustain load and recover from the failure scenarios.
+To get started, use the high-availability guide which also includes a comprehensive blueprint to deploy a highly available Keycloak to a cloud environment.
