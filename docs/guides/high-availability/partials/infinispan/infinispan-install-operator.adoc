@@ -1,0 +1,1 @@
+. Install the https://infinispan.org/docs/infinispan-operator/main/operator.html#installation[Infinispan Operator]
