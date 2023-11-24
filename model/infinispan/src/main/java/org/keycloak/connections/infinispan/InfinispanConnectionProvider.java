@@ -19,6 +19,7 @@ package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.keycloak.provider.Provider;
 
 /**
@@ -65,6 +66,24 @@ public interface InfinispanConnectionProvider extends Provider {
 
     // Constant used as the prefix of the current node if "jboss.node.name" is not configured
     String NODE_PREFIX = "node_";
+
+    String[] ALL_CACHES_NAME = {
+            REALM_CACHE_NAME,
+            REALM_REVISIONS_CACHE_NAME,
+            USER_CACHE_NAME,
+            USER_REVISIONS_CACHE_NAME,
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            WORK_CACHE_NAME,
+            AUTHORIZATION_CACHE_NAME,
+            AUTHORIZATION_REVISIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
+            KEYS_CACHE_NAME
+    };
 
     <K, V> Cache<K, V> getCache(String name);
 

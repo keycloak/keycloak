@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
@@ -28,6 +29,7 @@ import org.infinispan.eviction.EvictionType;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -39,6 +41,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.health.LoadbalancerCheckCommand;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -54,6 +57,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
@@ -119,9 +123,40 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void postInit(KeycloakSessionFactory factory) {
         factory.register((ProviderEvent event) -> {
             if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, session -> { registerSystemWideListeners(session); });
+                KeycloakModelUtils.runJobInTransaction(factory, this::registerSystemWideListeners);
+            } else if (event instanceof LoadbalancerCheckCommand) {
+                handleLoadBalancerEvent((LoadbalancerCheckCommand) event);
             }
         });
+    }
+
+    private void handleLoadBalancerEvent(LoadbalancerCheckCommand event) {
+        if (cacheManager == null) {
+            //not the instance in use, we have 2 instances with the following ids
+            // default -> DefaultInfinispanConnectionProviderFactory
+            // quarkus -> LegacyInfinispanConnectionFactory
+            return;
+        }
+        for (String cacheName : ALL_CACHES_NAME) {
+            // do not block in cache creation
+            Cache<?,?> cache = cacheManager.getCache(cacheName, false);
+
+            // check if cache is started
+            if (cache == null || !cache.getStatus().allowInvocations()) {
+                logger.debugf("[Load Balancer Event] Cache '%s' is not started yet.", cacheName);
+                event.down();
+                return; //no need to check other caches
+            }
+            PersistenceManager persistenceManager = cache.getAdvancedCache()
+                    .getComponentRegistry()
+                    .getComponent(PersistenceManager.class);
+            if (persistenceManager != null && !persistenceManager.isAvailable()) {
+                logger.debugf("[Load Balancer Event] PersistenceManager for cache '%s' is down.", cacheName);
+                event.down();
+                return; //no need to check other caches
+            }
+            logger.debugf("[Load Balancer Event] Cache '%s' is up.", cacheName);
+        }
     }
 
     protected void lazyInit() {
