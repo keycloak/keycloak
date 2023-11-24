@@ -1,0 +1,14 @@
+= Keycloak JS imports might need to be updated
+
+If you are loading Keycloak JS directly from the Keycloak server this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, etc. you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+
+[source,js]
+----
+// Before
+import Keycloak from 'keycloak-js/dist/keycloak.js';
+import AuthZ from 'keycloak-js/dist/keycloak-authz.js';
+
+// After
+import Keycloak from 'keycloak-js';
+import AuthZ from 'keycloak-js/authz';
+----
