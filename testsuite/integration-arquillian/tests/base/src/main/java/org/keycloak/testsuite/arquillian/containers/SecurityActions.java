@@ -123,7 +123,7 @@ final class SecurityActions {
         final T obj;
         try {
             Constructor<T> constructor = getConstructor(implClass, argumentTypes);
-            if (!constructor.isAccessible()) {
+            if (!constructor.canAccess(null)) {
                 constructor.setAccessible(true);
             }
             obj = constructor.newInstance(arguments);
@@ -183,7 +183,7 @@ final class SecurityActions {
                 @Override
                 public Void run() throws Exception {
                     Field field = source.getDeclaredField(fieldName);
-                    if (!field.isAccessible()) {
+                    if (!field.canAccess(target)) {
                         field.setAccessible(true);
                     }
                     field.set(target, value);

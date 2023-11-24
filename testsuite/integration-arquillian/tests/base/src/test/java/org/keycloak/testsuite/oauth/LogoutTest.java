@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oauth;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -105,7 +106,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
@@ -125,7 +126,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // Logout should succeed with expired refresh token, see KEYCLOAK-3302
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
@@ -167,7 +168,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // finally POST logout with VALID token should succeed
         try (CloseableHttpResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
@@ -188,7 +189,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // Assert logout fails with 400 when trying to use different client credentials
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
         }
 
         oauth.clientId("test-app");
@@ -245,8 +246,8 @@ public class LogoutTest extends AbstractKeycloakTest {
         
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -288,8 +289,8 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-            assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+            MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
 
         // Assert logout event triggered for backchannel logout
@@ -327,8 +328,8 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
                     CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
-                assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-                assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+                MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+                MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
             }
 
             assertNotNull(testingClient.testApp().getBackChannelLogoutToken());

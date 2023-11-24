@@ -5,7 +5,6 @@ import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimit
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
 
 import static org.junit.Assert.assertEquals;

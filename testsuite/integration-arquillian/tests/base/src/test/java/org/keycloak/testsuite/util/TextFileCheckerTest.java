@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

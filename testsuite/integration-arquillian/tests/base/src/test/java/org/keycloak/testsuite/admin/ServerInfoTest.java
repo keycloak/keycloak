@@ -32,7 +32,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.List;
 import java.util.Map;

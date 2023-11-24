@@ -40,6 +40,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -94,7 +96,7 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectRequiredAction(EventType event) {
-        return expectLogin().event(event).removeDetail(Details.CONSENT).session(Matchers.isEmptyOrNullString());
+        return expectLogin().event(event).removeDetail(Details.CONSENT).session(is(emptyOrNullString()));
     }
 
     public ExpectedEvent expectLogin() {

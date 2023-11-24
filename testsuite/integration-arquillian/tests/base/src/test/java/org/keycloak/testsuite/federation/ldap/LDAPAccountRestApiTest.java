@@ -187,7 +187,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         // Password won't have createdDate and any metadata set
         Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
-        Assert.assertEquals(userPassword.getCreatedDate(), new Long(-1L));
+        Assert.assertEquals(userPassword.getCreatedDate(), Long.valueOf(-1L));
         Assert.assertNull(userPassword.getCredentialData());
         Assert.assertNull(userPassword.getSecretData());
     }
