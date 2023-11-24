@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 import static org.keycloak.util.JsonSerialization.readValue;
 
 import java.io.InputStream;
@@ -632,7 +631,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionId));
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
