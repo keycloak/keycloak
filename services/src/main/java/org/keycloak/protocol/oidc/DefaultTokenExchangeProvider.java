@@ -33,6 +33,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -512,7 +513,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
-        userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
         context.addSessionNotesToUserSession(userSession);
 
@@ -523,11 +523,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
 
         String providerId = identityProviderConfig.getAlias();
-
-        // do we need this?
-        //AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
-        //context.setAuthenticationSession(authenticationSession);
-        //session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
         Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
@@ -604,6 +599,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
                 user.setEmailVerified(true);
             }
+
+            event.clone()
+                    .event(EventType.REGISTER)
+                    .user(user.getId())
+                    .detail(Details.REGISTER_METHOD, "token-exchange")
+                    .detail(Details.EMAIL, user.getEmail())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .success();
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);
