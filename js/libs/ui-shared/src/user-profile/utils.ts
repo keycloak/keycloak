@@ -105,7 +105,52 @@ function hasRequiredValidators(
 }
 
 export function isUserProfileError(error: unknown): error is UserProfileError {
-  return !!(error as UserProfileError).responseData;
+  // Check if the error is an object with a 'responseData' property.
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("responseData" in error)
+  ) {
+    return false;
+  }
+
+  const { responseData } = error;
+
+  if (isFieldError(responseData)) {
+    return true;
+  }
+
+  // Check if 'responseData' is an object with an 'errors' property that is an array.
+  if (
+    typeof responseData !== "object" ||
+    responseData === null ||
+    !("errors" in responseData) ||
+    !Array.isArray(responseData.errors)
+  ) {
+    return false;
+  }
+
+  // Check if all errors are field errors.
+  return responseData.errors.every(isFieldError);
+}
+
+function isFieldError(error: unknown): error is FieldError {
+  // Check if the error is an object.
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  // Check if the error object has a 'field' property that is a string.
+  if (!("field" in error) || typeof error.field !== "string") {
+    return false;
+  }
+
+  // Check if the error object has an 'errorMessage' property that is a string.
+  if (!("errorMessage" in error) || typeof error.errorMessage !== "string") {
+    return false;
+  }
+
+  return true;
 }
 
 export type TranslationFunction = (key: unknown, params?: object) => string;
