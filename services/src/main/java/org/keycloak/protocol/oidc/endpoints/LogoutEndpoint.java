@@ -473,7 +473,7 @@ public class LogoutEndpoint {
                 if (redirectUri != null) {
                     event.detail(Details.REDIRECT_URI, redirectUri);
                 }
-                event.user(userSession.getUser()).session(userSession).success();
+                event.client(logoutSession.getClient()).user(userSession.getUser()).session(userSession).success();
             }
         }
 
