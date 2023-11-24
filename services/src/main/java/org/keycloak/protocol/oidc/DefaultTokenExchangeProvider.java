@@ -588,7 +588,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
             if (! context.getIdpConfig().isTransientUsers()) {
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                        context.getUsername(), context.getToken());
+                        context.getModelUsername(), context.getToken());
                 session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
             }
 
