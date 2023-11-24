@@ -52,12 +52,12 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.Validators;
 
 /**
@@ -119,14 +119,17 @@ public class UserProfileResource {
     }
 
     public static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
-        Map<String, List<String>> am = profile.getAttributes().getReadable();
+        Attributes profileAttributes = profile.getAttributes();
+        Map<String, List<String>> am = profileAttributes.getReadable();
 
         if(am == null)
             return null;
+        Map<String, List<String>> unmanagedAttributes = profileAttributes.getUnmanagedAttributes();
 
         List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
-                .map(name -> profile.getAttributes().getMetadata(name))
+                .map(profileAttributes::getMetadata)
                 .filter(Objects::nonNull)
+                .filter(attributeMetadata -> !unmanagedAttributes.containsKey(attributeMetadata.getName()))
                 .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
                 .map(sam -> toRestMetadata(sam, session, profile))
                 .collect(Collectors.toList());

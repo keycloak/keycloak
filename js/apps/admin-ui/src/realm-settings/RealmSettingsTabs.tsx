@@ -49,6 +49,11 @@ import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
+import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+
+export interface UIRealmRepresentation extends RealmRepresentation {
+  upConfig?: UserProfileConfig;
+}
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -164,7 +169,7 @@ const RealmSettingsHeader = ({
 };
 
 type RealmSettingsTabsProps = {
-  realm: RealmRepresentation;
+  realm: UIRealmRepresentation;
   refresh: () => void;
 };
 
@@ -194,7 +199,7 @@ export const RealmSettingsTabs = ({
 
   useEffect(setupForm, [setValue, realm]);
 
-  const save = async (r: RealmRepresentation) => {
+  const save = async (r: UIRealmRepresentation) => {
     r = convertFormValuesToObject(r);
     if (
       r.attributes?.["acr.loa.map"] &&
@@ -210,7 +215,7 @@ export const RealmSettingsTabs = ({
     }
 
     try {
-      const savedRealm: RealmRepresentation = {
+      const savedRealm: UIRealmRepresentation = {
         ...realm,
         ...r,
         id: r.realm,
