@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
@@ -39,6 +40,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 import java.util.List;
+import java.util.Optional;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -94,13 +96,10 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private static void configureBuildClassLoader() {
-        ConfigValue ignoredArtifacts = Configuration.getCurrentBuiltTimeProperty(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + ClassLoaderOptions.IGNORE_ARTIFACTS.getKey());
-
-        if (ignoredArtifacts != null && StringUtil.isNotBlank(ignoredArtifacts.getValue())) {
-            // ignored artifacts must be set prior to starting re-augmentation
-            System.setProperty("quarkus.class-loading.removed-artifacts", ignoredArtifacts.getValue());
-        }
+        // ignored artifacts must be set prior to starting re-augmentation
+        Optional.ofNullable(Configuration.getCurrentBuiltTimeProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY))
+                .map(ConfigValue::getValue)
+                .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
     }
 
     @Override
