@@ -1,6 +1,7 @@
-export default interface UserProfileConfig {
+export interface UserProfileConfig {
   attributes?: UserProfileAttribute[];
   groups?: UserProfileGroup[];
+  unmanagedAttributePolicy?: UnmanagedAttributePolicy;
 }
 export interface UserProfileAttribute {
   name?: string;
@@ -52,4 +53,11 @@ export interface UserProfileAttributeGroupMetadata {
 export interface UserProfileMetadata {
   attributes?: UserProfileAttributeMetadata[];
   groups?: UserProfileAttributeGroupMetadata[];
+}
+
+export enum UnmanagedAttributePolicy {
+  Disabled = "DISABLED",
+  Enabled = "ENABLED",
+  AdminView = "ADMIN_VIEW",
+  AdminEdit = "ADMIN_EDIT",
 }
