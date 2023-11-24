@@ -41,10 +41,8 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributeSelector;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;

@@ -150,7 +150,7 @@ public class AdminClientUtil {
             throw new RuntimeException("Truststore file not found: " + file.getAbsolutePath());
         }
         SSLContext theContext = SSLContexts.custom()
-                .useProtocol("TLS")
+                .setProtocol("TLS")
                 .loadTrustMaterial(file, password == null ? null : password.toCharArray())
                 .build();
         return theContext;

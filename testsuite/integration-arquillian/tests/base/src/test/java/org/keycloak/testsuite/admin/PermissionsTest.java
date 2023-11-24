@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -1546,7 +1547,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).resetPasswordEmail();
+                realm.users().get(user.getId()).executeActionsEmail(List.of(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
             }
         }, Resource.USER, true);
         invoke(new Invocation() {

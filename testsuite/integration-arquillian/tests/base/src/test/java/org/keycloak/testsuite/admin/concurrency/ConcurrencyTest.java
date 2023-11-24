@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;

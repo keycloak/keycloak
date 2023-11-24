@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.javascript;
 
 import org.jboss.logging.Logger;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.WaitUtils;

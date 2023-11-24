@@ -102,7 +102,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
             try {
                 ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "rolesMapper");
-                LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel,
+                LDAPTestUtils.updateConfigOptions(mapperModel,
                         RoleMapperConfig.USE_REALM_ROLES_MAPPING, "false",
                         RoleMapperConfig.CLIENT_ID, rolesClient.getClientId());
                 appRealm.updateComponent(mapperModel);
@@ -155,7 +155,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
             try {
                 ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "rolesMapper");
-                LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel,
+                LDAPTestUtils.updateConfigOptions(mapperModel,
                         RoleMapperConfig.USE_REALM_ROLES_MAPPING, "false",
                         RoleMapperConfig.CLIENT_ID, clientId);
                 appRealm.updateComponent(mapperModel);

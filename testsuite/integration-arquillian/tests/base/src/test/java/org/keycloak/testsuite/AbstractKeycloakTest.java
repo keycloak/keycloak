@@ -68,7 +68,7 @@ import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;

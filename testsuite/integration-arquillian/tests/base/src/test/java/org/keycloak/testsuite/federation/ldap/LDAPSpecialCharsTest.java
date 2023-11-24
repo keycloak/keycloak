@@ -150,7 +150,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
             UserModel specialUser = session.users().getUserByUsername(appRealm, "jamees,key*cložak)ppp");

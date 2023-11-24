@@ -81,6 +81,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.PrivateKey;
@@ -661,7 +662,7 @@ public class SamlClient {
      * @return
      */
     public static String extractRelayStateFromRedirect(String responseUri) {
-        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
+        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), StandardCharsets.UTF_8);
 
         return params.stream().filter(nameValuePair -> nameValuePair.getName().equals(RELAY_STATE))
                 .findFirst().map(NameValuePair::getValue).orElse(null);
