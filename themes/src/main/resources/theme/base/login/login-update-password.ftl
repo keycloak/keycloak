@@ -22,6 +22,15 @@
                         </button>
                     </div>
 
+                    <#if properties.showPasswordQuality = "true">
+                        <script type="module" src="${url.resourcesPath}/js/passwordEntropy.js"></script>
+                        <password-entropy data-password-poor="${msg('poorPassword')}"
+                                          data-password-weak="${msg('weakPassword')}"
+                                          data-password-good="${msg('goodPassword')}"
+                                          data-password-strong="${msg('strongPassword')}">
+                        </password-entropy>
+                    </#if>
+
                     <#if messagesPerField.existsError('password')>
                         <span id="input-error-password" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
                             ${kcSanitize(messagesPerField.get('password'))?no_esc}
