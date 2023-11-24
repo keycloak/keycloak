@@ -1,6 +1,12 @@
 package org.keycloak.admin.ui.rest;
 
+import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
+
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -13,19 +19,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
 
-import java.util.Objects;
-import java.util.stream.Stream;
+public class UIRealmsResource {
 
-import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
-
-public class RealmResource {
     private final KeycloakSession session;
 
-    public RealmResource(KeycloakSession session) {
+    public UIRealmsResource(KeycloakSession session) {
         this.session = session;
     }
 
     @GET
+    @Path("names")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
@@ -42,7 +45,7 @@ public class RealmResource {
                     )
             )}
     )
-    public Stream<String> realmList() {
+    public Stream<String> getRealmNames() {
         Stream<String> realms = session.realms().getRealmsStream().filter(Objects::nonNull).map(RealmModel::getName);
         return throwIfEmpty(realms, new ForbiddenException());
     }

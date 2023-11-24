@@ -31,8 +31,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class UPConfig {
 
+    public enum UnmanagedAttributePolicy {
+        ENABLED,
+        ADMIN_VIEW,
+        ADMIN_EDIT
+    }
+
     private List<UPAttribute> attributes;
     private List<UPGroup> groups;
+
+    private UnmanagedAttributePolicy unmanagedAttributePolicy;
 
     public List<UPAttribute> getAttributes() {
         return attributes;
@@ -81,6 +89,14 @@ public class UPConfig {
             }
         }
         return null;
+    }
+
+    public UnmanagedAttributePolicy getUnmanagedAttributePolicy() {
+        return unmanagedAttributePolicy;
+    }
+
+    public void setUnmanagedAttributePolicy(UnmanagedAttributePolicy unmanagedAttributePolicy) {
+        this.unmanagedAttributePolicy = unmanagedAttributePolicy;
     }
 
     @Override
