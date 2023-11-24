@@ -148,7 +148,7 @@ export const ExtendedHeader = ({
           </DropdownItem>,
           <DropdownItem
             key="unlink"
-            isDisabled={editMode ? !editMode.includes("UNSYNCED") : false}
+            isDisabled={editMode ? editMode.includes("UNSYNCED") : false}
             onClick={toggleUnlinkUsersDialog}
           >
             {t("unlinkUsers")}
