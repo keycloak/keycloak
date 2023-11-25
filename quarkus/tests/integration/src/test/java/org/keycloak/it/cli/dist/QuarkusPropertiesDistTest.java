@@ -161,6 +161,17 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+            "--https-certificate-file=C:\\tmp\\kc\\bin\\..\\conf/server.crt.pem",
+            "--https-certificate-key-file=C:\\tmp\\kc\\bin\\..\\conf/server.key.pem" })
+    @Order(14)
+    void testHttpCertsWindowsPathTransformer(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("C:/tmp/kc/bin/../conf/server.crt.pem"));
+        cliResult.assertBuild();
+    }
+
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
