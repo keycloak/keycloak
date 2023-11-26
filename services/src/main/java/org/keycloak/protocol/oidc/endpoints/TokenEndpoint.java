@@ -566,10 +566,10 @@ public class TokenEndpoint {
             // KEYCLOAK-6771 Certificate Bound Token
             TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
 
-            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
-
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
             checkAndBindDPoPToken(responseBuilder, clientConfig.isUseRefreshToken() && (client.isPublicClient() || client.isBearerOnly()), Profile.isFeatureEnabled(Profile.Feature.DPOP));
+
+            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
 
             res = responseBuilder.build();
 
