@@ -40,15 +40,13 @@ import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Theme resource
@@ -109,11 +107,11 @@ public class ThemeResource {
     public Response getLocalizationTexts(@PathParam("realm") String realmName, @QueryParam("theme") String theme,
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
                                          @QueryParam("source") boolean showSource, @QueryParam("hasWords") List<String> hasWords,
-                                         @QueryParam("first") @DefaultValue("0") long first,
-                                         @QueryParam("max") long max) throws IOException {
+                                         @QueryParam("first") @DefaultValue("0") Long first,
+                                         @QueryParam("max") Long max) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
         session.getContext().setRealm(realm);
-        List<KeySource> result;
+        Stream<KeySource> result = Stream.<KeySource>builder().build();
 
         Theme theTheme;
         final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
@@ -126,31 +124,31 @@ public class ThemeResource {
         final Locale locale = Locale.forLanguageTag(localeString);
         if (showSource) {
             Properties messagesByLocale = theTheme.getMessages("messages", locale);
-            Set<KeySource> resultSet = messagesByLocale.entrySet().stream().map(e ->
-                    new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)).collect(toSet());
+            result = Stream.concat(result, messagesByLocale.entrySet().stream().map(e ->
+                    new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)));
 
             Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
             for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
-                final List<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
-                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM)).collect(toList());
-                resultSet.addAll(realmOverride);
+                final Stream<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
+                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM));
+                result = Stream.concat(result, realmOverride);
             }
-            result = new ArrayList<>(resultSet);
         } else {
-            result = theTheme.getEnhancedMessages(realm, locale).entrySet().stream().map(e ->
-                    new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
+            result = Stream.concat(result, theTheme.getEnhancedMessages(realm, locale).entrySet().stream().map(e ->
+                    new KeySource((String) e.getKey(), (String) e.getValue())));
         }
 
         if (!hasWords.isEmpty()) {
-            result = result.stream().filter(keySource -> hasWords.stream()
-                    .anyMatch(w -> keySource.getValue().toUpperCase(locale).contains(w.toUpperCase(locale)))).collect(toList());
+            result = result.filter(keySource -> hasWords.stream()
+                    .anyMatch(w -> keySource.getValue().toUpperCase(locale).contains(w.toUpperCase(locale))));
         }
 
-        if (max != 0) {
-            result = result.stream().skip(first).limit(max).collect(toList());
+        result = result.skip(first);
+        if (max != null) {
+            result = result.limit(max);
         }
 
-        Response.ResponseBuilder responseBuilder = Response.ok(result);
+        Response.ResponseBuilder responseBuilder = Response.ok(result.collect(toList()));
         return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").preflight().build();
     }
 }
