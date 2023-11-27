@@ -63,6 +63,7 @@ import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
+import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -111,11 +112,19 @@ public final class Picocli {
     private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
         int exitCode = 0;
 
-        if (shouldSkipRebuild(cliArgs)) {
+        CommandLine currentCommandSpec = getCurrentCommandSpec(cliArgs, cmd.getCommandSpec());
+
+        if (currentCommandSpec == null) {
+            return exitCode; // possible if using --version or the user made a mistake
+        }
+
+        String currentCommandName = currentCommandSpec.getCommandName();
+
+        if (shouldSkipRebuild(cliArgs, currentCommandName)) {
             return exitCode;
         }
 
-        if (cliArgs.contains(StartDev.NAME)) {
+        if (currentCommandName.equals(StartDev.NAME)) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
@@ -123,24 +132,22 @@ public final class Picocli {
                 Environment.forceDevProfile();
             }
         }
-        if (requiresReAugmentation(getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()))) {
+        if (requiresReAugmentation(currentCommandSpec)) {
             exitCode = runReAugmentation(cliArgs, cmd);
         }
 
         return exitCode;
     }
 
-    private static boolean shouldSkipRebuild(List<String> cliArgs) {
+    private static boolean shouldSkipRebuild(List<String> cliArgs, String currentCommandName) {
         return cliArgs.contains("--help")
                 || cliArgs.contains("-h")
                 || cliArgs.contains("--help-all")
-                || cliArgs.contains(ShowConfig.NAME);
+                || currentCommandName.equals(ShowConfig.NAME)
+                || currentCommandName.equals(Tools.NAME);
     }
 
-    public static boolean requiresReAugmentation(CommandLine cmdCommand) {
-        if (cmdCommand == null) {
-            return false; // possible if using --version or the user made a mistake
-        }
+    private static boolean requiresReAugmentation(CommandLine cmdCommand) {
         if (hasConfigChanges(cmdCommand)) {
             if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
