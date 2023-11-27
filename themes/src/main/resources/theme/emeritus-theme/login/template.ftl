@@ -51,9 +51,14 @@
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
-        <img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
+        <img onclick="redirectToInsights()" id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
         </div>
     </div>
+<script>
+    function redirectToInsights() {
+        window.open('https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/', '_blank');
+    }
+</script>
     <div class="${properties.kcFormCardClass!}">
         <header class="${properties.kcFormHeaderClass!}">
             <#if realm.internationalizationEnabled  && locale.supported?size gt 1>

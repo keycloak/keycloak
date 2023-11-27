@@ -156,6 +156,7 @@ div.kc-logo-text span {
   width: 145.333px;
   height: 40px;
   object-fit: contain;
+  cursor: pointer;
 }
 
 #kc-content {
@@ -217,6 +218,9 @@ div.kc-logo-text span {
 
 #kc-info {
   margin-top: 20px;
+  @media (max-width: 767px) {
+    margin-bottom: 20px;
+  }
 }
 
 #kc-info-wrapper {
@@ -436,7 +440,7 @@ ul#kc-totp-supported-apps {
     padding-left: 15px;
     padding-right: 15px;
     float: none;
-    text-align: left;
+    text-align: center;
   }
 
   div.kc-logo-text {
@@ -682,6 +686,10 @@ ul#kc-totp-supported-apps {
   margin-top: 100px !important;
   padding-bottom: 2rem !important;
   overflow: hidden;
+  @media (max-width: 767px) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 }
 
 /* End Recovery codes */
