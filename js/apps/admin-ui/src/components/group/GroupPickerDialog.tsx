@@ -239,8 +239,7 @@ export const GroupPickerDialog = ({
                   canBrowse={canBrowse}
                 />
                 {isSearching &&
-                  group.subGroups?.length !== 0 &&
-                  group.subGroups!.map((g) => (
+                  group.subGroups?.map((g) => (
                     <GroupRow
                       key={g.id}
                       group={g}
