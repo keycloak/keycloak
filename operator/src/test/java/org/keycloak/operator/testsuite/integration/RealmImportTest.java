@@ -29,6 +29,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.Arrays;
@@ -175,6 +176,35 @@ public class RealmImportTest extends BaseOperatorTest {
 
         // Act
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/incorrect-realm.yaml"));
+
+        // Assert
+        Awaitility.await()
+                .atMost(3, MINUTES)
+                .pollDelay(5, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var crSelector = k8sclient
+                            .resources(KeycloakRealmImport.class)
+                            .inNamespace(namespace)
+                            .withName("example-count0-kc");
+
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), DONE, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), STARTED, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), HAS_ERRORS, true);
+                });
+    }
+
+    @Test
+    public void testFailedRealmImportWhenKeycloakNotAvailable() {
+        // Arrange
+        Keycloak kc = getDefaultKeycloakDeployment();
+        kc.getSpec().setInstances(0);
+
+        // don't wait for Keycloak being available, since it has no instances
+        deployKeycloak(k8sclient, kc, false);
+
+        // Act
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
         Awaitility.await()
