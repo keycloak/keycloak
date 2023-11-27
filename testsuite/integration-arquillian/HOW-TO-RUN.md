@@ -343,14 +343,14 @@ that you need to use property `migration.mode` with the value `manual` .
 ## Spring Boot adapter tests
 
 Currently, we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty 9.4`. 
-We are testing various versions of Spring Boot 2.x. All versions are specified in [root pom.xml](../../pom.xml) (i.e. see properties `spring-boot24.version` and `spring-boot26.version`).
-To run tests execute following command. Default version of Spring Boot is 2.4.x, to run tests with version 2.6.x add profile `-Pspringboot26`.
+We are testing with Spring Boot 2.7. The version is specified in [root pom.xml](../../pom.xml) (i.e. see property `spring-boot27.version`).
+To run tests execute following command. Default version of Spring Boot is 2.7.x, there is also a profile `-Pspringboot27`.
 
 ```
 mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     clean test \
     -Dadapter.container=[tomcat|undertow|jetty94] \
-    [-Pspringboot26]
+    [-Pspringboot27]
 ```
 
 ## Base UI tests
