@@ -102,6 +102,20 @@ Use a single escape:
 bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30" --db-password keycloak --hostname localhost
 ```
 
+This change also means you cannot invoke kc.sh using a single quoted value of all arguments.  For example you can no longer use 
+
+```
+bin/kc.sh "start --help"
+```
+
+it must instead be individual arguments
+
+```
+bin/kc.sh start --help
+```
+
+The usage of individual arguments is also required in Dockerfile run commands.
+
 = Removed RegistrationProfile form action
 
 The form action `RegistrationProfile` (displayed in the UI of authentication flows as `Profile Validation`) was removed from the codebase and also from all authentication flows. By default, it was in
