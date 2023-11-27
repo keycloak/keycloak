@@ -19,7 +19,6 @@ package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.persistence.manager.PersistenceManager;
 import org.keycloak.provider.Provider;
 
 /**

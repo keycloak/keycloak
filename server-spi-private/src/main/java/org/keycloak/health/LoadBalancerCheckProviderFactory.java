@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,7 @@
 
 package org.keycloak.health;
 
-import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderFactory;
 
-/**
- * Providers might listen for this command and update the status to down.
- * Once one provider marks it as down, the status down will be returned to loadbalancer.
- *
- * @author <a href="mailto:aschwart@redhat.com">Alexander Schwartz</a>
- */
-public class LoadbalancerCheckCommand implements ProviderEvent {
-
-    boolean down = false;
-
-    public void down() {
-        down = true;
-    }
-
-    public boolean isDown() {
-        return down;
-    }
+public interface LoadBalancerCheckProviderFactory extends ProviderFactory<LoadBalancerCheckProvider> {
 }

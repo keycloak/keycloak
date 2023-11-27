@@ -23,9 +23,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.health.LoadbalancerCheckCommand;
+import org.keycloak.health.LoadBalancerCheckProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.MediaType;
+
+import java.util.Set;
 
 /**
  * Prepare information for the loadbalancer (possibly in a multi-site setup) whether this Keycloak cluster should receive traffic.
@@ -47,9 +49,8 @@ public class LoadbalancerResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public Response getStatusForLoadbalancer() {
-        LoadbalancerCheckCommand event = new LoadbalancerCheckCommand();
-        session.getKeycloakSessionFactory().publish(event);
-        if (event.isDown()) {
+        Set<LoadBalancerCheckProvider> healthStatusProviders = session.getAllProviders(LoadBalancerCheckProvider.class);
+        if (healthStatusProviders.stream().anyMatch(LoadBalancerCheckProvider::isDown)) {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("DOWN").build();
         } else {
             return Response.ok().entity("UP").build();

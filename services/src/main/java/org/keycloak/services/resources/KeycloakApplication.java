@@ -109,7 +109,12 @@ public class KeycloakApplication extends Application {
 
             singletons.add(new ObjectMapperResolver());
             classes.add(WelcomeResource.class);
-            classes.add(LoadbalancerResource.class);
+
+            if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+                // If we are running in multiple sites mode, we need to add resource which will
+                // decide whether this site should receive requests or not
+                classes.add(LoadbalancerResource.class);
+            }
 
             platform.onStartup(this::startup);
             platform.onShutdown(this::shutdown);
