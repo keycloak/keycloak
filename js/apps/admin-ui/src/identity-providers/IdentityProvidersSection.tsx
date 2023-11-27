@@ -90,7 +90,7 @@ export default function IdentityProvidersSection() {
   const { addAlert, addError } = useAlerts();
 
   useFetch(
-    async () => adminClient.identityProviders.find({ max: 1 }),
+    () => adminClient.identityProviders.find({ max: 1 }),
     (providers) => {
       setHasProviders(providers.length === 1);
     },
