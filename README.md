@@ -16,6 +16,8 @@ This repository contains the source code for the Keycloak Server, Java adapters 
 If you have found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/keycloak/keycloak/security/policy).
 
 
+
+
 ## Reporting an issue
 
 If you believe you have discovered a defect in Keycloak, please open [an issue](https://github.com/keycloak/keycloak/issues).
@@ -64,4 +66,5 @@ Before contributing to Keycloak, please read our [contributing guidelines](CONTR
 
 ## License
 
-* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
