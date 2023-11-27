@@ -55,7 +55,7 @@ export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
   };
 
   useFetch(
-    async () => adminClient.identityProviders.find(),
+    () => adminClient.identityProviders.find(),
     (providers) => {
       setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
       setOrder(providers.map((provider) => provider.alias!));
