@@ -98,14 +98,12 @@ export default function IdentityProvidersSection() {
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const params: IdentityProvidersQuery = {
-      first: first!,
-      max: max!,
-    };
-    if (search) {
-      params.search = search;
-    }
-    const providers = await adminClient.identityProviders.find(params);
+    const providers = await adminClient.identityProviders.find({
+      first,
+      max,
+      search,
+    });
+
     return sortBy(providers, ["config.guiOrder", "alias"]);
   };
 
