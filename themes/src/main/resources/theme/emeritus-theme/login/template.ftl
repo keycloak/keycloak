@@ -55,8 +55,8 @@
         </div>
     </div>
 <script>
-    function redirectToInsights() {
-        window.open('https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/', '_blank');
+   function redirectToInsights() {
+        window.location.href = 'https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/';
     }
 </script>
     <div class="${properties.kcFormCardClass!}">
