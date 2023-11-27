@@ -110,7 +110,9 @@ export function convertToFormValues<T extends FieldValues>(
       if (!isEmpty(value)) {
         const flattened: any = flatten(value, { safe: true });
         const convertedValues = Object.entries(flattened).map(([key, value]) =>
-          Array.isArray(value) ? [key, value[0]] : [key, value],
+          Array.isArray(value) && value.length === 1
+            ? [key, value[0]]
+            : [key, value],
         );
 
         convertedValues.forEach(([k, v]) =>
