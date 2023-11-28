@@ -77,6 +77,10 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         String policy = config.get(HOSTNAME_VERIFICATION_POLICY);
         String configuredType = config.get("type");
 
+        if (storepath != null || pass != null || configuredType != null) {
+            log.warn("Using deprecated 'spi-truststore-file-*' options. Consider using 'truststore-paths' option.");
+        }
+
         HostnameVerificationPolicy verificationPolicy = null;
         KeyStore truststore = null;
         boolean system = false;

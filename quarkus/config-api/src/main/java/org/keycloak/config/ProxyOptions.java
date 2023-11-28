@@ -2,6 +2,11 @@ package org.keycloak.config;
 
 public class ProxyOptions {
 
+    public enum Headers {
+        forwarded,
+        xforwarded
+    }
+
     public enum Mode {
         none(false),
         edge,
@@ -23,10 +28,16 @@ public class ProxyOptions {
         }
     }
 
+    public static final Option<Headers> PROXY_HEADERS = new OptionBuilder<>("proxy-headers", Headers.class)
+            .category(OptionCategory.PROXY)
+            .description("The proxy headers that should be accepted by the server. Misconfiguration might leave the server exposed to security vulnerabilities. Takes precedence over the deprecated proxy option.")
+            .build();
+
     public static final Option<Mode> PROXY = new OptionBuilder<>("proxy", Mode.class)
             .category(OptionCategory.PROXY)
             .description("The proxy address forwarding mode if the server is behind a reverse proxy.")
             .defaultValue(Mode.none)
+            .deprecated(PROXY_HEADERS.getKey())
             .build();
 
     public static final Option<Boolean> PROXY_FORWARDED_HOST = new OptionBuilder<>("proxy-forwarded-host", Boolean.class)

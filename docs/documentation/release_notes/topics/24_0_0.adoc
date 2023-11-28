@@ -26,6 +26,11 @@ Proceed to https://www.keycloak.org/server/features[Enabling and disabling featu
 
 = Keycloak CR Optimized Field
 
-The Keycloak CR now includes an `startOptimized` field, which may be used to override the default assumption about whether to use the `--optimized` flag for the start command. 
+The Keycloak CR now includes an `startOptimized` field, which may be used to override the default assumption about whether to use the `--optimized` flag for the start command.
 As a result, you can use the CR to configure build time options also when a custom Keycloak image is used.
 
+= Enhanced reverse proxy settings
+
+It is now possible to separately enable parsing of either `Forwarded` or `X-Forwarded-*` headers via the new `--proxy-headers` option.
+For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
+The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
