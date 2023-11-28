@@ -115,7 +115,7 @@ final class HttpPropertyMappers {
     }
 
     private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> validatePath(String key) {
-        return (value, context) -> value.filter(v -> v.equals(context.proceed(key).getValue())).map(p -> p.replace("\\", "/"));
+        return (value, context) -> Environment.isWindows() ? value.filter(v -> v.equals(context.proceed(key).getValue())).map(p -> p.replace("\\", "/")) : value;
     }
 
     private static Optional<String> getHttpEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
