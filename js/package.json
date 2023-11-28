@@ -1,5 +1,6 @@
 {
   "name": "root",
+  "type": "module",
   "scripts": {
     "prepare": "cd .. && husky install js/.husky"
   },
