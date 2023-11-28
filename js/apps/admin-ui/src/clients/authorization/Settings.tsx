@@ -22,6 +22,7 @@ import useToggle from "../../utils/useToggle";
 import { DecisionStrategySelect } from "./DecisionStrategySelect";
 import { ImportDialog } from "./ImportDialog";
 import { useFetch } from "../../utils/useFetch";
+import { useAccess } from "../../context/access/Access";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
@@ -43,6 +44,9 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const { control, reset, handleSubmit } = form;
 
   const { addAlert, addError } = useAlerts();
+  const { hasAccess } = useAccess();
+
+  const isDisabled = !hasAccess("manage-authorization");
 
   useFetch(
     () => adminClient.clients.getResourceServer({ id: clientId }),
@@ -88,7 +92,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         />
       )}
       <FormAccess
-        role="view-clients"
+        role="manage-authorization"
         isHorizontal
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -128,6 +132,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
                     key={mode}
                     data-testid={mode}
                     isChecked={field.value === mode}
+                    isDisabled={isDisabled}
                     name="policyEnforcementMode"
                     onChange={() => field.onChange(mode)}
                     label={t(`policyEnforcementModes.${mode}`)}

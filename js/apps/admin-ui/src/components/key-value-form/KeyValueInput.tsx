@@ -32,11 +32,13 @@ export type DefaultValue = {
 type KeyValueInputProps = {
   name: string;
   defaultKeyValue?: DefaultValue[];
+  isDisabled?: boolean;
 };
 
 export const KeyValueInput = ({
   name,
   defaultKeyValue,
+  isDisabled = false,
 }: KeyValueInputProps) => {
   const { t } = useTranslation();
   const {
@@ -89,6 +91,7 @@ export const KeyValueInput = ({
                     {...register(`${name}.${index}.key`, { required: true })}
                     validated={keyError ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
                 {keyError && (
@@ -115,6 +118,7 @@ export const KeyValueInput = ({
                     {...register(`${name}.${index}.value`, { required: true })}
                     validated={valueError ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
                 {valueError && (
@@ -131,6 +135,7 @@ export const KeyValueInput = ({
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
+                  isDisabled={isDisabled}
                 >
                   <MinusCircleIcon />
                 </Button>
@@ -147,6 +152,7 @@ export const KeyValueInput = ({
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
+            isDisabled={isDisabled}
           >
             {t("addAttribute")}
           </Button>
@@ -166,6 +172,7 @@ export const KeyValueInput = ({
         icon={<PlusCircleIcon />}
         isSmall
         onClick={appendNew}
+        isDisabled={isDisabled}
       >
         {t("addAttribute")}
       </Button>
