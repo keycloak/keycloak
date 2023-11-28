@@ -36,10 +36,23 @@ public class InfinispanMultiSiteLoadBalancerCheckProvider implements LoadBalance
         this.cacheManager = cacheManager;
     }
 
+    /**
+     * Non-blocking check if all caches and their persistence are available.
+     * <p />
+     * In a situation where any cache's remote cache is unreachable, this will report the "down" to the caller.
+     * When the remote cache is down, it assumes that it is down for all Keycloak nodes in this site, all incoming
+     * requests are likely to fail and that a loadbalancer should send traffic to the other site that might be healthy.
+     * <p />
+     * This code is non-blocking as the embedded Infinispan checks the connection to the remote store periodically
+     * in the background (default: every second).
+     * See {@link LoadBalancerCheckProvider#isDown()} to read more why this needs to be non-blocking.
+     *
+     * @return true if the component is down/unhealthy, false otherwise
+     */
     @Override
     public boolean isDown() {
         for (String cacheName : ALL_CACHES_NAME) {
-            // do not block in cache creation
+            // do not block in cache creation, as this method is required to be non-blocking
             Cache<?,?> cache = cacheManager.getCache(cacheName, false);
 
             // check if cache is started

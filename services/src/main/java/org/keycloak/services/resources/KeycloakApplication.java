@@ -111,8 +111,8 @@ public class KeycloakApplication extends Application {
             classes.add(WelcomeResource.class);
 
             if (Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
-                // If we are running in multiple sites mode, we need to add resource which will
-                // decide whether this site should receive requests or not
+                // If we are running in multi-site mode, we need to add a resource which to expose
+                // an endpoint for the loadbalancer to gather information whether this site should receive requests or not.
                 classes.add(LoadbalancerResource.class);
             }
 

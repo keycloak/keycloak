@@ -31,9 +31,9 @@ import java.util.Set;
 
 /**
  * Prepare information for the loadbalancer (possibly in a multi-site setup) whether this Keycloak cluster should receive traffic.
- *
+ * <p>
  * This is non-blocking, so that the loadbalancer can still retrieve the status even if the Keycloak instance is
- * trying to withstand a high load.
+ * trying to withstand a high load. See {@link LoadBalancerCheckProvider#isDown()} for a longer explanation.
  *
  * @author <a href="mailto:aschwart@redhat.com">Alexander Schwartz</a>
  */
@@ -46,6 +46,17 @@ public class LoadbalancerResource {
     @Context
     KeycloakSession session;
 
+    /**
+     * Return the status for a laod balancer in a multi-site setup if this Keycloak site should receive traffic.
+     * <p />
+     * While a loadbalancer will usually check for the returned status code, the additional text <code>UP</code> or <code>DOWN</down>
+     * is returned for humans to see the status in the browser.
+     * <p />
+     * In contrast to other management endpoints of Quarkus, no information is returned to the caller about the internal state of Keycloak
+     * as this endpoint might be publicly available from the internet and should return as little information as possible.
+     *
+     * @return HTTP status 503 and DOWN when down, and HTTP status 200 and UP when up.
+     */
     @GET
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public Response getStatusForLoadbalancer() {

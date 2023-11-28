@@ -20,8 +20,8 @@ package org.keycloak.health;
 import org.keycloak.provider.Provider;
 
 /**
- * This interface is used for controlling load balancer. If some of the implementations become unhealthy,
- * the load balancer endpoint will return {@code DOWN} status.
+ * This interface is used for controlling load balancer. If one of the implementations reports that it is down,
+ * the load balancer endpoint will return the {@code DOWN} status.
  *
  */
 public interface LoadBalancerCheckProvider extends Provider {
@@ -29,7 +29,12 @@ public interface LoadBalancerCheckProvider extends Provider {
     /**
      * Check if a component represented by this check is down/unhealthy.
      * <p />
-     * The implementation should be non-blocking.
+     * The implementation must be non-blocking as it is executed in the event loop.
+     * It is necessary to run this in the event loop as blocking requests are queued and then the check
+     * would time out on the loadbalancer side when there is an overload situation in Keycloak.
+     * An automatic failover to the secondary site due to an overloaded primary site is desired as this could
+     * lead to a ping-pong between the sites where the primary site becomes available again once the switchover
+     * is complete.
      *
      * @return true if the component is down/unhealthy, false otherwise
      */

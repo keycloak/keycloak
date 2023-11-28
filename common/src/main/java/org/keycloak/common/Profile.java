@@ -98,7 +98,7 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multiple sites support", Type.PREVIEW),
+        MULTI_SITE("Multi-site support", Type.PREVIEW),
         ;
 
         private final Type type;
