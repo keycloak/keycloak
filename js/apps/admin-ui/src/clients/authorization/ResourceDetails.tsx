@@ -37,6 +37,7 @@ import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
 import { ScopePicker } from "./ScopePicker";
 
 import "./resource-details.css";
+import { useAccess } from "../../context/access/Access";
 
 type SubmittedResource = Omit<
   ResourceRepresentation,
@@ -71,6 +72,10 @@ export default function ResourceDetails() {
   const setupForm = (resource: ResourceRepresentation = {}) => {
     convertToFormValues(resource, setValue);
   };
+
+  const { hasAccess } = useAccess();
+
+  const isDisabled = !hasAccess("manage-authorization");
 
   useFetch(
     () =>
@@ -174,6 +179,7 @@ export default function ResourceDetails() {
                 <DropdownItem
                   key="delete"
                   data-testid="delete-resource"
+                  isDisabled={isDisabled}
                   onClick={() => toggleDeleteDialog()}
                 >
                   {t("delete")}
@@ -186,7 +192,7 @@ export default function ResourceDetails() {
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
-            role="view-clients"
+            role="manage-authorization"
             className="keycloak__resource-details__form"
             onSubmit={handleSubmit(submit)}
           >
@@ -316,7 +322,7 @@ export default function ResourceDetails() {
               }
               fieldId="resourceAttribute"
             >
-              <KeyValueInput name="attributes" />
+              <KeyValueInput name="attributes" isDisabled={isDisabled} />
             </FormGroup>
             <ActionGroup>
               <div className="pf-u-mt-md">
