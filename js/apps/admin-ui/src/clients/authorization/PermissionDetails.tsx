@@ -37,6 +37,7 @@ import {
 } from "../routes/PermissionDetails";
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
 import { ScopeSelect } from "./ScopeSelect";
+import { useAccess } from "../../context/access/Access";
 
 type FormFields = PolicyRepresentation & {
   resourceType: string;
@@ -64,6 +65,9 @@ export default function PermissionDetails() {
   const { addAlert, addError } = useAlerts();
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [applyToResourceTypeFlag, setApplyToResourceTypeFlag] = useState(false);
+  const { hasAccess } = useAccess();
+
+  const isDisabled = !hasAccess("manage-authorization");
 
   useFetch(
     async () => {
@@ -192,6 +196,7 @@ export default function PermissionDetails() {
                 <DropdownItem
                   key="delete"
                   data-testid="delete-resource"
+                  isDisabled={isDisabled}
                   onClick={() => toggleDeleteDialog()}
                 >
                   {t("delete")}
@@ -203,7 +208,7 @@ export default function PermissionDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          role="view-clients"
+          role="manage-authorization"
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
@@ -376,6 +381,7 @@ export default function PermissionDetails() {
                         key={strategy}
                         data-testid={strategy}
                         isChecked={field.value === strategy}
+                        isDisabled={isDisabled}
                         name="decisionStrategies"
                         onChange={() => field.onChange(strategy)}
                         label={t(`decisionStrategies.${strategy}`)}

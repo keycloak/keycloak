@@ -46,6 +46,7 @@ import "./permissions.css";
 
 type PermissionsProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 type ExpandablePolicyRepresentation = PolicyRepresentation & {
@@ -66,7 +67,10 @@ const AssociatedPoliciesRenderer = ({
   );
 };
 
-export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
+export const AuthorizationPermissions = ({
+  clientId,
+  isDisabled = false,
+}: PermissionsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -204,6 +208,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                   toggle={
                     <DropdownToggle
                       onToggle={toggleCreate}
+                      isDisabled={isDisabled}
                       isPrimary
                       data-testid="permissionCreateDropdown"
                     >
@@ -215,7 +220,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                     <DropdownItem
                       data-testid="create-resource"
                       key="createResourceBasedPermission"
-                      isDisabled={disabledCreate?.resources}
+                      isDisabled={isDisabled || disabledCreate?.resources}
                       component="button"
                       onClick={() =>
                         navigate(
@@ -233,7 +238,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                     <DropdownItem
                       data-testid="create-scope"
                       key="createScopeBasedPermission"
-                      isDisabled={disabledCreate?.scopes}
+                      isDisabled={isDisabled || disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
                         navigate(
@@ -366,8 +371,8 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       {noData && !searching && (
         <EmptyPermissionsState
           clientId={clientId}
-          isResourceEnabled={disabledCreate?.resources}
-          isScopeEnabled={disabledCreate?.scopes}
+          isResourceEnabled={!isDisabled && disabledCreate?.resources}
+          isScopeEnabled={!isDisabled && disabledCreate?.scopes}
         />
       )}
       {noData && searching && (
