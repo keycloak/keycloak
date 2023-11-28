@@ -64,7 +64,7 @@ Before contributing to Keycloak, please read our [contributing guidelines](CONTR
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 
 
-## License
+## License 
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
