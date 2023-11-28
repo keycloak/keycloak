@@ -27,12 +27,24 @@ export const AccessContextProvider = ({ children }: PropsWithChildren) => {
     }
   }, [whoAmI, realm]);
 
-  const hasAccess = (...types: AccessType[]) => {
-    return types.every((type) => type === "anyone" || access.includes(type));
+  const hasAccess = (...types: AccessType[]): boolean => {
+    return types.every(
+      (type) =>
+        type === "anyone" ||
+        (typeof type === "function" &&
+          type({ hasAll: hasAccess, hasAny: hasSomeAccess })) ||
+        access.includes(type),
+    );
   };
 
-  const hasSomeAccess = (...types: AccessType[]) => {
-    return types.some((type) => type === "anyone" || access.includes(type));
+  const hasSomeAccess = (...types: AccessType[]): boolean => {
+    return types.some(
+      (type) =>
+        type === "anyone" ||
+        (typeof type === "function" &&
+          type({ hasAll: hasAccess, hasAny: hasSomeAccess })) ||
+        access.includes(type),
+    );
   };
 
   return (
