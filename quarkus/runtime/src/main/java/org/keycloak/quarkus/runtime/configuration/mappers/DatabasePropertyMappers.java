@@ -60,13 +60,11 @@ final class DatabasePropertyMappers {
                         .build(),
                 fromOption(DatabaseOptions.DB_USERNAME)
                         .to("quarkus.datasource.username")
-                        .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolveUsername)
                         .paramLabel("username")
                         .build(),
                 fromOption(DatabaseOptions.DB_PASSWORD)
                         .to("quarkus.datasource.password")
-                        .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolvePassword)
                         .paramLabel("password")
                         .isMasked(true)
@@ -137,7 +135,7 @@ final class DatabasePropertyMappers {
             return of("sa");
         }
 
-        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
+        return value;
     }
 
     private static Optional<String> resolvePassword(Optional<String> value, ConfigSourceInterceptorContext context) {
@@ -145,7 +143,7 @@ final class DatabasePropertyMappers {
             return of("password");
         }
 
-        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
+        return value;
     }
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
