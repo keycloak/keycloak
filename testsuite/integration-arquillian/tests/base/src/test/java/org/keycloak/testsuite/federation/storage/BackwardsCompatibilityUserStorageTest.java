@@ -28,10 +28,10 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -152,7 +152,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
         // Update his password
         CredentialRepresentation passwordRep = new CredentialRepresentation();
-        passwordRep.setType(CredentialModel.PASSWORD);
+        passwordRep.setType(PasswordCredentialModel.TYPE);
         passwordRep.setValue(password);
         passwordRep.setTemporary(false);
 

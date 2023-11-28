@@ -64,7 +64,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -348,7 +350,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         representation.setCredentials(Arrays.asList(password));
 
         this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class),
-                Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(400)))));
+                Matchers.hasProperty("response", Matchers.hasProperty("status", is(400)))));
         this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
 
         serviceAccount.update(representation);
@@ -370,7 +372,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         events.expect(EventType.REVOKE_GRANT)
                 .client("service-account-cl")
                 .user(userIdCl)
-                .session(Matchers.isEmptyOrNullString())
+                .session(is(emptyOrNullString()))
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .assertEvent();
 
@@ -379,8 +381,8 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         // TODO: This would be better to be "INTROSPECT_TOKEN_ERROR"
         events.expect(EventType.INTROSPECT_TOKEN)
                 .client("service-account-cl")
-                .user(Matchers.isEmptyOrNullString())
-                .session(Matchers.isEmptyOrNullString())
+                .user(is(emptyOrNullString()))
+                .session(is(emptyOrNullString()))
                 .assertEvent();
     }
 
@@ -426,8 +428,8 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assert.assertTrue(getIntrospectionResponse("service-account-cl", "secret1", tokenString));
         events.expect(EventType.INTROSPECT_TOKEN)
                 .client("service-account-cl")
-                .user(Matchers.isEmptyOrNullString())
-                .session(Matchers.isEmptyOrNullString())
+                .user(is(emptyOrNullString()))
+                .session(is(emptyOrNullString()))
                 .assertEvent();
 
         return tokenString;

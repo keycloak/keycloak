@@ -137,7 +137,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             ctx.getRealm().updateComponent(mapperModel);
 
         });
@@ -183,7 +183,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
             ctx.getRealm().updateComponent(mapperModel);
 
         });
@@ -312,7 +312,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group1/model2"));
 
             // Update group mapper to drop non-existing groups during sync
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC, "true");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC, "true");
             realm.updateComponent(mapperModel);
 
             // Sync groups again from LDAP. Assert LDAP non-existing groups deleted
@@ -335,7 +335,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             ctx.getRealm().updateComponent(mapperModel);
 
         });
@@ -387,7 +387,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
             ctx.getRealm().updateComponent(mapperModel);
 
         });
@@ -427,7 +427,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
 
             // Set group mapper to skip preservation of inheritance to test group creation
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             ctx.getRealm().updateComponent(mapperModel);
 
         });
@@ -449,7 +449,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
              *  created groups, existing as the result of (N-1)-th iteration are "just" updated.
              *  Also see NOTE: and the subsequent for loop, commented out, below for details.
              */
-            Long elapsedTime = new Long(0);
+            Long elapsedTime = Long.valueOf(0);
             for (int i = 1; i <= GROUPS_COUNT; i++) {
                 LDAPTestUtils.createLDAPGroup(session,
                                               appRealm,

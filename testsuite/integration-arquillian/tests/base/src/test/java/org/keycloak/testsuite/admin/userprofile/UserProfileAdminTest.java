@@ -26,7 +26,6 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +201,11 @@ public class UserProfileAdminTest extends AbstractAdminTest {
             assertEquals(group.getName(), mGroup.getName());
             assertEquals(group.getDisplayHeader(), mGroup.getDisplayHeader());
             assertEquals(group.getDisplayDescription(), mGroup.getDisplayDescription());
-            assertEquals(group.getAnnotations().size(), mGroup.getAnnotations().size());
+            if (group.getAnnotations() == null) {
+                assertEquals(group.getAnnotations(), mGroup.getAnnotations());
+            } else {
+                assertEquals(group.getAnnotations().size(), mGroup.getAnnotations().size());
+            }
         }
         assertEquals(config.getGroups().get(0).getName(), metadata.getAttributeMetadata(UserModel.FIRST_NAME).getGroup());
     }

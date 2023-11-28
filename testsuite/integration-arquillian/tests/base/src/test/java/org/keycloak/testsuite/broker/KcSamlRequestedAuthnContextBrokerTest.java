@@ -13,7 +13,6 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.Closeable;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

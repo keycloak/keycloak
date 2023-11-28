@@ -50,8 +50,6 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.JsonUtils;
 
 import java.io.File;
 import java.io.IOException;

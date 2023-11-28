@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.ws.rs.core.Response;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;

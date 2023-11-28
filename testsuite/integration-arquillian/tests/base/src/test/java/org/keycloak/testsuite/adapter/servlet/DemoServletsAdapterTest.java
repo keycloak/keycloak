@@ -101,6 +101,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -861,7 +862,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     private static Map<String, String> getQueryFromUrl(String url) {
         try {
-            return URLEncodedUtils.parse(new URI(url), "UTF-8").stream()
+            return URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8).stream()
                 .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
         } catch (URISyntaxException e) {
             return null;

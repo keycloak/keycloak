@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.admin;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
@@ -8,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;

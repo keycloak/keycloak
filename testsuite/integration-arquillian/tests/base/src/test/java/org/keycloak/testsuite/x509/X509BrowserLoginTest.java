@@ -46,7 +46,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SERIALNUMBER;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
-import org.keycloak.testsuite.ProfileAssume;
+
 import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.WebDriver;
 

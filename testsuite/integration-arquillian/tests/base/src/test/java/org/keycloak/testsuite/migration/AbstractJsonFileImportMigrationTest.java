@@ -20,7 +20,7 @@ import org.keycloak.common.Profile.Feature;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import org.junit.Assert;
+
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 

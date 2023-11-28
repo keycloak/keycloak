@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
