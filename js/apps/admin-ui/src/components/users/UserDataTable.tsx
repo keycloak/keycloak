@@ -49,6 +49,51 @@ export type UserAttribute = {
   value: string;
 };
 
+const UserDetailLink = (user: BruteUser) => {
+  const { realm } = useRealm();
+  return (
+    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username} <StatusRow user={user} />
+    </Link>
+  );
+};
+
+type StatusRowProps = {
+  user: BruteUser;
+};
+
+const StatusRow = ({ user }: StatusRowProps) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+      {user.bruteForceStatus?.disabled && (
+        <Label color="orange" icon={<WarningTriangleIcon />}>
+          {t("temporaryLocked")}
+        </Label>
+      )}
+    </>
+  );
+};
+
+const ValidatedEmail = (user: UserRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.emailVerified && (
+        <Tooltip content={t("notVerified")}>
+          <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
+        </Tooltip>
+      )}{" "}
+      {emptyFormatter()(user.email)}
+    </>
+  );
+};
+
 export function UserDataTable() {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -94,15 +139,6 @@ export function UserDataTable() {
       setProfile(profile);
     },
     [],
-  );
-
-  const UserDetailLink = (user: UserRepresentation) => (
-    <Link
-      key={user.username}
-      to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
-    >
-      {user.username}
-    </Link>
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
@@ -169,40 +205,6 @@ export function UserDataTable() {
       }
     },
   });
-
-  const StatusRow = (user: BruteUser) => {
-    return (
-      <>
-        {!user.enabled && (
-          <Label key={user.id} color="red" icon={<InfoCircleIcon />}>
-            {t("disabled")}
-          </Label>
-        )}
-        {user.bruteForceStatus?.disabled && (
-          <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
-            {t("temporaryLocked")}
-          </Label>
-        )}
-        {user.enabled && !user.bruteForceStatus?.disabled && "—"}
-      </>
-    );
-  };
-
-  const ValidatedEmail = (user: UserRepresentation) => {
-    return (
-      <>
-        {!user.emailVerified && (
-          <Tooltip
-            key={`email-verified-${user.id}`}
-            content={<>{t("notVerified")}</>}
-          >
-            <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
-          </Tooltip>
-        )}{" "}
-        {emptyFormatter()(user.email)}
-      </>
-    );
-  };
 
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
@@ -385,11 +387,6 @@ export function UserDataTable() {
             name: "firstName",
             displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "status",
-            displayKey: "status",
-            cellRenderer: StatusRow,
           },
         ]}
       />
