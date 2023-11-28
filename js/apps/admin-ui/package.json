@@ -1,5 +1,6 @@
 {
   "name": "admin-ui",
+  "type": "module",
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
