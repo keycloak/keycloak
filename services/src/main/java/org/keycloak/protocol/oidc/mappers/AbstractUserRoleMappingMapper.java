@@ -75,7 +75,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
     }
 
 
-    private static final Pattern CLIENT_ID_PATTERN = Pattern.compile(Pattern.quote("${client_id}"));
+    protected static final Pattern CLIENT_ID_PATTERN = Pattern.compile(Pattern.quote("${client_id}"));
 
     private static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue, String clientId) {
         attributeValue = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, attributeValue);
