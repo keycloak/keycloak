@@ -249,7 +249,7 @@ describe("Realm settings events tab tests", () => {
     cy.get(realmSettingsPage.supportedLocalesTypeahead)
       .click()
       .get(".pf-c-select__menu-item")
-      .contains("dansk")
+      .contains("Danish")
       .click();
     cy.get("#kc-l-supported-locales").click();
 
@@ -265,7 +265,7 @@ describe("Realm settings events tab tests", () => {
     masthead.checkNotificationMessage(
       "Success! The message bundle has been added.",
     );
-    realmSettingsPage.setDefaultLocale("dansk");
+    realmSettingsPage.setDefaultLocale("Danish");
     cy.findByTestId("localization-tab-save").click();
   });
 
