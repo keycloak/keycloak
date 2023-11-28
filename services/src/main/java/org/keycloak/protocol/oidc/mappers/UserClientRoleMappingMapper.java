@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.mappers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -125,8 +126,12 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
                 if (access == null) {
                     continue;
                 }
+                String augmentedRolePrefix = Objects.nonNull(rolePrefix)
+                        && !rolePrefix.trim().isEmpty()
+                        ? rolePrefix.replaceAll(CLIENT_ID_PATTERN.toString(), currClientId)
+                        : rolePrefix;
 
-                AbstractUserRoleMappingMapper.setClaim(token, mappingModel, access.getRoles(), currClientId, rolePrefix);
+                AbstractUserRoleMappingMapper.setClaim(token, mappingModel, access.getRoles(), currClientId, augmentedRolePrefix);
             }
         }
     }
