@@ -1,12 +1,12 @@
-import { NavExpandable, NavItem, Spinner } from "@patternfly/react-core";
+import { NavExpandable, Spinner } from "@patternfly/react-core";
 import { TFunction } from "i18next";
 import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { CallOptions } from "../api/methods";
-import { parseResponse } from "../api/parse-response";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
+import { NavLink } from "../root/PageNav";
 import { ContentComponentParams } from "../routes";
 import { joinPath } from "../utils/joinPath";
 import { usePromise } from "../utils/usePromise";
@@ -25,18 +25,14 @@ export async function fetchContentJson(
     joinPath(environment.resourceUrl, "/content.json"),
     opts,
   );
-  return parseResponse<ContentItem[]>(response);
+  return await response.json();
 }
 
 function createNavItem(page: PageDef, activePage: string, t: TFunction) {
   return (
-    <NavItem
-      key={page.id}
-      to={"#/content/" + page.path}
-      isActive={activePage === page.path}
-    >
+    <NavLink to={"content/" + page.path} isActive={activePage === page.path}>
       {t(page.label as TFuncKey)}
-    </NavItem>
+    </NavLink>
   );
 }
 

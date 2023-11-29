@@ -140,7 +140,7 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
-const NavLink = ({
+export const NavLink = ({
   to,
   isActive,
   children,
