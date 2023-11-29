@@ -73,8 +73,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     public static final String CONFIG_READ_ONLY_ATTRIBUTES = "read-only-attributes";
     public static final String MAX_EMAIL_LOCAL_PART_LENGTH = "max-email-local-part-length";
 
-    public static final String USER_METADATA_GROUP = "user-metadata";
-
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
         KeycloakContext context = session.getContext();

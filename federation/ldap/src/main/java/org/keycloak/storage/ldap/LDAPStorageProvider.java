@@ -62,7 +62,6 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.ReadOnlyException;
@@ -89,14 +88,13 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.userprofile.AbstractUserProfileProvider;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
-import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.UserProfileUtil;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -1027,23 +1025,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
             metadataAttributes.add(KerberosConstants.KERBEROS_PRINCIPAL);
         }
 
-        AttributeGroupMetadata metadataGroup = lookupMetadataGroup();
+        AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
 
         for (String attrName : metadataAttributes) {
-            // In case that attributes like LDAP_ID, KERBEROS_PRINCIPAL are explicitly defined on user profile, we can prefer defined configuration
-            if (!metadata.getAttribute(attrName).isEmpty()) {
-                logger.debugf("Ignore adding metadata attribute '%s' to user profile by LDAP provider '%s' as attribute is already defined on user profile.", attrName, getModel().getName());
-            } else {
-                logger.debugf("Adding metadata attribute '%s' to user profile by LDAP provider '%s' for user profile context '%s'.", attrName, getModel().getName(), metadata.getContext().toString());
-                AttributeMetadata attributeMetadata = metadata.addAttribute(attrName, guiOrder++, Collections.emptyList())
-                        .addWriteCondition(AttributeMetadata.ALWAYS_FALSE)  // Not writable for anyone
-                        .addReadCondition(onlyAdminCondition) // Read-only for administrators
-                        .setRequired(AttributeMetadata.ALWAYS_FALSE);
-
-                if (metadataGroup != null) {
-                     attributeMetadata.setAttributeGroupMetadata(metadataGroup);
-                }
-                attributeMetadata.setSelector(ldapUsersSelector);
+            boolean attributeAdded = UserProfileUtil.addMetadataAttributeToUserProfile(attrName, metadata, metadataGroup, ldapUsersSelector, guiOrder++, getModel().getName());
+            if (!attributeAdded) {
+                guiOrder--;
             }
         }
 
@@ -1053,15 +1040,5 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 attrMetadata.addWriteCondition(ldapUsersSelector.negate());
             }
         }
-    }
-
-    private AttributeGroupMetadata lookupMetadataGroup() {
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UPConfig config = provider.getConfiguration();
-        return config.getGroups().stream()
-                .filter(upGroup -> AbstractUserProfileProvider.USER_METADATA_GROUP.equals(upGroup.getName()))
-                .map(upGroup -> new AttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations()))
-                .findAny()
-                .orElse(null);
     }
 }
