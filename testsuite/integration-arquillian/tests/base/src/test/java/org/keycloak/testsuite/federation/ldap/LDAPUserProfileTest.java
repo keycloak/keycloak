@@ -52,7 +52,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.userprofile.AbstractUserProfileProvider.USER_METADATA_GROUP;
+import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
