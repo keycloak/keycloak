@@ -72,10 +72,8 @@ public class RedirectUtils {
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
-                resolveValidRedirects.add(validRedirect);
-            } else {
-                resolveValidRedirects.add(validRedirect);
             }
+            resolveValidRedirects.add(validRedirect);
         }
         return resolveValidRedirects;
     }
@@ -148,7 +146,11 @@ public class RedirectUtils {
                 valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
             }
 
-            if (valid != null && redirectUri.startsWith("/")) {
+            if (valid != null && !originalRedirect.isAbsolute()) {
+                // return absolute if the original URI is relative
+                if (!redirectUri.startsWith("/")) {
+                    redirectUri = "/" + redirectUri;
+                }
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
 
@@ -174,7 +176,7 @@ public class RedirectUtils {
     private static URI toUri(String redirectUri) {
         URI uri = null;
         if (redirectUri != null) {
-        try {
+            try {
                 uri = URI.create(redirectUri);
             } catch (IllegalArgumentException cause) {
                 logger.debug("Invalid redirect uri", cause);
@@ -189,7 +191,6 @@ public class RedirectUtils {
         String redirectUri = null;
         if (uri != null) {
             redirectUri = uri.normalize().toString();
-            redirectUri = lowerCaseHostname(redirectUri);
         }
         return redirectUri;
     }
@@ -204,9 +205,11 @@ public class RedirectUtils {
             KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
             String origQuery = uriBuilder.getQuery();
             String origFragment = uriBuilder.getFragment();
+            String origUserInfo = uriBuilder.getUserInfo();
             String encodedRedirectUri = uriBuilder
                     .replaceQuery(null)
                     .fragment(null)
+                    .userInfo(null)
                     .buildAsString();
             String decodedRedirectUri = null;
 
@@ -217,6 +220,7 @@ public class RedirectUtils {
                     return KeycloakUriBuilder.fromUri(decodedRedirectUri, false).preserveDefaultPort()
                             .replaceQuery(origQuery)
                             .fragment(origFragment)
+                            .userInfo(origUserInfo)
                             .buildAsString();
                 } else {
                     // Next attempt
@@ -228,15 +232,6 @@ public class RedirectUtils {
         }
         logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
         return null;
-    }
-
-    private static String lowerCaseHostname(String redirectUri) {
-        int n = redirectUri.indexOf('/', 7);
-        if (n == -1) {
-            return redirectUri.toLowerCase();
-        } else {
-            return redirectUri.substring(0, n).toLowerCase() + redirectUri.substring(n);
-        }
     }
 
     private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {
