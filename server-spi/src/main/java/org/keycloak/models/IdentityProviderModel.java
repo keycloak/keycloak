@@ -42,6 +42,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String CLAIM_FILTER_NAME = "claimFilterName";
     public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
     public static final String DO_NOT_STORE_USERS = "doNotStoreUsers";
+    public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
 
     private String internalId;
 
@@ -301,5 +302,13 @@ public class IdentityProviderModel implements Serializable {
 
     public void setClaimFilterValue(String claimFilterValue) {
         getConfig().put(CLAIM_FILTER_VALUE, claimFilterValue);
+    }
+
+    public String getMetadataDescriptorUrl() {
+        return getConfig().get(METADATA_DESCRIPTOR_URL);
+    }
+
+    public void setMetadataDescriptorUrl(String metadataDescriptorUrl) {
+        getConfig().put(METADATA_DESCRIPTOR_URL, metadataDescriptorUrl);
     }
 }

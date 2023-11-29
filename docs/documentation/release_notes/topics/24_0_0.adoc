@@ -6,3 +6,8 @@ The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-expor
 
 Keycloak introduces an improved truststores configuration options. The Keycloak truststore is now used across the server: for outgoing connections, mTLS, database drivers and more. It's no longer needed to configure separate truststores for individual areas. To configure the truststore, you can put your truststores files or certificates in the default `conf/truststores`, or use the new `truststore-paths` config option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
 
+== Automatic certificate management for SAML identity providers
+
+The SAML identity providers can now be configured to automatically download the signing certificates from the IDP entity metadata descriptor endpoint. In order to use the new feature the option `Metadata descriptor URL` should be configured in the provider (URL where the IDP metadata information with the certificates is published) and `Use metadata descriptor URL` needs to be `ON`. The certificates are automatically downloaded and cached in the `public-key-storage` SPI from that URL. The certificates can also be reloaded or imported from the admin console, using the action combo in the provider page.
+
+See the https://www.keycloak.org/docs/latest/server_admin/index.html#saml-v2-0-identity-providers[documentation] for more details about the new options.
