@@ -1,4 +1,5 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
 import {
   AlertVariant,
   Badge,
@@ -23,8 +24,6 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { IconMapper } from "ui-shared";
-
-import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -90,7 +89,7 @@ export default function IdentityProvidersSection() {
   const { addAlert, addError } = useAlerts();
 
   useFetch(
-    () => adminClient.identityProviders.find({ max: 1 }),
+    async () => adminClient.identityProviders.find({ max: 1 }),
     (providers) => {
       setHasProviders(providers.length === 1);
     },
@@ -98,12 +97,14 @@ export default function IdentityProvidersSection() {
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const providers = await adminClient.identityProviders.find({
-      first,
-      max,
-      search,
-    });
-
+    const params: IdentityProvidersQuery = {
+      first: first!,
+      max: max!,
+    };
+    if (search) {
+      params.search = search;
+    }
+    const providers = await adminClient.identityProviders.find(params);
     return sortBy(providers, ["config.guiOrder", "alias"]);
   };
 

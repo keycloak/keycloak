@@ -36,6 +36,7 @@ import { DetailDescriptionLink } from "./DetailDescription";
 
 type ScopesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 export type PermissionScopeRepresentation = ScopeRepresentation & {
@@ -48,7 +49,10 @@ type ExpandableRow = {
   isExpanded: boolean;
 };
 
-export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
+export const AuthorizationScopes = ({
+  clientId,
+  isDisabled = false,
+}: ScopesProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -305,6 +309,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         <ListEmptyState
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
+          isDisabled={isDisabled}
           onPrimaryAction={() => navigate(toNewScope({ id: clientId, realm }))}
           primaryActionText={t("createAuthorizationScope")}
         />
@@ -312,6 +317,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
+          isDisabled={isDisabled}
           message={t("noSearchResults")}
           instructions={t("noSearchResultsInstructions")}
         />

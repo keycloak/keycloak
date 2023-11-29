@@ -49,6 +49,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
 public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
@@ -139,6 +140,7 @@ public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP6, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP71, skip = true)
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP8, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_JETTY94, skip = true)
     public void testClockSkewTomcat() throws Exception {
 

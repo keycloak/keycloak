@@ -20,8 +20,6 @@
             xsi:schemaLocation="http://jboss.org/schema/arquillian
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
-    <defaultProtocol type="Servlet 3.0" />
-	
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>

@@ -52,7 +52,11 @@ class AdminClient {
     await this.#client.realms.del({ realm });
   }
 
-  async createClient(client: ClientRepresentation) {
+  async createClient(
+    client: ClientRepresentation & {
+      realm?: string;
+    },
+  ) {
     await this.#login();
     await this.#client.clients.create(client);
   }
@@ -66,6 +70,11 @@ class AdminClient {
     if (client) {
       await this.#client.clients.del({ id: client.id! });
     }
+  }
+
+  async getClient(clientName: string) {
+    await this.#login();
+    return (await this.#client.clients.find({ clientId: clientName }))[0];
   }
 
   async createGroup(groupName: string) {
@@ -146,6 +155,30 @@ class AdminClient {
     await this.#client.users.addRealmRoleMappings({
       id: userId,
       roles: [realmRole as RoleMappingPayload],
+    });
+  }
+
+  async addClientRoleToUser(
+    userId: string,
+    clientId: string,
+    roleNames: string[],
+  ) {
+    await this.#login();
+
+    const client = await this.#client.clients.find({ clientId });
+    const clientRoles = await Promise.all(
+      roleNames.map(
+        async (roleName) =>
+          (await this.#client.clients.findRole({
+            id: client[0].id!,
+            roleName: roleName,
+          })) as RoleMappingPayload,
+      ),
+    );
+    await this.#client.users.addClientRoleMappings({
+      id: userId,
+      clientUniqueId: client[0].id!,
+      roles: clientRoles,
     });
   }
 
