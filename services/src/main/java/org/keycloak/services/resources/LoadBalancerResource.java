@@ -30,18 +30,18 @@ import org.keycloak.utils.MediaType;
 import java.util.Set;
 
 /**
- * Prepare information for the loadbalancer (possibly in a multi-site setup) whether this Keycloak cluster should receive traffic.
+ * Prepare information for the load balancer (possibly in a multi-site setup) whether this Keycloak cluster should receive traffic.
  * <p>
- * This is non-blocking, so that the loadbalancer can still retrieve the status even if the Keycloak instance is
+ * This is non-blocking, so that the load balancer can still retrieve the status even if the Keycloak instance is
  * trying to withstand a high load. See {@link LoadBalancerCheckProvider#isDown()} for a longer explanation.
  *
  * @author <a href="mailto:aschwart@redhat.com">Alexander Schwartz</a>
  */
 @Path("/lb-check")
 @NonBlocking
-public class LoadbalancerResource {
+public class LoadBalancerResource {
 
-    protected static final Logger logger = Logger.getLogger(LoadbalancerResource.class);
+    protected static final Logger logger = Logger.getLogger(LoadBalancerResource.class);
 
     @Context
     KeycloakSession session;
@@ -59,7 +59,7 @@ public class LoadbalancerResource {
      */
     @GET
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
-    public Response getStatusForLoadbalancer() {
+    public Response getStatusForLoadBalancer() {
         Set<LoadBalancerCheckProvider> healthStatusProviders = session.getAllProviders(LoadBalancerCheckProvider.class);
         if (healthStatusProviders.stream().anyMatch(LoadBalancerCheckProvider::isDown)) {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("DOWN").build();

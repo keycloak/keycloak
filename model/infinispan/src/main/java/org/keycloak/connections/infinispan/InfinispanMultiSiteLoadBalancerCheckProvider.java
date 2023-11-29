@@ -18,7 +18,6 @@
 package org.keycloak.connections.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
 import org.keycloak.health.LoadBalancerCheckProvider;
@@ -29,11 +28,11 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 
 public class InfinispanMultiSiteLoadBalancerCheckProvider implements LoadBalancerCheckProvider {
     private static final Logger LOG = Logger.getLogger(InfinispanMultiSiteLoadBalancerCheckProvider.class);
-    private final EmbeddedCacheManager cacheManager;
+    private final InfinispanConnectionProvider connectionProvider;
 
-    public InfinispanMultiSiteLoadBalancerCheckProvider(EmbeddedCacheManager cacheManager) {
-        Objects.requireNonNull(cacheManager, "cacheManager");
-        this.cacheManager = cacheManager;
+    public InfinispanMultiSiteLoadBalancerCheckProvider(InfinispanConnectionProvider connectionProvider) {
+        Objects.requireNonNull(connectionProvider, "connectionProvider");
+        this.connectionProvider = connectionProvider;
     }
 
     /**
@@ -53,7 +52,7 @@ public class InfinispanMultiSiteLoadBalancerCheckProvider implements LoadBalance
     public boolean isDown() {
         for (String cacheName : ALL_CACHES_NAME) {
             // do not block in cache creation, as this method is required to be non-blocking
-            Cache<?,?> cache = cacheManager.getCache(cacheName, false);
+            Cache<?,?> cache = connectionProvider.getCache(cacheName, false);
 
             // check if cache is started
             if (cache == null || !cache.getStatus().allowInvocations()) {

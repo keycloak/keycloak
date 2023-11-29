@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.health.LoadBalancerCheckProvider;
@@ -24,7 +25,6 @@ import org.keycloak.health.LoadBalancerCheckProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.provider.ProviderFactory;
 
 
 
@@ -35,16 +35,17 @@ public class InfinispanMultiSiteLoadBalancerCheckProviderFactory implements Load
         @Override public boolean isDown() { return false; }
         @Override public void close() {}
     };
+    private static final Logger LOG = Logger.getLogger(InfinispanMultiSiteLoadBalancerCheckProviderFactory.class);
 
     @Override
     public LoadBalancerCheckProvider create(KeycloakSession session) {
         if (loadBalancerCheckProvider == null) {
-            ProviderFactory<InfinispanConnectionProvider> infinispanConnectionProviderPF = session.getKeycloakSessionFactory().getProviderFactory(InfinispanConnectionProvider.class);
-            if (infinispanConnectionProviderPF instanceof DefaultInfinispanConnectionProviderFactory) {
-                DefaultInfinispanConnectionProviderFactory dInfinispanConnectionPF = (DefaultInfinispanConnectionProviderFactory) infinispanConnectionProviderPF;
-                loadBalancerCheckProvider = new InfinispanMultiSiteLoadBalancerCheckProvider(dInfinispanConnectionPF.getCacheManager());
-            } else {
+            InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
+            if (infinispanConnectionProvider == null) {
+                LOG.warn("InfinispanConnectionProvider is not available. Load balancer check will be always healthy for Infinispan.");
                 loadBalancerCheckProvider = ALWAYS_HEALTHY;
+            } else {
+                loadBalancerCheckProvider = new InfinispanMultiSiteLoadBalancerCheckProvider(infinispanConnectionProvider);
             }
         }
         return loadBalancerCheckProvider;

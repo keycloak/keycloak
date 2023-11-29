@@ -126,10 +126,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         });
     }
 
-    EmbeddedCacheManager getCacheManager() {
-        return cacheManager;
-    }
-
     protected void lazyInit() {
         if (cacheManager == null) {
             synchronized (this) {

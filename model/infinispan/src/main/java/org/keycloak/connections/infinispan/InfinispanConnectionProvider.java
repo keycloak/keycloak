@@ -84,7 +84,25 @@ public interface InfinispanConnectionProvider extends Provider {
             KEYS_CACHE_NAME
     };
 
-    <K, V> Cache<K, V> getCache(String name);
+    /**
+     *
+     * Effectively the same as {@link InfinispanConnectionProvider#getCache(String, boolean)} with createIfAbsent set to {@code true}
+     *
+     */
+    default <K, V> Cache<K, V> getCache(String name) {
+        return getCache(name, true);
+    }
+
+    /**
+     * Provides an instance if Infinispan cache by name
+     *
+     * @param name name of the requested cache
+     * @param createIfAbsent if true the connection provider will create the requested cache on method call if it does not exist
+     * @return return a cache instance
+     * @param <K> key type
+     * @param <V> value type
+     */
+    <K, V> Cache<K, V> getCache(String name, boolean createIfAbsent);
 
     /**
      * Get remote cache of given name. Could just retrieve the remote cache from the remoteStore configured in given infinispan cache and/or
