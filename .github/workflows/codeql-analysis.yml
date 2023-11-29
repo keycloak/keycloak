@@ -9,6 +9,9 @@ on:
      branches: [main]
   workflow_dispatch:
 
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
 concurrency:
   # Only cancel jobs for PR updates
   group: codeql-analysis-${{ github.ref }}

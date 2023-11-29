@@ -3,6 +3,9 @@ name: Snyk
 on: 
   workflow_dispatch:
 
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
 defaults:
   run:
     shell: bash
@@ -34,7 +37,7 @@ jobs:
 
       - name: Check for vulnerabilities in Operator
         run: |
-          ./mvnw -Poperator -pl operator -am -DskipTests clean install --batch-mode
+          ./mvnw -Poperator -pl operator -am -DskipTests clean install
           snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
         continue-on-error: true
         env:
