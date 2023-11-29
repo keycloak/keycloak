@@ -255,6 +255,10 @@ public class LDAPConfig {
         }
     }
 
+    public String getReferral() {
+        return config.getFirst(LDAPConstants.REFERRAL);
+    }
+
     public void addBinaryAttribute(String attrName) {
         binaryAttributeNames.add(attrName);
     }

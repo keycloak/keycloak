@@ -30,6 +30,7 @@ export const LdapSettingsSearching = ({
   const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] =
     useState(false);
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
+  const [isReferralDropdownOpen, setIsReferralDropdownOpen] = useState(false);
 
   return (
     <>
@@ -400,6 +401,37 @@ export const LdapSettingsSearching = ({
                 labelOff={t("off")}
                 aria-label={t("pagination")}
               />
+            )}
+          ></Controller>
+        </FormGroup>
+        <FormGroup
+          label={t("referral")}
+          labelIcon={
+            <HelpItem helpText={t("referralHelp")} fieldLabelId="referral" />
+          }
+          fieldId="kc-referral"
+        >
+          <Controller
+            name="config.referral.0"
+            defaultValue=""
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                toggleId="kc-referral"
+                onToggle={() =>
+                  setIsReferralDropdownOpen(!isReferralDropdownOpen)
+                }
+                isOpen={isReferralDropdownOpen}
+                onSelect={(_, value) => {
+                  field.onChange(value as string);
+                  setIsReferralDropdownOpen(false);
+                }}
+                selections={field.value}
+                variant={SelectVariant.single}
+              >
+                <SelectOption value="ignore" isPlaceholder />
+                <SelectOption value="follow" />
+              </Select>
             )}
           ></Controller>
         </FormGroup>

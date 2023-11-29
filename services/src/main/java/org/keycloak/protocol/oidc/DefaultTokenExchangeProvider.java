@@ -86,7 +86,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.util.UUID;
 
 /**
  * Default token exchange implementation
@@ -515,6 +514,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
+        context.addSessionNotesToUserSession(userSession);
+
         return exchangeClientToClient(user, userSession, null, false);
     }
 
@@ -588,7 +589,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
             if (! context.getIdpConfig().isTransientUsers()) {
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                        context.getUsername(), context.getToken());
+                        context.getModelUsername(), context.getToken());
                 session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
             }
 
