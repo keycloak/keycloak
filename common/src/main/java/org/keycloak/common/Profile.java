@@ -86,11 +86,13 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak server", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
-        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED);
+        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
+
+        MULTI_SITE("Multi-site support", Type.PREVIEW);
 
         private final Type type;
         private final String label;
