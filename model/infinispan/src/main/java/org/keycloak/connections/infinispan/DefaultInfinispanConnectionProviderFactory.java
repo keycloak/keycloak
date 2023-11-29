@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
@@ -28,6 +29,7 @@ import org.infinispan.eviction.EvictionType;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -119,7 +121,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void postInit(KeycloakSessionFactory factory) {
         factory.register((ProviderEvent event) -> {
             if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, session -> { registerSystemWideListeners(session); });
+                KeycloakModelUtils.runJobInTransaction(factory, this::registerSystemWideListeners);
             }
         });
     }
