@@ -1,5 +1,9 @@
 == Migration Changes
 
+=== Migrating to 23.0.2
+
+include::changes-23_0_2.adoc[leveloffset=3]
+
 === Migrating to 23.0.0
 
 include::changes-23_0_0.adoc[leveloffset=3]
