@@ -90,6 +90,7 @@ aws elb describe-load-balancers \
     }
 ]
 ----
+<1> Utilise the Hosted Zone ID retrieved in the previous step
 +
 . Create Route53 health checks
 +
@@ -108,7 +109,7 @@ function createHealthCheck() {
   --health-check-config '
   {
     "Type": "HTTPS",
-    "ResourcePath": "/health/live",
+    "ResourcePath": "/lb-check",
     "FullyQualifiedDomainName": "'$1'",
     "Port": 443,
     "RequestInterval": 30,
