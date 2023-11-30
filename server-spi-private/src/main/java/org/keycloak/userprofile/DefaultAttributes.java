@@ -31,12 +31,11 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.storage.StorageId;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.validate.ValidationContext;
@@ -361,6 +360,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     values = (List<String>) value;
                 }
 
+                if (UserModel.USERNAME.equals(key) || UserModel.EMAIL.equals(key)) {
+                    values = values.stream().map(KeycloakModelUtils::toLowerCaseSafe).collect(Collectors.toList());
+                }
+
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
         }
@@ -394,7 +397,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         if (!email.isEmpty() && realm.isRegistrationEmailAsUsername()) {
             List<String> lowerCaseEmailList = email.stream()
                     .filter(Objects::nonNull)
-                    .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
             setUserName(newAttributes, lowerCaseEmailList);
