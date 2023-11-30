@@ -29,7 +29,7 @@ const ldapVendor = "Active Directory";
 // connection and authentication settings
 const connectionUrlValid = "ldap://localhost:3004";
 const bindTypeSimple = "simple";
-const truststoreSpiOnlyLdaps = "Only for ldaps";
+const truststoreSpiAlways = "Always";
 const connectionTimeoutTwoSecs = "2000";
 const bindDnCnDc = "cn=user,dc=test";
 const bindCredsValid = "user";
@@ -93,10 +93,10 @@ describe("User Fed LDAP mapper tests", () => {
     providersPage.fillLdapConnectionData(
       connectionUrlValid,
       bindTypeSimple,
-      truststoreSpiOnlyLdaps,
+      truststoreSpiAlways,
       connectionTimeoutTwoSecs,
       bindDnCnDc,
-      bindCredsValid
+      bindCredsValid,
     );
     providersPage.toggleSwitch(providersPage.enableStartTls);
     providersPage.toggleSwitch(providersPage.connectionPooling);
@@ -107,7 +107,7 @@ describe("User Fed LDAP mapper tests", () => {
       firstUserLdapAtt,
       firstRdnLdapAtt,
       firstUuidLdapAtt,
-      firstUserObjClasses
+      firstUserObjClasses,
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(providerCreatedSuccess);

@@ -74,7 +74,7 @@ describe("User Fed Kerberos tests", () => {
       firstKerberosName,
       firstKerberosRealm,
       firstKerberosPrincipal,
-      firstKerberosKeytab
+      firstKerberosKeytab,
     );
     providersPage.save(provider);
 
@@ -216,7 +216,7 @@ describe("User Fed Kerberos tests", () => {
       secondKerberosName,
       secondKerberosRealm,
       secondKerberosPrincipal,
-      secondKerberosKeytab
+      secondKerberosKeytab,
     );
     providersPage.save(provider);
 

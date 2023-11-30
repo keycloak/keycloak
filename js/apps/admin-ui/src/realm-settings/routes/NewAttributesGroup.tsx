@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type NewAttributesGroupParams = {
@@ -8,20 +8,20 @@ export type NewAttributesGroupParams = {
 };
 
 const AttributesGroupDetails = lazy(
-  () => import("../user-profile/AttributesGroupDetails")
+  () => import("../user-profile/AttributesGroupDetails"),
 );
 
 export const NewAttributesGroupRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/new",
   element: <AttributesGroupDetails />,
-  breadcrumb: (t) => t("realm-settings:createGroupText"),
+  breadcrumb: (t) => t("createGroupText"),
   handle: {
     access: "view-realm",
   },
 };
 
 export const toNewAttributesGroup = (
-  params: NewAttributesGroupParams
+  params: NewAttributesGroupParams,
 ): Partial<Path> => ({
-  pathname: generatePath(NewAttributesGroupRoute.path, params),
+  pathname: generateEncodedPath(NewAttributesGroupRoute.path, params),
 });

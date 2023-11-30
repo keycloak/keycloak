@@ -474,6 +474,15 @@ public class JpaUserFederatedStorageProvider implements
 
         return closing(paginateQuery(query, firstResult, max).getResultStream());
     }
+    
+    @Override
+    public Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max) {
+        TypedQuery<String> query = em.createNamedQuery("fedRoleMembership", String.class);
+        query.setParameter("roleId", role.getId());
+		query.setParameter("realmId", realm.getId());
+
+		return closing(paginateQuery(query, firstResult, max).getResultStream());
+    }
 
     @Override
     public Stream<String> getRequiredActionsStream(RealmModel realm, String userId) {

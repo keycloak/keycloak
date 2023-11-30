@@ -39,7 +39,7 @@ import java.net.URI;
 import java.util.HashMap;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**

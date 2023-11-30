@@ -43,7 +43,7 @@ export default class CreateClientScopePage extends CommonPage {
     name: string,
     description = "",
     consentScreenText = "",
-    displayOrder = ""
+    displayOrder = "",
   ) {
     cy.get(this.clientScopeNameInput).clear();
 

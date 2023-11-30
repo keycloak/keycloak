@@ -71,18 +71,22 @@ public class ProfileTest {
 
         Assert.assertEquals(Profile.ProfileName.DEFAULT, profile.getName());
         Set<Profile.Feature> disabledFeatures = new HashSet<>(Arrays.asList(
+            Profile.Feature.TRANSIENT_USERS,
+            Profile.Feature.DPOP,
             Profile.Feature.FIPS,
             Profile.Feature.ACCOUNT3,
             Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
+            Profile.Feature.MULTI_SITE,
             Profile.Feature.RECOVERY_CODES,
             Profile.Feature.SCRIPTS,
             Profile.Feature.TOKEN_EXCHANGE,
             Profile.Feature.MAP_STORAGE,
             Profile.Feature.DECLARATIVE_USER_PROFILE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
-            Profile.Feature.UPDATE_EMAIL
+            Profile.Feature.UPDATE_EMAIL,
+            Profile.Feature.LINKEDIN_OAUTH
         ));
 
         // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
@@ -90,7 +94,7 @@ public class ProfileTest {
             disabledFeatures.add(Profile.Feature.KERBEROS);
         }
         assertEquals(profile.getDisabledFeatures(), disabledFeatures);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ACCOUNT3, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.MULTI_SITE, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
     }
 
     @Test
@@ -264,7 +268,7 @@ public class ProfileTest {
         Profile.Feature[] a = actual.toArray(new Profile.Feature[0]);
         Arrays.sort(a, new FeatureComparator());
         Arrays.sort(expected, new FeatureComparator());
-        Assert.assertArrayEquals(a, expected);
+        Assert.assertArrayEquals(expected, a);
     }
 
     private static class FeatureComparator implements Comparator<Profile.Feature> {

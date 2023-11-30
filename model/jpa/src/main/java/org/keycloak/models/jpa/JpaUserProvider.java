@@ -88,6 +88,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     private static final String USERNAME = "username";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
+    private static final char ESCAPE_BACKSLASH = '\\';
 
     private final KeycloakSession session;
     protected EntityManager em;
@@ -910,21 +911,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
-            if (value.length() >= 2 && value.charAt(0) == '*' && value.charAt(value.length() - 1) == '*') {
-                // infix search
-                value = "%" + value.substring(1, value.length() - 1) + "%";
-            } else {
-                // default to prefix search
-                if (value.length() > 0 && value.charAt(value.length() - 1) == '*') {
-                    value = value.substring(0, value.length() - 1);
-                }
-                value += "%";
-            }
+            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            value = value.replace("*", "%");
+            if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
 
-            orPredicates.add(builder.like(from.get(USERNAME), value));
-            orPredicates.add(builder.like(from.get(EMAIL), value));
-            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+            orPredicates.add(builder.like(from.get(USERNAME), value, ESCAPE_BACKSLASH));
+            orPredicates.add(builder.like(from.get(EMAIL), value, ESCAPE_BACKSLASH));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value, ESCAPE_BACKSLASH));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value, ESCAPE_BACKSLASH));
         }
 
         return orPredicates.toArray(new Predicate[0]);

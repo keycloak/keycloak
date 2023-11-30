@@ -19,10 +19,16 @@ package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import java.io.IOException;
@@ -44,9 +50,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RealmLocalizationResource {
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -62,6 +70,8 @@ public class RealmLocalizationResource {
     @Path("{locale}/{key}")
     @PUT
     @Consumes(MediaType.TEXT_PLAIN)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void saveRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key,
             String text) {
         this.auth.realm().requireManageRealm();
@@ -81,6 +91,9 @@ public class RealmLocalizationResource {
     @POST
     @Path("{locale}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Import localization from uploaded JSON file")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale) {
         this.auth.realm().requireManageRealm();
 
@@ -101,6 +114,9 @@ public class RealmLocalizationResource {
     @POST
     @Path("{locale}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createOrUpdateRealmLocalizationTexts(@PathParam("locale") String locale,
             Map<String, String> localizationTexts) {
         this.auth.realm().requireManageRealm();
@@ -109,6 +125,8 @@ public class RealmLocalizationResource {
 
     @Path("{locale}")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void deleteRealmLocalizationTexts(@PathParam("locale") String locale) {
         this.auth.realm().requireManageRealm();
         if(!realm.removeRealmLocalizationTexts(locale)) {
@@ -118,6 +136,8 @@ public class RealmLocalizationResource {
 
     @Path("{locale}/{key}")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public void deleteRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key) {
         this.auth.realm().requireManageRealm();
         if (!session.realms().deleteLocalizationText(realm, locale, key)) {
@@ -127,6 +147,8 @@ public class RealmLocalizationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public Stream<String> getRealmLocalizationLocales() {
         auth.requireAnyAdminRole();
 
@@ -136,9 +158,13 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
             @Deprecated @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
-        auth.requireAnyAdminRole();
+        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
+            throw new ForbiddenException();
+        }
 
         // this fallback is no longer needed since the fix for #15845, don't forget to remove it from the API
         if (useFallback != null && useFallback) {
@@ -158,6 +184,8 @@ public class RealmLocalizationResource {
     @Path("{locale}/{key}")
     @GET
     @Produces(MediaType.TEXT_PLAIN)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation()
     public String getRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key) {
         auth.requireAnyAdminRole();
 

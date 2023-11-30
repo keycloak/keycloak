@@ -142,7 +142,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void setAttribute(String name, List<String> values) {
-                    String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
+                    String valueToSet = (values != null && !values.isEmpty()) ? values.get(0) : null;
                     if (UserModel.FIRST_NAME.equals(name)) {
                         this.firstName = valueToSet;
                         setFullNameToLDAPObject();
@@ -150,7 +150,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         this.lastName = valueToSet;
                         setFullNameToLDAPObject();
                     }
-                    super.setSingleAttribute(name, valueToSet);
+                    super.setAttribute(name, values);
                 }
 
                 @Override
@@ -233,6 +233,11 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
         EqualCondition fullNameCondition = new EqualCondition(ldapFullNameAttrName, fullName, escapeStrategy);
         query.addWhereCondition(fullNameCondition);
+    }
+
+    @Override
+    public Set<String> getUserAttributes() {
+        return new HashSet<>(List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME));
     }
 
     protected String getLdapFullNameAttrName() {

@@ -31,7 +31,7 @@
 
     <properties>
         <javadoc.branding>Keycloak ${project.version}</javadoc.branding>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -50,11 +50,6 @@
         </dependency>
         <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
         This avoids warnings when generating the JavaDoc -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-build-processor</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>

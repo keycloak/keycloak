@@ -30,60 +30,62 @@ const emptyStatePage = new EmptyStatePage();
 const modalUtils = new ModalUtils();
 
 export default class AdminEventsTab extends PageObject {
-  private searchAdminEventDrpDwnBtn = "adminEventsSearchSelectorToggle";
-  private searchEventsBtn = "search-events-btn";
-  private operationTypesInputFld =
-    ".pf-c-form-control.pf-c-select__toggle-typeahead";
-  private authAttrDataRow = 'tbody > tr > [data-label="Attribute"]';
-  private authValDataRow = 'tbody > tr > [data-label="Value"]';
-  private refreshBtn = "refresh-btn";
-  private resourcePathInput = "#kc-resourcePath";
-  private realmInput = "#kc-realm";
-  private clienInput = "#kc-client";
-  private userInput = "#kc-user";
-  private ipAddressInput = "#kc-ipAddress";
-  private dateFromInput = "#kc-dateFrom";
-  private dateToInput = "#kc-dateTo";
+  #searchAdminEventDrpDwnBtn = "adminEventsSearchSelectorToggle";
+  #searchEventsBtn = "search-events-btn";
+  #operationTypesInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
+  #authAttrDataRow = 'tbody > tr > [data-label="Attribute"]';
+  #authValDataRow = 'tbody > tr > [data-label="Value"]';
+  #refreshBtn = "refresh-btn";
+  #resourcePathInput = "#kc-resourcePath";
+  #realmInput = "#kc-realm";
+  #clientInput = "#kc-client";
+  #userInput = "#kc-user";
+  #ipAddressInput = "#kc-ipAddress";
+  #dateFromInput = "#kc-dateFrom";
+  #dateToInput = "#kc-dateTo";
 
   public refresh() {
-    cy.findByTestId(this.refreshBtn).click();
+    cy.findByTestId(this.#refreshBtn).click();
     return this;
   }
 
   public openSearchAdminEventDropdownMenu() {
-    super.openDropdownMenu("", cy.findByTestId(this.searchAdminEventDrpDwnBtn));
+    super.openDropdownMenu(
+      "",
+      cy.findByTestId(this.#searchAdminEventDrpDwnBtn),
+    );
     return this;
   }
 
   public assertAdminSearchDropdownMenuHasLabels() {
     super.assertDropdownMenuHasLabels(
-      Object.values(AdminEventsTabSearchFormFieldsLabel)
+      Object.values(AdminEventsTabSearchFormFieldsLabel),
     );
     return this;
   }
 
   public openResourceTypesSelectMenu() {
-    cy.get(this.operationTypesInputFld).first().click();
+    cy.get(this.#operationTypesInputFld).first().click();
     return this;
   }
 
   public closeResourceTypesSelectMenu() {
-    cy.get(this.operationTypesInputFld).first().click();
+    cy.get(this.#operationTypesInputFld).first().click();
     return this;
   }
 
   public openOperationTypesSelectMenu() {
-    cy.get(this.operationTypesInputFld).last().click();
+    cy.get(this.#operationTypesInputFld).last().click();
     return this;
   }
 
   public closeOperationTypesSelectMenu() {
-    cy.get(this.operationTypesInputFld).last().click();
+    cy.get(this.#operationTypesInputFld).last().click();
     return this;
   }
 
   public typeIpAddress(ipAddress: string) {
-    cy.get(this.ipAddressInput).type(ipAddress);
+    cy.get(this.#ipAddressInput).type(ipAddress);
     return this;
   }
 
@@ -104,32 +106,32 @@ export default class AdminEventsTab extends PageObject {
       this.closeOperationTypesSelectMenu();
     }
     if (searchData.resourcePath) {
-      cy.get(this.resourcePathInput).type(searchData.resourcePath);
+      cy.get(this.#resourcePathInput).type(searchData.resourcePath);
     }
     if (searchData.realm) {
-      cy.get(this.realmInput).type(searchData.realm);
+      cy.get(this.#realmInput).type(searchData.realm);
     }
     if (searchData.client) {
-      cy.get(this.clienInput).type(searchData.client);
+      cy.get(this.#clientInput).type(searchData.client);
     }
     if (searchData.user) {
-      cy.get(this.userInput).type(searchData.user);
+      cy.get(this.#userInput).type(searchData.user);
     }
     if (searchData.ipAddress) {
-      cy.get(this.ipAddressInput).type(searchData.ipAddress);
+      cy.get(this.#ipAddressInput).type(searchData.ipAddress);
     }
     if (searchData.dateFrom) {
-      cy.get(this.dateFromInput).type(searchData.dateFrom);
+      cy.get(this.#dateFromInput).type(searchData.dateFrom);
     }
     if (searchData.dateTo) {
-      cy.get(this.dateToInput).type(searchData.dateTo);
+      cy.get(this.#dateToInput).type(searchData.dateTo);
     }
-    cy.findByTestId(this.searchEventsBtn).click();
+    cy.findByTestId(this.#searchEventsBtn).click();
     return this;
   }
 
   public assertSearchAdminBtnEnabled(disabled: boolean) {
-    super.assertIsEnabled(cy.findByTestId(this.searchEventsBtn), disabled);
+    super.assertIsEnabled(cy.findByTestId(this.#searchEventsBtn), disabled);
     return this;
   }
 
@@ -204,7 +206,7 @@ export default class AdminEventsTab extends PageObject {
   public assertResourceTypesChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.ResourceTypes,
-      exist
+      exist,
     );
     return this;
   }
@@ -212,7 +214,7 @@ export default class AdminEventsTab extends PageObject {
   public assertOperationTypesChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.OperationTypes,
-      exist
+      exist,
     );
     return this;
   }
@@ -220,19 +222,19 @@ export default class AdminEventsTab extends PageObject {
   public assertResourcePathChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.ResourcePath,
-      exist
+      exist,
     );
     return this;
   }
 
   public assertResourcePathChipGroupItemExist(
     itemName: string,
-    exist: boolean
+    exist: boolean,
   ) {
     super.assertChipGroupItemExist(
       AdminEventsTabSearchFormFieldsLabel.ResourcePath,
       itemName,
-      exist
+      exist,
     );
     return this;
   }
@@ -240,7 +242,7 @@ export default class AdminEventsTab extends PageObject {
   public assertRealmChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.Realm,
-      exist
+      exist,
     );
     return this;
   }
@@ -248,7 +250,7 @@ export default class AdminEventsTab extends PageObject {
   public assertClientChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.Client,
-      exist
+      exist,
     );
     return this;
   }
@@ -261,7 +263,7 @@ export default class AdminEventsTab extends PageObject {
   public assertIpAddressChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.IpAddress,
-      exist
+      exist,
     );
     return this;
   }
@@ -269,7 +271,7 @@ export default class AdminEventsTab extends PageObject {
   public assertDateFromChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.DateFrom,
-      exist
+      exist,
     );
     return this;
   }
@@ -277,7 +279,7 @@ export default class AdminEventsTab extends PageObject {
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.DateTo,
-      exist
+      exist,
     );
     return this;
   }
@@ -289,8 +291,8 @@ export default class AdminEventsTab extends PageObject {
       .assertModalMessageContainText("Client")
       .assertModalMessageContainText("User")
       .assertModalMessageContainText("IP address")
-      .assertModalHasElement(this.authAttrDataRow, true)
-      .assertModalHasElement(this.authValDataRow, true)
+      .assertModalHasElement(this.#authAttrDataRow, true)
+      .assertModalHasElement(this.#authValDataRow, true)
       .closeModal();
     return this;
   }

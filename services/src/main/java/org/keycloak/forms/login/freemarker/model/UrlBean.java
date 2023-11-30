@@ -57,7 +57,11 @@ public class UrlBean {
     }
 
     public String getLoginRestartFlowUrl() {
-        return Urls.realmLoginRestartPage(baseURI, realm).toString();
+        return Urls.realmLoginRestartPage(baseURI, realm, false).toString();
+    }
+
+    public String getSsoLoginInOtherTabsUrl() {
+        return Urls.realmLoginRestartPage(baseURI, realm, true).toString();
     }
 
     public boolean hasAction()  {
@@ -73,14 +77,6 @@ public class UrlBean {
 
     public String getRegistrationUrl() {
         return Urls.realmRegisterPage(baseURI, realm).toString();
-    }
-
-    public String getLoginUpdatePasswordUrl() {
-        return Urls.loginActionUpdatePassword(baseURI, realm).toString();
-    }
-
-    public String getLoginUpdateTotpUrl() {
-        return Urls.loginActionUpdateTotp(baseURI, realm).toString();
     }
 
     public String getLoginUpdateProfileUrl() {
@@ -132,12 +128,12 @@ public class UrlBean {
         URI uri = getThemeRootUri();
         String commonPath = "";
         try {
-            commonPath = theme.getProperties().getProperty("import");
+            commonPath = theme.getProperties().getProperty("common");
         } catch (IOException ex) {
             logger.warn("Failed to load properties", ex);
         }
         if (commonPath == null || commonPath.isEmpty()) {
-            commonPath = "/common/keycloak";
+            commonPath = "common/keycloak";
         }
         return uri.getPath() + "/" + commonPath;
     }

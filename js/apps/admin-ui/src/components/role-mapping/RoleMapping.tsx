@@ -38,7 +38,7 @@ export type Row = {
 export const mapRoles = (
   assignedRoles: Row[],
   effectiveRoles: Row[],
-  hide: boolean
+  hide: boolean,
 ) => [
   ...(hide
     ? assignedRoles.map((row) => ({
@@ -86,7 +86,7 @@ export const RoleMapping = ({
   isManager = true,
   save,
 }: RoleMappingProps) => {
-  const { t } = useTranslation(type);
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -126,7 +126,7 @@ export const RoleMapping = ({
         client.mappings.map((role: RoleRepresentation) => ({
           client: { clientId: client.client, ...client },
           role,
-        }))
+        })),
       )
       .flat();
 
@@ -134,23 +134,23 @@ export const RoleMapping = ({
       ...mapRoles(
         [...realmRolesMapping, ...clientMapping],
         [...effectiveClientRoles, ...effectiveRoles],
-        hide
+        hide,
       ),
     ];
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:removeMappingTitle",
-    messageKey: t("clients:removeMappingConfirm", { count: selected.length }),
-    continueButtonLabel: "common:remove",
+    titleKey: "removeMappingTitle",
+    messageKey: t("removeMappingConfirm", { count: selected.length }),
+    continueButtonLabel: "remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await Promise.all(deleteMapping(type, id, selected));
-        addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
+        addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:clientScopeRemoveError", error);
+        addError("clientScopeRemoveError", error);
       }
     },
   });
@@ -173,8 +173,8 @@ export const RoleMapping = ({
         loader={loader}
         canSelectAll
         onSelect={(rows) => setSelected(rows)}
-        searchPlaceholderKey="clients:searchByName"
-        ariaLabelKey="clients:clientScopeList"
+        searchPlaceholderKey="searchByName"
+        ariaLabelKey="clientScopeList"
         isRowDisabled={(value) =>
           (value.role as CompositeRole).isInherited || false
         }
@@ -182,7 +182,7 @@ export const RoleMapping = ({
           <>
             <ToolbarItem>
               <Checkbox
-                label={t("common:hideInheritedRoles")}
+                label={t("hideInheritedRoles")}
                 id="hideInheritedRoles"
                 data-testid="hideInheritedRoles"
                 isChecked={hide}
@@ -199,7 +199,7 @@ export const RoleMapping = ({
                     data-testid="assignRole"
                     onClick={() => setShowAssign(true)}
                   >
-                    {t("common:assignRole")}
+                    {t("assignRole")}
                   </Button>
                 </ToolbarItem>
                 <ToolbarItem>
@@ -209,7 +209,7 @@ export const RoleMapping = ({
                     onClick={toggleDeleteDialog}
                     isDisabled={selected.length === 0}
                   >
-                    {t("common:unAssignRole")}
+                    {t("unAssignRole")}
                   </Button>
                 </ToolbarItem>
               </>
@@ -220,7 +220,7 @@ export const RoleMapping = ({
           isManager
             ? [
                 {
-                  title: t("common:unAssignRole"),
+                  title: t("unAssignRole"),
                   onRowClick: async (role) => {
                     setSelected([role]);
                     toggleDeleteDialog();
@@ -233,26 +233,26 @@ export const RoleMapping = ({
         columns={[
           {
             name: "role.name",
-            displayKey: t("common:name"),
+            displayKey: t("name"),
             transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
           },
           {
             name: "role.isInherited",
-            displayKey: t("common:inherent"),
+            displayKey: t("inherent"),
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "role.description",
-            displayKey: t("common:description"),
+            displayKey: t("description"),
             cellFormatters: [emptyFormatter()],
           },
         ]}
         emptyState={
           <ListEmptyState
-            message={t("noRoles")}
-            instructions={t("noRolesInstructions")}
-            primaryActionText={t("common:assignRole")}
+            message={t(`noRoles-${type}`)}
+            instructions={t(`noRolesInstructions-${type}`)}
+            primaryActionText={t("assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
           />
         }

@@ -2,7 +2,10 @@
 = Advanced configuration
 [role="_abstract"]
 
-After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.  For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.
+ifeval::[{project_community}==true]
+For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+endif::[]
 
 == Advanced tab
 
@@ -85,7 +88,7 @@ In the following cases, {project_name} will verify the client sending the access
 
 * A token refresh request is sent to the token endpoint with a holder-of-key refresh token.
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
-* A logout request is sent to Logout endpoint with a holder-of-key refresh token.
+* A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
 
 See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
 
@@ -93,6 +96,71 @@ See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mut
 ====
 Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
 ====
+
+[[_dpop-bound-tokens]]
+*OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)*
+
+DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.
+
+This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
+
+If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the workflow is:
+
+. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
+. {project_name} requests a DPoP proof.
+. {project_name} receives the DPoP proof.
+. {project_name} successfully verifies the DPoP proof.
+
+If verification fails, {project_name} rejects the token.
+
+If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
+and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
+on if you want to make sure that particular client always uses DPoP binding.
+
+In the following cases, {project_name} will verify the client sending the access token or the refresh token:
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token. This verification is done only for public clients as described in the DPoP specification. For confidential clients, the verification is not done as client authentication with proper client credentials is in place to ensure that request comes from the legitimate client. For public clients, both access tokens and refresh tokens are DPoP bound. For confidential clients, only access tokens are DPoP bound.
+* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
+* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This verification is done only for public clients as described above.
+
+See https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP)] for more details.
+
+[NOTE]
+====
+Currently, {project_name} client adapters do not support DPoP holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+====
+
+:tech_feature_name: DPoP
+:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
+:tech_feature_id: dpop
+include::../../templates/techpreview.adoc[]
+
+[[_client_advanced_settings_oidc]]
+*Advanced Settings for OIDC*
+
+The Advanced Settings for OpenID Connect allows you to configure overrides at the client level for <<_timeouts, session and token timeouts>>.
+
+image:images/client-advanced-settings-oidc.png[Advanced Settings]
+
+|===
+|Configuration|Description
+
+|Access Token Lifespan
+|The value overrides the realm option with same name.
+
+|Client Session Idle
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Idle*.
+
+|Client Session Max
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Max*.
+
+|Client Offline Session Idle
+|This setting allows you to configure a shorter offline session idle timeout for the client. The timeout is amount of time the session remains idle before {project_name} revokes its offline token. If not set, realm <<_offline-session-idle,Offline Session Idle>> is used.
+
+|Client Offline Session Max
+|This setting allows you to configure a shorter offline session max lifespan for the client. The lifespan is the maximum time before {project_name} revokes the corresponding offline token. This option needs <<_offline-session-max-limited,Offline Session Max Limited>> enabled globally in the realm, and defaults to <<_offline-session-max,Offline Session Max>>.
+
+|===
 
 [[_proof-key-for-code-exchange]]
 *Proof Key for Code Exchange Code Challenge Method*

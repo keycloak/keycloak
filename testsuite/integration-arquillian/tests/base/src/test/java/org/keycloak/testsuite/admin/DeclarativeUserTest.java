@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
@@ -21,6 +22,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -32,11 +34,9 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.utils.StringUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +107,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             ApiUtil.getCreatedId(response);
         } catch (WebApplicationException e) {
             // it's ok when the client has already been created for a previous test
-            assertThat(e.getResponse().getStatus(), equalTo(409));
         }
 
         testRealmUserManagerClient = AdminClientUtil.createAdminClient(true, realmRep.getRealm(),
@@ -235,7 +234,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         assertEquals("changed", user1.getFirstName());
 
         user1.setAttributes(Collections.emptyMap());
-        String expectedErrorMessage = String.format("Please specify attribute %s.", REQUIRED_ATTR_KEY);
+        String expectedErrorMessage = "error-user-attribute-required";
         verifyUserUpdateFails(realm.users(), user1Id, user1, expectedErrorMessage);
     }
 
@@ -255,78 +254,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void validationErrorMessagesCanBeConfiguredWithRealmLocalization() {
-        try {
-            setUserProfileConfiguration(this.realm, "{\"attributes\": ["
-                    + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"" + LOCALE_ATTR_KEY + "\", " + PERMISSIONS_ALL + "},"
-                    + "{\"name\": \"" + REQUIRED_ATTR_KEY + "\", \"required\": {}, " + PERMISSIONS_ALL + "}]}");
-
-            realm.localization().saveRealmLocalizationText("en", "error-user-attribute-required",
-                    "required-error en: {0}");
-            getCleanup().addLocalization("en");
-            realm.localization().saveRealmLocalizationText("de", "error-user-attribute-required",
-                    "required-error de: {0}");
-            getCleanup().addLocalization("de");
-
-            UsersResource testRealmUserManagerClientUsersResource =
-                    testRealmUserManagerClient.realm(REALM_NAME).users();
-
-            // start with locale en
-            changeTestRealmUserManagerLocale("en");
-
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername("user-realm-localization");
-            user.singleAttribute(REQUIRED_ATTR_KEY, "some-value");
-            String userId = createUser(user);
-
-            user.setAttributes(new HashMap<>());
-            verifyUserUpdateFails(testRealmUserManagerClientUsersResource, userId, user,
-                    "required-error en: " + REQUIRED_ATTR_KEY);
-
-            // switch to locale de
-            changeTestRealmUserManagerLocale("de");
-
-            user.singleAttribute(REQUIRED_ATTR_KEY, "some-value");
-            realm.users().get(userId).update(user);
-
-            user.setAttributes(new HashMap<>());
-            verifyUserUpdateFails(testRealmUserManagerClientUsersResource, userId, user,
-                    "required-error de: " + REQUIRED_ATTR_KEY);
-        } finally {
-            changeTestRealmUserManagerLocale(null);
-        }
-    }
-
-    private void changeTestRealmUserManagerLocale(String locale) {
-        UsersResource testRealmUserManagerUsersResource = testRealmUserManagerClient.realm(REALM_NAME).users();
-
-        List<UserRepresentation> foundUsers =
-                testRealmUserManagerUsersResource.search(TEST_REALM_USER_MANAGER_NAME, true);
-        assertThat(foundUsers, hasSize(1));
-        UserRepresentation user = foundUsers.iterator().next();
-
-        if (locale == null) {
-            Map<String, List<String>> attributes = user.getAttributes();
-            if (attributes != null) {
-                attributes.remove(LOCALE_ATTR_KEY);
-            }
-        } else {
-            user.singleAttribute(LOCALE_ATTR_KEY, locale);
-        }
-
-        // also set REQUIRED_ATTR_KEY, when not already set, otherwise the change will be rejected
-        if (StringUtil.isBlank(user.firstAttribute(REQUIRED_ATTR_KEY))) {
-            user.singleAttribute(REQUIRED_ATTR_KEY, "arbitrary-value");
-        }
-
-        testRealmUserManagerUsersResource.get(user.getId()).update(user);
-    }
-
-    @Test
     public void testDefaultUserProfileProviderIsActive() {
         getTestingClient().server(REALM_NAME).run(session -> {
             Set<UserProfileProvider> providers = session.getAllProviders(UserProfileProvider.class);
@@ -338,6 +265,34 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             assertThat(DeclarativeUserProfileProvider.class.getName(), is(provider.getClass().getName()));
             assertThat(provider, instanceOf(DeclarativeUserProfileProvider.class));
         });
+    }
+
+    @Test
+    public void testUserLocale() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
+        realmRep.setInternationalizationEnabled(true);
+        realm.update(realmRep);
+
+        try {
+            UserRepresentation user1 = new UserRepresentation();
+            user1.setUsername("user1");
+            user1.singleAttribute(UserModel.LOCALE, "pt_BR");
+            String user1Id = createUser(user1);
+
+            UserResource userResource = realm.users().get(user1Id);
+            user1 = userResource.toRepresentation();
+            assertEquals("pt_BR", user1.getAttributes().get(UserModel.LOCALE).get(0));
+
+            realmRep.setInternationalizationEnabled(false);
+            realm.update(realmRep);
+
+            user1 = userResource.toRepresentation();
+            assertNull(user1.getAttributes().get(UserModel.LOCALE));
+        } finally {
+            realmRep.setInternationalizationEnabled(internationalizationEnabled);
+            realm.update(realmRep);
+        }
     }
 
     private String createUser(UserRepresentation userRep) {

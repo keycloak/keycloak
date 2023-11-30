@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
@@ -57,7 +56,6 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -70,7 +68,7 @@ import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -145,9 +143,6 @@ public abstract class AbstractKeycloakTest {
 
     @Page
     protected AuthRealm masterRealmPage;
-
-    @Page
-    protected Account accountPage;
 
     @Page
     protected OIDCLogin loginPage;
@@ -293,7 +288,7 @@ public abstract class AbstractKeycloakTest {
     protected void deleteAllCookiesForRealm(String realmName) {
         // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
         // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -561,8 +556,9 @@ public abstract class AbstractKeycloakTest {
         return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
-    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
+    public static UserRepresentation createUserRepresentation(String id, String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
         UserRepresentation user = new UserRepresentation();
+        user.setId(id);
         user.setUsername(username);
         user.setEmail(email);
         user.setFirstName(firstName);
@@ -570,6 +566,10 @@ public abstract class AbstractKeycloakTest {
         user.setGroups(groups);
         user.setEnabled(enabled);
         return user;
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
+        return createUserRepresentation(null, username, email, firstName, lastName, groups, enabled);
     }
 
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
@@ -725,17 +725,6 @@ public abstract class AbstractKeycloakTest {
 
     public Logger getLogger() {
         return log;
-    }
-
-    protected String getAccountRedirectUrl(String realm) {
-        return AccountFormService
-              .loginRedirectUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
-              .build(realm)
-              .toString();
-    }
-
-    protected String getAccountRedirectUrl() {
-        return getAccountRedirectUrl("test");
     }
 
     protected static InputStream httpsAwareConfigurationStream(InputStream input) throws IOException {

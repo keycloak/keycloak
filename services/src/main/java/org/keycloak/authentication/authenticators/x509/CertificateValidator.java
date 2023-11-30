@@ -517,7 +517,7 @@ public class CertificateValidator {
 
         logger.debugf("Certificate policies found: %s", String.join(",", policyList));
 
-        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        if (CERTIFICATE_POLICY_MODE_ANY.equals(policyCheckMode))
         {
             boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
             if (!hasMatch) {

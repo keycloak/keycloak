@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
@@ -119,7 +119,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             log.debug("Current URL: " + driver.getCurrentUrl());
 
             log.debug("check logout_error");
-            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).assertEvent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).client(AssertEvents.DEFAULT_CLIENT_ID).assertEvent();
             assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
         } finally {
             log.debug("removing disabled-client");

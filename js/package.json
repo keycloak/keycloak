@@ -1,30 +1,31 @@
 {
   "name": "root",
+  "type": "module",
   "scripts": {
     "prepare": "cd .. && husky install js/.husky"
   },
   "devDependencies": {
-    "@types/node": "^20.2.5",
-    "@typescript-eslint/eslint-plugin": "^5.59.9",
-    "@typescript-eslint/parser": "^5.59.9",
-    "eslint": "^8.42.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-import-resolver-typescript": "^3.5.5",
-    "eslint-plugin-cypress": "^2.13.3",
-    "eslint-plugin-import": "^2.27.5",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-cypress": "^2.15.1",
+    "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-lodash": "^7.4.0",
-    "eslint-plugin-mocha": "^10.1.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-mocha": "^10.2.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.3",
-    "lint-staged": "^13.2.2",
-    "prettier": "^2.8.8",
-    "tslib": "^2.5.3",
-    "typescript": "^5.0.4",
-    "wireit": "^0.9.5"
+    "lint-staged": "^15.1.0",
+    "prettier": "^3.1.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.2",
+    "wireit": "^0.14.1"
   },
-  "packageManager": "pnpm@8.6.2",
+  "packageManager": "pnpm@8.10.0",
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
   }

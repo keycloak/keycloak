@@ -25,7 +25,7 @@ export type RequiredIdValue = {
 };
 
 export const ClientScope = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -47,11 +47,13 @@ export const ClientScope = () => {
     () => adminClient.clientScopes.find(),
     (scopes) => {
       setSelectedScopes(
-        getValues("clientScopes").map((s) => scopes.find((c) => c.id === s.id)!)
+        getValues("clientScopes").map(
+          (s) => scopes.find((c) => c.id === s.id)!,
+        ),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },
-    []
+    [],
   );
 
   return (
@@ -59,8 +61,8 @@ export const ClientScope = () => {
       label={t("clientScopes")}
       labelIcon={
         <HelpItem
-          helpText={t("clients-help:clientScopes")}
-          fieldLabelId="clients:clientScopes"
+          helpText={t("clientsClientScopesHelp")}
+          fieldLabelId="clientScopes"
         />
       }
       fieldId="clientScopes"
@@ -84,7 +86,7 @@ export const ClientScope = () => {
                   (scope) =>
                     !field.value
                       .map((c: RequiredIdValue) => c.id)
-                      .includes(scope.id!)
+                      .includes(scope.id!),
                 )}
                 isClientScopesConditionType
                 open={open}
@@ -119,9 +121,9 @@ export const ClientScope = () => {
         <TableComposable variant="compact">
           <Thead>
             <Tr>
-              <Th>{t("clientScope")}</Th>
+              <Th>{t("clientScopeTitle")}</Th>
               <Th>{t("required")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           <Tbody>
@@ -152,7 +154,7 @@ export const ClientScope = () => {
                     onClick={() => {
                       setValue("clientScopes", [
                         ...getValues("clientScopes").filter(
-                          (s) => s.id !== scope.id
+                          (s) => s.id !== scope.id,
                         ),
                       ]);
                       setSelectedScopes([

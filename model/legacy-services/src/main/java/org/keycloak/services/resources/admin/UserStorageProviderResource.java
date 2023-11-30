@@ -26,6 +26,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -42,6 +44,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,6 +75,15 @@ public class UserStorageProviderResource {
         this.adminEvent = adminEvent;
         this.clientConnection = session.getContext().getConnection();
         this.headers = session.getContext().getRequestHeaders();
+    }
+
+    public static String getErrorCode(Throwable throwable) {
+        if (throwable instanceof org.keycloak.models.ModelException) {
+           if (throwable.getCause() != null) {
+                return getErrorCode(throwable.getCause());
+            }
+        }
+        return LDAPServerCapabilitiesManager.getErrorCode(throwable);
     }
 
     /**
@@ -138,9 +150,19 @@ public class UserStorageProviderResource {
         UserStorageSyncManager syncManager = new UserStorageSyncManager();
         SynchronizationResult syncResult;
         if ("triggerFullSync".equals(action)) {
-            syncResult = syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            try {
+                syncResult = syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else if ("triggerChangedUsersSync".equals(action)) {
-            syncResult = syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            try {
+                syncResult = syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            } catch(Exception e) {
+                String errorMsg = getErrorCode(e);
+                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+            }
         } else if (action == null || action == "") {
             logger.debug("Missing action");
             throw new BadRequestException("Missing action");

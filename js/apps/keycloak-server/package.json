@@ -1,13 +1,14 @@
 {
   "name": "keycloak-server",
+  "type": "module",
   "scripts": {
-    "start": "./scripts/start-server.mjs",
-    "import-client": "wireit",
-    "clear-data": "rm -r ./server/data"
+    "start": "wireit",
+    "delete-data": "rm -r ./server/data",
+    "delete-server": "rm -r ./server"
   },
   "wireit": {
-    "import-client": {
-      "command": "./scripts/import-client.mjs",
+    "start": {
+      "command": "./scripts/start-server.js",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
@@ -15,10 +16,10 @@
   },
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@octokit/rest": "^19.0.11",
-    "@types/gunzip-maybe": "^1.4.0",
-    "@types/tar-fs": "^2.0.1",
+    "@octokit/rest": "^20.0.2",
+    "@types/gunzip-maybe": "^1.4.2",
+    "@types/tar-fs": "^2.0.4",
     "gunzip-maybe": "^1.4.2",
-    "tar-fs": "^2.1.1"
+    "tar-fs": "^3.0.4"
   }
 }

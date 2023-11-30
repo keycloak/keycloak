@@ -26,7 +26,7 @@ export const PolicyRow = ({
   policy: { id, configType, defaultValue, displayName },
   onRemove,
 }: PolicyRowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -38,14 +38,14 @@ export const PolicyRow = ({
       label={displayName}
       fieldId={id!}
       isRequired
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
       validated={
         errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
       }
       labelIcon={
         <HelpItem
-          helpText={t(`authentication-help:passwordPolicies.${id}`)}
-          fieldLabelId={`authentication:${id}`}
+          helpText={t(`passwordPoliciesHelp.${id}`)}
+          fieldLabelId={id!}
         />
       }
     >
@@ -93,8 +93,8 @@ export const PolicyRow = ({
           {!configType && (
             <Switch
               id={id!}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked
               isDisabled
               aria-label={displayName}
@@ -107,7 +107,7 @@ export const PolicyRow = ({
             variant="link"
             className="keycloak__policies_authentication__minus-icon"
             onClick={() => onRemove(id)}
-            aria-label={t("common:remove")}
+            aria-label={t("remove")}
           >
             <MinusCircleIcon />
           </Button>

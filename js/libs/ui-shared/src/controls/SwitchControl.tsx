@@ -11,7 +11,7 @@ import { FormLabel } from "./FormLabel";
 
 export type SwitchControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 > = SwitchProps &
   UseControllerProps<T, P> & {
     name: string;
@@ -24,9 +24,9 @@ export type SwitchControlProps<
 
 export const SwitchControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >(
-  props: SwitchControlProps<T, P>
+  props: SwitchControlProps<T, P>,
 ) => {
   const defaultValue = props.defaultValue ?? (false as PathValue<T, P>);
   const { control } = useFormContext();

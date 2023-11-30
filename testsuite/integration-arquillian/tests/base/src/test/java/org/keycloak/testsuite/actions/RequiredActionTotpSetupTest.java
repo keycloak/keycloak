@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,6 +37,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -48,12 +52,16 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -79,14 +87,26 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
     }
 
+    private void setOTPAuthRequirement(AuthenticationExecutionModel.Requirement requirement) {
+        adminClient.realm(TEST_REALM_NAME).flows().getExecutions("browser").
+                stream().filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
+                .forEach(execution -> {
+                    execution.setRequirement(requirement.name());
+                    adminClient.realm("test").flows().updateExecutions("browser", execution);
+                });
+    }
+
+    private void configureRequiredActionsToUser(String username, String... actions) {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserRepresentation userRepresentation = userResource.toRepresentation();
+        userRepresentation.setRequiredActions(Arrays.asList(actions));
+        userResource.update(userRepresentation);
+    }
+
     @Before
     public void setOTPAuthRequired() {
 
-        adminClient.realm("test").flows().getExecutions("browser").
-                stream().filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
-                .forEach(execution ->
-                {execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                adminClient.realm("test").flows().updateExecutions("browser", execution);});
+        setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
 
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
@@ -94,7 +114,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+                .build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
@@ -116,6 +136,10 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
+
+    @Drone
+    @SecondBrowser
+    private WebDriver driver2;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -602,4 +626,54 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    @Test
+    public void testTotpLogoutOtherSessionsChecked() {
+        testTotpLogoutOtherSessions(true);
+    }
+
+    @Test
+    public void testTotpLogoutOtherSessionsNotChecked() {
+        testTotpLogoutOtherSessions(false);
+    }
+
+    private void testTotpLogoutOtherSessions(boolean logoutOtherSessions) {
+        // allow login via password without OTP forced
+        setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
+        configureRequiredActionsToUser("test-user@localhost");
+
+        // login with the user using the second driver
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
+        oauth2.doLogin("test-user@localhost", "password");
+        EventRepresentation event1 = events.expectLogin().assertEvent();
+        assertEquals(1, testUser.getUserSessions().size());
+
+        // add action to configure totp
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.CONFIGURE_TOTP.name());
+
+        // login and configure totp checking/unchecking the logout checkbox
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        totpPage.assertCurrent();
+        if (!logoutOtherSessions) {
+            totpPage.uncheckLogoutSessions();
+        }
+        Assert.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_TOTP).user(event1.getUserId()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID)).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+
+        // assert old session is gone or is maintained
+        List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+        if (logoutOtherSessions) {
+            assertEquals(1, sessions.size());
+            assertEquals(event2.getSessionId(), sessions.iterator().next().getId());
+        } else {
+            assertEquals(2, sessions.size());
+            MatcherAssert.assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
+        }
+    }
 }

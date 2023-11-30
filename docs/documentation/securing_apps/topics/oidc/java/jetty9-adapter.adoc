@@ -2,18 +2,20 @@
 [[_jetty9_adapter]]
 ==== Jetty 9.4 adapter
 
-Keycloak has a separate adapter for Jetty 9.4 that you will have to install into your Jetty installation.
+include::adapter-deprecation-notice.adoc[]
+
+{project_name} has a separate adapter for Jetty 9.4 that you will have to install into your Jetty installation.
 You then have to provide some extra configuration in each WAR you deploy to Jetty.
 
 [[_jetty9_adapter_installation]]
 ===== Installing the adapter
 
-Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the Keycloak downloads site. They are also available as a maven artifact.
+Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the {project_name} downloads site. They are also available as a maven artifact.
 
 .Procedure
 .  Download the {project_name} Jetty 9.4 adapter ZIP archive from the link:https://www.keycloak.org/downloads[Keycloak Downloads] site.
 
-. Unzip the Jetty 9.4 distro into Jetty 9.4's link:https://www.eclipse.org/jetty/documentation/jetty-9/index.html[base directory]. In the example below, the Jetty base is named `your-base`:
+. Unzip the Jetty 9.4 distro into Jetty 9.4's link:https://eclipse.dev/jetty/documentation/jetty-9/index.html[base directory]. In the example below, the Jetty base is named `your-base`:
 +
 [source, subs="attributes"]
 ----
@@ -40,7 +42,7 @@ Use this procedure to secure a WAR directly by adding config and editing files w
 
 .Procedure
 
-. Create a `WEB-INF/jetty-web.xml` file in your WAR package. This is a Jetty specific config fil. You define a Keycloak specific authenticator within it.
+. Create a `WEB-INF/jetty-web.xml` file in your WAR package. This is a Jetty specific config fil. You define a {project_name} specific authenticator within it.
 +
 [source]
 ----

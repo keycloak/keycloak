@@ -1,30 +1,25 @@
 # Updating dependencies
 
-The dependencies will be downloaded at build time, based on the contents of `package-lock.json`. You should verify the new set of packages don't break anything before committing the new `package-lock.json`.
+The dependencies will be downloaded at build time, based on the contents of `package.json` and `pnpm-lock.yaml`. You should verify the new set of packages don't break anything before committing.
 
-## For login and old account console
+## For the login
 
 ```bash
 cd src/main/resources/theme/keycloak/common/resources
-npm install some-package-name@version
-git add package-lock.json
+pnpm update --latest --interactive
+git add package.json pnpm-lock.yaml
 cd -
 ```
 
-## For the new account console
+## For account console v2
 
 ```bash
 cd src/main/resources/theme/keycloak.v2/account/src
-npm install some-package-name@version
-git add package-lock.json
+pnpm update --latest --interactive
+git add package.json pnpm-lock.yaml
 cd -
 ```
 
 ## License Information
 
 Make sure to enter license information for new dependencies, as specified in `docs/dependency-license-information.md`. Javascript dependencies are included as `other` elements.
-
-
-## Tips
-
-You can use `npm outdated --latest` in the same directory where the `package.json` file resides to see which dependencies are outdated 

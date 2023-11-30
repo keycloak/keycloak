@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -31,7 +32,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -66,9 +66,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     private SessionPortal sessionPortalPage;
 
     @Page
-    private Sessions testRealmSessions;
-
-    @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
@@ -77,7 +74,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmSessions.setAuthRealm(DEMO);
+        oauth.realm(DEMO);
     }
 
     @Deployment(name = SessionPortal.DEPLOYMENT_NAME)
@@ -109,7 +106,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver2.findElement(By.id("password")).submit();
         assertCurrentUrlEquals(sessionPortalPage, driver2);
         String pageSource = driver2.getPageSource();
-        assertThat(pageSource, containsString("Counter=1"));
+        MatcherAssert.assertThat(pageSource, containsString("Counter=1"));
         // Counter increased now
         driver2.navigate().to(sessionPortalPage.toString());
         pageSource = driver2.getPageSource();
@@ -133,7 +130,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver2.navigate().to(sessionPortalPage.toString());
         assertCurrentUrlEquals(sessionPortalPage, driver2);
         pageSource = driver2.getPageSource();
-        assertThat(pageSource, containsString("Counter=3"));
+        MatcherAssert.assertThat(pageSource, containsString("Counter=3"));
 
         // Logout in driver2
         driver2.navigate().to(logoutUri);

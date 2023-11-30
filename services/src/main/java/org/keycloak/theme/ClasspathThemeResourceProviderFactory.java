@@ -2,10 +2,7 @@ package org.keycloak.theme;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -71,10 +68,8 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
 
     protected void loadMessages(Properties messages, URL resource) throws IOException {
         if (resource != null) {
-            Charset encoding = PropertiesUtil.detectEncoding(resource.openStream());
-            // detectEncoding closes the stream
-            try (Reader reader = new InputStreamReader(resource.openStream(), encoding)) {
-                messages.load(reader);
+            try (InputStream stream = resource.openStream()) {
+                PropertiesUtil.readCharsetAware(messages, stream);
             }
         }
     }

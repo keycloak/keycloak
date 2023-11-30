@@ -71,7 +71,7 @@ public class OIDCHybridResponseTypeCodeIDTokenTokenTest extends AbstractOIDCResp
         // Validate "s_hash"
         Assert.assertNotNull(idToken.getStateHash());
 
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
+        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
 
         // Validate if token_type is present
         Assert.assertNotNull(authzResponse.getTokenType());

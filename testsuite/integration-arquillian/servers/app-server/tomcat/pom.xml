@@ -126,7 +126,6 @@
                                         <artifactItem>
                                             <groupId>org.apache.httpcomponents</groupId>
                                             <artifactId>httpcore</artifactId>
-                                            <version>${apache.httpcomponents.httpcore.version}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.reactivestreams</groupId>
@@ -136,12 +135,10 @@
                                         <artifactItem>
                                             <groupId>com.fasterxml.jackson.core</groupId>
                                             <artifactId>jackson-databind</artifactId>
-                                            <version>${jackson.version}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.logging</groupId>
                                             <artifactId>jboss-logging</artifactId>
-                                            <version>${jboss.logging.version}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.json.bind</groupId>

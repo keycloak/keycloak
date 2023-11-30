@@ -32,7 +32,6 @@ import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
@@ -66,7 +65,9 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
 
     @Override
     public void close() {
-        onClose.run();
+        if (onClose != null) {
+            onClose.run();
+        }
     }
 
     @Override
@@ -104,7 +105,7 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
                 timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
                 timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredAdminEvents(), interval), interval, "ClearExpiredAdminEvents");
                 timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredClientInitialAccessTokens(), interval), interval, "ClearExpiredClientInitialAccessTokens");
-                timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, ClearExpiredUserSessions.TASK_NAME);
+                timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions(), interval), interval, ClearExpiredUserSessions.TASK_NAME);
                 UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
             }
         }

@@ -31,9 +31,16 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -59,6 +66,10 @@ public class OIDCAttributeMapperHelper {
     public static final String INCLUDE_IN_USERINFO = "userinfo.token.claim";
     public static final String INCLUDE_IN_USERINFO_LABEL = "includeInUserInfo.label";
     public static final String INCLUDE_IN_USERINFO_HELP_TEXT = "includeInUserInfo.tooltip";
+
+    public static final String INCLUDE_IN_INTROSPECTION = "introspection.token.claim";
+    public static final String INCLUDE_IN_INTROSPECTION_LABEL = "includeInIntrospection.label";
+    public static final String INCLUDE_IN_INTROSPECTION_HELP_TEXT = "includeInIntrospection.tooltip";
 
     private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
 
@@ -230,7 +241,7 @@ public class OIDCAttributeMapperHelper {
         if (attributeValue instanceof String) return Boolean.valueOf((String) attributeValue);
         return null;
     }
-    
+
     private static JsonNode getJsonNode(Object attributeValue) {
         if (attributeValue instanceof JsonNode){
             return (JsonNode) attributeValue;
@@ -259,7 +270,7 @@ public class OIDCAttributeMapperHelper {
     }
 
     private static <T> void mapClaim(T token, ProtocolMapperModel mappingModel, Object attributeValue,
-            Map<String, PropertySetter<T>> setters, Map<String, Object> jsonObject) {
+                                     Map<String, PropertySetter<T>> setters, Map<String, Object> jsonObject) {
         attributeValue = mapAttributeValue(mappingModel, attributeValue);
         if (attributeValue == null) {
             return;
@@ -317,16 +328,16 @@ public class OIDCAttributeMapperHelper {
     public static ProtocolMapperModel createClaimMapper(String name,
                                                         String userAttribute,
                                                         String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint,
                                                         String mapperId) {
-        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, accessToken, idToken, true, mapperId);
+        return createClaimMapper(name, userAttribute, tokenClaimName, claimType, accessToken, idToken, true, introspectionEndpoint, mapperId);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
-                                  String userAttribute,
-                                  String tokenClaimName, String claimType,
-                                  boolean accessToken, boolean idToken, boolean userinfo,
-                                  String mapperId) {
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean accessToken, boolean idToken, boolean userinfo, boolean introspectionEndpoint,
+                                                        String mapperId) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
@@ -338,6 +349,7 @@ public class OIDCAttributeMapperHelper {
         if (accessToken) config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(INCLUDE_IN_ID_TOKEN, "true");
         if (userinfo) config.put(INCLUDE_IN_USERINFO, "true");
+        if (introspectionEndpoint) config.put(INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }
@@ -367,6 +379,17 @@ public class OIDCAttributeMapperHelper {
         }
 
         return "true".equals(includeInUserInfo);
+    }
+
+    public static boolean includeInIntrospection(ProtocolMapperModel mappingModel) {
+        String includeInIntrospection = mappingModel.getConfig().get(INCLUDE_IN_INTROSPECTION);
+
+        // Backwards compatibility
+        if (includeInIntrospection == null && includeInAccessToken(mappingModel)) {
+            return true;
+        }
+
+        return "true".equals(includeInIntrospection);
     }
 
     public static void addAttributeConfig(List<ProviderConfigProperty> configProperties, Class<? extends ProtocolMapper> protocolMapperClass) {
@@ -439,6 +462,16 @@ public class OIDCAttributeMapperHelper {
             property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
             property.setDefaultValue("false");
             property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_RESPONSE_HELP_TEXT);
+            configProperties.add(property);
+        }
+
+        if (TokenIntrospectionTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
+            ProviderConfigProperty property = new ProviderConfigProperty();
+            property.setName(INCLUDE_IN_INTROSPECTION);
+            property.setLabel(INCLUDE_IN_INTROSPECTION_LABEL);
+            property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property.setDefaultValue("true");
+            property.setHelpText(INCLUDE_IN_INTROSPECTION_HELP_TEXT);
             configProperties.add(property);
         }
     }

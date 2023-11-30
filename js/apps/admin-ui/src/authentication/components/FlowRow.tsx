@@ -32,7 +32,7 @@ type FlowRowProps = {
   onRowChange: (execution: ExpandableExecution) => void;
   onAddExecution: (
     execution: ExpandableExecution,
-    type: AuthenticationProviderRepresentation
+    type: AuthenticationProviderRepresentation,
   ) => void;
   onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
   onDelete: (execution: ExpandableExecution) => void;
@@ -47,7 +47,7 @@ export const FlowRow = ({
   onAddFlow,
   onDelete,
 }: FlowRowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const hasSubList = !!execution.executionList?.length;
 
   return (
@@ -65,7 +65,7 @@ export const FlowRow = ({
           aria-labelledby={execution.id}
         >
           <DataListControl>
-            <DataListDragButton aria-label={t("common-help:dragHelp")} />
+            <DataListDragButton aria-label={t("dragHelp")} />
           </DataListControl>
           {hasSubList && (
             <DataListToggle
@@ -82,6 +82,7 @@ export const FlowRow = ({
                   <FlowTitle
                     id={execution.id}
                     key={execution.id}
+                    alias={execution.alias!}
                     title={execution.displayName!}
                   />
                 )}
@@ -89,7 +90,7 @@ export const FlowRow = ({
                   <>
                     {execution.displayName} <br />{" "}
                     <Text component={TextVariants.small}>
-                      {execution.description}
+                      {execution.alias} {execution.description}
                     </Text>
                   </>
                 )}
@@ -115,11 +116,11 @@ export const FlowRow = ({
                   </>
                 )}
                 {!builtIn && (
-                  <Tooltip content={t("common:delete")}>
+                  <Tooltip content={t("delete")}>
                     <Button
                       variant="plain"
                       data-testid={`${execution.displayName}-delete`}
-                      aria-label={t("common:delete")}
+                      aria-label={t("delete")}
                       onClick={() => onDelete(execution)}
                     >
                       <TrashIcon />

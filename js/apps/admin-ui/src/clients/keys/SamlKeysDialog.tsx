@@ -44,7 +44,7 @@ export const submitForm = async (
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
-  callback: (error?: unknown) => void
+  callback: (error?: unknown) => void,
 ) => {
   try {
     const formData = new FormData();
@@ -52,8 +52,8 @@ export const submitForm = async (
     Object.entries(rest).map(([key, value]) =>
       formData.append(
         key === "format" ? "keystoreFormat" : key,
-        value.toString()
-      )
+        value.toString(),
+      ),
     );
     formData.append("file", file);
 
@@ -70,7 +70,7 @@ export const SamlKeysDialog = ({
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
   const form = useForm<SamlKeysDialogForm>({ mode: "onChange" });
@@ -84,7 +84,7 @@ export const SamlKeysDialog = ({
   const submit = (form: SamlKeysDialogForm) => {
     submitForm(form, id, attr, (error) => {
       if (error) {
-        addError("clients:importError", error);
+        addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
       }
@@ -102,12 +102,12 @@ export const SamlKeysDialog = ({
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
-        "private.key"
+        "private.key",
       );
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -146,7 +146,7 @@ export const SamlKeysDialog = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -184,8 +184,8 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:certificate")}
-                  fieldLabelId="clients:certificate"
+                  helpText={t("certificateHelp")}
+                  fieldLabelId="certificate"
                 />
               }
             >

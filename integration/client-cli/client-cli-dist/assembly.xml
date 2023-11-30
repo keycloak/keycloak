@@ -60,7 +60,7 @@
             <includes>
                 <include>org.keycloak:keycloak-crypto-default</include>
                 <include>org.keycloak:keycloak-crypto-fips1402</include>
-                <include>org.bouncycastle:bcprov-jdk15on</include>
+                <include>org.bouncycastle:bcprov-jdk18on</include>
             </includes>
             <outputDirectory>keycloak-client-tools/bin/client/lib</outputDirectory>
         </dependencySet>

@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.context;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.services.clientpolicy.ClientPolicyContext;

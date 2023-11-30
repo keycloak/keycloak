@@ -36,7 +36,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.account.UserProfileAttributeMetadata;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -99,8 +101,8 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
     @Test
     @Override
-    public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
-
+    public void testEditUsernameAllowed() throws IOException {
+        super.testEditUsernameAllowed();
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
         UserRepresentation user = getUser();
@@ -219,7 +221,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
     @Test
     @Override
-    public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
+    public void testEditUsernameDisallowed() throws IOException {
         
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -259,6 +261,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         } finally {
             RealmRepresentation realmRep = testRealm().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
+            realmRep.setRegistrationEmailAsUsername(false);
             testRealm().update(realmRep);
         }
     }
@@ -362,10 +365,50 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
     @Override
     public void testUpdateSingleField() throws IOException {
         setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
          super.testUpdateSingleField();
+    }
+
+    @Test
+    public void testManageUserLocaleAttribute() throws IOException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
+        realmRep.setInternationalizationEnabled(false);
+        testRealm().update(realmRep);
+        UserRepresentation user = getUser();
+
+        try {
+            user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
+            user = updateAndGet(user);
+            assertNull(user.getAttributes().get(UserModel.LOCALE));
+
+            realmRep.setInternationalizationEnabled(true);
+            testRealm().update(realmRep);
+
+            user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
+            user = updateAndGet(user);
+            assertEquals("pt_BR", user.getAttributes().get(UserModel.LOCALE).get(0));
+
+            user.getAttributes().remove(UserModel.LOCALE);
+            user = updateAndGet(user);
+            assertNull(user.getAttributes().get(UserModel.LOCALE));
+
+            UserProfileMetadata metadata = user.getUserProfileMetadata();
+
+            assertTrue(metadata.getAttributes().stream()
+                    .map(UserProfileAttributeMetadata::getName)
+                    .filter(UserModel.LOCALE::equals).findAny()
+                    .isPresent()
+            );
+        } finally {
+            realmRep.setInternationalizationEnabled(internationalizationEnabled);
+            testRealm().update(realmRep);
+            user.getAttributes().remove(UserModel.LOCALE);
+            updateAndGet(user);
+        }
     }
     
     protected void setUserProfileConfiguration(String configuration) {

@@ -18,7 +18,7 @@ export const ScopeSelect = ({
   resourceId,
   preSelected,
 }: ScopeSelectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const {
     control,
@@ -29,7 +29,7 @@ export const ScopeSelect = ({
 
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [selectedScopes, setSelectedScopes] = useState<ScopeRepresentation[]>(
-    []
+    [],
   );
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -50,8 +50,8 @@ export const ScopeSelect = ({
         return adminClient.clients.listAllScopes(
           Object.assign(
             { id: clientId, deep: false },
-            search === "" ? null : { name: search }
-          )
+            search === "" ? null : { name: search },
+          ),
         );
       }
 
@@ -69,10 +69,10 @@ export const ScopeSelect = ({
       setScopes(scopes);
       if (!search)
         setSelectedScopes(
-          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!))
+          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!)),
         );
     },
-    [resourceId, search]
+    [resourceId, search],
   );
 
   return (

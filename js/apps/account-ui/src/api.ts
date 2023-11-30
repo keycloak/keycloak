@@ -7,13 +7,13 @@ import { joinPath } from "./utils/joinPath";
 export const fetchResources = async (
   params: RequestInit,
   requestParams: Record<string, string>,
-  shared: boolean | undefined = false
+  shared: boolean | undefined = false,
 ): Promise<{ data: Resource[]; links: Links }> => {
   const response = await get(
-    `/resources${shared ? "/shared-with-me?" : "?"}${new URLSearchParams(
-      requestParams
-    )}`,
-    params
+    `/resources${shared ? "/shared-with-me?" : "?"}${
+      shared ? "" : new URLSearchParams(requestParams)
+    }`,
+    params,
   );
 
   let links: Links;
@@ -32,11 +32,11 @@ export const fetchResources = async (
 
 export const fetchPermission = async (
   params: RequestInit,
-  resourceId: string
+  resourceId: string,
 ): Promise<Permission[]> => {
   const response = await request<Permission[]>(
     `/resources/${resourceId}/permissions`,
-    params
+    params,
   );
   return checkResponse(response);
 };
@@ -44,7 +44,7 @@ export const fetchPermission = async (
 export const updateRequest = (
   resourceId: string,
   username: string,
-  scopes: Scope[] | string[]
+  scopes: Scope[] | string[],
 ) =>
   request(`/resources/${resourceId}/permissions`, {
     method: "put",
@@ -53,7 +53,7 @@ export const updateRequest = (
 
 export const updatePermissions = (
   resourceId: string,
-  permissions: Permission[]
+  permissions: Permission[],
 ) =>
   request(`/resources/${resourceId}/permissions`, {
     method: "put",
@@ -71,7 +71,7 @@ async function get(path: string, params: RequestInit): Promise<Response> {
     "realms",
     environment.realm,
     "account",
-    path
+    path,
   );
 
   const response = await fetch(url, {
@@ -90,7 +90,7 @@ async function get(path: string, params: RequestInit): Promise<Response> {
 
 async function request<T>(
   path: string,
-  params: RequestInit
+  params: RequestInit,
 ): Promise<T | undefined> {
   const response = await get(path, params);
   if (response.status !== 204) return response.json();

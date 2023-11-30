@@ -1,33 +1,33 @@
 export default class UserRegistration {
-  private userRegistrationTab = "rs-userRegistration-tab";
-  private defaultGroupTab = "#pf-tab-20-groups";
-  private addRoleBtn = "assignRole";
-  private addDefaultGroupBtn = "no-default-groups-empty-action";
-  private namesColumn = 'tbody td[data-label="Name"]:visible';
-  private addBtn = "assign";
+  #userRegistrationTab = "rs-userRegistration-tab";
+  #defaultGroupTab = "#pf-tab-20-groups";
+  #addRoleBtn = "assignRole";
+  #addDefaultGroupBtn = "no-default-groups-empty-action";
+  #namesColumn = 'tbody td[data-label="Name"]:visible';
+  #addBtn = "assign";
 
   goToTab() {
-    cy.findByTestId(this.userRegistrationTab).click({ force: true });
+    cy.findByTestId(this.#userRegistrationTab).click({ force: true });
     return this;
   }
 
   goToDefaultGroupTab() {
-    cy.get(this.defaultGroupTab).click();
+    cy.get(this.#defaultGroupTab).click();
     return this;
   }
 
   addRole() {
-    cy.findByTestId(this.addRoleBtn).click({ force: true });
+    cy.findByTestId(this.#addRoleBtn).click({ force: true });
     return this;
   }
 
   addDefaultGroup() {
-    cy.findByTestId(this.addDefaultGroupBtn).click();
+    cy.findByTestId(this.#addDefaultGroupBtn).click();
     return this;
   }
 
   selectRow(name: string) {
-    cy.get(this.namesColumn)
+    cy.get(this.#namesColumn)
       .contains(name)
       .parent()
       .within(() => {
@@ -37,14 +37,14 @@ export default class UserRegistration {
   }
 
   assign() {
-    cy.findByTestId(this.addBtn).click();
+    cy.findByTestId(this.#addBtn).click();
     return this;
   }
 }
 
 export class GroupPickerDialog {
-  private addButton = "common:add-button";
-  private title = ".pf-c-modal-box__title";
+  #addButton = "add-button";
+  #title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {
     cy.findByTestId(groupName).within(() => cy.get("input").click());
@@ -57,12 +57,12 @@ export class GroupPickerDialog {
   }
 
   checkTitle(title: string) {
-    cy.get(this.title).should("have.text", title);
+    cy.get(this.#title).should("have.text", title);
     return this;
   }
 
   clickAdd() {
-    cy.findByTestId(this.addButton).click();
+    cy.findByTestId(this.#addButton).click();
     return this;
   }
 }

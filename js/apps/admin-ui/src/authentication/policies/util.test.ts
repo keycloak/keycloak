@@ -19,7 +19,7 @@ describe("serializePolicy", () => {
     };
 
     expect(serializePolicy(policies, submittedValues)).toEqual(
-      "one(value1) and two(value2)"
+      "one(value1) and two(value2)",
     );
   });
 });

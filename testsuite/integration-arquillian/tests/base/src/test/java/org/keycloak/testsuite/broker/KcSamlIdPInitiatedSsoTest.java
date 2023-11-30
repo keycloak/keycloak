@@ -38,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -63,7 +64,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -94,7 +95,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     private RealmRepresentation loadFromClasspath(String fileName, Properties properties) {
         InputStream is = KcSamlIdPInitiatedSsoTest.class.getResourceAsStream(fileName);
         try {
-            String template = StreamUtil.readString(is);
+            String template = StreamUtil.readString(is, Charset.defaultCharset());
             String realmString = StringPropertyReplacer.replaceProperties(template, properties);
             return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes("UTF-8")));
         } catch (IOException ex) {
@@ -148,7 +149,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("sign in to", true);
 
-        Assert.assertThat("Driver should be on the provider realm page right now",
+        assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
 
         log.debug("Logging in");
@@ -157,7 +158,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         waitForPage("update account information", false);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
-        Assert.assertThat("We must be on consumer realm right now",
+        assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
         log.debug("Updating info on updateAccount page");
@@ -173,7 +174,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         boolean isUserFound = users.stream().anyMatch(user -> user.getUsername().equals(CONSUMER_CHOSEN_USERNAME) && user.getEmail().equals("test@localhost"));
         Assert.assertTrue("There must be user " + CONSUMER_CHOSEN_USERNAME + " in realm " + REALM_CONS_NAME, isUserFound);
 
-        Assert.assertThat(driver.findElement(By.tagName("a")).getAttribute("id"), containsString("account"));
+        assertThat(driver.findElement(By.tagName("a")).getAttribute("id"), containsString("account"));
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {

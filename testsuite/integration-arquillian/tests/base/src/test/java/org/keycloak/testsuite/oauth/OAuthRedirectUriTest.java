@@ -53,7 +53,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
@@ -382,11 +382,11 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.clientId("test-dash");
 
         checkRedirectUri("http://with-dash.example.local", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local", true);
+        checkRedirectUri("http://wiTh-dAsh.example.local", false);
         checkRedirectUri("http://with-dash.example.local/foo", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local/foo", true);
+        checkRedirectUri("http://wiTh-dAsh.example.local/foo", false);
         checkRedirectUri("http://with-dash.example.local/foo", true);
-        checkRedirectUri("http://wiTh-dAsh.example.local/foo", true);
+        checkRedirectUri("http://wiTh-dAsh.example.local/foo", false);
         checkRedirectUri("http://wiTh-dAsh.example.local/Foo", false);
         checkRedirectUri("http://wiTh-dAsh.example.local/foO", false);
     }
@@ -395,8 +395,9 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     public void testDifferentCaseInScheme() throws IOException {
         oauth.clientId("test-dash");
 
-        checkRedirectUri("HTTP://with-dash.example.local", true);
-        checkRedirectUri("Http://wiTh-dAsh.example.local", true);
+        checkRedirectUri("http://with-dash.example.local", true);
+        checkRedirectUri("HTTP://with-dash.example.local", false);
+        checkRedirectUri("Http://wiTh-dAsh.example.local", false);
     }
 
     @Test
@@ -501,10 +502,11 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                         .replaceQueryParam(OAuth2Constants.CODE, null)
                         .replaceQueryParam(OAuth2Constants.STATE, null)
                         .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
+                        .replaceQueryParam(OAuth2Constants.ISSUER, null)
                         .build().toString();
                 if (browserUrlAfterRedirectFromKeycloak.endsWith("/")) browserUrlAfterRedirectFromKeycloak = browserUrlAfterRedirectFromKeycloak.substring(0, browserUrlAfterRedirectFromKeycloak.length() - 1);
                 if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {
-                    Assert.assertThat(browserUrlAfterRedirectFromKeycloak, Matchers.endsWith("oauth/oob"));
+                    assertThat(browserUrlAfterRedirectFromKeycloak, Matchers.endsWith("oauth/oob"));
                 } else {
                     Assert.assertEquals(redirectUri, browserUrlAfterRedirectFromKeycloak);
                 }

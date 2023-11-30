@@ -24,12 +24,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLRedirectLogin;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.Cookie;
 
 import java.text.MessageFormat;
@@ -51,8 +48,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     protected AuthRealm testRealmPage;
     @Page
     protected OIDCLogin testRealmLoginPage;
-    @Page
-    protected Account testRealmAccountPage;
 
     @Page
     protected SAMLPostLogin testRealmSAMLPostLoginPage;
@@ -82,7 +77,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     @Before
     public void beforeAuthTest() {
         testRealmLoginPage.setAuthRealm(testRealmPage);
-        testRealmAccountPage.setAuthRealm(testRealmPage);
+        oauth.realm("test");
 
         testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(testUser, PASSWORD);
@@ -111,15 +106,15 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForTestRealm() {
-        deleteAllCookiesForRealm(testRealmAccountPage.getAuthRealm());
+        deleteAllCookiesForRealm(loginPage.getAuthRealm());
     }
 
     protected void deleteAllSessionsInTestRealm() {
-        deleteAllSessionsInRealm(testRealmAccountPage.getAuthRealm());
+        deleteAllSessionsInRealm(loginPage.getAuthRealm());
     }
 
     protected void resetTestRealmSession() {
-        resetRealmSession(testRealmAccountPage.getAuthRealm());
+        resetRealmSession(loginPage.getAuthRealm());
     }
 
     public void listCookies() {

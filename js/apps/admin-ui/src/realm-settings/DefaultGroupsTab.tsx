@@ -33,7 +33,7 @@ import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const [isKebabOpen, toggleKebab] = useToggle();
   const [isGroupPickerOpen, toggleGroupPicker] = useToggle();
@@ -54,7 +54,7 @@ export const DefaultsGroupsTab = () => {
       setDefaultGroups(groups);
       setKey(key + 1);
     },
-    [load]
+    [load],
   );
 
   const loader = () => Promise.resolve(defaultGroups!);
@@ -66,16 +66,16 @@ export const DefaultsGroupsTab = () => {
           adminClient.realms.removeDefaultGroup({
             realm,
             id: group.id!,
-          })
-        )
+          }),
+        ),
       );
       addAlert(
         t("groupRemove", { count: selectedRows.length }),
-        AlertVariant.success
+        AlertVariant.success,
       );
       setSelectedRows([]);
     } catch (error) {
-      addError("realm-settings:groupRemoveError", error);
+      addError("groupRemoveError", error);
     }
     reload();
   };
@@ -87,15 +87,15 @@ export const DefaultsGroupsTab = () => {
           adminClient.realms.addDefaultGroup({
             realm,
             id: group.id!,
-          })
-        )
+          }),
+        ),
       );
       addAlert(
         t("defaultGroupAdded", { count: groups.length }),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
-      addError("realm-settings:defaultGroupAddedError", error);
+      addError("defaultGroupAddedError", error);
     }
     reload();
   };
@@ -103,7 +103,7 @@ export const DefaultsGroupsTab = () => {
   const [toggleRemoveDialog, RemoveDialog] = useConfirmDialog({
     titleKey: t("removeConfirmTitle", { count: selectedRows.length }),
     messageKey: t("removeConfirm", { count: selectedRows.length }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: removeGroup,
   });
@@ -119,8 +119,8 @@ export const DefaultsGroupsTab = () => {
         <GroupPickerDialog
           type="selectMany"
           text={{
-            title: "realm-settings:addDefaultGroups",
-            ok: "common:add",
+            title: "addDefaultGroups",
+            ok: "add",
           }}
           onConfirm={(groups) => {
             addGroups(groups || []);
@@ -132,7 +132,7 @@ export const DefaultsGroupsTab = () => {
       {enabled && (
         <Popover
           bodyContent={
-            <Trans i18nKey="realm-settings-help:defaultGroups">
+            <Trans i18nKey="defaultGroups">
               {" "}
               <Link to={toUserFederation({ realm })} />.
             </Trans>
@@ -155,8 +155,8 @@ export const DefaultsGroupsTab = () => {
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         loader={loader}
-        ariaLabelKey="realm-settings:defaultGroups"
-        searchPlaceholderKey="realm-settings:searchForGroups"
+        ariaLabelKey="defaultGroups"
+        searchPlaceholderKey="searchForGroups"
         toolbarItem={
           <>
             <ToolbarItem>
@@ -187,7 +187,7 @@ export const DefaultsGroupsTab = () => {
                       toggleKebab();
                     }}
                   >
-                    {t("common:remove")}
+                    {t("remove")}
                   </DropdownItem>,
                 ]}
               />
@@ -196,7 +196,7 @@ export const DefaultsGroupsTab = () => {
         }
         actions={[
           {
-            title: t("common:remove"),
+            title: t("remove"),
             onRowClick: (group) => {
               setSelectedRows([group]);
               toggleRemoveDialog();
@@ -207,11 +207,11 @@ export const DefaultsGroupsTab = () => {
         columns={[
           {
             name: "name",
-            displayKey: "groups:groupName",
+            displayKey: "groupName",
           },
           {
             name: "path",
-            displayKey: "groups:path",
+            displayKey: "path",
           },
         ]}
         emptyState={
@@ -219,7 +219,7 @@ export const DefaultsGroupsTab = () => {
             hasIcon
             message={t("noDefaultGroups")}
             instructions={
-              <Trans i18nKey="realm-settings:noDefaultGroupsInstructions">
+              <Trans i18nKey="noDefaultGroupsInstructions">
                 {" "}
                 <Link
                   className="pf-u-font-weight-light"

@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
@@ -20,7 +21,7 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
-const realmName = "test" + crypto.randomUUID();
+const realmName = "test" + uuid();
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();
@@ -67,7 +68,7 @@ describe("Authentication test", () => {
     listingPage.clickRowDetails("Browser").clickDetailMenu("Duplicate");
     duplicateFlowModal.fill("browser");
     masthead.checkNotificationMessage(
-      "Could not duplicate flow: New flow alias name already exists"
+      "Could not duplicate flow: New flow alias name already exists",
     );
   });
 
@@ -84,7 +85,7 @@ describe("Authentication test", () => {
     detailPage.expectPriorityChange(fromRow, () => {
       detailPage.moveRowTo(
         fromRow,
-        `[data-testid="Identity Provider Redirector"]`
+        `[data-testid="Identity Provider Redirector"]`,
       );
     });
   });
@@ -123,7 +124,7 @@ describe("Authentication test", () => {
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addExecution(
       "Copy of browser forms",
-      "reset-credentials-choose-user"
+      "reset-credentials-choose-user",
     );
 
     masthead.checkNotificationMessage("Flow successfully updated");
@@ -134,7 +135,7 @@ describe("Authentication test", () => {
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addCondition(
       "Copy of browser Browser - Conditional OTP",
-      "conditional-user-role"
+      "conditional-user-role",
     );
 
     masthead.checkNotificationMessage("Flow successfully updated");
@@ -145,7 +146,7 @@ describe("Authentication test", () => {
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addSubFlow(
       "Copy of browser Browser - Conditional OTP",
-      flowName
+      flowName,
     );
 
     masthead.checkNotificationMessage("Flow successfully updated");
@@ -172,7 +173,7 @@ describe("Authentication test", () => {
     detailPage.fillCreateForm(
       flowName,
       "Some nice description about what this flow does so that we can use it later",
-      "Client flow"
+      "Client flow",
     );
     masthead.checkNotificationMessage("Flow created");
     detailPage.addSubFlowToEmpty(flowName, "EmptySubFlow");
@@ -292,7 +293,7 @@ describe("Accessibility tests for authentication", () => {
     detailPage.fillCreateForm(
       flowName,
       "Some nice description about what this flow does",
-      "Client flow"
+      "Client flow",
     );
     cy.checkA11y();
   });

@@ -19,6 +19,7 @@ package org.keycloak.services.validation;
 
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.EmailValidationUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +34,6 @@ public class Validation {
     public static final String FIELD_OTP_CODE = "totp";
     public static final String FIELD_OTP_LABEL = "userLabel";
 
-    // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\p{IsLatin}|\\p{IsCommon}]+$");
 
     private static void addError(List<FormMessage> errors, String field, String message, Object... parameters){
@@ -62,7 +61,7 @@ public class Validation {
     }
 
     public static boolean isEmailValid(String email) {
-        return EMAIL_PATTERN.matcher(email).matches();
+        return EmailValidationUtil.isValidEmail(email);
     }
 
     public static boolean isUsernameValid(String username) {

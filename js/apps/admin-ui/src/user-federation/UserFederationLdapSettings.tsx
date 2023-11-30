@@ -34,7 +34,7 @@ import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function UserFederationLdapSettings() {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const { realm } = useRealm();
   const { id } = useParams<UserFederationLdapParams>();
@@ -48,13 +48,13 @@ export default function UserFederationLdapSettings() {
     () => adminClient.components.findOne({ id: id! }),
     (component) => {
       if (!component) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       setComponent(component);
       setupForm(component);
     },
-    [id, refreshCount]
+    [id, refreshCount],
   );
 
   const useTab = (tab: UserFederationLdapTab) =>
@@ -67,12 +67,12 @@ export default function UserFederationLdapSettings() {
     form.reset(component);
     form.setValue(
       "config.periodicChangedUsersSync",
-      component.config?.["changedSyncPeriod"]?.[0] !== "-1"
+      component.config?.["changedSyncPeriod"]?.[0] !== "-1",
     );
 
     form.setValue(
       "config.periodicFullSync",
-      component.config?.["fullSyncPeriod"]?.[0] !== "-1"
+      component.config?.["fullSyncPeriod"]?.[0] !== "-1",
     );
   };
 
@@ -80,12 +80,12 @@ export default function UserFederationLdapSettings() {
     try {
       await adminClient.components.update(
         { id: id! },
-        serializeFormData(formData)
+        serializeFormData(formData),
       );
-      addAlert(t("saveSuccess"), AlertVariant.success);
+      addAlert(t("userProviderSaveSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("user-federation:saveError", error);
+      addError("userProviderSaveError", error);
     }
   };
 
@@ -112,7 +112,7 @@ export default function UserFederationLdapSettings() {
         >
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <PageSection variant="light">
@@ -121,7 +121,7 @@ export default function UserFederationLdapSettings() {
           </Tab>
           <Tab
             id="mappers"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             data-testid="ldap-mappers-tab"
             {...mappersTab}
           >

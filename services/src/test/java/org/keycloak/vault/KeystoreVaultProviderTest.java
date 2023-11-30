@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.keycloak.vault.SecretContains.secretContains;
 

@@ -6,13 +6,11 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: js-ci-${{ github.head_ref || github.run_id }}
+  group: js-ci-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -22,15 +20,16 @@ defaults:
 jobs:
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build-keycloak:
     name: Build Keycloak
@@ -38,7 +37,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -50,7 +49,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-          mvn clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
@@ -67,16 +66,16 @@ jobs:
     env:
       WORKSPACE: "@keycloak/keycloak-admin-client"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-js:
@@ -87,13 +86,13 @@ jobs:
     env:
       WORKSPACE: keycloak-js
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-masthead:
@@ -104,16 +103,16 @@ jobs:
     env:
       WORKSPACE: keycloak-masthead
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   ui-shared:
@@ -124,16 +123,16 @@ jobs:
     env:
       WORKSPACE: ui-shared
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   account-ui:
@@ -144,16 +143,16 @@ jobs:
     env:
       WORKSPACE: account-ui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   admin-ui:
@@ -164,23 +163,83 @@ jobs:
     env:
       WORKSPACE: admin-ui
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run test
+      - run: pnpm --filter ${{ env.WORKSPACE }} run test
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run cy:check-types
+      - run: pnpm --filter ${{ env.WORKSPACE }} run cy:check-types
         working-directory: js
+
+  account-ui-e2e:
+    name: Account UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=declarative-user-profile,transient-users &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Install Playwright browsers
+        run: pnpm --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
+
+      - name: Run Playwright tests
+        run: pnpm --filter ${{ env.WORKSPACE }} run test
+        working-directory: js
+        env:
+          KEYCLOAK_SERVER: http://localhost:8080
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: account-ui-playwright-report
+          path: js/apps/${{ env.WORKSPACE }}/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: account-ui-server-log
+          path: ~/server.log
+
 
   admin-ui-e2e:
     name: Admin UI E2E
@@ -194,20 +253,31 @@ jobs:
     strategy:
       matrix:
         container: [1, 2, 3, 4, 5]
+        browser: [chrome, firefox]
+        exclude:
+          # Only test with Firefox on scheduled runs
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Google Chrome
+        if: matrix.browser == 'chrome'
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
+
+      - name: Install Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
 
       - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
       - name: Compile Admin Client
-        run: pnpm --filter=@keycloak/keycloak-admin-client run build
+        run: pnpm --filter @keycloak/keycloak-admin-client run build
         working-directory: js
 
       - name: Download Keycloak server
@@ -215,25 +285,32 @@ jobs:
         with:
           name: keycloak
 
-      - name: Start Keycloak Server
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile,transient-users &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Start LDAP server
-        run: pnpm --filter=${{ env.WORKSPACE }} run cy:ldap-server &
+        run: pnpm --filter ${{ env.WORKSPACE }} run cy:ldap-server &
         working-directory: js
 
       - name: Run Cypress
-        uses: cypress-io/github-action@v5
+        uses: cypress-io/github-action@v6
         with:
           install: false
           record: true
           parallel: true
-          browser: chrome
+          group: ${{ matrix.browser }} 
+          browser: ${{ matrix.browser }} 
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
@@ -243,42 +320,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload server logs
+        if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: server-log-${{ matrix.container }}
+          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always()
     needs:
+      - conditional
       - admin-client
       - keycloak-js
       - keycloak-masthead
       - ui-shared
       - account-ui
+      - account-ui-e2e
       - admin-ui
       - admin-ui-e2e
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
     steps:
-      - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak JavaScript CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.js-ci }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

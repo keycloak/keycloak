@@ -10,6 +10,7 @@ import { CubesIcon } from "@patternfly/react-icons";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
@@ -25,7 +26,9 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { keycloak } from "../keycloak";
-import { toUser } from "../user/routes/User";
+import { toUser, UserRoute } from "../user/routes/User";
+import { toUsers } from "../user/routes/Users";
+import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
 
 export type ColumnName =
@@ -42,6 +45,7 @@ export type SessionsTableProps = {
   logoutUser?: string;
   filter?: ReactNode;
   isSearching?: boolean;
+  isPaginated?: boolean;
 };
 
 const UsernameCell = (row: UserSessionRepresentation) => {
@@ -75,62 +79,69 @@ export default function SessionsTable({
   logoutUser,
   filter,
   isSearching,
+  isPaginated,
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const { t } = useTranslation("sessions");
+  const navigate = useNavigate();
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey((value) => value + 1);
+  const isOnUserPage = !!useMatch(UserRoute.path);
 
   const columns = useMemo(() => {
     const defaultColumns: Field<UserSessionRepresentation>[] = [
       {
         name: "username",
-        displayKey: "sessions:user",
+        displayKey: "user",
         cellRenderer: UsernameCell,
       },
       {
         name: "type",
-        displayKey: "common:type",
+        displayKey: "type",
       },
       {
         name: "start",
-        displayKey: "sessions:started",
+        displayKey: "started",
         cellRenderer: (row) => formatDate(new Date(row.start!)),
       },
       {
         name: "lastAccess",
-        displayKey: "sessions:lastAccess",
+        displayKey: "lastAccess",
         cellRenderer: (row) => formatDate(new Date(row.lastAccess!)),
       },
       {
         name: "ipAddress",
-        displayKey: "events:ipAddress",
+        displayKey: "ipAddress",
       },
       {
         name: "clients",
-        displayKey: "sessions:clients",
+        displayKey: "clients",
         cellRenderer: ClientsCell,
       },
     ];
 
     return defaultColumns.filter(
-      ({ name }) => !hiddenColumns.includes(name as ColumnName)
+      ({ name }) => !hiddenColumns.includes(name as ColumnName),
     );
   }, [realm, hiddenColumns]);
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
-    titleKey: "sessions:logoutAllSessions",
-    messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "common:confirm",
+    titleKey: "logoutAllSessions",
+    messageKey: "logoutAllDescription",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.users.logout({ id: logoutUser! });
-        refresh();
+        if (isOnUserPage && isLightweightUser(logoutUser)) {
+          navigate(toUsers({ realm: realm }));
+        } else {
+          refresh();
+        }
       } catch (error) {
-        addError("sessions:logoutAllSessionsError", error);
+        addError("logoutAllSessionsError", error);
       }
     },
   });
@@ -140,6 +151,8 @@ export default function SessionsTable({
 
     if (session.userId === whoAmI.getUserId()) {
       await keycloak.logout({ redirectUri: "" });
+    } else if (isOnUserPage && isLightweightUser(session.userId)) {
+      navigate(toUsers({ realm: realm }));
     } else {
       refresh();
     }
@@ -151,8 +164,9 @@ export default function SessionsTable({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="sessions:title"
-        searchPlaceholderKey="sessions:searchForSession"
+        ariaLabelKey="titleSessions"
+        searchPlaceholderKey="searchForSession"
+        isPaginated={isPaginated}
         isSearching={isSearching}
         searchTypeComponent={filter}
         toolbarItem={
@@ -167,7 +181,7 @@ export default function SessionsTable({
         columns={columns}
         actions={[
           {
-            title: t("common:signOut"),
+            title: t("signOut"),
             onRowClick: onClickSignOut,
           } as Action<UserSessionRepresentation>,
         ]}

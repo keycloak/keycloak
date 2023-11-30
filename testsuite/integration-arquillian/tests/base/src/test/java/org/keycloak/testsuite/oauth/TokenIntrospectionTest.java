@@ -60,6 +60,7 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.UriBuilder;
 
@@ -99,6 +100,16 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         samlApp.setSecret("secret2");
         samlApp.setServiceAccountsEnabled(Boolean.TRUE);
         samlApp.setProtocol("saml");
+
+        ClientRepresentation noScopeApp = KeycloakModelUtils.createClient(testRealm, "no-scope");
+        noScopeApp.setEnabled(true);
+        noScopeApp.setSecret("password");
+        noScopeApp.setRedirectUris(List.of(
+            "http://localhost:8180/auth/realms/master/app/auth/*",
+            "https://localhost:8543/auth/realms/master/app/auth/*"
+        ));
+        noScopeApp.setOptionalClientScopes(List.of());
+        noScopeApp.setDefaultClientScopes(List.of());
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("no-permissions");
@@ -321,7 +332,30 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
+    @Test
+    public void testIntrospectAccessTokenWithoutScope() throws Exception {
+        oauth.clientId("no-scope").openid(false).doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        RealmRepresentation testRealm = adminClient.realm("test").toRepresentation();
+        List<ClientScopeRepresentation> preExistingClientScopes = testRealm.getClientScopes();
+        testRealm.setClientScopes(List.of());
+        adminClient.realm("test").update(testRealm);
+        try {
+            EventRepresentation loginEvent = events.expectLogin().client("no-scope").assertEvent();
+            AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("no-scope", "password", accessTokenResponse.getAccessToken());
+            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
 
+            assertTrue(rep.isActive());
+            assertEquals("test-user@localhost", rep.getUserName());
+            assertEquals("no-scope", rep.getClientId());
+            assertEquals(loginEvent.getUserId(), rep.getSubject());
+            assertNull(rep.getScope());
+        } finally {
+            testRealm.setClientScopes(preExistingClientScopes);
+            adminClient.realm("test").update(testRealm);
+        }
+    }
 
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
@@ -352,6 +386,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertEquals("test-user@localhost", rep.getUserName());
             assertEquals("test-app", rep.getClientId());
             assertEquals(loginEvent.getUserId(), rep.getSubject());
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER, rep.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
             // Assert expected scope
             OIDCScopeTest.assertScopes("openid email profile", rep.getScope());

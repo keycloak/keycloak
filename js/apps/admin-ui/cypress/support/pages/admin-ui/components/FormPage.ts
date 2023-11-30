@@ -28,7 +28,7 @@ export default class FormPage extends CommonElements {
   checkSaveButtonIsDisabled(disabled: boolean) {
     this.checkElementIsDisabled(
       cy.get(this.primaryBtn).contains("Save"),
-      disabled
+      disabled,
     );
     return this;
   }

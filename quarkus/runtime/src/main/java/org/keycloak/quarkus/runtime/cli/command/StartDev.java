@@ -23,7 +23,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,9 +37,6 @@ import java.util.stream.Collectors;
 public final class StartDev extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start-dev";
-
-    @Option(names = AUTO_BUILD_OPTION_LONG, hidden = true)
-    Boolean autoConfig;
 
     @Mixin
     HelpAllMixin helpAllMixin;
@@ -61,5 +57,10 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
     @Override
     public boolean includeRuntime() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

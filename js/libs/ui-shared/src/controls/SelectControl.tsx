@@ -15,14 +15,14 @@ import {
 } from "@patternfly/react-core";
 import { FormLabel } from "./FormLabel";
 
-type Option = {
+export type SelectControlOption = {
   key: string;
   value: string;
 };
 
 export type SelectControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 > = Omit<
   SelectProps,
   "name" | "onToggle" | "selections" | "onSelect" | "onClear" | "isOpen"
@@ -30,18 +30,19 @@ export type SelectControlProps<
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
-    options: string[] | Option[];
+    options: string[] | SelectControlOption[];
     controller: Omit<ControllerProps, "name" | "render">;
   };
 
 export const SelectControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >({
   name,
   label,
   options,
   controller,
+  variant,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -65,13 +66,24 @@ export const SelectControl = <
             {...rest}
             toggleId={name}
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={value}
+            selections={
+              typeof options[0] !== "string"
+                ? (options as SelectControlOption[]).find(
+                    (o) => o.key === value[0],
+                  )?.value || value
+                : value
+            }
             onSelect={(_, v) => {
-              const option = v.toString();
-              if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+              if (variant === "typeaheadmulti") {
+                const option = v.toString();
+                if (value.includes(option)) {
+                  onChange(value.filter((item: string) => item !== option));
+                } else {
+                  onChange([...value, option]);
+                }
               } else {
-                onChange([...value, option]);
+                onChange([v]);
+                setOpen(false);
               }
             }}
             onClear={(event) => {
@@ -79,6 +91,7 @@ export const SelectControl = <
               onChange([]);
             }}
             isOpen={open}
+            variant={variant}
             validated={
               errors[name] ? ValidatedOptions.error : ValidatedOptions.default
             }

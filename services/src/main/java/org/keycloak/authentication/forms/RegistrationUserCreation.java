@@ -17,7 +17,10 @@
 
 package org.keycloak.authentication.forms;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
@@ -37,9 +40,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -54,7 +57,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public String getHelpText() {
-        return "This action must always be first! Validates the username of the user in validation phase.  In success phase, this will create the user in the database.";
+        return "This action must always be first! Validates the username and user profile of the user in validation phase.  In success phase, this will create the user in the database including his user profile.";
     }
 
     @Override
@@ -67,9 +70,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        KeycloakSession session = context.getSession();
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, formData);
+        UserProfile profile = getOrCreateUserProfile(context, formData);
         String email = profile.getAttributes().getFirstValue(UserModel.EMAIL);
 
         String username = profile.getAttributes().getFirstValue(UserModel.USERNAME);
@@ -90,12 +91,16 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+            }
+
             if (pve.hasError(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);
-            } else if (pve.hasError(Messages.MISSING_EMAIL, Messages.MISSING_USERNAME, Messages.INVALID_EMAIL)) {
-                context.error(Errors.INVALID_REGISTRATION);
             } else if (pve.hasError(Messages.USERNAME_EXISTS)) {
                 context.error(Errors.USERNAME_IN_USE);
+            } else {
+                context.error(Errors.INVALID_REGISTRATION);
             }
 
             context.validationError(formData, errors);
@@ -106,11 +111,13 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
-
+        checkNotOtherUserAuthenticating(context);
     }
 
     @Override
     public void success(FormContext context) {
+        checkNotOtherUserAuthenticating(context);
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
         String email = formData.getFirst(UserModel.EMAIL);
@@ -124,10 +131,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email);
 
-        KeycloakSession session = context.getSession();
-
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, formData);
+        UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
 
         user.setEnabled(true);
@@ -145,6 +149,14 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         String authType = context.getAuthenticationSession().getAuthNote(Details.AUTH_TYPE);
         if (authType != null) {
             context.getEvent().detail(Details.AUTH_TYPE, authType);
+        }
+    }
+
+    private void checkNotOtherUserAuthenticating(FormContext context) {
+        if (context.getUser() != null) {
+            // the user probably did some back navigation in the browser, hitting this page in a strange state
+            context.getEvent().detail(Details.EXISTING_USER, context.getUser().getUsername());
+            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, Errors.DIFFERENT_USER_AUTHENTICATING, Messages.EXPIRED_ACTION);
         }
     }
 
@@ -176,7 +188,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public String getDisplayType() {
-        return "Registration User Creation";
+        return "Registration User Profile Creation";
     }
 
     @Override
@@ -215,5 +227,31 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    private MultivaluedMap<String, String> normalizeFormParameters(MultivaluedMap<String, String> formParams) {
+        MultivaluedHashMap<String, String> copy = new MultivaluedHashMap<>(formParams);
+
+        // Remove "password" and "password-confirm" to avoid leaking them in the user-profile data
+        copy.remove(RegistrationPage.FIELD_PASSWORD);
+        copy.remove(RegistrationPage.FIELD_PASSWORD_CONFIRM);
+
+        return copy;
+    }
+
+    /**
+     * Get user profile instance for current HTTP request (KeycloakSession) and for given context. This assumes that there is
+     * single user registered within HTTP request, which is always the case in Keycloak
+     */
+    public UserProfile getOrCreateUserProfile(FormContext formContext, MultivaluedMap<String, String> formData) {
+        KeycloakSession session = formContext.getSession();
+        UserProfile profile = (UserProfile) session.getAttribute("UP_REGISTER");
+        if (profile == null) {
+            formData = normalizeFormParameters(formData);
+            UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+            profile = profileProvider.create(UserProfileContext.REGISTRATION, formData);
+            session.setAttribute("UP_REGISTER", profile);
+        }
+        return profile;
     }
 }

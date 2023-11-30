@@ -35,6 +35,7 @@ import com.webauthn4j.data.AuthenticatorTransport;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.WebAuthnConstants;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -52,6 +53,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
@@ -73,8 +76,6 @@ import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatemen
 import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.REG_ERR_LABEL;
@@ -224,6 +225,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         }
 
         RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, isUserVerificationRequired);
+
+        if ("on".equals(params.getFirst("logout-sessions"))) {
+            AuthenticatorUtil.logoutOtherSessions(context);
+        }
 
         WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager();
         try {

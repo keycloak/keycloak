@@ -44,6 +44,7 @@ import java.util.LinkedList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -123,7 +124,9 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         changePasswordPage.assertCurrent();
-        assertFalse(changePasswordPage.isLogoutSessionDisplayed());
+        assertTrue(changePasswordPage.isLogoutSessionDisplayed());
+        assertTrue(changePasswordPage.isLogoutSessionsChecked());
+        changePasswordPage.uncheckLogoutSessions();
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
         events.expectLogin().assertEvent();

@@ -55,7 +55,15 @@ public final class Configuration {
         Optional<String> value = getRawPersistedProperty(name);
 
         if (value.isEmpty()) {
-            value = getRawPersistedProperty(getMappedPropertyName(name));
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+
+            if (mapper != null) {
+                value = getRawPersistedProperty(mapper.getFrom());
+
+                if (value.isEmpty() && mapper.getTo() != null) {
+                    value = getRawPersistedProperty(mapper.getTo());
+                }
+            }
         }
 
         if (value.isEmpty()) {
@@ -105,6 +113,16 @@ public final class Configuration {
 
     public static Optional<String> getOptionalKcValue(String propertyName) {
         return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
+    }
+
+    public static Optional<Boolean> getOptionalBooleanKcValue(String propertyName) {
+        Optional<String> value = getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
+
+        if (value.isPresent()) {
+            return value.map(Boolean::parseBoolean);
+        }
+
+        return Optional.empty();
     }
 
     public static Optional<Boolean> getOptionalBooleanValue(String name) {

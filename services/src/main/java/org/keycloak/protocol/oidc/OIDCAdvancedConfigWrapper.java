@@ -22,6 +22,7 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
@@ -43,7 +44,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public static OIDCAdvancedConfigWrapper fromClientRepresentation(ClientRepresentation clientRep) {
         return new OIDCAdvancedConfigWrapper(null, clientRep);
     }
-
 
     public String getUserInfoSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
@@ -161,6 +161,26 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
         String val = String.valueOf(excludeSessionStateFromAuthResponse);
         setAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
+    }
+
+    public boolean isExcludeIssuerFromAuthResponse() {
+        String excludeIssuerFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE);
+        return Boolean.parseBoolean(excludeIssuerFromAuthResponse);
+    }
+
+    public void setExcludeIssuerFromAuthResponse(boolean excludeIssuerFromAuthResponse) {
+        String val = String.valueOf(excludeIssuerFromAuthResponse);
+        setAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, val);
+    }
+
+    public boolean isUseDPoP() {
+        String mode = getAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS);
+        return Boolean.parseBoolean(mode);
+    }
+
+    public void setUseDPoP(boolean useDPoP) {
+        String val = String.valueOf(useDPoP);
+        setAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, val);
     }
 
     // KEYCLOAK-6771 Certificate Bound Token

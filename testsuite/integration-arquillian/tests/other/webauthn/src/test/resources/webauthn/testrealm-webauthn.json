@@ -987,13 +987,6 @@
           "authenticatorFlow": false
         },
         {
-          "authenticator": "registration-profile-action",
-          "requirement": "REQUIRED",
-          "priority": 40,
-          "userSetupAllowed": false,
-          "authenticatorFlow": false
-        },
-        {
           "authenticator": "registration-password-action",
           "requirement": "REQUIRED",
           "priority": 50,

@@ -180,6 +180,9 @@ public class SessionExpirationUtilsTest {
         realmMap.put("getSsoSessionMaxLifespan", 1000);
         realmMap.put("getSsoSessionMaxLifespanRememberMe", 2000);
         Assert.assertEquals(2000 * 1000L, SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(false, true, t, t, realm, client) - t);
+        // set -1 in the client and should be not taken into account
+        clientMap.put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "-1");
+        Assert.assertEquals(2000 * 1000L, SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(false, true, t, t, realm, client) - t);
     }
 
     @Test
@@ -207,6 +210,13 @@ public class SessionExpirationUtilsTest {
         long t2 = t - 100;
         realmMap.put("getOfflineSessionMaxLifespan", 2000);
         Assert.assertEquals(2000 * 1000L, SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(true, false, t, t2, realm, client) - t2);
+        // set -1 in the client and should be not taken into account
+        clientMap.put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN, "-1");
+        Assert.assertEquals(2000 * 1000L, SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(true, false, t, t, realm, client) - t);
+        // set no expiration at realm but set expiration at client level
+        realmMap.put("isOfflineSessionMaxLifespanEnabled", false);
+        clientMap.put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN, "2000");
+        Assert.assertEquals(2000 * 1000L, SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(true, false, t, t, realm, client) - t);
     }
 
     @Test
@@ -230,6 +240,9 @@ public class SessionExpirationUtilsTest {
         // override value in client
         clientMap.put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "3000");
         Assert.assertEquals(3000 * 1000L, SessionExpirationUtils.calculateClientSessionIdleTimestamp(false, false, t, realm, client) - t);
+        // set -1 in the client and should be not taken into account
+        clientMap.put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "-1");
+        Assert.assertEquals(4000 * 1000L, SessionExpirationUtils.calculateClientSessionIdleTimestamp(false, false, t, realm, client) - t);
     }
 
     @Test
@@ -253,5 +266,8 @@ public class SessionExpirationUtilsTest {
         // override value in client
         clientMap.put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "3000");
         Assert.assertEquals(3000 * 1000L, SessionExpirationUtils.calculateClientSessionIdleTimestamp(true, false, t, realm, client) - t);
+        // set -1 in the client and should be not taken into account
+        clientMap.put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "-1");
+        Assert.assertEquals(4000 * 1000L, SessionExpirationUtils.calculateClientSessionIdleTimestamp(true, false, t, realm, client) - t);
     }
 }

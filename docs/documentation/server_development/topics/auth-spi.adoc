@@ -18,7 +18,7 @@ After the action is performed successfully, the user doesn't have to perform the
 You can write and plug in your own required actions.
 
 WARNING: If your authenticator or required action implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
-then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 === Terms
 
@@ -1032,51 +1032,43 @@ Let's also look at the user profile plugin that is used to validate email addres
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
+        context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
-        String eventError = Errors.INVALID_REGISTRATION;
+        UserProfile profile = getOrCreateUserProfile(context, formData);
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_FIRST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME));
-        }
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_LAST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_LAST_NAME, Messages.MISSING_LAST_NAME));
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+            }
 
-        String email = formData.getFirst(Validation.FIELD_EMAIL);
-        if (Validation.isBlank(email)) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
-        } else if (!Validation.isEmailValid(email)) {
-            formData.remove(Validation.FIELD_EMAIL);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS)) {
+                context.error(Errors.EMAIL_IN_USE);
+            } else if (pve.hasError(Messages.USERNAME_EXISTS)) {
+                context.error(Errors.USERNAME_IN_USE);
+            } else {
+                context.error(Errors.INVALID_REGISTRATION);
+            }
 
-        if (context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-            formData.remove(Validation.FIELD_EMAIL);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
-        }
-
-        if (errors.size() > 0) {
             context.validationError(formData, errors);
             return;
-
-        } else {
-            context.success();
         }
+        context.success();
     }
 ----
 
-As you can see, this validate() method of user profile processing makes sure that the email, first, and last name are filled in the form.
-It also makes sure that email is in the right format.
-If any of these validations fail, an error message is queued up for rendering.
-Any fields in error are removed from the form data.
-Error messages are represented by the FormMessage class.
-The first parameter of the constructor of this class takes the HTML element id.
-The input in error will be highlighted when the form is re-rendered.
-The second parameter is a message reference id.
-This id must correspond to a property in one of the localized message bundle files.
-in the theme.
+As you can see, this validate() method of user profile processing makes sure that the email and all other attributes are filled in the form.
+It delegates to User Profile SPI, which makes sure that email is in the right format and does all other validations.
+If any of these validations fail, an error message is queued up for rendering. It would contain the message for every field where the validation failed.
+
+NOTE: As you can see, the user profile makes sure that registration form contains all the needed user profile fields. User profile also makes sure that correct validations
+are used, attributes are correctly grouped on the page.  There is a correct type used for each field (such as if a user needs to choose from predefined values), fields
+are "conditionally" rendered just for some scopes (Progressive profiling) and others. So usually you will not need to implement new `FormAction` or registration fields, but
+you can just properly configure user-profile to reflect this. For more details, see link:{adminguide_link}#user-profile[User Profile documentation].
+In general, new FormAction might be useful for instance if you want to add new credentials to the registration form (such as ReCaptcha support as mentioned here) rather than new user profile fields.
 
 After all validations have been processed then, the form flow then invokes the FormAction.success() method.
 For recaptcha this is a no-op, so we won't go over it.
@@ -1087,17 +1079,44 @@ For user profile processing, this method fills in values in the registered user.
 
     @Override
     public void success(FormContext context) {
-        UserModel user = context.getUser();
+        checkNotOtherUserAuthenticating(context);
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        user.setFirstName(formData.getFirst(RegistrationPage.FIELD_FIRST_NAME));
-        user.setLastName(formData.getFirst(RegistrationPage.FIELD_LAST_NAME));
-        user.setEmail(formData.getFirst(RegistrationPage.FIELD_EMAIL));
+
+        String email = formData.getFirst(UserModel.EMAIL);
+        String username = formData.getFirst(UserModel.USERNAME);
+
+        if (context.getRealm().isRegistrationEmailAsUsername()) {
+            username = email;
+        }
+
+        context.getEvent().detail(Details.USERNAME, username)
+                .detail(Details.REGISTER_METHOD, "form")
+                .detail(Details.EMAIL, email);
+
+        UserProfile profile = getOrCreateUserProfile(context, formData);
+        UserModel user = profile.create();
+
+        user.setEnabled(true);
+
+        // This means that following actions can retrieve user from the context by context.getUser() method
+        context.setUser(user);
     }
 ----
 
-Pretty simple implementation.
-The UserModel of the newly registered user is obtained from the FormContext.
-The appropriate methods are called to initialize UserModel data.
+The new user is created and the UserModel of the newly registered user is added to the FormContext.
+The appropriate methods are called to initialize UserModel data. In your own FormAction, you can possibly obtain user by using something like:
+[source,java]
+----
+
+    @Override
+    public void success(FormContext context) {
+        UserModel user = context.getUser();
+        if (user != null) {
+            // Do something useful with the user here ...
+        }
+    }
+----
 
 Finally, you are also required to define a FormActionFactory class.
 This class is implemented similarly to AuthenticatorFactory, so we won't go over it.
@@ -1112,7 +1131,7 @@ For example:
 [source]
 ----
 
-org.keycloak.authentication.forms.RegistrationProfile
+org.keycloak.authentication.forms.RegistrationUserCreation
 org.keycloak.authentication.forms.RegistrationRecaptcha
 ----
 

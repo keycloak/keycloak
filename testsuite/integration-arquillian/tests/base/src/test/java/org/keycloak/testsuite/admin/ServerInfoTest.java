@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.common.Version;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
@@ -31,7 +32,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -55,8 +55,8 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getProviders().get("authenticator"));
 
         assertNotNull(info.getThemes());
-        // Not checking account themes for now as old account console is going to be removed soon, which would remove "keycloak" theme. So that is just to avoid another "test to update" when it is removed :)
         assertNotNull(info.getThemes().get("account"));
+        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v2", "custom-account-provider");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
         Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");
@@ -68,6 +68,11 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo());
         assertNotNull(info.getCryptoInfo());
         Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
+        Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+        Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
+                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512);
 
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()

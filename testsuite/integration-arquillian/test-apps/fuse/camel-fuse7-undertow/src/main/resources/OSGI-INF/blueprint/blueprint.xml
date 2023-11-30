@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:camel="http://camel.apache.org/schema/blueprint"
+           xsi:schemaLocation="
+       http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+       http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint-2.17.1.xsd">
+
+    <bean id="keycloakConfigResolver" class="org.keycloak.adapters.osgi.BundleBasedKeycloakConfigResolver" >
+        <property name="bundleContext" ref="blueprintBundleContext" />
+    </bean>
+
+    <bean id="helloProcessor" class="org.keycloak.example.CamelHelloProcessor" />
+
+    <camelContext id="blueprintContext"
+                  trace="false"
+                  xmlns="http://camel.apache.org/schema/blueprint">
+
+        <!--the link with Keycloak security handlers happens by using undertow-keycloak component -->
+        <restConfiguration apiComponent="undertow-keycloak" contextPath="/restdsl" port="8484">
+            <endpointProperty key="configResolver" value="#keycloakConfigResolver" />
+            <endpointProperty key="allowedRoles" value="admin,superadmin" />
+        </restConfiguration>
+
+        <rest path="/hello" >
+            <description>Hello rest service</description>
+            <get uri="/{id}" outType="java.lang.String">
+                <description>Just a hello</description>
+                <to uri="direct:justDirect" />
+            </get>
+
+        </rest>
+
+        <route id="justDirect">
+            <from uri="direct:justDirect"/>
+            <process ref="helloProcessor" />
+            <log message="RestDSL correctly invoked ${body}"/>
+            <setBody>
+                <constant>(__This second sentence is returned from a Camel RestDSL endpoint__)</constant>
+            </setBody>
+        </route>
+
+
+        <route id="httpBridge">
+            <from uri="undertow-keycloak:http://0.0.0.0:8383/admin-camel-endpoint?matchOnUriPrefix=true&amp;configResolver=#keycloakConfigResolver&amp;allowedRoles=admin" />
+            <process ref="helloProcessor" />
+            <log message="The message from camel endpoint contains ${body}"/>
+        </route>
+
+    </camelContext>
+
+</blueprint>

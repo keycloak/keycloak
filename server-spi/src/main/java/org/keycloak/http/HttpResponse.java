@@ -23,6 +23,10 @@ package org.keycloak.http;
  * <p>Instances of this class can be obtained from {@link org.keycloak.models.KeycloakContext#getHttpResponse}.
  */
 public interface HttpResponse {
+    /**
+     * Gets a status code.
+     */
+    int getStatus();
 
     /**
      * Sets a status code.

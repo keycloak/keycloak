@@ -102,6 +102,9 @@ public class OIDCClientRepresentation {
 
     private String tls_client_auth_subject_dn;
 
+    // OAuth 2.0 DPoP
+    private Boolean dpop_bound_access_tokens;
+
     // OIDC Session Management
     private List<String> post_logout_redirect_uris;
 
@@ -474,6 +477,14 @@ public class OIDCClientRepresentation {
 
     public void setTlsClientCertificateBoundAccessTokens(Boolean tls_client_certificate_bound_access_tokens) {
         this.tls_client_certificate_bound_access_tokens = tls_client_certificate_bound_access_tokens;
+    }
+
+    public Boolean getDpopBoundAccessTokens() {
+        return dpop_bound_access_tokens;
+    }
+
+    public void setDpopBoundAccessTokens(Boolean dpop_bound_access_tokens) {
+        this.dpop_bound_access_tokens = dpop_bound_access_tokens;
     }
 
     public String getBackchannelLogoutUri() {

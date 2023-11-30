@@ -21,7 +21,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.util.JsonSerialization;
@@ -42,6 +41,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -165,11 +165,7 @@ public class AccountCredentialResource {
 
         boolean includeUserCredentials = userCredentials == null || userCredentials;
 
-        List<CredentialProvider> credentialProviders = session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
-                .filter(f -> Types.supports(CredentialProvider.class, f, CredentialProviderFactory.class))
-                .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
-                .collect(Collectors.toList());
-        Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
+        Set<String> enabledCredentialTypes = getEnabledCredentialTypes(getCredentialProviders());
 
         Stream<CredentialModel> modelsStream = includeUserCredentials ? user.credentialManager().getStoredCredentialsStream() : Stream.empty();
         List<CredentialModel> models = modelsStream.collect(Collectors.toList());
@@ -219,7 +215,7 @@ public class AccountCredentialResource {
             return new CredentialContainer(metadata, userCredentialMetadataModels);
         };
 
-        return credentialProviders.stream()
+        return getCredentialProviders()
                 .filter(p -> type == null || Objects.equals(p.getType(), type))
                 .filter(p -> enabledCredentialTypes.contains(p.getType()))
                 .map(toCredentialContainer)
@@ -227,9 +223,15 @@ public class AccountCredentialResource {
                 .sorted(Comparator.comparing(CredentialContainer::getMetadata));
     }
 
+    private Stream<CredentialProvider> getCredentialProviders() {
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
+                .filter(f -> Types.supports(CredentialProvider.class, f, CredentialProviderFactory.class))
+                .map(f -> session.getProvider(CredentialProvider.class, f.getId()));
+    }
+
     // Going through all authentication flows and their authentication executions to see if there is any authenticator of the corresponding
     // credential type.
-    private Set<String> getEnabledCredentialTypes(List<CredentialProvider> credentialProviders) {
+    private Set<String> getEnabledCredentialTypes(Stream<CredentialProvider> credentialProviders) {
         Stream<String> enabledCredentialTypes = realm.getAuthenticationFlowsStream()
                 .filter(((Predicate<AuthenticationFlowModel>) this::isFlowEffectivelyDisabled).negate())
                 .flatMap(flow ->
@@ -242,7 +244,7 @@ public class AccountCredentialResource {
                                 .filter(Objects::nonNull)
                 );
 
-        Set<String> credentialTypes = credentialProviders.stream()
+        Set<String> credentialTypes = credentialProviders
                 .map(CredentialProvider::getType)
                 .collect(Collectors.toSet());
 
@@ -277,6 +279,17 @@ public class AccountCredentialResource {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
+            // Backwards compatibility with account console 1 - When stored credential is not found, it may be federated credential.
+            // In this case, it's ID needs to be something like "otp-id", which is returned by account REST GET endpoint as a placeholder
+            // for federated credentials (See CredentialHelper.createUserStorageCredentialRepresentation )
+            Optional<String> federatedCredentialType = getEnabledCredentialTypes(getCredentialProviders()).stream()
+                    .filter(credentialType -> (credentialType + "-id").equals(credentialId))
+                    .findFirst();
+            if (federatedCredentialType.isPresent()) {
+                user.credentialManager().disableCredentialType(federatedCredentialType.get());
+                return;
+            }
+
             throw new NotFoundException("Credential not found");
         }
         user.credentialManager().removeStoredCredentialById(credentialId);

@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -57,7 +55,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -76,7 +73,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -122,9 +118,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
-
-    @Page
-    protected AccountManagement accountManagementPage;
 
     @Page
     private ErrorPage errorPage;
@@ -274,14 +267,15 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-2741
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void logoutWithRememberMe() throws IOException {
         try (RealmAttributeUpdater update = new RealmAttributeUpdater(testRealm()).setRememberMe(true).update()) {
+            String testUsername = "test-user@localhost";
+            String testUserPassword = "password";
             loginPage.open();
             assertFalse(loginPage.isRememberMeChecked());
             loginPage.setRememberMe(true);
             assertTrue(loginPage.isRememberMeChecked());
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             String sessionId = events.expectLogin().assertEvent().getSessionId();
 
@@ -291,17 +285,21 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
-            assertEquals("test-user@localhost", loginPage.getUsername());
+            assertEquals(testUsername, loginPage.getUsername());
 
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             //log out
-            appPage.openAccount();
-            accountManagementPage.signOut();
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+
+            loginPage.open();
             // Assert rememberMe not checked nor username/email prefilled
             assertTrue(loginPage.isCurrent());
             assertFalse(loginPage.isRememberMeChecked());
-            assertNotEquals("test-user@localhost", loginPage.getUsername());
+            assertNotEquals(testUsername, loginPage.getUsername());
         }
     }
 
@@ -454,13 +452,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Completely invalid redirect uri
         driver.navigate().to(oauth.getLogoutUrl().postLogoutRedirectUri("https://invalid").idTokenHint(idTokenString).build());
         errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, "https://invalid").assertEvent();
+        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                .client(AssertEvents.DEFAULT_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, "https://invalid")
+                .assertEvent();
 
         // Redirect uri of different client in the realm should fail as well
         String rootUrlClientRedirectUri = UriUtils.getOrigin(APP_REDIRECT_URI) + "/foo/bar";
         driver.navigate().to(oauth.getLogoutUrl().postLogoutRedirectUri(rootUrlClientRedirectUri).idTokenHint(idTokenString).build());
         errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, rootUrlClientRedirectUri).assertEvent();
+        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                .client(AssertEvents.DEFAULT_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, rootUrlClientRedirectUri)
+                .assertEvent();
 
         // Session still authenticated
         MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
@@ -512,7 +516,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // expected
         }
 
-        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
@@ -602,7 +606,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Logout confirmation page not shown as id_token_hint was included.
         // Redirected back to the application with expected "state"
-        events.expectLogout(tokenResponse.getSessionState()).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("third-party").assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
@@ -764,7 +768,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // expected
         }
 
-        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
@@ -839,7 +843,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Deutsch", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
             WaitUtils.waitForPageToLoad();
-            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
 
             // Remove ui_locales from logout request. Default locale should be set
             tokenResponse = loginUser();
@@ -848,7 +852,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
             WaitUtils.waitForPageToLoad();
-            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         }
     }
 
@@ -903,6 +907,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Change locale on the info page (AuthenticationSession does not exists on server at this point)
+            infoPage.openLanguage("English");
+            Assert.assertEquals("You are logged out", infoPage.getInfo()); // Logout success message
+
+            // Change locale again
+            infoPage.openLanguage("Čeština");
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Refresh page
+            driver.navigate().refresh();
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
             infoPage.clickBackToApplicationLinkCs();
             WaitUtils.waitForPageToLoad();
             MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));

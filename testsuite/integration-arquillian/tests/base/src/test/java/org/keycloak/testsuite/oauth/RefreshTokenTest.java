@@ -60,6 +60,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -107,6 +108,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -238,9 +240,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", tokenResponse.getTokenType());
 
-        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - getCurrentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
 
         assertEquals(sessionId, refreshToken.getSessionState());
 
@@ -253,11 +255,11 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshedToken.getSessionState());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + ALLOWED_CLOCK_SKEW)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + ALLOWED_CLOCK_SKEW)));
 
-        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
-        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
+        assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
+        assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
 
         // "test-app" should not be an audience in the refresh token
         assertEquals("test-app", refreshedRefreshToken.getIssuedFor());
@@ -282,6 +284,41 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
         assertEquals("123456", refreshedToken.getNonce());
+    }
+
+    @Test
+    public void refreshTokenWithDifferentIssuer() throws Exception {
+        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final int httpPort = 8666;
+        final int httpsPort = 8667;
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
+        proxy.start();
+
+        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        Assert.assertEquals(400, response.getStatusCode());
+        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+
+        proxy.stop();
+
+        oauth.baseUrl(AUTH_SERVER_ROOT);
     }
 
     @Test
@@ -968,7 +1005,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
             // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
-            Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
+            assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
 
             RealmManager.realm(realmResource).ssoSessionIdleTimeout(1);
 

@@ -42,4 +42,9 @@ public final class Import extends AbstractExportImportCommand implements Runnabl
                 optionCategory != OptionCategory.EXPORT).collect(Collectors.toList());
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
 }

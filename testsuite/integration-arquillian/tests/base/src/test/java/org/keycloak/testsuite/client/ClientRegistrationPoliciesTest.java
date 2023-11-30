@@ -195,18 +195,34 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
+    public void testAnonCreateWithInvalidRedirectScheme() throws Exception {
+        setTrustedHost("localhost");
+        OIDCClientRepresentation client = createRepOidc();
+
+        client.setRedirectUris(Collections.singletonList("invalid://bad.host"));
+        assertOidcFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
+
+        client.setRedirectUris(Collections.singletonList("invalid://localhost"));
+        OIDCClientRepresentation oidcClientRep = reg.oidc().create(client);
+
+        assertRegAccessToken(oidcClientRep.getRegistrationAccessToken(), RegistrationAuth.ANONYMOUS);
+    }
+
+
+    @Test
     public void testAnonUpdateWithTrustedHost() throws Exception {
         setTrustedHost("localhost");
         OIDCClientRepresentation client = create();
 
         // Fail update client
         client.setRedirectUris(Collections.singletonList("http://bad:8080/foo"));
-        assertOidcFail(ClientRegOp.UPDATE, client, 403, "URL doesn't match");
+        assertOidcFail(ClientRegOp.UPDATE, client, 403, "URI doesn't match");
 
         // Should be fine now
         client.setRedirectUris(Collections.singletonList("http://localhost:8080/foo"));
         reg.oidc().update(client);
     }
+
 
 
     @Test
@@ -229,7 +245,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Check new client can't be created anymore
         oidcClientRep = createRepOidc("http://www.host.com", "http://www.example.com");
-        assertOidcFail(ClientRegOp.CREATE, oidcClientRep, 403, "URL doesn't match");
+        assertOidcFail(ClientRegOp.CREATE, oidcClientRep, 403, "URI doesn't match");
     }
 
 

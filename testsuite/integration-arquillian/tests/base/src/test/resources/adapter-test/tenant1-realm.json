@@ -66,7 +66,10 @@
             "redirectUris": [
                 "/multi-tenant/tenant1/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "attributes" : {
+                "exclude.issuer.from.auth.response": "true"
+            }
         }
     ]
 }

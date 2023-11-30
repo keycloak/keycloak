@@ -308,7 +308,8 @@ public interface UsersResource {
                   @QueryParam("email") String email,
                   @QueryParam("emailVerified") Boolean emailVerified,
                   @QueryParam("username") String username,
-                  @QueryParam("enabled") Boolean enabled);
+                  @QueryParam("enabled") Boolean enabled,
+                  @QueryParam("q") String searchQuery);
 
     /**
      * Returns the number of users with the given status for emailVerified.

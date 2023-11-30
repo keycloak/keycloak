@@ -20,7 +20,7 @@ import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -38,7 +38,7 @@ export const Role = () => {
     async () => {
       if (values && values.length > 0) {
         const roles = await Promise.all(
-          values.map((r) => adminClient.roles.findOneById({ id: r.id }))
+          values.map((r) => adminClient.roles.findOneById({ id: r.id })),
         );
         return Promise.all(
           roles.map(async (role) => ({
@@ -48,23 +48,20 @@ export const Role = () => {
                   id: role?.containerId!,
                 })
               : undefined,
-          }))
+          })),
         );
       }
       return Promise.resolve([]);
     },
     setSelectedRoles,
-    []
+    [],
   );
 
   return (
     <FormGroup
       label={t("roles")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:policyRoles")}
-          fieldLabelId="clients:roles"
-        />
+        <HelpItem helpText={t("policyRolesHelp")} fieldLabelId="roles" />
       }
       fieldId="roles"
       helperTextInvalid={t("requiredRoles")}
@@ -117,7 +114,7 @@ export const Role = () => {
             <Tr>
               <Th>{t("roles")}</Th>
               <Th>{t("required")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           <Tbody>
@@ -153,7 +150,7 @@ export const Role = () => {
                       ]);
                       setSelectedRoles([
                         ...selectedRoles.filter(
-                          (s) => s.role.id !== row.role.id
+                          (s) => s.role.id !== row.role.id,
                         ),
                       ]);
                     }}

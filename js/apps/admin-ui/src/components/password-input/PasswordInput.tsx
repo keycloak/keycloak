@@ -17,7 +17,7 @@ const PasswordInputBase = ({
   innerRef,
   ...rest
 }: PasswordInputProps) => {
-  const { t } = useTranslation("common-help");
+  const { t } = useTranslation();
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>
@@ -42,6 +42,6 @@ const PasswordInputBase = ({
 export const PasswordInput = forwardRef(
   (props: PasswordInputProps, ref: Ref<HTMLInputElement>) => (
     <PasswordInputBase {...props} innerRef={ref as MutableRefObject<any>} />
-  )
+  ),
 );
 PasswordInput.displayName = "PasswordInput";

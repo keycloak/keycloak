@@ -20,11 +20,12 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 import org.keycloak.models.UserModel;
+import org.keycloak.testsuite.pages.LogoutSessionsPage;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class UpdateEmailPage extends RequiredActions {
+public class UpdateEmailPage extends LogoutSessionsPage {
 
     @FindBy(id = "email")
     private WebElement emailInput;
@@ -38,22 +39,20 @@ public class UpdateEmailPage extends RequiredActions {
     @FindBy(css = "input[type='submit']")
     private WebElement submitActionButton;
 
-    @Override
-    public String getActionId() {
-        return UserModel.RequiredAction.UPDATE_EMAIL.name();
-    }
+    @FindBy(css = "input[type='submit']")
+    private WebElement submitButton;
 
     @Override
     public boolean isCurrent() {
         return driver.getCurrentUrl().contains("login-actions/required-action")
-                && driver.getCurrentUrl().contains("execution=" + getActionId());
+                && driver.getCurrentUrl().contains("execution=" + UserModel.RequiredAction.UPDATE_EMAIL.name());
     }
 
     public void changeEmail(String email){
         emailInput.clear();
         emailInput.sendKeys(email);
 
-        submit();
+        clickLink(submitButton);
     }
 
     public String getEmail() {
@@ -84,4 +83,8 @@ public class UpdateEmailPage extends RequiredActions {
         clickLink(submitActionButton);
     }
 
+    @Override
+    public void open() throws Exception {
+        throw new UnsupportedOperationException();
+    }
 }

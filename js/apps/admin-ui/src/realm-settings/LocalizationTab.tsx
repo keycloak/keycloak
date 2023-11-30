@@ -34,14 +34,12 @@ import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { FormPanel, HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -49,12 +47,18 @@ import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
   refresh: () => void;
   realm: RealmRepresentation;
+};
+
+type LocaleSpecificEntry = {
+  key: string;
+  value: string;
 };
 
 export enum RowEditAction {
@@ -79,7 +83,7 @@ const localeToDisplayName = (locale: string) => {
 };
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
 
@@ -90,13 +94,15 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
 
   const { setValue, getValues, control, handleSubmit, formState } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
-  const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
+  const [messageBundles, setMessageBundles] = useState<LocaleSpecificEntry[]>(
+    [],
+  );
   const [tableRows, setTableRows] = useState<IRow[]>([]);
 
   const themeTypes = useServerInfo().themes!;
   const allLocales = useMemo(() => {
     const locales = Object.values(themeTypes).flatMap((theme) =>
-      theme.flatMap(({ locales }) => (locales ? locales : []))
+      theme.flatMap(({ locales }) => (locales ? locales : [])),
     );
     return Array.from(new Set(locales));
   }, [themeTypes]);
@@ -104,6 +110,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
 
   const defaultSupportedLocales = realm.supportedLocales?.length
     ? realm.supportedLocales
@@ -158,7 +165,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       if (filter) {
         const filtered = uniqWith(
           searchInBundles(0).concat(searchInBundles(1)),
-          isEqual
+          isEqual,
         );
 
         result = Object.fromEntries(filtered);
@@ -167,21 +174,28 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       return { result };
     },
     ({ result }) => {
-      const bundles = Object.entries(result).slice(first, first + max + 1);
+      const bundles = localeSort(
+        Object.entries(result).map<LocaleSpecificEntry>(([key, value]) => ({
+          key,
+          value,
+        })),
+        mapByKey("key"),
+      ).slice(first, first + max + 1);
+
       setMessageBundles(bundles);
 
       const updatedRows = bundles.map<IRow>((messageBundle) => ({
         rowEditBtnAriaLabel: () =>
           t("rowEditBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         rowSaveBtnAriaLabel: () =>
           t("rowSaveBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         rowCancelBtnAriaLabel: () =>
           t("rowCancelBtnAriaLabel", {
-            messageBundle: messageBundle[1],
+            messageBundle: messageBundle.value,
           }),
         cells: [
           {
@@ -193,11 +207,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 props={props}
                 isDisabled
                 handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[0]}
+                inputAriaLabel={messageBundle.key}
               />
             ),
             props: {
-              value: messageBundle[0],
+              value: messageBundle.key,
             },
           },
           {
@@ -208,11 +222,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 cellIndex={cellIndex!}
                 props={props}
                 handleTextInputChange={handleTextInputChange}
-                inputAriaLabel={messageBundle[1]}
+                inputAriaLabel={messageBundle.value}
               />
             ),
             props: {
-              value: messageBundle[1],
+              value: messageBundle.value,
             },
           },
         ],
@@ -221,14 +235,14 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
 
       return bundles;
     },
-    [tableKey, filter, first, max]
+    [tableKey, filter, first, max],
   );
 
   const handleTextInputChange = (
     newValue: string,
     evt: any,
     rowIndex: number,
-    cellIndex: number
+    cellIndex: number,
   ) => {
     setTableRows((prev) => {
       const newRows = cloneDeep(prev);
@@ -243,7 +257,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const updateEditableRows = async (
     type: RowEditType,
     rowIndex?: number,
-    validationErrors?: RowErrors
+    validationErrors?: RowErrors,
   ) => {
     if (rowIndex === undefined) {
       return;
@@ -277,7 +291,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
             key,
           },
-          value
+          value,
         );
         addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
       } catch (error) {
@@ -316,7 +330,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
           key: pair.key,
         },
-        pair.value
+        pair.value,
       );
 
       adminClient.setConfig({
@@ -339,7 +353,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       refreshTable();
       addAlert(t("deleteMessageBundleSuccess"));
     } catch (error) {
-      addError("realm-settings:deleteMessageBundleError", error);
+      addError("deleteMessageBundleError", error);
     }
   };
 
@@ -367,8 +381,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             fieldId="kc-internationalization"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:internationalization")}
-                fieldLabelId="realm-settings:internationalization"
+                helpText={t("internationalizationHelp")}
+                fieldLabelId="internationalization"
               />
             }
           >
@@ -379,8 +393,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               render={({ field }) => (
                 <Switch
                   id="kc-l-internationalization"
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   data-testid={
                     field.value
@@ -414,8 +428,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                         if (field.value.includes(option)) {
                           field.onChange(
                             field.value.filter(
-                              (item: string) => item !== option
-                            )
+                              (item: string) => item !== option,
+                            ),
                           );
                         } else {
                           field.onChange([...field.value, option]);
@@ -463,10 +477,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                         field.value
                           ? localeToDisplayName(field.value)
                           : realm.defaultLocale !== ""
-                          ? localeToDisplayName(
-                              realm.defaultLocale || DEFAULT_LOCALE
-                            )
-                          : t("placeholderText")
+                            ? localeToDisplayName(
+                                realm.defaultLocale || DEFAULT_LOCALE,
+                              )
+                            : t("placeholderText")
                       }
                       variant={SelectVariant.single}
                       aria-label={t("defaultLocale")}
@@ -495,10 +509,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               type="submit"
               data-testid="localization-tab-save"
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={setupForm}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>
@@ -518,7 +532,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 setFirst(first);
                 setMax(max);
               }}
-              inputGroupName={"common:search"}
+              inputGroupName={"search"}
               inputGroupOnEnter={(search) => {
                 setFilter(search);
                 setFirst(0);
@@ -553,8 +567,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       selectMenuValueSelected
                         ? localeToDisplayName(selectMenuLocale)
                         : realm.defaultLocale !== ""
-                        ? localeToDisplayName(DEFAULT_LOCALE)
-                        : t("placeholderText")
+                          ? localeToDisplayName(DEFAULT_LOCALE)
+                          : t("placeholderText")
                     }
                   >
                     {options}
@@ -575,8 +589,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   hasIcon
                   icon={SearchIcon}
                   isSearchVariant
-                  message={t("common:noSearchResults")}
-                  instructions={t("common:noSearchResultsInstructions")}
+                  message={t("noSearchResults")}
+                  instructions={t("noSearchResultsInstructions")}
                 />
               )}
               {messageBundles.length !== 0 && (
@@ -584,17 +598,17 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   aria-label={t("editableRowsTable")}
                   data-testid="editable-rows-table"
                   variant={TableVariant.compact}
-                  cells={[t("common:key"), t("common:value")]}
+                  cells={[t("key"), t("value")]}
                   rows={tableRows}
                   onRowEdit={(_, type, _b, rowIndex, validation) =>
                     updateEditableRows(type, rowIndex, validation)
                   }
                   actions={[
                     {
-                      title: t("common:delete"),
+                      title: t("delete"),
                       onClick: (_, row) =>
                         deleteKey(
-                          (tableRows[row].cells?.[0] as IRowCell).props.value
+                          (tableRows[row].cells?.[0] as IRowCell).props.value,
                         ),
                     },
                   ]}

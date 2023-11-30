@@ -139,6 +139,14 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider setInfo(String message, Object ... parameters);
 
+    LoginFormsProvider setMessage(MessageType type, String message, Object... parameters);
+
+    /**
+     * Used when authenticationSession was already removed for this browser session and hence we don't have any
+     * authenticationSession or user data. Would just repeat previous info/error page after language is changed
+     */
+    LoginFormsProvider setDetachedAuthSession();
+
     LoginFormsProvider setUser(UserModel user);
 
     LoginFormsProvider setResponseHeader(String headerName, String headerValue);

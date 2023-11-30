@@ -50,18 +50,20 @@ public enum MembershipType {
         @Override
         public Set<LDAPDn> getLDAPSubgroups(CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup) {
             CommonLDAPGroupMapperConfig config = groupMapper.getConfig();
-            return getLDAPMembersWithParent(groupMapper.getLdapProvider(), ldapGroup, config.getMembershipLdapAttribute(), LDAPDn.fromString(config.getLDAPGroupsDn()));
+            return getLDAPMembersWithParent(groupMapper.getLdapProvider(), ldapGroup, config.getMembershipLdapAttribute(),
+                    LDAPDn.fromString(config.getLDAPGroupsDn()), config.getLDAPGroupNameLdapAttribute());
         }
 
         // Get just those members of specified group, which are descendants of "requiredParentDn"
-        protected Set<LDAPDn> getLDAPMembersWithParent(LDAPStorageProvider ldapProvider, LDAPObject ldapGroup, String membershipLdapAttribute, LDAPDn requiredParentDn) {
+        protected Set<LDAPDn> getLDAPMembersWithParent(LDAPStorageProvider ldapProvider, LDAPObject ldapGroup,
+                String membershipLdapAttribute, LDAPDn requiredParentDn, String rdnAttr) {
             Set<String> allMemberships = LDAPUtils.getExistingMemberships(ldapProvider, membershipLdapAttribute, ldapGroup);
 
             // Filter and keep just descendants of requiredParentDn
             Set<LDAPDn> result = new HashSet<>();
             for (String membership : allMemberships) {
                 LDAPDn childDn = LDAPDn.fromString(membership);
-                if (childDn.isDescendantOf(requiredParentDn)) {
+                if (childDn.getFirstRdn().getAttrValue(rdnAttr) != null && childDn.isDescendantOf(requiredParentDn)) {
                     result.add(childDn);
                 }
             }
@@ -73,8 +75,9 @@ public enum MembershipType {
             LDAPStorageProvider ldapProvider = groupMapper.getLdapProvider();
             CommonLDAPGroupMapperConfig config = groupMapper.getConfig();
 
+            LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
             LDAPDn usersDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
-            Set<LDAPDn> userDns = getLDAPMembersWithParent(ldapProvider, ldapGroup, config.getMembershipLdapAttribute(), usersDn);
+            Set<LDAPDn> userDns = getLDAPMembersWithParent(ldapProvider, ldapGroup, config.getMembershipLdapAttribute(), usersDn, ldapConfig.getRdnLdapAttribute());
 
             if (userDns == null) {
                 return Collections.emptyList();
@@ -90,14 +93,9 @@ public enum MembershipType {
 
             // If usernameAttrName is same like DN, we can just retrieve usernames from DNs
             List<String> usernames = new LinkedList<>();
-            LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
             if (ldapConfig.getUsernameLdapAttribute().equals(ldapConfig.getRdnLdapAttribute())) {
                 for (LDAPDn userDn : dns) {
                     String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
-                    if (username == null) {
-                        throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
-                            ldapConfig.getRdnLdapAttribute() + ", user DN: " + userDn + ", attributes from LDAP: " + userDn.getFirstRdn().getAllKeys());
-                    }
                     usernames.add(username);
                 }
             } else {

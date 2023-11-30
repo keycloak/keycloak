@@ -3,3 +3,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.join-group-dialog-row {
+  cursor: pointer;
+}

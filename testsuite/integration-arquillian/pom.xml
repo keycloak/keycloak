@@ -41,7 +41,7 @@
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.7.0.Alpha14</arquillian-core.version>
+        <arquillian-core.version>1.7.1.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
@@ -50,6 +50,7 @@
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
+        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
         <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
@@ -212,6 +213,26 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
+
+            <!-- Fuse adapter tests dependencies -->
+            <dependency>
+		        <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-karaf-managed</artifactId>
+                <version>${arquillian-container-karaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-osgi</artifactId>
+                <version>${arquillian-container-karaf.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Fuse adapter tests dependencies END -->
+            
         </dependencies>
     </dependencyManagement>
     
@@ -548,7 +569,7 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
-                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
+                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>

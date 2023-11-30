@@ -153,7 +153,7 @@ public class LoginActionsServiceChecks {
         }
 
         if (! user.isEnabled()) {
-            throw new ExplainedVerificationException(Errors.USER_DISABLED, Messages.INVALID_USER);
+            throw new ExplainedVerificationException(Errors.USER_DISABLED, Messages.ACCOUNT_DISABLED);
         }
 
         if (userSetter != null) {

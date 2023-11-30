@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 import { ClientRegistrationTab } from "./ClientRegistration";
 
@@ -16,7 +16,7 @@ const DetailProvider = lazy(() => import("../registration/DetailProvider"));
 export const AddRegistrationProviderRoute: AppRouteObject = {
   path: "/:realm/clients/client-registration/:subTab/:providerId",
   element: <DetailProvider />,
-  breadcrumb: (t) => t("clients:clientSettings"),
+  breadcrumb: (t) => t("clientSettings"),
   handle: {
     access: "manage-clients",
   },
@@ -28,13 +28,13 @@ export const EditRegistrationProviderRoute: AppRouteObject = {
 };
 
 export const toRegistrationProvider = (
-  params: RegistrationProviderParams
+  params: RegistrationProviderParams,
 ): Partial<Path> => {
   const path = params.id
     ? EditRegistrationProviderRoute.path
     : AddRegistrationProviderRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

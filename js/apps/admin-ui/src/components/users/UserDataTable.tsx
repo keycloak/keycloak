@@ -1,6 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -29,19 +29,19 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { SearchType } from "../../user/details/SearchFilter";
+import { toAddUser } from "../../user/routes/AddUser";
+import { toUser } from "../../user/routes/User";
+import { emptyFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { emptyFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
-import { toAddUser } from "../../user/routes/AddUser";
-import { toUser } from "../../user/routes/User";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
-import { SearchType } from "../../user/details/SearchFilter";
 
 export type UserAttribute = {
   name: string;
@@ -49,8 +49,53 @@ export type UserAttribute = {
   value: string;
 };
 
+const UserDetailLink = (user: BruteUser) => {
+  const { realm } = useRealm();
+  return (
+    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username} <StatusRow user={user} />
+    </Link>
+  );
+};
+
+type StatusRowProps = {
+  user: BruteUser;
+};
+
+const StatusRow = ({ user }: StatusRowProps) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+      {user.bruteForceStatus?.disabled && (
+        <Label color="orange" icon={<WarningTriangleIcon />}>
+          {t("temporaryLocked")}
+        </Label>
+      )}
+    </>
+  );
+};
+
+const ValidatedEmail = (user: UserRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.emailVerified && (
+        <Tooltip content={t("notVerified")}>
+          <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
+        </Tooltip>
+      )}{" "}
+      {emptyFormatter()(user.email)}
+    </>
+  );
+};
+
 export function UserDataTable() {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const navigate = useNavigate();
@@ -82,27 +127,18 @@ export function UserDataTable() {
         return [[], {}, {}] as [
           ComponentRepresentation[],
           RealmRepresentation | undefined,
-          UserProfileConfig
+          UserProfileConfig,
         ];
       }
     },
     ([storageProviders, realm, profile]) => {
       setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled[0] === "true")
+        storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
       );
       setRealm(realm);
       setProfile(profile);
     },
-    []
-  );
-
-  const UserDetailLink = (user: UserRepresentation) => (
-    <Link
-      key={user.username}
-      to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
-    >
-      {user.username}
-    </Link>
+    [],
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
@@ -128,31 +164,31 @@ export function UserDataTable() {
       });
     } catch (error) {
       if (userStorage?.length) {
-        addError("users:noUsersFoundErrorStorage", error);
+        addError("noUsersFoundErrorStorage", error);
       } else {
-        addError("users:noUsersFoundError", error);
+        addError("noUsersFoundError", error);
       }
       return [];
     }
   };
 
   const [toggleUnlockUsersDialog, UnlockUsersConfirm] = useConfirmDialog({
-    titleKey: "users:unlockAllUsers",
-    messageKey: "users:unlockUsersConfirm",
-    continueButtonLabel: "users:unlock",
+    titleKey: "unlockAllUsers",
+    messageKey: "unlockUsersConfirm",
+    continueButtonLabel: "unlock",
     onConfirm: async () => {
       try {
         await adminClient.attackDetection.delAll();
         refresh();
         addAlert(t("unlockUsersSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:unlockUsersError", error);
+        addError("unlockUsersError", error);
       }
     },
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "users:deleteConfirm",
+    titleKey: "deleteConfirmUsers",
     messageKey: t("deleteConfirmDialog", { count: selectedRows.length }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -165,44 +201,10 @@ export function UserDataTable() {
         clearAllFilters();
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("users:userDeletedError", error);
+        addError("userDeletedError", error);
       }
     },
   });
-
-  const StatusRow = (user: BruteUser) => {
-    return (
-      <>
-        {!user.enabled && (
-          <Label key={user.id} color="red" icon={<InfoCircleIcon />}>
-            {t("disabled")}
-          </Label>
-        )}
-        {user.bruteForceStatus?.disabled && (
-          <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
-            {t("temporaryLocked")}
-          </Label>
-        )}
-        {user.enabled && !user.bruteForceStatus?.disabled && "—"}
-      </>
-    );
-  };
-
-  const ValidatedEmail = (user: UserRepresentation) => {
-    return (
-      <>
-        {!user.emailVerified && (
-          <Tooltip
-            key={`email-verified-${user.id}`}
-            content={<>{t("notVerified")}</>}
-          >
-            <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
-          </Tooltip>
-        )}{" "}
-        {emptyFormatter()(user.email)}
-      </>
-    );
-  };
 
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
@@ -215,7 +217,7 @@ export function UserDataTable() {
 
   const clearAllFilters = () => {
     const filtered = [...activeFilters].filter(
-      (chip) => chip.name !== chip.name
+      (chip) => chip.name !== chip.name,
     );
     setActiveFilters(filtered);
     setSearchUser("");
@@ -251,7 +253,7 @@ export function UserDataTable() {
                     event.stopPropagation();
 
                     const filtered = [...activeFilters].filter(
-                      (chip) => chip.name !== entry.name
+                      (chip) => chip.name !== entry.name,
                     );
                     const attributes = createQueryString(filtered);
 
@@ -309,7 +311,7 @@ export function UserDataTable() {
               clearAllFilters();
             }}
           >
-            {t("common:clearAllFilters")}
+            {t("clearAllFilters")}
           </Button>
         </ToolbarItem>
       </div>
@@ -325,7 +327,7 @@ export function UserDataTable() {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="users:title"
+        ariaLabelKey="titleUsers"
         canSelectAll
         onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
         emptyState={
@@ -357,7 +359,7 @@ export function UserDataTable() {
 
           return [
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onClick: () => {
                 setSelectedRows([user]);
                 toggleDeleteDialog();
@@ -368,28 +370,23 @@ export function UserDataTable() {
         columns={[
           {
             name: "username",
-            displayKey: "users:username",
+            displayKey: "username",
             cellRenderer: UserDetailLink,
           },
           {
             name: "email",
-            displayKey: "users:email",
+            displayKey: "email",
             cellRenderer: ValidatedEmail,
           },
           {
             name: "lastName",
-            displayKey: "users:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "users:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "status",
-            displayKey: "users:status",
-            cellRenderer: StatusRow,
           },
         ]}
       />

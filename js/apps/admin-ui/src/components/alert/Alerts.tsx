@@ -13,7 +13,7 @@ const ALERT_TIMEOUT = 8000;
 export type AddAlertFunction = (
   message: string,
   variant?: AlertVariant,
-  description?: string
+  description?: string,
 ) => void;
 
 export type AddErrorFunction = (message: string, error: unknown) => void;
@@ -25,7 +25,7 @@ export type AlertProps = {
 
 export const AlertContext = createNamedContext<AlertProps | undefined>(
   "AlertContext",
-  undefined
+  undefined,
 );
 
 export const useAlerts = () => useRequiredContext(AlertContext);
@@ -57,7 +57,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
       setAlerts((alerts) => [alert, ...alerts]);
       setTimeout(() => removeAlert(alert.id), ALERT_TIMEOUT);
     },
-    []
+    [],
   );
 
   const addError = useCallback<AddErrorFunction>((message, error) => {
@@ -65,7 +65,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
       t(message, {
         error: getErrorMessage(error),
       }),
-      AlertVariant.danger
+      AlertVariant.danger,
     );
   }, []);
 

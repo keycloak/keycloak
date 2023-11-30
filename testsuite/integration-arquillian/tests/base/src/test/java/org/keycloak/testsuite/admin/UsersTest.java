@@ -70,6 +70,18 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchUserWithWildcards() throws Exception {
+        createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
+
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use%", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use_", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Us_r", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use", null, null), hasSize(1));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use*", null, null), hasSize(1));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Us*e", null, null), hasSize(1));
+    }
+
+    @Test
     public void searchUserDefaultSettings() throws Exception {
         createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
 

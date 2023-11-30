@@ -13,7 +13,7 @@ import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(10);
   const [key, setKey] = useState(0);
@@ -24,7 +24,7 @@ export const UserRegistration = () => {
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
     setRealm,
-    []
+    [],
   );
 
   if (!realm) {
@@ -37,12 +37,12 @@ export const UserRegistration = () => {
     try {
       await adminClient.roles.createComposite(
         { roleId: realm.defaultRole!.id!, realm: realmName },
-        compositeArray
+        compositeArray,
       );
       setKey(key + 1);
-      addAlert(t("roles:addAssociatedRolesSuccess"), AlertVariant.success);
+      addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roles:addAssociatedRolesError", error);
+      addError("addAssociatedRolesError", error);
     }
   };
 

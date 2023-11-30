@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.webauthn;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
@@ -28,25 +29,35 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.events.Details;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
+import org.openqa.selenium.WebDriver;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
@@ -71,6 +82,10 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
     @Page
     WebAuthnRegisterPage webAuthnRegisterPage;
+
+    @Drone
+    @SecondBrowser
+    private WebDriver driver2;
 
     @Before
     @Override
@@ -150,8 +165,32 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     }
 
     @Test
-    public void proceedSetupWebAuthn() {
-        loginUser();
+    public void proceedSetupWebAuthnLogoutOtherSessionsChecked() throws IOException {
+        testWebAuthnLogoutOtherSessions(true);
+    }
+
+    @Test
+    public void proceedSetupWebAuthnLogoutOtherSessionsNotChecked() throws IOException {
+        testWebAuthnLogoutOtherSessions(false);
+    }
+
+    private void testWebAuthnLogoutOtherSessions(boolean logoutOtherSessions) throws IOException {
+        UserResource testUser = testRealm().users().get(findUser(DEFAULT_USERNAME).getId());
+
+        // perform a login using normal user/password form to have an old session
+        EventRepresentation event1;
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+                .setBrowserFlow("browser")
+                .update()) {
+            OAuthClient oauth2 = new OAuthClient();
+            oauth2.init(driver2);
+            oauth2.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+            event1 = events.expectLogin().assertEvent();
+            assertEquals(1, testUser.getUserSessions().size());
+        }
+
+        EventRepresentation event2 = loginUser();
+        assertEquals(2, testUser.getUserSessions().size());
 
         doAIA();
 
@@ -163,15 +202,29 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         final int credentialsCount = getCredentialCount.get();
 
         webAuthnRegisterPage.assertCurrent();
+        if (!logoutOtherSessions) {
+            webAuthnRegisterPage.uncheckLogoutSessions();
+        }
+        assertThat(webAuthnRegisterPage.isLogoutSessionsChecked(), is(logoutOtherSessions));
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential("authenticator1");
 
         assertKcActionStatus(SUCCESS);
 
         assertThat(getCredentialCount.get(), is(credentialsCount + 1));
+
+        List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+        if (logoutOtherSessions) {
+            assertThat(sessions.size(), is(1));
+            assertThat(sessions.iterator().next().getId(), is(event2.getSessionId()));
+        } else {
+            assertThat(sessions.size(), is(2));
+            assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
+                    containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
+        }
     }
 
-    private void loginUser() {
+    private EventRepresentation loginUser() {
         usernamePage.open();
         usernamePage.assertCurrent();
         usernamePage.login(DEFAULT_USERNAME);
@@ -179,7 +232,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         passwordPage.assertCurrent();
         passwordPage.login(DEFAULT_PASSWORD);
 
-        events.expectLogin()
+        return events.expectLogin()
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .assertEvent();
     }

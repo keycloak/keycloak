@@ -31,31 +31,15 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wildfly-common.version>1.5.4.Final-format-001</wildfly-common.version>
-
-        <!--
-            We need to override certain dependencies from the parent POM.
-            TODO: remove these properties after changing the parent POM to use the same property names used by Quarkus BOM.
-        -->
-        <wildfly.common.version>${wildfly-common.version}</wildfly.common.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom</artifactId>
-                <version>${quarkus.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            
             <!-- Override the dependencies below to use the versions used by Keycloak -->
             <dependency>
                 <groupId>org.infinispan</groupId>

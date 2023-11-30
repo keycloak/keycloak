@@ -37,16 +37,16 @@ type PolicySelectProps = {
 };
 
 const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
   const [open, setOpen] = useState(false);
 
   const policies = useMemo(
     () =>
       passwordPolicies?.filter(
-        (p) => selectedPolicies.find((o) => o.id === p.id) === undefined
+        (p) => selectedPolicies.find((o) => o.id === p.id) === undefined,
       ),
-    [selectedPolicies]
+    [selectedPolicies],
   );
 
   return (
@@ -79,7 +79,7 @@ export const PasswordPolicy = ({
   realm,
   realmUpdated,
 }: PasswordPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
 
   const { addAlert, addError } = useAlerts();
@@ -123,7 +123,7 @@ export const PasswordPolicy = ({
       setupForm(updatedRealm);
       addAlert(t("updatePasswordPolicySuccess"), AlertVariant.success);
     } catch (error: any) {
-      addError("authentication:updatePasswordPolicyError", error);
+      addError("updatePasswordPolicyError", error);
     }
   };
 
@@ -164,14 +164,14 @@ export const PasswordPolicy = ({
                     type="submit"
                     isDisabled={!isDirty}
                   >
-                    {t("common:save")}
+                    {t("save")}
                   </Button>
                   <Button
                     data-testid="reload"
                     variant={ButtonVariant.link}
                     onClick={() => setupForm(realm)}
                   >
-                    {t("common:reload")}
+                    {t("reload")}
                   </Button>
                 </ActionGroup>
               </FormAccess>

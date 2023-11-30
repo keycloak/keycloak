@@ -17,7 +17,10 @@
 
 package org.keycloak.services.resources.admin;
 
-import com.google.common.collect.Streams;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -36,7 +39,10 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -45,28 +51,32 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
-import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
  * @author Pedro Igor
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
     public IdentityProvidersResource(RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -76,7 +86,7 @@ public class IdentityProvidersResource {
     }
 
     /**
-     * Get identity providers
+     * Get the identity provider factory for a provider id.
      *
      * @param providerId Provider id
      * @return
@@ -85,19 +95,20 @@ public class IdentityProvidersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Get the identity provider factory for that provider id")
+    public IdentityProviderFactory getIdentityProviderFactory(@Parameter(description = "The provider id to get the factory") @PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         if (providerFactory != null) {
-            return Response.ok(providerFactory).build();
+            return providerFactory;
         }
-        return Response.status(BAD_REQUEST).build();
+        throw new BadRequestException();
     }
 
     /**
      * Import identity provider from uploaded JSON file
      *
-     * @param input
      * @return
      * @throws IOException
      */
@@ -105,6 +116,8 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( description = "Import identity provider from uploaded JSON file")
     public Map<String, String> importFrom() throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
@@ -129,7 +142,9 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(Map<String, Object> data) throws IOException {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Import identity provider from JSON body")
+    public Map<String, String> importFrom(@Parameter(description = "JSON body") Map<String, Object> data) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
@@ -144,6 +159,8 @@ public class IdentityProvidersResource {
             IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(session, inputStream);
+            // add the URL just if needed by the identity provider
+            config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
             return config;
         } finally {
             try {
@@ -154,19 +171,58 @@ public class IdentityProvidersResource {
     }
 
     /**
-     * Get identity providers
+     * List identity providers.
      *
-     * @return
+     * @param search Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.
+     * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
+     * @param firstResult Pagination offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @return The list of providers.
      */
     @GET
     @Path("instances")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<IdentityProviderRepresentation> getIdentityProviders() {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation(summary = "List identity providers")
+    public Stream<IdentityProviderRepresentation> getIdentityProviders(
+            @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
+            @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         this.auth.realm().requireViewIdentityProviders();
 
-        return realm.getIdentityProvidersStream()
-                .map(provider -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, provider)));
+        if (maxResults == null) {
+            maxResults = 100; // always set a maximum of 100
+        }
+
+        Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
+                ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
+                : m -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, m));
+
+        Stream<IdentityProviderModel> stream = realm.getIdentityProvidersStream().sorted(new IdPComparator());
+        if (!StringUtil.isBlank(search)) {
+            stream = stream.filter(predicateByName(search));
+        }
+        if (firstResult != null) {
+            stream = stream.skip(firstResult);
+        }
+        return stream.limit(maxResults).map(toRepresentation);
+    }
+
+    private Predicate<IdentityProviderModel> predicateByName(final String search) {
+        if (search.startsWith("\"") && search.endsWith("\"")) {
+            final String name = search.substring(1, search.length() - 1);
+            return (m) -> m.getAlias().equals(name);
+        } else if (search.startsWith("*") && search.endsWith("*")) {
+            final String name = search.substring(1, search.length() - 1);
+            return (m) -> m.getAlias().contains(name);
+        } else if (search.endsWith("*")) {
+            final String name = search.substring(0, search.length() - 1);
+            return (m) -> m.getAlias().startsWith(name);
+        } else {
+            return (m) -> m.getAlias().startsWith(search);
+        }
     }
 
     /**
@@ -178,7 +234,9 @@ public class IdentityProvidersResource {
     @POST
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(IdentityProviderRepresentation representation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Create a new identity provider")
+    public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
         ReservedCharValidator.validate(representation.getAlias());
@@ -224,7 +282,16 @@ public class IdentityProvidersResource {
     }
 
     private Stream<ProviderFactory> getProviderFactories() {
-        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+        return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
+    }
+
+    // TODO: for the moment just sort the identity provider list. But the
+    // idea is modifying the Model API to get the result already ordered.
+    private static class IdPComparator implements Comparator<IdentityProviderModel> {
+        @Override
+        public int compare(IdentityProviderModel idp1, IdentityProviderModel idp2) {
+            return idp1.getAlias().compareTo(idp2.getAlias());
+        }
     }
 }

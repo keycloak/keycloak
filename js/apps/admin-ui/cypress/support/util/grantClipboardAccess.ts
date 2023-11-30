@@ -8,6 +8,6 @@ export default function grantClipboardAccess() {
         permissions: ["clipboardReadWrite", "clipboardSanitizedWrite"],
         origin: window.location.origin,
       },
-    })
+    }),
   );
 }

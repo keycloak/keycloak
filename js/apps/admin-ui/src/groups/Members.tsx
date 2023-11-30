@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { SubGroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   AlertVariant,
   Button,
@@ -17,6 +18,7 @@ import { Link, useLocation } from "react-router-dom";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { GroupPath } from "../components/group/GroupPath";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
@@ -26,6 +28,7 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emptyFormatter } from "../util";
+import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
@@ -39,7 +42,7 @@ const MemberOfRenderer = (member: MembersOf) => {
     <>
       {member.membership.map((group, index) => (
         <>
-          <GroupPath key={group.id} group={group} />
+          <GroupPath key={group.id + "-" + member.id} group={group} />
           {member.membership[index + 1] ? ", " : ""}
         </>
       ))}
@@ -57,20 +60,27 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
   const id = getLastId(location.pathname);
   const [includeSubGroup, setIncludeSubGroup] = useState(false);
-  const { currentGroup } = useSubGroups();
+  const { currentGroup: group } = useSubGroups();
+  const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
   const [addMembers, setAddMembers] = useState(false);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const { hasAccess } = useAccess();
 
+  useFetch(
+    () => adminClient.groups.findOne({ id: group()!.id! }),
+    setCurrentGroup,
+    [],
+  );
+
   const isManager =
-    hasAccess("manage-users") || currentGroup()!.access!.manageMembership;
+    hasAccess("manage-users") || currentGroup?.access!.manageMembership;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -78,40 +88,65 @@ export const Members = () => {
   const getMembership = async (id: string) =>
     await adminClient.users.listGroups({ id: id! });
 
-  const getSubGroups = (groups: GroupRepresentation[]) => {
-    let subGroups: GroupRepresentation[] = [];
-    for (const group of groups!) {
-      subGroups.push(group);
-      const subs = getSubGroups(group.subGroups!);
-      subGroups = subGroups.concat(subs);
+  // this queries the subgroups using the new search paradigm but doesn't
+  // account for pagination and therefore isn't going to scale well
+  const getSubGroups = async (groupId?: string, count = 0) => {
+    let nestedGroups: GroupRepresentation[] = [];
+    if (!count || !groupId) {
+      return nestedGroups;
     }
-    return subGroups;
+    const args: SubGroupQuery = {
+      parentId: groupId,
+      first: 0,
+      max: count,
+    };
+    const subGroups: GroupRepresentation[] =
+      await adminClient.groups.listSubGroups(args);
+    nestedGroups = nestedGroups.concat(subGroups);
+
+    await Promise.all(
+      subGroups.map((g) => getSubGroups(g.id, g.subGroupCount)),
+    ).then((values: GroupRepresentation[][]) => {
+      values.forEach((groups) => (nestedGroups = nestedGroups.concat(groups)));
+    });
+    return nestedGroups;
   };
 
   const loader = async (first?: number, max?: number) => {
+    if (!id) {
+      return [];
+    }
+
     let members = await adminClient.groups.listMembers({
       id: id!,
       first,
       max,
     });
 
-    if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup()?.subGroups!);
-      for (const group of subGroups) {
-        members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! })
-        );
-      }
+    if (includeSubGroup && currentGroup?.subGroupCount && currentGroup.id) {
+      const subGroups = await getSubGroups(
+        currentGroup.id,
+        currentGroup.subGroupCount,
+      );
+      await Promise.all(
+        subGroups.map((g) => adminClient.groups.listMembers({ id: g.id! })),
+      ).then((values: UserRepresentation[][]) => {
+        values.forEach((users) => (members = members.concat(users)));
+      });
       members = uniqBy(members, (member) => member.username);
     }
 
     const memberOfPromises = await Promise.all(
-      members.map((member) => getMembership(member.id!))
+      members.map((member) => getMembership(member.id!)),
     );
     return members.map((member: UserRepresentation, i) => {
       return { ...member, membership: memberOfPromises[i] };
     });
   };
+
+  if (!currentGroup) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
@@ -128,7 +163,7 @@ export const Members = () => {
         data-testid="members-table"
         key={`${id}${key}${includeSubGroup}`}
         loader={loader}
-        ariaLabelKey="groups:members"
+        ariaLabelKey="members"
         isPaginated
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
@@ -174,16 +209,16 @@ export const Members = () => {
                               adminClient.users.delFromGroup({
                                 id: user.id!,
                                 groupId: id!,
-                              })
-                            )
+                              }),
+                            ),
                           );
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success
+                            AlertVariant.success,
                           );
                         } catch (error) {
-                          addError("groups:usersLeftError", error);
+                          addError("usersLeftError", error);
                         }
 
                         refresh();
@@ -210,10 +245,10 @@ export const Members = () => {
                       });
                       addAlert(
                         t("usersLeft", { count: 1 }),
-                        AlertVariant.success
+                        AlertVariant.success,
                       );
                     } catch (error) {
-                      addError("groups:usersLeftError", error);
+                      addError("usersLeftError", error);
                     }
 
                     return true;
@@ -225,34 +260,34 @@ export const Members = () => {
         columns={[
           {
             name: "username",
-            displayKey: "common:name",
+            displayKey: "name",
             cellRenderer: UserDetailLink,
           },
           {
             name: "email",
-            displayKey: "groups:email",
+            displayKey: "email",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "groups:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "lastName",
-            displayKey: "groups:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "membership",
-            displayKey: "groups:membership",
+            displayKey: "membership",
             cellRenderer: MemberOfRenderer,
           },
         ]}
         emptyState={
           <ListEmptyState
-            message={t("users:noUsersFound")}
-            instructions={isManager ? t("users:emptyInstructions") : undefined}
+            message={t("noUsersFound")}
+            instructions={isManager ? t("emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
             secondaryActions={[

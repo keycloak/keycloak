@@ -17,8 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
@@ -29,6 +35,7 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.ClientModel;
@@ -38,14 +45,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.infinispan.client.hotrod.VersionedValue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -140,11 +141,16 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             long lifespanMs = lifespanMsLoader.apply(realm, client, newWrapper.getEntity());
             long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, client, newWrapper.getEntity());
 
-            logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
+            // It is possible the session may be expired by the time this has replicated, double check before inserting
+            if (maxIdleTimeMs != SessionTimeouts.ENTRY_EXPIRED_FLAG && lifespanMs != SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+                logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
+                // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
+                cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                      .putIfAbsent(key, newWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+            } else {
+                logger.tracef("Not calling putIfAbsent for entity '%s' in the cache '%s' as entry is already expired", key, remoteCache.getName());
+            }
 
-            // Using putIfAbsent. Theoretic possibility that entity was already put to cache by someone else
-            cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                    .putIfAbsent(key, newWrapper, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
         }));
     }

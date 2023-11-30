@@ -2,30 +2,113 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
     title="Configuring the database"
     summary="An overview about how to configure relational databases"
     includedOptions="db db-* transaction-xa-enabled">
 
-This {section} explains how to configure the Keycloak server to store data in a relational database.
+This {section} explains how to configure the {project_name} server to store data in a relational database.
 
 == Supported databases
 
 The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
 
+[%autowidth]
 |===
-|Database | Tested Version
+|Database | Option value | Tested Version
 
-|mariadb| 10
-|mssql| 2016
-|mysql| 8
-|oracle| 12c
-|postgres| 10
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]?replace("-latest","")}
+|MySQL | `mysql` | ${properties["mysql.version"]}
+|Oracle Database | `oracle` | ${properties["oracledb.version"]}
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]}
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
+
+<@profile.ifProduct>
+
+== Installing a database driver
+
+Database drivers are shipped as part of {project_name} except for the Oracle Database and Micrsoft SQL Server drivers which need to be installed separately.
+
+Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+
+=== Installing the Oracle Database driver
+
+To install the Oracle Database driver for {project_name}:
+
+. Download the `ojdbc11` and `orai18n` JAR files from one of the following sources:
+
+.. *Zipped JDBC driver and Companion Jars* version ${properties["oracle-jdbc.version"]} from the https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html[Oracle driver download page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar++[ojdbc11]` and `link:++https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar++[orai18n]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in {project_name}'s `providers` folder
+
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
++
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile]
+----
+FROM quay.io/keycloak/keycloak:latest
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+# Setting the build parameter for the database:
+ENV KC_DB=oracle
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
+=== Installing the Microsoft SQL Server driver
+
+To install the Microsoft SQL Server driver for {project_name}:
+
+. Download the `mssql-jdbc` JAR file from one of the following sources:
+
+.. Download a version from the https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server[Microsoft JDBC Driver for SQL Server page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar++[mssql-jdbc]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `mssql-jdbc` in {project_name}'s `providers` folder
+
+. When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the {project_name} Operator, those images need to be optimized images with all build-time options of {project_name} set.
++
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile]
+----
+FROM quay.io/keycloak/keycloak:latest
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+# Setting the build parameter for the database:
+ENV KC_DB=mssql
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the {project_name} Operator, it needs to be optimized, which requires {project_name}'s build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
+</@profile.ifProduct>
 
 == Configuring a database
 
@@ -131,16 +214,18 @@ Unicode is supported for a PostgreSQL database when the database character set i
 
 . Check the default character set for a PostgreSQL cluster by entering the following SQL command.
 +
-```
+[source]
+----
 show server_encoding;
-```
+----
 
 . If the default character set is not UTF 8, create the database with the UTF8 as the default character set using a command such as:
 
 +
-```
+[source]
+----
 create database keycloak with encoding 'UTF8';
-```
+----
 
 == Changing database locking timeout in a cluster configuration
 
@@ -151,11 +236,11 @@ The maximum timeout for this lock is 900 seconds. If a node waits on this lock f
 <@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
 
 == Using Database Vendors without XA transaction support
-Keycloak uses XA transactions and the appropriate database drivers by default. Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate JDBC driver, enter the following command:
+{project_name} uses XA transactions and the appropriate database drivers by default. Certain vendors, such as Azure SQL and MariaDB Galera, do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate JDBC driver, enter the following command:
 
 <@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
 
-Keycloak automatically chooses the appropriate JDBC driver for your vendor.
+{project_name} automatically chooses the appropriate JDBC driver for your vendor.
 
 == Setting JPA provider configuration option for migrationStrategy
 

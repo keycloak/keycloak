@@ -27,13 +27,13 @@ const Groups = () => {
           getParents(
             el,
             groups,
-            groups.map(({ path }) => path)
-          )
+            groups.map(({ path }) => path),
+          ),
         );
       }
       setGroups(groups);
     },
-    [directMembership]
+    [directMembership],
   );
 
   const getParents = (el: Group, groups: Group[], groupsPaths: string[]) => {
@@ -51,9 +51,12 @@ const Groups = () => {
   };
 
   return (
-    <Page title={t("groupLabel")} description={t("groupDescriptionLabel")}>
-      <DataList id="groups-list" aria-label={t("groupLabel")} isCompact>
-        <DataListItem id="groups-list-header" aria-labelledby="Columns names">
+    <Page title={t("groups")} description={t("groupDescriptionLabel")}>
+      <DataList id="groups-list" aria-label={t("groups")} isCompact>
+        <DataListItem
+          id="groups-list-header"
+          aria-label={t("groupsListHeader")}
+        >
           <DataListItemRow>
             <DataListItemCells
               dataListCells={[
@@ -69,7 +72,10 @@ const Groups = () => {
             />
           </DataListItemRow>
         </DataListItem>
-        <DataListItem id="groups-list-header" aria-labelledby="Columns names">
+        <DataListItem
+          id="groups-list-columns-names"
+          aria-label={t("groupsListColumnsNames")}
+        >
           <DataListItemRow>
             <DataListItemCells
               dataListCells={[
@@ -96,7 +102,7 @@ const Groups = () => {
               <DataListItemCells
                 dataListCells={[
                   <DataListCell
-                    id={`${appIndex}-group-name`}
+                    data-testid={`group[${appIndex}].name`}
                     width={2}
                     key={"name-" + appIndex}
                   >

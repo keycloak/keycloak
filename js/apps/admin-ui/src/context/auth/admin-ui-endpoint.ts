@@ -1,21 +1,22 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import { adminClient } from "../../admin-client";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { joinPath } from "../../utils/joinPath";
 
 export async function fetchAdminUI<T>(
   endpoint: string,
-  query?: Record<string, string>
+  query?: Record<string, string>,
 ): Promise<T> {
   const accessToken = await adminClient.getAccessToken();
   const baseUrl = adminClient.baseUrl;
 
-  const response = await fetch(
+  const response = await fetchWithError(
     joinPath(baseUrl, "admin/realms", adminClient.realmName, endpoint) +
       (query ? "?" + new URLSearchParams(query) : ""),
     {
       method: "GET",
       headers: getAuthorizationHeaders(accessToken),
-    }
+    },
   );
 
   return await response.json();

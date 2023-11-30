@@ -11,18 +11,15 @@ A PEP is responsible for enforcing access decisions from the {project_name} serv
 associated with a protected resource. It acts as a filter or interceptor in your application in order to check whether or not a particular request
 to a protected resource can be fulfilled based on the permissions granted by these decisions.
 
-Permissions are enforced depending on the protocol you are using. When using UMA, the policy enforcer always expects an RPT as a bearer token in order
-to decide whether or not a request can be served. That means clients should first obtain an RPT from {project_name} before sending requests to the resource server.
+{project_name} provides built-in support for enabling the *{project_name} Policy Enforcer* to Java applications with built-in support to secure JakartaEE-compliant frameworks and web containers.
+If you are using Maven, you should configure the following dependency to your project:
 
-However, if you are not using UMA, you can also send regular access tokens to the resource server. In this case, the policy enforcer will try to obtain permissions directly from the server.
-
-If you are using any of the {project_name} OIDC adapters, you can easily enable the policy enforcer by adding the following property to your *keycloak.json* file:
-
-.keycloak.json
-```json
-{
- "policy-enforcer": {}
-}
+```xml
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-policy-enforcer</artifactId>
+    <version>${keycloak.version}</version>
+</dependency>
 ```
 
 When you enable the policy enforcer all requests sent to your application are intercepted and access to protected resources will be granted

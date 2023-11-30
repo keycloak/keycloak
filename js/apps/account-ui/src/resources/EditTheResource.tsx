@@ -39,8 +39,8 @@ export const EditTheResource = ({
     try {
       await Promise.all(
         permissions.map((permission) =>
-          updatePermissions(resource._id, [permission])
-        )
+          updatePermissions(resource._id, [permission]),
+        ),
       );
       addAlert(t("updateSuccess"));
       onClose();
@@ -51,7 +51,7 @@ export const EditTheResource = ({
 
   return (
     <Modal
-      title={t("editTheResource", [resource.name])}
+      title={t("editTheResource", { name: resource.name })}
       variant="medium"
       isOpen
       onClose={onClose}

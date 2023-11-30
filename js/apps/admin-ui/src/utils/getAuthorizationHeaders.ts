@@ -1,5 +1,5 @@
 export function getAuthorizationHeaders(
-  accessToken?: string
+  accessToken?: string,
 ): Record<string, string> {
   if (!accessToken) {
     return {};

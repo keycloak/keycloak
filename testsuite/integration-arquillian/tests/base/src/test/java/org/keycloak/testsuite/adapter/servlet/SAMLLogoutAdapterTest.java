@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 import static org.keycloak.testsuite.adapter.servlet.SAMLServletAdapterTest.FORBIDDEN_TEXT;
 import static org.keycloak.testsuite.adapter.servlet.SAMLServletAdapterTest.WEBSPHERE_FORBIDDEN_TEXT;
@@ -54,6 +54,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {

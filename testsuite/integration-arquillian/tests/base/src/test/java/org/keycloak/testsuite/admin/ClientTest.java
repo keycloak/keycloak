@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -548,7 +548,7 @@ public class ClientTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
 
         Map<String, Long> offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(0), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(0), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be no offline sessions", 0, userSessions.size());
@@ -561,7 +561,7 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(1), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(1), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());

@@ -40,7 +40,7 @@ describe("useSetTimeout", () => {
     unmount();
 
     expect(() => result.current(vi.fn(), 1000)).toThrowError(
-      "Can't schedule a timeout on an unmounted component."
+      "Can't schedule a timeout on an unmounted component.",
     );
   });
 

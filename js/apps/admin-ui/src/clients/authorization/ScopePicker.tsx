@@ -19,7 +19,7 @@ type Scope = {
 };
 
 export const ScopePicker = ({ clientId }: { clientId: string }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [open, setOpen] = useState(false);
@@ -38,7 +38,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       return adminClient.clients.listAllScopes(params);
     },
     setScopes,
-    [search]
+    [search],
   );
 
   const renderScopes = (scopes?: ScopeRepresentation[]) =>
@@ -52,10 +52,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
     <FormGroup
       label={t("authorizationScopes")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:scopes")}
-          fieldLabelId="clients:scopes"
-        />
+        <HelpItem helpText={t("clientScopesHelp")} fieldLabelId="scopes" />
       }
       fieldId="scopes"
     >
@@ -69,8 +66,8 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("common:hide"),
-              collapsedText: t("common:showRemaining"),
+              expandedText: t("hide"),
+              collapsedText: t("showRemaining"),
             }}
             onToggle={setOpen}
             isOpen={open}
@@ -85,7 +82,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
                   ? selectedValue
                   : (selectedValue as Scope).name;
               const changedValue = field.value.find(
-                (o: Scope) => o.name === option
+                (o: Scope) => o.name === option,
               )
                 ? field.value.filter((item: Scope) => item.name !== option)
                 : [...field.value, selectedValue];

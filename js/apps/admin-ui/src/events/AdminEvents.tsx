@@ -79,7 +79,7 @@ const DisplayDialog = ({
   onClose,
   children,
 }: PropsWithChildren<DisplayDialogProps>) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   return (
     <Modal
       variant={ModalVariant.medium}
@@ -93,7 +93,7 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();
@@ -166,7 +166,7 @@ export const AdminEvents = () => {
 
   function removeFilterValue(
     key: keyof AdminEventSearchForm,
-    valueToRemove: string
+    valueToRemove: string,
   ) {
     const formValues = getValues();
     const fieldValue = formValues[key];
@@ -181,7 +181,7 @@ export const AdminEvents = () => {
   function commitFilters() {
     const newFilters: Partial<AdminEventSearchForm> = pickBy(
       getValues(),
-      (value) => value !== "" || (Array.isArray(value) && value.length > 0)
+      (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
     setActiveFilters(newFilters);
@@ -234,8 +234,8 @@ export const AdminEvents = () => {
                       data-testid="resource-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -263,7 +263,7 @@ export const AdminEvents = () => {
                               onClick={(resource) => {
                                 resource.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -295,8 +295,8 @@ export const AdminEvents = () => {
                       data-testid="operation-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -324,7 +324,7 @@ export const AdminEvents = () => {
                               onClick={(operation) => {
                                 operation.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -465,7 +465,7 @@ export const AdminEvents = () => {
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof AdminEventSearchForm,
-                  string | string[]
+                  string | string[],
                 ];
 
                 return (
@@ -510,7 +510,7 @@ export const AdminEvents = () => {
       representationEvent?.representation
         ? prettyPrintJSON(JSON.parse(representationEvent.representation))
         : "",
-    [representationEvent?.representation]
+    [representationEvent?.representation],
   );
 
   return (
@@ -548,7 +548,7 @@ export const AdminEvents = () => {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="events:adminEvents"
+        ariaLabelKey="adminEvents"
         toolbarItem={adminEventSearchFormDisplay()}
         actions={
           [
@@ -565,27 +565,27 @@ export const AdminEvents = () => {
         columns={[
           {
             name: "time",
-            displayKey: "events:time",
+            displayKey: "time",
             cellRenderer: (row) =>
               formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
           },
           {
             name: "resourcePath",
-            displayKey: "events:resourcePath",
+            displayKey: "resourcePath",
             cellRenderer: CellResourceLinkRenderer,
           },
           {
             name: "resourceType",
-            displayKey: "events:resourceType",
+            displayKey: "resourceType",
           },
           {
             name: "operationType",
-            displayKey: "events:operationType",
+            displayKey: "operationType",
             transforms: [cellWidth(10)],
           },
           {
             name: "",
-            displayKey: "events:user",
+            displayKey: "user",
             cellRenderer: (event) => event.authDetails?.userId || "",
           },
         ]}

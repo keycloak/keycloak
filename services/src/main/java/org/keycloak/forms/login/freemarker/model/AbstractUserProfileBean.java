@@ -3,6 +3,7 @@ package org.keycloak.forms.login.freemarker.model;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -88,7 +89,12 @@ public abstract class AbstractUserProfileBean {
     private List<Attribute> toAttributes(Map<String, List<String>> attributes, boolean writeableOnly) {
         if(attributes == null)
             return null;
-        return attributes.keySet().stream().map(name -> profile.getAttributes().getMetadata(name)).filter((am) -> writeableOnly ? !profile.getAttributes().isReadOnly(am.getName()) : true).map(Attribute::new).sorted().collect(Collectors.toList());
+        return attributes.keySet().stream().map(name -> profile.getAttributes().getMetadata(name))
+                .filter((am) -> writeableOnly ? !profile.getAttributes().isReadOnly(am.getName()) : true)
+                .filter(Objects::nonNull)
+                .map(Attribute::new)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     /**

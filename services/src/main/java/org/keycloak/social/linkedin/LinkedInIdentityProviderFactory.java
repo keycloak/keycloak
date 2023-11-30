@@ -18,35 +18,56 @@ package org.keycloak.social.linkedin;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
+@Deprecated
 public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFactory<LinkedInIdentityProvider>
-		implements SocialIdentityProviderFactory<LinkedInIdentityProvider> {
+        implements SocialIdentityProviderFactory<LinkedInIdentityProvider>, EnvironmentDependentProviderFactory  {
 
-	public static final String PROVIDER_ID = "linkedin";
+    public static final String PROVIDER_ID = "linkedin";
 
-	@Override
-	public String getName() {
-		return "LinkedIn";
-	}
+    @Override
+    public String getName() {
+        return "LinkedIn (deprecated)";
+    }
 
-	@Override
-	public LinkedInIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-		return new LinkedInIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
-	}
+    @Override
+    public LinkedInIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new LinkedInIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
+    }
 
-	@Override
-	public OAuth2IdentityProviderConfig createConfig() {
-		return new OAuth2IdentityProviderConfig();
-	}
+    @Override
+    public OAuth2IdentityProviderConfig createConfig() {
+        return new OAuth2IdentityProviderConfig();
+    }
 
-	@Override
-	public String getId() {
-		return PROVIDER_ID;
-	}
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("profileProjection")
+                .label("Profile projection")
+                .helpText("Projection parameter for profile request. Leave empty for default projection.")
+                .add().build();
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.LINKEDIN_OAUTH);
+    }
 }

@@ -7,12 +7,25 @@ import type { RoleMappingPayload } from "../defs/roleRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 
-export interface GroupQuery {
+interface Query {
+  search?: string;
+  exact?: boolean;
+}
+
+interface PaginatedQuery {
   first?: number;
   max?: number;
-  search?: string;
+}
+
+interface SummarizedQuery {
   briefRepresentation?: boolean;
 }
+
+export type GroupQuery = Query & PaginatedQuery & SummarizedQuery;
+export type SubGroupQuery = PaginatedQuery &
+  SummarizedQuery & {
+    parentId: string;
+  };
 
 export interface GroupCountQuery {
   search?: string;
@@ -22,11 +35,16 @@ export interface GroupCountQuery {
 export class Groups extends Resource<{ realm?: string }> {
   public find = this.makeRequest<GroupQuery, GroupRepresentation[]>({
     method: "GET",
+    queryParamKeys: ["search", "exact", "briefRepresentation", "first", "max"],
   });
 
   public create = this.makeRequest<GroupRepresentation, { id: string }>({
     method: "POST",
     returnResourceIdInLocationHeader: { field: "id" },
+  });
+
+  public updateRoot = this.makeRequest<GroupRepresentation, void>({
+    method: "POST",
   });
 
   /**
@@ -67,8 +85,8 @@ export class Groups extends Resource<{ realm?: string }> {
   /**
    * Set or create child.
    * This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.
+   * @deprecated Use `createChildGroup` or `updateChildGroup` instead.
    */
-
   public setOrCreateChild = this.makeUpdateRequest<
     { id: string },
     GroupRepresentation,
@@ -79,6 +97,47 @@ export class Groups extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
     returnResourceIdInLocationHeader: { field: "id" },
   });
+
+  /**
+   * Creates a child group on the specified parent group. If the group already exists, then an error is returned.
+   */
+  public createChildGroup = this.makeUpdateRequest<
+    { id: string },
+    Omit<GroupRepresentation, "id">,
+    { id: string }
+  >({
+    method: "POST",
+    path: "/{id}/children",
+    urlParamKeys: ["id"],
+    returnResourceIdInLocationHeader: { field: "id" },
+  });
+
+  /**
+   * Updates a child group on the specified parent group. If the group doesn’t exist, then an error is returned.
+   * Can be used to move a group from one parent to another.
+   */
+  public updateChildGroup = this.makeUpdateRequest<
+    { id: string },
+    GroupRepresentation,
+    void
+  >({
+    method: "POST",
+    path: "/{id}/children",
+    urlParamKeys: ["id"],
+  });
+
+  /**
+   * Finds all subgroups on the specified parent group matching the provided parameters.
+   */
+  public listSubGroups = this.makeRequest<SubGroupQuery, GroupRepresentation[]>(
+    {
+      method: "GET",
+      path: "/{parentId}/children",
+      urlParamKeys: ["parentId"],
+      queryParamKeys: ["first", "max", "briefRepresentation"],
+      catchNotFound: true,
+    },
+  );
 
   /**
    * Members

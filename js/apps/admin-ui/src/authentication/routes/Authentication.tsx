@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type AuthenticationTab = "flows" | "required-actions" | "policies";
@@ -24,13 +24,13 @@ export const AuthenticationRouteWithTab: AppRouteObject = {
 };
 
 export const toAuthentication = (
-  params: AuthenticationParams
+  params: AuthenticationParams,
 ): Partial<Path> => {
   const path = params.tab
     ? AuthenticationRouteWithTab.path
     : AuthenticationRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

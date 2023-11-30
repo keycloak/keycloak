@@ -19,6 +19,7 @@ import {
   ReactNode,
   isValidElement,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -128,7 +129,7 @@ export type Action<T> = IAction & {
 export type LoaderFunction<T> = (
   first?: number,
   max?: number,
-  search?: string
+  search?: string,
 ) => Promise<T[]>;
 
 export type DataListProps<T> = Omit<
@@ -163,7 +164,7 @@ export type DataListProps<T> = Omit<
  *   <KeycloakDataTable columns={[
  *     {
  *        name: "clientId", //name of the field from the array of object the loader returns to display in this column
- *        displayKey: "common:clientId", //i18n key to use to lookup the name of the column header
+ *        displayKey: "clientId", //i18n key to use to lookup the name of the column header
  *        cellRenderer: ClientDetailLink, //optionally you can use a component to render the column when you don't want just the content of the field, the whole row / entire object is passed in.
  *     }
  *   ]}
@@ -210,7 +211,7 @@ export function KeycloakDataTable<T>({
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
     "pageSize",
-    10
+    10,
   );
 
   const [max, setMax] = useState(defaultPageSize);
@@ -220,6 +221,7 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
+  const id = useId();
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -272,7 +274,7 @@ export function KeycloakDataTable<T>({
       return getNodeText(
         isValidElement((node as TitleCell).title)
           ? (node as TitleCell).title.props
-          : Object.values(node)
+          : Object.values(node),
       );
     }
     return "";
@@ -287,11 +289,13 @@ export function KeycloakDataTable<T>({
               row.cells.some(
                 (cell) =>
                   cell &&
-                  getNodeText(cell).toLowerCase().includes(search.toLowerCase())
-              )
+                  getNodeText(cell)
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
+              ),
             )
             .slice(first, first + max + 1),
-    [search, first, max]
+    [search, first, max],
   );
 
   useEffect(() => {
@@ -301,7 +305,7 @@ export function KeycloakDataTable<T>({
         .item(0);
       if (checkboxes) {
         const checkAllCheckbox = checkboxes.children!.item(
-          0
+          0,
         )! as HTMLInputElement;
         checkAllCheckbox.indeterminate =
           selected.length > 0 &&
@@ -338,7 +342,13 @@ export function KeycloakDataTable<T>({
       setRows(result);
       setLoading(false);
     },
-    [key, first, max, search, typeof loader !== "function" ? loader : undefined]
+    [
+      key,
+      first,
+      max,
+      search,
+      typeof loader !== "function" ? loader : undefined,
+    ],
   );
 
   const convertAction = () =>
@@ -347,7 +357,7 @@ export function KeycloakDataTable<T>({
       delete action.onRowClick;
       action.onClick = async (_, rowIndex) => {
         const result = await actions[index].onRowClick!(
-          (filteredData || rows)![rowIndex].data
+          (filteredData || rows)![rowIndex].data,
         );
         if (result) {
           if (!isPaginated) {
@@ -366,7 +376,7 @@ export function KeycloakDataTable<T>({
         data!.map((row) => {
           (row as Row<T>).selected = isSelected;
           return row;
-        })
+        }),
       );
     } else {
       (data![rowIndex] as Row<T>).selected = isSelected;
@@ -378,7 +388,7 @@ export function KeycloakDataTable<T>({
     const difference = differenceBy(
       selected,
       data!.map((row) => row.data),
-      "id"
+      "id",
     );
 
     // Selected rows are any rows previously selected from a different page, plus current page selections
@@ -407,7 +417,7 @@ export function KeycloakDataTable<T>({
     <>
       {(loading || !noData || searching) && (
         <PaginatingTableToolbar
-          id={ariaLabelKey}
+          id={id}
           count={rowLength}
           first={first}
           max={max}

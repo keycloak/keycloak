@@ -14,7 +14,7 @@ import { toClientRole } from "../routes/ClientRole";
 import { NewRoleParams } from "../routes/NewRole";
 
 export default function CreateClientRole() {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const form = useForm<AttributeForm>({ mode: "onChange" });
   const navigate = useNavigate();
   const { clientId } = useParams<NewRoleParams>();
@@ -46,10 +46,10 @@ export default function CreateClientRole() {
           clientId: clientId!,
           id: createdRole.id!,
           tab: "details",
-        })
+        }),
       );
     } catch (error) {
-      addError("roles:roleCreateError", error);
+      addError("roleCreateError", error);
     }
   };
 

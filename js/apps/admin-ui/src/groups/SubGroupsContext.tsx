@@ -12,7 +12,7 @@ type SubGroupsProps = {
 
 const SubGroupsContext = createNamedContext<SubGroupsProps | undefined>(
   "SubGroupsContext",
-  undefined
+  undefined,
 );
 
 export const SubGroups = ({ children }: PropsWithChildren) => {
@@ -21,7 +21,7 @@ export const SubGroups = ({ children }: PropsWithChildren) => {
   const clear = () => setSubGroups([]);
   const remove = (group: GroupRepresentation) =>
     setSubGroups(
-      subGroups.slice(0, subGroups.findIndex((g) => g.id === group.id) + 1)
+      subGroups.slice(0, subGroups.findIndex((g) => g.id === group.id) + 1),
     );
   const currentGroup = () => subGroups[subGroups.length - 1];
   return (

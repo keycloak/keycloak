@@ -97,6 +97,7 @@ public class KeycloakServer {
     public static class KeycloakServerConfig {
         private String host = "localhost";
         private int port = 8081;
+        private String path = "/auth";
         private int portHttps = -1;
         private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;
         private String resourcesHome;
@@ -117,12 +118,20 @@ public class KeycloakServer {
             return resourcesHome;
         }
 
+        public String getPath() {
+            return path;
+        }
+
         public void setHost(String host) {
             this.host = host;
         }
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
         }
 
         public void setPortHttps(int portHttps) {
@@ -182,6 +191,10 @@ public class KeycloakServer {
 
         if (System.getProperty("keycloak.port") != null) {
             config.setPort(Integer.valueOf(System.getProperty("keycloak.port")));
+        }
+
+        if (System.getProperty("keycloak.path") != null) {
+            config.setPath(System.getProperty("keycloak.path"));
         }
 
         if (System.getProperty("keycloak.port.https") != null) {
@@ -414,7 +427,7 @@ public class KeycloakServer {
 
             DeploymentInfo di = server.undertowDeployment(deployment, "");
             di.setClassLoader(getClass().getClassLoader());
-            di.setContextPath("/auth");
+            di.setContextPath(config.getPath());
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
@@ -452,7 +465,7 @@ public class KeycloakServer {
                 info("Loading resources from " + config.getResourcesHome());
             }
 
-            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth"
+            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + config.getPath()
                     + (config.getPortHttps() > 0 ? ", https://" + config.getHost() + ":" + config.getPortHttps()+ "/auth" : "")
                     + ") in "
                     + (System.currentTimeMillis() - start) + " ms\n");

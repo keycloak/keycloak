@@ -17,8 +17,10 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.ResponseSessionTask;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -78,6 +80,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
@@ -121,6 +124,8 @@ public class LoginActionsService {
     public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
 
     public static final String RESTART_PATH = "restart";
+
+    public static final String DETACHED_INFO_PATH = "detached-info";
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
@@ -214,7 +219,8 @@ public class LoginActionsService {
     @GET
     public Response restartSession(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                    @QueryParam(Constants.CLIENT_ID) String clientId,
-                                   @QueryParam(Constants.TAB_ID) String tabId) {
+                                   @QueryParam(Constants.TAB_ID) String tabId,
+                                   @QueryParam(Constants.SKIP_LOGOUT) String skipLogout) {
         event.event(EventType.RESTART_AUTHENTICATION);
         SessionCodeChecks checks = new SessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, authSessionId, null, null, clientId,  tabId, null);
 
@@ -228,12 +234,14 @@ public class LoginActionsService {
             flowPath = AUTHENTICATE_PATH;
         }
 
-        // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
-        // We logout userSession in this case
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (userSession != null) {
-            logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
-            AuthenticationManager.backchannelLogout(session, userSession, false);
+        if (!Boolean.parseBoolean(skipLogout)) {
+            // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
+            // We logout userSession in this case
+            UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+            if (userSession != null) {
+                logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
+                AuthenticationManager.backchannelLogout(session, userSession, false);
+            }
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);
@@ -241,6 +249,50 @@ public class LoginActionsService {
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), tabId);
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
+    }
+
+    /**
+     * protocol independent "detached info" page. Shown when locale is changed by user on info/error page
+     * after authenticationSession was already removed.
+     *
+     * @return
+     */
+    @Path(DETACHED_INFO_PATH)
+    @GET
+    public Response detachedInfo(@QueryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM) String stateCheckerParam) {
+        DetachedInfoStateCookie cookie;
+        try {
+            cookie = new DetachedInfoStateChecker(session, realm).verifyStateCheckerParameter(stateCheckerParam);
+            logger.tracef("Detached info endpoint invoked and cookie successfully verified. StateCheckerParam=%s, StateCookie=%s", stateCheckerParam, cookie);
+        } catch (VerificationException ve) {
+            logger.warn(ve.getMessage());
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
+        }
+
+        processLocaleParam(null);
+
+        boolean skipLink = true;
+        if (cookie.getClientUuid() != null) {
+            ClientModel client = session.clients().getClientById(realm, cookie.getClientUuid());
+            if (client != null) {
+                session.getContext().setClient(client);
+                skipLink = client.equals(SystemClientUtil.getSystemClient(realm));
+            }
+        }
+
+        MessageType type = Enum.valueOf(MessageType.class, cookie.getMessageType());
+        Response.Status statusObj = cookie.getStatus() == null ? Response.Status.BAD_REQUEST : Response.Status.fromStatusCode(cookie.getStatus());
+        Object[] paramsAsObject = cookie.getMessageParameters() == null ? null : cookie.getMessageParameters().toArray();
+
+        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
+                .setDetachedAuthSession()
+                .setMessage(type, cookie.getMessageKey(), paramsAsObject);
+
+        if (skipLink) {
+            loginForm.setAttribute(Constants.SKIP_LINK, true);
+        }
+
+        return type == MessageType.ERROR ? loginForm.createErrorPage(statusObj) : loginForm.createInfoPage();
     }
 
 
@@ -257,25 +309,7 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-                @Override
-                public Response runInternal(KeycloakSession session) {
-                    // create another instance of the endpoint to isolate each run.
-                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
-                    LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                    // process the request in the created instance.
-                    return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
-                }
-            }, 10, 100);
-        } else {
-            return authenticateInternal(authSessionId, code, execution, clientId, tabId);
-        }
 
-    }
-
-    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
-                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
@@ -909,10 +943,10 @@ public class LoginActionsService {
             return response;
         }
 
-        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.addConsent(session, realm, user, grantedConsent);
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
@@ -931,7 +965,7 @@ public class LoginActionsService {
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.updateConsent(session, realm, user, grantedConsent);
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

@@ -31,7 +31,9 @@ public class ConditionalUserAttributeValueFactory implements ConditionalAuthenti
 
     public static final String CONF_ATTRIBUTE_NAME = "attribute_name";
     public static final String CONF_ATTRIBUTE_EXPECTED_VALUE = "attribute_expected_value";
+    public static final String CONF_INCLUDE_GROUP_ATTRIBUTES = "include_group_attributes";
     public static final String CONF_NOT = "not";
+    public static final String REGEX = "regex";
 
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.DISABLED
@@ -96,13 +98,25 @@ public class ConditionalUserAttributeValueFactory implements ConditionalAuthenti
         authNoteExpectedValue.setLabel("Expected attribute value");
         authNoteExpectedValue.setHelpText("Expected value in the attribute");
 
+        ProviderConfigProperty includeGroupAttributes = new ProviderConfigProperty();
+        includeGroupAttributes.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        includeGroupAttributes.setName(CONF_INCLUDE_GROUP_ATTRIBUTES);
+        includeGroupAttributes.setLabel("Include group attributes");
+        includeGroupAttributes.setHelpText("If On, the condition checks if any of the joined groups has one attribute matching the configured name and value (this option can affect performance)");
+
         ProviderConfigProperty negateOutput = new ProviderConfigProperty();
         negateOutput.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         negateOutput.setName(CONF_NOT);
         negateOutput.setLabel("Negate output");
         negateOutput.setHelpText("Apply a not to the check result");
 
-        return Arrays.asList(authNoteName, authNoteExpectedValue, negateOutput);
+        ProviderConfigProperty regexOutput = new ProviderConfigProperty();
+        regexOutput.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        regexOutput.setName(REGEX);
+        regexOutput.setLabel(REGEX);
+        regexOutput.setHelpText("Check equality with regex");
+
+        return Arrays.asList(authNoteName, authNoteExpectedValue, includeGroupAttributes, negateOutput, regexOutput);
     }
 
     @Override

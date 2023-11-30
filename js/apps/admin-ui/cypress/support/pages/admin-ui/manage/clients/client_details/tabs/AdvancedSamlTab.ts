@@ -1,7 +1,7 @@
 import PageObject from "../../../../components/PageObject";
 
 export class AdvancedSamlTab extends PageObject {
-  private termsOfServiceUrlId = "attributes.tosUri";
+  #termsOfServiceUrlId = "attributes.tosUri";
 
   saveFineGrain() {
     cy.findAllByTestId("fineGrainSave").click();
@@ -12,15 +12,15 @@ export class AdvancedSamlTab extends PageObject {
   }
 
   termsOfServiceUrl(termsOfServiceUrl: string) {
-    cy.findAllByTestId(this.termsOfServiceUrlId).clear();
-    cy.findAllByTestId(this.termsOfServiceUrlId).type(termsOfServiceUrl);
+    cy.findAllByTestId(this.#termsOfServiceUrlId).clear();
+    cy.findAllByTestId(this.#termsOfServiceUrlId).type(termsOfServiceUrl);
     return this;
   }
 
   checkTermsOfServiceUrl(termsOfServiceUrl: string) {
-    cy.findAllByTestId(this.termsOfServiceUrlId).should(
+    cy.findAllByTestId(this.#termsOfServiceUrlId).should(
       "have.value",
-      termsOfServiceUrl
+      termsOfServiceUrl,
     );
     return this;
   }

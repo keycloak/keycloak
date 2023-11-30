@@ -10,12 +10,13 @@ You can obtain this library from a running a {project_name} Server instance by i
 ----
 <script src="http://...{kc_js_path}/keycloak-authz.js"></script>
 ----
-Once you do that, you can create a `KeycloakAuthorization` instance as follows:
+Next, you can create a `KeycloakAuthorization` instance as follows:
 
-```javascript
+[source,javascript]
+----
 const keycloak = ... // obtain a Keycloak instance from keycloak.js library
 const authorization = new KeycloakAuthorization(keycloak);
-```
+----
 The *keycloak-authz.js* library provides two main features:
 
 * Obtain permissions from the server using a permission ticket, if you are accessing a UMA protected resource server.
@@ -44,7 +45,8 @@ See <<_service_uma_authorization_process, UMA Authorization Process>> for more i
 What your client needs to do is extract the permission ticket from the ```WWW-Authenticate``` header returned by the resource server
 and use the library to send an authorization request as follows:
 
-```javascript
+[source,javascript]
+----
 // prepare a authorization request with the permission ticket
 const authorizationRequest = {};
 authorizationRequest.ticket = ticket;
@@ -57,7 +59,7 @@ Identity.authorization.authorize(authorizationRequest).then(function (rpt) {
 }, function () {
     // onError
 });
-```
+----
 
 The `authorize` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
@@ -73,16 +75,18 @@ The ```keycloak-authz.js``` library provides an `entitlement` function that you 
 the resources and scopes your client wants to access.
 
 .Example about how to obtain an RPT with permissions for all resources and scopes the user can access
-```javascript
+[source,javascript]
+----
 authorization.entitlement('my-resource-server-id').then(function (rpt) {
     // onGrant callback function.
     // If authorization was successful you'll receive an RPT
     // with the necessary permissions to access the resource server
 });
-```
+----
 
 .Example about how to obtain an RPT with permissions for specific resources and scopes
-```javascript
+[source,javascript]
+----
 authorization.entitlement('my-resource-server', {
     "permissions": [
         {
@@ -92,7 +96,7 @@ authorization.entitlement('my-resource-server', {
 }).then(function (rpt) {
     // onGrant
 });
-```
+----
 
 When using the `entitlement` function, you must provide the _client_id_ of the resource server you want to access.
 
@@ -111,7 +115,8 @@ properties:
 +
 An array of objects representing the resource and scopes. For instance:
 +
-```javascript
+[source,javascript]
+----
 const authorizationRequest = {
    "permissions": [
        {
@@ -120,7 +125,7 @@ const authorizationRequest = {
        }
    ]
 }
-```
+----
 +
 * *metadata*
 +
@@ -144,6 +149,7 @@ This parameter will only take effect when used together with the `ticket` parame
 
 If you have already obtained an RPT using any of the authorization functions provided by the library, you can always obtain the RPT as follows from the authorization object (assuming that it has been initialized by one of the techniques shown earlier):
 
-```javascript
+[source,javascript]
+----
 const rpt = authorization.rpt;
-```
+----

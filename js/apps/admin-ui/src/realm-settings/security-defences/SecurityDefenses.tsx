@@ -12,7 +12,7 @@ type SecurityDefensesProps = {
 };
 
 export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(10);
   return (
     <Tabs

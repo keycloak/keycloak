@@ -1,8 +1,6 @@
 package org.keycloak.testsuite.model;
 
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;

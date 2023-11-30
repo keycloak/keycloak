@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
@@ -73,6 +74,10 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
         }
 
         UpdateEmail.updateEmailNow(tokenContext.getEvent(), user, emailUpdateValidationResult);
+
+        if (Boolean.TRUE.equals(token.getLogoutSessions())) {
+            AuthenticatorUtil.logoutOtherSessions(tokenContext);
+        }
 
         tokenContext.getEvent().success();
 

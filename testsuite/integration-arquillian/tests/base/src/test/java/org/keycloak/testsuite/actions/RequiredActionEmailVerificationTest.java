@@ -857,7 +857,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
         Assert.assertTrue(user.isEmailVerified());
-        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+        assertThat(user.getRequiredActions(), Matchers.empty());
     }
 
     @Test
@@ -896,7 +896,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
         Assert.assertTrue(user.isEmailVerified());
-        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+        assertThat(user.getRequiredActions(), Matchers.empty());
     }
 
     @Test
@@ -940,7 +940,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
         Assert.assertTrue(user.isEmailVerified());
-        Assert.assertThat(user.getRequiredActions(), Matchers.empty());
+        assertThat(user.getRequiredActions(), Matchers.empty());
 
         // after refresh in the first browser the app should be shown
         driver.navigate().refresh();

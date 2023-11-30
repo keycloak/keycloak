@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 import type { PermissionType } from "./NewPermission";
 
@@ -12,20 +12,21 @@ export type PermissionDetailsParams = {
 };
 
 const PermissionDetails = lazy(
-  () => import("../authorization/PermissionDetails")
+  () => import("../authorization/PermissionDetails"),
 );
 
 export const PermissionDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/permission/:permissionType/:permissionId",
   element: <PermissionDetails />,
-  breadcrumb: (t) => t("clients:permissionDetails"),
+  breadcrumb: (t) => t("permissionDetails"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "view-authorization"),
   },
 };
 
 export const toPermissionDetails = (
-  params: PermissionDetailsParams
+  params: PermissionDetailsParams,
 ): Partial<Path> => ({
-  pathname: generatePath(PermissionDetailsRoute.path, params),
+  pathname: generateEncodedPath(PermissionDetailsRoute.path, params),
 });

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.junit.Assert;
@@ -33,7 +34,10 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.federation.kerberos.KerberosFederationProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -43,6 +47,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
@@ -128,7 +133,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         List<String> origLdapEntryDn = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
         Assert.assertEquals(1, origLdapId.size());
         Assert.assertEquals(1, origLdapEntryDn.size());
-        Assert.assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
+        assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
 
         // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
         user.setFirstName("JohnUpdated");
@@ -202,6 +207,42 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
             Assert.fail("Not expected to successfully update user");
         } catch (BadRequestException e) {
             // Expected
+        }
+    }
+
+    @Test
+    public void testErrorResponseWhenLdapIsFailing() {
+        // Create user just with the username
+        UserRepresentation user1 = UserBuilder.create()
+                .username("admintestuser1")
+                .password("userpass")
+                .enabled(true)
+                .build();
+        String newUserId1 = createUserExpectSuccess(user1);
+        getCleanup().addUserId(newUserId1);
+
+        List<ComponentRepresentation> storageProviders = testRealm().components().query(testRealm().toRepresentation().getId(), UserStorageProvider.class.getName());
+        ComponentRepresentation ldapProvider = storageProviders.get(0);
+        List<String> originalUrl = ldapProvider.getConfig().get(LDAPConstants.CONNECTION_URL);
+
+        getCleanup().addCleanup(new AutoCloseable() {
+            @Override
+            public void close() {
+                ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+                testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+            }
+        });
+
+        ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+
+        try {
+            List<UserRepresentation> search = testRealm().users().search("*", -1, -1, true);
+            Assert.fail("Should fail because LDAP is in failing state");
+        } catch (WebApplicationException expected) {
+            Response response = expected.getResponse();
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("unknown_error", error.getError());
         }
     }
 }

@@ -29,7 +29,7 @@ type BindFlowDialogProps = {
 };
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { control, handleSubmit } = useForm<BindingForm>();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -41,11 +41,11 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
     try {
       await adminClient.realms.update(
         { realm },
-        { ...realmRep, [bindingType]: flowAlias }
+        { ...realmRep, [bindingType]: flowAlias },
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
 
     onClose();
@@ -58,7 +58,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
       onClose={onClose}
       actions={[
         <Button key="confirm" data-testid="save" type="submit" form="bind-form">
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -66,7 +66,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen

@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.AppPage;
@@ -82,8 +83,8 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOST
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN_WITH_PROJECTION;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
@@ -97,6 +98,7 @@ import com.google.common.collect.ImmutableMap;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";
@@ -123,9 +125,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         GITHUB("github", GitHubLoginPage.class),
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
         TWITTER("twitter", TwitterConsentLoginPage.class),
-        LINKEDIN("linkedin", LinkedInLoginPage.class),
-        LINKEDIN_WITH_PROJECTION("linkedin", LinkedInLoginPage.class),
+        LINKEDIN("linkedin-openid-connect", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
+        MICROSOFT_SINGLE_TENANT("microsoft", "microsoft-single-tenant", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
@@ -248,7 +250,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void openshiftLogin() {
         setTestProvider(OPENSHIFT);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -340,7 +342,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     public void facebookLogin() throws InterruptedException {
         setTestProvider(FACEBOOK);
-        performLogin();
+        performFacebookLogin();
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -350,7 +352,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void facebookLoginWithEnhancedScope() throws InterruptedException {
         setTestProvider(FACEBOOK_INCLUDE_BIRTHDAY);
         addAttributeMapper("birthday", "birthday");
-        performLogin();
+        performFacebookLogin();
         appPage.assertCurrent();
         assertAttribute("birthday", getConfig("profile.birthday"));
         testTokenExchange();
@@ -370,6 +372,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubLogin() throws InterruptedException {
         setTestProvider(GITHUB);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -378,6 +381,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubPrivateEmailLogin() throws InterruptedException {
         setTestProvider(GITHUB_PRIVATE_EMAIL);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
     }
 
@@ -385,21 +389,15 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
+        navigateToLoginPage();
+        assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
 
     @Test
     public void linkedinLogin() {
         setTestProvider(LINKEDIN);
-        performLogin();
-        appPage.assertCurrent();
-    }
-
-    @Test
-    public void linkedinLoginWithProjection() {
-        setTestProvider(LINKEDIN_WITH_PROJECTION);
-        addAttributeMapper("picture",
-            "profilePicture.displayImage~.elements[0].identifiers[0].identifier");
+        addAttributeMapper("picture", "picture", "linkedin-user-attribute-mapper");
         performLogin();
         appPage.assertCurrent();
         assertAttribute("picture", getConfig("profile.picture"));
@@ -409,6 +407,15 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void microsoftLogin() {
         setTestProvider(MICROSOFT);
         performLogin();
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void microsoftSingleTenantLogin() {
+        setTestProvider(MICROSOFT_SINGLE_TENANT);
+        navigateToLoginPage();
+        assertTrue(driver.getCurrentUrl().contains("/" + getConfig(MICROSOFT_SINGLE_TENANT, "tenantId") + "/"));
+        doLogin();
         appPage.assertCurrent();
     }
 
@@ -447,14 +454,18 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == GOOGLE_NON_MATCHING_HOSTED_DOMAIN) {
             idp.getConfig().put("hostedDomain", "non-matching-hosted-domain");
         }
-        if (provider == LINKEDIN_WITH_PROJECTION) {
-            idp.getConfig().put("profileProjection", "(id,firstName,lastName,profilePicture(displayImage~:playableStreams))");
-        }
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
         if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
+        }
+        if (provider == MICROSOFT_SINGLE_TENANT) {
+            final String tenantId = getConfig(provider, "tenantId");
+            if (tenantId == null) {
+                throw new IllegalArgumentException("'tenantId' for Microsoft IdP must be specified");
+            }
+            idp.getConfig().put("tenantId", tenantId);
         }
         if (provider == PAYPAL) {
             idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));
@@ -467,13 +478,17 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void addAttributeMapper(String name, String jsonField) {
+        addAttributeMapper(name, jsonField, currentTestProvider.id + "-user-attribute-mapper");
+    }
+
+    private void addAttributeMapper(String name, String jsonField, String mapperName) {
         IdentityProviderResource identityProvider = adminClient.realm(REALM).identityProviders().get(currentTestProvider.id);
         IdentityProviderRepresentation identityProviderRepresentation = identityProvider.toRepresentation();
         //Add birthday mapper
         IdentityProviderMapperRepresentation mapperRepresentation = new IdentityProviderMapperRepresentation();
         mapperRepresentation.setName(name);
         mapperRepresentation.setIdentityProviderAlias(identityProviderRepresentation.getAlias());
-        mapperRepresentation.setIdentityProviderMapper(currentTestProvider.id + "-user-attribute-mapper");
+        mapperRepresentation.setIdentityProviderMapper(mapperName);
         mapperRepresentation.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString())
                 .put(AbstractJsonUserAttributeMapper.CONF_JSON_FIELD, jsonField)
@@ -496,9 +511,35 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         doLogin();
     }
 
+    private void performFacebookLogin() {
+        navigateToLoginPage();
+
+        // Check if allowing cookies is required and eventually allow them
+        List<WebElement> allowCookiesButton = driver.findElements(By.xpath("//button[text()='Allow all cookies']"));
+        if (allowCookiesButton.size() > 0) {
+            allowCookiesButton.get(0).click();
+        }
+
+        doLogin();
+
+        // When logging into facebook app for the first time user is required to press continue as button to finish login flow
+        String firstName = getConfig("profile.firstName");
+        List<WebElement> continueAsButton = driver.findElements(By.xpath("//span[text()='Continue as " + firstName + "']"));
+        if (continueAsButton.size() > 0) {
+            continueAsButton.get(0).click();
+            WaitUtils.pause(3000);
+            WaitUtils.waitForPageToLoad();
+        }
+    }
+
     private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
-        driver.navigate().to(oauth.getLoginFormUrl());
+
+        driver.navigate().to(
+                currentTestProvider.equals(PAYPAL)
+                        ? oauth.getLoginFormUrl("https://127.0.0.1:8543/auth")
+                        : oauth.getLoginFormUrl()
+        );
         loginPage.clickSocial(currentTestProvider.id());
 
         // Just to be sure there's no redirect in progress
@@ -524,7 +565,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(1, users.size());
         assertNotNull(users.get(0).getAttributes());
         assertNotNull(users.get(0).getAttributes().get(attrName));
-        assertEquals(expectedValue, users.get(0).getAttributes().get(attrName).get(0));
+        String attrValue = users.get(0).getAttributes().get(attrName).get(0);
+        if (currentTestProvider.equals(LINKEDIN) && attrName.equals("picture")) {
+            assertTrue(attrValue.contains(expectedValue));
+        } else {
+            assertEquals(expectedValue, attrValue);
+        }
     }
 
     private void assertUpdateProfile(boolean firstName, boolean lastName, boolean email) {

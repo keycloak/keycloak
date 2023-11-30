@@ -23,7 +23,7 @@ export const ChangeTypeDropdown = ({
   selectedRows,
   refresh,
 }: ChangeTypeDropdownProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const { addAlert, addError } = useAlerts();
@@ -46,22 +46,22 @@ export const ChangeTypeDropdown = ({
                     clientId,
                     row,
                     row.type,
-                    value as ClientScope
+                    value as ClientScope,
                   )
                 : changeScope(row, value as ClientScope);
-            })
+            }),
           );
           setOpen(false);
           refresh();
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
         } catch (error) {
-          addError("clients:clientScopeError", error);
+          addError("clientScopeError", error);
         }
       }}
     >
       {clientScopeTypesSelectOptions(
         t,
-        !clientId ? allClientScopeTypes : undefined
+        !clientId ? allClientScopeTypes : undefined,
       )}
     </Select>
   );

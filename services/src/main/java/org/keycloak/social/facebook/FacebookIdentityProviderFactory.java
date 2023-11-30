@@ -21,6 +21,10 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author Pedro Igor
@@ -47,5 +51,15 @@ public class FacebookIdentityProviderFactory extends AbstractIdentityProviderFac
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("fetchedFields")
+                .label("Additional user's profile fields")
+                .helpText("Provide additional fields which would be fetched using the profile request. This will be appended to the default set of 'id,name,email,first_name,last_name'.")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add().build();
     }
 }

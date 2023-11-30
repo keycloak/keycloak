@@ -1,0 +1,9 @@
+{
+  "realm" : "demo",
+  "resource" : "jaas",
+  "bearer-only" : true,
+  "auth-server-url" : "http://localhost:8080/auth",
+  "ssl-required" : "external",
+  "use-resource-role-mappings": false,
+  "principal-attribute": "preferred_username"
+}

@@ -1,1 +1,1 @@
-mcr.microsoft.com/mssql/server:2019-latest
+mcr.microsoft.com/mssql/server:2022-latest

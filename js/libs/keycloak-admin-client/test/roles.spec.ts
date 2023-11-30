@@ -56,7 +56,7 @@ describe("Roles", () => {
         // todo: open an issue on keycloak
         name: "cool-role",
         description: "cool",
-      }
+      },
     );
 
     const role = await client.roles.findOneByName({
@@ -70,7 +70,7 @@ describe("Roles", () => {
       { id: currentRole.id! },
       {
         description: "another description",
-      }
+      },
     );
 
     const roleById = await client.roles.findOneById({
@@ -107,7 +107,7 @@ describe("Roles", () => {
   it.skip("Enable fine grained permissions", async () => {
     const permission = await client.roles.updatePermission(
       { id: currentRole.id! },
-      { enabled: true }
+      { enabled: true },
     );
     expect(permission).to.include({
       enabled: true,

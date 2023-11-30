@@ -79,7 +79,7 @@ export interface UserProfileAttributeMetadata {
   displayName: string;
   required: boolean;
   readOnly: boolean;
-  annotations: { [index: string]: any };
+  annotations?: { [index: string]: any };
   validators: { [index: string]: { [index: string]: any } };
 }
 
@@ -87,16 +87,9 @@ export interface UserProfileMetadata {
   attributes: UserProfileAttributeMetadata[];
 }
 
-export interface UserRepresentation {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  emailVerified: boolean;
+export type UserRepresentation = any & {
   userProfileMetadata: UserProfileMetadata;
-  attributes: { [index: string]: string[] };
-}
+};
 
 export interface CredentialRepresentation {
   id: string;
@@ -187,7 +180,7 @@ export interface Resource {
   client: Client;
   scopes: Scope[];
   uris: string[];
-  shareRequests: Permission[];
+  shareRequests?: Permission[];
 }
 
 export interface Permission {

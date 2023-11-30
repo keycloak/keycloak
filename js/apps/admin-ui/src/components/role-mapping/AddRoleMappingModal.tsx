@@ -11,6 +11,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAccess } from "../../context/access/Access";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -39,11 +40,15 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
-  const { t } = useTranslation(type);
+  const { t } = useTranslation();
+  const { hasAccess } = useAccess();
+  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
 
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [filterType, setFilterType] = useState<FilterType>("roles");
+  const [filterType, setFilterType] = useState<FilterType>(
+    canViewRealmRoles ? "roles" : "clients",
+  );
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -54,7 +59,7 @@ export const AddRoleMappingModal = ({
   const loader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<Row[]> => {
     const params: Record<string, string | number> = {
       first: first!,
@@ -78,7 +83,7 @@ export const AddRoleMappingModal = ({
   const clientRolesLoader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<Row[]> => {
     const roles = await getAvailableClientRoles({
       id,
@@ -94,7 +99,7 @@ export const AddRoleMappingModal = ({
         role: { id: e.id, name: e.role, description: e.description },
         id: e.id,
       })),
-      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`
+      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`,
     );
   };
 
@@ -102,9 +107,7 @@ export const AddRoleMappingModal = ({
     <Modal
       variant={ModalVariant.large}
       title={
-        isLDAPmapper
-          ? t("common:assignRole")
-          : t("common:assignRolesTo", { client: name })
+        isLDAPmapper ? t("assignRole") : t("assignRolesTo", { client: name })
       }
       isOpen
       onClose={onClose}
@@ -119,7 +122,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {t("common:assign")}
+          {t("assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -127,49 +130,51 @@ export const AddRoleMappingModal = ({
           variant="link"
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
-        searchPlaceholderKey="clients:searchByRoleName"
+        searchPlaceholderKey="searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
-          <ToolbarItem>
-            <Dropdown
-              onSelect={() => {
-                setFilterType(filterType === "roles" ? "clients" : "roles");
-                setSearchToggle(false);
-                refresh();
-              }}
-              data-testid="filter-type-dropdown"
-              toggle={
-                <DropdownToggle
-                  onToggle={setSearchToggle}
-                  icon={<FilterIcon />}
-                >
-                  {filterType === "roles"
-                    ? t("common:filterByRoles")
-                    : t("common:filterByClients")}
-                </DropdownToggle>
-              }
-              isOpen={searchToggle}
-              dropdownItems={[
-                <DropdownItem key="filter-type" data-testid={filterType}>
-                  {filterType === "roles"
-                    ? t("common:filterByClients")
-                    : t("common:filterByRoles")}
-                </DropdownItem>,
-              ]}
-            />
-          </ToolbarItem>
+          canViewRealmRoles && (
+            <ToolbarItem>
+              <Dropdown
+                onSelect={() => {
+                  setFilterType(filterType === "roles" ? "clients" : "roles");
+                  setSearchToggle(false);
+                  refresh();
+                }}
+                data-testid="filter-type-dropdown"
+                toggle={
+                  <DropdownToggle
+                    onToggle={setSearchToggle}
+                    icon={<FilterIcon />}
+                  >
+                    {filterType === "roles"
+                      ? t("filterByRoles")
+                      : t("filterByClients")}
+                  </DropdownToggle>
+                }
+                isOpen={searchToggle}
+                dropdownItems={[
+                  <DropdownItem key="filter-type" data-testid={filterType}>
+                    {filterType === "roles"
+                      ? t("filterByClients")
+                      : t("filterByRoles")}
+                  </DropdownItem>,
+                ]}
+              />
+            </ToolbarItem>
+          )
         }
         canSelectAll
         isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
-        ariaLabelKey="clients:roles"
+        ariaLabelKey="roles"
         columns={[
           {
             name: "name",
@@ -177,16 +182,16 @@ export const AddRoleMappingModal = ({
           },
           {
             name: "role.description",
-            displayKey: "common:description",
+            displayKey: "description",
           },
         ]}
         emptyState={
           <ListEmptyState
             message={t("noRoles")}
-            instructions={t("common:noRealmRolesToAssign")}
+            instructions={t("noRealmRolesToAssign")}
             secondaryActions={[
               {
-                text: t("common:filterByClients"),
+                text: t("filterByClients"),
                 onClick: () => {
                   setFilterType("clients");
                   refresh();

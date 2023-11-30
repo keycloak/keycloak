@@ -113,12 +113,9 @@ public class Sssd {
                 return false;
             }
             if (email != null) {
-                return email.equals(userModel.getEmail());
+                return email.equalsIgnoreCase(userModel.getEmail());
             }
-            if (email != userModel.getEmail()) {
-                return false;
-            }
-            return true;
+            return userModel.getEmail() == null;
         }
 
         @Override

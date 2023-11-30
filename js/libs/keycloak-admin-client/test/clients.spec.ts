@@ -69,7 +69,7 @@ describe("Clients", () => {
         // clientId is required in client update. no idea why...
         clientId,
         description: "test",
-      }
+      },
     );
 
     const client = await kcAdminClient.clients.findOne({
@@ -159,7 +159,7 @@ describe("Clients", () => {
           id: currentClient.id!,
           roleName: currentRoleName,
         },
-        delta
+        delta,
       );
 
       // check the change
@@ -206,7 +206,7 @@ describe("Clients", () => {
         {
           clientId,
           serviceAccountsEnabled: true,
-        }
+        },
       );
     });
 
@@ -222,7 +222,7 @@ describe("Clients", () => {
       const newCredential = await kcAdminClient.clients.generateNewClientSecret(
         {
           id: currentClient.id!,
-        }
+        },
       );
 
       const credential = await kcAdminClient.clients.getClientSecret({
@@ -326,13 +326,13 @@ describe("Clients", () => {
       });
 
       const defaultScopes = await kcAdminClient.clients.listDefaultClientScopes(
-        { id: id! }
+        { id: id! },
       );
 
       expect(defaultScopes).to.be.ok;
 
       const clientScope = defaultScopes.find(
-        (scope) => scope.id === clientScopeId
+        (scope) => scope.id === clientScopeId,
       );
       expect(clientScope).to.be.ok;
     });
@@ -351,11 +351,11 @@ describe("Clients", () => {
         clientScopeId: clientScopeId!,
       });
       const defaultScopes = await kcAdminClient.clients.listDefaultClientScopes(
-        { id: id! }
+        { id: id! },
       );
 
       const clientScope = defaultScopes.find(
-        (scope) => scope.id === clientScopeId
+        (scope) => scope.id === clientScopeId,
       );
       expect(clientScope).not.to.be.ok;
     });
@@ -425,7 +425,7 @@ describe("Clients", () => {
       expect(optionalScopes).to.be.ok;
 
       const clientScope = optionalScopes.find(
-        (scope) => scope.id === clientScopeId
+        (scope) => scope.id === clientScopeId,
       );
       expect(clientScope).to.be.ok;
     });
@@ -447,7 +447,7 @@ describe("Clients", () => {
         await kcAdminClient.clients.listOptionalClientScopes({ id: id! });
 
       const clientScope = optionalScopes.find(
-        (scope) => scope.id === clientScopeId
+        (scope) => scope.id === clientScopeId,
       );
       expect(clientScope).not.to.be.ok;
     });
@@ -586,7 +586,7 @@ describe("Clients", () => {
 
       await kcAdminClient.clients.updateProtocolMapper(
         { id: id!, mapperId: mapper.id! },
-        mapper
+        mapper,
       );
 
       const updatedMapper =
@@ -668,7 +668,7 @@ describe("Clients", () => {
             id: clientUniqueId!,
             client: clientUniqueId!,
           },
-          availableRoles
+          availableRoles,
         );
 
         const roles = await kcAdminClient.clients.listClientScopeMappings({
@@ -716,7 +716,7 @@ describe("Clients", () => {
           {
             id: clientUniqueId!,
             client: clientUniqueId!,
-          }
+          },
         );
 
         await kcAdminClient.clients.delClientScopeMappings(
@@ -724,7 +724,7 @@ describe("Clients", () => {
             id: clientUniqueId!,
             client: clientUniqueId!,
           },
-          rolesBefore
+          rolesBefore,
         );
 
         const rolesAfter = await kcAdminClient.clients.listClientScopeMappings({
@@ -819,7 +819,7 @@ describe("Clients", () => {
 
         await kcAdminClient.clients.addRealmScopeMappings(
           { id: id! },
-          availableRoles
+          availableRoles,
         );
 
         const roles = await kcAdminClient.clients.listRealmScopeMappings({
@@ -865,7 +865,7 @@ describe("Clients", () => {
 
         await kcAdminClient.clients.delRealmScopeMappings(
           { id: id! },
-          rolesBefore
+          rolesBefore,
         );
 
         const rolesAfter = await kcAdminClient.clients.listRealmScopeMappings({
@@ -953,7 +953,7 @@ describe("Clients", () => {
     it("generate and download keys", async () => {
       const result = await kcAdminClient.clients.generateAndDownloadKey(
         { id: currentClient.id!, attr },
-        keystoreConfig
+        keystoreConfig,
       );
 
       expect(result).to.be.ok;
@@ -978,7 +978,7 @@ describe("Clients", () => {
     it("download key", async () => {
       const result = await kcAdminClient.clients.downloadKey(
         { id: currentClient.id!, attr },
-        keystoreConfig
+        keystoreConfig,
       );
 
       expect(result).to.be.ok;
@@ -1014,7 +1014,7 @@ describe("Clients", () => {
           clientId: currentClient.clientId,
           authorizationServicesEnabled: true,
           serviceAccountsEnabled: true,
-        }
+        },
       );
     });
 
@@ -1038,7 +1038,7 @@ describe("Clients", () => {
           clientId: currentClient.clientId,
           authorizationServicesEnabled: false,
           serviceAccountsEnabled: false,
-        }
+        },
       );
     });
 
@@ -1050,11 +1050,11 @@ describe("Clients", () => {
               { id: currentClient.id! },
               {
                 name,
-              }
+              },
             );
             expect(result).to.be.ok;
             return result;
-          })
+          }),
         )
       ).sort((a, b) => (a.name < b.name ? -1 : 1));
     });
@@ -1064,7 +1064,7 @@ describe("Clients", () => {
         id: currentClient.id!,
       });
       expect(result.sort((a, b) => (a.name! < b.name! ? -1 : 1))).to.deep.equal(
-        scopes
+        scopes,
       );
     });
 
@@ -1072,7 +1072,7 @@ describe("Clients", () => {
       const updatedScope = { ...scopes[0], displayName: "Hello" };
       await kcAdminClient.clients.updateAuthorizationScope(
         { id: currentClient.id!, scopeId: scopes[0].id! },
-        updatedScope
+        updatedScope,
       );
 
       const fetchedScope = await kcAdminClient.clients.getAuthorizationScope({
@@ -1109,7 +1109,7 @@ describe("Clients", () => {
           policies: [],
           scopes: [],
           decisionStrategy: "UNANIMOUS",
-        }
+        },
       );
     });
 
@@ -1129,7 +1129,7 @@ describe("Clients", () => {
           name: resourceConfig.name,
           type: resourceConfig.type,
           scopes,
-        }
+        },
       );
       expect(resource).to.be.ok;
     });
@@ -1152,7 +1152,7 @@ describe("Clients", () => {
       resourceServer.decisionStrategy = "UNANIMOUS";
       await kcAdminClient.clients.updateResourceServer(
         { id: currentClient.id! },
-        resourceServer
+        resourceServer,
       );
     });
 
@@ -1171,7 +1171,7 @@ describe("Clients", () => {
         resourceName: resource._id!,
       });
       expect(result.sort((a, b) => (a.name < b.name ? -1 : 1))).to.deep.equal(
-        scopes
+        scopes,
       );
     });
 
@@ -1189,7 +1189,7 @@ describe("Clients", () => {
           id: currentClient.id!,
           resourceId: resource._id!,
         },
-        resource
+        resource,
       );
       const result = await kcAdminClient.clients.getResource({
         id: currentClient.id!,
@@ -1209,7 +1209,7 @@ describe("Clients", () => {
           name: policyConfig.name,
           logic: policyConfig.logic,
           users: [user.id!],
-        }
+        },
       );
       expect(policy).to.be.ok;
     });
@@ -1235,7 +1235,7 @@ describe("Clients", () => {
           resources: [resource._id],
           policies: [policy.id!],
           scopes: scopes.map((scope) => scope.id!),
-        }
+        },
       );
 
       const p = await kcAdminClient.clients.findPermissions({
@@ -1253,7 +1253,7 @@ describe("Clients", () => {
         permissionId: permission.id!,
       });
       expect(result.sort((a, b) => (a.name < b.name ? -1 : 1))).to.deep.equal(
-        scopes
+        scopes,
       );
     });
 
@@ -1290,7 +1290,7 @@ describe("Clients", () => {
     it.skip("Enable fine grained permissions", async () => {
       const permission = await kcAdminClient.clients.updateFineGrainPermission(
         { id: currentClient.id! },
-        { enabled: true }
+        { enabled: true },
       );
       expect(permission).to.include({
         enabled: true,
@@ -1299,7 +1299,7 @@ describe("Clients", () => {
 
     it.skip("List fine grained permissions for this client", async () => {
       const permissions = (await kcAdminClient.clients.listFineGrainPermissions(
-        { id: currentClient.id! }
+        { id: currentClient.id! },
       ))!;
 
       expect(permissions.scopePermissions).to.be.an("object");

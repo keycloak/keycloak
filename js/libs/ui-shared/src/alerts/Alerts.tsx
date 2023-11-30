@@ -9,7 +9,7 @@ import { createContext, PropsWithChildren, useContext, useState } from "react";
 export type AddAlertFunction = (
   message: string,
   variant?: AlertVariant,
-  description?: string
+  description?: string,
 ) => void;
 
 export type AddErrorFunction = (message: string) => void;
@@ -40,7 +40,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
   const addAlert = (
     message: string,
     variant: AlertVariant = AlertVariant.success,
-    description?: string
+    description?: string,
   ) => {
     setAlerts([
       {
@@ -59,7 +59,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
 
   return (
     <AlertContext.Provider value={{ addAlert, addError }}>
-      <AlertGroup isToast>
+      <AlertGroup isToast data-testid="alerts">
         {alerts.map(({ id, variant, message, description }) => (
           <Alert
             key={id}

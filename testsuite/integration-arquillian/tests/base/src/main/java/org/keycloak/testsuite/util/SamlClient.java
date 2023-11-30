@@ -81,6 +81,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.PrivateKey;
@@ -96,7 +97,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
@@ -661,7 +662,7 @@ public class SamlClient {
      * @return
      */
     public static String extractRelayStateFromRedirect(String responseUri) {
-        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
+        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), StandardCharsets.UTF_8);
 
         return params.stream().filter(nameValuePair -> nameValuePair.getName().equals(RELAY_STATE))
                 .findFirst().map(NameValuePair::getValue).orElse(null);

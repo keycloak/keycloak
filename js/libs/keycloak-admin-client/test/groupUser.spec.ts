@@ -96,7 +96,7 @@ describe("Group user integration", () => {
     before(async () => {
       const clients = await kcAdminClient.clients.find();
       managementClient = clients.find(
-        (client) => client.clientId === "master-realm"
+        (client) => client.clientId === "master-realm",
       )!;
     });
     after(async () => {
@@ -109,7 +109,7 @@ describe("Group user integration", () => {
     it("Enable permissions", async () => {
       const permission = await kcAdminClient.groups.updatePermission(
         { id: currentGroup.id! },
-        { enabled: true }
+        { enabled: true },
       );
       expect(permission).to.include({
         enabled: true,
@@ -126,7 +126,7 @@ describe("Group user integration", () => {
       };
       currentUserPolicy = await kcAdminClient.clients.createPolicy(
         { id: managementClient.id!, type: userPolicyData.type! },
-        userPolicyData
+        userPolicyData,
       );
 
       expect(currentUserPolicy).to.include({
@@ -187,7 +187,7 @@ describe("Group user integration", () => {
           permissionId: permissions.scopePermissions!.manage,
           type: "scope",
         },
-        policyData
+        policyData,
       );
       currentPolicy = (await kcAdminClient.clients.findOnePermission({
         id: managementClient.id!,

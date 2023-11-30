@@ -146,6 +146,12 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
     urlParamKeys: ["alias"],
   });
 
+  public reloadKeys = this.makeRequest<{ alias: string }, boolean>({
+    method: "GET",
+    path: "/instances/{alias}/reload-keys",
+    urlParamKeys: ["alias"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/identity-provider",

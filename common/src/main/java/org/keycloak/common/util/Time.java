@@ -24,7 +24,7 @@ import java.util.Date;
  */
 public class Time {
 
-    private static int offset;
+    private static volatile int offset;
 
     /**
      * Returns current time in seconds adjusted by adding {@link #offset) seconds.

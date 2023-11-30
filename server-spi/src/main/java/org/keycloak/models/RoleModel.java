@@ -18,7 +18,6 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.storage.SearchableModelField;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -28,16 +27,6 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface RoleModel {
-
-    public static class SearchableFields {
-        public static final SearchableModelField<RoleModel> ID                  = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<RoleModel> REALM_ID            = new SearchableModelField<>("realmId", String.class);
-        /** If client role, ID of the client (not the clientId) */
-        public static final SearchableModelField<RoleModel> CLIENT_ID           = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<RoleModel> NAME                = new SearchableModelField<>("name", String.class);
-        public static final SearchableModelField<RoleModel> DESCRIPTION         = new SearchableModelField<>("description", String.class);
-        public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
-    }
 
     interface RoleNameChangeEvent extends ProviderEvent {
         RealmModel getRealm();

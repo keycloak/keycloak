@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.webauthn.pages;
 
 import org.hamcrest.CoreMatchers;
-import org.keycloak.testsuite.pages.AbstractPage;
+import org.keycloak.testsuite.pages.LogoutSessionsPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.NoSuchElementException;
@@ -39,7 +39,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * Page will be displayed after successful JS call of "navigator.credentials.create", which will register WebAuthn credential
  * with the browser
  */
-public class WebAuthnRegisterPage extends AbstractPage {
+public class WebAuthnRegisterPage extends LogoutSessionsPage {
 
     public static final long ALERT_CHECK_TIMEOUT = 3; //seconds
     public static final long ALERT_DEFAULT_TIMEOUT = 60; //seconds

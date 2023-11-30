@@ -52,6 +52,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -77,6 +78,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -97,7 +99,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
@@ -131,12 +133,33 @@ public class IdentityProviderTest extends AbstractAdminTest {
       + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
 
     @Test
-    public void testFindAll() {
+    public void testFind() {
+        create(createRep("twitter", "twitter", true, Collections.singletonMap("key1", "value1")));
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
         create(createRep("google", "google"));
-
+        create(createRep("github", "github"));
         create(createRep("facebook", "facebook"));
 
-        Assert.assertNames(realm.identityProviders().findAll(), "google", "facebook");
+        Assert.assertNames(realm.identityProviders().findAll(), "facebook", "github", "google", "linkedin-openid-connect", "twitter");
+
+        Assert.assertNames(realm.identityProviders().find(null, true, 0, 2), "facebook", "github");
+        Assert.assertNames(realm.identityProviders().find(null, true, 2, 2), "google", "linkedin-openid-connect");
+        Assert.assertNames(realm.identityProviders().find(null, true, 4, 2), "twitter");
+
+        Assert.assertNames(realm.identityProviders().find("g", true, 0, 5), "github", "google");
+
+        Assert.assertNames(realm.identityProviders().find("g*", true, 0, 5), "github", "google");
+        Assert.assertNames(realm.identityProviders().find("g*", true, 0, 1), "github");
+        Assert.assertNames(realm.identityProviders().find("g*", true, 1, 1), "google");
+
+        Assert.assertNames(realm.identityProviders().find("*oo*", true, 0, 5), "google", "facebook");
+
+        List<IdentityProviderRepresentation> results = realm.identityProviders().find("\"twitter\"", true, 0, 5);
+        Assert.assertNames(results, "twitter");
+        Assert.assertTrue("Result is not in brief representation", results.iterator().next().getConfig().isEmpty());
+        results = realm.identityProviders().find("\"twitter\"", null, 0, 5);
+        Assert.assertNames(results, "twitter");
+        Assert.assertFalse("Config should be present in full representation", results.iterator().next().getConfig().isEmpty());
     }
 
     @Test
@@ -550,8 +573,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
-        create(createRep("linkedin", "linkedin"));
-        provider = realm.identityProviders().get("linkedin");
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
+        provider = realm.identityProviders().get("linkedin-openid-connect");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
 
@@ -581,10 +604,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-advanced-group-idp-mapper", "saml-xpath-attribute-idp-mapper");
     }
 
+    @Test
+    public void mapperTypesCanBeOverwritten() {
+        String kcOidcProviderId = "keycloak-oidc";
+        create(createRep(kcOidcProviderId, kcOidcProviderId));
+
+        String testProviderId = OverwrittenMappersTestIdentityProviderFactory.PROVIDER_ID;
+        create(createRep(testProviderId, testProviderId));
+
+        /*
+         * in the test provider, we have overwritten the mapper types to be the same as supported by "keycloak-oidc", so
+         * the "keycloak-oidc" mappers are the expected mappers for the test provider
+         */
+        IdentityProviderResource kcOidcProvider = realm.identityProviders().get(kcOidcProviderId);
+        Set<String> expectedMapperTypes = kcOidcProvider.getMapperTypes().keySet();
+
+        IdentityProviderResource testProvider = realm.identityProviders().get(testProviderId);
+        Set<String> actualMapperTypes = testProvider.getMapperTypes().keySet();
+
+        assertThat(actualMapperTypes, equalTo(expectedMapperTypes));
+    }
+
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
         Set<String> expected = new HashSet<>();
         expected.add("hardcoded-user-session-attribute-idp-mapper");
         expected.add("oidc-hardcoded-role-idp-mapper");
+        expected.add("oidc-hardcoded-group-idp-mapper");
         expected.add("hardcoded-attribute-idp-mapper");
         expected.add("multi-valued-test-idp-mapper");
         expected.addAll(Arrays.asList(mapperIds));
@@ -871,10 +916,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
         body = response.readEntity(Map.class);
         assertProviderInfo(body, "twitter", "Twitter");
 
-        response = realm.identityProviders().getIdentityProviders("linkedin");
+        response = realm.identityProviders().getIdentityProviders("linkedin-openid-connect");
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
-        assertProviderInfo(body, "linkedin", "LinkedIn");
+        assertProviderInfo(body, "linkedin-openid-connect", "LinkedIn");
 
         response = realm.identityProviders().getIdentityProviders("microsoft");
         Assert.assertEquals("Status", 200, response.getStatus());
@@ -1085,32 +1130,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Document document = DocumentUtil.getDocument(body);
 
         Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
-        Assert.assertThat("Signature not null", signatureElement, notNullValue());
+        assertThat("Signature not null", signatureElement, notNullValue());
 
         Element keyInfoElement = DocumentUtil.getDirectChildElement(signatureElement, XMLDSIG_NSURI.get(), "KeyInfo");
-        Assert.assertThat("KeyInfo not null", keyInfoElement, notNullValue());
+        assertThat("KeyInfo not null", keyInfoElement, notNullValue());
 
         Element x509DataElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "X509Data");
-        Assert.assertThat("X509Data not null", x509DataElement, notNullValue());
+        assertThat("X509Data not null", x509DataElement, notNullValue());
 
         Element x509CertificateElement = DocumentUtil.getDirectChildElement(x509DataElement, XMLDSIG_NSURI.get(), "X509Certificate");
-        Assert.assertThat("X509Certificate not null", x509CertificateElement, notNullValue());
+        assertThat("X509Certificate not null", x509CertificateElement, notNullValue());
 
         Element keyNameElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "KeyName");
-        Assert.assertThat("KeyName not null", keyNameElement, notNullValue());
+        assertThat("KeyName not null", keyNameElement, notNullValue());
 
         String activeSigCert = KeyUtils.findActiveSigningKey(realm, Constants.DEFAULT_SIGNATURE_ALGORITHM).getCertificate();
-        Assert.assertThat("activeSigCert not null", activeSigCert, notNullValue());
+        assertThat("activeSigCert not null", activeSigCert, notNullValue());
 
         X509Certificate activeX509SigCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(activeSigCert);
-        Assert.assertThat("KeyName matches subject DN",
-                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectDN().getName()));
+        assertThat("KeyName matches subject DN",
+                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectX500Principal().getName()));
 
-        Assert.assertThat("Signing cert matches active realm cert",
+        assertThat("Signing cert matches active realm cert",
                 x509CertificateElement.getTextContent().trim(), equalTo(Base64.getEncoder().encodeToString(activeX509SigCert.getEncoded())));
 
         PublicKey activePublicSigKey = activeX509SigCert.getPublicKey();
-        Assert.assertThat("Metadata signature is valid",
+        assertThat("Metadata signature is valid",
                 new SAML2Signature().validate(document, new HardcodedKeyLocator(activePublicSigKey)), is(true));
     }
 }

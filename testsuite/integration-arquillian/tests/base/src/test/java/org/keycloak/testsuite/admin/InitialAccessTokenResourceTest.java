@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -64,9 +64,9 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         assertNotNull(response.getId());
-        assertEquals(new Integer(2), response.getCount());
-        assertEquals(new Integer(2), response.getRemainingCount());
-        assertEquals(new Integer(100), response.getExpiration());
+        assertEquals(Integer.valueOf(2), response.getCount());
+        assertEquals(Integer.valueOf(2), response.getRemainingCount());
+        assertEquals(Integer.valueOf(100), response.getExpiration());
         assertThat(response.getTimestamp(), allOf(greaterThanOrEqualTo(time), lessThanOrEqualTo(Time.currentTime())));
         assertNotNull(response.getToken());
 

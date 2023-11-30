@@ -23,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;

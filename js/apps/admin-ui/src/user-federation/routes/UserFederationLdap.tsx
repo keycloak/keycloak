@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type UserFederationLdapTab = "settings" | "mappers";
@@ -12,13 +12,13 @@ export type UserFederationLdapParams = {
 };
 
 const UserFederationLdapSettings = lazy(
-  () => import("../UserFederationLdapSettings")
+  () => import("../UserFederationLdapSettings"),
 );
 
 export const UserFederationLdapRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap/:id",
   element: <UserFederationLdapSettings />,
-  breadcrumb: (t) => t("common:settings"),
+  breadcrumb: (t) => t("settings"),
   handle: {
     access: "view-realm",
   },
@@ -30,13 +30,13 @@ export const UserFederationLdapWithTabRoute: AppRouteObject = {
 };
 
 export const toUserFederationLdap = (
-  params: UserFederationLdapParams
+  params: UserFederationLdapParams,
 ): Partial<Path> => {
   const path = params.tab
     ? UserFederationLdapWithTabRoute.path
     : UserFederationLdapRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

@@ -30,14 +30,13 @@ export const LdapSettingsGeneral = ({
   showSectionDescription = false,
   vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     (result) => form.setValue("parentId", result!.id),
-    []
+    [],
   );
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
@@ -47,45 +46,50 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "cn");
         form.setValue("config.rdnLDAPAttribute[0]", "cn");
         form.setValue("config.uuidLDAPAttribute[0]", "objectGUID");
+        form.setValue("config.krbPrincipalAttribute[0]", "userPrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
-          "person, organizationalPerson, user"
+          "person, organizationalPerson, user",
         );
         break;
       case "rhds":
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "nsuniqueid");
+        form.setValue("config.krbPrincipalAttribute[0]", "krbPrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "tivoli":
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "uniqueidentifier");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "edirectory":
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "guid");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "other":
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "entryUUID");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       default:
@@ -98,7 +102,7 @@ export const LdapSettingsGeneral = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("generalOptions")}
-          description={helpText("ldapGeneralOptionsSettingsDescription")}
+          description={t("ldapGeneralOptionsSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -107,8 +111,8 @@ export const LdapSettingsGeneral = ({
           label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:uiDisplayNameHelp")}
-              fieldLabelId="user-federation:uiDisplayName"
+              helpText={t("uiDisplayNameHelp")}
+              fieldLabelId="uiDisplayName"
             />
           }
           fieldId="kc-ui-display-name"
@@ -152,10 +156,7 @@ export const LdapSettingsGeneral = ({
         <FormGroup
           label={t("vendor")}
           labelIcon={
-            <HelpItem
-              helpText={t("user-federation-help:vendorHelp")}
-              fieldLabelId="user-federation:vendor"
-            />
+            <HelpItem helpText={t("vendorHelp")} fieldLabelId="vendor" />
           }
           fieldId="kc-vendor"
           isRequired

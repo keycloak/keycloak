@@ -82,7 +82,7 @@ describe("User federation using component api", () => {
         providerId: "ldap",
         providerType: "org.keycloak.storage.UserStorageProvider",
         name: "cool-name",
-      }
+      },
     );
     const updated = await kcAdminClient.components.findOne({
       id: currentUserFed.id!,

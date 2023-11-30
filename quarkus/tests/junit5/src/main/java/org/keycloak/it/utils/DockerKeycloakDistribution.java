@@ -1,8 +1,10 @@
 package org.keycloak.it.utils;
 
+import com.github.dockerjava.api.DockerClient;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
@@ -11,12 +13,13 @@ import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
-import org.testcontainers.utility.ResourceReaper;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -37,10 +40,16 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String containerId = null;
 
     private Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
+    private Map<String, String> envVars = new HashMap<>();
 
     public DockerKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
         this.debug = debug;
         this.manualStop = manualStop;
+    }
+
+    @Override
+    public void setEnvVar(String name, String value) {
+        this.envVars.put(name, value);
     }
 
     private GenericContainer getKeycloakContainer() {
@@ -69,6 +78,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         return new GenericContainer(image)
+                .withEnv(envVars)
                 .withExposedPorts(8080)
                 .withStartupAttempts(1)
                 .withStartupTimeout(Duration.ofSeconds(120))
@@ -101,6 +111,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             cleanupContainer();
             keycloakContainer = null;
             LOGGER.warn("Failed to start Keycloak container", cause);
+        } finally {
+            if (!manualStop) {
+                envVars.clear();
+            }
         }
 
         trySetRestAssuredPort();
@@ -172,9 +186,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                     @Override
                     public void run() {
                         try {
-                            ResourceReaper
-                                    .instance()
-                                    .stopAndRemoveContainer(finalContainerId);
+                            DockerClient dockerClient = DockerClientFactory.lazyClient();
+                            dockerClient.killContainerCmd(containerId).exec();
+                            dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).withForce(true).exec();
                         } catch (Exception cause) {
                             throw new RuntimeException("Failed to stop and remove container", cause);
                         }

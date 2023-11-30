@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
@@ -28,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.Theme;
 
@@ -75,23 +77,18 @@ public class AccountLoader {
         List<MediaType> accepts = headers.getAcceptableMediaTypes();
 
         Theme theme = getTheme(session);
-        boolean deprecatedAccount = isDeprecatedFormsAccountConsole(theme);
         UriInfo uriInfo = session.getContext().getUri();
 
+        AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
+        
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
+        } else if (accountResourceProvider != null) {
+            return accountResourceProvider.getResource();
         } else {
-            if (deprecatedAccount) {
-                AccountFormService accountFormService = new AccountFormService(session, client, event);
-                accountFormService.init();
-                return accountFormService;
-            } else {
-                AccountConsole console = new AccountConsole(session, client, theme);
-                console.init();
-                return console;
-            }
+            throw new NotFoundException();
         }
     }
 
@@ -112,13 +109,6 @@ public class AccountLoader {
         }
     }
 
-    private boolean isDeprecatedFormsAccountConsole(Theme theme) {
-        try {
-            return Boolean.parseBoolean(theme.getProperties().getProperty("deprecatedMode", "true"));
-        } catch (IOException e) {
-            throw new InternalServerErrorException(e);
-        }
-    }
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
@@ -159,4 +149,12 @@ public class AccountLoader {
         return client;
     }
 
+    private AccountResourceProvider getAccountResourceProvider(Theme theme) {
+      try {
+        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        }
+      } catch (IOException ignore) {}
+      return session.getProvider(AccountResourceProvider.class);
+    }
 }

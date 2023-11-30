@@ -48,7 +48,7 @@ describe("Partial realm export", () => {
     modal.includeGroupsAndRolesSwitch().click({ force: true });
     modal.exportButton().click();
     cy.readFile(
-      Cypress.config("downloadsFolder") + "/realm-export.json"
+      Cypress.config("downloadsFolder") + "/realm-export.json",
     ).should("exist");
     modal.exportButton().should("not.exist");
   });

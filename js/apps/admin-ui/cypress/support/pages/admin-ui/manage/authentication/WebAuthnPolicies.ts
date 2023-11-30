@@ -21,7 +21,7 @@ export default class WebAuthnPolicies {
       cy.get(
         `#${
           isPasswordLess ? prop.replace("Policy", "PolicyPasswordless") : prop
-        }`
+        }`,
       )
         .click()
         .parent()

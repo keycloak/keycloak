@@ -1,3 +1,0 @@
-include::overview.adoc[]
-include::{generated}/paths.adoc[]
-include::{generated}/definitions.adoc[]

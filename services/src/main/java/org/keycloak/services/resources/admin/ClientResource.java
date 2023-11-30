@@ -16,7 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import jakarta.ws.rs.core.Response.Status;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
@@ -65,6 +70,7 @@ import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -99,6 +105,7 @@ import static java.lang.Boolean.TRUE;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
     protected RealmModel realm;
@@ -132,6 +139,8 @@ public class ClientResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Update the client")
     public Response update(final ClientRepresentation rep) {
         auth.clients().requireConfigure(client);
 
@@ -174,6 +183,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get representation of the client")
     public ClientRepresentation getClient() {
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, auth.adminAuth()));
@@ -204,6 +215,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Path("installation/providers/{providerId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation()
     public Response getInstallationProvider(@PathParam("providerId") String providerId) {
         auth.clients().requireView(client);
 
@@ -218,6 +231,8 @@ public class ClientResource {
      */
     @DELETE
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Delete the client")
     public void deleteClient() {
         auth.clients().requireManage(client);
 
@@ -250,6 +265,8 @@ public class ClientResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Generate a new secret for the client")
     public CredentialRepresentation regenerateSecret() {
         try{
             auth.clients().requireConfigure(client);
@@ -293,6 +310,8 @@ public class ClientResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Generate a new registration access token for the client")
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.clients().requireManage(client);
 
@@ -314,6 +333,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get the client secret")
     public CredentialRepresentation getClientSecret() {
         auth.clients().requireView(client);
 
@@ -350,6 +371,8 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-client-scopes")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get default client scopes.  Only name and ids are returned.")
     public Stream<ClientScopeRepresentation> getDefaultClientScopes() {
         return getDefaultClientScopes(true);
     }
@@ -364,6 +387,8 @@ public class ClientResource {
     @PUT
     @NoCache
     @Path("default-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation()
     public void addDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId,true);
     }
@@ -387,6 +412,8 @@ public class ClientResource {
     @DELETE
     @NoCache
     @Path("default-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation()
     public void removeDefaultClientScope(@PathParam("clientScopeId") String clientScopeId) {
         auth.clients().requireManage(client);
 
@@ -409,6 +436,8 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("optional-client-scopes")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get optional client scopes.  Only name and ids are returned.")
     public Stream<ClientScopeRepresentation> getOptionalClientScopes() {
         return getDefaultClientScopes(false);
     }
@@ -416,6 +445,8 @@ public class ClientResource {
     @PUT
     @NoCache
     @Path("optional-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation()
     public void addOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         addDefaultClientScope(clientScopeId, false);
     }
@@ -423,6 +454,8 @@ public class ClientResource {
     @DELETE
     @NoCache
     @Path("optional-client-scopes/{clientScopeId}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation()
     public void removeOptionalClientScope(@PathParam("clientScopeId") String clientScopeId) {
         removeDefaultClientScope(clientScopeId);
     }
@@ -441,6 +474,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get a user dedicated to the service account")
     public UserRepresentation getServiceAccountUser() {
         auth.clients().requireView(client);
 
@@ -465,6 +500,8 @@ public class ClientResource {
     @Path("push-revocation")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Push the client's revocation policy to its admin URL If the client has an admin URL, push revocation policy to it.")
     public GlobalRequestResult pushRevocation() {
         auth.clients().requireConfigure(client);
 
@@ -488,6 +525,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get application session count Returns a number of user sessions associated with this client { \"count\": number }")
     public Map<String, Long> getApplicationSessionCount() {
         auth.clients().requireView(client);
 
@@ -509,7 +548,9 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get user sessions for client Returns a list of user sessions associated with this client\n")
+    public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
@@ -533,6 +574,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get application offline session count Returns a number of offline user sessions associated with this client { \"count\": number }")
     public Map<String, Long> getOfflineSessionCount() {
         auth.clients().requireView(client);
 
@@ -554,7 +597,9 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get offline sessions for client Returns a list of offline user sessions associated with this client")
+    public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
@@ -575,6 +620,9 @@ public class ClientResource {
     @Path("nodes")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Register a cluster node with the client Manually register cluster node to this client - usually it’s not needed to call this directly as adapter should handle by sending registration request to Keycloak")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void registerNode(Map<String, String> formParams) {
         auth.clients().requireConfigure(client);
 
@@ -598,6 +646,8 @@ public class ClientResource {
     @Path("nodes/{node}")
     @DELETE
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Unregister a cluster node from the client")
     public void unregisterNode(final @PathParam("node") String node) {
         auth.clients().requireConfigure(client);
 
@@ -622,6 +672,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Test if registered cluster nodes are available Tests availability by sending 'ping' request to all cluster nodes.")
     public GlobalRequestResult testNodesAvailable() {
         auth.clients().requireConfigure(client);
 
@@ -647,6 +699,8 @@ public class ClientResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions() {
         auth.roles().requireView(client);
 
@@ -677,6 +731,8 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.clients().requireManage(client);
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -697,6 +753,8 @@ public class ClientResource {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Invalidate the rotated secret for the client")
     public Response invalidateRotatedSecret() {
         try{
             auth.clients().requireConfigure(client);
@@ -729,6 +787,8 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @Operation( summary = "Get the rotated client secret")
     public CredentialRepresentation getClientRotatedSecret() {
         auth.clients().requireView(client);
 

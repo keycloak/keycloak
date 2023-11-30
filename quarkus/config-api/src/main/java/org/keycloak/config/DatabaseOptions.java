@@ -19,7 +19,7 @@ public class DatabaseOptions {
             .category(OptionCategory.DATABASE)
             .description("The database vendor.")
             .defaultValue("dev-file")
-            .expectedValues(Database::getLegacyStoreAliases)
+            .expectedValues(Database::getDatabaseAliases)
             .buildTime(true)
             .build();
 

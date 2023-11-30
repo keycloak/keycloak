@@ -71,11 +71,52 @@ public class LDAPServerCapabilitiesManager {
         return new LDAPIdentityStore(session, ldapConfig).queryServerCapabilities();
     }
 
-    public static boolean testLDAP(TestLdapConnectionRepresentation config, KeycloakSession session, RealmModel realm) {
+    public static class InvalidBindDNException extends javax.naming.NamingException {
+        public InvalidBindDNException(String s) {
+            super(s);
+        }
+    }
+
+    public static String getErrorCode(Throwable throwable) {
+        String errorMsg = "UnknownError";
+        if (throwable instanceof javax.naming.NamingException)
+             errorMsg = "NamingError";
+        if (throwable instanceof javax.naming.AuthenticationException)
+             errorMsg = "AuthenticationFailure";
+        if (throwable instanceof javax.naming.CommunicationException)
+             errorMsg = "CommunicationError";
+        if (throwable instanceof javax.naming.ServiceUnavailableException)
+             errorMsg = "ServiceUnavailable";
+        if (throwable instanceof javax.naming.InvalidNameException)
+             errorMsg = "InvalidName";
+        if (throwable instanceof javax.naming.ServiceUnavailableException)
+             errorMsg = "ServiceUnavailable";
+        if (throwable instanceof InvalidBindDNException)
+             errorMsg = "InvalidBindDN";
+
+        if (throwable instanceof javax.naming.NamingException) {
+            Throwable rootCause = ((javax.naming.NamingException)throwable).getRootCause();
+            if (rootCause instanceof java.net.MalformedURLException)
+                 errorMsg = "MalformedURL";
+            if (rootCause instanceof java.net.NoRouteToHostException)
+                 errorMsg = "NoRouteToHost";
+            if (rootCause instanceof java.net.ConnectException)
+                 errorMsg = "ConnectionFailed";
+            if (rootCause instanceof java.net.UnknownHostException)
+                 errorMsg = "UnknownHost";
+            if (rootCause instanceof javax.net.ssl.SSLHandshakeException)
+                 errorMsg = "SSLHandshakeFailed";
+            if (rootCause instanceof java.net.SocketException)
+                 errorMsg = "SocketReset";
+        }
+        return errorMsg;
+    }
+
+    public static void testLDAP(TestLdapConnectionRepresentation config, KeycloakSession session, RealmModel realm) throws javax.naming.NamingException {
 
         if (!TEST_CONNECTION.equals(config.getAction()) && !TEST_AUTHENTICATION.equals(config.getAction())) {
             ServicesLogger.LOGGER.unknownAction(config.getAction());
-            return false;
+            throw new javax.naming.NamingException("testLDAP unknown action");
         }
 
         if (TEST_AUTHENTICATION.equals(config.getAction())) {
@@ -83,8 +124,7 @@ public class LDAPServerCapabilitiesManager {
             // LDAPContextManager is responsible for correct order of addition of credentials to context in case
             // tls is true
             if ((config.getBindDn() == null || config.getBindDn().isEmpty()) && LDAPConstants.AUTH_TYPE_SIMPLE.equals(config.getAuthType())) {
-                logger.error("Unknown bind DN");
-                return false;
+                throw new InvalidBindDNException("Unknown bind DN");
             }
         } else {
             // only test the connection.
@@ -97,14 +137,11 @@ public class LDAPServerCapabilitiesManager {
         // is not needed anymore
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
             ldapContextManager.getLdapContext();
-
-            // Connection was successful, no exception was raised returning true
-            return true;
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(config.getAction())) ? "Error when authenticating to LDAP: "
                 : "Error when connecting to LDAP: ";
             ServicesLogger.LOGGER.errorAuthenticating(ne, errorMessage + ne.getMessage());
-            return false;
+            throw ne;
         }
     }
 }

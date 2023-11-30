@@ -55,7 +55,7 @@ const defaultValues: ClientProfileForm = {
 };
 
 export default function ClientProfileForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     handleSubmit,
@@ -84,7 +84,7 @@ export default function ClientProfileForm() {
       serverInfo.componentTypes?.[
         "org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider"
       ],
-    []
+    [],
   );
   const [executorToDelete, setExecutorToDelete] = useState<{
     idx: number;
@@ -103,21 +103,21 @@ export default function ClientProfileForm() {
         profiles: profiles.profiles?.filter((p) => p.name !== profileName),
       });
       const globalProfile = profiles.globalProfiles?.find(
-        (p) => p.name === profileName
+        (p) => p.name === profileName,
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
       setValue("name", globalProfile?.name ?? profile?.name ?? "");
       setValue(
         "description",
-        globalProfile?.description ?? profile?.description ?? ""
+        globalProfile?.description ?? profile?.description ?? "",
       );
       setValue(
         "executors",
-        globalProfile?.executors ?? profile?.executors ?? []
+        globalProfile?.executors ?? profile?.executors ?? [],
       );
     },
-    [key]
+    [key],
   );
 
   const save = async (form: ClientProfileForm) => {
@@ -131,18 +131,16 @@ export default function ClientProfileForm() {
 
       addAlert(
         editMode
-          ? t("realm-settings:updateClientProfileSuccess")
-          : t("realm-settings:createClientProfileSuccess"),
-        AlertVariant.success
+          ? t("updateClientProfileSuccess")
+          : t("createClientProfileSuccess"),
+        AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName: form.name }));
     } catch (error) {
       addError(
-        editMode
-          ? "realm-settings:updateClientProfileError"
-          : "realm-settings:createClientProfileError",
-        error
+        editMode ? "updateClientProfileError" : "createClientProfileError",
+        error,
       );
     }
   };
@@ -228,7 +226,7 @@ export default function ClientProfileForm() {
             fieldId="kc-name"
             helperText={t("createClientProfileNameHelperText")}
             isRequired
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
@@ -240,7 +238,7 @@ export default function ClientProfileForm() {
               {...register("name", { required: true })}
             />
           </FormGroup>
-          <FormGroup label={t("common:description")} fieldId="kc-description">
+          <FormGroup label={t("description")} fieldId="kc-description">
             <KeycloakTextArea
               id="kc-description"
               data-testid="client-profile-description"
@@ -256,7 +254,7 @@ export default function ClientProfileForm() {
                 data-testid="saveCreateProfile"
                 isDisabled={!isDirty}
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
             )}
             {editMode && !isGlobalProfile && (
@@ -267,7 +265,7 @@ export default function ClientProfileForm() {
                 isDisabled={!isDirty}
                 onClick={reload}
               >
-                {t("realm-settings:reload")}
+                {t("reload")}
               </Button>
             )}
             {!editMode && !isGlobalProfile && (
@@ -282,7 +280,7 @@ export default function ClientProfileForm() {
                 )}
                 data-testid={"cancelCreateProfile"}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             )}
           </ActionGroup>
@@ -293,8 +291,8 @@ export default function ClientProfileForm() {
                   <Text className="kc-executors" component={TextVariants.h1}>
                     {t("executors")}
                     <HelpItem
-                      helpText={t("realm-settings:executorsHelpText")}
-                      fieldLabelId="realm-settings:executors"
+                      helpText={t("executorsHelpText")}
+                      fieldLabelId="executors"
                     />
                   </Text>
                 </FlexItem>
@@ -316,7 +314,7 @@ export default function ClientProfileForm() {
                       data-testid="addExecutor"
                       icon={<PlusCircleIcon />}
                     >
-                      {t("realm-settings:addExecutor")}
+                      {t("addExecutor")}
                     </Button>
                   </FlexItem>
                 )}
@@ -361,14 +359,14 @@ export default function ClientProfileForm() {
                                 )}
                                 {executorTypes
                                   ?.filter(
-                                    (type) => type.id === executor.executor
+                                    (type) => type.id === executor.executor,
                                   )
                                   .map((type) => (
                                     <Fragment key={type.id}>
                                       <HelpItem
                                         key={type.id}
                                         helpText={type.helpText}
-                                        fieldLabelId="realm-settings:executorTypeTextHelpText"
+                                        fieldLabelId="executorTypeTextHelpText"
                                       />
                                       {!isGlobalProfile && (
                                         <Button
@@ -388,7 +386,7 @@ export default function ClientProfileForm() {
                                               name: type.id,
                                             });
                                           }}
-                                          aria-label={t("common:remove")}
+                                          aria-label={t("remove")}
                                         />
                                       )}
                                     </Fragment>
@@ -413,7 +411,7 @@ export default function ClientProfileForm() {
                       className="kc-backToPolicies"
                       data-testid="backToClientPolicies"
                     >
-                      {t("realm-settings:back")}
+                      {t("back")}
                     </Button>
                   )}
                 </>
@@ -423,9 +421,9 @@ export default function ClientProfileForm() {
                   <Divider />
                   <Text
                     className="kc-emptyExecutors"
-                    component={TextVariants.h6}
+                    component={TextVariants.h2}
                   >
-                    {t("realm-settings:emptyExecutors")}
+                    {t("emptyExecutors")}
                   </Text>
                 </>
               )}

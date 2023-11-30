@@ -48,6 +48,7 @@ import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceToken
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
@@ -145,10 +146,20 @@ public class DeviceGrantType {
         return flow != null;
     }
 
-    public static OAuth2DeviceCodeModel getDeviceByDeviceCode(KeycloakSession session, RealmModel realm, String deviceCode) {
+    public static OAuth2DeviceCodeModel getDeviceByDeviceCode(KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event, String deviceCode) {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         Map<String, String> notes = singleUseStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
-        return notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
+        OAuth2DeviceCodeModel deviceCodeModel = notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
+
+        if (deviceCodeModel != null) {
+            if (!client.getClientId().equals(deviceCodeModel.getClientId())) {
+                event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "unauthorized client",
+                        Response.Status.BAD_REQUEST);
+            }
+        }
+
+        return deviceCodeModel;
     }
 
     public static void removeDeviceByDeviceCode(KeycloakSession session, String deviceCode) {
@@ -227,7 +238,7 @@ public class DeviceGrantType {
                 "Missing parameter: " + OAuth2Constants.DEVICE_CODE, Response.Status.BAD_REQUEST);
         }
 
-        OAuth2DeviceCodeModel deviceCodeModel = getDeviceByDeviceCode(session, realm, deviceCode);
+        OAuth2DeviceCodeModel deviceCodeModel = getDeviceByDeviceCode(session, realm, client, event, deviceCode);
 
         if (deviceCodeModel == null) {
             event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);

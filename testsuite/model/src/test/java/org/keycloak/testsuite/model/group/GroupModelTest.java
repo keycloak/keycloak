@@ -22,11 +22,19 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class GroupModelTest extends KeycloakModelTest {
 
@@ -70,4 +78,149 @@ public class GroupModelTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void testSubGroupsSorted() {
+        List<String> subGroups = Arrays.asList("sub-group-1", "sub-group-2", "sub-group-3");
+
+        String groupId = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "my-group");
+
+            subGroups.stream().sorted(Collections.reverseOrder()).forEach(s -> {
+                GroupModel subGroup = session.groups().createGroup(realm, s);
+                group.addChild(subGroup);
+            });
+
+            return group.getId();
+        });
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().getGroupById(realm, groupId);
+
+            assertThat(group.getSubGroupsStream().map(GroupModel::getName).collect(Collectors.toList()),
+                    contains(subGroups.toArray()));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void testGroupByName() {
+        String subGroupId1 = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-1");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group-1", group);
+           return subGroup.getId();
+        });
+
+        String subGroupId2 = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-2");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group-1", group);
+            return subGroup.getId();
+        });
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = session.groups().getGroupByName(realm, null,"parent-1");
+            GroupModel group2 = session.groups().getGroupByName(realm, null,"parent-2");
+
+            GroupModel subGroup1 = session.groups().getGroupByName(realm, group1,"sub-group-1");
+            GroupModel subGroup2 = session.groups().getGroupByName(realm, group2,"sub-group-1");
+
+            assertThat(subGroup1.getId(), equalTo(subGroupId1));
+            assertThat(subGroup1.getName(), equalTo("sub-group-1"));
+            assertThat(subGroup2.getId(), equalTo(subGroupId2));
+            assertThat(subGroup2.getName(), equalTo("sub-group-1"));
+            return null;
+        });
+    }
+
+    @Test
+    public void testConflictingNames() {
+        final String conflictingGroupName = "conflicting-group-name";
+
+        String parentGroupWithChildId = withRealm(realmId, (session, realm) -> {
+            GroupModel parentGroupWithChild = session.groups().createGroup(realm, "parent-1");
+            GroupModel subGroup1 = session.groups().createGroup(realm, conflictingGroupName, parentGroupWithChild);
+            return parentGroupWithChild.getId();
+        });
+
+        String parentGroupWithConflictingNameId = withRealm(realmId, (session, realm) -> session.groups().createGroup(realm, conflictingGroupName).getId());
+        String parentGroupWithoutChildrenId = withRealm(realmId, (session, realm) -> session.groups().createGroup(realm, "parent-2").getId());
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel searchedGroup = session.groups().getGroupByName(realm, null, conflictingGroupName);
+            assertThat(searchedGroup, notNullValue());
+            assertThat(searchedGroup.getId(), equalTo(parentGroupWithConflictingNameId));
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel parentGroupWithChild = session.groups().getGroupById(realm, parentGroupWithChildId);
+            GroupModel searchedGroup = session.groups().getGroupByName(realm, parentGroupWithChild, conflictingGroupName);
+            assertThat(searchedGroup, notNullValue());
+            assertThat(searchedGroup.getParentId(), equalTo(parentGroupWithChildId));
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel parentGroupWithoutChildren = session.groups().getGroupById(realm, parentGroupWithoutChildrenId);
+            GroupModel searchedGroup = session.groups().getGroupByName(realm, parentGroupWithoutChildren, conflictingGroupName);
+            assertThat(searchedGroup, nullValue());
+            return null;
+        });
+    }
+
+    @Test
+    public void testGroupByNameCacheInvalidation() {
+        String subGroupId1 = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-1");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group-1", group);
+            return subGroup.getId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = session.groups().getGroupByName(realm, null, "parent-1");
+            GroupModel subGroup1 = session.groups().getGroupByName(realm, group1, "sub-group-1");
+            assertThat(subGroup1.getId(), equalTo(subGroupId1));
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = session.groups().getGroupByName(realm, null, "parent-1");
+            GroupModel subGroup1 = session.groups().getGroupByName(realm, group1, "sub-group-1");
+            session.groups().removeGroup(realm, subGroup1);
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = session.groups().getGroupByName(realm, null, "parent-1");
+            GroupModel subGroup1 = session.groups().getGroupByName(realm, group1, "sub-group-1");
+            assertThat(subGroup1, nullValue());
+            return null;
+        });
+
+    }
+    @Test
+    public void testFindGroupByPath() {
+        String subGroupId1 = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-1");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group-1", group);
+            return subGroup.getId();
+        });
+
+        String subGroupIdWithSlash = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-2");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group/1", group);
+            return subGroup.getId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-1");
+            GroupModel group2 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-2");
+            assertThat(group1.getName(), equalTo("parent-1"));
+            assertThat(group2.getName(), equalTo("parent-2"));
+
+            GroupModel subGroup1 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-1/sub-group-1");
+            GroupModel subGroup2 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-2/sub-group/1");
+            assertThat(subGroup1.getId(), equalTo(subGroupId1));
+            assertThat(subGroup2.getId(), equalTo(subGroupIdWithSlash));
+            return null;
+        });
+    }
 }

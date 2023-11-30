@@ -70,8 +70,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.oneOf;
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -243,7 +245,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // group management
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
 
-        GroupModel group =  KeycloakModelUtils.findGroupByPath(realm, "top");
+        GroupModel group =  KeycloakModelUtils.findGroupByPath(session, realm, "top");
         UserModel groupMember = session.users().addUser(realm, "groupMember");
         groupMember.joinGroup(group);
         groupMember.setEnabled(true);
@@ -820,7 +822,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         ClientModel client = realm.getClientByClientId("removedClient");
         RoleModel removedClientRole = client.getRole("removedClientRole");
         client.removeRole(removedClientRole);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, "removedGroup");
         realm.removeGroup(group);
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(2, byResourceServer.size());
@@ -1010,7 +1012,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search(null, "test", null, null, 20, 40);
 
@@ -1023,12 +1025,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
 
             client.realm("test").users().search(null, null, null, null, -1, -1);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
         }
 
         try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
@@ -1037,12 +1039,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<UserRepresentation> result = client.realm("test").users().search(null, null, null, null, -1, 20);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search("test", -1, 20, false);
 
             Assert.assertEquals(20, result.size());
-            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
             result = client.realm("test").users().search("a", -1, 20, false);
 
@@ -1142,10 +1144,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll(null, true, false, 0, 1);
 
             Assert.assertEquals(1, result.size());
-            Assert.assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-09"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-09"))));
 
             result = client.realm("test").clients().findAll(null, true, false, 1, 1);
-            Assert.assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-10"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-10"))));
 
             Assert.assertEquals(1, result.size());
 
@@ -1196,7 +1198,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-09",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-09",
                     "client-search-10",
                     "client-search-11",
                     "client-search-12",
@@ -1210,7 +1212,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-19",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-19",
                     "client-search-20",
                     "client-search-21",
                     "client-search-22",
@@ -1224,8 +1226,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 20, 10);
             clients.addAll(result);
             Assert.assertEquals(1, result.size());
-            Assert.assertThat(result, Matchers.hasItems(
-                    Matchers.hasProperty("clientId", Matchers.isOneOf("client-search-29"))));
+            assertThat(result, Matchers.hasItems(
+                    Matchers.hasProperty("clientId", is(oneOf("client-search-29")))));
         }
     }
 
@@ -1279,7 +1281,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-15",
                     "client-search-16",
                     "client-search-17",
@@ -1294,7 +1296,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(5, result.size());
-            Assert.assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-25",
                     "client-search-26",
                     "client-search-27",

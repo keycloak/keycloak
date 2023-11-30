@@ -218,7 +218,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         out.println("    --trustpass PASSWORD    Truststore password (prompted for if not specified and --truststore is used)");
         out.println();
         out.println("  Command specific options:");
-        out.println("    --server SERVER_URL     Server endpoint url (e.g. 'http://localhost:8080/auth')");
+        out.println("    --server SERVER_URL     Server endpoint url (e.g. 'http://localhost:8080')");
         out.println("    --realm REALM           Realm name to use");
         out.println("    --user USER             Username to login with");
         out.println("    --password PASSWORD     Password to login with (prompted for if not specified and --user is used)");
@@ -235,30 +235,30 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         out.println();
         out.println("Login as 'admin' user of 'master' realm to a local Keycloak server running on default port.");
         out.println("You will be prompted for a password:");
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:8080/auth --realm master --user admin");
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:8080 --realm master --user admin");
         out.println();
         out.println("Login to Keycloak server at non-default endpoint passing the password via standard input:");
         if (OS_ARCH.isWindows()) {
-            out.println("  " + PROMPT + " echo mypassword | " + CMD + " config credentials --server http://localhost:9080/auth --realm master --user admin");
+            out.println("  " + PROMPT + " echo mypassword | " + CMD + " config credentials --server http://localhost:9080 --realm master --user admin");
         } else {
-            out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080/auth --realm master --user admin << EOF");
+            out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080 --realm master --user admin << EOF");
             out.println("  mypassword");
             out.println("  EOF");
         }
         out.println();
         out.println("Login specifying a password through command line:");
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080/auth --realm master --user admin --password " + OS_ARCH.envVar("PASSWORD"));
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080 --realm master --user admin --password " + OS_ARCH.envVar("PASSWORD"));
         out.println();
         out.println("Login using a client service account of a custom client. You will be prompted for a client secret:");
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080/auth --realm master --client reg-cli");
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080 --realm master --client reg-cli");
         out.println();
         out.println("Login using a client service account of a custom client, authenticating with signed JWT.");
         out.println("You will be prompted for a keystore password, and a key password:");
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080/auth --realm master --client reg-cli --keystore " + OS_ARCH.path("~/.keycloak/keystore.jks"));
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080 --realm master --client reg-cli --keystore " + OS_ARCH.path("~/.keycloak/keystore.jks"));
         out.println();
         out.println("Login as 'user' while also authenticating a custom client with signed JWT.");
         out.println("You will be prompted for a user password, a keystore password, and a key password:");
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080/auth --realm master --user user --client reg-cli --keystore " + OS_ARCH.path("~/.keycloak/keystore.jks"));
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:9080 --realm master --user user --client reg-cli --keystore " + OS_ARCH.path("~/.keycloak/keystore.jks"));
         out.println();
         out.println();
         out.println("Use '" + CMD + " help' for general information and a list of commands");

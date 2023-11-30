@@ -190,7 +190,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         if (output instanceof WebElement) {
             waitUntilElement((WebElement) output).text().contains(value);
         } else {
-            Assert.assertThat((String) output, containsString(value));
+            assertThat((String) output, containsString(value));
         }
     }
 
@@ -203,7 +203,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     }
 
     public ResponseValidator assertResponseStatus(long status) {
-        return output -> Assert.assertThat(output, hasEntry("status", status));
+        return output -> assertThat(output, hasEntry("status", status));
     }
 
     public JavascriptStateValidator assertOutputContains(String text) {

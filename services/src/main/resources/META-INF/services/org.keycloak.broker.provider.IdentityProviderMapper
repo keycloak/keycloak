@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.keycloak.broker.provider.HardcodedGroupMapper
 org.keycloak.broker.provider.HardcodedRoleMapper
 org.keycloak.broker.provider.HardcodedAttributeMapper
 org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper

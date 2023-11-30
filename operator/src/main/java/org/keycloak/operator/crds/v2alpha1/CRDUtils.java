@@ -21,22 +21,14 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class CRDUtils {
     public static boolean isTlsConfigured(Keycloak keycloakCR) {
-        var tlsSecret = getValueFromSubSpec(keycloakCR.getSpec().getHttpSpec(), HttpSpec::getTlsSecret);
+        var tlsSecret = Optional.ofNullable(keycloakCR.getSpec().getHttpSpec()).map(HttpSpec::getTlsSecret);
         return tlsSecret.isPresent() && !tlsSecret.get().trim().isEmpty();
     }
 
-    public static <T, R> Optional<R> getValueFromSubSpec(T subSpec, Function<T, R> valueSupplier) {
-        if (subSpec != null) {
-            return Optional.ofNullable(valueSupplier.apply(subSpec));
-        } else {
-            return Optional.empty();
-        }
-    }
 }

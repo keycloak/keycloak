@@ -3,10 +3,24 @@ package org.keycloak.config;
 public class ProxyOptions {
 
     public enum Mode {
-        none,
+        none(false),
         edge,
         reencrypt,
-        passthrough;
+        passthrough(false);
+
+        private final boolean proxyHeadersEnabled;
+
+        Mode(boolean proxyHeadersEnabled) {
+            this.proxyHeadersEnabled = proxyHeadersEnabled;
+        }
+
+        Mode() {
+            this(true);
+        }
+
+        public boolean isProxyHeadersEnabled() {
+            return proxyHeadersEnabled;
+        }
     }
 
     public static final Option<Mode> PROXY = new OptionBuilder<>("proxy", Mode.class)

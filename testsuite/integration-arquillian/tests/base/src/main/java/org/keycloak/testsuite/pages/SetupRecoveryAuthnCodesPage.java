@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class SetupRecoveryAuthnCodesPage extends LanguageComboboxAwarePage {
+public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 
     @FindBy(id = "kc-recovery-codes-list")
     private WebElement recoveryAuthnCodesList;

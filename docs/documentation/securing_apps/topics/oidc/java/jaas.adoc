@@ -1,6 +1,8 @@
 [[_jaas_adapter]]
 ==== JAAS plugin
 
+include::adapter-deprecation-notice.adoc[]
+
 It's generally not needed to use JAAS for most of the applications, especially if they are HTTP based, and you should most likely choose one of our other adapters.
 However, some applications and systems may still rely on pure legacy JAAS solution.
 {project_name} provides two login modules to help in these situations.

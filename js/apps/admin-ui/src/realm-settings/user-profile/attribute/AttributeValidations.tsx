@@ -19,6 +19,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { DefaultValue } from "../../../components/key-value-form/KeyValueInput";
 import useToggle from "../../../utils/useToggle";
 import type { IndexedValidations } from "../../NewAttributeSettings";
 import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
@@ -26,10 +27,10 @@ import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import "../../realm-settings-section.css";
 
 export const AttributeValidations = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addValidatorModalOpen, toggleModal] = useToggle();
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
-  const { setValue, control, register } = useFormContext();
+  const { setValue, control, register, getValues } = useFormContext();
 
   const validators: IndexedValidations[] = useWatch({
     name: "validations",
@@ -39,18 +40,18 @@ export const AttributeValidations = () => {
 
   useEffect(() => {
     register("validations");
-  }, []);
+  }, [register]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteValidatorConfirmTitle"),
     messageKey: t("deleteValidatorConfirmMsg", {
       validatorName: validatorToDelete,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
-        (validator) => validator.key !== validatorToDelete
+        (validator) => validator.key !== validatorToDelete,
       );
 
       setValue("validations", [...updatedValidators]);
@@ -63,6 +64,16 @@ export const AttributeValidations = () => {
         <AddValidatorDialog
           selectedValidators={validators}
           onConfirm={(newValidator) => {
+            const annotations: DefaultValue[] = getValues("annotations");
+            if (
+              newValidator.id === "options" &&
+              !annotations.find((a) => a.key === "inputType")
+            ) {
+              setValue("annotations", [
+                ...annotations,
+                { key: "inputType", value: "select" },
+              ]);
+            }
             setValue("validations", [
               ...validators,
               { key: newValidator.id, value: newValidator.config },
@@ -81,7 +92,7 @@ export const AttributeValidations = () => {
           className="kc--attributes-validations--add-validation-button"
           icon={<PlusCircleIcon />}
         >
-          {t("realm-settings:addValidator")}
+          {t("addValidator")}
         </Button>
         <Divider />
         {validators.length !== 0 ? (
@@ -90,7 +101,7 @@ export const AttributeValidations = () => {
               <Tr>
                 <Th>{t("validatorColNames.colName")}</Th>
                 <Th>{t("validatorColNames.colConfig")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>
@@ -112,7 +123,7 @@ export const AttributeValidations = () => {
                         setValidatorToDelete(validator.key);
                       }}
                     >
-                      {t("common:delete")}
+                      {t("delete")}
                     </Button>
                   </Td>
                 </Tr>
@@ -121,7 +132,7 @@ export const AttributeValidations = () => {
           </TableComposable>
         ) : (
           <Text className="kc-emptyValidators" component={TextVariants.h6}>
-            {t("realm-settings:emptyValidators")}
+            {t("emptyValidators")}
           </Text>
         )}
       </div>

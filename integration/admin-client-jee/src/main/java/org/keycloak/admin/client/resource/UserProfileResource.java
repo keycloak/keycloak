@@ -19,9 +19,12 @@ package org.keycloak.admin.client.resource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+
+import org.keycloak.representations.idm.UserProfileMetadata;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -30,11 +33,25 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public interface UserProfileResource {
 
+    /**
+     * @return user profile configuration
+     */
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
-    String getConfiguration();
+    UPConfig getConfiguration();
 
+    @GET
+    @Path("/metadata")
+    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    UserProfileMetadata getMetadata();
+
+    /**
+     * Updates user profile configuration. Using null as an argument could mean restart of the configuration to the default configuration
+     *
+     * @param config Could be null, which can mean restart to the default user-profile configuration (Can depend on the implementation)
+     * @return
+     */
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    Response update(String text);
+    void update(UPConfig config);
 }

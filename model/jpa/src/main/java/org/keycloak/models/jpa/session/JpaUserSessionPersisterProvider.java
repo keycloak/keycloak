@@ -519,12 +519,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setClientId(clientId);
         model.setUserSessionId(userSession.getId());
 
-        UserModel user = userSession.getUser();
-        if (user != null) {
-            model.setUserId(user.getId());
-        }
-        else if (userSession instanceof PersistentUserSessionAdapter) {
+        if (userSession instanceof PersistentUserSessionAdapter) {
             model.setUserId(((PersistentUserSessionAdapter) userSession).getUserId());
+        }
+        else {
+            UserModel user = userSession.getUser(); 
+            if (user != null) { 
+                model.setUserId(user.getId()); 
+            }
         }
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());

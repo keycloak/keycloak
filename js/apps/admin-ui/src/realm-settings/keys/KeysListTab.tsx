@@ -27,6 +27,8 @@ import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
 
+import useFormatDate from "../../utils/useFormatDate";
+
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
 type FilterType = (typeof FILTER_OPTIONS)[number];
 
@@ -43,7 +45,7 @@ type SelectFilterProps = {
 };
 
 const SelectFilter = ({ onFilter }: SelectFilterProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<FilterType>(FILTER_OPTIONS[0]);
 
   const [filterDropdownOpen, toggleFilter] = useToggle();
@@ -80,8 +82,9 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 };
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const formatDate = useFormatDate();
 
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
@@ -97,19 +100,19 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       return keysMetaData.keys?.map((key) => {
         const provider = realmComponents.find(
           (component: ComponentRepresentation) =>
-            component.id === key.providerId
+            component.id === key.providerId,
         );
         return { ...key, provider: provider?.name } as KeyData;
       })!;
     },
     setKeyData,
-    []
+    [],
   );
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
     titleKey: t("publicKeys").slice(0, -1),
     messageKey: publicKey,
-    continueButtonLabel: "common:close",
+    continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });
@@ -117,7 +120,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const [toggleCertificateDialog, CertificateDialog] = useConfirmDialog({
     titleKey: t("certificate"),
     messageKey: certificate,
-    continueButtonLabel: "common:close",
+    continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });
@@ -134,15 +137,15 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
         isNotCompact
         className="kc-keys-list"
         loader={filteredKeyData || keyData}
-        ariaLabelKey="realm-settings:keysList"
-        searchPlaceholderKey="realm-settings:searchKey"
+        ariaLabelKey="keysList"
+        searchPlaceholderKey="searchKey"
         searchTypeComponent={
           <SelectFilter
             onFilter={(filterType) =>
               setFilteredKeyData(
                 filterType !== FILTER_OPTIONS[0]
                   ? keyData!.filter(({ status }) => status === filterType)
-                  : undefined
+                  : undefined,
               )
             }
           />
@@ -151,7 +154,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
         columns={[
           {
             name: "algorithm",
-            displayKey: "realm-settings:algorithm",
+            displayKey: "algorithm",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(15)],
           },
@@ -163,26 +166,34 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           },
           {
             name: "kid",
-            displayKey: "realm-settings:kid",
+            displayKey: "kid",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "use",
-            displayKey: "realm-settings:use",
+            displayKey: "use",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "provider",
-            displayKey: "realm-settings:provider",
+            displayKey: "provider",
             cellRenderer: ({ provider }: KeyData) => provider || "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
+            name: "validTo",
+            displayKey: "validTo",
+            cellRenderer: ({ validTo }: KeyData) =>
+              validTo ? formatDate(new Date(validTo)) : "",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
             name: "publicKeys",
-            displayKey: "realm-settings:publicKeys",
+            displayKey: "publicKeys",
             cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
               if (type === "EC") {
                 return (

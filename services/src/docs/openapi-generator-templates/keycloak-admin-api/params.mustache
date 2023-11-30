@@ -1,0 +1,91 @@
+===== Parameters
+
+{{#hasPathParams}}
+{{^useTableTitles}}
+====== Path Parameters
+{{/useTableTitles}}
+
+[cols="2,3,1,1"]
+{{#useTableTitles}}
+.Path Parameters
+{{/useTableTitles}}
+|===
+|Name| Description| Default| Pattern
+
+{{#pathParams}}
+{{>param}}
+{{/pathParams}}
+|===
+{{/hasPathParams}}
+
+{{#hasBodyParam}}
+{{^useTableTitles}}
+====== Body Parameter
+{{/useTableTitles}}
+
+[cols="2,3,1,1"]
+{{#useTableTitles}}
+.Body Parameter
+{{/useTableTitles}}
+|===
+|Name| Description| Default| Pattern
+
+{{#bodyParams}}
+{{>param}}
+{{/bodyParams}}
+|===
+{{/hasBodyParam}}
+
+{{#hasFormParams}}
+{{^useTableTitles}}
+====== Form Parameters
+{{/useTableTitles}}
+
+[cols="2,3,1,1"]
+{{#useTableTitles}}
+.Form Parameters
+{{/useTableTitles}}
+|===
+|Name| Description| Default| Pattern
+
+{{#formParams}}
+{{>param}}
+{{/formParams}}
+|===
+{{/hasFormParams}}
+
+{{#hasHeaderParams}}
+{{^useTableTitles}}
+====== Header Parameters
+{{/useTableTitles}}
+
+[cols="2,3,1,1"]
+{{#useTableTitles}}
+.Header Parameters
+{{/useTableTitles}}
+|===
+|Name| Description| Default| Pattern
+
+{{#headerParams}}
+{{>param}}
+{{/headerParams}}
+|===
+{{/hasHeaderParams}}
+
+{{#hasQueryParams}}
+{{^useTableTitles}}
+====== Query Parameters
+{{/useTableTitles}}
+
+[cols="2,3,1,1"]
+{{#useTableTitles}}
+.Query Parameters
+{{/useTableTitles}}
+|===
+|Name| Description| Default| Pattern
+
+{{#queryParams}}
+{{>param}}
+{{/queryParams}}
+|===
+{{/hasQueryParams}}

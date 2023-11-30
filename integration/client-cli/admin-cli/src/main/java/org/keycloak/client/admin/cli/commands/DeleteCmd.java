@@ -91,7 +91,7 @@ public class DeleteCmd extends CreateCmd {
         out.println("    -F, --fields FILTER       A filter pattern to specify which fields of a JSON response to output");
         out.println("                              Use '" + CMD + " get --help' for more info on FILTER syntax.");
         out.println("    -c, --compressed          Don't pretty print the output");
-        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println();
         out.println("Examples:");
         out.println();

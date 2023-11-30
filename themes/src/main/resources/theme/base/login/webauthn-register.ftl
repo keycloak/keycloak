@@ -1,4 +1,6 @@
     <#import "template.ftl" as layout>
+    <#import "password-commons.ftl" as passwordCommons>
+
     <@layout.registrationLayout; section>
     <#if section = "title">
         title
@@ -15,6 +17,7 @@
                 <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
                 <input type="hidden" id="transports" name="transports"/>
                 <input type="hidden" id="error" name="error"/>
+                <@passwordCommons.logoutOtherSessions/>
             </div>
         </form>
 

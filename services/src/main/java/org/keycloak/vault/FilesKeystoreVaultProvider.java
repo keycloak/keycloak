@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.jboss.logging.Logger;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;

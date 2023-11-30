@@ -15,11 +15,9 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { FormPanel, HelpItem } from "ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import {
   TimeSelector,
   toHumanFormat,
@@ -27,6 +25,7 @@ import {
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { convertToFormValues, sortProviders } from "../util";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 import "./realm-settings-section.css";
 
@@ -41,15 +40,16 @@ export const RealmSettingsTokensTab = ({
   reset,
   save,
 }: RealmSettingsSessionsTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const serverInfo = useServerInfo();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
 
   const defaultSigAlgOptions = sortProviders(
-    serverInfo.providers!["signature"].providers
+    serverInfo.providers!["signature"].providers,
   );
 
   const form = useForm<RealmRepresentation>();
@@ -79,10 +79,7 @@ export const RealmSettingsTokensTab = ({
 
   return (
     <PageSection variant="light">
-      <FormPanel
-        title={t("realm-settings:general")}
-        className="kc-sso-session-template"
-      >
+      <FormPanel title={t("general")} className="kc-sso-session-template">
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -93,8 +90,8 @@ export const RealmSettingsTokensTab = ({
             fieldId="kc-default-signature-algorithm"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:defaultSigAlg")}
-                fieldLabelId="realm-settings:algorithm"
+                helpText={t("defaultSigAlgHelp")}
+                fieldLabelId="algorithm"
               />
             }
           >
@@ -130,81 +127,85 @@ export const RealmSettingsTokensTab = ({
             />
           </FormGroup>
 
-          <FormGroup
-            label={t("oAuthDeviceCodeLifespan")}
-            fieldId="oAuthDeviceCodeLifespan"
-            labelIcon={
-              <HelpItem
-                helpText={t("realm-settings-help:oAuthDeviceCodeLifespan")}
-                fieldLabelId="realm-settings:oAuthDeviceCodeLifespan"
-              />
-            }
-          >
-            <Controller
-              name="oauth2DeviceCodeLifespan"
-              defaultValue={0}
-              control={form.control}
-              render={({ field }) => (
-                <TimeSelector
-                  id="oAuthDeviceCodeLifespan"
-                  data-testid="oAuthDeviceCodeLifespan"
-                  value={field.value || 0}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
+          {isFeatureEnabled(Feature.DeviceFlow) && (
+            <>
+              <FormGroup
+                label={t("oAuthDeviceCodeLifespan")}
+                fieldId="oAuthDeviceCodeLifespan"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("oAuthDeviceCodeLifespanHelp")}
+                    fieldLabelId="oAuthDeviceCodeLifespan"
+                  />
+                }
+              >
+                <Controller
+                  name="oauth2DeviceCodeLifespan"
+                  defaultValue={0}
+                  control={form.control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      id="oAuthDeviceCodeLifespan"
+                      data-testid="oAuthDeviceCodeLifespan"
+                      value={field.value || 0}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("oAuthDevicePollingInterval")}
-            fieldId="oAuthDevicePollingInterval"
-            labelIcon={
-              <HelpItem
-                helpText={t("realm-settings-help:oAuthDevicePollingInterval")}
-                fieldLabelId="realm-settings:oAuthDevicePollingInterval"
-              />
-            }
-          >
-            <Controller
-              name="oauth2DevicePollingInterval"
-              defaultValue={0}
-              control={form.control}
-              render={({ field }) => (
-                <NumberInput
-                  id="oAuthDevicePollingInterval"
-                  value={field.value}
-                  min={0}
-                  onPlus={() => field.onChange(field.value || 0 + 1)}
-                  onMinus={() => field.onChange(field.value || 0 - 1)}
-                  onChange={(event) => {
-                    const newValue = Number(event.currentTarget.value);
-                    field.onChange(!isNaN(newValue) ? newValue : 0);
-                  }}
-                  placeholder={t("oAuthDevicePollingInterval")}
+              </FormGroup>
+              <FormGroup
+                label={t("oAuthDevicePollingInterval")}
+                fieldId="oAuthDevicePollingInterval"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("oAuthDevicePollingIntervalHelp")}
+                    fieldLabelId="oAuthDevicePollingInterval"
+                  />
+                }
+              >
+                <Controller
+                  name="oauth2DevicePollingInterval"
+                  defaultValue={0}
+                  control={form.control}
+                  render={({ field }) => (
+                    <NumberInput
+                      id="oAuthDevicePollingInterval"
+                      value={field.value}
+                      min={0}
+                      onPlus={() => field.onChange(field.value || 0 + 1)}
+                      onMinus={() => field.onChange(field.value || 0 - 1)}
+                      onChange={(event) => {
+                        const newValue = Number(event.currentTarget.value);
+                        field.onChange(!isNaN(newValue) ? newValue : 0);
+                      }}
+                      placeholder={t("oAuthDevicePollingInterval")}
+                    />
+                  )}
                 />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("shortVerificationUri")}
-            fieldId="shortVerificationUri"
-            labelIcon={
-              <HelpItem
-                helpText={t("realm-settings-help:shortVerificationUriTooltip")}
-                fieldLabelId="realm-settings:shortVerificationUri"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="shortVerificationUri"
-              placeholder={t("shortVerificationUri")}
-              {...form.register("attributes.shortVerificationUri")}
-            />
-          </FormGroup>
+              </FormGroup>
+              <FormGroup
+                label={t("shortVerificationUri")}
+                fieldId="shortVerificationUri"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("shortVerificationUriTooltipHelp")}
+                    fieldLabelId="shortVerificationUri"
+                  />
+                }
+              >
+                <KeycloakTextInput
+                  id="shortVerificationUri"
+                  placeholder={t("shortVerificationUri")}
+                  {...form.register("attributes.shortVerificationUri")}
+                />
+              </FormGroup>
+            </>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel
-        title={t("realm-settings:refreshTokens")}
+        title={t("refreshTokens")}
         className="kc-client-session-template"
       >
         <FormAccess
@@ -219,8 +220,8 @@ export const RealmSettingsTokensTab = ({
             fieldId="kc-revoke-refresh-token"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:revokeRefreshToken")}
-                fieldLabelId="realm-settings:revokeRefreshToken"
+                helpText={t("revokeRefreshTokenHelp")}
+                fieldLabelId="revokeRefreshToken"
               />
             }
           >
@@ -233,8 +234,8 @@ export const RealmSettingsTokensTab = ({
                   id="kc-revoke-refresh-token"
                   data-testid="revoke-refresh-token-switch"
                   aria-label={t("revokeRefreshToken")}
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -246,8 +247,8 @@ export const RealmSettingsTokensTab = ({
               label={t("refreshTokenMaxReuse")}
               labelIcon={
                 <HelpItem
-                  helpText={t("realm-settings-help:refreshTokenMaxReuse")}
-                  fieldLabelId="realm-settings:refreshTokenMaxReuse"
+                  helpText={t("refreshTokenMaxReuseHelp")}
+                  fieldLabelId="refreshTokenMaxReuse"
                 />
               }
               fieldId="refreshTokenMaxReuse"
@@ -265,7 +266,7 @@ export const RealmSettingsTokensTab = ({
                     onMinus={() => field.onChange(field.value! - 1)}
                     onChange={(event) =>
                       field.onChange(
-                        Number((event.target as HTMLInputElement).value)
+                        Number((event.target as HTMLInputElement).value),
                       )
                     }
                   />
@@ -276,7 +277,7 @@ export const RealmSettingsTokensTab = ({
         </FormAccess>
       </FormPanel>
       <FormPanel
-        title={t("realm-settings:accessTokens")}
+        title={t("accessTokens")}
         className="kc-offline-session-template"
       >
         <FormAccess
@@ -293,8 +294,8 @@ export const RealmSettingsTokensTab = ({
             })}
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:accessTokenLifespan")}
-                fieldLabelId="realm-settings:accessTokenLifespan"
+                helpText={t("accessTokenLifespanHelp")}
+                fieldLabelId="accessTokenLifespan"
               />
             }
           >
@@ -324,10 +325,8 @@ export const RealmSettingsTokensTab = ({
             fieldId="accessTokenLifespanImplicitFlow"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:accessTokenLifespanImplicitFlow"
-                )}
-                fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
+                helpText={t("accessTokenLifespanImplicitFlow")}
+                fieldLabelId="accessTokenLifespanImplicitFlow"
               />
             }
           >
@@ -350,8 +349,8 @@ export const RealmSettingsTokensTab = ({
             fieldId="clientLoginTimeout"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:clientLoginTimeout")}
-                fieldLabelId="realm-settings:clientLoginTimeout"
+                helpText={t("clientLoginTimeoutHelp")}
+                fieldLabelId="clientLoginTimeout"
               />
             }
           >
@@ -378,8 +377,8 @@ export const RealmSettingsTokensTab = ({
               id="offline-session-max-label"
               labelIcon={
                 <HelpItem
-                  helpText={t("realm-settings-help:offlineSessionMax")}
-                  fieldLabelId="realm-settings:offlineSessionMax"
+                  helpText={t("offlineSessionMaxHelp")}
+                  fieldLabelId="offlineSessionMax"
                 />
               }
             >
@@ -416,8 +415,8 @@ export const RealmSettingsTokensTab = ({
             fieldId="userInitiatedActionLifespan"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:userInitiatedActionLifespan")}
-                fieldLabelId="realm-settings:userInitiatedActionLifespan"
+                helpText={t("userInitiatedActionLifespanHelp")}
+                fieldLabelId="userInitiatedActionLifespan"
               />
             }
           >
@@ -442,10 +441,8 @@ export const RealmSettingsTokensTab = ({
             id="default-admin-initiated-label"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:defaultAdminInitiatedActionLifespan"
-                )}
-                fieldLabelId="realm-settings:defaultAdminInitiated"
+                helpText={t("defaultAdminInitiatedActionLifespanHelp")}
+                fieldLabelId="defaultAdminInitiated"
               />
             }
           >
@@ -557,10 +554,10 @@ export const RealmSettingsTokensTab = ({
               data-testid="tokens-tab-save"
               isDisabled={!form.formState.isDirty}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={reset}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>

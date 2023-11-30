@@ -36,12 +36,12 @@ type UsedByModalProps = {
 };
 
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
 
   const loader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<{ name: string }[]> => {
     const result = await fetchUsedBy({
       id,
@@ -75,15 +75,15 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
           key="cancel"
           onClick={onClose}
         >
-          {t("common:close")}
+          {t("close")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="authentication:usedBy"
-        searchPlaceholderKey="common:search"
+        ariaLabelKey="usedBy"
+        searchPlaceholderKey="search"
         columns={[
           {
             name: "name",
@@ -95,11 +95,11 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
 };
 
 export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const [open, toggle] = useToggle();
 
   const key = Object.entries(realm).find(
-    (e) => e[1] === usedBy?.values[0]
+    (e) => e[1] === usedBy?.values[0],
   )?.[0];
 
   return (
@@ -123,7 +123,7 @@ export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
                   "appliedBy" +
                     (usedBy.type === "SPECIFIC_CLIENTS"
                       ? "Clients"
-                      : "Providers")
+                      : "Providers"),
                 )}{" "}
                 {usedBy.values.map((used, index) => (
                   <>

@@ -36,6 +36,8 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
 
     protected IdentityProviderResource identityProviderResource;
 
+    protected void postInitializeUser(UserRepresentation user) {}
+    
     @Override
     @Before
     public void beforeBrokerTest() {
@@ -47,6 +49,7 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         user.setEmail(bc.getUserEmail());
         user.setEmailVerified(true);
         user.setEnabled(true);
+        postInitializeUser(user);
 
         RealmResource realmResource = adminClient.realm(bc.providerRealmName());
         userId = createUserWithAdminClient(realmResource, user);

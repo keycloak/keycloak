@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -17,7 +18,7 @@ const keysTab = new KeysTab();
 const modalUtils = new ModalUtils();
 
 describe("Realm settings tabs tests", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
 
   beforeEach(() => {
     loginPage.logIn();
@@ -38,7 +39,7 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.profileEnabledSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated");
@@ -74,12 +75,12 @@ describe("Realm settings tabs tests", () => {
     // Check other values
     cy.findByTestId(realmSettingsPage.emailAsUsernameSwitch).should(
       "have.value",
-      "off"
+      "off",
     );
 
     cy.findByTestId(realmSettingsPage.verifyEmailSwitch).should(
       "have.value",
-      "off"
+      "off",
     );
   });
 
@@ -125,7 +126,6 @@ describe("Realm settings tabs tests", () => {
 
     realmSettingsPage.selectLoginThemeType("keycloak");
     realmSettingsPage.selectAccountThemeType("keycloak");
-    realmSettingsPage.selectAdminThemeType("base");
     realmSettingsPage.selectEmailThemeType("base");
 
     realmSettingsPage.saveThemes();

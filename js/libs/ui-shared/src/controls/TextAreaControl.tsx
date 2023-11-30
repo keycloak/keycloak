@@ -12,7 +12,7 @@ import { KeycloakTextArea } from "./keycloak-text-area/KeycloakTextArea";
 
 export type TextAreaControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 > = UseControllerProps<T, P> & {
   label: string;
   labelIcon?: string;
@@ -21,9 +21,9 @@ export type TextAreaControlProps<
 
 export const TextAreaControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >(
-  props: TextAreaControlProps<T, P>
+  props: TextAreaControlProps<T, P>,
 ) => {
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);

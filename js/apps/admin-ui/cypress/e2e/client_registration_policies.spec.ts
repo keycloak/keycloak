@@ -54,7 +54,7 @@ describe("Client registration policies subtab", () => {
     clientRegistrationPage.modalUtils().confirmModal();
 
     masthead.checkNotificationMessage(
-      "Client registration policy deleted successfully"
+      "Client registration policy deleted successfully",
     );
     listingPage.itemExist("policy 2", false);
   });

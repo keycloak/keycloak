@@ -19,6 +19,8 @@ package org.keycloak.services.clientregistration.policy.impl;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
@@ -62,7 +64,6 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
     @Override
     public void afterRegister(ClientRegistrationContext context, ClientModel clientModel) {
     }
-
 
 
     @Override
@@ -214,26 +215,17 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
             checkURLTrusted(adminUrl, trustedHosts, trustedDomains);
         }
         for (String redirect : resolvedRedirects) {
-            checkURLTrusted(redirect, trustedHosts, trustedDomains);
+            checkURITrusted(redirect, trustedHosts, trustedDomains);
         }
 
     }
-
 
     protected void checkURLTrusted(String url, List<String> trustedHosts, List<String> trustedDomains) throws ClientRegistrationPolicyException {
         try {
             String host = new URL(url).getHost();
 
-            for (String trustedHost : trustedHosts) {
-                if (host.equals(trustedHost)) {
-                    return;
-                }
-            }
-
-            for (String trustedDomain : trustedDomains) {
-                if (host.endsWith(trustedDomain)) {
-                    return;
-                }
+            if (checkHostTrusted(host, trustedHosts, trustedDomains)) {
+                return;
             }
         } catch (MalformedURLException mfe) {
             logger.debugf(mfe, "URL '%s' is malformed", url);
@@ -242,6 +234,38 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
         ServicesLogger.LOGGER.urlDoesntMatch(url);
         throw new ClientRegistrationPolicyException("URL doesn't match any trusted host or trusted domain");
+    }
+
+    protected void checkURITrusted(String uri, List<String> trustedHosts, List<String> trustedDomains) throws ClientRegistrationPolicyException {
+        try {
+            String host = new URI(uri).getHost();
+
+            if (checkHostTrusted(host, trustedHosts, trustedDomains)) {
+                return;
+            }
+        } catch (URISyntaxException use) {
+            logger.debugf(use, "URI '%s' is malformed", uri);
+            throw new ClientRegistrationPolicyException("URI is malformed");
+        }
+
+        ServicesLogger.LOGGER.uriDoesntMatch(uri);
+        throw new ClientRegistrationPolicyException("URI doesn't match any trusted host or trusted domain");
+    }
+
+    private boolean checkHostTrusted(String host, List<String> trustedHosts, List<String> trustedDomains) {
+        for (String trustedHost : trustedHosts) {
+            if (host.equals(trustedHost)) {
+                return true;
+            }
+        }
+
+        for (String trustedDomain : trustedDomains) {
+            if (host.endsWith(trustedDomain)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
@@ -270,6 +294,6 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
     // True by default
     private boolean parseBoolean(String propertyKey) {
         String val = componentModel.getConfig().getFirst(propertyKey);
-        return val==null || Boolean.parseBoolean(val);
+        return val == null || Boolean.parseBoolean(val);
     }
 }

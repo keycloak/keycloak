@@ -31,7 +31,7 @@ export const RevocationModal = ({
   handleModalToggle,
   save,
 }: RevocationModalProps) => {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();
@@ -53,7 +53,7 @@ export const RevocationModal = ({
     (realm) => {
       setRealm(realm);
     },
-    [key]
+    [key],
   );
 
   const parseResult = (result: GlobalRequestResult, prefixKey: string) => {
@@ -61,26 +61,26 @@ export const RevocationModal = ({
     const failedCount = result.failedRequests?.length || 0;
 
     if (successCount === 0 && failedCount === 0) {
-      addAlert(t("clients:noAdminUrlSet"), AlertVariant.warning);
+      addAlert(t("noAdminUrlSet"), AlertVariant.warning);
     } else if (failedCount > 0) {
       addAlert(
-        t("clients:" + prefixKey + "Success", {
+        t("" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
-        AlertVariant.success
+        AlertVariant.success,
       );
       addAlert(
-        t("clients:" + prefixKey + "Fail", {
+        t("" + prefixKey + "Fail", {
           failedNodes: result.failedRequests,
         }),
-        AlertVariant.danger
+        AlertVariant.danger,
       );
     } else {
       addAlert(
-        t("clients:" + prefixKey + "Success", {
+        t("" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
-        AlertVariant.success
+        AlertVariant.success,
       );
     }
   };
@@ -92,7 +92,7 @@ export const RevocationModal = ({
         {
           realm: realmName,
           notBefore: Date.now() / 1000,
-        }
+        },
       );
 
       addAlert(t("notBeforeSuccess"), AlertVariant.success);
@@ -108,7 +108,7 @@ export const RevocationModal = ({
         {
           realm: realmName,
           notBefore: 0,
-        }
+        },
       );
       addAlert(t("notBeforeClearedSuccess"), AlertVariant.success);
       refresh();
@@ -178,7 +178,7 @@ export const RevocationModal = ({
             handleModalToggle();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

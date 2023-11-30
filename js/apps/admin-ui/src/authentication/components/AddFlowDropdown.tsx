@@ -19,7 +19,7 @@ type AddFlowDropdownProps = {
   execution: ExpandableExecution;
   onAddExecution: (
     execution: ExpandableExecution,
-    type: AuthenticationProviderRepresentation
+    type: AuthenticationProviderRepresentation,
   ) => void;
   onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
 };
@@ -29,7 +29,7 @@ export const AddFlowDropdown = ({
   onAddExecution,
   onAddFlow,
 }: AddFlowDropdownProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
 
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FlowType>();
@@ -41,11 +41,11 @@ export const AddFlowDropdown = ({
         flowId: execution.flowId!,
       }),
     ({ providerId }) => setProviderId(providerId),
-    []
+    [],
   );
 
   return (
-    <Tooltip content={t("common:add")}>
+    <Tooltip content={t("add")}>
       <>
         <Dropdown
           isPlain
@@ -53,7 +53,7 @@ export const AddFlowDropdown = ({
           data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={
-            <DropdownToggle onToggle={setOpen} aria-label={t("common:add")}>
+            <DropdownToggle onToggle={setOpen} aria-label={t("add")}>
               <PlusIcon />
             </DropdownToggle>
           }

@@ -9,7 +9,7 @@ include::../templates/techpreview.adoc[]
 
 [NOTE]
 ====
-To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin_fine_grained_authz` feature.
+To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
 For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 

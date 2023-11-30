@@ -1,15 +1,15 @@
 export default class GroupModal {
-  private openPartialImport = "openPartialImportModal";
+  #openPartialImport = "openPartialImportModal";
 
   open() {
-    cy.findByTestId(this.openPartialImport).click();
+    cy.findByTestId(this.#openPartialImport).click();
     return this;
   }
 
   typeResourceFile = (filename: string) => {
     cy.get("#partial-import-file-filename").selectFile(
       "cypress/fixtures/partial-import-test-data/" + filename,
-      { action: "drag-drop" }
+      { action: "drag-drop" },
     );
   };
 

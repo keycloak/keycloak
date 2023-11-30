@@ -44,7 +44,7 @@ public class VertxClientCertificateLookup implements X509ClientCertificateLookup
 
         if (logger.isTraceEnabled() && certificates != null) {
             for (X509Certificate cert : certificates) {
-                logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectDN().getName());
+                logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectX500Principal().getName());
             }
         }
 

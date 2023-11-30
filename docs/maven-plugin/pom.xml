@@ -32,9 +32,9 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server</artifactId>
+            <artifactId>keycloak-quarkus-server-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>

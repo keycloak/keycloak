@@ -4,14 +4,12 @@ import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
 import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
+import { libInjectCss } from "vite-plugin-lib-inject-css";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  resolve: {
-    mainFields: ["module"],
-  },
   build: {
-    target: "ES2022",
+    target: "esnext",
     lib: {
       entry: path.resolve(__dirname, "src/main.ts"),
       formats: ["es"],
@@ -26,6 +24,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    libInjectCss(),
     checker({ typescript: true }),
     dts({ insertTypesEntry: true }),
   ],

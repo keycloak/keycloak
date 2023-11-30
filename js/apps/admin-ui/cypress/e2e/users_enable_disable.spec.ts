@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -16,9 +17,7 @@ const masthead = new Masthead();
 const createUser = (fields: UserRepresentation) =>
   cy
     .wrap(null)
-    .then(() =>
-      adminClient.createUser({ username: crypto.randomUUID(), ...fields })
-    );
+    .then(() => adminClient.createUser({ username: uuid(), ...fields }));
 
 const deleteUser = (username: string) =>
   cy.wrap(null).then(() => adminClient.deleteUser(username));

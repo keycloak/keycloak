@@ -20,13 +20,14 @@ import {
   ExternalLinkAltIcon,
   InfoAltIcon,
 } from "@patternfly/react-icons";
-import { TFuncKey } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
-import { useAlerts, ContinueCancelModal } from "ui-shared";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
+import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {
@@ -44,13 +45,13 @@ const Applications = () => {
   usePromise(
     (signal) => getApplications({ signal }),
     (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
-    [key]
+    [key],
   );
 
   const toggleOpen = (clientId: string) => {
     setApplications([
       ...applications!.map((a) =>
-        a.clientId === clientId ? { ...a, open: !a.open } : a
+        a.clientId === clientId ? { ...a, open: !a.open } : a,
       ),
     ]);
   };
@@ -80,7 +81,7 @@ const Applications = () => {
             <span style={{ visibility: "hidden", height: 55 }}>
               <DataListToggle
                 id="applications-list-header-invisible-toggle"
-                aria-controls="hidden"
+                aria-controls="applications-list-content"
               />
             </span>
             <DataListItemCells
@@ -121,6 +122,7 @@ const Applications = () => {
                 onClick={() => toggleOpen(application.clientId)}
                 isExpanded={application.open}
                 id={`toggle-${application.clientId}`}
+                aria-controls={`content-${application.clientId}`}
               />
               <DataListItemCells
                 className="pf-u-align-items-center"
@@ -153,8 +155,11 @@ const Applications = () => {
             </DataListItemRow>
 
             <DataListContent
+              id={`content-${application.clientId}`}
               className="pf-u-pl-4xl"
-              aria-label={t("applicationDetails")}
+              aria-label={t("applicationDetails", {
+                clientId: application.clientId,
+              })}
               isHidden={!application.open}
             >
               <DescriptionList>
@@ -224,17 +229,10 @@ const Applications = () => {
                     )}
                     <DescriptionListGroup>
                       <DescriptionListTerm>
-                        {t("accessGrantedOn") + ": "}
+                        {t("accessGrantedOn")}
                       </DescriptionListTerm>
                       <DescriptionListDescription>
-                        {new Intl.DateTimeFormat("en", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "numeric",
-                          second: "numeric",
-                        }).format(application.consent.createdDate)}
+                        {formatDate(new Date(application.consent.createdDate))}
                       </DescriptionListDescription>
                     </DescriptionListGroup>
                   </>
@@ -245,15 +243,15 @@ const Applications = () => {
                   <hr />
                   <GridItem>
                     <ContinueCancelModal
-                      buttonTitle="removeButton"
+                      buttonTitle={t("removeAccess")}
+                      modalTitle={t("removeAccess")}
+                      continueLabel={t("confirm")}
+                      cancelLabel={t("cancel")}
                       buttonVariant="secondary"
-                      modalTitle="removeModalTitle"
-                      modalMessage={t("removeModalMessage", [
-                        application.clientId,
-                      ])}
-                      continueLabel="confirmButton"
-                      onContinue={() => removeConsent(application.clientId)} // required
-                    />
+                      onContinue={() => removeConsent(application.clientId)}
+                    >
+                      {t("removeModalMessage", { name: application.clientId })}
+                    </ContinueCancelModal>
                   </GridItem>
                   <GridItem>
                     <InfoAltIcon /> {t("infoMessage")}

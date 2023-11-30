@@ -18,7 +18,6 @@
 package org.keycloak.representations.overrides;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 public class NoSubcomponentsComponentExportRepresentation {
 
@@ -28,7 +27,6 @@ public class NoSubcomponentsComponentExportRepresentation {
     private String subType;
     // TODO: eventually generate code for Nth levels of depth
     // private MultivaluedHashMap<String, ComponentExportRepresentation> subComponents = new MultivaluedHashMap<>();
-    @SchemaFrom(type = org.keycloak.representations.overrides.MultivaluedStringStringHashMap.class)
     private MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
 
     public String getId() {

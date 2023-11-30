@@ -1,5 +1,5 @@
 [[_nodejs_adapter]]
-=== Node.js adapter
+=== {project_name} Node.js adapter
 
 {project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps - the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
@@ -82,12 +82,12 @@ Now we have the ability to run our server with following command:
 ----
 
 By default, this will locate a file named `keycloak.json` alongside
-the main executable of your application, in our case on the root folder, to initialize keycloak-specific
+the main executable of your application, in our case on the root folder, to initialize {project_name} specific
 settings such as public key, realm name, various URLs.
 
-In that case a Keycloak deployment is necessary to access Keycloak admin console.
+In that case a {project_name} deployment is necessary to access {project_name} admin console.
 
-Please visit links on how to deploy a Keycloak admin console with 
+Please visit links on how to deploy a {project_name} admin console with
 https://www.keycloak.org/getting-started/getting-started-podman[Podman] or https://www.keycloak.org/getting-started/getting-started-docker[Docker]
 
 Now we are ready to obtain the `keycloak.json` file by visiting the {project_name} Admin Console -> clients (left sidebar) -> choose your client -> Installation -> Format Option -> Keycloak OIDC JSON -> Download
@@ -370,4 +370,4 @@ to the `middleware()` call:
 
 ==== Complete example 
 
-A complete example using the Node.js adapter usage can be found in {quickstartRepo_link}/tree/latest/service-nodejs/[Keycloak quickstarts for Node.js]
+A complete example using the Node.js adapter usage can be found in {quickstartRepo_link}/tree/latest/nodejs/resource-server[Keycloak quickstarts for Node.js]

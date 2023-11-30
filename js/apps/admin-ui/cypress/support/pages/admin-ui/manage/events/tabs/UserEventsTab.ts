@@ -22,32 +22,32 @@ export class UserEventSearchData {
 const emptyStatePage = new EmptyStatePage();
 
 export default class UserEventsTab extends PageObject {
-  private searchUserEventDrpDwnToggle = "userEventsSearchSelectorToggle";
-  private searchUserIdInput = "#kc-userId";
-  private searchEventTypeSelectToggle =
+  #searchUserEventDrpDwnToggle = "userEventsSearchSelectorToggle";
+  #searchUserIdInput = "#kc-userId";
+  #searchEventTypeSelectToggle =
     ".pf-c-select.keycloak__events_search__type_select";
-  private searchClientInput = "#kc-client";
-  private searchDateFromInput = "#kc-dateFrom";
-  private searchDateToInput = "#kc-dateTo";
-  private searchIpAddress = "#kc-ipAddress";
-  private searchEventsBtn = "search-events-btn";
-  private refreshBtn = "refresh-btn";
+  #searchClientInput = "#kc-client";
+  #searchDateFromInput = "#kc-dateFrom";
+  #searchDateToInput = "#kc-dateTo";
+  #searchIpAddress = "#kc-ipAddress";
+  #searchEventsBtn = "search-events-btn";
+  #refreshBtn = "refresh-btn";
 
   public openSearchUserEventDropdownMenu() {
     super.openDropdownMenu(
       "",
-      cy.findByTestId(this.searchUserEventDrpDwnToggle)
+      cy.findByTestId(this.#searchUserEventDrpDwnToggle),
     );
     return this;
   }
 
   public openEventTypeSelectMenu() {
-    super.openSelectMenu("", cy.get(this.searchEventTypeSelectToggle));
+    super.openSelectMenu("", cy.get(this.#searchEventTypeSelectToggle));
     return this;
   }
 
   public closeEventTypeSelectMenu() {
-    super.closeSelectMenu("", cy.get(this.searchEventTypeSelectToggle));
+    super.closeSelectMenu("", cy.get(this.#searchEventTypeSelectToggle));
     return this;
   }
 
@@ -57,34 +57,37 @@ export default class UserEventsTab extends PageObject {
   }
 
   public assertSearchEventBtnIsEnabled(enabled: boolean) {
-    super.assertIsEnabled(cy.findByTestId(this.searchEventsBtn), enabled);
+    super.assertIsEnabled(cy.findByTestId(this.#searchEventsBtn), enabled);
     return this;
   }
 
   public assertUserSearchDropdownMenuHasLabels() {
     super.assertDropdownMenuHasLabels(
-      Object.values(UserEventsTabSearchFormFieldsLabel)
+      Object.values(UserEventsTabSearchFormFieldsLabel),
     );
     return this;
   }
 
   public assertSearchUserEventDropdownMenuExist(exist: boolean) {
-    super.assertExist(cy.findByTestId(this.searchUserEventDrpDwnToggle), exist);
+    super.assertExist(
+      cy.findByTestId(this.#searchUserEventDrpDwnToggle),
+      exist,
+    );
     return this;
   }
 
   public refresh() {
-    cy.findByTestId(this.refreshBtn).click();
+    cy.findByTestId(this.#refreshBtn).click();
     return this;
   }
 
   public typeUserId(userId: string) {
-    cy.get(this.searchUserIdInput).type(userId);
+    cy.get(this.#searchUserIdInput).type(userId);
     return this;
   }
 
   public typeIpAddress(ipAddress: string) {
-    cy.get(this.searchIpAddress).type(ipAddress);
+    cy.get(this.#searchIpAddress).type(ipAddress);
     return this;
   }
 
@@ -101,18 +104,18 @@ export default class UserEventsTab extends PageObject {
       this.closeEventTypeSelectMenu();
     }
     if (searchData.client) {
-      cy.get(this.searchClientInput).type(searchData.client);
+      cy.get(this.#searchClientInput).type(searchData.client);
     }
     if (searchData.dateFrom) {
-      cy.get(this.searchDateFromInput).type(searchData.dateFrom);
+      cy.get(this.#searchDateFromInput).type(searchData.dateFrom);
     }
     if (searchData.dateTo) {
-      cy.get(this.searchDateToInput).type(searchData.dateTo);
+      cy.get(this.#searchDateToInput).type(searchData.dateTo);
     }
     if (searchData.ipAddress) {
-      cy.get(this.searchIpAddress).type(searchData.ipAddress);
+      cy.get(this.#searchIpAddress).type(searchData.ipAddress);
     }
-    cy.findByTestId(this.searchEventsBtn).click();
+    cy.findByTestId(this.#searchEventsBtn).click();
     return this;
   }
 
@@ -161,7 +164,7 @@ export default class UserEventsTab extends PageObject {
   public removeEventTypeChipGroupItem(itemName: string) {
     super.removeChipGroupItem(
       UserEventsTabSearchFormFieldsLabel.EventType,
-      itemName
+      itemName,
     );
     return this;
   }
@@ -170,7 +173,7 @@ export default class UserEventsTab extends PageObject {
     super.assertChipGroupItemExist(
       UserEventsTabSearchFormFieldsLabel.EventType,
       itemName,
-      exist
+      exist,
     );
     return this;
   }
@@ -178,7 +181,7 @@ export default class UserEventsTab extends PageObject {
   public assertUserIdChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.UserId,
-      exist
+      exist,
     );
     return this;
   }
@@ -186,7 +189,7 @@ export default class UserEventsTab extends PageObject {
   public assertEventTypeChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.EventType,
-      exist
+      exist,
     );
     return this;
   }
@@ -194,7 +197,7 @@ export default class UserEventsTab extends PageObject {
   public assertClientChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.Client,
-      exist
+      exist,
     );
     return this;
   }
@@ -202,7 +205,7 @@ export default class UserEventsTab extends PageObject {
   public assertDateFromChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.DateFrom,
-      exist
+      exist,
     );
     return this;
   }
@@ -210,7 +213,7 @@ export default class UserEventsTab extends PageObject {
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.DateTo,
-      exist
+      exist,
     );
     return this;
   }
@@ -218,7 +221,7 @@ export default class UserEventsTab extends PageObject {
   public assertIpAddressChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.IpAddress,
-      exist
+      exist,
     );
     return this;
   }

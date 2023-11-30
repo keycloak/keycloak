@@ -31,7 +31,7 @@ export const DuplicateFlowModal = ({
   toggleDialog,
   onComplete,
 }: DuplicateFlowModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { setValue, getValues, handleSubmit } = form;
   const { addAlert, addError } = useAlerts();
@@ -58,7 +58,7 @@ export const DuplicateFlowModal = ({
         newFlow.description = form.description;
         await adminClient.authenticationManagement.updateFlow(
           { flowId: newFlow.id! },
-          newFlow
+          newFlow,
         );
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
@@ -68,10 +68,10 @@ export const DuplicateFlowModal = ({
           id: newFlow.id!,
           usedBy: "notInUse",
           builtIn: newFlow.builtIn ? "builtIn" : undefined,
-        })
+        }),
       );
     } catch (error) {
-      addError("authentication:copyFlowError", error);
+      addError("copyFlowError", error);
     }
     onComplete();
   };
@@ -96,7 +96,7 @@ export const DuplicateFlowModal = ({
           variant={ButtonVariant.link}
           onClick={toggleDialog}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen

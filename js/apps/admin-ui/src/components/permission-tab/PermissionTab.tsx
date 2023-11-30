@@ -45,7 +45,7 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
@@ -57,7 +57,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "clients":
         return adminClient.clients.updateFineGrainPermission(
           { id: id! },
-          { enabled }
+          { enabled },
         );
       case "users":
         return adminClient.realms.updateUsersManagementPermissions({
@@ -71,7 +71,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "identityProviders":
         return adminClient.identityProviders.updatePermission(
           { alias: id! },
-          { enabled }
+          { enabled },
         );
     }
   };
@@ -106,13 +106,13 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       setRealmId(clients[0]?.id!);
       setPermission(permission);
     },
-    [id]
+    [id],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "common:permissionsDisable",
-    messageKey: "common:permissionsDisableConfirm",
-    continueButtonLabel: "common:confirm",
+    titleKey: "permissionsDisable",
+    messageKey: "permissionsDisableConfirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       const permission = await togglePermissionEnabled(false);
       setPermission(permission);
@@ -138,16 +138,16 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               fieldId="permissionsEnabled"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:permissionsEnabled")}
-                  fieldLabelId="clients:permissionsEnabled"
+                  helpText={t("permissionsEnabledHelp")}
+                  fieldLabelId="permissionsEnabled"
                 />
               }
             >
               <Switch
                 id="permissionsEnabled"
                 data-testid="permissionSwitch"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={permission.enabled}
                 onChange={async (enabled) => {
                   if (enabled) {
@@ -168,7 +168,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
           <Card isFlat className="pf-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
-              <Trans i18nKey="common:permissionsListIntro">
+              <Trans i18nKey="permissionsListIntro">
                 {" "}
                 <strong>
                   {{
@@ -197,7 +197,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 <Tbody>
                   {localeSort(
                     Object.entries(permission.scopePermissions || {}),
-                    ([name]) => name
+                    ([name]) => name,
                   ).map(([name, id]) => (
                     <Tr key={id}>
                       <Td>
@@ -219,7 +219,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                         <ActionsColumn
                           items={[
                             {
-                              title: t("common:edit"),
+                              title: t("edit"),
                               onClick() {
                                 navigate(
                                   toPermissionDetails({
@@ -227,7 +227,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                                     id: realmId,
                                     permissionType: "scope",
                                     permissionId: id,
-                                  })
+                                  }),
                                 );
                               },
                             },

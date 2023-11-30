@@ -16,13 +16,10 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventStoreSpi;
 import org.keycloak.events.EventType;
-import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.junit.Test;
 
@@ -52,11 +49,7 @@ public class TimeOffsetTest extends AbstractAdminTest {
 
         setTimeOffset(5);
 
-        // legacy store requires manual trigger of expired events removal
-        String eventStoreProvider = testingClient.server().fetch(session -> Config.getProvider(EventStoreSpi.NAME), String.class);
-        if (eventStoreProvider.equals(JpaEventStoreProviderFactory.ID)) {
-            testingClient.testing().clearExpiredEvents();
-        }
+        testingClient.testing().clearExpiredEvents();
 
         testingClient.server().run(session -> {
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);

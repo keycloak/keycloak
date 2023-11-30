@@ -12,18 +12,18 @@ export const PasswordComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { register } = useFormContext();
 
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <PasswordInput
         id={name!}

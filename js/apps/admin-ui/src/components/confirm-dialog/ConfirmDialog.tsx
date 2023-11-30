@@ -8,7 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 export const useConfirmDialog = (
-  props: ConfirmDialogProps
+  props: ConfirmDialogProps,
 ): [() => void, () => ReactElement] => {
   const [show, setShow] = useState(false);
 
@@ -80,7 +80,7 @@ export const ConfirmDialogModal = ({
             toggleDialog();
           }}
         >
-          {t(continueButtonLabel || "common:continue")}
+          {t(continueButtonLabel || "continue")}
         </Button>,
         !noCancelButton && (
           <Button
@@ -93,7 +93,7 @@ export const ConfirmDialogModal = ({
               toggleDialog();
             }}
           >
-            {t(cancelButtonLabel || "common:cancel")}
+            {t(cancelButtonLabel || "cancel")}
           </Button>
         ),
       ]}

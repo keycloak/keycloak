@@ -34,7 +34,7 @@ type EventsConfigForm = RealmEventsConfigRepresentation & {
 };
 
 export const EventsTab = ({ realm }: EventsTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const form = useForm<EventsConfigForm>();
   const { setValue, handleSubmit } = form;
 
@@ -62,9 +62,9 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteEvents",
-    messageKey: "realm-settings:deleteEventsConfirm",
-    continueButtonLabel: "common:clear",
+    titleKey: "deleteEvents",
+    messageKey: "deleteEventsConfirm",
+    continueButtonLabel: "clear",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -78,7 +78,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
       } catch (error) {
-        addError(`realm-settings:${type}-events-cleared-error`, error);
+        addError(`${type}-events-cleared-error`, error);
       }
     },
   });
@@ -92,13 +92,13 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
       });
       reload();
     },
-    [key]
+    [key],
   );
 
   const save = async (config: EventsConfigForm) => {
     const updatedEventListener = !isEqual(
       events?.eventsListeners,
-      config.eventsListeners
+      config.eventsListeners,
     );
 
     const { adminEventsExpiration, ...eventConfig } = config;
@@ -108,28 +108,28 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         {
           ...realm,
           attributes: { ...(realm.attributes || {}), adminEventsExpiration },
-        }
+        },
       );
     }
 
     try {
       await adminClient.realms.updateConfigEvents(
         { realm: realmName },
-        eventConfig
+        eventConfig,
       );
       setupForm({ ...events, ...eventConfig, adminEventsExpiration });
       addAlert(
         updatedEventListener
-          ? t("realm-settings:saveEventListenersSuccess")
-          : t("realm-settings:eventConfigSuccessfully"),
-        AlertVariant.success
+          ? t("saveEventListenersSuccess")
+          : t("eventConfigSuccessfully"),
+        AlertVariant.success,
       );
     } catch (error) {
       addError(
         updatedEventListener
-          ? t("realm-settings:saveEventListenersError")
-          : t("realm-settings:eventConfigError"),
-        error
+          ? t("saveEventListenersError")
+          : t("eventConfigError"),
+        error,
       );
     }
   };
@@ -202,7 +202,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               eventTypes={events?.enabledEventTypes || []}
               onDelete={(value) => {
                 const enabledEventTypes = events?.enabledEventTypes?.filter(
-                  (e) => e !== value.id
+                  (e) => e !== value.id,
                 );
                 addEvents(enabledEventTypes);
                 setEvents({ ...events, enabledEventTypes });

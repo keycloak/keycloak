@@ -22,6 +22,7 @@ import {
 import { Controller } from "react-hook-form";
 
 import { useAccess } from "../../context/access/Access";
+import { FixedButtonsGroup } from "./FixedButtonGroup";
 
 export type FormAccessProps = FormProps & {
   /**
@@ -64,7 +65,7 @@ export const FormAccess = ({
 
   const recursiveCloneChildren = (
     children: ReactNode,
-    newProps: any
+    newProps: any,
   ): ReactNode => {
     return Children.map(children, (child) => {
       if (!isValidElement(child)) {
@@ -87,13 +88,19 @@ export const FormAccess = ({
         }
         const children = recursiveCloneChildren(
           element.props.children,
-          newProps
+          newProps,
         );
-        if (child.type === TextArea) {
-          return cloneElement(child, {
-            readOnly: newProps.isDisabled,
-            children,
-          } as any);
+        switch (child.type) {
+          case FixedButtonsGroup:
+            return cloneElement(child, {
+              isActive: !newProps.isDisabled,
+              children,
+            } as any);
+          case TextArea:
+            return cloneElement(child, {
+              readOnly: newProps.isDisabled,
+              children,
+            } as any);
         }
 
         return cloneElement(
@@ -106,7 +113,7 @@ export const FormAccess = ({
             child.type === Stack ||
             child.type === StackItem
             ? { children }
-            : { ...newProps, children }
+            : { ...newProps, children },
         );
       }
       return child;

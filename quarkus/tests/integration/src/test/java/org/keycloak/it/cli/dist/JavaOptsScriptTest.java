@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 @WithEnvVars({"PRINT_ENV", "true"})
 public class JavaOptsScriptTest {
 
-    private static final String DEFAULT_OPTS = "(?:-\\S+ )*-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8(?: -\\S+)*";
+    private static final String DEFAULT_OPTS = "(?:-\\S+ )*-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8(?: -\\S+)*";
 
     @Test
     @Launch({ "start-dev" })

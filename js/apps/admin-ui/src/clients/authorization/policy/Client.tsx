@@ -15,7 +15,7 @@ import { adminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 export const Client = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -41,14 +41,14 @@ export const Client = () => {
         return await Promise.all(
           values.map(
             (id: string) =>
-              adminClient.clients.findOne({ id }) as ClientRepresentation
-          )
+              adminClient.clients.findOne({ id }) as ClientRepresentation,
+          ),
         );
       }
       return await adminClient.clients.find(params);
     },
     setClients,
-    [search]
+    [search],
   );
 
   const convert = (clients: ClientRepresentation[]) =>
@@ -66,10 +66,7 @@ export const Client = () => {
     <FormGroup
       label={t("clients")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:policyClient")}
-          fieldLabelId="clients:client"
-        />
+        <HelpItem helpText={t("policyClientHelp")} fieldLabelId="client" />
       }
       fieldId="clients"
       helperTextInvalid={t("requiredClient")}
@@ -98,7 +95,7 @@ export const Client = () => {
               const option = v.toString();
               if (field.value.includes(option)) {
                 field.onChange(
-                  field.value.filter((item: string) => item !== option)
+                  field.value.filter((item: string) => item !== option),
                 );
               } else {
                 field.onChange([...field.value, option]);

@@ -25,9 +25,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.junit.Before;
 import org.keycloak.common.Profile;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -37,10 +40,11 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -63,12 +67,27 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
         session.getContext().setAuthenticationSession(createAuthenticationSession(realm.getClientByClientId(clientId), requestedScopes));
     }
 
-    protected static DeclarativeUserProfileProvider getDynamicUserProfileProvider(KeycloakSession session) {
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+    protected static Optional<ComponentModel> setAndGetDefaultConfiguration(KeycloakSession session) {
+        setDefaultConfiguration(session);
+        return getComponentModel(session);
+    }
 
-        provider.setConfiguration(null);
+    protected static Optional<ComponentModel> getComponentModel(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
+    }
 
-        return (DeclarativeUserProfileProvider) provider;
+    protected static void setDefaultConfiguration(KeycloakSession session) {
+        setConfiguration(session, UPConfigUtils.readDefaultConfig());
+    }
+
+    protected static void setConfiguration(KeycloakSession session, String config) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        provider.setConfiguration(config);
+    }
+
+    protected static UserProfileProvider getUserProfileProvider(KeycloakSession session) {
+        return session.getProvider(UserProfileProvider.class);
     }
 
     /**
@@ -271,5 +290,13 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
             testRealm.setAttributes(new HashMap<>());
         }
         testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
+    }
+
+    @Before
+    public void resetConfigBeforeTest() {
+        VerifyProfileTest.disableDynamicUserProfile(testRealm());
+        RealmRepresentation realm = testRealm().toRepresentation();
+        VerifyProfileTest.enableDynamicUserProfile(realm);
+        testRealm().update(realm);
     }
 }

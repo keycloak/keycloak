@@ -28,9 +28,10 @@ export type Environment = {
 };
 
 // The default environment, used during development.
+const realm = new URLSearchParams(window.location.search).get("realm");
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  realm: "master",
+  realm: realm || "master",
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",

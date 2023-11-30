@@ -55,7 +55,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -83,6 +82,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -162,7 +162,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     public void testBrowserSecurityHeaders() {
         Client client = AdminClientUtil.createResteasyClient();
         Response response = client.target(oauth.getLoginFormUrl()).request().get();
-        Assert.assertThat(response.getStatus(), is(equalTo(200)));
+        assertThat(response.getStatus(), is(equalTo(200)));
         for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
             String headerValue = response.getHeaderString(header.getHeaderName());
             String expectedValue = header.getDefaultValue();
@@ -170,7 +170,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 Assert.assertNull(headerValue);
             } else {
                 Assert.assertNotNull(headerValue);
-                Assert.assertThat(headerValue, is(equalTo(expectedValue)));
+                assertThat(headerValue, is(equalTo(expectedValue)));
             }
         }
         response.close();
@@ -192,7 +192,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             Client client = AdminClientUtil.createResteasyClient();
             Response response = client.target(oauth.getLoginFormUrl()).request().get();
             String headerValue = response.getHeaderString(cspReportOnlyHeader);
-            Assert.assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
+            assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
             response.close();
             client.close();
         } finally {
@@ -210,8 +210,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
         Response response = client.target(b.build(oauth.getRealm())).request().post(oauth.getLoginEntityForPOST());
         
-        Assert.assertThat(response.getStatus(), is(equalTo(200)));
-        Assert.assertThat(response, Matchers.body(containsString("Sign in")));
+        assertThat(response.getStatus(), is(equalTo(200)));
+        assertThat(response, Matchers.body(containsString("Sign in")));
 
         response.close();
         client.close();
@@ -892,6 +892,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
+
+    @Test
+    public void testAuthenticationSessionExpiresEarlyAfterAuthentication() throws Exception {
+        // Open login form and refresh right after. This simulates creating another "tab" in rootAuthenticationSession
+        oauth.openLoginForm();
+        driver.navigate().refresh();
+
+        // Assert authenticationSession in cache with 2 tabs
+        String authSessionId = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID).getValue();
+        Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        loginPage.login("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        // authentication session should still exists with remaining browser tab
+        Assert.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        // authentication session should be expired after 1 minute
+        setTimeOffset(300);
+        Assert.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+    }
+
 
     @Test
     public void loginRememberMeExpiredIdle() throws Exception {

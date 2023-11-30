@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
@@ -34,7 +35,7 @@ describe("Realm roles test", () => {
     // The error should inform about duplicated name/id (THIS MESSAGE DOES NOT HAVE QUOTES AS THE OTHERS)
     masthead.checkNotificationMessage(
       "Could not create role: Role with name admin already exists",
-      true
+      true,
     );
   });
 
@@ -46,7 +47,7 @@ describe("Realm roles test", () => {
   });
 
   it("Realm role CRUD test", () => {
-    itemId += "_" + crypto.randomUUID();
+    itemId += "_" + uuid();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -69,7 +70,7 @@ describe("Realm roles test", () => {
   });
 
   it("should delete role from details action", () => {
-    itemId += "_" + crypto.randomUUID();
+    itemId += "_" + uuid();
     listingPage.goToCreateItem();
     createRealmRolePage.fillRealmRoleData(itemId).save();
     masthead.checkNotificationMessage("Role created", true);
@@ -84,12 +85,12 @@ describe("Realm roles test", () => {
     listingPage.itemExist(defaultRole).deleteItem(defaultRole);
     masthead.checkNotificationMessage(
       "You cannot delete a default role.",
-      true
+      true,
     );
   });
 
   it("Add associated roles test", () => {
-    itemId += "_" + crypto.randomUUID();
+    itemId += "_" + uuid();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -121,7 +122,7 @@ describe("Realm roles test", () => {
     // Add associated client role
     associatedRolesPage.addAssociatedRoleFromSearchBar(
       "manage-account-links",
-      true
+      true,
     );
     masthead.checkNotificationMessage("Associated roles have been added", true);
   });
@@ -158,7 +159,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
@@ -177,13 +178,13 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
   it("Should delete associated roles from list test", () => {
     itemId = "realm_role_crud";
-    itemId += "_" + crypto.randomUUID();
+    itemId += "_" + uuid();
 
     // Create
     listingPage.itemExist(itemId, false).goToCreateItem();
@@ -208,7 +209,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
     listingPage.removeItem("offline_access");
     sidebarPage.waitForPageLoad();
@@ -217,7 +218,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
@@ -230,7 +231,7 @@ describe("Realm roles test", () => {
       adminClient.createRealmRole({
         name: editRoleName,
         description,
-      })
+      }),
     );
 
     after(() => adminClient.deleteRealmRole(editRoleName));

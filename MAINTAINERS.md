@@ -2,6 +2,7 @@ Maintainers
 ===========
 
 * [Stian Thorgersen](https://github.com/stianst) (project lead)
+* [Alexander Schwartz](https://github.com/ahus1)
 * [Bruno Oliveira da Silva](https://github.com/abstractj)
 * [Hynek Mlnařík](https://github.com/hmlnarik)
 * [Marek Posolda](https://github.com/mposolda)

@@ -35,12 +35,6 @@
         <module>legacy-private</module>
         <module>legacy-services</module>
         <module>jpa</module>
-        <module>map-jpa</module>
         <module>infinispan</module>
-        <module>map</module>
-        <module>build-processor</module>
-        <module>map-hot-rod</module>
-        <module>map-ldap</module>
-        <module>map-file</module>
     </modules>
 </project>

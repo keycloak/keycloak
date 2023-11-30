@@ -1,7 +1,7 @@
 [[_saml_multi_tenancy]]
 ==== Multi Tenancy
 
-SAML offers the same functionality as OIDC for <<_multi_tenancy,Multi Tenancy>>, meaning that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located on the same {project_name} instance or on different instances.
+SAML offers Multi Tenancy, meaning that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located on the same {project_name} instance or on different instances.
 
 To do this, the application must have multiple `keycloak-saml.xml` adapter configuration files.
 

@@ -47,7 +47,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
     <DataListItem
       id={`${account.providerAlias}-idp`}
       key={account.providerName}
-      aria-labelledby={t("linkedAccountsTitle")}
+      aria-label={t("linkedAccounts")}
     >
       <DataListItemRow key={account.providerName}>
         <DataListItemCells

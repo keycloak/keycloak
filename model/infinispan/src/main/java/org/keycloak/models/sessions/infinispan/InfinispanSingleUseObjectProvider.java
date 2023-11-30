@@ -82,12 +82,8 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     public Map<String, String> remove(String key) {
         try {
             BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-            SingleUseObjectValueEntity singleUseObjectValueEntity = tx.get(cache, key);
-            if (singleUseObjectValueEntity != null) {
-                tx.remove(cache, key);
-                return singleUseObjectValueEntity.getNotes();
-            }
-            return null;
+            SingleUseObjectValueEntity existing = cache.remove(key);
+            return existing == null ? null : existing.getNotes();
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.

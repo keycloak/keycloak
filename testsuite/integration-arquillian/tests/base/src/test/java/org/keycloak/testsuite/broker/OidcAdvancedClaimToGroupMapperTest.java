@@ -26,6 +26,9 @@ import jakarta.ws.rs.core.Response;
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMapperTest {
+    protected boolean isHardcodedGroup() {
+        return false;
+    }
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -74,7 +77,11 @@ public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMappe
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
 
         UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasNotBeenAssignedToGroup(user);
+        if (!isHardcodedGroup()) {
+            assertThatUserHasNotBeenAssignedToGroup(user);
+        } else {
+            assertThatUserHasBeenAssignedToGroup(user);
+        }
     }
 
     @Test
@@ -113,7 +120,11 @@ public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMappe
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
 
         UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
-        assertThatUserHasNotBeenAssignedToGroup(user);
+        if (!isHardcodedGroup()) {
+            assertThatUserHasNotBeenAssignedToGroup(user);
+        } else {
+            assertThatUserHasBeenAssignedToGroup(user);
+        }
     }
 
     @Test
@@ -121,7 +132,11 @@ public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMappe
         newValueForAttribute2 = "value mismatch";
         UserRepresentation user = createMapperAndLoginAsUserTwiceWithMapper(FORCE, false, MAPPER_TEST_GROUP_PATH);
 
-        assertThatUserHasNotBeenAssignedToGroup(user);
+        if (!isHardcodedGroup()) {
+            assertThatUserHasNotBeenAssignedToGroup(user);
+        } else {
+            assertThatUserHasBeenAssignedToGroup(user);
+        }
     }
 
     @Test

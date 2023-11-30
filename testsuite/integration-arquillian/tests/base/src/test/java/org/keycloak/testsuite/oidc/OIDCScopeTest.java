@@ -222,7 +222,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
             Assert.assertEquals("John", idToken.getGivenName());
             Assert.assertEquals("Doe", idToken.getFamilyName());
             Assert.assertEquals("John Doe", idToken.getName());
-            Assert.assertEquals(new Long(1643282255L),idToken.getUpdatedAt());
+            Assert.assertEquals(Long.valueOf(1643282255L),idToken.getUpdatedAt());
         } else {
             Assert.assertNull(idToken.getPreferredUsername());
             Assert.assertNull(idToken.getGivenName());

@@ -1,12 +1,12 @@
 import { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { useMatches } from "react-router";
+import { useMatches } from "react-router-dom";
 
 import { ForbiddenSection } from "../ForbiddenSection";
 import { useAccess } from "../context/access/Access";
 
 function hasProp<K extends PropertyKey>(
   data: object,
-  prop: K
+  prop: K,
 ): data is Record<K, unknown> {
   return prop in data;
 }

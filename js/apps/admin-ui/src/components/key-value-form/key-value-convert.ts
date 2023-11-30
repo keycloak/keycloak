@@ -19,7 +19,7 @@ export function keyValueToArray(attributeArray: KeyValueType[] = []) {
 
 export function arrayToKeyValue<T>(attributes: Record<string, string[]> = {}) {
   const result = Object.entries(attributes).flatMap(([key, value]) =>
-    value.map<KeyValueType>((value) => ({ key, value }))
+    value.map<KeyValueType>((value) => ({ key, value })),
   );
 
   return result as PathValue<T, Path<T>>;

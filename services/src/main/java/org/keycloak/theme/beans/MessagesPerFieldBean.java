@@ -19,6 +19,8 @@ package org.keycloak.theme.beans;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.forms.login.MessageType;
+
 /**
  * Bean used to hold form messages per field. Stored under <code>messagesPerField</code> key in Freemarker context.
  *

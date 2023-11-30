@@ -16,10 +16,11 @@ Options:
 
 Cache:
 
---cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
-                       is used to create a cluster between multiple server nodes. A 'local' cache
-                       disables clustering and is intended for development and testing purposes.
-                       Possible values are: ispn, local. Default: ispn.
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -71,16 +72,18 @@ Feature:
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
+                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
+                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 
 Hostname:
 
@@ -113,6 +116,9 @@ HTTP/TLS:
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a
@@ -137,7 +143,7 @@ HTTP/TLS:
                        value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable. Default: TLSv1.3.
+                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.

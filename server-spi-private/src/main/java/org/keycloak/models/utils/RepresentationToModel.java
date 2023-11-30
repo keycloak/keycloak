@@ -18,11 +18,9 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -57,6 +55,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -99,7 +98,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -230,7 +228,7 @@ public class RepresentationToModel {
                             cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
-                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm());
+                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
@@ -710,10 +708,10 @@ public class RepresentationToModel {
         return session.getProvider(DatastoreProvider.class).getExportImportManager().createUser(newRealm, userRep);
     }
 
-    public static void createGroups(UserRepresentation userRep, RealmModel newRealm, UserModel user) {
+    public static void createGroups(KeycloakSession session, UserRepresentation userRep, RealmModel newRealm, UserModel user) {
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
                 if (group == null) {
                     throw new RuntimeException("Unable to find group specified by path: " + path);
 
@@ -926,7 +924,7 @@ public class RepresentationToModel {
     }
 
 
-    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
+    public static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationExecutionRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         model.setId(rep.getId());
         model.setFlowId(rep.getFlowId());
@@ -938,7 +936,7 @@ public class RepresentationToModel {
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
 
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel cfg = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel cfg = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(cfg.getId());
         }
         return model;

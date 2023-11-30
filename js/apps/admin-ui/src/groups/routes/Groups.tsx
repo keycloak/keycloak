@@ -1,9 +1,9 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
-export type GroupsParams = { realm: string; id?: string };
+export type GroupsParams = { realm: string; id?: string; lazy?: string };
 
 const GroupsSection = lazy(() => import("../GroupsSection"));
 
@@ -24,6 +24,6 @@ export const toGroups = (params: GroupsParams): Partial<Path> => {
   const path = params.id ? GroupsWithIdRoute.path : GroupsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

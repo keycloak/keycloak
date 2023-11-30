@@ -28,9 +28,10 @@ export const RoleComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
 
   const [openModal, toggleModal] = useToggle();
   const {
@@ -43,12 +44,11 @@ export const RoleComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       validated={errors[fieldName] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={fieldName}

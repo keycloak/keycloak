@@ -34,4 +34,14 @@ public class MacSecretClientSignatureVerifierProvider implements ClientSignature
     public SignatureVerifierContext verifier(ClientModel client, JWSInput input) throws VerificationException {
         return new ClientMacSignatureVerifierContext(session, client, algorithm);
     }
+
+    @Override
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return false;
+    }
 }

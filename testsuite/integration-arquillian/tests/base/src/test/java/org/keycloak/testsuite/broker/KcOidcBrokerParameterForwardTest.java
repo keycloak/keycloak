@@ -2,6 +2,7 @@ package org.keycloak.testsuite.broker;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
@@ -53,16 +54,16 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
         waitForPage(driver, "sign in to", true);
 
-        Assert.assertThat("Driver should be on the provider realm page right now",
+        assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        Assert.assertThat(FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + " should be part of the url",
+        assertThat(FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + " should be part of the url",
                 driver.getCurrentUrl(), containsString(FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE));
 
-        Assert.assertThat("\"" + PARAMETER_NOT_SET + "\"" + " should NOT be part of the url",
+        assertThat("\"" + PARAMETER_NOT_SET + "\"" + " should NOT be part of the url",
                 driver.getCurrentUrl(), not(containsString(PARAMETER_NOT_SET)));
 
-        Assert.assertThat("\"" + PARAMETER_NOT_FORWARDED +"\"" + " should be NOT part of the url",
+        assertThat("\"" + PARAMETER_NOT_FORWARDED +"\"" + " should be NOT part of the url",
                 driver.getCurrentUrl(), not(containsString(PARAMETER_NOT_FORWARDED)));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
@@ -70,7 +71,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
         updateAccountInformationPage.assertCurrent();
 
-        Assert.assertThat("We must be on correct realm right now",
+        assertThat("We must be on correct realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");

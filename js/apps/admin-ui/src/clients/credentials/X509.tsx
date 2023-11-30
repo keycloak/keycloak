@@ -7,7 +7,7 @@ import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 export const X509 = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -19,8 +19,8 @@ export const X509 = () => {
         label={t("allowRegexComparison")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:allowRegexComparison")}
-            fieldLabelId="clients:allowRegexComparison"
+            helpText={t("allowRegexComparisonHelp")}
+            fieldLabelId="allowRegexComparison"
           />
         }
         fieldId="allowRegexComparison"
@@ -28,15 +28,15 @@ export const X509 = () => {
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.x509.allow.regex.pattern.comparison"
+            "attributes.x509.allow.regex.pattern.comparison",
           )}
           defaultValue="false"
           control={control}
           render={({ field }) => (
             <Switch
               id="allowRegexComparison"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
@@ -48,12 +48,9 @@ export const X509 = () => {
         label={t("subject")}
         fieldId="kc-subject"
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:subject")}
-            fieldLabelId="clients:subject"
-          />
+          <HelpItem helpText={t("subjectHelp")} fieldLabelId="subject" />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.attributes?.[beerify("x509.subjectdn")]
             ? ValidatedOptions.error
@@ -71,7 +68,7 @@ export const X509 = () => {
           }
           {...register(
             convertAttributeNameToForm("attributes.x509.subjectdn"),
-            { required: true }
+            { required: true },
           )}
         />
       </FormGroup>

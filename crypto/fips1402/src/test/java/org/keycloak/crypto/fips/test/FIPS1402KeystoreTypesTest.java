@@ -15,6 +15,8 @@ import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.rule.CryptoInitRule;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -33,7 +35,7 @@ public class FIPS1402KeystoreTypesTest {
     public void testKeystoreFormatsInNonApprovedMode() {
         Assume.assumeFalse(CryptoServicesRegistrar.isInApprovedOnlyMode());
         Set<KeystoreUtil.KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().collect(Collectors.toSet());
-        Assert.assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
+        assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
                 KeystoreUtil.KeystoreFormat.PKCS12,
                 KeystoreUtil.KeystoreFormat.BCFKS));
     }
@@ -43,7 +45,7 @@ public class FIPS1402KeystoreTypesTest {
     public void testKeystoreFormatsInApprovedMode() {
         Assume.assumeTrue(CryptoServicesRegistrar.isInApprovedOnlyMode());
         Set<KeystoreUtil.KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().collect(Collectors.toSet());
-        Assert.assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
+        assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
                 KeystoreUtil.KeystoreFormat.BCFKS));
     }
 }

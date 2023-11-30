@@ -32,7 +32,7 @@ type AddRealmProps = {
 
 const AddRealm = ({ onClick }: AddRealmProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
 
   return (
     <Button
@@ -84,7 +84,7 @@ export const RealmSelector = () => {
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const recentRealms = useRecentRealms();
 
   const all = useMemo(
@@ -96,14 +96,10 @@ export const RealmSelector = () => {
         })
         .concat(
           realms
-            .filter(
-              (r) => !recentRealms.includes(r.realm!) || r.realm === realm
-            )
-            .map((r) => {
-              return { name: r.realm!, used: false };
-            })
+            .filter((name) => !recentRealms.includes(name) || name === realm)
+            .map((name) => ({ name, used: false })),
         ),
-    [recentRealms, realm, realms]
+    [recentRealms, realm, realms],
   );
 
   const filteredItems = useMemo(
@@ -111,9 +107,9 @@ export const RealmSelector = () => {
       search.trim() === ""
         ? all
         : all.filter((r) =>
-            r.name.toLowerCase().includes(search.toLowerCase())
+            r.name.toLowerCase().includes(search.toLowerCase()),
           ),
-    [search, all]
+    [search, all],
   );
 
   return realms.length > 5 ? (
@@ -164,15 +160,15 @@ export const RealmSelector = () => {
         </DropdownToggle>
       }
       dropdownItems={(realms.length !== 0
-        ? realms.map((r) => (
+        ? realms.map((name) => (
             <DropdownItem
-              key={r.realm}
+              key={name}
               component={
                 <Link
-                  to={toDashboard({ realm: r.realm! })}
+                  to={toDashboard({ realm: name })}
                   onClick={() => setOpen(false)}
                 >
-                  <RealmText value={r.realm!} />
+                  <RealmText value={name} />
                 </Link>
               }
             />
@@ -187,7 +183,7 @@ export const RealmSelector = () => {
           {whoAmI.canCreateRealm() && (
             <>
               <Divider key="divider" />
-              <DropdownItem key="add">
+              <DropdownItem key="add" component="div">
                 <AddRealm onClick={() => setOpen(false)} />
               </DropdownItem>
             </>

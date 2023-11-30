@@ -39,7 +39,7 @@ const defaultValues: ExecutorForm = {
 };
 
 export default function ExecutorForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
   const { executorName } = useParams<ExecutorParams>();
@@ -65,7 +65,7 @@ export default function ExecutorForm() {
   const setupForm = (profiles: ClientProfileRepresentation[]) => {
     const profile = profiles.find((profile) => profile.name === profileName);
     const executor = profile?.executors?.find(
-      (executor) => executor.executor === executorName
+      (executor) => executor.executor === executorName,
     );
     if (executor) reset({ config: executor.configuration });
   };
@@ -80,7 +80,7 @@ export default function ExecutorForm() {
       setupForm(profiles.profiles!);
       setupForm(profiles.globalProfiles!);
     },
-    []
+    [],
   );
 
   const save = async () => {
@@ -97,7 +97,7 @@ export default function ExecutorForm() {
 
       if (editMode) {
         const profileExecutor = profile.executors!.find(
-          (executor) => executor.executor === executorName
+          (executor) => executor.executor === executorName,
         );
         profileExecutor!.configuration = {
           ...profileExecutor!.configuration,
@@ -119,29 +119,22 @@ export default function ExecutorForm() {
         globalProfiles: globalProfiles,
       });
       addAlert(
-        editMode
-          ? t("realm-settings:updateExecutorSuccess")
-          : t("realm-settings:addExecutorSuccess"),
-        AlertVariant.success
+        editMode ? t("updateExecutorSuccess") : t("addExecutorSuccess"),
+        AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName }));
     } catch (error) {
-      addError(
-        editMode
-          ? "realm-settings:updateExecutorError"
-          : "realm-settings:addExecutorError",
-        error
-      );
+      addError(editMode ? "updateExecutorError" : "addExecutorError", error);
     }
   };
 
   const globalProfile = globalProfiles.find(
-    (globalProfile) => globalProfile.name === profileName
+    (globalProfile) => globalProfile.name === profileName,
   );
 
   const profileExecutorType = executorTypes?.find(
-    (executor) => executor.id === executorName
+    (executor) => executor.id === executorName,
   );
 
   const editedProfileExecutors =
@@ -152,7 +145,7 @@ export default function ExecutorForm() {
           ...property,
           defaultValue: globalDefaultValues,
         };
-      }
+      },
     );
 
   return (
@@ -175,12 +168,12 @@ export default function ExecutorForm() {
               executors.length > 0 && executors[0].helpText! !== "" ? (
                 <HelpItem
                   helpText={executors[0].helpText}
-                  fieldLabelId="realm-settings:executorTypeHelpText"
+                  fieldLabelId="executorTypeHelpText"
                 />
               ) : editMode ? (
                 <HelpItem
                   helpText={profileExecutorType?.helpText}
-                  fieldLabelId="realm-settings:executorTypeHelpText"
+                  fieldLabelId="executorTypeHelpText"
                 />
               ) : undefined
             }
@@ -197,11 +190,11 @@ export default function ExecutorForm() {
                   onSelect={(_, value) => {
                     reset({ ...defaultValues, executor: value.toString() });
                     const selectedExecutor = executorTypes?.filter(
-                      (type) => type.id === value
+                      (type) => type.id === value,
                     );
                     setExecutors(selectedExecutor ?? []);
                     setExecutorProperties(
-                      selectedExecutor?.[0].properties ?? []
+                      selectedExecutor?.[0].properties ?? [],
                     );
                     setSelectExecutorTypeOpen(false);
                   }}
@@ -239,7 +232,7 @@ export default function ExecutorForm() {
                 onClick={() => handleSubmit(save)()}
                 data-testid="addExecutor-saveBtn"
               >
-                {editMode ? t("common:save") : t("common:add")}
+                {editMode ? t("save") : t("add")}
               </Button>
               <Button
                 variant="link"
@@ -251,7 +244,7 @@ export default function ExecutorForm() {
                 )}
                 data-testid="addExecutor-cancelBtn"
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           )}
@@ -264,7 +257,7 @@ export default function ExecutorForm() {
               )}
               variant="primary"
             >
-              {t("realm-settings:back")}
+              {t("back")}
             </Button>
           </div>
         )}

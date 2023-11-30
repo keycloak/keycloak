@@ -36,6 +36,7 @@ import { DetailDescriptionLink } from "./DetailDescription";
 
 type ScopesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 export type PermissionScopeRepresentation = ScopeRepresentation & {
@@ -48,8 +49,11 @@ type ExpandableRow = {
   isExpanded: boolean;
 };
 
-export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
-  const { t } = useTranslation("clients");
+export const AuthorizationScopes = ({
+  clientId,
+  isDisabled = false,
+}: ScopesProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
 
@@ -83,7 +87,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       setScopes(scopes.map((s) => ({ ...s, isLoaded: false })));
       setCollapsed(scopes.map((s) => ({ id: s.id!, isExpanded: false })));
     },
-    [key, search, first, max]
+    [key, search, first, max],
   );
 
   const getScope = (id: string) => scopes?.find((scope) => scope.id === id)!;
@@ -116,14 +120,14 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             permissions,
             isLoaded: true,
           };
-        })
+        }),
       );
     },
     (resourcesScopes) => {
       let result = [...(scopes || [])];
       resourcesScopes.forEach((resourceScope) => {
         const index = scopes?.findIndex(
-          (scope) => resourceScope.id === scope.id
+          (scope) => resourceScope.id === scope.id,
         )!;
         result = [
           ...result.slice(0, index),
@@ -134,7 +138,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
 
       setScopes(result);
     },
-    [collapsed]
+    [collapsed],
   );
 
   if (!scopes) {
@@ -183,11 +187,11 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             <TableComposable aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
-                  <Th>{t("common:name")}</Th>
+                  <Th aria-hidden="true" />
+                  <Th>{t("name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th />
-                  <Th />
+                  <Th aria-hidden="true" />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {scopes.map((scope, rowIndex) => (
@@ -241,7 +245,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("common:delete"),
+                            title: t("delete"),
                             onClick: () => {
                               setSelectedScope(scope);
                               toggleDeleteDialog();
@@ -305,6 +309,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         <ListEmptyState
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
+          isDisabled={isDisabled}
           onPrimaryAction={() => navigate(toNewScope({ id: clientId, realm }))}
           primaryActionText={t("createAuthorizationScope")}
         />
@@ -312,8 +317,9 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("common:noSearchResults")}
-          instructions={t("common:noSearchResultsInstructions")}
+          isDisabled={isDisabled}
+          message={t("noSearchResults")}
+          instructions={t("noSearchResultsInstructions")}
         />
       )}
     </PageSection>

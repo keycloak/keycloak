@@ -38,6 +38,7 @@ public interface Errors {
     String USER_DISABLED = "user_disabled";
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
+    String DIFFERENT_USER_AUTHENTICATING = "different_user_authenticating";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
     String USER_DELETE_ERROR = "user_delete_error";
 
@@ -93,6 +94,7 @@ public interface Errors {
     String PKCE_VERIFICATION_FAILED = "pkce_verification_failed";
     String INVALID_CODE_CHALLENGE_METHOD = "invalid_code_challenge_method";
 
+    String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";

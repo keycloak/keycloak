@@ -43,7 +43,7 @@ export type CredentialsProps = {
 };
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
 
@@ -79,19 +79,19 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       setProviders(providers);
       setSecret(secret.value!);
     },
-    []
+    [],
   );
 
   async function regenerate<T>(
     call: (clientId: string) => Promise<T>,
-    message: string
+    message: string,
   ): Promise<T | undefined> {
     try {
       const data = await call(clientId);
       addAlert(t(`${message}Success`), AlertVariant.success);
       return data;
     } catch (error) {
-      addError(`clients:${message}Error`, error);
+      addError(`${message}Error`, error);
     }
   }
 
@@ -99,17 +99,17 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const secret = await regenerate<CredentialRepresentation>(
       (clientId) =>
         adminClient.clients.generateNewClientSecret({ id: clientId }),
-      "clientSecret"
+      "clientSecret",
     );
     setSecret(secret?.value || "");
     refresh();
   };
 
   const [toggleClientSecretConfirm, ClientSecretConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmClientSecretTitle",
-    messageKey: "clients:confirmClientSecretBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "confirmClientSecretTitle",
+    messageKey: "confirmClientSecretBody",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateClientSecret,
   });
 
@@ -117,16 +117,16 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const accessToken = await regenerate<AccessToken>(
       (clientId) =>
         adminClient.clients.generateRegistrationAccessToken({ id: clientId }),
-      "accessToken"
+      "accessToken",
     );
     setAccessToken(accessToken?.registrationAccessToken || "");
   };
 
   const [toggleAccessTokenConfirm, AccessTokenConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmAccessTokenTitle",
-    messageKey: "clients:confirmAccessTokenBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "confirmAccessTokenTitle",
+    messageKey: "confirmAccessTokenBody",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateAccessToken,
   });
 
@@ -148,8 +148,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-client-authenticator-type"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:client-authenticator-type")}
-                  fieldLabelId="clients:clientAuthenticator"
+                  helpText={t("clientAuthenticatorTypeHelp")}
+                  fieldLabelId="clientAuthenticator"
                 />
               }
             >
@@ -185,7 +185,9 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               />
             </FormGroup>
             {(clientAuthenticatorType === "client-jwt" ||
-              clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
+              clientAuthenticatorType === "client-secret-jwt") && (
+              <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
+            )}
             {clientAuthenticatorType === "client-jwt" && (
               <FormGroup>
                 <Alert variant="info" isInline title={t("signedJWTConfirm")} />
@@ -194,7 +196,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
-                {t("common:save")}
+                {t("save")}
               </Button>
             </ActionGroup>
           </CardBody>
@@ -218,8 +220,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-access-token"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:registration-access-token")}
-                  fieldLabelId="clients:registrationAccessToken"
+                  helpText={t("registrationAccessTokenHelp")}
+                  fieldLabelId="registrationAccessToken"
                 />
               }
             >

@@ -6,6 +6,8 @@ runs:
   steps:
     - id: upload-jvm-heapdumps
       name: Upload JVM Heapdumps
+      # Windows runners are running into https://github.com/actions/upload-artifact/issues/240
+      if: runner.os != 'Windows'
       uses: actions/upload-artifact@v3
       with:
         name: jvm-heap-dumps

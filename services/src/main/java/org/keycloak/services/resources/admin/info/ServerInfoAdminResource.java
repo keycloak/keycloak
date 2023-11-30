@@ -17,12 +17,16 @@
 
 package org.keycloak.services.resources.admin.info;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -45,6 +49,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.representations.info.ClientInstallationRepresentation;
 import org.keycloak.representations.info.CryptoInfoRepresentation;
+import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
@@ -52,6 +57,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.GET;
@@ -73,6 +79,7 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
@@ -91,12 +98,31 @@ public class ServerInfoAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROOT)
+    @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
-        info.setCryptoInfo(CryptoInfoRepresentation.create());
+        info.setFeatures(FeatureRepresentation.create());
+
+        // True - asymmetric algorithms, false - symmetric algorithms
+        Map<Boolean, List<String>> algorithms = session.getAllProviders(ClientSignatureVerifierProvider.class).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
+                                        clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
+                                        (l1, l2) -> {
+                                            List<String> result = listCombiner(l1, l2);
+                                            return result.stream()
+                                                    .sorted()
+                                                    .collect(Collectors.toList());
+                                        },
+                                        HashMap::new
+                                )
+                        );
+        info.setCryptoInfo(CryptoInfoRepresentation.create(algorithms.get(false), algorithms.get(true)));
 
         setSocialProviders(info);
         setIdentityProviders(info);

@@ -42,11 +42,16 @@ public class MigrateTo22_0_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         session.realms().getRealmsStream().forEach(this::removeHttpChallengeFlow);
+        //login, account, email themes are handled by JpaUpdate22_0_0_RemoveRhssoThemes
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         removeHttpChallengeFlow(realm);
+        updateLoginTheme(realm);
+        updateAccountTheme(realm);
+        updateEmailTheme(realm);
+        updateClientAttributes(realm);
     }
 
     private void removeHttpChallengeFlow(RealmModel realm) {
@@ -61,6 +66,36 @@ public class MigrateTo22_0_0 implements Migration {
                     HTTP_CHALLENGE_FLOW, realm.getName());
             throw me;
         }
+    }
+
+    private void updateAccountTheme(RealmModel realm) {
+        String accountTheme = realm.getAccountTheme();
+        if ("keycloak".equals(accountTheme) || "rh-sso".equals(accountTheme) || "rh-sso.v2".equals(accountTheme)) {
+            realm.setAccountTheme("keycloak.v2");
+        }
+    }
+
+    private void updateEmailTheme(RealmModel realm) {
+        String emailTheme = realm.getEmailTheme();
+        if ("rh-sso".equals(emailTheme)) {
+            realm.setEmailTheme(null);
+        }
+    }
+
+    private void updateLoginTheme(RealmModel realm) {
+        String loginTheme = realm.getLoginTheme();
+        if ("rh-sso".equals(loginTheme)) {
+            realm.setLoginTheme(null);
+        }
+    }
+
+    private void updateClientAttributes(RealmModel realm) {
+        realm.getClientsStream()
+                .filter(client -> {
+                    String clientLoginTheme = client.getAttribute("login_theme");
+                    return clientLoginTheme != null && clientLoginTheme.equals("rh-sso");
+                })
+                .forEach(client -> client.setAttribute("login_theme", null));
     }
 
     @Override

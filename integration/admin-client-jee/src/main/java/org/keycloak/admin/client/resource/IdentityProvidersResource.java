@@ -25,6 +25,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -42,6 +43,11 @@ public interface IdentityProvidersResource {
     @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)
     List<IdentityProviderRepresentation> findAll();
+
+    @GET
+    @Path("instances")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<IdentityProviderRepresentation> find(@QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
     @POST
     @Path("instances")

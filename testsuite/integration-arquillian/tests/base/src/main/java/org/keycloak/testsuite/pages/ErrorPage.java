@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UIUtils;
@@ -26,7 +25,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorPage extends AbstractPage {
+public class ErrorPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;

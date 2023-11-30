@@ -12,7 +12,7 @@ type GroupRoleMappingProps = {
 };
 
 export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {
@@ -33,12 +33,12 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
               id,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
-            })
-          )
+            }),
+          ),
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:roleMappingUpdatedError", error);
+      addError("roleMappingUpdatedError", error);
     }
   };
 

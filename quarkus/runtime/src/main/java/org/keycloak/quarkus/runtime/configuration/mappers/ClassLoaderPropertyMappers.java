@@ -1,15 +1,13 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import java.util.Optional;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.ClassLoaderOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 final class ClassLoaderPropertyMappers {
 
@@ -26,15 +24,7 @@ final class ClassLoaderPropertyMappers {
 
     private static Optional<String> resolveIgnoredArtifacts(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (Environment.isRebuildCheck() || Environment.isRebuild()) {
-            Profile profile = getCurrentOrCreateFeatureProfile();
-
-            if (profile.getFeatures().get(Feature.FIPS)) {
-                return Optional.of(
-                        "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.bouncycastle:bcutil-jdk15on,org.keycloak:keycloak-crypto-default");
-            }
-
-            return Optional.of(
-                    "org.keycloak:keycloak-crypto-fips1402,org.bouncycastle:bc-fips,org.bouncycastle:bctls-fips,org.bouncycastle:bcpkix-fips");
+            return Optional.of(String.join(",", IgnoredArtifacts.getDefaultIgnoredArtifacts()));
         }
 
         return value;

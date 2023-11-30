@@ -171,17 +171,3 @@ You can exclude events by using the `--spi-events-listener-email-exclude-events`
 kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_TOTP,REMOVE_TOTP
 ----
 
-You can set a maximum length of each Event detail in the database by using the `--spi-events-store-jpa-max-detail-length` argument. This setting is useful if a detail (for example, redirect_uri) is long. For example:
-
-[source,bash]
-----
-kc.[sh|bat] --spi-events-store-jpa-max-detail-length=1000
-----
-
-Also you can set a maximum length of all Event's details by using the `--spi-events-store-jpa-max-field-length` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
-
-[source,bash]
-----
-kc.[sh|bat] --spi-events-store-jpa-max-field-length=2500
-----
-

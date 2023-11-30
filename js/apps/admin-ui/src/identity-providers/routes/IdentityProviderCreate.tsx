@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderCreateParams = {
@@ -13,14 +13,14 @@ const AddIdentityProvider = lazy(() => import("../add/AddIdentityProvider"));
 export const IdentityProviderCreateRoute: AppRouteObject = {
   path: "/:realm/identity-providers/:providerId/add",
   element: <AddIdentityProvider />,
-  breadcrumb: (t) => t("identity-providers:addProvider"),
+  breadcrumb: (t) => t("addProvider"),
   handle: {
     access: "manage-identity-providers",
   },
 };
 
 export const toIdentityProviderCreate = (
-  params: IdentityProviderCreateParams
+  params: IdentityProviderCreateParams,
 ): Partial<Path> => ({
-  pathname: generatePath(IdentityProviderCreateRoute.path, params),
+  pathname: generateEncodedPath(IdentityProviderCreateRoute.path, params),
 });

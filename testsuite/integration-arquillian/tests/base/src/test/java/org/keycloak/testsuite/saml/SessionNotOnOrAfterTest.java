@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import org.junit.Assert;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
@@ -42,7 +42,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
         Assert.assertNotNull(resp);
         Assert.assertNotNull(resp.getAssertions());
-        Assert.assertThat(resp.getAssertions().size(), greaterThan(0));
+        assertThat(resp.getAssertions().size(), greaterThan(0));
         Assert.assertNotNull(resp.getAssertions().get(0));
         Assert.assertNotNull(resp.getAssertions().get(0).getAssertion());
 

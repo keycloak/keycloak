@@ -249,7 +249,7 @@ public class LDAPRule extends ExternalResource {
                 // Default to startTLS disabled
                 config.put(LDAPConstants.START_TLS, "false");
                 // By default use truststore from TruststoreSPI only for LDAP over SSL connections
-                config.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY);
+                config.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
         }
         switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED)) {
             case "true":

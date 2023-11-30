@@ -8,11 +8,6 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
-                       and a new server image must be built prior to starting the server. This
-                       option provides an alternative to manually running the 'build' prior to
-                       starting the server. Use this configuration carefully in production as it
-                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
@@ -79,6 +74,9 @@ HTTP/TLS:
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
@@ -100,7 +98,7 @@ HTTP/TLS:
                        value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable. Default: TLSv1.3.
+                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.

@@ -26,7 +26,7 @@ import { useParams } from "../utils/useParams";
 export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -50,12 +50,7 @@ export const UserConsents = () => {
     return (
       <ChipGroup className="kc-consents-chip-group">
         {grantedClientScopes!.map((currentChip) => (
-          <Chip
-            key={currentChip}
-            isReadOnly
-            className="kc-consents-chip"
-            id="consents-chip-text"
-          >
+          <Chip key={currentChip} isReadOnly className="kc-consents-chip">
             {currentChip}
           </Chip>
         ))}
@@ -64,11 +59,11 @@ export const UserConsents = () => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "users:revokeClientScopesTitle",
-    messageKey: t("users:revokeClientScopes", {
+    titleKey: "revokeClientScopesTitle",
+    messageKey: t("revokeClientScopes", {
       clientId: selectedClient?.clientId,
     }),
-    continueButtonLabel: "common:revoke",
+    continueButtonLabel: "revoke",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -81,7 +76,7 @@ export const UserConsents = () => {
 
         addAlert(t("deleteGrantsSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("roles:deleteGrantsError", error);
+        addError("deleteGrantsError", error);
       }
     },
   });
@@ -92,32 +87,32 @@ export const UserConsents = () => {
       <KeycloakDataTable
         loader={loader}
         key={key}
-        ariaLabelKey="roles:roleList"
+        ariaLabelKey="roleList"
         searchPlaceholderKey=" "
         columns={[
           {
             name: "clientId",
-            displayKey: "clients:Client",
+            displayKey: "Client",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(20)],
           },
           {
             name: "grantedClientScopes",
-            displayKey: "client-scopes:grantedClientScopes",
+            displayKey: "grantedClientScopes",
             cellFormatters: [emptyFormatter()],
             cellRenderer: clientScopesRenderer,
             transforms: [cellWidth(30)],
           },
           {
             name: "createDate",
-            displayKey: "clients:created",
+            displayKey: "created",
             transforms: [cellWidth(20)],
             cellRenderer: ({ createDate }) =>
               createDate ? formatDate(new Date(createDate)) : "—",
           },
           {
             name: "lastUpdatedDate",
-            displayKey: "clients:lastUpdated",
+            displayKey: "lastUpdated",
             transforms: [cellWidth(10)],
             cellRenderer: ({ lastUpdatedDate }) =>
               lastUpdatedDate ? formatDate(new Date(lastUpdatedDate)) : "—",
@@ -125,7 +120,7 @@ export const UserConsents = () => {
         ]}
         actions={[
           {
-            title: t("users:revoke"),
+            title: t("revoke"),
             onRowClick: (client) => {
               setSelectedClient(client);
               toggleDeleteDialog();
@@ -136,8 +131,8 @@ export const UserConsents = () => {
           <ListEmptyState
             hasIcon={true}
             icon={CubesIcon}
-            message={t("users:noConsents")}
-            instructions={t("users:noConsentsText")}
+            message={t("noConsents")}
+            instructions={t("noConsentsText")}
           />
         }
       />

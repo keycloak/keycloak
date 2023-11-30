@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import ListingPage, {
   Filter,
@@ -60,7 +61,7 @@ describe("Clients test", () => {
         await adminClient.createClientScope(clientScope);
         await adminClient.addDefaultClientScopeInClient(
           clientScopeName + i,
-          clientId
+          clientId,
         );
       }
       clientScope.name = clientScopeNameDefaultType;
@@ -148,9 +149,7 @@ describe("Clients test", () => {
           .checkModalTitle("Add client scopes to " + clientId);
         commonPage.tableUtils().selectRowItemCheckbox(itemName);
         commonPage.modalUtils().confirmModalWithItem(assignedType);
-        commonPage
-          .masthead()
-          .checkNotificationMessage("Scope mapping successfully updated");
+        commonPage.masthead().checkNotificationMessage("Scope mapping updated");
         commonPage.tableToolbarUtils().searchItem(itemName, false);
         commonPage
           .tableUtils()
@@ -309,12 +308,12 @@ describe("Clients test", () => {
       commonPage
         .masthead()
         .checkNotificationMessage(
-          "Could not create client: 'Client account already exists'"
+          "Could not create client: 'Client account already exists'",
         );
     });
 
     it("Client CRUD test", () => {
-      itemId += "_" + crypto.randomUUID();
+      itemId += "_" + uuid();
 
       // Create
       commonPage.tableUtils().checkRowItemExists(itemId, false);
@@ -458,7 +457,7 @@ describe("Clients test", () => {
       cy.findByTestId("importClient").click();
       cy.findByTestId("realm-file").selectFile(
         "cypress/fixtures/partial-import-test-data/import-identical-client.json",
-        { action: "drag-drop" }
+        { action: "drag-drop" },
       );
 
       cy.wait(1000);
@@ -469,7 +468,7 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage(
           "Could not import client: Client identical already exists",
-          true
+          true,
         );
     });
 
@@ -481,14 +480,14 @@ describe("Clients test", () => {
 
   describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
-    const client = "client_" + crypto.randomUUID();
+    const client = "client_" + uuid();
 
     before(() =>
       adminClient.createClient({
         clientId: client,
         protocol: "openid-connect",
         publicClient: false,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -562,7 +561,7 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage(
           `Could not create role: Role with name ${itemId} already exists`,
-          true
+          true,
         );
     });
 
@@ -594,7 +593,7 @@ describe("Clients test", () => {
       // Add associated client role
       associatedRolesPage.addAssociatedRoleFromSearchBar(
         "manage-account",
-        true
+        true,
       );
       commonPage
         .masthead()
@@ -605,7 +604,7 @@ describe("Clients test", () => {
       // Add associated client role
       associatedRolesPage.addAssociatedRoleFromSearchBar(
         "manage-consent",
-        true
+        true,
       );
       commonPage
         .masthead()
@@ -687,7 +686,7 @@ describe("Clients test", () => {
       loginPage.logIn();
       keycloakBefore();
       commonPage.sidebar().goToClients();
-      client = "client_" + crypto.randomUUID();
+      client = "client_" + uuid();
       commonPage.tableToolbarUtils().createClient();
       createClientPage
         .selectClientType("openid-connect")
@@ -806,7 +805,7 @@ describe("Clients test", () => {
         authorizationServicesEnabled: true,
         serviceAccountsEnabled: true,
         standardFlowEnabled: true,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -967,7 +966,7 @@ describe("Clients test", () => {
         protocol: "openid-connect",
         clientId: keysName,
         publicClient: false,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -990,7 +989,7 @@ describe("Clients test", () => {
       commonPage
         .masthead()
         .checkNotificationMessage(
-          "New key pair and certificate generated successfully"
+          "New key pair and certificate generated successfully",
         );
     });
   });
@@ -1035,7 +1034,7 @@ describe("Clients test", () => {
         protocol: "openid-connect",
         publicClient: false,
         bearerOnly: true,
-      })
+      }),
     );
 
     beforeEach(() => {

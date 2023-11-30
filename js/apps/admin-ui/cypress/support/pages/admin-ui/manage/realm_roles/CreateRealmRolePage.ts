@@ -1,16 +1,16 @@
 class CreateRealmRolePage {
-  private realmRoleNameInput = "#kc-name";
-  private realmRoleNameError = "#kc-name-helper";
-  private realmRoleDescriptionInput = "#kc-description";
-  private saveBtn = "save";
-  private cancelBtn = "cancel";
+  #realmRoleNameInput = "#kc-name";
+  #realmRoleNameError = "#kc-name-helper";
+  #realmRoleDescriptionInput = "#kc-description";
+  #saveBtn = "save";
+  #cancelBtn = "cancel";
 
   //#region General Settings
   fillRealmRoleData(name: string, description = "") {
-    cy.get(this.realmRoleNameInput).clear();
+    cy.get(this.#realmRoleNameInput).clear();
 
     if (name) {
-      cy.get(this.realmRoleNameInput).type(name);
+      cy.get(this.#realmRoleNameInput).type(name);
     }
 
     if (description !== "") {
@@ -20,7 +20,7 @@ class CreateRealmRolePage {
   }
 
   checkRealmRoleNameRequiredMessage(exist = true) {
-    cy.get(this.realmRoleNameError).should((!exist ? "not." : "") + "exist");
+    cy.get(this.#realmRoleNameError).should((!exist ? "not." : "") + "exist");
 
     return this;
   }
@@ -36,29 +36,33 @@ class CreateRealmRolePage {
   }
 
   checkNameDisabled() {
-    cy.get(this.realmRoleNameInput).should("have.attr", "readonly", "readonly");
+    cy.get(this.#realmRoleNameInput).should(
+      "have.attr",
+      "readonly",
+      "readonly",
+    );
     return this;
   }
 
   checkDescription(description: string) {
-    cy.get(this.realmRoleDescriptionInput).should("have.value", description);
+    cy.get(this.#realmRoleDescriptionInput).should("have.value", description);
     return this;
   }
 
   updateDescription(description: string) {
-    cy.get(this.realmRoleDescriptionInput).clear();
-    cy.get(this.realmRoleDescriptionInput).type(description);
+    cy.get(this.#realmRoleDescriptionInput).clear();
+    cy.get(this.#realmRoleDescriptionInput).type(description);
     return this;
   }
 
   save() {
-    cy.findByTestId(this.saveBtn).click();
+    cy.findByTestId(this.#saveBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.findByTestId(this.cancelBtn).click();
+    cy.findByTestId(this.#cancelBtn).click();
 
     return this;
   }

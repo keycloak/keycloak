@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
@@ -137,6 +138,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         this.session = session;
     }
 
+    @Override
     public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
         callback.setType(MediaType.APPLICATION_JSON);
         callback.writeToOutputStream(outputStream -> {
@@ -258,8 +260,8 @@ public class LegacyExportImportManager implements ExportImportManager {
         // OAuth 2.0 Device Authorization Grant
         OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
 
-        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+        deviceConfig.setOAuth2DeviceCodeLifespan(newRealm, rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(newRealm, rep.getOAuth2DevicePollingInterval());
 
         if (rep.getSslRequired() != null)
             newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
@@ -276,6 +278,12 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLocalizationTexts() != null) {
+            Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
+            for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
+                newRealm.createOrUpdateRealmLocalizationTexts(entry.getKey(), entry.getValue());
+            }
+        }
 
         // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
@@ -301,7 +309,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         updateParSettings(rep, newRealm);
 
-        Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
+        Map<String, String> mappedFlows = importAuthenticationFlows(session, newRealm, rep);
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
@@ -402,11 +410,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
             if (rep.getDefaultGroups() != null) {
-                for (String path : rep.getDefaultGroups()) {
-                    GroupModel found = KeycloakModelUtils.findGroupByPath(newRealm, path);
-                    if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
-                    newRealm.addDefaultGroup(found);
-                }
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
             }
         }
 
@@ -678,6 +682,18 @@ public class LegacyExportImportManager implements ExportImportManager {
             }
             accountClient.setRedirectUris(accountRedirectUris);
         }
+
+        ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        if (accountConsoleClient != null) {
+            if (accountConsoleClient.getBaseUrl() != null) {
+                accountConsoleClient.setBaseUrl(accountConsoleClient.getBaseUrl().replace("/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            Set<String> accountConsoleRedirectUris = new HashSet<>();
+            for (String r : accountConsoleClient.getRedirectUris()) {
+                accountConsoleRedirectUris.add(replace(r, "/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            accountConsoleClient.setRedirectUris(accountConsoleRedirectUris);
+        }
     }
 
     private static String replace(String url, String target, String replacement) {
@@ -688,11 +704,6 @@ public class LegacyExportImportManager implements ExportImportManager {
     public void updateRealm(RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) {
             renameRealm(realm, rep.getRealm());
-        }
-
-        if (!Boolean.parseBoolean(rep.getAttributesOrEmpty().get("userProfileEnabled"))) {
-            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-            provider.setConfiguration(null);
         }
 
         // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
@@ -709,6 +720,9 @@ public class LegacyExportImportManager implements ExportImportManager {
             }
         }
 
+        if (rep.getDefaultGroups() != null) {
+            KeycloakModelUtils.setDefaultGroups(session, realm, rep.getDefaultGroups().stream());
+        }
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
@@ -745,8 +759,8 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         OAuth2DeviceConfig deviceConfig = realm.getOAuth2DeviceConfig();
 
-        deviceConfig.setOAuth2DeviceCodeLifespan(rep.getOAuth2DeviceCodeLifespan());
-        deviceConfig.setOAuth2DevicePollingInterval(rep.getOAuth2DevicePollingInterval());
+        deviceConfig.setOAuth2DeviceCodeLifespan(realm, rep.getOAuth2DeviceCodeLifespan());
+        deviceConfig.setOAuth2DevicePollingInterval(realm, rep.getOAuth2DevicePollingInterval());
 
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
@@ -895,7 +909,7 @@ public class LegacyExportImportManager implements ExportImportManager {
             }
             user.setServiceAccountClientLink(client.getId());
         }
-        createGroups(userRep, newRealm, user);
+        createGroups(session, userRep, newRealm, user);
         return user;
     }
 
@@ -1197,6 +1211,9 @@ public class LegacyExportImportManager implements ExportImportManager {
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
         if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
+        List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyExtraOrigins();
+        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
         return webAuthnPolicy;
     }
 
@@ -1249,9 +1266,12 @@ public class LegacyExportImportManager implements ExportImportManager {
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyPasswordlessAcceptableAaguids();
         if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
+        List<String> webAuthnPolicyExtraOrigins = rep.getWebAuthnPolicyPasswordlessExtraOrigins();
+        if (webAuthnPolicyExtraOrigins != null) webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
+
         return webAuthnPolicy;
     }
-    public static Map<String, String> importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+    public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
@@ -1279,7 +1299,7 @@ public class LegacyExportImportManager implements ExportImportManager {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
                     for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
                         newRealm.addAuthenticatorExecution(execution);
                     }
                 }
@@ -1365,10 +1385,10 @@ public class LegacyExportImportManager implements ExportImportManager {
         return mappedFlows;
     }
 
-    private static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
+    private static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());
@@ -1467,7 +1487,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
                 if (group == null) {
                     throw new RuntimeException("Unable to find group specified by path: " + path);
 

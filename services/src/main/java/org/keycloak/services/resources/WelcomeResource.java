@@ -23,6 +23,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
@@ -56,6 +57,8 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -67,11 +70,10 @@ public class WelcomeResource {
 
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
-    @Context
-    private KeycloakSession session;
+    private AtomicBoolean shouldBootstrap;
 
-    public WelcomeResource() {
-    }
+    @Context
+    KeycloakSession session;
 
     /**
      * Welcome page of Keycloak
@@ -82,8 +84,6 @@ public class WelcomeResource {
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getWelcomePage() throws URISyntaxException {
-        checkBootstrap();
-
         String requestUri = session.getContext().getUri().getRequestUri().toString();
         if (!requestUri.endsWith("/")) {
             return Response.seeOther(new URI(requestUri + "/")).build();
@@ -95,8 +95,9 @@ public class WelcomeResource {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
-    public Response createUser(final MultivaluedMap<String, String> formData) {
-        checkBootstrap();
+    public Response createUser() {
+        HttpRequest request = session.getContext().getHttpRequest();
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
 
         if (!shouldBootstrap()) {
             return createWelcomePage(null, null);
@@ -131,16 +132,11 @@ public class WelcomeResource {
             expireCsrfCookie();
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-            if (applianceBootstrap.isNoMasterUser()) {
-                setBootstrap(false);
-                applianceBootstrap.createMasterRealmUser(username, password);
+            applianceBootstrap.createMasterRealmUser(username, password);
 
-                ServicesLogger.LOGGER.createdInitialAdminUser(username);
-                return createWelcomePage("User created", null);
-            } else {
-                ServicesLogger.LOGGER.initialUserAlreadyCreated();
-                return createWelcomePage(null, "Users already exists");
-            }
+            shouldBootstrap.set(false);
+            ServicesLogger.LOGGER.createdInitialAdminUser(username);
+            return createWelcomePage("User created", null);
         }
     }
 
@@ -164,13 +160,22 @@ public class WelcomeResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
     private Response createWelcomePage(String successMessage, String errorMessage) {
         try {
             Theme theme = getTheme();
+
+            if(Objects.isNull(theme)) {
+                logger.error("Theme is null please check the \"--spi-theme-default\" parameter");
+                errorMessage = "The theme is null";
+                ResponseBuilder rb = Response.status(Status.BAD_REQUEST)
+                        .entity(errorMessage)
+                        .cacheControl(CacheControlUtil.noCache());
+                return rb.build();
+            }
 
             Map<String, Object> map = new HashMap<>();
 
@@ -179,6 +184,7 @@ public class WelcomeResource {
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
+
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
@@ -187,8 +193,11 @@ public class WelcomeResource {
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
-                map.put("localAdminUrl", "http://localhost:8080/auth");
-                map.put("adminUserCreationMessage","or use the add-user-keycloak script");
+
+                String localAdminUrl = session.getContext().getUri(UrlType.LOCAL_ADMIN).getBaseUri().toString();
+                String adminCreationMessage = getAdminCreationMessage();
+                map.put("localAdminUrl", localAdminUrl);
+                map.put("adminUserCreationMessage", adminCreationMessage);
 
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();
@@ -209,7 +218,7 @@ public class WelcomeResource {
                     .cacheControl(CacheControlUtil.noCache());
             return rb.build();
         } catch (Exception e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -221,21 +230,23 @@ public class WelcomeResource {
         try {
             return session.theme().getTheme(Theme.Type.WELCOME);
         } catch (IOException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private void checkBootstrap() {
-        if (shouldBootstrap())
-            KeycloakApplication.BOOTSTRAP_ADMIN_USER.compareAndSet(true, new ApplianceBootstrap(session).isNoMasterUser());
+    protected String getAdminCreationMessage() {
+        return "or set the environment variables KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD before starting the server";
     }
 
     private boolean shouldBootstrap() {
-        return KeycloakApplication.BOOTSTRAP_ADMIN_USER.get();
-    }
-
-    private void setBootstrap(boolean value) {
-        KeycloakApplication.BOOTSTRAP_ADMIN_USER.set(value);
+        if (shouldBootstrap == null) {
+            synchronized (this) {
+                if (shouldBootstrap == null) {
+                    shouldBootstrap = new AtomicBoolean(new ApplianceBootstrap(session).isNoMasterUser());
+                }
+            }
+        }
+        return shouldBootstrap.get();
     }
 
     private boolean isLocal() {
@@ -243,14 +254,16 @@ public class WelcomeResource {
             ClientConnection clientConnection = session.getContext().getConnection();
             InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
             InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
-            String xForwardedFor = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-For");
+            HttpRequest request = session.getContext().getHttpRequest();
+            HttpHeaders headers = request.getHttpHeaders();
+            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
             logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
 
             // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
             // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
             return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
         } catch (UnknownHostException e) {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -274,7 +287,9 @@ public class WelcomeResource {
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_STATE_CHECKER);
+        HttpRequest request = session.getContext().getHttpRequest();
+        HttpHeaders headers = request.getHttpHeaders();
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie == null) {
             throw new ForbiddenException();
         }

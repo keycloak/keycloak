@@ -192,15 +192,15 @@ article.pf-c-card.pf-m-flat.kc-email-connection
 }
 
 .kc-emptyExecutors {
-  color: #8d9195;
+  color: var(--pf-global--Color--200);
 }
 
 .kc-emptyConditions {
-  color: #8d9195;
+  color: var(--pf-global--Color--200);
 }
 
 .kc-emptyClientProfiles {
-  color: #8d9195;
+  color: var(--pf-global--Color--200);
 }
 
 .kc-action-dropdown {
@@ -277,7 +277,7 @@ input#kc-scopes {
 }
 
 .kc-emptyValidators {
-  color: #8d9195;
+  color: var(--pf-global--Color--200);
   margin-left: 25px;
 }
 

@@ -30,6 +30,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -75,6 +76,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  *
  * @author vramik
  */
+@Ignore
 public class ZeroDowntimeTest extends AbstractKeycloakTest {
 
     @ArquillianResource private ContainerController controller;

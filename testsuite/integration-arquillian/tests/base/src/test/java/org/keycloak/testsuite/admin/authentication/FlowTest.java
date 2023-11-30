@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.Matchers.body;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -104,13 +105,14 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // test that built-in flow cannot be deleted
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
-        for (AuthenticationFlowRepresentation flow : flows) {
-            try {
-                authMgmtResource.deleteFlow(flow.getId());
-                Assert.fail("deleteFlow should fail for built in flow");
-            } catch (BadRequestException e) {
-                break;
-            }
+        AuthenticationFlowRepresentation builtInFlow = flows.stream().filter(AuthenticationFlowRepresentation::isBuiltIn).findAny().orElse(null);
+        Assert.assertNotNull("No built in flow in the realm", builtInFlow);
+        try {
+            authMgmtResource.deleteFlow(builtInFlow.getId());
+            Assert.fail("deleteFlow should fail for built in flow");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Can't delete built in flow", error.getError());
         }
 
         // try create new flow using alias of already existing flow
@@ -248,9 +250,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy using existing alias as new name
         Response response = authMgmtResource.copy("browser", params);
         try {
-            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, statusCodeIs(Status.CONFLICT));
-            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("already exists")));
-            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("flow alias")));
+            assertThat("Copy flow using the new alias of existing flow should fail", response, statusCodeIs(Status.CONFLICT));
+            assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("already exists")));
+            assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("flow alias")));
         } finally {
             response.close();
         }
@@ -259,7 +261,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.clear();
         response = authMgmtResource.copy("non-existent", params);
         try {
-            Assert.assertThat("Copy non-existing flow", response, statusCodeIs(Status.NOT_FOUND));
+            assertThat("Copy non-existing flow", response, statusCodeIs(Status.NOT_FOUND));
         } finally {
             response.close();
         }
@@ -269,7 +271,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
-            Assert.assertThat("Copy flow", response, statusCodeIs(Status.CREATED));
+            assertThat("Copy flow", response, statusCodeIs(Status.CREATED));
         } finally {
             response.close();
         }
@@ -359,6 +361,15 @@ public class FlowTest extends AbstractAuthenticationTest {
         } catch (ClientErrorException exception){
             //expoected
         }
+
+        //try to update old flow with an alias with illegal characters
+        testFlow.setAlias("New(Flow");
+        try {
+            authMgmtResource.updateFlow(found.getId(), testFlow);
+        } catch (ClientErrorException exception){
+            //expected
+        }
+
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow

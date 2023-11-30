@@ -1,0 +1,294 @@
+{
+    "realm": "demo",
+    "enabled": true,
+    "accessTokenLifespan": 60,
+    "accessCodeLifespan": 60,
+    "accessCodeLifespanUserAction": 300,
+    "ssoSessionIdleTimeout": 600,
+    "ssoSessionMaxLifespan": 36000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user", "ssh" ],
+            "clientRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "stian",
+            "enabled": true,
+            "email" : "stian@redhat.com",
+            "firstName": "Stian",
+            "lastName": "Thorgersen",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user", "ssh" ],
+            "clientRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "mposolda@redhat.com",
+            "enabled": true,
+            "email" : "mposolda@redhat.com",
+            "firstName": "Marek",
+            "lastName": "Posolda",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user", "ssh" ],
+            "clientRoles": {
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "admin",
+            "enabled": true,
+            "email" : "admin@admin.com",
+            "firstName": "Admin",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [ "user","admin", "ssh" ],
+            "clientRoles": {
+                "realm-management": [ "realm-admin" ],
+                "account": [ "manage-account" ]
+            }
+        },
+        {
+            "username" : "jmxadmin",
+            "enabled": true,
+            "email" : "jmxadmin@admin.com",
+            "firstName": "JmxAdmin",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user", "jmxAdmin", "ssh" ],
+            "clientRoles": {
+                "account": [ "manage-account" ],
+                "realm-management": [ "realm-admin" ]
+            }
+        },
+        {
+            "username" : "john",
+            "firstName" : "John",
+            "lastName" : "Anthony",
+            "email" : "john@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "realmRoles" : [ "viewer", "ssh" ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ]
+            }
+        },
+        {
+            "username" : "mary",
+            "firstName" : "Mary",
+            "lastName" : "Kelly",
+            "email" : "mary@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "realmRoles" : [ "ssh" ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ]
+            }
+        },
+        {
+            "username" : "root",
+            "firstName" : "Root",
+            "lastName" : "Root",
+            "email" : "root@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "realmRoles" : [ "jmxAdmin", "ssh" ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ],
+                "realm-management" : [ "realm-admin" ]
+            }
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Administrator privileges"
+            },
+            {
+                "name": "manager"
+            },
+            {
+                "name": "viewer"
+            },
+            {
+                "name": "Operator"
+            },
+            {
+                "name": "Maintainer"
+            },
+            {
+                "name": "Deployer"
+            },
+            {
+                "name": "Auditor"
+            },
+            {
+                "name": "Administrator"
+            },
+            {
+                "name": "SuperUser"
+            },
+            {
+                "name": "ssh"
+            },
+            {
+                "name": "jmxAdmin",
+                "description": "Admin role with all privileges to SSH and JMX access",
+                "composite": true,
+                "composites": {
+                    "realm": [ "admin", "manager", "viewer", "Operator", "Maintainer", "Deployer", "Auditor", "Administrator", "SuperUser", "ssh" ]
+                }
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "customer-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8181/customer-portal",
+            "baseUrl": "http://localhost:8181/customer-portal",
+            "redirectUris": [
+                "http://localhost:8181/customer-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "product-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8181/product-portal",
+            "baseUrl": "http://localhost:8181/product-portal",
+            "redirectUris": [
+                "http://localhost:8181/product-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "builtin-cxf-app",
+            "enabled": true,
+            "adminUrl": "http://localhost:8181/cxf",
+            "baseUrl": "http://localhost:8181/cxf",
+            "redirectUris": [
+                "http://localhost:8181/cxf/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "custom-cxf-endpoint",
+            "enabled": true,
+            "adminUrl": "http://localhost:8282/PersonServiceCF",
+            "baseUrl": "http://localhost:8282/PersonServiceCF",
+            "bearerOnly": true
+        },
+        {
+            "clientId": "admin-camel-endpoint",
+            "enabled": true,
+            "adminUrl": "http://localhost:8383/admin-camel-endpoint",
+            "baseUrl": "http://localhost:8383/admin-camel-endpoint",
+            "bearerOnly": true
+        },
+        {
+            "clientId": "admin-camel-restdsl",
+            "enabled": true,
+            "adminUrl": "http://localhost:8484/restdsl",
+            "baseUrl": "http://localhost:8484/restdsl",
+            "bearerOnly": true
+        },
+        {
+            "clientId": "ssh-jmx-admin-client",
+            "enabled": true,
+            "publicClient": false,
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "secret": "password"
+        },
+        {
+            "clientId": "external-config",
+            "enabled": true,
+            "adminUrl": "http://localhost:8181/external-config",
+            "baseUrl": "http://localhost:8181/external-config",
+            "redirectUris": [
+                "http://localhost:8181/external-config",
+                "http://localhost:8181/external-config/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId" : "hawtio-client",
+            "surrogateAuthRequired" : false,
+            "fullScopeAllowed" : false,
+            "enabled" : true,
+            "redirectUris" : [ "http://localhost:8080/hawtio/*", "http://localhost:8181/hawtio/*", "http://localhost:8081/hawtio/*" ],
+            "webOrigins" : [ "http://localhost:8080", "http://localhost:8181", "http://localhost:8081" ],
+            "bearerOnly" : false,
+            "publicClient" : true,
+            "protocol" : "openid-connect"
+        }
+
+    ],
+    "scopeMappings": [
+        {
+            "client": "ssh-jmx-admin-client",
+            "roles": [ "admin", "jmxAdmin" ]
+        },
+        {
+            "client": "hawtio-client",
+            "roles": [ "viewer", "jmxAdmin" ]
+        }
+    ],
+    "clientScopeMappings": {
+        "account": [
+            {
+                "client": "hawtio-client",
+                "roles": [ "view-profile", "manage-account" ]
+            }
+        ]
+    }
+}

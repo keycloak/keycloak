@@ -17,7 +17,7 @@ export default class OTPPolicies {
   checkSupportedApplications(...supportedApplications: string[]) {
     cy.findByTestId("supportedApplications").should(
       "have.text",
-      supportedApplications.join("")
+      supportedApplications.join(""),
     );
     return this;
   }

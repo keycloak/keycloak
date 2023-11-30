@@ -30,30 +30,30 @@ export const ManageOrderDialog = ({
   providers,
   onClose,
 }: ManageOrderDialogProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!)
+    providers.map((provider) => provider.alias!),
   );
 
   const onDragStart = (id: string) => {
     setAlias(id);
-    setLiveText(t("common:onDragStart", { item: id }));
+    setLiveText(t("onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: alias }));
+    setLiveText(t("onDragMove", { item: alias }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("common:onDragCancel"));
+    setLiveText(t("onDragCancel"));
   };
 
   const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("common:onDragFinish", { list: providerOrder }));
+    setLiveText(t("onDragFinish", { list: providerOrder }));
     setOrder(providerOrder);
   };
 
@@ -79,13 +79,13 @@ export const ManageOrderDialog = ({
               await Promise.all(updates);
               addAlert(t("orderChangeSuccess"));
             } catch (error) {
-              addError("identity-providers:orderChangeError", error);
+              addError("orderChangeError", error);
             }
 
             onClose();
           }}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -94,7 +94,7 @@ export const ManageOrderDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -120,7 +120,7 @@ export const ManageOrderDialog = ({
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton aria-label={t("common-help:dragHelp")} />
+                <DataListDragButton aria-label={t("dragHelp")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[

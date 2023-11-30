@@ -64,11 +64,11 @@ final class HttpPropertyMappers {
                         .paramLabel("protocols")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
-                        .to("quarkus.http.ssl.certificate.file")
+                        .to("quarkus.http.ssl.certificate.files")
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE)
-                        .to("quarkus.http.ssl.certificate.key-file")
+                        .to("quarkus.http.ssl.certificate.key-files")
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_FILE
@@ -101,6 +101,10 @@ final class HttpPropertyMappers {
                         .mapFrom(SecurityOptions.FIPS_MODE.getKey())
                         .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
+                        .build(),
+                fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
+                        .to("quarkus.thread-pool.queue-size")
+                        .paramLabel("requests")
                         .build()
         };
     }

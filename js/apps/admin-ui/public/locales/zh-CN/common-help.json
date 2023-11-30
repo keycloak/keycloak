@@ -1,7 +1,0 @@
-{
-  "helpToggleInfo": "此开关将启用/禁用UI中的部分帮助信息。包括任何帮助文本、链接和弹出窗口",
-  "showPassword": "以明文展示密码字段",
-  "helpFileUpload": "上传 JSON 文件",
-  "helpFileUploadClient": "上传 JSON 或 XML 文件",
-  "dragHelp": "按空格键或回车键开始拖动，并使用箭头键向上或向下导航。按回车键确认拖动，或按任何其他键取消拖动操作"
-}

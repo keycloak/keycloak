@@ -2,29 +2,15 @@
 
 set -o pipefail
 
-echo "Modifying /etc/sssd/sssd.conf file"
-if ! grep -q ^ldap_user_extra_attrs /etc/sssd/sssd.conf; then
-  sed -i '/ldap_tls_cacert/a ldap_user_extra_attrs = mail:mail, sn:sn, givenname:givenname, telephoneNumber:telephoneNumber' /etc/sssd/sssd.conf
-fi
-if ! grep -q ^user_attributes /etc/sssd/sssd.conf; then
-  sed -i '/allowed_uids/a user_attributes = +mail, +telephoneNumber, +givenname, +sn' /etc/sssd/sssd.conf
-fi
-
-systemctl restart sssd
-sss_cache -E
-
-echo "Creating /etc/pam.d/keycloak file for PAM"
-cat >/etc/pam.d/keycloak <<EOF
-auth    required   pam_sss.so
-account required   pam_sss.so
-EOF
+echo "Executing federation-sssd-setup.sh to prepare SSSD and PAM"
+quarkus/dist/src/main/content/bin/federation-sssd-setup.sh
 
 if [[ "true" == "$1" ]]; then
   echo "Adding users and groups for the test"
 
   printf "%b" "password\n" | kinit admin
   ipa group-add --desc='test group' testgroup
-  ipa user-add emily --first=Emily --last=Jones --email=emily@jones.com --random
+  ipa user-add emily --first=Emily --last=Jones --email=Emily@jones.com --random
   ipa group-add-member testgroup --users=emily
   ipa user-add bart --first=bart --last=bart --email= --random
   ipa user-add david --first=david --last=david --random

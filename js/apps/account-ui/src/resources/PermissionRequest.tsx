@@ -40,12 +40,12 @@ export const PermissionRequest = ({
 
   const approveDeny = async (
     shareRequest: Permission,
-    approve: boolean = false
+    approve: boolean = false,
   ) => {
     try {
       const permissions = await fetchPermission({}, resource._id);
       const { scopes, username } = permissions.find(
-        (p) => p.username === shareRequest.username
+        (p) => p.username === shareRequest.username,
       )!;
 
       await updateRequest(
@@ -53,7 +53,7 @@ export const PermissionRequest = ({
         username,
         approve
           ? [...(scopes as string[]), ...(shareRequest.scopes as string[])]
-          : scopes
+          : scopes,
       );
       addAlert(t("shareSuccess"));
       toggle();
@@ -67,10 +67,10 @@ export const PermissionRequest = ({
     <>
       <Button variant="link" onClick={toggle}>
         <UserCheckIcon size="lg" />
-        <Badge>{resource.shareRequests.length}</Badge>
+        <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
-        title={t("permissionRequest", [resource.name])}
+        title={t("permissionRequest", { name: resource.name })}
         variant={ModalVariant.large}
         isOpen={open}
         onClose={toggle}
@@ -85,11 +85,11 @@ export const PermissionRequest = ({
             <Tr>
               <Th>{t("requestor")}</Th>
               <Th>{t("permissionRequests")}</Th>
-              <Th></Th>
+              <Th aria-hidden="true"></Th>
             </Tr>
           </Thead>
           <Tbody>
-            {resource.shareRequests.map((shareRequest) => (
+            {resource.shareRequests?.map((shareRequest) => (
               <Tr key={shareRequest.username}>
                 <Td>
                   {shareRequest.firstName} {shareRequest.lastName}{" "}
@@ -119,7 +119,7 @@ export const PermissionRequest = ({
                     className="pf-u-ml-sm"
                     variant="danger"
                   >
-                    {t("doDeny")}
+                    {t("deny")}
                   </Button>
                 </Td>
               </Tr>

@@ -1,9 +1,9 @@
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
+import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import ProviderPage from "../support/pages/admin-ui/manage/providers/ProviderPage";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
@@ -134,15 +134,14 @@ describe("i18n tests", () => {
 
     goToUserFederationPage();
 
-    // check key "user-federation:addProvider_other"
     providersPage.assertCardContainsText("ldap", "Add Ldap providers");
   });
 
   it("should apply plurals and interpolation for REALM localization", () => {
     addLocalization(
       "en",
-      "user-federation:addProvider_other",
-      "addProvider_other en: {{provider}}"
+      "addProvider_other",
+      "addProvider_other en: {{provider}}",
     );
     updateUserLocale("en");
 
@@ -159,20 +158,22 @@ describe("i18n tests", () => {
 
   function updateUserLocale(locale: string) {
     cy.wrap(null).then(() =>
-      adminClient.updateUser(usernameI18nId, { attributes: { locale: locale } })
+      adminClient.updateUser(usernameI18nId, {
+        attributes: { locale: locale },
+      }),
     );
   }
 
   function addCommonRealmSettingsLocalizationText(
     locale: string,
-    value: string
+    value: string,
   ) {
-    addLocalization(locale, "common:realmSettings", value);
+    addLocalization(locale, "realmSettings", value);
   }
 
   function addLocalization(locale: string, key: string, value: string) {
     cy.wrap(null).then(() =>
-      adminClient.addLocalizationText(locale, key, value)
+      adminClient.addLocalizationText(locale, key, value),
     );
   }
 });

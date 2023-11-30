@@ -53,7 +53,7 @@ public class LoginEventsTest extends AbstractEventTest {
     }
 
     private void badLogin() {
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login("bad", "user");
     }
 
@@ -164,6 +164,15 @@ public class LoginEventsTest extends AbstractEventTest {
         assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
         assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
 
+    }
+
+    @Test
+    public void testErrorEventsAreNotStoredWhenDisabled() {
+        configRep.setEventsEnabled(false);
+        saveConfig();
+
+        badLogin();
+        assertEquals(0, events().size());
     }
 
     /*

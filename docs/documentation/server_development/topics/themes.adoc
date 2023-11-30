@@ -126,6 +126,7 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 
 * parent - Parent theme to extend
 * import - Import resources from another theme
+* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of `${url.resourcesCommonPath}`, which is used typically in freemarker templates (prefix of `${url.resoucesCommonPath}` value is theme root uri).
 * styles - Space-separated list of styles to include
 * locales - Comma-separated list of supported locales
 
@@ -187,7 +188,7 @@ You will notice that the only styles being applied are those from your custom st
 +
 [source]
 ----
-styles=web_modules/@fontawesome/fontawesome-free/css/icons/all.css web_modules/@patternfly/react-core/dist/styles/base.css web_modules/@patternfly/react-core/dist/styles/app.css node_modules/patternfly/dist/css/patternfly.min.css node_modules/patternfly/dist/css/patternfly-additions.min.css css/login.css css/styles.css
+styles=css/login.css css/styles.css
 ----
 +
 NOTE: To override styles from the parent stylesheets, ensure that your stylesheet is listed last.
@@ -301,14 +302,11 @@ locales=en,no
 ----
 locale_no=Norsk
 ----
-+
-By default message properties files should be encoded using ISO-8859-1. It's also possible to specify the encoding using a special header. For example to use UTF-8 encoding:
-+
-[source]
-----
-# encoding: UTF-8
-usernameOrEmail=....
-----
+
+By default, message properties files should be encoded using UTF-8.
+Keycloak falls back to ISO-8859-1 handling if it can't read the contents as UTF-8.
+Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
+Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported.
 
 [role="_additional-resources"]
 .Additional resources

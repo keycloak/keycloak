@@ -3,7 +3,7 @@ import { joinPath } from "./joinPath";
 
 export const convertClientToUrl = (
   { rootUrl, baseUrl }: ClientRepresentation,
-  adminClientBaseUrl: string
+  adminClientBaseUrl: string,
 ) => {
   // absolute base url configured, use base url is
   if (baseUrl?.startsWith("http")) {
@@ -16,7 +16,7 @@ export const convertClientToUrl = (
   ) {
     return rootUrl.replace(
       /\$\{(authAdminUrl|authBaseUrl)\}/,
-      joinPath(adminClientBaseUrl, baseUrl)
+      joinPath(adminClientBaseUrl, baseUrl),
     );
   }
 

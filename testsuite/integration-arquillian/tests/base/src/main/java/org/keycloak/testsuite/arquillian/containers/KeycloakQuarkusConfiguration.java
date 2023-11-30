@@ -141,7 +141,8 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.providersPath = providersPath;
     }
 
-    public void setProvidersPath(String providersPath) {
+    // https://github.com/keycloak/keycloak/issues/20455 Overloading fails time to time with a mismatch error, most probably an Arquillian class reflection bug.
+    public void setProvidersPathString(String providersPath) {
         this.providersPath = Paths.get(providersPath);
     }
 

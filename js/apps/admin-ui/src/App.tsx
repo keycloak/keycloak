@@ -2,7 +2,7 @@ import { Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { Outlet } from "react-router-dom";
-import { Help } from "ui-shared";
+import { Help, mainPageContentId } from "ui-shared";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
@@ -19,12 +19,10 @@ import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { AuthWall } from "./root/AuthWall";
 
-export const mainPageContentId = "kc-main-content-page-container";
-
 const AppContexts = ({ children }: PropsWithChildren) => (
-  <WhoAmIContextProvider>
-    <RealmsProvider>
-      <RealmContextProvider>
+  <RealmsProvider>
+    <RealmContextProvider>
+      <WhoAmIContextProvider>
         <RecentRealmsProvider>
           <AccessContextProvider>
             <Help>
@@ -34,9 +32,9 @@ const AppContexts = ({ children }: PropsWithChildren) => (
             </Help>
           </AccessContextProvider>
         </RecentRealmsProvider>
-      </RealmContextProvider>
-    </RealmsProvider>
-  </WhoAmIContextProvider>
+      </WhoAmIContextProvider>
+    </RealmContextProvider>
+  </RealmsProvider>
 );
 
 export const App = () => {

@@ -233,8 +233,10 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             oauthGrantPage.accept();
 
             assertCurrentUrlStartsWith(offlineTokenPage);
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(offlineTokenPage.getRefreshToken().getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+
+            RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Check that the client scopes have been granted by the user
             List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
@@ -276,6 +278,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         }
         setTimeOffset(0);
+        // Improve stability of the cleanup and have more time for synchronizing auth and app server living in different JVMs
+        pause(400);
     }
     
 }

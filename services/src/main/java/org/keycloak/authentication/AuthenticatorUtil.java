@@ -17,18 +17,27 @@
 
 package org.keycloak.authentication;
 
-import com.google.common.collect.Sets;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
 import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
@@ -85,7 +94,12 @@ public class AuthenticatorUtil {
         final String callbacksFactories = authSession.getAuthNote(CALLBACKS_FACTORY_IDS_NOTE);
 
         if (StringUtil.isNotBlank(callbacksFactories)) {
-            return Sets.newHashSet(callbacksFactories.split(Constants.CFG_DELIMITER));
+            String[] split = callbacksFactories.split(Constants.CFG_DELIMITER);
+            Set<String> set = new HashSet<>(split.length);
+            for (String s : split) {
+                set.add(s);
+            }
+            return Collections.unmodifiableSet(set);
         } else {
             return Collections.emptySet();
         }
@@ -110,4 +124,35 @@ public class AuthenticatorUtil {
         return executions;
     }
 
+    /**
+     * Logouts all sessions that are different to the current authentication session
+     * managed in the action context.
+     *
+     * @param context The required action context
+     */
+    public static void logoutOtherSessions(RequiredActionContext context) {
+        logoutOtherSessions(context.getSession(), context.getRealm(), context.getUser(),
+                context.getAuthenticationSession(), context.getConnection(), context.getHttpRequest());
+    }
+
+    /**
+     * Logouts all sessions that are different to the current authentication session
+     * managed in the action token context.
+     *
+     * @param context The required action token context
+     */
+    public static void logoutOtherSessions(ActionTokenContext<? extends DefaultActionToken> context) {
+        logoutOtherSessions(context.getSession(), context.getRealm(), context.getAuthenticationSession().getAuthenticatedUser(),
+                context.getAuthenticationSession(), context.getClientConnection(), context.getRequest());
+    }
+
+    private static void logoutOtherSessions(KeycloakSession session, RealmModel realm, UserModel user,
+            AuthenticationSessionModel authSession, ClientConnection conn, HttpRequest req) {
+        session.sessions().getUserSessionsStream(realm, user)
+                .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
+                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
+                        conn, req.getHttpHeaders(), true)
+                );
+    }
 }

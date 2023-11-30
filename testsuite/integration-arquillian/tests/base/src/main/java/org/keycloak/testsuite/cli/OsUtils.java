@@ -39,6 +39,8 @@ public class OsUtils {
             return new OsArch("osx", "x86_64");
         } else if (os.startsWith("freebsd")) {
             return new OsArch("freebsd", arch);
+        } else if (os.startsWith("openbsd")) {
+            return new OsArch("openbsd", arch);
         }
 
         // unsupported platform

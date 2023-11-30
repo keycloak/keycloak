@@ -1,12 +1,16 @@
 [[_spring_boot_adapter]]
 ==== Spring Boot adapter
 
-ifeval::[{project_product}==true]
+[WARNING]
 ====
-[NOTE]
-The Spring Boot Adapter is deprecated and will not be included in the 8.0 and higher versions of RH-SSO. This adapter will be maintained during the lifecycle of RH-SSO 7.x. Users are urged to migrate to Spring Security to integrate their Spring Boot applications with RH-SSO.
+This adapter is deprecated and will be removed in a future release of Keycloak. No further enhancements or new features
+will be added to this adapter.
+
+We recommend that you leverage the OAuth2/OpenID Connect support from Spring Security.
+
+For more details about how to integrate {project_name} with Spring Boot applications, consider looking at the
+{quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
 ====
-endif::[]
 
 
 [[_spring_boot_adapter_installation]]

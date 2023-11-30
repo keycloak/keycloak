@@ -104,7 +104,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
@@ -235,8 +235,9 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testSuccess_dotsInClientId() throws Exception {
         // Create client with dot in the name
+        final String clientId = "my.foo.$\\client\\$";
         ClientRepresentation clientRep = org.keycloak.testsuite.util.ClientBuilder.create()
-                .clientId("my.foo.client")
+                .clientId(clientId)
                 .addRedirectUri("http://foo.host")
                 .secret("password")
                 .directAccessGrants()
@@ -258,11 +259,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
         userResource.roles().clientLevel(clientUUID).add(Collections.singletonList(fooRole));
 
         // Login to the new client
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.clientId("my.foo.client")
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.clientId(clientId)
                 .doGrantAccessTokenRequest("password", "test-user@localhost", "password");
 
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assert.assertNames(accessToken.getResourceAccess("my.foo.client").getRoles(), "my.foo.role");
+        Assert.assertNames(accessToken.getResourceAccess(clientId).getRoles(), "my.foo.role");
 
         events.clear();
 
@@ -271,7 +272,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
 
-            testSuccessfulUserInfoResponse(response, "my.foo.client");
+            testSuccessfulUserInfoResponse(response, clientId);
         } finally {
             client.close();
         }

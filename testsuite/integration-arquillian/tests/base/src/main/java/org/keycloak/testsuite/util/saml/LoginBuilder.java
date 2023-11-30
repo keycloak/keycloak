@@ -41,7 +41,7 @@ import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 

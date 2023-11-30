@@ -37,6 +37,7 @@ org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
 org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
+org.keycloak.services.resource.AccountResourceSpi
 org.keycloak.services.resource.RealmResourceSPI
 org.keycloak.sessions.AuthenticationSessionSpi
 org.keycloak.sessions.StickySessionEncoderSpi
@@ -46,7 +47,6 @@ org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.broker.provider.IdentityProviderSpi
 org.keycloak.broker.provider.IdentityProviderMapperSpi
 org.keycloak.broker.social.SocialProviderSpi
-org.keycloak.forms.account.AccountSpi
 org.keycloak.forms.login.LoginFormsSpi
 org.keycloak.email.EmailSenderSpi
 org.keycloak.email.EmailTemplateSpi
@@ -63,6 +63,7 @@ org.keycloak.authentication.otp.OTPApplicationSpi
 org.keycloak.authorization.policy.provider.PolicySpi
 org.keycloak.authorization.store.StoreFactorySpi
 org.keycloak.authorization.AuthorizationSpi
+org.keycloak.deployment.DeployedConfigurationsSpi
 org.keycloak.models.cache.authorization.CachedStoreFactorySpi
 org.keycloak.protocol.oidc.TokenExchangeSpi
 org.keycloak.protocol.oidc.TokenIntrospectionSpi
@@ -90,3 +91,4 @@ org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi
 org.keycloak.services.clientpolicy.ClientPolicyManagerSpi
 org.keycloak.userprofile.UserProfileSpi
 org.keycloak.device.DeviceRepresentationSpi
+org.keycloak.health.LoadBalancerCheckSpi

@@ -30,7 +30,7 @@ export const UserSelect = ({
   isRequired,
   variant = SelectVariant.typeaheadMulti,
 }: UserSelectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -55,13 +55,13 @@ export const UserSelect = ({
 
       if (values?.length && !search) {
         return Promise.all(
-          values.map((id: string) => adminClient.users.findOne({ id }))
+          values.map((id: string) => adminClient.users.findOne({ id })),
         );
       }
       return adminClient.users.find(params);
     },
     setUsers,
-    [search]
+    [search],
   );
 
   const convert = (clients: (UserRepresentation | undefined)[]) =>
@@ -81,12 +81,10 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={
-        <HelpItem helpText={helpText!} fieldLabelId={`clients:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
     >
       <Controller
         name={name!}
@@ -117,7 +115,7 @@ export const UserSelect = ({
                   : field.onChange([option]);
               } else {
                 const changedValue = field.value.find(
-                  (v: string) => v === option
+                  (v: string) => v === option,
                 )
                   ? field.value.filter((v: string) => v !== option)
                   : [...field.value, option];

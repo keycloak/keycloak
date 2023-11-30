@@ -42,7 +42,7 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();
@@ -65,7 +65,7 @@ export default function ProfilesTab() {
         (globalProfiles) => ({
           ...globalProfiles,
           global: true,
-        })
+        }),
       );
 
       const profiles = allProfiles.profiles?.map((profiles) => ({
@@ -77,13 +77,13 @@ export default function ProfilesTab() {
       setTableProfiles(allClientProfiles || []);
       setCode(JSON.stringify(allClientProfiles, null, 2));
     },
-    [key]
+    [key],
   );
 
   const loader = async () => tableProfiles ?? [];
 
   const normalizeProfile = (
-    profile: ClientProfile
+    profile: ClientProfile,
   ): ClientProfileRepresentation => omit(profile, "global");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -96,10 +96,11 @@ export default function ProfilesTab() {
     onConfirm: async () => {
       const updatedProfiles = tableProfiles
         ?.filter(
-          (profile) => profile.name !== selectedProfile?.name && !profile.global
+          (profile) =>
+            profile.name !== selectedProfile?.name && !profile.global,
         )
         .map<ClientProfileRepresentation>((profile) =>
-          normalizeProfile(profile)
+          normalizeProfile(profile),
         );
 
       try {
@@ -151,13 +152,10 @@ export default function ProfilesTab() {
           profiles: changedProfiles,
           globalProfiles: changedGlobalProfiles,
         });
-        addAlert(
-          t("realm-settings:updateClientProfilesSuccess"),
-          AlertVariant.success
-        );
+        addAlert(t("updateClientProfilesSuccess"), AlertVariant.success);
         setKey(key + 1);
       } catch (error) {
-        addError("realm-settings:updateClientProfilesError", error);
+        addError("updateClientProfilesError", error);
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
@@ -202,8 +200,8 @@ export default function ProfilesTab() {
       {!show ? (
         <KeycloakDataTable
           key={tableProfiles.length}
-          ariaLabelKey="realm-settings:profiles"
-          searchPlaceholderKey="realm-settings:clientProfileSearch"
+          ariaLabelKey="profiles"
+          searchPlaceholderKey="clientProfileSearch"
           loader={loader}
           toolbarItem={
             <ToolbarItem>
@@ -224,7 +222,7 @@ export default function ProfilesTab() {
           isRowDisabled={(value) => value.global}
           actions={[
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onRowClick: (profile) => {
                 setSelectedProfile(profile);
                 toggleDeleteDialog();
@@ -234,7 +232,7 @@ export default function ProfilesTab() {
           columns={[
             {
               name: "name",
-              displayKey: t("common:name"),
+              displayKey: t("name"),
               cellRenderer: cellFormatter,
             },
             {

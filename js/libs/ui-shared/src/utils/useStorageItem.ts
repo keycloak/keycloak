@@ -11,10 +11,10 @@ import { Dispatch, useCallback, useEffect, useState } from "react";
 export function useStorageItem(
   storageArea: Storage,
   keyName: string,
-  defaultValue: string
+  defaultValue: string,
 ): [string, Dispatch<string>] {
   const [value, setInnerValue] = useState(
-    () => storageArea.getItem(keyName) ?? defaultValue
+    () => storageArea.getItem(keyName) ?? defaultValue,
   );
 
   const setValue = useCallback((newValue: string) => {

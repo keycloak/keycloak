@@ -6,7 +6,7 @@ export type ReplaceString<
   Input extends string,
   Search extends string,
   Replacement extends string,
-  Options extends ReplaceStringOptions = {}
+  Options extends ReplaceStringOptions = {},
 > = Input extends `${infer Head}${Search}${infer Tail}`
   ? Options["skipFirst"] extends true
     ? `${Head}${Search}${ReplaceString<Tail, Search, Replacement>}`

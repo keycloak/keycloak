@@ -101,6 +101,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
+import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -109,6 +115,7 @@ import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -252,8 +259,14 @@ public class SAMLEndpoint {
         }
 
         protected KeyLocator getIDPKeyLocator() {
-            List<Key> keys = new LinkedList<>();
+            if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
+                String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
+                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+                return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
+            }
 
+            List<Key> keys = new LinkedList<>();
             for (String signingCertificate : config.getSigningCertificates()) {
                 X509Certificate cert = null;
                 try {
@@ -412,10 +425,15 @@ public class SAMLEndpoint {
 
             try {
                 AuthenticationSessionModel authSession;
-                if (clientId != null && ! clientId.trim().isEmpty()) {
+                if (StringUtil.isNotBlank(clientId)) {
                     authSession = samlIdpInitiatedSSO(clientId);
-                } else {
+                } else if (StringUtil.isNotBlank(relayState)) {
                     authSession = callback.getAndVerifyAuthenticationSession(relayState);
+                } else {
+                    logger.error("SAML RelayState parameter was null when it should be returned by the IDP");
+                    event.event(EventType.LOGIN);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
                 session.getContext().setAuthenticationSession(authSession);
 

@@ -2,7 +2,6 @@ import { saveAs } from "file-saver";
 import { cloneDeep } from "lodash-es";
 import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 import { flatten } from "flat";
-
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
@@ -22,7 +21,7 @@ export const sortProviders = (providers: {
 
 const sortProvider = (
   a: [string, ProviderRepresentation],
-  b: [string, ProviderRepresentation]
+  b: [string, ProviderRepresentation],
 ) => {
   let s1, s2;
   if (a[1].order !== b[1].order) {
@@ -57,7 +56,7 @@ export const exportClient = (client: ClientRepresentation): void => {
     new Blob([prettyPrintJSON(clientCopy)], {
       type: "application/json",
     }),
-    clientCopy.clientId + ".json"
+    clientCopy.clientId + ".json",
   );
 };
 
@@ -67,7 +66,7 @@ export const toUpperCase = <T extends string>(name: T) =>
 const isAttributesObject = (value: any) => {
   return (
     Object.values(value).filter(
-      (value) => Array.isArray(value) && value.length === 1
+      (value) => Array.isArray(value) && value.length >= 1,
     ).length !== 0
   );
 };
@@ -78,18 +77,18 @@ const isAttributeArray = (value: any) => {
   }
 
   return value.some(
-    (e) => Object.hasOwn(e, "key") && Object.hasOwn(e, "value")
+    (e) => Object.hasOwn(e, "key") && Object.hasOwn(e, "value"),
   );
 };
 
 const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
 export function convertAttributeNameToForm<T>(
-  name: string
+  name: string,
 ): PathValue<T, Path<T>> {
   const index = name.indexOf(".");
   return `${name.substring(0, index)}.${beerify(
-    name.substring(index + 1)
+    name.substring(index + 1),
   )}` as PathValue<T, Path<T>>;
 }
 
@@ -101,7 +100,7 @@ const debeerify = <T extends string>(name: T) =>
 
 export function convertToFormValues<T extends FieldValues>(
   obj: FieldValues,
-  setValue: UseFormSetValue<T>
+  setValue: UseFormSetValue<T>,
 ) {
   Object.entries(obj).map((entry) => {
     const [key, value] = entry as [Path<T>, any];
@@ -111,11 +110,13 @@ export function convertToFormValues<T extends FieldValues>(
       if (!isEmpty(value)) {
         const flattened: any = flatten(value, { safe: true });
         const convertedValues = Object.entries(flattened).map(([key, value]) =>
-          Array.isArray(value) ? [key, value[0]] : [key, value]
+          Array.isArray(value) && value.length === 1
+            ? [key, value[0]]
+            : [key, value],
         );
 
         convertedValues.forEach(([k, v]) =>
-          setValue(`${key}.${beerify(k)}` as Path<T>, v)
+          setValue(`${key}.${beerify(k)}` as Path<T>, v),
         );
       } else {
         setValue(key, undefined as PathValue<T, Path<T>>);
@@ -127,7 +128,7 @@ export function convertToFormValues<T extends FieldValues>(
 }
 
 export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
-  obj: T
+  obj: T,
 ): G {
   const result: any = {};
   Object.entries(obj).map(([key, value]) => {
@@ -136,8 +137,8 @@ export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
     } else if (key === "config" || key === "attributes") {
       result[key] = Object.fromEntries(
         Object.entries(
-          (value as Record<string, unknown> | undefined) || {}
-        ).map(([k, v]) => [debeerify(k), v])
+          (value as Record<string, unknown> | undefined) || {},
+        ).map(([k, v]) => [debeerify(k), v]),
       );
     } else {
       result[key] = value;

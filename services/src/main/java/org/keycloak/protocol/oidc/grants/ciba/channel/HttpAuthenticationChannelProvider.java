@@ -103,6 +103,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         bearerToken.id(request.getAuthResultId());
         bearerToken.issuedFor(client.getClientId());
         bearerToken.audience(request.getIssuer());
+        bearerToken.iat(request.getIat());
         bearerToken.exp(request.getExp());
         bearerToken.subject(request.getSubject());
 

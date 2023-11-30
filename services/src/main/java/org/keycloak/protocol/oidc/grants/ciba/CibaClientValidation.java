@@ -18,18 +18,11 @@
 
 package org.keycloak.protocol.oidc.grants.ciba;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.google.common.collect.Streams;
-import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.validation.DefaultClientValidationProvider;
 import org.keycloak.validation.ValidationContext;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;

@@ -56,11 +56,13 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
@@ -75,13 +77,17 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -108,6 +114,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.representations.IDToken.NONCE;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -174,8 +181,8 @@ public class TokenManager {
         }
 
         if (oldToken.isIssuedBeforeSessionStart(userSession.getStarted())) {
-            logger.debug("Refresh toked issued before the user session started");
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the user session started");
+            logger.debug("Refresh token issued before the user session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token issued before the user session started");
         }
 
 
@@ -193,8 +200,8 @@ public class TokenManager {
         }
 
         if (oldToken.isIssuedBeforeSessionStart(clientSession.getStarted())) {
-            logger.debug("Refresh toked issued before the client session started");
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the client session started");
+            logger.debug("refresh token issued before the client session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "refresh token issued before the client session started");
         }
 
         if (!client.getClientId().equals(oldToken.getIssuedFor())) {
@@ -382,6 +389,7 @@ public class TokenManager {
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
         // validate authorizedClient is same as validated client
         if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
@@ -400,24 +408,13 @@ public class TokenManager {
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
-        if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+        if (clientConfig.isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
         }
 
         if (validation.newToken.getAuthorization() != null
-            && OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+            && clientConfig.isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
-        }
-
-        // KEYCLOAK-6771 Certificate Bound Token
-        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
-        // bind refreshed access and refresh token with Client Certificate
-        AccessToken.CertConf certConf = refreshToken.getCertConf();
-        if (certConf != null) {
-            responseBuilder.getAccessToken().setCertConf(certConf);
-            if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
-                responseBuilder.getRefreshToken().setCertConf(certConf);
-            }
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -484,14 +481,17 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
 
+            TokenVerifier<RefreshToken> tokenVerifier = TokenVerifier.createWithoutSignature(refreshToken)
+                    .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
+
             if (checkExpiration) {
-                try {
-                    TokenVerifier.createWithoutSignature(refreshToken)
-                            .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
-                            .verify();
-                } catch (VerificationException e) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
-                }
+                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE);
+            }
+
+            try {
+                tokenVerifier.verify();
+            } catch (VerificationException e) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
             }
 
             if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
@@ -505,7 +505,19 @@ public class TokenManager {
                 }
             }
 
+            if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+                DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+                if (client.isPublicClient() && (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() || dPoP != null )) {
+                    try {
+                        DPoPUtil.validateBinding(refreshToken, dPoP);
+                    } catch (VerificationException ex) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                    }
+                }
+            }
+
             return refreshToken;
+
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
@@ -580,8 +592,8 @@ public class TokenManager {
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
         clientSession.setTimestamp(userSession.getLastSessionRefresh());
 
-        // Remove authentication session now
-        new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
+        // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
+        new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(userSession.getRealm(), authSession);
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
         return clientSessionCtx;
@@ -733,7 +745,7 @@ public class TokenManager {
             return true;
         }
 
-        UserConsentModel grantedConsent = session.users().getConsentByClient(client.getRealm(), user.getId(), client.getId());
+        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
         return requestedClientScopes
                 .filter(ClientScopeModel::isDisplayOnConsentScreen)
@@ -777,6 +789,17 @@ public class TokenManager {
                     @Override
                     protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
                         return ((UserInfoTokenMapper) mapper.getValue()).transformUserInfoToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
+    }
+
+    public AccessToken transformIntrospectionAccessToken(KeycloakSession session, AccessToken token,
+                                                         UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof TokenIntrospectionTokenMapper)
+                .collect(new TokenCollector<AccessToken>(token) {
+                    @Override
+                    protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((TokenIntrospectionTokenMapper) mapper.getValue()).transformIntrospectionToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
                     }
                 });
     }
@@ -1012,11 +1035,14 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+        String responseTokenType;
 
         boolean generateAccessTokenHash = false;
         String codeHash;
 
         String stateHash;
+
+        private AccessTokenResponse response;
 
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session,
                                           UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
@@ -1026,6 +1052,7 @@ public class TokenManager {
             this.session = session;
             this.userSession = userSession;
             this.clientSessionCtx = clientSessionCtx;
+            this.responseTokenType = formatTokenType(client);
         }
 
         public AccessToken getAccessToken() {
@@ -1046,6 +1073,11 @@ public class TokenManager {
         }
         public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
             this.refreshToken = refreshToken;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder responseTokenType(String responseTokenType) {
+            this.responseTokenType = responseTokenType;
             return this;
         }
 
@@ -1152,6 +1184,8 @@ public class TokenManager {
         }
 
         public AccessTokenResponse build() {
+            if (response != null) return response;
+
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
             }
@@ -1170,7 +1204,7 @@ public class TokenManager {
             if (accessToken != null) {
                 String encodedToken = session.tokens().encode(accessToken);
                 res.setToken(encodedToken);
-                res.setTokenType(formatTokenType(client));
+                res.setTokenType(responseTokenType);
                 res.setSessionState(accessToken.getSessionState());
                 if (accessToken.getExpiration() != 0) {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
@@ -1203,8 +1237,11 @@ public class TokenManager {
 
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
-            if (userNotBefore > notBefore) notBefore = userNotBefore;
+            final UserModel user = userSession.getUser();
+            if (! isLightweightUser(user)) {
+                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+                if (userNotBefore > notBefore) notBefore = userNotBefore;
+            }
             res.setNotBeforePolicy(notBefore);
 
             res = transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
@@ -1214,7 +1251,8 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            return res;
+            response = res;
+            return response;
         }
 
 
@@ -1275,7 +1313,9 @@ public class TokenManager {
         }
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
-            return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+            return isLightweightUser(userModel)
+              ? new NotBeforeCheck((int) (((LightweightUserAdapter) userModel).getCreatedTimestamp() / 1000L))
+              : new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
         }
     }
 

@@ -84,7 +84,6 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.services.util.P3PHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -100,6 +99,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -111,6 +111,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
@@ -170,7 +171,7 @@ public class AuthenticationManager {
     // Parameter of LogoutEndpoint
     public static final String INITIATING_IDP_PARAM = "initiating_idp";
 
-    private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
+    private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID));
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
         if (userSession == null) {
@@ -287,7 +288,8 @@ public class AuthenticationManager {
 
         if (logger.isDebugEnabled()) {
             UserModel user = userSession.getUser();
-            logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
+            String username = user == null ? null : user.getUsername();
+            logger.debugv("Logging out: {0} ({1}) offline: {2}", username, userSession.getId(),
                     userSession.isOffline());
         }
 
@@ -798,7 +800,6 @@ public class AuthenticationManager {
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
         int sessionCookieMaxAge = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
         CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, sessionCookieMaxAge, secureOnly, false, SameSiteAttributeValue.NONE, keycloakSession);
-        P3PHelper.addP3PHeader(keycloakSession);
     }
 
     public static void createRememberMeCookie(String username, UriInfo uriInfo, KeycloakSession session) {
@@ -1072,6 +1073,7 @@ public class AuthenticationManager {
                 infoPage.setAttribute(Constants.SKIP_LINK, true);
             }
             Response response = infoPage
+                    .setDetachedAuthSession()
                     .createInfoPage();
 
             new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
@@ -1148,7 +1150,7 @@ public class AuthenticationManager {
             final UserModel user = authSession.getAuthenticatedUser();
             final ClientModel client = authSession.getClient();
 
-            return session.users().getConsentByClient(realm, user.getId(), client.getId());
+            return UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         }
     }
 
@@ -1541,10 +1543,12 @@ public class AuthenticationManager {
             return false;
         }
 
-        int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-        if (token.getIssuedAt() < userNotBefore) {
-            logger.debug("User notBefore newer than token");
-            return false;
+        if (! isLightweightUser(user)) {
+            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+            if (token.getIssuedAt() < userNotBefore) {
+                logger.debug("User notBefore newer than token");
+                return false;
+            }
         }
 
         return true;

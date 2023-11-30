@@ -68,6 +68,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -174,7 +175,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directPublic.setFullScopeAllowed(false);
         directPublic.addRedirectUri("*");
-        directPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
+        directPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false, true));
 
         ClientModel directUntrustedPublic = realm.addClient("direct-public-untrusted");
         directUntrustedPublic.setClientId("direct-public-untrusted");
@@ -185,7 +186,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directUntrustedPublic.setFullScopeAllowed(false);
         directUntrustedPublic.addRedirectUri("*");
         directUntrustedPublic.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
-        directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
+        directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false, true));
 
         ClientModel directNoSecret = realm.addClient("direct-no-secret");
         directNoSecret.setClientId("direct-no-secret");
@@ -417,7 +418,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertNull(exchangedToken.getRealmAccess());
 
             Object impersonatorRaw = exchangedToken.getOtherClaims().get("impersonator");
-            Assert.assertThat(impersonatorRaw, instanceOf(Map.class));
+            assertThat(impersonatorRaw, instanceOf(Map.class));
             Map impersonatorClaim = (Map) impersonatorRaw;
 
             Assert.assertEquals(token.getSubject(), impersonatorClaim.get("id"));
@@ -537,16 +538,16 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         }
 
         try (Response response = exchangeUrl.request()
-                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("client-exchanger", "secret"))
-                    .post(Entity.form(
-                            new Form()
-                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
-                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
-                                    .param(OAuth2Constants.AUDIENCE, "target")
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("client-exchanger", "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+                                .param(OAuth2Constants.AUDIENCE, "target")
 
-                    ))) {
+                ))) {
             org.junit.Assert.assertEquals(200, response.getStatus());
             AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
             String exchangedTokenString = accessTokenResponse.getToken();

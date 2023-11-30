@@ -30,7 +30,7 @@ export const AddHostDialog = ({
   onAdded,
   onClose,
 }: AddHostDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -47,7 +47,7 @@ export const AddHostDialog = ({
       onAdded(node);
       addAlert(t("addedNodeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:addedNodeFail", error);
+      addError("addedNodeFail", error);
     }
 
     onClose();
@@ -67,7 +67,7 @@ export const AddHostDialog = ({
           form="add-host-form"
           isDisabled={!isDirty || !isValid}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           key="cancel"
@@ -75,7 +75,7 @@ export const AddHostDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

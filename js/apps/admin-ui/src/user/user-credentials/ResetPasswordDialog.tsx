@@ -45,7 +45,7 @@ export const ResetPasswordDialog = ({
   refresh,
   onClose,
 }: ResetPasswordDialogProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -66,15 +66,11 @@ export const ResetPasswordDialog = ({
   const { addAlert, addError } = useAlerts();
 
   const [toggleConfirmSaveModal, ConfirmSaveModal] = useConfirmDialog({
-    titleKey: isResetPassword
-      ? "users:resetPasswordConfirm"
-      : "users:setPasswordConfirm",
+    titleKey: isResetPassword ? "resetPasswordConfirm" : "setPasswordConfirm",
     messageKey: isResetPassword
       ? t("resetPasswordConfirmText", { username: user.username })
       : t("setPasswordConfirmText", { username: user.username }),
-    continueButtonLabel: isResetPassword
-      ? "users:resetPassword"
-      : "users:savePassword",
+    continueButtonLabel: isResetPassword ? "resetPassword" : "savePassword",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: () => handleSubmit(saveUserPassword)(),
   });
@@ -102,22 +98,20 @@ export const ResetPasswordDialog = ({
             id: user.id!,
             credentialId: credentialLabel.id!,
           },
-          t("defaultPasswordLabel")
+          t("defaultPasswordLabel"),
         );
       }
       addAlert(
         isResetPassword
           ? t("resetCredentialsSuccess")
           : t("savePasswordSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
       refresh();
     } catch (error) {
       addError(
-        isResetPassword
-          ? "users:resetPasswordError"
-          : "users:savePasswordError",
-        error
+        isResetPassword ? "resetPasswordError" : "savePasswordError",
+        error,
       );
     }
 
@@ -139,7 +133,7 @@ export const ResetPasswordDialog = ({
         toggleDialog={toggle}
         onConfirm={toggleConfirmSaveModal}
         confirmButtonDisabled={!isValid}
-        continueButtonLabel="common:save"
+        continueButtonLabel="save"
       >
         <Form
           id="userCredentials-form"
@@ -150,7 +144,7 @@ export const ResetPasswordDialog = ({
             name="password"
             label={t("password")}
             fieldId="password"
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={
               errors.password
                 ? ValidatedOptions.error
@@ -202,7 +196,7 @@ export const ResetPasswordDialog = ({
             />
           </FormGroup>
           <FormGroup
-            label={t("common:temporaryPassword")}
+            label={t("temporaryPassword")}
             labelIcon={
               <HelpItem
                 helpText={t("temporaryPasswordHelpText")}
@@ -220,9 +214,9 @@ export const ResetPasswordDialog = ({
                   className="kc-temporaryPassword"
                   onChange={field.onChange}
                   isChecked={field.value}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  aria-label={t("common:temporaryPassword")}
+                  label={t("on")}
+                  labelOff={t("off")}
+                  aria-label={t("temporaryPassword")}
                 />
               )}
             />

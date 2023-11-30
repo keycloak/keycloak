@@ -42,7 +42,7 @@ const CANONICALIZATION = [
 ] as const;
 
 export const SamlSignature = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [algOpen, setAlgOpen] = useState(false);
   const [keyOpen, setKeyOpen] = useState(false);
   const [canOpen, setCanOpen] = useState(false);
@@ -50,12 +50,12 @@ export const SamlSignature = () => {
   const { control, watch } = useFormContext<FormFields>();
 
   const signDocs = watch(
-    convertAttributeNameToForm<FormFields>("attributes.saml.server.signature")
+    convertAttributeNameToForm<FormFields>("attributes.saml.server.signature"),
   );
   const signAssertion = watch(
     convertAttributeNameToForm<FormFields>(
-      "attributes.saml.assertion.signature"
-    )
+      "attributes.saml.assertion.signature",
+    ),
   );
 
   return (
@@ -79,14 +79,14 @@ export const SamlSignature = () => {
             fieldId="signatureAlgorithm"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:signatureAlgorithm")}
-                fieldLabelId="clients:signatureAlgorithm"
+                helpText={t("signatureAlgorithmHelp")}
+                fieldLabelId="signatureAlgorithm"
               />
             }
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.signature.algorithm"
+                "attributes.saml.signature.algorithm",
               )}
               defaultValue={SIGNATURE_ALGORITHMS[0]}
               control={control}
@@ -119,14 +119,14 @@ export const SamlSignature = () => {
             fieldId="signatureKeyName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:signatureKeyName")}
-                fieldLabelId="clients:signatureKeyName"
+                helpText={t("signatureKeyNameHelp")}
+                fieldLabelId="signatureKeyName"
               />
             }
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer"
+                "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer",
               )}
               defaultValue={KEYNAME_TRANSFORMER[0]}
               control={control}
@@ -159,8 +159,8 @@ export const SamlSignature = () => {
             fieldId="canonicalization"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:canonicalization")}
-                fieldLabelId="clients:canonicalization"
+                helpText={t("canonicalizationHelp")}
+                fieldLabelId="canonicalization"
               />
             }
           >

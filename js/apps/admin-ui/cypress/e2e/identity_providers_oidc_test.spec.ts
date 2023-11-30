@@ -81,21 +81,28 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.assertOIDCPKCESwitch();
       //Client Authentication
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.basicAuth
+        ClientAuthentication.basicAuth,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.jwt
+        ClientAuthentication.post,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.jwtPrivKey
+        ClientAuthentication.jwt,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.post
+        ClientAuthentication.jwtPrivKey,
       );
       //Client assertion signature algorithm
       Object.entries(ClientAssertionSigningAlg).forEach(([, value]) => {
         providerBaseAdvancedSettingsPage.assertOIDCClientAuthSignAlg(value);
       });
+      //Client assertion audience
+      providerBaseAdvancedSettingsPage.typeClientAssertionAudience(
+        "http://localhost:8180",
+      );
+      providerBaseAdvancedSettingsPage.assertClientAssertionAudienceInputEqual(
+        "http://localhost:8180",
+      );
       //OIDC Advanced Settings
       providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);
@@ -103,7 +110,7 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.login);
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.select);
       providerBaseAdvancedSettingsPage.selectPromptOption(
-        PromptSelect.unspecified
+        PromptSelect.unspecified,
       );
       //Advanced Settings
       providerBaseAdvancedSettingsPage.assertAdvancedSettings();

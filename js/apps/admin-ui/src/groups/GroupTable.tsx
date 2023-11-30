@@ -1,15 +1,16 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-import { adminClient } from "../admin-client";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
-import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { GroupsModal } from "./GroupsModal";
 import { useSubGroups } from "./SubGroupsContext";
@@ -17,7 +18,7 @@ import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
-import { toGroups } from "./routes/Groups";
+import { adminClient } from "../admin-client";
 
 type GroupTableProps = {
   refresh: () => void;
@@ -28,9 +29,8 @@ export const GroupTable = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTableProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
-  const { realm } = useRealm();
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 
   const [rename, setRename] = useState<GroupRepresentation>();
@@ -44,7 +44,6 @@ export const GroupTable = ({
   const refresh = () => setKey(key + 1);
   const [search, setSearch] = useState<string>();
 
-  const navigate = useNavigate();
   const location = useLocation();
   const id = getLastId(location.pathname);
 
@@ -52,34 +51,24 @@ export const GroupTable = ({
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
   const loader = async (first?: number, max?: number) => {
-    const params: Record<string, string> = {
-      search: search || "",
-      first: first?.toString() || "",
-      max: max?.toString() || "",
-    };
-
     let groupsData = undefined;
     if (id) {
-      const group = await adminClient.groups.findOne({ id });
-      if (!group) {
-        throw new Error(t("common:notFound"));
-      }
-
-      groupsData = !search
-        ? group.subGroups
-        : group.subGroups?.filter((g) => g.name?.includes(search));
+      const args: SubGroupQuery = {
+        first: first,
+        max: max,
+        parentId: id,
+      };
+      groupsData = await adminClient.groups.listSubGroups(args);
     } else {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
-        ...params,
-        global: "false",
-      });
+      const args: GroupQuery = {
+        search: search || "",
+        first: first || undefined,
+        max: max || undefined,
+      };
+      groupsData = await adminClient.groups.find(args);
     }
 
-    if (!groupsData) {
-      navigate(toGroups({ realm }));
-    }
-
-    return groupsData || [];
+    return groupsData;
   };
 
   return (
@@ -97,7 +86,7 @@ export const GroupTable = ({
       {rename && (
         <GroupsModal
           id={rename.id}
-          rename={rename.name}
+          rename={rename}
           refresh={() => {
             refresh();
             viewRefresh();
@@ -132,7 +121,7 @@ export const GroupTable = ({
         onSelect={(rows) => setSelectedRows([...rows])}
         canSelectAll
         loader={loader}
-        ariaLabelKey="groups:groups"
+        ariaLabelKey="groups"
         isPaginated
         isSearching={!!search}
         toolbarItem={
@@ -189,7 +178,7 @@ export const GroupTable = ({
                   isSeparator: true,
                 },
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: async (group: GroupRepresentation) => {
                     setSelectedRows([group]);
                     toggleShowDelete();
@@ -201,14 +190,10 @@ export const GroupTable = ({
         columns={[
           {
             name: "name",
-            displayKey: "groups:groupName",
+            displayKey: "groupName",
             cellRenderer: (group) =>
               canViewDetails ? (
-                <Link
-                  key={group.id}
-                  to={`${location.pathname}/${group.id}`}
-                  onClick={() => navigate(toGroups({ realm, id: group.id }))}
-                >
+                <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>
               ) : (
@@ -221,7 +206,7 @@ export const GroupTable = ({
             hasIcon={true}
             message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
             instructions={t(
-              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`
+              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`,
             )}
             primaryActionText={t("createGroup")}
             onPrimaryAction={toggleCreateOpen}

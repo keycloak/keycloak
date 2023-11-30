@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import jakarta.ws.rs.NotFoundException;
@@ -28,7 +31,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -39,8 +41,8 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.utils.LockObjectsForModification;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -68,6 +70,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ComponentResource {
     protected static final Logger logger = Logger.getLogger(ComponentResource.class);
 
@@ -95,6 +98,8 @@ public class ComponentResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Stream<ComponentRepresentation> getComponents(@QueryParam("parent") String parent,
                                                        @QueryParam("type") String type,
                                                        @QueryParam("name") String name) {
@@ -125,30 +130,31 @@ public class ComponentResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Response create(ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-            RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
-            try {
-                ComponentModel model = RepresentationToModel.toModel(kcSession, rep);
-                if (model.getParentId() == null) model.setParentId(realmModel.getId());
+        try {
+            ComponentModel model = RepresentationToModel.toModel(session, rep);
+            if (model.getParentId() == null) model.setParentId(realm.getId());
 
-                model = realmModel.addComponentModel(model);
+            model = realm.addComponentModel(model);
 
-                adminEvent.operation(OperationType.CREATE).resourcePath(kcSession.getContext().getUri(), model.getId()).representation(StripSecretsUtils.strip(kcSession, rep)).success();
-                return Response.created(kcSession.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
-            } catch (ComponentValidationException e) {
-                return localizedErrorResponse(e);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException(e);
-            }
-        }, 10, 100);
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
+            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
+        } catch (ComponentValidationException e) {
+            return localizedErrorResponse(e);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        }
     }
 
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         auth.realm().requireViewRealm();
         ComponentModel model = realm.getComponent(id);
@@ -162,41 +168,37 @@ public class ComponentResource {
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-            RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
-            try {
-                ComponentModel model = realmModel.getComponent(id);
-                if (model == null) {
-                    throw new NotFoundException("Could not find component");
-                }
-                RepresentationToModel.updateComponent(kcSession, rep, model, false);
-                adminEvent.operation(OperationType.UPDATE).resourcePath(kcSession.getContext().getUri()).representation(StripSecretsUtils.strip(kcSession, rep)).success();
-                realmModel.updateComponent(model);
-                return Response.noContent().build();
-            } catch (ComponentValidationException e) {
-                return localizedErrorResponse(e);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException();
-            }
-        }, 10, 100);
-    }
-    @DELETE
-    @Path("{id}")
-    public void removeComponent(@PathParam("id") String id) {
-        auth.realm().requireManageRealm();
-        KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-            RealmModel realmModel = LockObjectsForModification.lockRealmsForModification(kcSession, () -> kcSession.realms().getRealm(realm.getId()));
-
-            ComponentModel model = realmModel.getComponent(id);
+        try {
+            ComponentModel model = realm.getComponent(id);
             if (model == null) {
                 throw new NotFoundException("Could not find component");
             }
-            adminEvent.operation(OperationType.DELETE).resourcePath(kcSession.getContext().getUri()).success();
-            realmModel.removeComponent(model);
-            return null;
-        }, 10 , 100);
+            RepresentationToModel.updateComponent(session, rep, model, false);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(StripSecretsUtils.strip(session, rep)).success();
+            realm.updateComponent(model);
+            return Response.noContent().build();
+        } catch (ComponentValidationException e) {
+            return localizedErrorResponse(e);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException();
+        }
+    }
+    @DELETE
+    @Path("{id}")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation()
+    public void removeComponent(@PathParam("id") String id) {
+        auth.realm().requireManageRealm();
+        ComponentModel model = realm.getComponent(id);
+        if (model == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        realm.removeComponent(model);
     }
 
     private Response localizedErrorResponse(ComponentValidationException cve) {
@@ -228,6 +230,8 @@ public class ComponentResource {
     @Path("{id}/sub-component-types")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.COMPONENT)
+    @Operation( summary = "List of subcomponent types that are available to configure for a particular parent component.")
     public Stream<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
         auth.realm().requireViewRealm();
         ComponentModel parent = realm.getComponent(parentId);

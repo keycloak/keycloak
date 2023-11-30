@@ -1,5 +1,5 @@
 [[_javascript_adapter]]
-=== JavaScript adapter
+=== {project_name} JavaScript adapter
 
 {project_name} comes with a client-side JavaScript library called `keycloak-js` that can be used to secure web applications. The adapter also comes with built-in support for Cordova applications.
 
@@ -370,11 +370,9 @@ to {project_name} will contain the scope parameter `scope=openid address phone`.
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
-* scope - Used to forward the scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
-reference link:{adminguide_link}#_client_scopes[Client scopes] defined on a particular client. Note that the scope `openid` is
-always added to the list of scopes by the adapter. For example, if you enter the scope options `address phone`, then the request
-to {project_name} will contain the scope parameter `scope=openid address phone`.
+* acrValues - Generates the `acr_values` parameter which refers to authentication context class reference and allows clients to declare the required assurance level requirements, e.g. authentication mechanisms. See https://openid.net/specs/openid-connect-modrna-authentication-1_0.html#acr_values[Section 4. acr_values request values and level of assurance in OpenID Connect MODRNA Authentication Profile 1.0].
 * messageReceiveTimeout - Set a timeout in milliseconds for waiting for message responses from the Keycloak server. This is used, for example, when waiting for a message during 3rd party cookies check. The default value is 10000.
+* locale - When onLoad is 'login-required', sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 
 Returns a promise that resolves when initialization completes.
 
@@ -396,6 +394,7 @@ provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[
 * acr - Contains the information about `acr` claim, which will be sent inside `claims` parameter to the {project_name} server. Typical usage
 is for step-up authentication. Example of use `{ values: ["silver", "gold"], essential: true }`. See OpenID Connect specification
 and link:{adminguide_link}#_step-up-flow[Step-up authentication documentation] for more details.
+* acrValues - Generates the `acr_values` parameter which refers to authentication context class reference and allows clients to declare the required assurance level requirements, e.g. authentication mechanisms. See https://openid.net/specs/openid-connect-modrna-authentication-1_0.html#acr_values[Section 4. acr_values request values and level of assurance in OpenID Connect MODRNA Authentication Profile 1.0].
 * action - If value is `register` then user is redirected to registration page, if the value is `UPDATE_PASSWORD` then the user will be redirected to the reset password page (if not authenticated will send user to login page first and redirect after authenticated), otherwise to login page.
 * locale - Sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 * cordovaOptions - Specifies the arguments that are passed to the Cordova in-app-browser (if applicable). Options `hidden` and `location` are not affected by these arguments. All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/. Example of use: `{ zoom: "no", hardwareback: "yes" }`;

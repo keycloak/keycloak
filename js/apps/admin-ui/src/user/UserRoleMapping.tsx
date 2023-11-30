@@ -12,7 +12,7 @@ type UserRoleMappingProps = {
 };
 
 export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {
@@ -33,12 +33,12 @@ export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
               id,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
-            })
-          )
+            }),
+          ),
       );
-      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
+      addAlert(t("userRoleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:roleMappingUpdatedError", error);
+      addError("roleMappingUpdatedError", error);
     }
   };
 

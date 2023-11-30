@@ -45,7 +45,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
-            <version>3.1</version>
         </dependency>
     </dependencies>
 
@@ -54,7 +53,6 @@
             <plugin>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <groupId>io.smallrye</groupId>
-                <version>3.1.2</version>
                 <configuration>
                     <scanPackages>org.keycloak.admin.ui.rest</scanPackages>
                 </configuration>

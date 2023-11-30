@@ -22,7 +22,7 @@ import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
 
 export const AuthorizationExport = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
 
@@ -40,7 +40,7 @@ export const AuthorizationExport = () => {
       setCode(JSON.stringify(authDetails, null, 2));
       setAuthorizationDetails(authDetails);
     },
-    []
+    [],
   );
 
   const exportAuthDetails = () => {
@@ -49,7 +49,7 @@ export const AuthorizationExport = () => {
         new Blob([prettyPrintJSON(authorizationDetails)], {
           type: "application/json",
         }),
-        "test-authz-config.json"
+        "test-authz-config.json",
       );
       addAlert(t("exportAuthDetailsSuccess"), AlertVariant.success);
     } catch (error) {
@@ -63,13 +63,17 @@ export const AuthorizationExport = () => {
 
   return (
     <PageSection>
-      <FormAccess isHorizontal role="view-realm" className="pf-u-mt-lg">
+      <FormAccess
+        isHorizontal
+        role="manage-authorization"
+        className="pf-u-mt-lg"
+      >
         <FormGroup
           label={t("authDetails")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:authDetails")}
-              fieldLabelId="clients:authDetails"
+              helpText={t("authDetailsHelp")}
+              fieldLabelId="authDetails"
             />
           }
           fieldId="client"
@@ -88,7 +92,7 @@ export const AuthorizationExport = () => {
             data-testid="authorization-export-download"
             onClick={() => exportAuthDetails()}
           >
-            {t("common:download")}
+            {t("download")}
           </Button>
           <Button
             data-testid="authorization-export-copy"

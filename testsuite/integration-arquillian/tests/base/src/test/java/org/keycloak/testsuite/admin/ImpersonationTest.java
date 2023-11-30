@@ -24,6 +24,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -56,7 +57,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.*;
 import org.openqa.selenium.Cookie;
 
@@ -103,9 +103,6 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     @Page
     protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
 
     private String impersonatedUserId;
 
@@ -182,6 +179,20 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testImpersonationFailsForDisabledUser() {
+        UserResource impersonatedUserResource = adminClient.realms().realm("test").users().get(impersonatedUserId);
+        UserRepresentation impersonatedUserRepresentation = impersonatedUserResource.toRepresentation();
+        impersonatedUserRepresentation.setEnabled(false);
+        impersonatedUserResource.update(impersonatedUserRepresentation);
+        try {
+            testBadRequestImpersonation("impersonator", "test", impersonatedUserId, "test", "User is disabled");
+        } finally {
+            impersonatedUserRepresentation.setEnabled(true);
+            impersonatedUserResource.update(impersonatedUserRepresentation);
+        }
+    }
+
+    @Test
     public void testImpersonateByMastertBadImpersonator() {
         String userId;
         try (Response response = adminClient.realm("master").users().create(UserBuilder.create().username("master-bad-impersonator").build())) {
@@ -245,6 +256,9 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, "test");
+
+        // test impersonation over the service account fails
+        testBadRequestImpersonation("impersonator", "test", user.getId(), "test", "Service accounts cannot be impersonated");
 
         // Remove test client
         ApiUtil.findClientByClientId(realm, "service-account-cl").remove();
@@ -331,7 +345,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
                     .collect(Collectors.toSet());
 
             Assert.assertNotNull(cookies);
-            Assert.assertThat(cookies, is(not(empty())));
+            MatcherAssert.assertThat(cookies, is(not(empty())));
 
             return cookies;
         } catch (IOException e) {
@@ -344,7 +358,19 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             client.realms().realm("test").users().get(impersonatedUserId).impersonate();
             Assert.fail("Expected ClientErrorException wasn't thrown.");
         } catch (ClientErrorException e) {
-            Assert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+            MatcherAssert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+        }
+    }
+
+    protected void testBadRequestImpersonation(String admin, String adminRealm, String impersonatedId,
+            String impersonatedRealm, String errorExpected) {
+        try (Keycloak client = createAdminClient(adminRealm, establishClientId(adminRealm), admin)) {
+            client.realms().realm(impersonatedRealm).users().get(impersonatedId).impersonate();
+            Assert.fail("Expected ClientErrorException wasn't thrown.");
+        } catch (ClientErrorException e) {
+            Assert.assertEquals(Response.Status.BAD_REQUEST, e.getResponse().getStatusInfo());
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals(errorExpected, error.getErrorMessage());
         }
     }
 
@@ -438,7 +464,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
                     .collect(Collectors.toSet());
 
             Assert.assertNotNull(cookies);
-            Assert.assertThat(cookies, is(not(empty())));
+            MatcherAssert.assertThat(cookies, is(not(empty())));
 
             return cookies;
         } catch (IOException e) {

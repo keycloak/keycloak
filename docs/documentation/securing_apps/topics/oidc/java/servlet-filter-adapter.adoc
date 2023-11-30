@@ -1,6 +1,8 @@
 [[_servlet_filter_adapter]]
 ==== Java servlet filter adapter
 
+include::adapter-deprecation-notice.adoc[]
+
 If you are deploying your Java Servlet application on a platform where there is no {project_name} adapter you opt to use the servlet filter adapter.
 This adapter works a bit differently than the other adapters. You do not define security constraints in web.xml.
 Instead you define a filter mapping using the {project_name} servlet filter adapter to secure the url patterns you want to secure.

@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import GroupModal from "../support/pages/admin-ui/manage/groups/GroupModal";
 import GroupDetailPage from "../support/pages/admin-ui/manage/groups/group_details/GroupDetailPage";
 import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
@@ -45,7 +46,7 @@ describe("Group test", () => {
             return { id: user.id!, username: username + index };
           });
         return user;
-      })
+      }),
     );
   });
 
@@ -55,7 +56,7 @@ describe("Group test", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToGroups();
-    groupName = groupNamePrefix + crypto.randomUUID();
+    groupName = groupNamePrefix + uuid();
     groupNames.push(groupName);
   });
 
@@ -132,7 +133,7 @@ describe("Group test", () => {
 
     it("Delete groups from search bar", () => {
       cy.wrap(null).then(() =>
-        adminClient.createGroup("group_multiple_deletion_test")
+        adminClient.createGroup("group_multiple_deletion_test"),
       );
       cy.reload();
       groupPage
@@ -150,7 +151,7 @@ describe("Group test", () => {
         range(5).map((index) => {
           adminClient.addUserToGroup(
             users[index].id!,
-            createdGroups[index % 3].id
+            createdGroups[index % 3].id,
           );
         }),
         adminClient.createUser({ username: "new", enabled: true }),
@@ -266,7 +267,7 @@ describe("Group test", () => {
       childGroupsTab
         .createGroup(predefinedGroups[2], false)
         .assertNotificationCouldNotCreateGroupWithDuplicatedName(
-          predefinedGroups[2]
+          predefinedGroups[2],
         );
     });
 
@@ -316,7 +317,7 @@ describe("Group test", () => {
         range(5).map((index) => {
           adminClient.addUserToGroup(
             users[index].id!,
-            createdGroups[index % 3].id
+            createdGroups[index % 3].id,
           );
         }),
         adminClient.createGroup(emptyGroup),

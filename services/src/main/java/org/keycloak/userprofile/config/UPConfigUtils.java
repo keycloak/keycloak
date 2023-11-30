@@ -35,6 +35,8 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
@@ -107,7 +109,9 @@ public class UPConfigUtils {
 
     private static List<String> validateAttributes(KeycloakSession session, UPConfig config) {
         List<String> errors = new ArrayList<>();
-        Set<String> groups = config.getGroups().stream().map(g -> g.getName()).collect(Collectors.toSet()); 
+        Set<String> groups = config.getGroups().stream()
+                .map(g -> g.getName())
+                .collect(Collectors.toSet());
         
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
@@ -250,36 +254,13 @@ public class UPConfigUtils {
     }
 
     /**
-     * Break string to substrings of given length.
-     * 
-     * @param src to break
-     * @param partLength
-     * @return list of string parts, never null (but can be empty if src is null)
-     */
-    public static List<String> getChunks(String src, int partLength) {
-        List<String> ret = new ArrayList<>();
-        if (src != null) {
-            int pieces = (src.length() / partLength) + 1;
-            for (int i = 0; i < pieces; i++) {
-                if ((i + 1) < pieces)
-                    ret.add(src.substring(i * partLength, (i + 1) * partLength));
-                else if (i == 0 || (i * partLength) < src.length())
-                    ret.add(src.substring(i * partLength));
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Check if context CAN BE part of the AuthenticationFlow.
      * 
      * @param context to check
      * @return true if context CAN BE part of the auth flow
      */
     public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT
-                && context != UserProfileContext.ACCOUNT_OLD;
+        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
     }
 
     /**

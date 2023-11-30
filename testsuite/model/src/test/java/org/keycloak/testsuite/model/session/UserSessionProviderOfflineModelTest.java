@@ -49,8 +49,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -59,12 +61,14 @@ import java.util.stream.IntStream;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 @RequireProvider(UserSessionPersisterProvider.class)
-@RequireProvider(value=UserSessionProvider.class, only={"infinispan"})
+@RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
@@ -390,7 +394,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         List<String> offlineUserSessionIds =  withRealm(realmId, (session, realm) -> {
             UserModel user = session.users().getUserByUsername(realm, "user1");
             List<String> ids = session.sessions().getOfflineUserSessionsStream(realm, user).map(UserSessionModel::getId).collect(Collectors.toList());
-            Assert.assertThat(ids, Matchers.hasSize(2));
+            assertThat(ids, Matchers.hasSize(2));
             return ids;
         });
 
@@ -406,6 +410,61 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
                 // each associated offline client session should be found by looking into persister
                 Assert.assertNotNull(offlineUserSession.getAuthenticatedClientSessionByClient(clientUUID));
+            });
+            return null;
+        });
+    }
+
+    @Test
+    public void testLoadingOfflineClientSessionWhenCreatedBeforeSessionTime() {
+        // setup idle timeout for the realm
+        int idleTimeout = (int) TimeUnit.DAYS.toSeconds(1);
+        withRealm(realmId, (session, realmModel) -> {
+            realmModel.setClientOfflineSessionIdleTimeout(idleTimeout);
+            return null;
+        });
+
+        // create online user and client sessions
+        inComittedTransaction((Consumer<KeycloakSession>) session -> UserSessionPersisterProviderTest.createSessions(session, realmId));
+
+        // create offline user and client sessions
+        List<String> offlineUserSessionIds = withRealm(realmId, (session, realm) -> session.sessions()
+                .getUserSessionsStream(realm, realm.getClientByClientId("test-app"))
+                .map(userSession -> {
+                            UserSessionModel offlineUserSession = Optional.ofNullable(
+                                    session.sessions().getOfflineUserSession(realm, userSession.getId())
+                            ).orElseGet(() -> session.sessions().createOfflineUserSession(userSession));
+
+                            userSession.getAuthenticatedClientSessions()
+                                    .values()
+                                    .forEach(clientSession -> {
+                                        // set timestamp manually to make sure the client session is created before session time
+                                        // this simulates the cases when the offline client sessions are created before the session time
+                                        clientSession.setTimestamp(Time.currentTime() - idleTimeout * 2);
+
+                                        session.sessions().createOfflineClientSession(clientSession, offlineUserSession);
+                                    });
+
+                            return offlineUserSession.getId();
+                        }
+                ).collect(Collectors.toList())
+        );
+
+        withRealm(realmId, (session, realm) -> {
+            // remove offline client sessions from the cache
+            // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
+            session.getProvider(InfinispanConnectionProvider.class)
+                    .getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+
+            String clientUUID = realm.getClientByClientId("test-app").getId();
+
+            offlineUserSessionIds.forEach(id -> {
+                UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, id);
+
+                // each associated offline client session should be found by looking into persister
+                AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessionByClient(clientUUID);
+                Assert.assertNotNull(offlineClientSession);
+                Assert.assertEquals(offlineUserSession.getLastSessionRefresh(), offlineClientSession.getTimestamp());
             });
             return null;
         });

@@ -29,13 +29,13 @@ type UserGroupsProps = {
 };
 
 export const UserGroups = ({ user }: UserGroupsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
 
   const [isDirectMembership, setDirectMembership] = useState(true);
@@ -79,7 +79,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           ...paths.map((p) => ({
             name: p,
             path: g.path?.substring(0, g.path.indexOf(p) + p.length),
-          }))
+          })),
         );
       });
 
@@ -109,13 +109,13 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
             adminClient.users.delFromGroup({
               id: user.id!,
               groupId: group.id!,
-            })
-          )
+            }),
+          ),
         );
 
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addError("users:removedGroupMembershipError", error);
+        addError("removedGroupMembershipError", error);
       }
       refresh();
     },
@@ -133,13 +133,13 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           adminClient.users.addToGroup({
             id: user.id!,
             groupId: group.id!,
-          })
-        )
+          }),
+        ),
       );
 
       addAlert(t("addedGroupMembership"), AlertVariant.success);
     } catch (error) {
-      addError("users:addedGroupMembershipError", error);
+      addError("addedGroupMembershipError", error);
     }
     refresh();
   };
@@ -153,7 +153,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           type="selectMany"
           text={{
             title: t("joinGroupsFor", { username: user.username }),
-            ok: "users:join",
+            ok: "join",
           }}
           canBrowse={isManager}
           onClose={() => setOpen(false)}
@@ -168,14 +168,14 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         loader={loader}
         className="keycloak_user-section_groups-table"
         isPaginated
-        ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="groups:searchGroup"
+        ariaLabelKey="roleList"
+        searchPlaceholderKey="searchGroup"
         canSelectAll
         onSelect={(groups) =>
           isDirectMembership
             ? setSelectedGroups(groups)
             : setSelectedGroups(
-                intersectionBy(groups, directMembershipList, "id")
+                intersectionBy(groups, directMembershipList, "id"),
               )
         }
         isRowDisabled={(group) =>
@@ -216,7 +216,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
               <Popover
                 aria-label="Basic popover"
                 position="bottom"
-                bodyContent={<div>{t("whoWillAppearPopoverText")}</div>}
+                bodyContent={<div>{t("whoWillAppearPopoverTextUsers")}</div>}
               >
                 <Button
                   variant="link"
@@ -224,7 +224,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                   key="who-will-appear-button"
                   icon={<QuestionCircleIcon />}
                 >
-                  {t("whoWillAppearLinkText")}
+                  {t("whoWillAppearLinkTextUsers")}
                 </Button>
               </Popover>
             )}
@@ -233,14 +233,14 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         columns={[
           {
             name: "groupMembership",
-            displayKey: "users:groupMembership",
+            displayKey: "groupMembership",
             cellRenderer: (group: GroupRepresentation) => group.name || "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(40)],
           },
           {
             name: "path",
-            displayKey: "users:path",
+            displayKey: "path",
             cellRenderer: (group: GroupRepresentation) => (
               <GroupPath group={group} />
             ),

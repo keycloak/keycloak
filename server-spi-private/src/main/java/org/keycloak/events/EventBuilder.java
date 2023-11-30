@@ -50,6 +50,7 @@ public class EventBuilder {
     private RealmModel realm;
     private Event event;
     private Boolean storeImmediately;
+    private final boolean isEventsEnabled;
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
@@ -59,17 +60,23 @@ public class EventBuilder {
     public EventBuilder(RealmModel realm, KeycloakSession session) {
         this.session = session;
         this.realm = realm;
+        this.isEventsEnabled = realm.isEventsEnabled();
 
         event = new Event();
 
-        this.store = realm.isEventsEnabled() ? session.getProvider(EventStoreProvider.class) : null;
-        if (realm.isEventsEnabled() && this.store == null) {
-            log.error("Events enabled, but no event store provider configured");
-        }
-
+        this.store = this.isEventsEnabled ? getEventStoreProvider(session) : null;
         this.listeners = getEventListeners(session, realm);
 
         realm(realm);
+    }
+
+    private static EventStoreProvider getEventStoreProvider(KeycloakSession session) {
+        EventStoreProvider store = session.getProvider(EventStoreProvider.class);
+        if (store == null) {
+            log.error("Events enabled, but no event store provider configured");
+        }
+
+        return store;
     }
 
     private static List<EventListenerProvider> getEventListeners(KeycloakSession session, RealmModel realm) {
@@ -92,6 +99,7 @@ public class EventBuilder {
         this.event = event;
         this.session = session;
         this.store = store;
+        this.isEventsEnabled = realm.isEventsEnabled();
     }
 
     public EventBuilder realm(RealmModel realm) {
@@ -235,9 +243,9 @@ public class EventBuilder {
 
         Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
         if (sendImmediately) {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), session -> {
-                EventStoreProvider store = session.getProvider(EventStoreProvider.class);
-                List<EventListenerProvider> listeners = getEventListeners(session, realm);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), innerSession -> {
+                EventStoreProvider store = this.isEventsEnabled ? getEventStoreProvider(innerSession) : null;
+                List<EventListenerProvider> listeners = getEventListeners(innerSession, realm);
 
                 sendNow(store, eventTypes, listeners);
             });

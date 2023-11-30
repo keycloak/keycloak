@@ -189,7 +189,7 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd {
         out.println("  " + PROMPT + " " + CMD + " config truststore " + OS_ARCH.path("~/.keycloak/truststore.jks"));
         out.println();
         out.println("Specify a truststore, and password - truststore will automatically be used without prompting for password:");
-        out.println("  " + PROMPT + " " + CMD + " config truststore --storepass " + OS_ARCH.envVar("PASSWORD") + " " + OS_ARCH.path("~/.keycloak/truststore.jks"));
+        out.println("  " + PROMPT + " " + CMD + " config truststore --trustpass " + OS_ARCH.envVar("PASSWORD") + " " + OS_ARCH.path("~/.keycloak/truststore.jks"));
         out.println();
         out.println("Remove truststore configuration:");
         out.println("  " + PROMPT + " " + CMD + " config truststore --delete");

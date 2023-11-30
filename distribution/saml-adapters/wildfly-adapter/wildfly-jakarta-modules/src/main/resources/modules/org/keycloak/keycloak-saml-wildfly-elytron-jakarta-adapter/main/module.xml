@@ -38,7 +38,7 @@
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-saml-adapter-api-public"/>
-        <module name="org.keycloak.keycloak-saml-adapter-core"/>
+        <module name="org.keycloak.keycloak-saml-adapter-core-jakarta"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.infinispan"/>

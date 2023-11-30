@@ -40,7 +40,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -191,8 +191,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
         assertEquals("Bearer", response.getTokenType());
 
@@ -819,7 +819,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();
         ClientScopeResource clientScopeResource = adminClient.proxy(ClientScopeResource.class, scopeUri);
-        ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", true, true);
+        ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", true, true, true);
         ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(hard);
         response = clientScopeResource.getProtocolMappers().createMapper(mapper);
         assertEquals(201, response.getStatus());
@@ -1318,12 +1318,12 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     private void validateTokenECDSASignature(String expectedAlg) {
-        assertThat(ECDSASignatureProvider.ECDSA.values(), hasItemInArray(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg)));
+        assertThat(ECDSAAlgorithm.values(), hasItemInArray(ECDSAAlgorithm.valueOf(expectedAlg)));
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAlg);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAlg);
-            validateTokenSignatureLength(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg).getSignatureLength());
+            validateTokenSignatureLength(ECDSAAlgorithm.getSignatureLength(expectedAlg));
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);

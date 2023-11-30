@@ -16,11 +16,14 @@
  */
 package org.keycloak.social.microsoft;
 
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
@@ -36,16 +39,26 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
 
     @Override
     public MicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new MicrosoftIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
+        return new MicrosoftIdentityProvider(session, new MicrosoftIdentityProviderConfig(model));
     }
 
     @Override
-    public OAuth2IdentityProviderConfig createConfig() {
-        return new OAuth2IdentityProviderConfig();
+    public MicrosoftIdentityProviderConfig createConfig() {
+        return new MicrosoftIdentityProviderConfig();
     }
 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("tenantId")
+                .label("Tenant ID")
+                .helpText("Uses single-tenant auth endpoints when specified, uses 'common' multi-tenant endpoints otherwise.")
+                .type(ProviderConfigProperty.STRING_TYPE).add()
+                .build();
     }
 }

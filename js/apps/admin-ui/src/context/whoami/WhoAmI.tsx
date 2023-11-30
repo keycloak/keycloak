@@ -7,48 +7,52 @@ import { adminClient } from "../../admin-client";
 import environment from "../../environment";
 import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
 import { useFetch } from "../../utils/useFetch";
+import { useRealm } from "../realm-context/RealmContext";
 
 export class WhoAmI {
-  constructor(private me?: WhoAmIRepresentation) {
-    if (this.me?.locale) {
-      i18n.changeLanguage(this.me.locale, (error) => {
+  #me?: WhoAmIRepresentation;
+
+  constructor(me?: WhoAmIRepresentation) {
+    this.#me = me;
+    if (this.#me?.locale) {
+      i18n.changeLanguage(this.#me.locale, (error) => {
         if (error) {
-          console.warn("Error(s) loading locale", this.me?.locale, error);
+          console.warn("Error(s) loading locale", this.#me?.locale, error);
         }
       });
     }
   }
 
   public getDisplayName(): string {
-    if (this.me === undefined) return "";
+    if (this.#me === undefined) return "";
 
-    return this.me.displayName;
+    return this.#me.displayName;
   }
 
   public getLocale() {
-    return this.me?.locale ?? DEFAULT_LOCALE;
+    return this.#me?.locale ?? DEFAULT_LOCALE;
   }
 
   public getRealm() {
-    return this.me?.realm ?? "";
+    return this.#me?.realm ?? "";
   }
 
   public getUserId(): string {
-    if (this.me === undefined) return "";
+    if (this.#me === undefined) return "";
 
-    return this.me.userId;
+    return this.#me.userId;
   }
 
   public canCreateRealm(): boolean {
-    return !!this.me?.createRealm;
+    return !!this.#me?.createRealm;
   }
 
   public getRealmAccess(): Readonly<{
     [key: string]: ReadonlyArray<AccessType>;
   }> {
-    if (this.me === undefined) return {};
+    if (this.#me === undefined) return {};
 
-    return this.me.realm_access;
+    return this.#me.realm_access;
   }
 }
 
@@ -59,22 +63,27 @@ type WhoAmIProps = {
 
 export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
   "WhoAmIContext",
-  undefined
+  undefined,
 );
 
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
+  const { realm } = useRealm();
   const [key, setKey] = useState(0);
 
   useFetch(
-    () => adminClient.whoAmI.find({ realm: environment.loginRealm }),
+    () =>
+      adminClient.whoAmI.find({
+        realm: environment.loginRealm,
+        currentRealm: realm!,
+      }),
     (me) => {
       const whoAmI = new WhoAmI(me);
       setWhoAmI(whoAmI);
     },
-    [key]
+    [key, realm],
   );
 
   return (

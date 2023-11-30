@@ -171,4 +171,9 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
                 || property.startsWith("%"))
                 && !ignoredPropertyKeys.contains(property);
     }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
 }

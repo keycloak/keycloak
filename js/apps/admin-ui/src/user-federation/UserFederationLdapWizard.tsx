@@ -19,7 +19,7 @@ import { SettingsCache } from "./shared/SettingsCache";
 
 export const UserFederationLdapWizard = () => {
   const form = useForm<ComponentRepresentation>();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const steps = [
@@ -108,17 +108,17 @@ export const UserFederationLdapWizard = () => {
             return (
               <>
                 <Button variant="primary" type="submit" onClick={onNext}>
-                  {t("common:next")}
+                  {t("next")}
                 </Button>
                 <Button
                   variant="secondary"
                   onClick={onBack}
                   className="pf-m-disabled"
                 >
-                  {t("common:back")}
+                  {t("back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               </>
             );
@@ -131,13 +131,13 @@ export const UserFederationLdapWizard = () => {
             return (
               <>
                 <Button variant="primary" type="submit" onClick={onNext}>
-                  {t("common:next")}
+                  {t("next")}
                 </Button>
                 <Button variant="secondary" onClick={onBack}>
-                  {t("common:back")}
+                  {t("back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               </>
             );
@@ -147,12 +147,12 @@ export const UserFederationLdapWizard = () => {
             return (
               <>
                 {/* TODO: close the wizard and finish */}
-                <Button>{t("common:finish")}</Button>
+                <Button>{t("finish")}</Button>
                 <Button variant="secondary" onClick={onBack}>
-                  {t("common:back")}
+                  {t("back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               </>
             );
@@ -165,11 +165,9 @@ export const UserFederationLdapWizard = () => {
                 Back
               </Button>
               {/* TODO: validate last step and finish */}
-              <Button variant="link">
-                {t("common:skipCustomizationAndFinish")}
-              </Button>
+              <Button variant="link">{t("skipCustomizationAndFinish")}</Button>
               <Button variant="link" onClick={onClose}>
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </>
           );

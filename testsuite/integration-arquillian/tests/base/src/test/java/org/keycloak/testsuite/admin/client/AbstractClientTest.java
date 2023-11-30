@@ -52,7 +52,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm("test");
-        accountPage.setAuthRealm("test");
+        oauth.realm("test");
     }    
 
     @Before

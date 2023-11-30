@@ -1,4 +1,4 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   ActionGroup,
   Alert,
@@ -38,7 +38,7 @@ export function UserDataTableAttributeSearchForm({
   createAttributeSearchChips,
   searchUserWithAttributes,
 }: UserDataTableAttributeSearchFormProps) {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert } = useAlerts();
   const [selectAttributeKeyOpen, setSelectAttributeKeyOpen] = useState(false);
 
@@ -120,7 +120,7 @@ export function UserDataTableAttributeSearchForm({
 
   const clearActiveFilters = () => {
     const filtered = [...activeFilters].filter(
-      (chip) => chip.name !== chip.name
+      (chip) => chip.name !== chip.name,
     );
     setActiveFilters(filtered);
   };
@@ -171,7 +171,7 @@ export function UserDataTableAttributeSearchForm({
       return (
         <KeycloakTextInput
           id="name"
-          placeholder={t("common:keyPlaceholder")}
+          placeholder={t("keyPlaceholder")}
           validated={errors.name && "error"}
           onKeyDown={(e) => e.key === "Enter" && addToFilter()}
           {...register("name", {
@@ -186,20 +186,21 @@ export function UserDataTableAttributeSearchForm({
   return (
     <Form className="user-attribute-search-form">
       <TextContent className="user-attribute-search-form-headline">
-        <Text component={TextVariants.h6}>{t("selectAttributes")}</Text>
+        <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
       </TextContent>
       <Alert
         isInline
         className="user-attribute-search-form-alert"
         variant="info"
         title={t("searchUserByAttributeDescription")}
+        component="h3"
       />
       <TextContent className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h6}>{t("common:key")}</Text>
+          <Text component={TextVariants.h3}>{t("key")}</Text>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h6}>{t("common:value")}</Text>
+          <Text component={TextVariants.h3}>{t("value")}</Text>
         </div>
       </TextContent>
       <div className="user-attribute-search-form-left">
@@ -209,7 +210,7 @@ export function UserDataTableAttributeSearchForm({
         <InputGroup>
           <KeycloakTextInput
             id="value"
-            placeholder={t("common:valuePlaceholder")}
+            placeholder={t("valuePlaceholder")}
             validated={errors.value && "error"}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -226,6 +227,7 @@ export function UserDataTableAttributeSearchForm({
             variant="control"
             icon={<CheckIcon />}
             onClick={addToFilter}
+            aria-label={t("addToFilter")}
           />
         </InputGroup>
       </div>
@@ -238,7 +240,7 @@ export function UserDataTableAttributeSearchForm({
           isDisabled={!activeFilters.length}
           onClick={searchUserWithAttributes}
         >
-          {t("common:search")}
+          {t("search")}
         </Button>
         <Button
           variant={ButtonVariant.link}
@@ -247,7 +249,7 @@ export function UserDataTableAttributeSearchForm({
             clearActiveFilters();
           }}
         >
-          {t("common:reset")}
+          {t("reset")}
         </Button>
       </ActionGroup>
     </Form>

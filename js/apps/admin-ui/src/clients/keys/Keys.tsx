@@ -41,7 +41,7 @@ type KeysProps = {
 const attr = "jwt.credential";
 
 export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -66,7 +66,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   useFetch(
     () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
     (info) => setKeyInfo(info),
-    [key]
+    [key],
   );
 
   const generate = async (config: KeyStoreConfig) => {
@@ -76,16 +76,16 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
           id: clientId,
           attr,
         },
-        config
+        config,
       );
       saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${getFileExtension(config.format ?? "")}`
+        `keystore.${getFileExtension(config.format ?? "")}`,
       );
       addAlert(t("generateSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -102,12 +102,12 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
 
       await adminClient.clients.uploadCertificate(
         { id: clientId, attr },
-        formData
+        formData,
       );
       addAlert(t("importSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("clients:importError", error);
+      addError("importError", error);
     }
   };
 
@@ -144,8 +144,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               fieldId="useJwksUrl"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:useJwksUrl")}
-                  fieldLabelId="clients:useJwksUrl"
+                  helpText={t("useJwksUrlHelp")}
+                  fieldLabelId="useJwksUrl"
                 />
               }
             >
@@ -156,8 +156,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   <Switch
                     data-testid="useJwksUrl"
                     id="useJwksUrl-switch"
-                    label={t("common:on")}
-                    labelOff={t("common:off")}
+                    label={t("on")}
+                    labelOff={t("off")}
                     isChecked={field.value === "true"}
                     onChange={(value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
@@ -177,8 +177,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 fieldId="jwksUrl"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:jwksUrl")}
-                    fieldLabelId="clients:jwksUrl"
+                    helpText={t("jwksUrlHelp")}
+                    fieldLabelId="jwksUrl"
                   />
                 }
               >
@@ -186,7 +186,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   id="jwksUrl"
                   type="url"
                   {...register(
-                    convertAttributeNameToForm("attributes.jwks.url")
+                    convertAttributeNameToForm("attributes.jwks.url"),
                   )}
                 />
               </FormGroup>
@@ -197,7 +197,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 onClick={save}
                 isDisabled={!isDirty}
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
               <Button
                 data-testid="generate"

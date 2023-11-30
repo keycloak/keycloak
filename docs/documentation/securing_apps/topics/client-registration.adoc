@@ -39,8 +39,8 @@ The recommended approach to registering new clients is by using initial access t
 An initial access token can only be used to create clients and has a configurable expiration as well as a configurable limit on how many clients can be created. 
 
 An initial access token can be created through the admin console.
-To create a new initial access token first select the realm in the admin console, then click on `Realm Settings` in the menu on the left, followed by
-`Client Registration` in the tabs displayed in the page. Then finally click on `Initial Access Tokens` sub-tab.
+To create a new initial access token first select the realm in the admin console, then click on `Client` in the menu on the left, followed by
+`Initial access token` in the tabs displayed in the page.
 
 You will now be able to see any existing initial access tokens. If you have access you can delete tokens that are no longer required. You can only retrieve the
 value of the token when you are creating it. To create a new token click on `Create`. You can now optionally add how long the token should be valid, also how

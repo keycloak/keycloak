@@ -18,15 +18,19 @@ package org.keycloak.broker.provider;
 
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Pedro Igor
  */
-public interface IdentityProviderFactory<T extends IdentityProvider> extends ProviderFactory<T> {
+public interface IdentityProviderFactory<T extends IdentityProvider> extends ProviderFactory<T>, ConfiguredProvider {
 
     /**
      * <p>A friendly name for this factory.</p>
@@ -64,4 +68,10 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * @return the provider specific instance
      */
     IdentityProviderModel createConfig();
+
+    default List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
+    }
+
+    default String getHelpText() { return ""; }
 }

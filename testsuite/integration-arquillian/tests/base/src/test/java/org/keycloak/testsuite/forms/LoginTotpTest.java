@@ -22,10 +22,16 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
-import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel.SecretEncoding;
+import org.keycloak.models.credential.dto.OTPCredentialData;
+import org.keycloak.models.credential.dto.OTPSecretData;
+import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -40,15 +46,17 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.util.JsonSerialization;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.List;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -232,5 +240,47 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
         } finally {
             httpClient.close();
         }
+    }
+
+    @Test
+    public void testBase32EncodedSecret() throws IOException {
+        UserRepresentation userRep = testRealm().users().search("test-user@localhost").get(0);
+        UserResource user = testRealm().users().get(userRep.getId());
+        List<CredentialRepresentation> credentials = user.credentials();
+        CredentialRepresentation otpCredential = credentials.stream()
+                .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
+                .findAny().orElse(null);
+
+        Assert.assertNotNull(otpCredential);
+
+        OTPCredentialData credentialData = JsonSerialization.readValue(otpCredential.getCredentialData(), OTPCredentialData.class);
+        OTPCredentialData newCredentialData = new OTPCredentialData(credentialData.getSubType(), credentialData.getDigits(), credentialData.getCounter(), credentialData.getPeriod(), credentialData.getAlgorithm(),
+                SecretEncoding.BASE32.name());
+        UserRepresentation newUser = UserBuilder.create().username("test-otp-user@localhost").password("password").enabled(true).build();
+        CredentialRepresentation credential = new CredentialRepresentation();
+
+        credential.setType(otpCredential.getType());
+        credential.setTemporary(false);
+        credential.setUserLabel("my-otp");
+        credential.setCredentialData(JsonSerialization.writeValueAsString(newCredentialData));
+
+        String rawSecret = "JXGDDKNLXTBKGTA2KV6QJGAF4SS4R75X";
+
+        credential.setSecretData(JsonSerialization.writeValueAsString(new OTPSecretData(rawSecret)));
+
+        newUser.getCredentials().add(credential);
+
+        testRealm().users().create(newUser).close();
+
+        loginPage.open();
+        loginPage.login(newUser.getUsername(), "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
+        loginTotpPage.login(totp.generateTOTP(Base32.decode(rawSecret)));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 }

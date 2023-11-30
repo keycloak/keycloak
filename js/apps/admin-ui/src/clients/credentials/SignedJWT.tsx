@@ -10,15 +10,22 @@ import {
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "ui-shared";
-import { convertAttributeNameToForm, sortProviders } from "../../util";
+import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
-export const SignedJWT = () => {
+type SignedJWTProps = {
+  clientAuthenticatorType: string;
+};
+
+export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
   const { control } = useFormContext();
-  const providers = sortProviders(
-    useServerInfo().providers!.clientSignature.providers
-  );
-  const { t } = useTranslation("clients");
+  const { cryptoInfo } = useServerInfo();
+  const providers =
+    clientAuthenticatorType === "client-jwt"
+      ? cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? []
+      : cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
+
+  const { t } = useTranslation();
 
   const [open, isOpen] = useState(false);
   return (
@@ -27,14 +34,14 @@ export const SignedJWT = () => {
       fieldId="kc-signature-algorithm"
       labelIcon={
         <HelpItem
-          helpText={t("clients-help:signature-algorithm")}
-          fieldLabelId="clients:signatureAlgorithm"
+          helpText={t("signatureAlgorithmHelp")}
+          fieldLabelId="signatureAlgorithm"
         />
       }
     >
       <Controller
         name={convertAttributeNameToForm<FormFields>(
-          "attributes.token.endpoint.auth.signing.alg"
+          "attributes.token.endpoint.auth.signing.alg",
         )}
         defaultValue=""
         control={control}

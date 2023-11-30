@@ -193,7 +193,7 @@ public class UserCredentialModel implements CredentialInput {
         this.algorithm = algorithm;
     }
 
-    public void setNote(String key, String value) {
+    public void setNote(String key, Object value) {
         this.notes.put(key, value);
     }
 

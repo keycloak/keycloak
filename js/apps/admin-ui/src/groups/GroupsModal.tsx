@@ -18,7 +18,7 @@ import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTex
 
 type GroupsModalProps = {
   id?: string;
-  rename?: string;
+  rename?: GroupRepresentation;
   handleModalToggle: () => void;
   refresh: (group?: GroupRepresentation) => void;
 };
@@ -29,14 +29,14 @@ export const GroupsModal = ({
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: { name: rename },
+    defaultValues: { name: rename?.name },
   });
 
   const submitForm = async (group: GroupRepresentation) => {
@@ -46,19 +46,24 @@ export const GroupsModal = ({
       if (!id) {
         await adminClient.groups.create(group);
       } else if (rename) {
-        await adminClient.groups.update({ id }, group);
+        await adminClient.groups.update(
+          { id },
+          { ...rename, name: group.name },
+        );
       } else {
-        await adminClient.groups.setOrCreateChild({ id }, group);
+        await (group.id
+          ? adminClient.groups.updateChildGroup({ id }, group)
+          : adminClient.groups.createChildGroup({ id }, group));
       }
 
-      refresh(rename ? group : undefined);
+      refresh(rename ? { ...rename, name: group.name } : undefined);
       handleModalToggle();
       addAlert(
         t(rename ? "groupUpdated" : "groupCreated"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
-      addError("groups:couldNotCreateGroup", error);
+      addError("couldNotCreateGroup", error);
     }
   };
 
@@ -87,16 +92,16 @@ export const GroupsModal = ({
             handleModalToggle();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
         <FormGroup
           name="create-modal-group"
-          label={t("common:name")}
+          label={t("name")}
           fieldId="create-group-name"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }

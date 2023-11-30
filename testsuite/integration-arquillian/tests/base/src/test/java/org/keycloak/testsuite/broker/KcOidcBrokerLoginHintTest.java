@@ -3,6 +3,7 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -115,7 +116,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
             idpConfirmLinkPage.clickLinkAccount();
 
             loginPage.login(bc.getUserPassword());
-            accountPage.isCurrent();
+            assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
         }
     }
 }

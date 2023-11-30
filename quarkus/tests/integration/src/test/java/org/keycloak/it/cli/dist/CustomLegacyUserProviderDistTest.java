@@ -23,7 +23,6 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
-import com.acme.provider.legacy.jpa.entity.CustomLegacyJpaEntityProvider;
 import com.acme.provider.legacy.jpa.user.CustomLegacyUserProvider;
 
 import io.quarkus.test.junit.main.Launch;
@@ -36,7 +35,7 @@ public class CustomLegacyUserProviderDistTest {
 
     @Test
     @TestProvider(CustomLegacyUserProvider.class)
-    @Launch({ "start-dev", "--spi-user-provider=custom_jpa --spi-user-jpa-enabled=false" })
+    @Launch({ "start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false" })
     void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("KC-SERVICES0047: custom_jpa (com.acme.provider.legacy.jpa.user.MyUserProviderFactory) is implementing the internal SPI user. This SPI is internal and may change without notice");

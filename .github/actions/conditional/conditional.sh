@@ -1,27 +1,22 @@
 #!/bin/bash -e
 
-REMOTE="$1"
-BASE_REF="$2"
-
+REPOSITORY="$1"
+REF="$2"
 CONDITIONS_FILE=".github/actions/conditional/conditions"
 
-[ "$BASE_REF" != "" ] && IS_PR=true || IS_PR=false
-[ "$GITHUB_OUTPUT" != "" ] && IS_GITHUB_ACTIONS=true || IS_GITHUB_ACTIONS=false
+if [[ "$REF" =~ refs/pull/([0-9]+)/merge ]]; then
+  PR=$(echo $REF | cut -f 3 -d '/')
+  IS_PR=true
+else
+  IS_PR=false
+fi
 
 if [ "$IS_PR" == true ]; then
-  # Fetch remote if running on GitHub Actions
-  if [ "$IS_GITHUB_ACTIONS" == true ]; then
-    echo "========================================================================================"
-    echo "Fetching '$BASE_REF' in '$(git remote get-url "$REMOTE")'"
-    echo "--------------------------------------------------------------------------------"
-    git fetch --depth 1 "$REMOTE" "$BASE_REF"
-  fi
-
-  # Get list of changes files
   echo "========================================================================================"
-  echo "Changes compared to '$BASE_REF' in '$(git remote get-url "$REMOTE")'"
+  echo "Changes in PR: $PR"
   echo "----------------------------------------------------------------------------------------"
-  CHANGED_FILES=$(git diff "$REMOTE/$BASE_REF" --name-only)
+
+  CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$PR/files --jq .[].filename)
   echo "$CHANGED_FILES"
 fi
 
@@ -43,12 +38,12 @@ for C in "${CONDITIONS[@]}"; do
   if [ "$IS_PR" == true ]; then
     PATTERN="${CONDITION[0]}"
 
+    if [[ "$PATTERN" =~ testsuite::* ]]; then
+      PATTERN=$(cat testsuite/integration-arquillian/tests/base/testsuites/database-suite | grep -v -e '^[[:space:]]*$' | sed -z 's/\n$//g' | sed -z 's/\n/|/g' | sed 's/\./\//g' | sed 's/\*\*/*/g')
+    fi
+
     # Convert pattern to regex
     REGEX="$PATTERN"
-    #REGEX=$(echo "$PATTERN" | sed 's|\.|\\.|g' | sed 's|/$|/.*|g' | sed 's|^*|.*|g')
-
-    # Escape '/' characters
-    REGEX=$(echo "$REGEX" | sed 's|\/|\\/|g')
 
     # Escape '.' to make it match the '.' character only
     REGEX=$(echo "$REGEX" | sed 's|\.|\\.|g')
@@ -60,8 +55,8 @@ for C in "${CONDITIONS[@]}"; do
     REGEX=$(echo "$REGEX" | sed 's|/$|/.*|g')
 
     # If no directory separators allow any directory structure before
-    if ( echo "$REGEX" | grep -v -E '\/' &>/dev/null ); then
-      REGEX="(.*\/)?$REGEX"
+    if ( echo "$REGEX" | grep -v -E '/' &>/dev/null ); then
+      REGEX="(.*/)?$REGEX"
     fi
 
     # Check if changed files matches regex
@@ -98,7 +93,7 @@ do
   echo "$JOB=${JOB_CONDITIONS[$JOB]}"
 
   # Set output for GitHub job
-  if [ "$IS_GITHUB_ACTIONS" == true ]; then
-      echo "$JOB=${JOB_CONDITIONS[$JOB]}" >> $GITHUB_OUTPUT
+  if [ "$GITHUB_OUTPUT" != "" ]; then
+    echo "$JOB=${JOB_CONDITIONS[$JOB]}" >> $GITHUB_OUTPUT
   fi
 done

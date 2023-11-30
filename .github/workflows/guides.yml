@@ -8,13 +8,9 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
-
 concurrency:
   # Only cancel jobs for PR updates
-  group: guides-${{ github.head_ref || github.run_id }}
+  group: guides-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -25,16 +21,17 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       guides: ${{ steps.conditional.outputs.guides }}
       ci: ${{ steps.conditional.outputs.ci }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -43,38 +40,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-  check-set-status:
-    name: Set check conclusion
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
   check:
     name: Status Check - Keycloak Guides
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    if: always()
     needs:
       - conditional
-      - check-set-status
+      - build
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.guides == 'true' && needs.conditional.outputs.ci != 'true' }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}
