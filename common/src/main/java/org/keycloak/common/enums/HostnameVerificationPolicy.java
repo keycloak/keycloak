@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.truststore;
+package org.keycloak.common.enums;
 
 public enum HostnameVerificationPolicy {
 

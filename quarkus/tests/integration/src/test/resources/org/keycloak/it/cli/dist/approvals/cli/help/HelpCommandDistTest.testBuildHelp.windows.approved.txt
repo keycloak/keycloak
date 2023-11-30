@@ -60,7 +60,7 @@ Feature:
                        preview, recovery-codes, scripts, step-up-authentication, token-exchange,
                        transient-users, update-email, web-authn.
 
-HTTP/TLS:
+HTTP(S):
 
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a

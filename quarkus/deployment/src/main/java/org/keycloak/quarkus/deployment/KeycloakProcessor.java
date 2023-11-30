@@ -230,6 +230,13 @@ class KeycloakProcessor {
         recorder.configureProfile(profile.getName(), profile.getFeatures());
     }
 
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void configureTruststore(KeycloakRecorder recorder) {
+        recorder.configureTruststore();
+    }
+
     /**
      * Check whether JDBC driver is present for the specified DB
      *
