@@ -400,10 +400,6 @@ spec:
             path: /
             pathType: ImplementationSpecific
 ---
-
-# Source: keycloak/templates/cockroach-operator/cockroach-operator.yaml
-# sourced from https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/install/operator.yaml
----
 # Source: keycloak/templates/keycloak.yaml
 # There are several callouts in this YAML marked with `# <1>' etc. See 'running/keycloak-deployment.adoc` for the details.
 # tag::keycloak[]
@@ -431,11 +427,14 @@ spec:
     passwordSecret:
       name: keycloak-db-secret
       key: password
+  features:
+    enabled:
+      - multi-site # <2>
   # tag::keycloak-ispn[]
   additionalOptions:
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <2>
+    - name: metrics-enabled # <3>
       value: 'true'
   http:
     tlsSecret: keycloak-tls-secret
@@ -457,7 +456,7 @@ spec:
         containers:
           - env:
               # end::keycloak-ispn[]
-              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <3>
+              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <4>
                 value: "66"
               # end::keycloak[]
               # tag::keycloak-queue-size[]
@@ -479,7 +478,7 @@ spec:
                     optional: false
                 # tag::keycloak[]
               # tag::keycloak-ispn[]
-              - name: JAVA_OPTS_APPEND # <4>
+              - name: JAVA_OPTS_APPEND # <5>
                 value: >
                   -Xms512m -Xmx1524m -Djgroups.thread_dumps_threshold=1
 
