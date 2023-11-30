@@ -12,3 +12,9 @@ import AuthZ from 'keycloak-js/dist/keycloak-authz.js';
 import Keycloak from 'keycloak-js';
 import AuthZ from 'keycloak-js/authz';
 ----
+
+= Truststore Changes
+
+The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated, please use the new default location for truststore material, `conf/truststores`, or specify your desired paths via the `truststore-paths` option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.

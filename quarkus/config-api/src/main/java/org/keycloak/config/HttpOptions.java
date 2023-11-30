@@ -89,17 +89,17 @@ public class HttpOptions {
 
     public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
             .category(OptionCategory.HTTP)
-            .description("The trust store which holds the certificate information of the certificates to trust.")
+            .description("DEPRECATED: The trust store which holds the certificate information of the certificates to trust.")
             .build();
 
     public static final Option HTTPS_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-trust-store-password", String.class)
             .category(OptionCategory.HTTP)
-            .description("The password of the trust store file.")
+            .description("DEPRECATED: The password of the trust store file.")
             .build();
 
     public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
             .category(OptionCategory.HTTP)
-            .description("The type of the trust store file. " +
+            .description("DEPRECATED: The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();

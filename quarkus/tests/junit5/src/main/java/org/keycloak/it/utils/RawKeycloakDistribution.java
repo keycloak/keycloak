@@ -258,11 +258,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
+        Exception ex = null;
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 throw new IllegalStateException(
-                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
 
             if (!keycloak.isAlive()) {
@@ -287,6 +288,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                     break;
                 }
             } catch (Exception ignore) {
+                ex = ignore;
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -314,12 +316,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
         TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
             }
