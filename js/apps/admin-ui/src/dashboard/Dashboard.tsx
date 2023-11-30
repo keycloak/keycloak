@@ -30,7 +30,6 @@ import FeatureRepresentation, {
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../util";
 import { HelpItem } from "ui-shared";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -163,12 +162,6 @@ const Dashboard = () => {
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             {serverInfo.systemInfo?.version}
-                          </DescriptionListDescription>
-                          <DescriptionListTerm>
-                            {t("product")}
-                          </DescriptionListTerm>
-                          <DescriptionListDescription>
-                            {toUpperCase(serverInfo.profileInfo?.name!)}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
