@@ -35,6 +35,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 
@@ -314,6 +315,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     values = (List<String>) value;
                 }
 
+                if (UserModel.USERNAME.equals(key) || UserModel.EMAIL.equals(key)) {
+                    values = values.stream().map(KeycloakModelUtils::toLowerCaseSafe).collect(Collectors.toList());
+                }
+
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
         }
@@ -347,7 +352,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         if (!email.isEmpty() && realm.isRegistrationEmailAsUsername()) {
             List<String> lowerCaseEmailList = email.stream()
                     .filter(Objects::nonNull)
-                    .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
             setUserName(newAttributes, lowerCaseEmailList);
