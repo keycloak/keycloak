@@ -160,7 +160,7 @@
       </div>
     </div>
 </div>
-<div class="${properties.kcTerms!}">
+<div class="${properties.kcTerms!}" style="display: flex;justify-content: center;margin-top: 1rem;font-size: 1rem;">
     <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/terms-of-service" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
     <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/privacy-policy" target="_blank">Privacy Policy</a>
 </div>
