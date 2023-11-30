@@ -6,28 +6,62 @@ import {
 } from "../components/key-value-form/key-value-convert";
 
 export type UserFormFields = Omit<
-  UserRepresentation,
-  "attributes" | "userProfileMetadata"
+  UIUserRepresentation,
+  "attributes" | "userProfileMetadata | unmanagedAttributes"
 > & {
   attributes?: KeyValueType[] | Record<string, string | string[]>;
+  unmanagedAttributes?: KeyValueType[] | Record<string, string | string[]>;
 };
 
+export interface UIUserRepresentation extends UserRepresentation {
+  unmanagedAttributes?: Record<string, string[]>;
+}
+
 export function toUserFormFields(
-  data: UserRepresentation,
+  data: UIUserRepresentation,
   userProfileEnabled: boolean,
 ): UserFormFields {
   const attributes = userProfileEnabled
     ? data.attributes
     : arrayToKeyValue(data.attributes);
-
-  return { ...data, attributes };
+  const unmanagedAttributes = arrayToKeyValue(data.unmanagedAttributes);
+  return { ...data, attributes, unmanagedAttributes };
 }
 
-export function toUserRepresentation(data: UserFormFields): UserRepresentation {
+export function toUserRepresentation(
+  data: UserFormFields,
+): UIUserRepresentation {
   const username = data.username?.trim();
   const attributes = Array.isArray(data.attributes)
     ? keyValueToArray(data.attributes)
     : data.attributes;
+  const unmanagedAttributes = Array.isArray(data.unmanagedAttributes)
+    ? keyValueToArray(data.unmanagedAttributes)
+    : data.unmanagedAttributes;
 
-  return { ...data, username, attributes };
+  for (const key in unmanagedAttributes) {
+    if (attributes && Object.hasOwn(attributes, key)) {
+      throw Error(
+        `Attribute ${key} is a managed attribute and is already available from the user details.`,
+      );
+    }
+  }
+
+  return {
+    ...data,
+    username,
+    attributes: { ...unmanagedAttributes, ...attributes },
+    unmanagedAttributes: undefined,
+  };
+}
+
+export function filterManagedAttributes(
+  attributes: Record<string, string[]> = {},
+  unmanagedAttributes: Record<string, string[]> = {},
+) {
+  return Object.fromEntries(
+    Object.entries(attributes).filter(
+      ([key]) => !Object.hasOwn(unmanagedAttributes, key),
+    ),
+  );
 }

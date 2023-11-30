@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -39,7 +40,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SslMailServer;
-import org.keycloak.truststore.HostnameVerificationPolicy;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
