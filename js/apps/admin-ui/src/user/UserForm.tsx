@@ -397,7 +397,7 @@ export const UserForm = ({
           component={
             !user?.id
               ? (props) => (
-                  <Link {...props} to={toUsers({ realm: realm.id! })} />
+                  <Link {...props} to={toUsers({ realm: realm.realm! })} />
                 )
               : undefined
           }
