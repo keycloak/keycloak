@@ -1757,4 +1757,20 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertTrue(profile.getAttributes().contains(UserModel.FIRST_NAME));
         assertTrue(profile.getAttributes().contains(UserModel.LAST_NAME));
     }
+
+    @Test
+    public void testAttributeNormalization() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeNormalization);
+    }
+
+    private static void testAttributeNormalization(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, "TesT");
+        attributes.put(UserModel.EMAIL, "TesT@TesT.org");
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        Attributes profileAttributes = profile.getAttributes();
+        assertEquals(attributes.get(UserModel.USERNAME).toLowerCase(), profileAttributes.getFirstValue(UserModel.USERNAME));
+        assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirstValue(UserModel.EMAIL));
+    }
 }
