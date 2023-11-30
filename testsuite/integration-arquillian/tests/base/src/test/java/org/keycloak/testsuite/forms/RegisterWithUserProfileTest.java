@@ -223,7 +223,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         registerPage.assertCurrent();
         assertEquals("Length must be between 3 and 255.", registerPage.getInputAccountErrors().getLastNameError());
 
-        events.expectRegister("registerUserInvalidLastNameLength", "registerUserInvalidLastNameLength@email")
+        events.expectRegister("registeruserinvalidlastnamelength", "registeruserinvalidlastnamelength@email")
                 .error("invalid_registration").assertEvent();
     }
 
