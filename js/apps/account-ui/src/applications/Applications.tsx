@@ -128,15 +128,22 @@ const Applications = () => {
                 className="pf-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
-                    <Button
-                      className="pf-u-pl-0 title-case"
-                      component="a"
-                      variant="link"
-                      onClick={() => window.open(application.effectiveUrl)}
-                    >
-                      {application.clientName || application.clientId}{" "}
-                      <ExternalLinkAltIcon />
-                    </Button>
+                    {application.effectiveUrl && (
+                      <Button
+                        className="pf-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        onClick={() => window.open(application.effectiveUrl)}
+                      >
+                        {application.clientName || application.clientId}{" "}
+                        <ExternalLinkAltIcon />
+                      </Button>
+                    )}
+                    {!application.effectiveUrl && (
+                      <span>
+                        {application.clientName || application.clientId}
+                      </span>
+                    )}
                   </DataListCell>,
                   <DataListCell
                     width={2}
