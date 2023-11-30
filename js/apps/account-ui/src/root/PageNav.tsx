@@ -18,6 +18,7 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
+import { ContentMenu } from "../content/ContentRenderer";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
 
@@ -79,6 +80,7 @@ export const PageNav = () => (
     nav={
       <Nav>
         <NavList>
+          <ContentMenu />
           {menuItems
             .filter((menuItem) => !menuItem.isHidden)
             .map((menuItem) => (
@@ -138,7 +140,7 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
-const NavLink = ({
+export const NavLink = ({
   to,
   isActive,
   children,
