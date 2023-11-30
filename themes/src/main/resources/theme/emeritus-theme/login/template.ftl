@@ -51,7 +51,7 @@
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
-        <img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
+        <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com" target="_blank"><img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/></a>
         </div>
     </div>
     <div class="${properties.kcFormCardClass!}">
@@ -158,9 +158,12 @@
           </#if>
         </div>
       </div>
-
     </div>
-  </div>
+</div>
+<div class="${properties.kcTerms!}">
+    <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/terms-of-service" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
+    <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/privacy-policy" target="_blank">Privacy Policy</a>
+</div>
 </body>
 </html>
 </#macro>
