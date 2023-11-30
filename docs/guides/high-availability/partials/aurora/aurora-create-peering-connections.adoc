@@ -23,14 +23,12 @@ vpc-0b40bd7c59dbe4277
 .Command:
 [source,bash]
 ----
-<#noparse>
 NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/worker -o jsonpath='{.items[0].metadata.name}')
 aws ec2 describe-instances \
   --filters "Name=private-dns-name,Values=${NODE}" \
   --query 'Reservations[0].Instances[0].VpcId' \
   --region eu-west-1 \
   --output text
-</#noparse>
 ----
 +
 .Output:
