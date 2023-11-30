@@ -57,9 +57,9 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 </@tmpl.guide>
 
-== Loadbalancer
+== Load balancer
 
-A loadbalancer which checks the `/health/live` URl of the {project_name} deployment in each site.
+A load balancer which checks the `/lb-check` URl of the {project_name} deployment in each site.
 
 *Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>.
 

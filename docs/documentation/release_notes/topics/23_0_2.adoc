@@ -1,0 +1,11 @@
+= Non-blocking health check for load balancers
+
+A new health check endpoint available at `/lb-check` was added.
+The execution is running in the event loop which means this check is responsive also in overloaded situations when Keycloak needs to handle many requests waiting in request queue.
+This behavior is useful, for example, in multi-site deployment where we do not want to fail over to the other site under heavy load.
+The endpoint is currently checking availability of the embedded and external Infinispan caches. Other checks may be added later.
+
+
+This endpoint is not available by default.
+To enable it, run Keycloak with feature `multi-site`.
+Proceed to https://www.keycloak.org/server/features[Enabling and disabling features] guide for more details.
