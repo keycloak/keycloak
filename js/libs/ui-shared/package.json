@@ -40,13 +40,15 @@
     }
   },
   "dependencies": {
+    "@keycloak/keycloak-admin-client": "workspace:*",
     "@patternfly/react-core": "^4.278.0",
     "@patternfly/react-icons": "^4.93.7",
-    "@keycloak/keycloak-admin-client": "workspace:*",
+    "i18next": "^23.7.6",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "7.48.2"
+    "react-hook-form": "7.48.2",
+    "react-i18next": "^13.5.0"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",

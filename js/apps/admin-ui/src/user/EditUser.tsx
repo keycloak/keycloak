@@ -14,11 +14,13 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
+import { TFunction } from "i18next";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { isUserProfileError, setUserProfileServerError } from "ui-shared";
+
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -158,9 +160,8 @@ export default function EditUser() {
       refresh();
     } catch (error) {
       if (isUserProfileError(error)) {
-        setUserProfileServerError(error, form.setError, (key, param) =>
-          t(key as string, { ...param }),
-        );
+        setUserProfileServerError(error, form.setError, ((key, param) =>
+          t(key as string, param as any)) as TFunction);
       } else {
         addError("userCreateError", error);
       }
