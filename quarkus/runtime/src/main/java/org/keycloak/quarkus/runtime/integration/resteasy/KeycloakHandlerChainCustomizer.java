@@ -17,7 +17,9 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import static jakarta.ws.rs.HttpMethod.PATCH;
 import static jakarta.ws.rs.HttpMethod.POST;
+import static jakarta.ws.rs.HttpMethod.PUT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +53,10 @@ public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomi
 
         switch (phase) {
             case BEFORE_METHOD_INVOKE:
-                if (POST.equalsIgnoreCase(resourceMethod.getHttpMethod())) {
+                if (!resourceMethod.isFormParamRequired() && 
+                    (PATCH.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
+                     POST.equalsIgnoreCase(resourceMethod.getHttpMethod()) ||
+                     PUT.equalsIgnoreCase(resourceMethod.getHttpMethod()))) {
                     handlers.add(formBodyHandler);
                 }
                 handlers.add(TRANSACTIONAL_SESSION_HANDLER);
