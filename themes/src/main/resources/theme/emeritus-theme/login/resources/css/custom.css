@@ -152,6 +152,7 @@ div.kc-logo-text span {
   width: 145.333px;
   height: 40px;
   object-fit: contain;
+  cursor: pointer;
 }
 
 #kc-content {
@@ -213,6 +214,9 @@ div.kc-logo-text span {
 
 #kc-info {
   margin-top: 20px;
+  @media (max-width: 767px) {
+    margin-bottom: 20px;
+  }
 }
 
 #kc-info-wrapper {
@@ -432,7 +436,7 @@ ul#kc-totp-supported-apps {
     padding-left: 15px;
     padding-right: 15px;
     float: none;
-    text-align: left;
+    text-align: center;
   }
 
   div.kc-logo-text {
@@ -678,6 +682,59 @@ ul#kc-totp-supported-apps {
   margin-top: 100px !important;
   padding-bottom: 2rem !important;
   overflow: hidden;
+  @media (max-width: 767px) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+.kc-login-footer {
+  background-color: #f8f8fa;
+  border: 1px solid #e5e5e5;
+  padding: 20px !important;
+  max-width: 856px;
+  margin: 0 auto;
+  border-radius: 4px;
+  @media (max-width: 767px) {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+    margin-bottom: 24px;
+  }
+}
+.kc-login-footer-title {
+  color: #1f7ead;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 140%;
+  margin-bottom: 8px;
+}
+
+.kc-login-footer-text {
+  color: #444444;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 160%;
+}
+.kc-login-footer-notice {
+  color: #444444;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 140%;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+.kc-login-footer-steps-label {
+  color: #222222;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 160%;
+  margin-bottom: 5px;
+}
+.kc-login-footer-margin {
+  min-height: 60px;
+  @media (max-width: 767px) {
+    min-height: 24px;
+  }
 }
 
 #kc-info-message .instruction {

@@ -51,7 +51,9 @@
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
-        <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com" target="_blank"><img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/></a>
+          <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com" target="_blank">
+            <img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
+           </a>
         </div>
     </div>
     <div class="${properties.kcFormCardClass!}">

@@ -112,3 +112,18 @@
     </#if>
 
 </@layout.registrationLayout>
+
+    <div class="kc-login-footer">
+    <div class="kc-login-footer-title">Important Notice</div>
+    <div class="kc-login-footer-text">We have recently made some changes to our login system, and your current password is no longer valid. To protect your account, we kindly request that you reset your password.</div>
+    <div class="kc-login-footer-notice">This is a one-time action, and you will not need to reset your password again unless you forget it. Once you have successfully reset your password, you will be able to log in using your new password.</div>
+    <div class="kc-login-footer-steps-label">To reset your password, follow these simple steps:</div>
+    <div class="kc-login-footer-text">1. Click on the "Forgot Password" link below the login form.</div>
+    <div class="kc-login-footer-text">2. Enter your registered email address and click on the "Reset Password" button.</div>
+    <div class="kc-login-footer-text">3. Check your email inbox for a password reset message from us.</div>
+    <div class="kc-login-footer-text">4. Click on the link provided in the email to proceed with the password reset process.</div>
+    <div class="kc-login-footer-text">5. Create a new strong password and confirm it.</div>
+    <div class="kc-login-footer-text">6. Click on the "Reset Password" button to finalize the process.</div>
+    </div>
+    <div class="kc-login-footer-margin"></div>
+
