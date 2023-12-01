@@ -21,9 +21,6 @@ package org.keycloak.userprofile;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes;
-import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
-
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,19 +34,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
@@ -73,16 +64,11 @@ import org.keycloak.validate.ValidatorConfig;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<UserProfileProvider>
-        implements AmphibianProviderFactory<UserProfileProvider> {
+public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
-    public static final String ID = "declarative-user-profile";
-    public static final int PROVIDER_PRIORITY = 1;
     public static final String UP_COMPONENT_CONFIG_KEY = "kc.user.profile.config";
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
-    private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
-    
-    private static boolean isDeclarativeConfigurationEnabled;
+    protected static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata"; // TODO:mposolda should it be here or rather on factory?
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
@@ -105,30 +91,22 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return getRequestedClientScopes(requestedScopesString, client).map((csm) -> csm.getName()).anyMatch(configuredScopes::contains);
     }
 
-    protected String defaultRawConfig;
-    protected UPConfig parsedDefaultRawConfig;
+    private final KeycloakSession session;
+    private final boolean isDeclarativeConfigurationEnabled;
+    private final String providerId;
+    private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
+    private final String defaultRawConfig;
+    protected final UPConfig parsedDefaultRawConfig;
 
-    public DeclarativeUserProfileProvider() {
-        // factory create
+    public DeclarativeUserProfileProvider(KeycloakSession session, DeclarativeUserProfileProviderFactory factory) {
+        this.session = session;
+        this.providerId = factory.getId();
+        this.isDeclarativeConfigurationEnabled = factory.isDeclarativeConfigurationEnabled();
+        this.contextualMetadataRegistry = factory.getContextualMetadataRegistry();
+        this.defaultRawConfig = factory.getDefaultRawConfig();
+        this.parsedDefaultRawConfig = factory.getParsedDefaultRawConfig();
     }
 
-    public DeclarativeUserProfileProvider(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry, String defaultRawConfig, UPConfig parsedDefaultRawConfig) {
-        super(session, metadataRegistry);
-        this.defaultRawConfig = defaultRawConfig;
-        this.parsedDefaultRawConfig = parsedDefaultRawConfig;
-    }
-
-    @Override
-    public String getId() {
-        return ID;
-    }
-
-    @Override
-    protected UserProfileProvider create(KeycloakSession session, Map<UserProfileContext, UserProfileMetadata> metadataRegistry) {
-        return new DeclarativeUserProfileProvider(session, metadataRegistry, defaultRawConfig, parsedDefaultRawConfig);
-    }
-
-    @Override
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
         RealmModel realm = session.getContext().getRealm();
@@ -143,16 +121,59 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
-        if (isDeclarativeConfigurationEnabled) {
-            // default metadata for each context is based on the default realm configuration
-            return decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
-        }
-
-        return metadata;
+    public UserProfile create(UserProfileContext context, UserModel user) {
+        return createUserProfile(context, user.getAttributes(), user);
     }
 
     @Override
+    public UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
+        return createUserProfile(context, attributes, user);
+    }
+
+    @Override
+    public UserProfile create(UserProfileContext context, Map<String, ?> attributes) {
+        return createUserProfile(context, attributes, null);
+    }
+
+    private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
+        UserProfileMetadata metadata = configureUserProfile(contextualMetadataRegistry.get(context), session);
+        Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
+        return new DefaultUserProfile(metadata, profileAttributes, createUserFactory(), user, session);
+    }
+
+    /**
+     * Creates a {@link Function} for creating new users when the creating them using {@link UserProfile#create()}.
+     *
+     * @return a function for creating new users.
+     */
+    private Function<Attributes, UserModel> createUserFactory() {
+        return new Function<Attributes, UserModel>() {
+            private UserModel user;
+
+            @Override
+            public UserModel apply(Attributes attributes) {
+                if (user == null) {
+                    String userName = attributes.getFirstValue(UserModel.USERNAME);
+
+                    // fallback to email in case email is allowed
+                    if (userName == null) {
+                        userName = attributes.getFirstValue(UserModel.EMAIL);
+                    }
+
+                    user = session.users().addUser(session.getContext().getRealm(), userName);
+                }
+
+                return user;
+            }
+        };
+    }
+
+    /**
+     * Specifies how contextual profile metadata is configured at runtime.
+     *
+     * @param metadata the profile metadata
+     * @return the metadata
+     */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
         UserProfileContext context = metadata.getContext();
         UserProfileMetadata decoratedMetadata = metadata.clone();
@@ -185,35 +206,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         }
 
         return metadataMap.computeIfAbsent(context, createUserDefinedProfileDecorator(session, decoratedMetadata, component));
-    }
-
-    @Override
-    public String getHelpText() {
-        return null;
-    }
-
-    @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
-        String upConfigJson = getConfigJsonFromComponentModel(model);
-
-        if (!isBlank(upConfigJson)) {
-            try {
-                UPConfig upc = parseConfig(upConfigJson);
-                List<String> errors = UPConfigUtils.validate(session, upc);
-
-                if (!errors.isEmpty()) {
-                    throw new ComponentValidationException(errors.toString());
-                }
-            } catch (IOException e) {
-                throw new ComponentValidationException(e.getMessage(), e);
-            }
-        }
-
-        // delete cache so new config is parsed and applied next time it is required
-        // throught #configureUserProfile(metadata, session)
-        if (model != null) {
-            model.removeNote(PARSED_CONFIG_COMPONENT_KEY);
-        }
     }
 
     @Override
@@ -261,39 +253,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         realm.updateComponent(component);
     }
 
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return ProviderConfigurationBuilder.create()
-                .property().name(UP_COMPONENT_CONFIG_KEY)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .build();
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
-        defaultRawConfig = UPConfigUtils.readDefaultConfig();
-        try {
-            parsedDefaultRawConfig = parseConfig(defaultRawConfig);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to parse default user profile configuration", cause);
-        }
-        super.init(config);
-    }
-
-    @Override
-    public int order() {
-        return PROVIDER_PRIORITY;
-    }
-
     private Optional<ComponentModel> getComponentModel() {
         RealmModel realm = session.getContext().getRealm();
         return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
     }
 
     /**
-     * Decorate basic metadata provided from {@link AbstractUserProfileProvider} based on 'per realm' configuration.
+     * Decorate basic metadata based on 'per realm' configuration.
      * This method is called for each {@link UserProfileContext} in each realm, and metadata are cached then and this
      * method is called again only if configuration changes.
      */
@@ -479,7 +445,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected UPConfig getParsedConfig(String rawConfig) {
         if (!isBlank(rawConfig)) {
             try {
-                return parseConfig(rawConfig);
+                return UPConfigUtils.parseConfig(rawConfig);
             } catch (IOException e) {
                 throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
             }
@@ -488,17 +454,13 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return null;
     }
 
-    private UPConfig parseConfig(String rawConfig) throws IOException {
-        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
-    }
-
     /**
      * Create the component model to store configuration
      * @return component model
      */
     protected ComponentModel createComponentModel() {
         RealmModel realm = session.getContext().getRealm();
-        return realm.addComponentModel(new DeclarativeUserProfileModel(getId()));
+        return realm.addComponentModel(new DeclarativeUserProfileModel(providerId));
     }
 
     /**
@@ -529,6 +491,10 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     @Override
     public boolean isEnabled(RealmModel realm) {
         return isDeclarativeConfigurationEnabled && realm.getAttribute(REALM_USER_PROFILE_ENABLED, false);
+    }
+
+    @Override
+    public void close() {
     }
 
     private Function<UserProfileContext, UserProfileMetadata> createUserDefinedProfileDecorator(KeycloakSession session, UserProfileMetadata decoratedMetadata, ComponentModel component) {
