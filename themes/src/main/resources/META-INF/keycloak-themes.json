@@ -10,6 +10,6 @@
         "types": [ "account", "admin" ]
     },{
         "name":"emeritus-theme",
-        "types": ["login","common"]
+        "types": ["login", "common", "email"]
     }]
 }

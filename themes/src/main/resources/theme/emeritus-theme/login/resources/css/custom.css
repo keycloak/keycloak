@@ -57,10 +57,6 @@ textarea.pf-c-form-control {
   font-size: var(--pf-global--FontSize--xs);
 }
 
-p.instruction {
-  margin: 5px 0;
-}
-
 .pf-c-button.pf-m-control {
   border-radius: 4px;
   border: 1px solid #e5e5e5;
@@ -739,6 +735,25 @@ ul#kc-totp-supported-apps {
   @media (max-width: 767px) {
     min-height: 24px;
   }
+}
+
+#kc-info-message .instruction {
+  display: none;
+}
+
+#kc-info-message p {
+  font-size: 1rem;
+}
+
+.terms {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  font-size: 1rem;
+}
+
+#kc-error-message .instruction {
+  font-size: 1rem;
 }
 
 /* End Recovery codes */
