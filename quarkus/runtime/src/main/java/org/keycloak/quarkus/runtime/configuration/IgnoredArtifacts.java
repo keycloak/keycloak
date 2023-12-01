@@ -17,9 +17,13 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.database.Database;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
@@ -29,9 +33,12 @@ import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeature
 public class IgnoredArtifacts {
 
     public static Set<String> getDefaultIgnoredArtifacts() {
-        return new Builder()
-                .append(fips())
-                .build();
+        return Stream.of(
+                        fips(),
+                        jdbcDrivers()
+                )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     // FIPS
@@ -56,23 +63,71 @@ public class IgnoredArtifacts {
         return isFipsEnabled ? FIPS_ENABLED : FIPS_DISABLED;
     }
 
-    /**
-     * Builder for artifacts aggregation
-     */
-    private static final class Builder {
-        private final Set<String> finalIgnoredArtifacts;
+    // JDBC Drivers
+    public static final Set<String> JDBC_H2 = Set.of(
+            "io.quarkus:quarkus-jdbc-h2",
+            "io.quarkus:quarkus-jdbc-h2-deployment",
+            "com.h2database:h2"
+    );
 
-        public Builder() {
-            this.finalIgnoredArtifacts = new HashSet<>();
-        }
+    public static final Set<String> JDBC_POSTGRES = Set.of(
+            "io.quarkus:quarkus-jdbc-postgresql",
+            "io.quarkus:quarkus-jdbc-postgresql-deployment",
+            "org.postgresql:postgresql"
+    );
 
-        public Builder append(Set<String> ignoredArtifacts) {
-            finalIgnoredArtifacts.addAll(ignoredArtifacts);
-            return this;
-        }
+    public static final Set<String> JDBC_MARIADB = Set.of(
+            "io.quarkus:quarkus-jdbc-mariadb",
+            "io.quarkus:quarkus-jdbc-mariadb-deployment",
+            "org.mariadb.jdbc:mariadb-java-client"
+    );
 
-        public Set<String> build() {
-            return finalIgnoredArtifacts;
-        }
+    public static final Set<String> JDBC_MYSQL = Set.of(
+            "io.quarkus:quarkus-jdbc-mysql",
+            "io.quarkus:quarkus-jdbc-mysql-deployment",
+            "mysql:mysql-connector-java"
+    );
+
+    public static final Set<String> JDBC_MSSQL = Set.of(
+            "io.quarkus:quarkus-jdbc-mssql",
+            "io.quarkus:quarkus-jdbc-mssql-deployment",
+            "com.microsoft.sqlserver:mssql-jdbc"
+    );
+
+    public static final Set<String> JDBC_ORACLE = Set.of(
+            "io.quarkus:quarkus-jdbc-oracle",
+            "io.quarkus:quarkus-jdbc-oracle-deployment",
+            "com.oracle.database.jdbc:ojdbc11",
+            "com.oracle.database.nls:orai18n"
+    );
+
+    public static final Set<String> JDBC_DRIVERS = Stream.of(
+                    JDBC_H2,
+                    JDBC_POSTGRES,
+                    JDBC_MARIADB,
+                    JDBC_MYSQL,
+                    JDBC_MSSQL,
+                    JDBC_ORACLE
+            )
+            .flatMap(Collection::stream)
+            .collect(Collectors.toUnmodifiableSet());
+
+    private static Set<String> jdbcDrivers() {
+        final Database.Vendor vendor = Configuration.getOptionalValue("quarkus.datasource.db-kind")
+                .flatMap(Database::getVendorByDbKind)
+                .orElse(Database.Vendor.H2);
+
+        final Set<String> jdbcArtifacts = switch (vendor) {
+            case H2 -> JDBC_H2;
+            case MYSQL -> JDBC_MYSQL;
+            case MARIADB -> JDBC_MARIADB;
+            case POSTGRES -> JDBC_POSTGRES;
+            case MSSQL -> JDBC_MSSQL;
+            case ORACLE -> JDBC_ORACLE;
+        };
+
+        final Set<String> allJdbcDrivers = new HashSet<>(JDBC_DRIVERS);
+        allJdbcDrivers.removeAll(jdbcArtifacts);
+        return allJdbcDrivers;
     }
 }
