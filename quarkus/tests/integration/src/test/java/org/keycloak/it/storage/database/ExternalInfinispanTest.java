@@ -38,6 +38,8 @@ public class ExternalInfinispanTest {
 
         InfinispanContainer.remoteCacheManager.administration().removeCache("sessions");
 
+        // The `lb-check` relies on the Infinispan's persistence check status. By default, Infinispan checks in the background every second that the remote store is available.
+        // So we'll wait on average about one second here for the check to switch its state.
         Retry.execute(() -> {
             when().get("/lb-check").then()
                     .statusCode(503);
