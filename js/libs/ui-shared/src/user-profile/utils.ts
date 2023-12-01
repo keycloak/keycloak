@@ -1,5 +1,6 @@
 import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { TFunction } from "i18next";
 import { FieldPath } from "react-hook-form";
 
 export type KeyValueType = { key: string; value: string };
@@ -23,18 +24,17 @@ export type UserProfileError = {
   responseData: ErrorArray | FieldError;
 };
 
-export const isBundleKey = (displayName?: string) =>
-  displayName?.includes("${");
+const isBundleKey = (displayName?: string) => displayName?.includes("${");
 export const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
-  t: TranslationFunction,
+  t: TFunction,
   text: string | undefined,
   fallback: string | undefined,
 ) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
 
 export const labelAttribute = (
-  t: TranslationFunction,
+  t: TFunction,
   attribute: UserProfileAttributeMetadata,
 ) => label(t, attribute.displayName, attribute.name);
 
@@ -51,7 +51,7 @@ export const fieldName = (name?: string) =>
 export function setUserProfileServerError<T>(
   error: UserProfileError,
   setError: (field: keyof T, params: object) => void,
-  t: TranslationFunction,
+  t: TFunction,
 ) {
   (
     ((error.responseData as ErrorArray).errors !== undefined
@@ -152,5 +152,3 @@ function isFieldError(error: unknown): error is FieldError {
 
   return true;
 }
-
-export type TranslationFunction = (key: unknown, params?: object) => string;
