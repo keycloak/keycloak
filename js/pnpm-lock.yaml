@@ -266,8 +266,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(axe-core@4.8.2)(cypress@13.6.0)
       jsdom:
-        specifier: ^23.0.0
-        version: 23.0.0
+        specifier: ^23.0.1
+        version: 23.0.1
       ldap-server-mock:
         specifier: ^6.0.1
         version: 6.0.1
@@ -288,7 +288,7 @@ importers:
         version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4)
       vitest:
         specifier: ^0.34.6
-        version: 0.34.6(jsdom@23.0.0)(lightningcss@1.22.1)
+        version: 0.34.6(jsdom@23.0.1)(lightningcss@1.22.1)
 
   apps/keycloak-server:
     dependencies:
@@ -1789,7 +1789,7 @@ packages:
       dom-accessibility-api: 0.5.16
       lodash: 4.17.21
       redent: 3.0.0
-      vitest: 0.34.6(jsdom@23.0.0)(lightningcss@1.22.1)
+      vitest: 0.34.6(jsdom@23.0.1)(lightningcss@1.22.1)
     dev: true
 
   /@testing-library/react@14.1.2(react-dom@18.2.0)(react@18.2.0):
@@ -4938,11 +4938,11 @@ packages:
     resolution: {integrity: sha512-UVU9dibq2JcFWxQPA6KCqj5O42VOmAY3zQUfEKxU0KpTGXwNoCjkX1e13eHNvw/xPynt6pU0rZ1htjWTNTSXsg==}
     dev: true
 
-  /jsdom@23.0.0:
-    resolution: {integrity: sha512-cbL/UCtohJguhFC7c2/hgW6BeZCNvP7URQGnx9tSJRYKCdnfbfWOrtuLTMfiB2VxKsx5wPHVsh/J0aBy9lIIhQ==}
+  /jsdom@23.0.1:
+    resolution: {integrity: sha512-2i27vgvlUsGEBO9+/kJQRbtqtm+191b5zAZrU/UezVmnC2dlDAFLgDYJvAEi94T4kjsRKkezEtLQTgsNEsW2lQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      canvas: ^3.0.0
+      canvas: ^2.11.2
     peerDependenciesMeta:
       canvas:
         optional: true
@@ -7410,7 +7410,7 @@ packages:
       - terser
     dev: true
 
-  /vitest@0.34.6(jsdom@23.0.0)(lightningcss@1.22.1):
+  /vitest@0.34.6(jsdom@23.0.1)(lightningcss@1.22.1):
     resolution: {integrity: sha512-+5CALsOvbNKnS+ZHMXtuUC7nL8/7F1F2DnHGjSsszX8zCjWSSviphCb/NuS9Nzf4Q03KyyDRBAXhF/8lffME4Q==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -7454,7 +7454,7 @@ packages:
       cac: 6.7.14
       chai: 4.3.10
       debug: 4.3.4(supports-color@8.1.1)
-      jsdom: 23.0.0
+      jsdom: 23.0.1
       local-pkg: 0.4.3
       magic-string: 0.30.5
       pathe: 1.1.1
