@@ -20,6 +20,8 @@ package org.keycloak.testsuite.pages;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -148,6 +150,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
         private String lastName;
         private String department;
         private String email;
+        private final Map<String, String> other = new LinkedHashMap<>();
 
         protected Update(LoginUpdateProfilePage page) {
             this.page = page;
@@ -173,6 +176,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return this;
         }
 
+        public Update otherProfileAttribute(String name, String value) {
+            other.put(name, value);
+            return this;
+        }
+
         public void submit() {
             if (firstName != null) {
                 page.firstNameInput.clear();
@@ -191,6 +199,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
             if (email != null) {
                 page.emailInput.clear();
                 page.emailInput.sendKeys(email);
+            }
+
+            for (Map.Entry<String, String> entry : other.entrySet()) {
+                WebElement el = page.driver.findElement(By.id(entry.getKey()));
+                if (el != null) {
+                    el.clear();
+                    el.sendKeys(entry.getValue());
+                }
             }
 
             clickLink(page.submitButton);
