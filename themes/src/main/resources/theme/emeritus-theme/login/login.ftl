@@ -112,7 +112,56 @@
     </#if>
 
 </@layout.registrationLayout>
+    <style scoped>
+            .kc-login-footer {
+    background-color: #f8f8fa;
+    border: 1px solid #e5e5e5;
+    padding: 20px !important;
+    max-width: 856px;
+    margin: 10px auto;
+    border-radius: 4px;
+    @media (max-width: 767px) {
+        margin-left: 16px !important;
+        margin-right: 16px !important;
+        margin-bottom: 24px;
+    }
+    }
+    .kc-login-footer-title {
+    color: #1f7ead;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 140%;
+    margin-bottom: 8px;
+    }
 
+    .kc-login-footer-text {
+    color: #444444;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 160%;
+    }
+    .kc-login-footer-notice {
+    color: #444444;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 140%;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    }
+    .kc-login-footer-steps-label {
+    color: #222222;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 160%;
+    margin-bottom: 5px;
+    }
+    .kc-login-footer-margin {
+    min-height: 60px;
+    @media (max-width: 767px) {
+        min-height: 24px;
+    }
+    }
+    </style>
     <div class="kc-login-footer">
     <div class="kc-login-footer-title">Important Notice</div>
     <div class="kc-login-footer-text">We have recently made some changes to our login system, and your current password is no longer valid. To protect your account, we kindly request that you reset your password.</div>
@@ -125,5 +174,6 @@
     <div class="kc-login-footer-text">5. Create a new strong password and confirm it.</div>
     <div class="kc-login-footer-text">6. Click on the "Reset Password" button to finalize the process.</div>
     </div>
-    <div class="kc-login-footer-margin"></div>
+    <div class="kc-login-footer-margin">
+    </div>
 
