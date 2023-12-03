@@ -17,13 +17,17 @@
 
 package org.keycloak.utils;
 
+import java.text.MessageFormat;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.services.util.CookieHelper;
 
 public class CookieHelperTest {
+
+    private static final Logger logger = Logger.getLogger(CookieHelperTest.class);
     
     @Test
     public void testParseCookies() {
@@ -31,5 +35,16 @@ public class CookieHelperTest {
                 "terms_user=; KC_RESTART=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJhZDUyMjdhMy1iY2ZkLTRjZjAtYTdiNi0zOTk4MzVhMDg1NjYifQ.eyJjaWQiOiJodHRwczovL3Nzby5qYm9zcy5vcmciLCJwdHkiOiJzYW1sIiwicnVyaSI6Imh0dHBzOi8vc3NvLmpib3NzLm9yZy9sb2dpbj9wcm92aWRlcj1SZWRIYXRFeHRlcm5hbFByb3ZpZGVyIiwiYWN0IjoiQVVUSEVOVElDQVRFIiwibm90ZXMiOnsiU0FNTF9SRVFVRVNUX0lEIjoibXBmbXBhYWxkampqa2ZmcG5oYmJoYWdmZmJwam1rbGFqbWVlb2lsaiIsInNhbWxfYmluZGluZyI6InBvc3QifX0.d0QJSOQ6pJGzqcjqDTRwkRpU6fwYeICedL6R9Gqs8CQ; AUTH_SESSION_ID=451ec4be-a0c8-430e-b489-6580f195ccf0; AUTH_SESSION_ID=55000981-8b5e-4c8d-853f-ee4c582c1d0d;AUTH_SESSION_ID=451ec4be-a0c8-430e-b489-6580f195ccf0; AUTH_SESSION_ID=55000981-8b5e-4c8d-853f-ee4c582c1d0d;AUTH_SESSION_ID=451ec4be-a0c8-430e-b489-6580f195ccf0; AUTH_SESSION_ID=55000981-8b5e-4c8d-853f-ee4c582c1d0d4;", "AUTH_SESSION_ID");
         
         Assert.assertEquals(3, values.size());
+    }
+
+    @Test
+    public void testLoggingPrint() {
+        String a = "name";
+        String b = "legacy";
+
+        System.out.println(MessageFormat.format("Could not find any cookies with name {0}, trying {1}", a,b));
+
+        Assert.assertEquals("Could not find any cookies with name name, trying legacy",
+                MessageFormat.format("Could not find any cookies with name {0}, trying {1}", a,b));
     }
 }

@@ -25,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
+
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -96,7 +98,7 @@ public class CookieHelper {
         Set<String> ret = getInternalCookieValue(session, name);
         if (ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find any cookies with name {0}, trying {1}", name, legacy);
+            logger.debugv(MessageFormat.format("Could not find any cookies with name {0}, trying {1}", name, legacy));
             ret = getInternalCookieValue(session, legacy);
         }
         return ret;
