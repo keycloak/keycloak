@@ -47,6 +47,8 @@ public class HealthDistTest {
                 .statusCode(404);
         when().get("/q/health/ready").then()
                 .statusCode(404);
+        when().get("/lb-check").then()
+                .statusCode(404);
     }
 
     @Test
@@ -61,6 +63,8 @@ public class HealthDistTest {
         // Metrics should not be enabled
         when().get("/metrics").then()
                 .statusCode(404);
+        when().get("/lb-check").then()
+                .statusCode(404);
     }
 
     @Test
@@ -72,6 +76,8 @@ public class HealthDistTest {
                 .statusCode(200)
                 .body("checks[0].name", equalTo("Keycloak database connections async health check"))
                 .body("checks.size()", equalTo(1));
+        when().get("/lb-check").then()
+                .statusCode(404);
     }
 
     @Test
@@ -83,6 +89,8 @@ public class HealthDistTest {
                 .statusCode(200)
                 .body("checks[0].name", equalTo("Keycloak database connections health check"))
                 .body("checks.size()", equalTo(1));
+        when().get("/lb-check").then()
+                .statusCode(404);
     }
 
     @Test
@@ -124,5 +132,12 @@ public class HealthDistTest {
 
             distribution.stop();
         }
+    }
+
+    @Test
+    @Launch({ "start-dev", "--features=multi-site" })
+    void testLoadBalancerCheck() {
+        when().get("/lb-check").then()
+                .statusCode(200);
     }
 }
