@@ -47,21 +47,25 @@
     </#if>
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
-            var modal = document.getElementById('overlayModal');
+            var overlayModal = document.getElementById('overlayModal');
             var openModalBtn = document.getElementById('openModalBtn');
             var closeModalBtn = document.getElementById('closeModalBtn');
+            var noModal = document.getElementById('noModal');
+            var modalContent = document.getElementById('modalContent');
+
+            noModal.appendChild(modalContent);
+            closeModalBtn.style.display = 'none';
+
             if(!sessionStorage.getItem('isModalClosed')){
-                modal.style.display = 'flex';
+                overlayModal.appendChild(modalContent);
+                closeModalBtn.style.display = 'flex';
+                overlayModal.style.display = 'flex';
             }
             closeModalBtn.addEventListener("click", function (e) {
-                modal.style.display = 'none';
+                overlayModal.style.display = 'none';
+                closeModalBtn.style.display = 'none';
+                noModal.appendChild(modalContent);
                 sessionStorage.setItem("isModalClosed", 'true')
-            });
-            window.addEventListener("click", function (event) {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                    sessionStorage.setItem("isModalClosed", 'true')
-                }
             });
         });
     </script>
