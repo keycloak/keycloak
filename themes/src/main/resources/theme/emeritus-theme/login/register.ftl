@@ -138,11 +138,8 @@
                aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
         />
         <label for="terms" class="${properties.kcLabelClass!}">
-            I accept Emeritus insights’s   
+            I accept Emeritus insights’s Terms of Use and Privacy Policy
         </label>
-        <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/terms-of-service" target="_blank">Terms of Use</a>
-        and
-        <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/privacy-policy" target="_blank">Privacy Policy</a>
          <#if messagesPerField.existsError('termsAccepted')>
                  <span id="input-error-terms" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
                 ${kcSanitize(messagesPerField.get('termsAccepted')!msg("termsConditionsError"))?no_esc}

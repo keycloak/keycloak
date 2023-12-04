@@ -45,13 +45,37 @@
             );
         </script>
     </#if>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var overlayModal = document.getElementById('overlayModal');
+            var openModalBtn = document.getElementById('openModalBtn');
+            var closeModalBtn = document.getElementById('closeModalBtn');
+            var noModal = document.getElementById('noModal');
+            var modalContent = document.getElementById('modalContent');
+
+            noModal.appendChild(modalContent);
+            closeModalBtn.style.display = 'none';
+
+            if(!sessionStorage.getItem('isModalClosed')){
+                overlayModal.appendChild(modalContent);
+                closeModalBtn.style.display = 'flex';
+                overlayModal.style.display = 'flex';
+            }
+            closeModalBtn.addEventListener("click", function (e) {
+                overlayModal.style.display = 'none';
+                closeModalBtn.style.display = 'none';
+                noModal.appendChild(modalContent);
+                sessionStorage.setItem("isModalClosed", 'true')
+            });
+        });
+    </script>
 </head>
 
 <body class="${properties.kcBodyClass!}">
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
-          <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com" target="_blank">
+          <a id="logo" target="_blank">
             <img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
            </a>
         </div>
@@ -163,9 +187,18 @@
     </div>
 </div>
 <div class="${properties.kcTerms!}" style="display: flex;justify-content: center;margin-top: 1rem;font-size: 1rem;">
-    <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/terms-of-service" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
-    <a href="https://insights-fe-staging-b1fc39a5bdb9.herokuapp.com/privacy-policy" target="_blank">Privacy Policy</a>
+    <a id="terms" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
+    <a id="privacy" target="_blank">Privacy Policy</a>
 </div>
+ <script type="text/javascript">
+    var referrer = "https://insights-beta.emeritus.org/";
+    var terms = document.getElementById('terms');
+    var privacy = document.getElementById('privacy');
+    var logo = document.getElementById('logo');
+    terms.href = referrer + 'terms-of-service';
+    privacy.href = referrer + 'privacy-policy';
+    logo.href = referrer;
+</script>
 </body>
 </html>
 </#macro>
