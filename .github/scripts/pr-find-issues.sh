@@ -8,7 +8,7 @@ if [ "$REPO" == "" ]; then
 fi
 
 function parse_issues() {
-    echo "$1" | grep -i -P -o "(close|closes|closed|resolve|resolves|resolved) https://github.com/$REPO/issues/[[:digit:]]*" | cut -d '/' -f 7 | sort -n
+    echo "$1" | grep -i -P -o "(close|closes|closed|resolve|resolves|resolved) #[[:digit:]]*" | cut -d '#' -f 2 | sort -n
 }
 
 PR_JSON=$(gh api "/repos/$REPO/pulls/$PR")
