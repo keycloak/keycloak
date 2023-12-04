@@ -54,6 +54,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -871,16 +872,21 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
         assertNull(otpCredential.getCreateAction());
         assertNull(otpCredential.getUpdateAction());
+        assertTrue(otpCredential.isRemoveable());
+
+        String otpCredentialId = otpCredential.getUserCredentialMetadatas().get(0).getCredential().getId();
+
+        // remove credential using account console as otp is removable
+        try (SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredentialId), httpClient)
+                .acceptJson()
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
 
         // Revert - re-enable requiredAction and remove OTP credential from the user
         setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
-
-        String otpCredentialId = adminUserResource.credentials().stream()
-                .filter(credential -> OTPCredentialModel.TYPE.equals(credential.getType()))
-                .findFirst()
-                .get()
-                .getId();
-        adminUserResource.removeCredential(otpCredentialId);
     }
 
     private void setRequiredActionEnabledStatus(String requiredActionProviderId, boolean enabled) {
@@ -904,6 +910,20 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // We won't be able to authenticate later as user won't have password
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
+        // delete password should fail as it is not removable
+        AccountCredentialResource.CredentialContainer password = credentials.get(0);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
+        try (SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("credentials/" + password.getUserCredentialMetadatas().get(0).getCredential().getId()), httpClient)
+                .acceptJson()
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            Assert.assertEquals("Credential type password cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
+        }
+
         // Remove password from the user now
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         for (CredentialRepresentation credential : user.credentials()) {
@@ -914,7 +934,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         // Get credentials. Ensure user doesn't have password credential and create action is UPDATE_PASSWORD
         credentials = getCredentials();
-        AccountCredentialResource.CredentialContainer password = credentials.get(0);
+        password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
                 "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 UserModel.RequiredAction.UPDATE_PASSWORD.toString(), null, false, 0);
