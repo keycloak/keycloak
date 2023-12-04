@@ -12,14 +12,13 @@ function parse_issues() {
 }
 
 PR_JSON=$(gh api "/repos/$REPO/pulls/$PR")
-
-PR_BODY=$(echo "$PR_JSON" | jq .body)
+PR_BODY=$(echo "$PR_JSON" | jq -r .body)
 PR_MERGE_COMMIT_SHA=$(echo "$PR_JSON" | jq -r .merge_commit_sha)
 
 ISSUES=$(parse_issues "$PR_BODY")
 if [ "$ISSUES" == "" ]; then
     COMMIT_JSON=$(gh api "/repos/$REPO/commits/$PR_MERGE_COMMIT_SHA")
-    COMMIT_MESSAGE=$(echo "$COMMIT_JSON" | jq .commit.message)
+    COMMIT_MESSAGE=$(echo "$COMMIT_JSON" | jq -r .commit.message)
 
     ISSUES=$(parse_issues "$COMMIT_MESSAGE")
 fi
@@ -27,3 +26,4 @@ fi
 for i in $ISSUES; do
     echo "$i"
 done
+
