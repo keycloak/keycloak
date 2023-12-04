@@ -113,67 +113,125 @@
 
 </@layout.registrationLayout>
     <style scoped>
-            .kc-login-footer {
-    background-color: #f8f8fa;
-    border: 1px solid #e5e5e5;
-    padding: 20px !important;
-    max-width: 856px;
-    margin: 10px auto;
-    border-radius: 4px;
-    @media (max-width: 767px) {
-        margin-left: 16px !important;
-        margin-right: 16px !important;
-        margin-bottom: 24px;
-    }
-    }
-    .kc-login-footer-title {
-    color: #1f7ead;
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 140%;
-    margin-bottom: 8px;
-    }
+        .kc-login-footer {
+            background: #fff;
+            padding: 10px 20px !important;
+            max-width: 856px;
+            margin: 10px auto;
+            border-radius: 4px;
+            text-align: left;
+            @media (max-width: 767px) {
+                margin-left: 16px !important;
+                margin-right: 16px !important;
+                margin-bottom: 24px;
+            }
+        }
 
-    .kc-login-footer-text {
-    color: #444444;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 160%;
-    }
-    .kc-login-footer-notice {
-    color: #444444;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 140%;
-    margin-bottom: 20px;
-    margin-top: 10px;
-    }
-    .kc-login-footer-steps-label {
-    color: #222222;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 160%;
-    margin-bottom: 5px;
-    }
-    .kc-login-footer-margin {
-    min-height: 60px;
-    @media (max-width: 767px) {
-        min-height: 24px;
-    }
-    }
+        .kc-login-footer-text {
+            color: #444444;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 160%;
+            padding-left: 10px;
+        }
+
+        .kc-login-footer-notice {
+            color: #444444;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 140%;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        .kc-login-footer-steps-label {
+            color: #222222;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 160%;
+            margin-bottom: 5px;
+        }
+
+        #overlayModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .modal-content {
+            background: #f8f8fa;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: fit-content;
+            width: 100%;
+        }
+
+        .modal-content h2 {
+            color: #1f7ead;
+            margin-top: unset;
+        }
+
+        .my-10 {
+            margin: 1rem 0;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 2px;
+            right: 10px;
+            height: 40px;
+            width: 40px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        /* Media query for smaller screens */
+        @media only screen and (max-width: 600px) {
+            .modal-content {
+                max-width: 94%;
+            }
+
+            .kc-login-footer-notice {
+                margin-bottom: 11px;
+                margin-top: 0px;
+            }
+
+            .modal-content h2 {
+                margin-top: 10px;
+            }
+
+            .kc-login-footer {
+                max-height: 60vh;
+                overflow: auto; 
+            }
+
+        }
     </style>
-    <div class="kc-login-footer">
-    <div class="kc-login-footer-title">Important Notice</div>
-    <div class="kc-login-footer-text">We have recently made some changes to our login system, and your current password is no longer valid. To protect your account, we kindly request that you reset your password.</div>
-    <div class="kc-login-footer-notice">This is a one-time action, and you will not need to reset your password again unless you forget it. Once you have successfully reset your password, you will be able to log in using your new password.</div>
-    <div class="kc-login-footer-steps-label">To reset your password, follow these simple steps:</div>
-    <div class="kc-login-footer-text">1. Click on the "Forgot Password" link below the login form.</div>
-    <div class="kc-login-footer-text">2. Enter your registered email address and click on the "Reset Password" button.</div>
-    <div class="kc-login-footer-text">3. Check your email inbox for a password reset message from us.</div>
-    <div class="kc-login-footer-text">4. Click on the link provided in the email to proceed with the password reset process.</div>
-    <div class="kc-login-footer-text">5. Create a new strong password and confirm it.</div>
-    <div class="kc-login-footer-text">6. Click on the "Reset Password" button to finalize the process.</div>
+    <div id="overlayModal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <h2>Important Notice</h2>
+            <div class="kc-login-footer">
+                <div class="kc-login-footer-notice">We have recently made some changes to our login system, and your current password is no longer valid. To protect your account, we kindly request that you reset your password.</div>
+                <div class="kc-login-footer-notice">This is a one-time action, and you will not need to reset your password again unless you forget it. Once you have successfully reset your password, you will be able to log in using your new password.</div>
+                <div class="kc-login-footer-steps-label">To reset your password, follow these simple steps:</div>
+                <div class="kc-login-footer-text">1. Click on the "Forgot Password" link below the login form.</div>
+                <div class="kc-login-footer-text">2. Enter your registered email address and click on the "Reset Password" button.</div>
+                <div class="kc-login-footer-text">3. Check your email inbox for a password reset message from us.</div>
+                <div class="kc-login-footer-text">4. Click on the link provided in the email to proceed with the password reset process.</div>
+                <div class="kc-login-footer-text">5. Create a new strong password and confirm it.</div>
+                <div class="kc-login-footer-text">6. Click on the "Reset Password" button to finalize the process.</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="kc-login-footer-margin">
-    </div>
+   
 

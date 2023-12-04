@@ -45,6 +45,26 @@
             );
         </script>
     </#if>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var modal = document.getElementById('overlayModal');
+            var openModalBtn = document.getElementById('openModalBtn');
+            var closeModalBtn = document.getElementById('closeModalBtn');
+            if(!sessionStorage.getItem('isModalClosed')){
+                modal.style.display = 'flex';
+            }
+            closeModalBtn.addEventListener("click", function (e) {
+                modal.style.display = 'none';
+                sessionStorage.setItem("isModalClosed", 'true')
+            });
+            window.addEventListener("click", function (event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                    sessionStorage.setItem("isModalClosed", 'true')
+                }
+            });
+        });
+    </script>
 </head>
 
 <body class="${properties.kcBodyClass!}">
@@ -167,7 +187,7 @@
     <a id="privacy" target="_blank">Privacy Policy</a>
 </div>
  <script type="text/javascript">
-    var referrer = document.referrer;
+    var referrer = "https://insights-beta.emeritus.org/";
     var terms = document.getElementById('terms');
     var privacy = document.getElementById('privacy');
     var logo = document.getElementById('logo');
