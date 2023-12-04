@@ -7,8 +7,10 @@ import type { RequiredActionAlias } from "../defs/requiredActionProviderRepresen
 import type RoleRepresentation from "../defs/roleRepresentation.js";
 import type { RoleMappingPayload } from "../defs/roleRepresentation.js";
 import type UserConsentRepresentation from "../defs/userConsentRepresentation.js";
-import type UserProfileConfig from "../defs/userProfileMetadata.js";
-import type { UserProfileMetadata } from "../defs/userProfileMetadata.js";
+import type {
+  UserProfileConfig,
+  UserProfileMetadata,
+} from "../defs/userProfileMetadata.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";

@@ -177,4 +177,6 @@ public interface Attributes {
     }
 
     Map<String, List<String>> toMap();
+
+    Map<String, List<String>> getUnmanagedAttributes();
 }

@@ -66,6 +66,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.services.ErrorPage;
@@ -89,7 +90,9 @@ import jakarta.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -101,6 +104,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
+import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -253,8 +262,14 @@ public class SAMLEndpoint {
         }
 
         protected KeyLocator getIDPKeyLocator() {
-            List<Key> keys = new LinkedList<>();
+            if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
+                String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
+                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+                return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
+            }
 
+            List<Key> keys = new LinkedList<>();
             for (String signingCertificate : config.getSigningCertificates()) {
                 X509Certificate cert = null;
                 try {
@@ -446,14 +461,19 @@ public class SAMLEndpoint {
 
                 if (assertionIsEncrypted) {
                     try {
+                        XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
                         /* This code is deprecated and will be removed in Keycloak 24 */
                         if (DEPRECATED_ENCRYPTION) {
                             KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                            assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
-                        } else {
-                        /* End of deprecated code */
-                            assertionElement = AssertionUtil.decryptAssertion(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                            final XMLEncryptionUtil.DecryptionKeyLocator tmp = decryptionKeyLocator;
+                            decryptionKeyLocator = data -> {
+                                List<PrivateKey> result = new ArrayList<>(tmp.getKeys(data));
+                                result.add(keys.getPrivateKey());
+                                return result;
+                            };
                         }
+                        /* End of deprecated code */
+                        assertionElement = AssertionUtil.decryptAssertion(responseType, decryptionKeyLocator);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML assertion. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the assertion encrypted by identity provider '%s'", realm.getName(), config.getAlias());
                         throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
@@ -499,14 +519,19 @@ public class SAMLEndpoint {
 
                 if (AssertionUtil.isIdEncrypted(responseType)) {
                     try {
+                        XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
                         /* This code is deprecated and will be removed in Keycloak 24 */
                         if (DEPRECATED_ENCRYPTION) {
                             KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                            AssertionUtil.decryptId(responseType, data -> Collections.singletonList(keys.getPrivateKey()));
-                        } else {
-                            /* End of deprecated code */
-                            AssertionUtil.decryptId(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                            final XMLEncryptionUtil.DecryptionKeyLocator tmp = decryptionKeyLocator;
+                            decryptionKeyLocator = data -> {
+                                List<PrivateKey> result = new ArrayList<>(tmp.getKeys(data));
+                                result.add(keys.getPrivateKey());
+                                return result;
+                            };
                         }
+                        /* End of deprecated code */
+                        AssertionUtil.decryptId(responseType, decryptionKeyLocator);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML encryptedId. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the encryptedId encrypted by identity provider '%s'", realm.getName(), config.getAlias());
                         throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);

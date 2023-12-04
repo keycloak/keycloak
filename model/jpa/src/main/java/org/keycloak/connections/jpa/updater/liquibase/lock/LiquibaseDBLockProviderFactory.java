@@ -20,19 +20,17 @@ package org.keycloak.connections.jpa.updater.liquibase.lock;
 import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory, EnvironmentDependentProviderFactory {
+public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProviderFactory.class);
     public static final int PROVIDER_PRIORITY = 1;
@@ -88,10 +86,5 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory, En
                 .type("int")
                 .helpText("The maximum time to wait when waiting to release a database lock.")
                 .add().build();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

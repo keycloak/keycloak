@@ -462,7 +462,6 @@ public class FlowTest extends AbstractAuthenticationTest {
 
     @Test
     public void failWithLongDescription() throws IOException {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
         ContainerAssume.assumeAuthServerQuarkus();
         AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
                 .filter(new Predicate<AuthenticationFlowRepresentation>() {

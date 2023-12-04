@@ -35,7 +35,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class AttributeMetadata {
+public class AttributeMetadata {
 
     public static final Predicate<AttributeContext> ALWAYS_TRUE = context -> true;
     public static final Predicate<AttributeContext> ALWAYS_FALSE = context -> false;
@@ -43,7 +43,7 @@ public final class AttributeMetadata {
     private final String attributeName;
     private String attributeDisplayName;
     private AttributeGroupMetadata attributeGroupMetadata;
-    private final Predicate<AttributeContext> selector;
+    private Predicate<AttributeContext> selector;
     private final List<Predicate<AttributeContext>> writeAllowed = new ArrayList<>();
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
     private Predicate<AttributeContext> required;
@@ -129,6 +129,10 @@ public final class AttributeMetadata {
 
     public boolean isSelected(AttributeContext context) {
         return selector.test(context);
+    }
+
+    public void setSelector(Predicate<AttributeContext> selector) {
+        this.selector = selector;
     }
 
     private boolean allConditionsMet(List<Predicate<AttributeContext>> predicates, AttributeContext context) {

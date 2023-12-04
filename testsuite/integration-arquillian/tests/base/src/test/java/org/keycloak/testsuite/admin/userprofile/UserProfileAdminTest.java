@@ -201,7 +201,11 @@ public class UserProfileAdminTest extends AbstractAdminTest {
             assertEquals(group.getName(), mGroup.getName());
             assertEquals(group.getDisplayHeader(), mGroup.getDisplayHeader());
             assertEquals(group.getDisplayDescription(), mGroup.getDisplayDescription());
-            assertEquals(group.getAnnotations().size(), mGroup.getAnnotations().size());
+            if (group.getAnnotations() == null) {
+                assertEquals(group.getAnnotations(), mGroup.getAnnotations());
+            } else {
+                assertEquals(group.getAnnotations().size(), mGroup.getAnnotations().size());
+            }
         }
         assertEquals(config.getGroups().get(0).getName(), metadata.getAttributeMetadata(UserModel.FIRST_NAME).getGroup());
     }

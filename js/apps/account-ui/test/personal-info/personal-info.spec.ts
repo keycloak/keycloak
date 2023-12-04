@@ -1,4 +1,4 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { expect, test } from "@playwright/test";
 import {
   createUser,

@@ -1,11 +1,12 @@
 import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { FormGroup, InputGroup } from "@patternfly/react-core";
+import { TFunction } from "i18next";
 import { get } from "lodash-es";
 import { PropsWithChildren, ReactNode } from "react";
 import { UseFormReturn } from "react-hook-form";
+
 import { HelpItem } from "../controls/HelpItem";
 import {
-  TranslationFunction,
   UserFormFields,
   fieldName,
   isRequiredAttribute,
@@ -13,7 +14,7 @@ import {
 } from "./utils";
 
 export type UserProfileGroupProps = {
-  t: TranslationFunction;
+  t: TFunction;
   form: UseFormReturn<UserFormFields>;
   attribute: UserProfileAttributeMetadata;
   renderer?: (attribute: UserProfileAttributeMetadata) => ReactNode;
@@ -39,7 +40,9 @@ export const UserProfileGroup = ({
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}
       validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
-      helperTextInvalid={t(get(errors, fieldName(attribute.name))?.message)}
+      helperTextInvalid={t(
+        get(errors, fieldName(attribute.name))?.message as string,
+      )}
       labelIcon={
         helpText ? (
           <HelpItem helpText={helpText} fieldLabelId={attribute.name!} />

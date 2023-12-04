@@ -8,11 +8,13 @@ const DECISION_STRATEGY = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
 type DecisionStrategySelectProps = {
   helpLabel?: string;
+  isDisabled?: boolean;
   isLimited?: boolean;
 };
 
 export const DecisionStrategySelect = ({
   helpLabel,
+  isDisabled = false,
   isLimited = false,
 }: DecisionStrategySelectProps) => {
   const { t } = useTranslation();
@@ -46,6 +48,7 @@ export const DecisionStrategySelect = ({
                 key={strategy}
                 data-testid={strategy}
                 isChecked={field.value === strategy}
+                isDisabled={isDisabled}
                 name="decisionStrategy"
                 onChange={() => field.onChange(strategy)}
                 label={t(`decisionStrategies.${strategy}`)}

@@ -29,10 +29,16 @@ import {
   convertToFormValues,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { useFetch } from "../utils/useFetch";
+import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
 type RealmSettingsGeneralTabProps = {
-  realm: RealmRepresentation;
-  save: (realm: RealmRepresentation) => void;
+  realm: UIRealmRepresentation;
+  save: (realm: UIRealmRepresentation) => void;
 };
 
 type FormFields = Omit<RealmRepresentation, "groups">;
@@ -56,6 +62,18 @@ export const RealmSettingsGeneralTab = ({
 
   const requireSslTypes = ["all", "external", "none"];
 
+  const [userProfileConfig, setUserProfileConfig] =
+    useState<UserProfileConfig>();
+  const unmanagedAttributePolicies = [
+    UnmanagedAttributePolicy.Disabled,
+    UnmanagedAttributePolicy.Enabled,
+    UnmanagedAttributePolicy.AdminView,
+    UnmanagedAttributePolicy.AdminEdit,
+  ];
+  const [isUnmanagedAttributeOpen, setIsUnmanagedAttributeOpen] =
+    useState(false);
+  const [isUserProfileEnabled, setUserProfileEnabled] = useState(false);
+
   const setupForm = () => {
     convertToFormValues(realm, setValue);
     if (realm.attributes?.["acr.loa.map"]) {
@@ -68,7 +86,14 @@ export const RealmSettingsGeneralTab = ({
         result,
       );
     }
+    setUserProfileEnabled(realm.attributes?.["userProfileEnabled"] === "true");
   };
+
+  useFetch(
+    () => adminClient.users.getProfile({ realm: realmName }),
+    (config) => setUserProfileConfig(config),
+    [],
+  );
 
   useEffect(setupForm, []);
 
@@ -78,7 +103,15 @@ export const RealmSettingsGeneralTab = ({
         isHorizontal
         role="manage-realm"
         className="pf-u-mt-lg"
-        onSubmit={handleSubmit(save)}
+        onSubmit={handleSubmit((data) => {
+          if (
+            UnmanagedAttributePolicy.Disabled ===
+            userProfileConfig?.unmanagedAttributePolicy
+          ) {
+            userProfileConfig.unmanagedAttributePolicy = undefined;
+          }
+          save({ ...data, upConfig: userProfileConfig });
+        })}
       >
         <FormGroup
           label={t("realmId")}
@@ -244,11 +277,50 @@ export const RealmSettingsGeneralTab = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(value) => {
+                    field.onChange(value.toString());
+                    setUserProfileEnabled(value);
+                  }}
                   aria-label={t("userProfileEnabled")}
                 />
               )}
             />
+          </FormGroup>
+        )}
+        {isUserProfileEnabled && (
+          <FormGroup
+            label={t("unmanagedAttributes")}
+            fieldId="kc-user-profile-unmanaged-attribute-policy"
+            labelIcon={
+              <HelpItem
+                helpText={t("unmanagedAttributesHelpText")}
+                fieldLabelId="unmanagedAttributes"
+              />
+            }
+          >
+            <Select
+              toggleId="kc-user-profile-unmanaged-attribute-policy"
+              onToggle={() =>
+                setIsUnmanagedAttributeOpen(!isUnmanagedAttributeOpen)
+              }
+              onSelect={(_, value) => {
+                if (userProfileConfig) {
+                  userProfileConfig.unmanagedAttributePolicy =
+                    value as UnmanagedAttributePolicy;
+                  setUserProfileConfig(userProfileConfig);
+                }
+                setIsUnmanagedAttributeOpen(false);
+              }}
+              selections={userProfileConfig?.unmanagedAttributePolicy}
+              variant={SelectVariant.single}
+              isOpen={isUnmanagedAttributeOpen}
+            >
+              {unmanagedAttributePolicies.map((policy) => (
+                <SelectOption key={policy} value={policy}>
+                  {t(`unmanagedAttributePolicy.${policy}`)}
+                </SelectOption>
+              ))}
+            </Select>
           </FormGroup>
         )}
         <FormGroup

@@ -22,11 +22,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -43,7 +41,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
 import org.keycloak.testsuite.pages.AppPage;
@@ -87,13 +84,6 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {

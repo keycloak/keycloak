@@ -1,0 +1,7 @@
+= Valid redirect URIs for clients are always compared with exact string matching
+
+Version 1.8.0 introduced a lower-case for the hostname and scheme when comparing a redirect URI with the specified valid redirects for a client. Unfortunately it did not fully work in all the protocols, and, for example, the host was lower-cased for `http` but not for `https`. As https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[OAuth 2.0 Security Best Current Practice] advises to compare URIs using exact string matching, {project_name} will follow the recommendation and for now on valid redirects are compared with exact case even for the hostname and scheme.
+
+For realms relying on the old behavior, the valid redirect URIs for their clients should now hold separate entries for each URI that should be recognized by the server.
+
+Although it introduces more steps and verbosity when configuring clients, the new behavior enables more secure deployments as pattern-based checks are frequently the cause of security issues. Not only due to how they are implemented but also how they are configured.

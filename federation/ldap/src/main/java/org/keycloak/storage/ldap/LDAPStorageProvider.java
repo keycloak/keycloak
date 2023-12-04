@@ -18,8 +18,10 @@
 package org.keycloak.storage.ldap;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +88,13 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.userprofile.AttributeContext;
+import org.keycloak.userprofile.AttributeGroupMetadata;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileUtil;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -101,7 +110,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserLookupProvider,
         UserRegistrationProvider,
         UserQueryMethodsProvider,
-        ImportedUserValidation {
+        ImportedUserValidation,
+        UserProfileDecorator {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
 
@@ -962,5 +972,73 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public String toString() {
         return "LDAPStorageProvider - " + getModel().getName();
+    }
+
+    @Override
+    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+        Predicate<AttributeContext> ldapUsersSelector = (attributeContext -> {
+            UserModel user = attributeContext.getUser();
+            if (user == null) {
+                return false;
+            }
+
+            if (model.isImportEnabled()) {
+                return getModel().getId().equals(user.getFederationLink());
+            } else {
+                return getModel().getId().equals(new StorageId(user.getId()).getProviderId());
+            }
+        });
+
+        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext() == UserProfileContext.USER_API;
+
+        int guiOrder = (int) metadata.getAttributes().stream()
+                .map(AttributeMetadata::getName)
+                .distinct()
+                .count();
+
+        // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
+        Set<String> attributes = new LinkedHashSet<>();
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .forEachOrdered(mapperModel -> {
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    attributes.addAll(ldapMapper.getUserAttributes());
+                });
+        for (String attrName : attributes) {
+            // In case that attributes from LDAP mappers are explicitly defined on user profile, we can prefer defined configuration
+            if (!metadata.getAttribute(attrName).isEmpty()) {
+                logger.debugf("Ignore adding attribute '%s' to user profile by LDAP provider '%s' as attribute is already defined on user profile.", attrName, getModel().getName());
+            } else {
+                logger.debugf("Adding attribute '%s' to user profile by LDAP provider '%s' for user profile context '%s'.", attrName, getModel().getName(), metadata.getContext().toString());
+                // Writable and readable only by administrators by default. Applied only for LDAP users
+                AttributeMetadata attributeMetadata = metadata.addAttribute(attrName, guiOrder++, Collections.emptyList())
+                        .addWriteCondition(onlyAdminCondition)
+                        .addReadCondition(onlyAdminCondition)
+                        .setRequired(AttributeMetadata.ALWAYS_FALSE);
+                attributeMetadata.setSelector(ldapUsersSelector);
+            }
+        }
+
+        // 2 - metadata attributes
+        Set<String> metadataAttributes = new HashSet<>(List.of(LDAPConstants.LDAP_ID, LDAPConstants.LDAP_ENTRY_DN));
+        if (getKerberosConfig().isAllowKerberosAuthentication()) {
+            metadataAttributes.add(KerberosConstants.KERBEROS_PRINCIPAL);
+        }
+
+        AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
+
+        for (String attrName : metadataAttributes) {
+            boolean attributeAdded = UserProfileUtil.addMetadataAttributeToUserProfile(attrName, metadata, metadataGroup, ldapUsersSelector, guiOrder++, getModel().getName());
+            if (!attributeAdded) {
+                guiOrder--;
+            }
+        }
+
+        // 3 - make all attributes read-only for LDAP users in case that LDAP itself is read-only
+        if (getEditMode() == EditMode.READ_ONLY) {
+            for (AttributeMetadata attrMetadata : metadata.getAttributes()) {
+                attrMetadata.addWriteCondition(ldapUsersSelector.negate());
+            }
+        }
     }
 }

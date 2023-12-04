@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -44,6 +45,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +55,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
-import org.hamcrest.Matchers;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -111,11 +113,13 @@ import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCr
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -571,6 +575,62 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             checkMtlsFlow();
+        }
+    }
+
+    @Test
+    public void testSuppressRefreshTokenRotationWithHolderOfKeyToken() throws Exception {
+        Assume.assumeTrue("This test must be executed with enabled TLS.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SuppressRefreshTokenRotationExecutorFactory.PROVIDER_ID, null)
+                        .addExecutor(HolderOfKeyEnforcerExecutorFactory.PROVIDER_ID,
+                                createHolderOfKeyEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
+            ClientRepresentation clientRep = cau.getResource().toRepresentation();
+            Assert.assertNotNull(clientRep);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
+            cau.update();
+            // Check login.
+            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            Assert.assertNull(loginResponse.getError());
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            // Check token obtaining.
+            OAuthClient.AccessTokenResponse accessTokenResponse;
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+                accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET, client);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+            assertEquals(200, accessTokenResponse.getStatusCode());
+
+            // Check token refresh.
+            OAuthClient.AccessTokenResponse accessTokenResponseRefreshed;
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+                accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET, client);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+            assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
+            assertNull(accessTokenResponseRefreshed.getRefreshToken());
         }
     }
 

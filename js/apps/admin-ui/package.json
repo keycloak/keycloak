@@ -1,5 +1,6 @@
 {
   "name": "admin-ui",
+  "type": "module",
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
@@ -72,7 +73,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.7.6",
+    "i18next": "^23.7.7",
     "i18next-http-backend": "^2.4.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -91,23 +92,23 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.1",
-    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.38",
+    "@types/react": "^18.2.39",
     "@types/react-dom": "^18.2.17",
     "@types/uuid": "^9.0.7",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "cypress": "^13.6.0",
     "cypress-axe": "^1.5.0",
-    "jsdom": "^22.1.0",
+    "jsdom": "^23.0.1",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.22.1",
     "ts-node": "^10.9.1",
     "uuid": "^9.0.1",
-    "vite": "^5.0.2",
+    "vite": "^5.0.4",
     "vite-plugin-checker": "^0.6.2",
     "vitest": "^0.34.6"
   }
