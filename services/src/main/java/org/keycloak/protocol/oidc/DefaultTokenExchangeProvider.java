@@ -513,6 +513,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
+        userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
         context.addSessionNotesToUserSession(userSession);
 
