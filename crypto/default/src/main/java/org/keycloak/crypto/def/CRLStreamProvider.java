@@ -14,37 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto.def;
 
-package org.keycloak.truststore;
+import org.keycloak.common.crypto.CRLProvider;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import java.io.File;
+import java.io.IOException;
+import java.security.cert.X509CRL;
 
 /**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
+ * Crl Provider using the streaming parser
+ *
+ * @author Scott Tustison
  */
-public class TruststoreSpi implements Spi {
-
-    public static final String NAME = "truststore";
-
+public class CRLStreamProvider implements CRLProvider {
     @Override
-    public boolean isInternal() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return TruststoreProvider.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return TruststoreProviderFactory.class;
+    public X509CRL generateCRL(File crlFile) throws IOException {
+        return new StreamingCrlParser(crlFile);
     }
 }
