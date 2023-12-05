@@ -131,16 +131,16 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.4)
+        version: 3.5.0(vite@5.0.5)
       lightningcss:
         specifier: ^1.22.1
         version: 1.22.1
       vite:
-        specifier: ^5.0.4
-        version: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4)
+        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.5)
 
   apps/admin-ui:
     dependencies:
@@ -258,7 +258,7 @@ importers:
         version: 9.0.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.4)
+        version: 3.5.0(vite@5.0.5)
       cypress:
         specifier: ^13.6.0
         version: 13.6.0
@@ -281,11 +281,11 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       vite:
-        specifier: ^5.0.4
-        version: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4)
+        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.5)
       vitest:
         specifier: ^1.0.1
         version: 1.0.1(@types/node@20.10.3)(jsdom@23.0.1)(lightningcss@1.22.1)
@@ -414,19 +414,19 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.4)
+        version: 3.5.0(vite@5.0.5)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.6.1)
       vite:
-        specifier: ^5.0.4
-        version: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4)
+        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.5)
       vite-plugin-dts:
         specifier: ^3.6.4
-        version: 3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.4)
+        version: 3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.5)
 
   libs/ui-shared:
     dependencies:
@@ -469,22 +469,22 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.4)
+        version: 3.5.0(vite@5.0.5)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.6.1)
       vite:
-        specifier: ^5.0.4
-        version: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4)
+        version: 0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.5)
       vite-plugin-dts:
         specifier: ^3.6.4
-        version: 3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.4)
+        version: 3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.5)
       vite-plugin-lib-inject-css:
         specifier: ^1.3.0
-        version: 1.3.0(vite@5.0.4)
+        version: 1.3.0(vite@5.0.5)
       vitest:
         specifier: ^1.0.1
         version: 1.0.1(@types/node@20.10.3)(jsdom@23.0.1)(lightningcss@1.22.1)
@@ -1391,25 +1391,9 @@ packages:
       rollup: 4.6.1
     dev: true
 
-  /@rollup/rollup-android-arm-eabi@4.6.0:
-    resolution: {integrity: sha512-keHkkWAe7OtdALGoutLY3utvthkGF+Y17ws9LYT8pxMBYXaCoH/8dXS2uzo6e8+sEhY7y/zi5RFo22Dy2lFpDw==}
-    cpu: [arm]
-    os: [android]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-android-arm-eabi@4.6.1:
     resolution: {integrity: sha512-0WQ0ouLejaUCRsL93GD4uft3rOmB8qoQMU05Kb8CmMtMBe7XUDLAltxVZI1q6byNqEtU7N1ZX1Vw5lIpgulLQA==}
     cpu: [arm]
-    os: [android]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@rollup/rollup-android-arm64@4.6.0:
-    resolution: {integrity: sha512-y3Kt+34smKQNWilicPbBz/MXEY7QwDzMFNgwEWeYiOhUt9MTWKjHqe3EVkXwT2fR7izOvHpDWZ0o2IyD9SWX7A==}
-    cpu: [arm64]
     os: [android]
     requiresBuild: true
     dev: true
@@ -1423,25 +1407,9 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-darwin-arm64@4.6.0:
-    resolution: {integrity: sha512-oLzzxcUIHltHxOCmaXl+pkIlU+uhSxef5HfntW7RsLh1eHm+vJzjD9Oo4oUKso4YuP4PpbFJNlZjJuOrxo8dPg==}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-darwin-arm64@4.6.1:
     resolution: {integrity: sha512-cEXJQY/ZqMACb+nxzDeX9IPLAg7S94xouJJCNVE5BJM8JUEP4HeTF+ti3cmxWeSJo+5D+o8Tc0UAWUkfENdeyw==}
     cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@rollup/rollup-darwin-x64@4.6.0:
-    resolution: {integrity: sha512-+ANnmjkcOBaV25n0+M0Bere3roeVAnwlKW65qagtuAfIxXF9YxUneRyAn/RDcIdRa7QrjRNJL3jR7T43ObGe8Q==}
-    cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
@@ -1455,14 +1423,6 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-linux-arm-gnueabihf@4.6.0:
-    resolution: {integrity: sha512-tBTSIkjSVUyrekddpkAqKOosnj1Fc0ZY0rJL2bIEWPKqlEQk0paORL9pUIlt7lcGJi3LzMIlUGXvtNi1Z6MOCQ==}
-    cpu: [arm]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-linux-arm-gnueabihf@4.6.1:
     resolution: {integrity: sha512-EfI3hzYAy5vFNDqpXsNxXcgRDcFHUWSx5nnRSCKwXuQlI5J9dD84g2Usw81n3FLBNsGCegKGwwTVsSKK9cooSQ==}
     cpu: [arm]
@@ -1471,24 +1431,8 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-linux-arm64-gnu@4.6.0:
-    resolution: {integrity: sha512-Ed8uJI3kM11de9S0j67wAV07JUNhbAqIrDYhQBrQW42jGopgheyk/cdcshgGO4fW5Wjq97COCY/BHogdGvKVNQ==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-linux-arm64-gnu@4.6.1:
     resolution: {integrity: sha512-9lhc4UZstsegbNLhH0Zu6TqvDfmhGzuCWtcTFXY10VjLLUe4Mr0Ye2L3rrtHaDd/J5+tFMEuo5LTCSCMXWfUKw==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@rollup/rollup-linux-arm64-musl@4.6.0:
-    resolution: {integrity: sha512-mZoNQ/qK4D7SSY8v6kEsAAyDgznzLLuSFCA3aBHZTmf3HP/dW4tNLTtWh9+LfyO0Z1aUn+ecpT7IQ3WtIg3ViQ==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
@@ -1503,24 +1447,8 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-linux-x64-gnu@4.6.0:
-    resolution: {integrity: sha512-rouezFHpwCqdEXsqAfNsTgSWO0FoZ5hKv5p+TGO5KFhyN/dvYXNMqMolOb8BkyKcPqjYRBeT+Z6V3aM26rPaYg==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-linux-x64-gnu@4.6.1:
     resolution: {integrity: sha512-DNGZvZDO5YF7jN5fX8ZqmGLjZEXIJRdJEdTFMhiyXqyXubBa0WVLDWSNlQ5JR2PNgDbEV1VQowhVRUh+74D+RA==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@rollup/rollup-linux-x64-musl@4.6.0:
-    resolution: {integrity: sha512-Bbm+fyn3S6u51urfj3YnqBXg5vI2jQPncRRELaucmhBVyZkbWClQ1fEsRmdnCPpQOQfkpg9gZArvtMVkOMsh1w==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
@@ -1535,14 +1463,6 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-win32-arm64-msvc@4.6.0:
-    resolution: {integrity: sha512-+MRMcyx9L2kTrTUzYmR61+XVsliMG4odFb5UmqtiT8xOfEicfYAGEuF/D1Pww1+uZkYhBqAHpvju7VN+GnC3ng==}
-    cpu: [arm64]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-win32-arm64-msvc@4.6.1:
     resolution: {integrity: sha512-v2FVT6xfnnmTe3W9bJXl6r5KwJglMK/iRlkKiIFfO6ysKs0rDgz7Cwwf3tjldxQUrHL9INT/1r4VA0n9L/F1vQ==}
     cpu: [arm64]
@@ -1551,25 +1471,9 @@ packages:
     dev: true
     optional: true
 
-  /@rollup/rollup-win32-ia32-msvc@4.6.0:
-    resolution: {integrity: sha512-rxfeE6K6s/Xl2HGeK6cO8SiQq3k/3BYpw7cfhW5Bk2euXNEpuzi2cc7llxx1si1QgwfjNtdRNTGqdBzGlFZGFw==}
-    cpu: [ia32]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@rollup/rollup-win32-ia32-msvc@4.6.1:
     resolution: {integrity: sha512-YEeOjxRyEjqcWphH9dyLbzgkF8wZSKAKUkldRY6dgNR5oKs2LZazqGB41cWJ4Iqqcy9/zqYgmzBkRoVz3Q9MLw==}
     cpu: [ia32]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@rollup/rollup-win32-x64-msvc@4.6.0:
-    resolution: {integrity: sha512-QqmCsydHS172Y0Kc13bkMXvipbJSvzeglBncJG3LsYJSiPlxYACz7MmJBs4A8l1oU+jfhYEIC/+AUSlvjmiX/g==}
-    cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
@@ -2317,13 +2221,13 @@ packages:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
 
-  /@vitejs/plugin-react-swc@3.5.0(vite@5.0.4):
+  /@vitejs/plugin-react-swc@3.5.0(vite@5.0.5):
     resolution: {integrity: sha512-1PrOvAaDpqlCV+Up8RkAh9qaiUjoDUcjtttyhXDKw53XA6Ve16SOp6cCOpRs8Dj8DqUQs6eTW5YkLcLJjrXAig==}
     peerDependencies:
       vite: ^4 || ^5
     dependencies:
       '@swc/core': 1.3.96
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@swc/helpers'
     dev: true
@@ -5546,8 +5450,8 @@ packages:
     hasBin: true
     dev: true
 
-  /nanoid@3.3.6:
-    resolution: {integrity: sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==}
+  /nanoid@3.3.7:
+    resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
     dev: true
@@ -5861,11 +5765,11 @@ packages:
     deprecated: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
     dev: false
 
-  /postcss@8.4.31:
-    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
+  /postcss@8.4.32:
+    resolution: {integrity: sha512-D/kj5JNu6oo2EIy+XL/26JEDTlIbB8hw85G8StOE6L74RQAVVP5rej6wxCNqyMbR4RkPfqvezVbPw81Ngd6Kcw==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
-      nanoid: 3.3.6
+      nanoid: 3.3.7
       picocolors: 1.0.0
       source-map-js: 1.0.2
     dev: true
@@ -6308,26 +6212,6 @@ packages:
       rollup: '*'
     dependencies:
       rollup: 4.6.1
-    dev: true
-
-  /rollup@4.6.0:
-    resolution: {integrity: sha512-R8i5Her4oO1LiMQ3jKf7MUglYV/mhQ5g5OKeld5CnkmPdIGo79FDDQYqPhq/PCVuTQVuxsWgIbDy9F+zdHn80w==}
-    engines: {node: '>=18.0.0', npm: '>=8.0.0'}
-    hasBin: true
-    optionalDependencies:
-      '@rollup/rollup-android-arm-eabi': 4.6.0
-      '@rollup/rollup-android-arm64': 4.6.0
-      '@rollup/rollup-darwin-arm64': 4.6.0
-      '@rollup/rollup-darwin-x64': 4.6.0
-      '@rollup/rollup-linux-arm-gnueabihf': 4.6.0
-      '@rollup/rollup-linux-arm64-gnu': 4.6.0
-      '@rollup/rollup-linux-arm64-musl': 4.6.0
-      '@rollup/rollup-linux-x64-gnu': 4.6.0
-      '@rollup/rollup-linux-x64-musl': 4.6.0
-      '@rollup/rollup-win32-arm64-msvc': 4.6.0
-      '@rollup/rollup-win32-ia32-msvc': 4.6.0
-      '@rollup/rollup-win32-x64-msvc': 4.6.0
-      fsevents: 2.3.3
     dev: true
 
   /rollup@4.6.1:
@@ -7171,7 +7055,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -7183,7 +7067,7 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-checker@0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.4):
+  /vite-plugin-checker@0.6.2(eslint@8.54.0)(typescript@5.3.2)(vite@5.0.5):
     resolution: {integrity: sha512-YvvvQ+IjY09BX7Ab+1pjxkELQsBd4rPhWNw8WLBeFVxu/E7O+n6VYAqNsKdK/a2luFlX/sMpoWdGFfg4HvwdJQ==}
     engines: {node: '>=14.16'}
     peerDependencies:
@@ -7229,14 +7113,14 @@ packages:
       strip-ansi: 6.0.1
       tiny-invariant: 1.3.1
       typescript: 5.3.2
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vscode-languageclient: 7.0.0
       vscode-languageserver: 7.0.0
       vscode-languageserver-textdocument: 1.0.11
       vscode-uri: 3.0.8
     dev: true
 
-  /vite-plugin-dts@3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.4):
+  /vite-plugin-dts@3.6.4(@types/node@20.10.3)(rollup@4.6.1)(typescript@5.3.2)(vite@5.0.5):
     resolution: {integrity: sha512-yOVhUI/kQhtS6lCXRYYLv2UUf9bftcwQK9ROxCX2ul17poLQs02ctWX7+vXB8GPRzH8VCK3jebEFtPqqijXx6w==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -7252,7 +7136,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       kolorist: 1.8.0
       typescript: 5.3.2
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vue-tsc: 1.8.22(typescript@5.3.2)
     transitivePeerDependencies:
       - '@types/node'
@@ -7260,18 +7144,18 @@ packages:
       - supports-color
     dev: true
 
-  /vite-plugin-lib-inject-css@1.3.0(vite@5.0.4):
+  /vite-plugin-lib-inject-css@1.3.0(vite@5.0.5):
     resolution: {integrity: sha512-Rldq36U9TDlpDom3yoLybfJtzn897+oMKdX0+fxbVYnYjRGnTtaFfnMmfOckH8GQ3cvGAKv9Ai1PWyE0amIbjg==}
     peerDependencies:
       vite: '*'
     dependencies:
       magic-string: 0.30.5
       picocolors: 1.0.0
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
     dev: true
 
-  /vite@5.0.4(@types/node@20.10.3)(lightningcss@1.22.1):
-    resolution: {integrity: sha512-RzAr8LSvM8lmhB4tQ5OPcBhpjOZRZjuxv9zO5UcxeoY2bd3kP3Ticd40Qma9/BqZ8JS96Ll/jeBX9u+LJZrhVg==}
+  /vite@5.0.5(@types/node@20.10.3)(lightningcss@1.22.1):
+    resolution: {integrity: sha512-OekeWqR9Ls56f3zd4CaxzbbS11gqYkEiBtnWFFgYR2WV8oPJRRKq0mpskYy/XaoCL3L7VINDhqqOMNDiYdGvGg==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -7301,8 +7185,8 @@ packages:
       '@types/node': 20.10.3
       esbuild: 0.19.5
       lightningcss: 1.22.1
-      postcss: 8.4.31
-      rollup: 4.6.0
+      postcss: 8.4.32
+      rollup: 4.6.1
     optionalDependencies:
       fsevents: 2.3.3
     dev: true
@@ -7352,7 +7236,7 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.8.1
-      vite: 5.0.4(@types/node@20.10.3)(lightningcss@1.22.1)
+      vite: 5.0.5(@types/node@20.10.3)(lightningcss@1.22.1)
       vite-node: 1.0.1(@types/node@20.10.3)(lightningcss@1.22.1)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
