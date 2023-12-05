@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.model.StoreProvider;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractQuarkusDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
@@ -206,8 +208,37 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         }
 
         addStorageOptions(storeProvider, commands);
+        addFeaturesOption(commands);
 
         return commands;
+    }
+
+    protected void addFeaturesOption(List<String> commands) {
+        String defaultFeatures = configuration.getDefaultFeatures();
+
+        if (StringUtil.isBlank(defaultFeatures)) {
+            return;
+        }
+
+        if (commands.stream().anyMatch(List.of("import", "export")::contains)) {
+            return;
+        }
+
+        StringBuilder featuresOption = new StringBuilder("--features=").append(defaultFeatures);
+        Iterator<String> iterator = commands.iterator();
+
+        while (iterator.hasNext()) {
+            String command = iterator.next();
+
+            if (command.startsWith("--features")) {
+                featuresOption = new StringBuilder(command);
+                featuresOption.append(",").append(defaultFeatures);
+                iterator.remove();
+                break;
+            }
+        }
+
+        commands.add(featuresOption.toString());
     }
 
     protected List<String> configureArgs(List<String> commands) {
