@@ -1,6 +1,6 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true">
+<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
 :guide-id: ${id}
 :guide-title: ${title}
 :guide-summary: ${summary}
@@ -14,7 +14,13 @@ include::../attributes.adoc[]
 = ${title}
 
 ifeval::["${preview}" == "true"]
-WARNING: This {section} is describing a feature which is currently in preview. Please provide your feedback while we’re continuing to work on this.
+WARNING: This {section} is describing a feature which is currently in preview.
+ifeval::["${previewDiscussionLink}" == ""]
+Please provide your feedback while we’re continuing to work on this.
+endif::[]
+ifeval::["${previewDiscussionLink}" != ""]
+Please provide your feedback by link:${previewDiscussionLink}[joining this discussion] while we’re continuing to work on this.
+endif::[]
 endif::[]
 
 <#nested>

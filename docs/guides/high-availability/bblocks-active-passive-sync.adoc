@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Building blocks active-passive deployments"
 summary="Overview of building blocks, alternatives and not considered options"
-preview="true" >
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
 
 The following building blocks are needed to set up an active-passive deployment with synchronous replication.
 
