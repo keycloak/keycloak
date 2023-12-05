@@ -73,6 +73,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         commands.add(getCommand());
         commands.add("-v");
         commands.add(command);
+        addFeaturesOption(commands);
         if (args != null) {
             commands.addAll(Arrays.asList(args));
         }
