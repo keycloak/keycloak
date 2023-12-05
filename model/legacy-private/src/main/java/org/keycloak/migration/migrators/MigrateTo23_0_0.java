@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -43,7 +44,16 @@ public class MigrateTo23_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(this::migrateRealm);
+        session.realms().getRealmsStream().forEach(realm -> {
+            KeycloakContext context = session.getContext();
+
+            try {
+                context.setRealm(realm);
+                migrateRealm(realm);
+            } finally {
+                context.setRealm(null);
+            }
+        });
     }
 
     @Override
