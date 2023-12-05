@@ -4,6 +4,7 @@ import {
   arrayToKeyValue,
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
+import { beerify, debeerify } from "../util";
 
 export type UserFormFields = Omit<
   UIUserRepresentation,
@@ -21,9 +22,15 @@ export function toUserFormFields(
   data: UIUserRepresentation,
   userProfileEnabled: boolean,
 ): UserFormFields {
-  const attributes = userProfileEnabled
-    ? data.attributes
-    : arrayToKeyValue(data.attributes);
+  let attributes: Record<string, string | string[]> = {};
+  if (userProfileEnabled) {
+    Object.entries(data.attributes || {}).forEach(
+      ([k, v]) => (attributes[beerify(k)] = v),
+    );
+  } else {
+    attributes = arrayToKeyValue(data.attributes);
+  }
+
   const unmanagedAttributes = arrayToKeyValue(data.unmanagedAttributes);
   return { ...data, attributes, unmanagedAttributes };
 }
@@ -34,7 +41,12 @@ export function toUserRepresentation(
   const username = data.username?.trim();
   const attributes = Array.isArray(data.attributes)
     ? keyValueToArray(data.attributes)
-    : data.attributes;
+    : Object.fromEntries(
+        Object.entries(data.attributes || {}).map(([k, v]) => [
+          debeerify(k),
+          v,
+        ]),
+      );
   const unmanagedAttributes = Array.isArray(data.unmanagedAttributes)
     ? keyValueToArray(data.unmanagedAttributes)
     : data.unmanagedAttributes;
