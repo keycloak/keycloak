@@ -49,6 +49,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -1080,7 +1081,8 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
+    public GroupRepresentation getGroupByPath(@PathParam("path") List<PathSegment> pathSegments) {
+        String[] path = pathSegments.stream().map(PathSegment::getPath).toArray(String[]::new);
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
