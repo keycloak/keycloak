@@ -1299,6 +1299,44 @@ public class GroupTest extends AbstractGroupTest {
         assertTrue(searchResultGroups.isEmpty());
     }
 
+    @Test
+    public void testGroupsWithSpaces() {
+        RealmResource realm = adminClient.realms().realm("test");
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent space");
+        parentGroup = createGroup(realm, parentGroup);
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child space");
+        try (Response response = realm.groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertEquals(201, response.getStatus()); // created status
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE,
+                AdminEventPaths.groupSubgroupsPath(parentGroup.getId()), childGroup, ResourceType.GROUP);
+
+        List<GroupRepresentation> groupsFound = realm.groups().groups("parent space", true, 0, 1, true);
+        Assert.assertEquals(1, groupsFound.size());
+        Assert.assertEquals(parentGroup.getId(), groupsFound.iterator().next().getId());
+        Assert.assertEquals(0, groupsFound.iterator().next().getSubGroups().size());
+        groupsFound = realm.groups().groups("child space", true, 0, 1, true);
+        Assert.assertEquals(1, groupsFound.size());
+        Assert.assertEquals(parentGroup.getId(), groupsFound.iterator().next().getId());
+        Assert.assertEquals(1, groupsFound.iterator().next().getSubGroups().size());
+        Assert.assertEquals(childGroup.getId(), groupsFound.iterator().next().getSubGroups().iterator().next().getId());
+
+        GroupRepresentation groupFound = realm.getGroupByPath(parentGroup.getName());
+        Assert.assertNotNull(groupFound);
+        Assert.assertEquals(parentGroup.getId(), groupFound.getId());
+        groupFound = realm.getGroupByPath("/" + parentGroup.getName() + "/" + childGroup.getName());
+        Assert.assertNotNull(groupFound);
+        Assert.assertEquals(childGroup.getId(), groupFound.getId());
+
+        realm.groups().group(childGroup.getId()).remove();
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.groupPath(childGroup.getId()), ResourceType.GROUP);
+        realm.groups().group(parentGroup.getId()).remove();
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.groupPath(parentGroup.getId()), ResourceType.GROUP);
+    }
+
     /**
      * Assert that when you create/move/update a group name, the response is not Http 409 Conflict and the message does not
      * correspond to the returned user-friendly message in such cases
