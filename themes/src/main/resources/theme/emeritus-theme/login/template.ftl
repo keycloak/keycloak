@@ -187,12 +187,12 @@
     </div>
 </div>
 <div class="${properties.kcTerms!}" style="display: flex;justify-content: center;margin-top: 1rem;font-size: 1rem;">
-    <a id="terms" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
+    <a id="terms_of_use" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
     <a id="privacy" target="_blank">Privacy Policy</a>
 </div>
  <script type="text/javascript">
     var referrer = "https://insights-beta.emeritus.org/";
-    var terms = document.getElementById('terms');
+    var terms = document.getElementById('terms_of_use');
     var privacy = document.getElementById('privacy');
     var logo = document.getElementById('logo');
     terms.href = referrer + 'terms-of-service';
