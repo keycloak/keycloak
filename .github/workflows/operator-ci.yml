@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.31.2
   KUBERNETES_VERSION: v1.24.17 # OCP 4.11
 
@@ -88,7 +89,7 @@ jobs:
 
       - name: Test operator running locally
         run: |
-          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ env.version_local }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
@@ -134,7 +135,7 @@ jobs:
       - name: Test operator running in cluster
         run: |
           eval $(minikube -p minikube docker-env)
-          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
+          ./mvnw install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ env.version_remote }} \
