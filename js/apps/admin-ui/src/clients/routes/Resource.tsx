@@ -17,7 +17,11 @@ export const ResourceDetailsRoute: AppRouteObject = {
   breadcrumb: (t) => t("resourceDetails"),
   handle: {
     access: (accessChecker) =>
-      accessChecker.hasAny("manage-clients", "view-authorization"),
+      accessChecker.hasAny(
+        "manage-clients",
+        "view-authorization",
+        "manage-authorization",
+      ),
   },
 };
 
