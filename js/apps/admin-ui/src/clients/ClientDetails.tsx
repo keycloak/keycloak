@@ -509,6 +509,7 @@ export default function ClientDetails() {
                 >
                   <Tab
                     id="setup"
+                    data-testid="clientScopesSetupTab"
                     title={<TabTitleText>{t("setup")}</TabTitleText>}
                     {...clientScopesSetupTab}
                   >
@@ -521,6 +522,7 @@ export default function ClientDetails() {
                   </Tab>
                   <Tab
                     id="evaluate"
+                    data-testid="clientScopesEvaluateTab"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                     {...clientScopesEvaluateTab}
                   >

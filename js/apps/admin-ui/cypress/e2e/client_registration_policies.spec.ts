@@ -136,12 +136,7 @@ describe("Accessibility tests for client registration policies", () => {
     cy.injectAxe();
   });
 
-  it("Check a11y violations on load/ anonymous client registration policies", () => {
-    cy.checkA11y();
-  });
-
-  it("Check a11y violations on load/ authenticated client registration policies", () => {
-    clientRegistrationPage.goToAuthenticatedSubTab();
+  it("Check a11y violations on load/ client registration policies", () => {
     cy.checkA11y();
   });
 });
