@@ -142,4 +142,56 @@ public class RedirectUtilsTest {
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path<less/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path/index.jsp?param=v1 v2", set, false));
     }
+
+    @Test
+    // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f
+    // OAuth recommends/advises exact matching string comparison for URIs
+    public void testverifyCaseIsSensitive() {
+        Set<String> set = Stream.of(
+                "https://keycloak.org/*",
+                "http://KeyCloak.org/*",
+                "no.host.Name.App:/Test"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
+        Assert.assertEquals("http://KeyCloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "http://KeyCloak.org/index.html", set, false));
+        Assert.assertEquals("no.host.Name.App:/Test", RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.App:/Test", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://KeyCloak.org/index.html", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://keycloak.org/index.html", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "HTTPS://keycloak.org/index.html", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.app:/Test", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "no.host.Name.App:/test", set, false));
+    }
+
+    @Test
+    public void testRelativeRedirectUri() {
+        Set<String> set = Stream.of(
+                "*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/path", RedirectUtils.verifyRedirectUri(session, "https://keycloak.org", "/path", set, false));
+        Assert.assertEquals("https://keycloak.org/path", RedirectUtils.verifyRedirectUri(session, "https://keycloak.org", "path", set, false));
+    }
+
+    @Test
+    public void testUserInfo() {
+        Set<String> set = Stream.of(
+                "https://keycloak.org/*",
+                "https://test*",
+                "https://something@keycloak.com/exact"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
+        Assert.assertEquals("https://test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
+        Assert.assertEquals("https://something@keycloak.org/path", RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.org/path", set, false));
+        Assert.assertEquals("https://some%20thing@test.com/path", RedirectUtils.verifyRedirectUri(session, null, "https://some%20thing@test.com/path", set, false));
+        Assert.assertEquals("https://something@keycloak.com/exact", RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.com/exact", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@other.com/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org@other.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2F@other.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@other.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com@other.com", set, false));
+    }
 }
