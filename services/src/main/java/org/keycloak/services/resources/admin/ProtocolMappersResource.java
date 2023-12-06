@@ -112,7 +112,7 @@ public class ProtocolMappersResource {
 
         return client.getProtocolMappersStream()
                 .filter(mapper -> isEnabled(session, mapper) && Objects.equals(mapper.getProtocol(), protocol))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(this::toEffectiveProtocolMapperRep);
     }
 
     /**
@@ -180,7 +180,7 @@ public class ProtocolMappersResource {
 
         return client.getProtocolMappersStream()
                 .filter(mapper -> isEnabled(session, mapper))
-                .map(ModelToRepresentation::toRepresentation);
+                .map(this::toEffectiveProtocolMapperRep);
     }
 
     /**
@@ -200,6 +200,17 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
+        return toEffectiveProtocolMapperRep(model);
+    }
+
+    private ProtocolMapperRepresentation toEffectiveProtocolMapperRep(ProtocolMapperModel model) {
+        ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
+        if (mapper == null) {
+            logger.warnf("Protocol mapper provider '%s' not found. Configured on mapper with ID '%s'", model.getProtocolMapper(), model.getId());
+            throw new NotFoundException("Protocol mapper provider not found");
+        }
+
+        model = mapper.getEffectiveModel(session, realm, model);
         return ModelToRepresentation.toRepresentation(model);
     }
 
