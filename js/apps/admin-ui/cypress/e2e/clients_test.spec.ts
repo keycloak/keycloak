@@ -263,7 +263,7 @@ describe("Clients test", () => {
         .should("have.length.gt", 0);
 
       cy.findByTestId("effective-protocol-mappers").within(() => {
-        cy.contains("locale").should("exist");
+        cy.contains("website").should("exist");
       });
     });
 
