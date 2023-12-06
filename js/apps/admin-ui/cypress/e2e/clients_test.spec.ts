@@ -262,9 +262,7 @@ describe("Clients test", () => {
         .find("tr")
         .should("have.length.gt", 0);
 
-      cy.findByTestId("effective-protocol-mappers").within(() => {
-        cy.contains("website").should("exist");
-      });
+      cy.findByTestId("effective-protocol-mappers").contains("picture");
     });
 
     it("check role scope mappings list list is not empty and find role scope mapping admin", () => {
