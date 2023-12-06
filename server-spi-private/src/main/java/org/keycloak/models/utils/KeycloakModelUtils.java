@@ -716,6 +716,23 @@ public final class KeycloakModelUtils {
         return getGroupModel(session.groups(), realm, null, split, 0);
     }
 
+    /**
+     * Finds group by path. Variant when you have the path already separated by
+     * group names.
+     *
+     * @param session Keycloak session
+     * @param realm The realm
+     * @param path Path The path hierarchy of groups
+     *
+     * @return {@code GroupModel} corresponding to the given {@code path} or {@code null} if no group was found
+     */
+    public static GroupModel findGroupByPath(KeycloakSession session, RealmModel realm, String[] path) {
+        if (path == null || path.length == 0) {
+            return null;
+        }
+        return getGroupModel(session.groups(), realm, null, path, 0);
+    }
+
     private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
         StringBuilder nameBuilder = new StringBuilder();
         for (int i = index; i < split.length; i++) {
