@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -35,6 +38,7 @@ import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -246,6 +250,28 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
             events.expectLogin().error(Errors.INVALID_REDIRECT_URI).user((String) null).session((String) null).clearDetails().assertEvent();
+        }
+    }
+
+    @Test
+    public void authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setRedirectUris(Collections.singletonList("*"))
+                .update()) {
+            oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+            oauth.responseType(OAuth2Constants.CODE);
+            oauth.redirectUri("/test?p=&gt;"); // set HTML entity &gt;
+            oauth.doLogin("test-user@localhost", "password");
+
+            WaitUtils.waitForPageToLoad();
+            // if not properly encoded %3E would be received instead of &gt;
+            MatcherAssert.assertThat("Redirect page was not encoded", oauth.getDriver().getCurrentUrl(), Matchers.endsWith("/test?p=&gt;"));
+
+            events.expect(EventType.LOGIN)
+                    .user(AssertEvents.isUUID())
+                    .session(AssertEvents.isUUID())
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .assertEvent();
         }
     }
 

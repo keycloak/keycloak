@@ -160,7 +160,9 @@ public abstract class OIDCRedirectUriBuilder {
             builder.append("  </HEAD>");
             builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
 
-            builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + redirectUri.toString() + "\">");
+            builder.append("    <FORM METHOD=\"POST\" ACTION=\"")
+                    .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
+                    .append("\">");
 
             for (Map.Entry<String, String> param : params.entrySet()) {
                 builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
