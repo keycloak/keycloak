@@ -46,7 +46,7 @@
             line-height: 140%;
         }
 
-        @media only screen and (max-width: 600px) {
+        @media only screen and (max-width: 767px) {
             .notice {
                 margin-top: 20px;
                 padding: 0 20px;
