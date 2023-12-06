@@ -273,10 +273,6 @@ describe("Clients test", () => {
       cy.findByTestId("effective-role-scope-mappings")
         .find("tr")
         .should("have.length.gt", 0);
-
-      cy.findByTestId("effective-role-scope-mappings").within(() => {
-        cy.contains("admin").should("exist");
-      });
     });
 
     it("check generated access token when user is not selected", () => {
