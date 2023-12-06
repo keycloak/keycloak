@@ -639,6 +639,20 @@ public class SamlClient {
     }
 
     /**
+     * Extracts the form element from a Post binding.
+     *
+     * @param responsePage HTML code in the page
+     * @return The element that is the form
+     */
+    public static Element extractFormFromPostResponse(String responsePage) {
+        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(responsePage);
+        Elements form = theResponsePage.select("form");
+        assertThat("Checking uniqueness of SAMLResponse/SAMLRequest form in Post binding", form.size(), is(1));
+
+        return form.first();
+    }
+
+    /**
      * Extracts and parses value of RelayState input field of a form present in the given page.
      *
      * @param responsePage HTML code of the page
