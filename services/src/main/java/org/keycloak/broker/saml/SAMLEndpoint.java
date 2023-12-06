@@ -430,7 +430,7 @@ public class SAMLEndpoint {
                 AuthenticationSessionModel authSession;
                 if (StringUtil.isNotBlank(clientId)) {
                     authSession = samlIdpInitiatedSSO(clientId);
-                } else if (StringUtil.isNotBlank(relayState)) {
+                } else if (StringUtil.isNotBlank(relayState) && relayState != null) {
                     authSession = callback.getAndVerifyAuthenticationSession(relayState);
                 } else {
                     logger.error("SAML RelayState parameter was null when it should be returned by the IDP");
