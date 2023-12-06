@@ -240,23 +240,22 @@ describe("Clients test", () => {
       commonPage.sidebar().goToClients();
     });
 
-    before(() => {
-      adminClient.createClient({
+    before(async () => {
+      await adminClient.createClient({
         protocol: "openid-connect",
         clientId: clientName,
         publicClient: false,
       });
     });
 
-    after(() => {
-      adminClient.deleteClient(clientName);
+    after(async () => {
+      await adminClient.deleteClient(clientName);
     });
 
     it("check effective protocol mappers list is not empty and find effective protocol mapper locale", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
-      clientDetailsPage.goToClientScopesTab();
       clientDetailsPage.goToClientScopesEvaluateTab();
 
       cy.findByTestId("effective-protocol-mappers")
@@ -272,7 +271,6 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
-      clientDetailsPage.goToClientScopesTab();
       clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateEffectiveRoleScopeMappingsTab();
 
@@ -289,7 +287,6 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
-      clientDetailsPage.goToClientScopesTab();
       clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
 
@@ -300,7 +297,6 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
-      clientDetailsPage.goToClientScopesTab();
       clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
 
@@ -311,7 +307,6 @@ describe("Clients test", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
-      clientDetailsPage.goToClientScopesTab();
       clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
 
@@ -1163,10 +1158,6 @@ describe("Clients test", () => {
       keycloakBefore();
       commonPage.sidebar().goToClients();
       cy.injectAxe();
-    });
-
-    afterEach(() => {
-      adminClient.deleteClient(clientId);
     });
 
     it("Check a11y violations on load/ clients list tab", () => {

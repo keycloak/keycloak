@@ -78,6 +78,7 @@ export default class ClientDetailsPage extends CommonPage {
   }
 
   goToClientScopesEvaluateTab() {
+    this.goToClientScopesTab();
     cy.findByTestId(this.#clientScopesEvaluateTab).click();
     return this;
   }
