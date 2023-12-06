@@ -284,6 +284,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
+    public void testUserLoginWithAngleBrackets() {
+        KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm test --user 'special>>character' --password '<password>'");
+
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user special>>character of realm test", exe.stderrLines().get(0));
+    }
+
+    @Test
     public void testUserLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test user login with interaction - provide user password after prompted for it
