@@ -172,7 +172,7 @@ public class ClusteringTest extends BaseOperatorTest {
                 .untilAsserted(() -> assertThat(crSelector.scale().getStatus().getReplicas()).isEqualTo(2));
 
         // get the service
-        String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+        String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
 
         Awaitility.await().atMost(5, MINUTES).untilAsserted(() -> {
             Log.info("Starting curl Pod to test if the realm is available");
