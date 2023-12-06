@@ -1,0 +1,22 @@
+= Automating Infinispan CLI commands
+{jdgserver_name} CLI commands can be automated by creating a `Batch` CR instance.
+
+For example, the following `Batch` CR could be used to automate taking an {jdgserver_name} site offline:
+[source,yaml,subs="+attributes"]
+----
+apiVersion: infinispan.org/v2alpha1
+kind: Batch
+metadata:
+  name: take-offline
+  namespace: {ns} #<1>
+spec:
+  cluster: {cluster-name} #<2>
+  config: | #<3>
+    site take-offline --all-caches --site={site-a-cr}
+    site status --all-caches --site={site-a-cr}
+----
+<1> The `Batch` CR must be created in the same namespace as the {jdgserver_name} deployment.
+<2> The name of the Infinispan CR.
+<3> A multiline string containing one or more {jdgserver_name} CLI commands.
+
+For more information see the https://infinispan.org/docs/infinispan-operator/main/operator.html#batch-cr[Batch CR documentation].

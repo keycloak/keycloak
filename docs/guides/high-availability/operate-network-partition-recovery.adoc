@@ -66,6 +66,8 @@ As now the state is available in the secondary site, {project_name} can be start
 +
 When deploying {project_name} using the {project_name} Operator, change the number of {project_name} instances in the {project_name} Custom Resource to the original value.
 
+include::partials/infinispan/infinispan-cli-batch.adoc[leveloffset=4]
+
 === AWS Aurora Database
 
 No action required.

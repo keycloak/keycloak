@@ -70,6 +70,8 @@ When deploying {project_name} using the {project_name} Operator, change the numb
 
 Both {jdgserver_name} clusters are in sync and the switchover from secondary back to the primary site can be performed.
 
+include::partials/infinispan/infinispan-cli-batch.adoc[leveloffset=4]
+
 === AWS Aurora Database
 
 include::partials/aurora/aurora-failover.adoc[]
