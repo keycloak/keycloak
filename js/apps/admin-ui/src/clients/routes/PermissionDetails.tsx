@@ -21,7 +21,11 @@ export const PermissionDetailsRoute: AppRouteObject = {
   breadcrumb: (t) => t("permissionDetails"),
   handle: {
     access: (accessChecker) =>
-      accessChecker.hasAny("manage-clients", "view-authorization"),
+      accessChecker.hasAny(
+        "manage-clients",
+        "view-authorization",
+        "manage-authorization",
+      ),
   },
 };
 
