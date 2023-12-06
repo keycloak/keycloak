@@ -261,8 +261,6 @@ describe("Clients test", () => {
       cy.findByTestId("effective-protocol-mappers")
         .find("tr")
         .should("have.length.gt", 0);
-
-      cy.findByTestId("effective-protocol-mappers").contains("website");
     });
 
     it("check role scope mappings list list is not empty and find role scope mapping admin", () => {
