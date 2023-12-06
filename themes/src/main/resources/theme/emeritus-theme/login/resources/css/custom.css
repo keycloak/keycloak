@@ -679,12 +679,13 @@ ul#kc-totp-supported-apps {
 
 .login-pf-page {
   padding-top: 0px !important;
-  margin-top: 100px !important;
+  margin-top: 45px !important;
   padding-bottom: 2rem !important;
   overflow: hidden;
   @media (max-width: 767px) {
     padding-left: 16px !important;
     padding-right: 16px !important;
+    margin-top: 25px !important;
   }
 }
 
