@@ -22,12 +22,20 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -154,5 +162,23 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
                             ClientSessionContext clientSessionCtx) {
 
+    }
+
+    @Override
+    public ProtocolMapperModel getEffectiveModel(KeycloakSession session, RealmModel realm, ProtocolMapperModel protocolMapperModel) {
+        // Effectively clone
+        ProtocolMapperModel copy = RepresentationToModel.toModel(ModelToRepresentation.toRepresentation(protocolMapperModel));
+
+        // UserInfo - if not set, default value is the same as includeInIDToken
+        if (copy.getConfig().get(INCLUDE_IN_ID_TOKEN) != null) {
+            copy.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(OIDCAttributeMapperHelper.includeInUserInfo(protocolMapperModel)));
+        }
+
+        // Introspection - if not set, default value is the same as includeInAccessToken
+        if (copy.getConfig().get(INCLUDE_IN_ACCESS_TOKEN) != null) {
+            copy.getConfig().put(INCLUDE_IN_INTROSPECTION, String.valueOf(OIDCAttributeMapperHelper.includeInIntrospection(protocolMapperModel)));
+        }
+
+        return copy;
     }
 }
