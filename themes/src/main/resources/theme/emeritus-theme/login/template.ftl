@@ -45,33 +45,21 @@
             );
         </script>
     </#if>
-    <script type="text/javascript">
-        document.addEventListener('DOMContentLoaded', function () {
-            var overlayModal = document.getElementById('overlayModal');
-            var openModalBtn = document.getElementById('openModalBtn');
-            var closeModalBtn = document.getElementById('closeModalBtn');
-            var noModal = document.getElementById('noModal');
-            var modalContent = document.getElementById('modalContent');
-
-            noModal.appendChild(modalContent);
-            closeModalBtn.style.display = 'none';
-
-            if(!sessionStorage.getItem('isModalClosed')){
-                overlayModal.appendChild(modalContent);
-                closeModalBtn.style.display = 'flex';
-                overlayModal.style.display = 'flex';
-            }
-            closeModalBtn.addEventListener("click", function (e) {
-                overlayModal.style.display = 'none';
-                closeModalBtn.style.display = 'none';
-                noModal.appendChild(modalContent);
-                sessionStorage.setItem("isModalClosed", 'true')
-            });
-        });
-    </script>
 </head>
 
 <body class="${properties.kcBodyClass!}">
+<style scoped>
+    .login-pf-page {
+        margin-top: 45px !important;
+        @media (max-width: 767px) {
+            margin-top: 25px !important;
+        }
+    }
+
+    input[type=submit]:active, input[type=submit]:focus {
+        color: #fff;
+    }
+</style>
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
