@@ -67,7 +67,7 @@ public abstract class AbstractCibaEndpoint {
     }
 
     protected void checkSsl() {
-        ClientConnection clientConnection = session.getContext().getContextObject(ClientConnection.class);
+        ClientConnection clientConnection = session.getContext().getConnection();
         RealmModel realm = session.getContext().getRealm();
 
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {

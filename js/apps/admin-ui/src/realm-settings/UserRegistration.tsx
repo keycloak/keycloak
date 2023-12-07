@@ -56,6 +56,7 @@ export const UserRegistration = () => {
         id="roles"
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
+        data-testid="default-roles-tab"
       >
         <RoleMapping
           name={realm.defaultRole!.name!}
@@ -69,6 +70,7 @@ export const UserRegistration = () => {
         id="groups"
         eventKey={20}
         title={<TabTitleText>{t("defaultGroups")}</TabTitleText>}
+        data-testid="default-groups-tab"
       >
         <DefaultsGroupsTab />
       </Tab>

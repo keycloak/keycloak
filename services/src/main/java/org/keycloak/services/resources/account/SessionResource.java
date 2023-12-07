@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.util.Time;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -45,8 +44,6 @@ import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -147,7 +144,7 @@ public class SessionResource {
     @NoCache
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, id));
+        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
         }

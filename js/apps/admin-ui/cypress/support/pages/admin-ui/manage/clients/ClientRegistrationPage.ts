@@ -6,8 +6,13 @@ export class ClientRegistrationPage extends CommonPage {
     return this;
   }
 
+  goToAuthenticatedSubTab() {
+    cy.findAllByTestId("authenticated").click();
+    return this;
+  }
+
   createPolicy() {
-    cy.findAllByTestId("createPolicy").click();
+    cy.findAllByTestId("createPolicy").click({ force: true });
     return this;
   }
 
@@ -17,7 +22,7 @@ export class ClientRegistrationPage extends CommonPage {
   }
 
   fillPolicyForm(props: { name: string }) {
-    cy.findAllByTestId("name").clear().type(props.name);
+    cy.findAllByTestId("name").type(props.name);
     return this;
   }
 }

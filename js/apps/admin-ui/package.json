@@ -73,7 +73,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.7.7",
+    "i18next": "^23.7.8",
     "i18next-http-backend": "^2.4.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -108,7 +108,7 @@
     "lightningcss": "^1.22.1",
     "ts-node": "^10.9.1",
     "uuid": "^9.0.1",
-    "vite": "^5.0.5",
+    "vite": "^5.0.6",
     "vite-plugin-checker": "^0.6.2",
     "vitest": "^1.0.1"
   }
