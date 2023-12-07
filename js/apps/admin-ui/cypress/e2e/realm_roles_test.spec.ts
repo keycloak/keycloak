@@ -300,8 +300,17 @@ describe("Realm roles test", () => {
     });
 
     const role = "a11y-role";
+    const defaultRolesMaster = "default-roles-master";
 
     it("Check a11y violations on load/ realm roles", () => {
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on default-roles-master default tab and default roles tabs", () => {
+      listingPage.goToItemDetails(defaultRolesMaster);
+      cy.checkA11y();
+
+      rolesTab.goToDefaultGroupsTab();
       cy.checkA11y();
     });
 
