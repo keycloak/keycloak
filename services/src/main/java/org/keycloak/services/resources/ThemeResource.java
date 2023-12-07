@@ -20,6 +20,7 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
@@ -40,13 +41,14 @@ import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Theme resource
@@ -55,6 +57,45 @@ import static java.util.stream.Collectors.toList;
  */
 @Path("/resources")
 public class ThemeResource {
+
+    enum Source {
+        THEME,
+        REALM
+    }
+
+    class KeySource implements Comparable<KeySource> {
+
+        private String key;
+        private String value;
+        private Source source;
+
+        public KeySource(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public KeySource(String key, String value, Source source) {
+            this(key, value);
+            this.source = source;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public Source getSource() {
+            return source;
+        }
+
+        @Override
+        public int compareTo(KeySource o) {
+            return Comparator.comparing(KeySource::getKey).thenComparing(KeySource::getSource).compare(this, o);
+        }
+    }
 
     @Context
     private KeycloakSession session;
@@ -106,82 +147,66 @@ public class ThemeResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLocalizationTexts(@PathParam("realm") String realmName, @QueryParam("theme") String theme,
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
-                                         @QueryParam("source") boolean showSource, @QueryParam("hasWords") List<String> hasWords,
+                                         @QueryParam("source") boolean showSource,
+                                         @QueryParam("hasWords") List<String> hasWords,
                                          @QueryParam("first") @DefaultValue("0") Long first,
                                          @QueryParam("max") Long max) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
-        session.getContext().setRealm(realm);
-        Stream<KeySource> result = Stream.<KeySource>builder().build();
 
-        Theme theTheme;
-        final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
-        if (theme == null) {
-            theTheme = session.theme().getTheme(type);
-        } else {
-            theTheme = session.theme().getTheme(theme, type);
+        if (realm == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        final Locale locale = Locale.forLanguageTag(localeString);
+        session.getContext().setRealm(realm);
+        Stream<KeySource> result;
+
+        Theme theTheme;
+        final Locale locale;
+        try {
+            final Theme.Type type = themeType == null ? null : Theme.Type.valueOf(themeType.toUpperCase());
+
+            if (theme == null) {
+                theTheme = session.theme().getTheme(type);
+            } else {
+                theTheme = session.theme().getTheme(theme, type);
+            }
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        locale = localeString == null ? Locale.getDefault() : Locale.forLanguageTag(localeString);
+        
         if (showSource) {
             Properties messagesByLocale = theTheme.getMessages("messages", locale);
-            result = Stream.concat(result, messagesByLocale.entrySet().stream().map(e ->
-                    new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)));
+            result = messagesByLocale.entrySet().stream()
+              .map(e -> new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME));
 
             Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
             for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
-                final Stream<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
-                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM));
+                final Stream<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream()
+                  .map(e -> new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM));
                 result = Stream.concat(result, realmOverride);
             }
         } else {
-            result = Stream.concat(result, theTheme.getEnhancedMessages(realm, locale).entrySet().stream().map(e ->
-                    new KeySource((String) e.getKey(), (String) e.getValue())));
+            result = theTheme.getEnhancedMessages(realm, locale).entrySet().stream()
+              .map(e -> new KeySource((String) e.getKey(), (String) e.getValue()));
         }
 
-        if (!hasWords.isEmpty()) {
-            result = result.filter(keySource -> hasWords.stream()
-                    .anyMatch(w -> keySource.getValue().toUpperCase(locale).contains(w.toUpperCase(locale))));
+        if (hasWords != null && !hasWords.isEmpty()) {
+            Set<String> hw = hasWords.stream().map(w -> w.toUpperCase(locale).trim()).collect(Collectors.toSet());
+            result = result.filter(keySource -> hw.stream().anyMatch(w -> keySource.getValue().toUpperCase(locale).contains(w))); 
         }
 
-        result = result.skip(first);
+        result = result.sorted();
+
+        if (first != null) {
+            result = result.skip(first);
+        }
         if (max != null) {
             result = result.limit(max);
         }
 
-        Response.ResponseBuilder responseBuilder = Response.ok(result.collect(toList()));
+        Response.ResponseBuilder responseBuilder = Response.ok(result.collect(Collectors.toList()));
         return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").preflight().build();
-    }
-}
-
-enum Source {
-    THEME,
-    REALM
-}
-
-class KeySource {
-    private String key;
-    private String value;
-    private Source source;
-
-    public KeySource(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public KeySource(String key, String value, Source source) {
-        this(key, value);
-        this.source = source;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public Source getSource() {
-        return source;
     }
 }
