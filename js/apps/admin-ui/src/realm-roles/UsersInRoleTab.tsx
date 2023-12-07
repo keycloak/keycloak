@@ -50,6 +50,7 @@ export const UsersInRoleTab = () => {
         loader={loader}
         ariaLabelKey="roleList"
         searchPlaceholderKey=""
+        data-testid="users-in-role-table"
         toolbarItem={
           enabled && (
             <Popover
