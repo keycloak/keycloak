@@ -239,6 +239,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   #publicKeyBtn = ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
   #realmSettingsEventsTab = new RealmSettingsEventsTab();
+  #realmId = 'input[aria-label="Copyable input"]';
 
   #realmName?: string;
   constructor(realmName?: string) {
@@ -311,6 +312,10 @@ export default class RealmSettingsPage extends CommonPage {
 
   fillDisplayName(displayName: string) {
     cy.get(this.#realmDisplayName).clear().type(displayName);
+  }
+
+  clearRealmId() {
+    cy.get(this.#realmId).clear();
   }
 
   fillFromDisplayName(displayName: string) {
