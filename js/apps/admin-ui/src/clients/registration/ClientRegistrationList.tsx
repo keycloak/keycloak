@@ -103,8 +103,9 @@ export const ClientRegistrationList = ({
       )}
       <DeleteConfirm />
       <KeycloakDataTable
-        ariaLabelKey="initialAccessToken"
-        searchPlaceholderKey="searchInitialAccessToken"
+        ariaLabelKey="clientRegistration"
+        searchPlaceholderKey="searchClientRegistration"
+        data-testid={`clientRegistration-${subType}`}
         loader={policies}
         toolbarItem={
           <ToolbarItem>
