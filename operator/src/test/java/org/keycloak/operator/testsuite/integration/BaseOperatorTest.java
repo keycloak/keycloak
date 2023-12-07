@@ -57,6 +57,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.WatchedSecretsController;
+import org.keycloak.operator.controllers.WatchedStore;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
@@ -188,7 +190,9 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler, overrider -> overrider.settingNamespace(namespace));
+      operator.register(reconciler, overrider -> overrider.settingNamespace(namespace)
+              // workaround for https://github.com/operator-framework/java-operator-sdk/issues/2152
+              .withItemStore((reconciler instanceof WatchedSecretsController) ? new WatchedStore<>() : null));
     }
   }
 

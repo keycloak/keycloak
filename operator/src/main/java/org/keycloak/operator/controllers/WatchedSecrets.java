@@ -23,6 +23,8 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Provides a mechanism to track secrets
@@ -30,8 +32,6 @@ import java.util.List;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public interface WatchedSecrets {
-    public static final String WATCHED_SECRETS_LABEL_VALUE = "watched-secret";
-
     /**
      * @param deployment mutable resource being reconciled, it will be updated with annotations
      */
@@ -39,6 +39,8 @@ public interface WatchedSecrets {
 
     EventSource getWatchedSecretsEventSource();
 
-    void addLabelsToWatchedSecrets(StatefulSet deployment);
+    void addWatched(StatefulSet deployment);
+
+    void setStatefulSetLister(Function<String, Stream<StatefulSet>> lister);
 
 }

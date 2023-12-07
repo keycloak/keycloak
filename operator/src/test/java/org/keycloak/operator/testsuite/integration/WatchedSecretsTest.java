@@ -28,7 +28,6 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.WatchedSecrets;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
@@ -57,9 +56,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
         Secret dbSecret = getDbSecret();
         Secret tlsSecret = getTlsSecret();
-
-        assertThat(dbSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
-        assertThat(tlsSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
 
         Log.info("Updating DB Secret, expecting restart");
         testDeploymentRestarted(Set.of(kc), Set.of(), () -> {

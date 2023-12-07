@@ -18,7 +18,6 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -46,46 +45,52 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@ControllerConfiguration(labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE)
+@ControllerConfiguration(itemStore = WatchedStore.class)
 public class WatchedSecretsController implements Reconciler<Secret>, EventSourceInitializer<Secret>, WatchedSecrets {
-
-    private volatile KubernetesClient client;
 
     private final SimpleInboundEventSource eventSource = new SimpleInboundEventSource();
 
+    private volatile KubernetesClient client;
     private volatile IndexerResourceCache<Secret> secrets;
+    private volatile WatchedStore<?> watchedStore;
+    private Function<String, Stream<StatefulSet>> lister;
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Secret> context) {
         this.secrets = context.getPrimaryCache();
         this.client = context.getClient();
+        this.watchedStore = (WatchedStore)context.getControllerConfiguration().getItemStore().orElseThrow();
         return Map.of();
     }
 
     @Override
-    public UpdateControl<Secret> reconcile(Secret resource, Context<Secret> context) throws Exception {
+    public synchronized void setStatefulSetLister(Function<String, Stream<StatefulSet>> lister) {
+        this.lister = lister;
+    }
+
+    @Override
+    public synchronized UpdateControl<Secret> reconcile(Secret resource, Context<Secret> context) throws Exception {
+        if (lister == null) {
+            return UpdateControl.noUpdate();
+        }
         // find all statefulsets to notify
         //  - this could detect whether the reconciliation is even necessary if we track individual hashes
-        var ret = client.apps().statefulSets().inNamespace(resource.getMetadata().getNamespace())
-                .withLabels(Constants.DEFAULT_LABELS).list().getItems().stream()
+        var ret = lister.apply(resource.getMetadata().getNamespace())
                 .filter(statefulSet -> getSecretNames(statefulSet).contains(resource.getMetadata().getName()))
                 .map(statefulSet -> new ResourceID(statefulSet.getMetadata().getName(),
                         resource.getMetadata().getNamespace()))
                 .collect(Collectors.toSet());
 
         if (ret.isEmpty()) {
-            Log.infof("Removing label from Secret \"%s\"", resource.getMetadata().getName());
-
-            return UpdateControl.updateResource(new SecretBuilder(resource)
-                    .editMetadata()
-                    .removeFromLabels(Constants.KEYCLOAK_COMPONENT_LABEL)
-                    .endMetadata()
-                    .build());
+            Log.infof("Stop watching Secret \"%s\"", resource.getMetadata().getName());
+            ret.forEach(rid -> watchedStore.removeWatched(rid.getName(), rid.getNamespace().orElse(null)));
         } else {
             ret.forEach(eventSource::propagateEvent);
         }
@@ -132,18 +137,8 @@ public class WatchedSecretsController implements Reconciler<Secret>, EventSource
     }
 
     @Override
-    public void addLabelsToWatchedSecrets(StatefulSet deployment) {
-        for (Secret secret : fetchSecrets(getSecretNames(deployment), deployment.getMetadata().getNamespace())) {
-            if (!secret.getMetadata().getLabels().containsKey(Constants.KEYCLOAK_COMPONENT_LABEL)) {
-
-                Log.infof("Adding label to Secret \"%s\"", secret.getMetadata().getName());
-
-                client.resource(secret).accept(s -> {
-                    s.getMetadata().getLabels().put(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
-                    s.getMetadata().setResourceVersion(null);
-                });
-            }
-        }
+    public synchronized void addWatched(StatefulSet deployment) {
+        getSecretNames(deployment).forEach(s -> watchedStore.addWatched(s, deployment.getMetadata().getNamespace()));
     }
 
     public List<String> getSecretNames(StatefulSet deployment) {

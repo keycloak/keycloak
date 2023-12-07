@@ -32,8 +32,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecFluent.TemplateNested;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Config;
@@ -80,6 +82,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
+    }
+
+    @Override
+    protected InformerEventSource<StatefulSet, Keycloak> createEventSource(EventSourceContext<Keycloak> context) {
+        var result = super.createEventSource(context);
+        watchedSecrets.setStatefulSetLister(namespace -> result.list(namespace));
+        return result;
     }
 
     @Override
@@ -131,13 +140,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     @Override
     protected void onCreated(Keycloak primary, StatefulSet created, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(created);
+        watchedSecrets.addWatched(created);
         super.onCreated(primary, created, context);
     }
 
     @Override
     protected void onUpdated(Keycloak primary, StatefulSet updated, StatefulSet actual, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(updated);
+        watchedSecrets.addWatched(updated);
         super.onUpdated(primary, updated, actual, context);
     }
 
