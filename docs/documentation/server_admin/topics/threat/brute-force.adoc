@@ -87,8 +87,8 @@ When {project_name} disables a user, the user cannot log in until an administrat
 .. If the time between this failure and the last failure is greater than _Failure Reset Time_
 ... Reset `count`
 .. Increment `count`
-.. Calculate `wait` using _Wait Increment_ * (`count` / _Max Login Failures_). The division is an integer division rounded down to a whole number
-.. If `wait` equals 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
+.. Calculate `wait` using _Wait Increment_ * (1 + `count` - _Max Login Failures_). The division is an integer division rounded down to a whole number
+.. If `wait` are less or equals 0 and the time between this failure and the last failure is less than _Quick Login Check Milliseconds_, set `wait` to _Minimum Quick Login Wait_.
 ... Temporarily disable the user for the smallest of `wait` and _Max Wait_ seconds
 
 `count` does not increment when a temporarily disabled account commits a login failure.

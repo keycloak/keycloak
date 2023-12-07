@@ -204,11 +204,11 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         userLoginFailure.incrementFailures();
         logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-        int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        int waitSeconds = realm.getWaitIncrementSeconds() * (1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
-        if (waitSeconds == 0) {
+        if (waitSeconds <= 0) {
             if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
                 logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
