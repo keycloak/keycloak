@@ -193,7 +193,7 @@
     </div>
 </div>
 <div class="${properties.kcTerms!}" style="display: flex;justify-content: center;margin-top: 1rem;font-size: 1rem;">
-    <a id="terms_of_use" target="_blank">Terms of Use</a>&nbsp;and&nbsp;
+    <a id="terms_of_use" target="_blank">Terms of Service</a>&nbsp;and&nbsp;
     <a id="privacy" target="_blank">Privacy Policy</a>
 </div>
  <script type="text/javascript">

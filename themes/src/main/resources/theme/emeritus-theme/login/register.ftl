@@ -138,7 +138,7 @@
                aria-invalid="<#if messagesPerField.existsError('termsAccepted')>true</#if>"
         />
         <label for="terms" class="${properties.kcLabelClass!}">
-            I accept Emeritus insights’s Terms of Use and Privacy Policy
+            I accept Emeritus insights’s Terms of Service and Privacy Policy
         </label>
          <#if messagesPerField.existsError('termsAccepted')>
                  <span id="input-error-terms" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
