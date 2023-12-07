@@ -1,14 +1,41 @@
 name: Frontend Plugin Cache
-description: Caches NPM dependencies for the frontend-maven-plugin to speed up builds
+description: Caches Node.js and installed packages to speed up builds using the frontend plugin.
 
 runs:
   using: composite
   steps:
-    - name: Get PNPM version
-      id: pnpm-version
+    - name: Get project settings
+      id: project-settings
       shell: bash
       run: |
-        echo "version=$(mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "node-version=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout | cut -d 'v' -f 2)" >> $GITHUB_OUTPUT
+        echo "pnpm-version=$(mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "maven-cache-dir=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)" >> $GITHUB_OUTPUT
+
+    - name: Determine Node.js download paths
+      id: nodejs-download-paths
+      shell: bash
+      run: |
+        NODE_VERSION=${{ steps.project-settings.outputs.node-version }}
+        BASE_URL=https://nodejs.org/dist/v$NODE_VERSION
+        TARGET_DIR=${{ steps.project-settings.outputs.maven-cache-dir }}/repository/com/github/eirslett/node/$NODE_VERSION
+
+        echo "target-dir=$TARGET_DIR" >> $GITHUB_OUTPUT
+
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          echo "src=$BASE_URL/node-v$NODE_VERSION-linux-x64.tar.gz" >> $GITHUB_OUTPUT
+          echo "target=$TARGET_DIR/node-$NODE_VERSION-linux-x64.tar.gz" >> $GITHUB_OUTPUT
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+          echo "src=$BASE_URL/win-x64/node.exe" >> $GITHUB_OUTPUT
+          echo "target=$TARGET_DIR/node-$NODE_VERSION-win-x64.exe" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: actions/cache@v3
+      name: Cache Node.js distribution
+      id: cache-nodejs
+      with:
+        path: ${{ steps.nodejs-download-paths.outputs.target }}
+        key: ${{ runner.os }}-frontend-plugin-nodejs-dist-${{ steps.project-settings.outputs.node-version }}
 
     - uses: actions/cache@v3
       name: Cache PNPM store
@@ -18,4 +45,12 @@ runs:
           ~/.local/share/pnpm/store
           ~/AppData/Local/pnpm/store
           ~/Library/pnpm/store
-        key: ${{ runner.os }}-frontend-plugin-pnpm-store-${{ steps.pnpm-version.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-frontend-plugin-pnpm-store-${{ steps.project-settings.outputs.pnpm-version }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - name: Download Node.js distribution
+      # Only download if the cache was not hit.
+      if: ${{ steps.cache-nodejs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        mkdir -p ${{ steps.nodejs-download-paths.outputs.target-dir }}
+        wget ${{ steps.nodejs-download-paths.outputs.src }} -O ${{ steps.nodejs-download-paths.outputs.target }}
