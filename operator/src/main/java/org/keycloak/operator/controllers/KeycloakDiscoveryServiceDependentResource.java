@@ -37,7 +37,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
         @Override
         public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return KeycloakServiceDependentResource.getService(KeycloakDiscoveryServiceDependentResource::getName, primary, context);
+            return Utils.getByName(Service.class, KeycloakDiscoveryServiceDependentResource::getName, primary, context);
         }
     }
 
