@@ -15,6 +15,9 @@
 
     <properties>
         <exclude.sssd>**/sssd/**/*Test.java</exclude.sssd>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
     </properties>
 
     <build>

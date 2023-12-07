@@ -5,6 +5,7 @@
 title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
 summary="Building block for an {jdgserver_name} deployment on Kubernetes"
 preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 include::partials/infinispan/infinispan-attributes.adoc[]
@@ -183,7 +184,6 @@ For `{site-b}`, the Cache CR is similar except in point 2.
 include::examples/generated/ispn-site-b.yaml[tag=infinispan-cache-sessions]
 ----
 
-[#verifying-the-deployment]
 == Verifying the deployment
 
 Confirm that the {jdgserver_name} cluster is formed, and the cross-site connection is established between the {ocp} clusters.

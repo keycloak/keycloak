@@ -20,7 +20,11 @@ export const PolicyDetailsRoute: AppRouteObject = {
   breadcrumb: (t) => t("policyDetails"),
   handle: {
     access: (accessChecker) =>
-      accessChecker.hasAny("manage-clients", "view-authorization"),
+      accessChecker.hasAny(
+        "manage-clients",
+        "view-authorization",
+        "manage-authorization",
+      ),
   },
 };
 

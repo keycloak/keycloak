@@ -4,8 +4,10 @@ import {
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
+import { TFunction } from "i18next";
 import { ReactNode, useMemo } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
+
 import { ScrollForm } from "../main";
 import { LocaleSelector } from "./LocaleSelector";
 import { MultiInputComponent } from "./MultiInputComponent";
@@ -13,13 +15,7 @@ import { OptionComponent } from "./OptionsComponent";
 import { SelectComponent } from "./SelectComponent";
 import { TextAreaComponent } from "./TextAreaComponent";
 import { TextComponent } from "./TextComponent";
-import {
-  TranslationFunction,
-  UserFormFields,
-  fieldName,
-  isRootAttribute,
-  label,
-} from "./utils";
+import { UserFormFields, fieldName, isRootAttribute, label } from "./utils";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -51,7 +47,7 @@ const INPUT_TYPES = [
 export type InputType = (typeof INPUT_TYPES)[number];
 
 export type UserProfileFieldProps = {
-  t: TranslationFunction;
+  t: TFunction;
   form: UseFormReturn<UserFormFields>;
   inputType: InputType;
   attribute: UserProfileAttributeMetadata;
@@ -80,7 +76,7 @@ export const FIELDS: {
 } as const;
 
 export type UserProfileFieldsProps = {
-  t: TranslationFunction;
+  t: TFunction;
   form: UseFormReturn<UserFormFields>;
   userProfileMetadata: UserProfileMetadata;
   supportedLocales: string[];
@@ -167,7 +163,7 @@ export const UserProfileFields = ({
 };
 
 type FormFieldProps = {
-  t: TranslationFunction;
+  t: TFunction;
   form: UseFormReturn<UserFormFields>;
   supportedLocales: string[];
   attribute: UserProfileAttributeMetadata;

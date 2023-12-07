@@ -299,6 +299,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case UPDATE_USER_PROFILE:
                 attributes.put("profile", new VerifyProfileBean(user, formData, session));
+                userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+                attributes.put("user", new ProfileBean(userCtx, formData));
                 break;
             case IDP_REVIEW_USER_PROFILE:
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);

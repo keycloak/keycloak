@@ -25,6 +25,17 @@ data:
           namesAsTags: true
           gauges: true
           histograms: false
+      server:
+        endpoints:
+          - securityRealm: default
+            socketBinding: default
+            connectors:
+              rest:
+                restConnector:
+                  authentication:
+                    mechanisms: BASIC
+              hotrod:
+                hotrodConnector: null
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]

@@ -31,12 +31,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.storage.StorageId;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 
@@ -65,7 +66,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     protected final UserProfileContext context;
     protected final KeycloakSession session;
     private final Map<String, AttributeMetadata> metadataByAttribute;
+    private final UPConfig upConfig;
     protected final UserModel user;
+    private Map<String, List<String>> unmanagedAttributes = new HashMap<>();
 
     public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
             UserProfileMetadata profileMetadata,
@@ -74,11 +77,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         this.user = user;
         this.session = session;
         this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes());
+        this.upConfig = session.getProvider(UserProfileProvider.class).getConfiguration();
         putAll(Collections.unmodifiableMap(normalizeAttributes(attributes)));
     }
 
     @Override
     public boolean isReadOnly(String attributeName) {
+        if (!isManagedAttribute(attributeName)) {
+            return !isAllowEditUnmanagedAttribute();
+        }
+
         if (UserModel.USERNAME.equals(attributeName)) {
             if (isServiceAccountUser()) {
                 return true;
@@ -96,6 +104,23 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return getMetadata(attributeName) == null;
+    }
+
+    private boolean isAllowEditUnmanagedAttribute() {
+        UnmanagedAttributePolicy unmanagedAttributesPolicy = upConfig.getUnmanagedAttributePolicy();
+
+        if (!isAllowUnmanagedAttribute()) {
+            return false;
+        }
+
+        switch (unmanagedAttributesPolicy) {
+            case ENABLED:
+                return true;
+            case ADMIN_EDIT:
+                return UserProfileContext.USER_API.equals(context);
+        }
+
+        return false;
     }
 
     /**
@@ -195,8 +220,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             AttributeMetadata metadata = getMetadata(name);
             RealmModel realm = session.getContext().getRealm();
 
-            if (UserModel.USERNAME.equals(name)
-                    && realm.isRegistrationEmailAsUsername()) {
+            if ((UserModel.USERNAME.equals(name) && realm.isRegistrationEmailAsUsername())
+                || !isManagedAttribute(name)) {
                 continue;
             }
 
@@ -210,13 +235,27 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public AttributeMetadata getMetadata(String name) {
-        AttributeMetadata metadata = metadataByAttribute.get(name);
+        if (unmanagedAttributes.containsKey(name)) {
+            return new AttributeMetadata(name, Integer.MAX_VALUE) {
+                final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
 
-        if (metadata == null) {
-            return null;
+                @Override
+                public boolean canView(AttributeContext context) {
+                    return canEdit(context)
+                            || (UnmanagedAttributePolicy.ADMIN_VIEW.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+                }
+
+                @Override
+                public boolean canEdit(AttributeContext context) {
+                    return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy)
+                            || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+                }
+            };
         }
 
-        return metadata.clone();
+        return Optional.ofNullable(metadataByAttribute.get(name))
+                .map(AttributeMetadata::clone)
+                .orElse(null);
     }
 
     @Override
@@ -302,6 +341,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 String key = entry.getKey();
 
                 if (!isSupportedAttribute(key)) {
+                    if (!isManagedAttribute(key) && isAllowUnmanagedAttribute()) {
+                        unmanagedAttributes.put(key, (List<String>) entry.getValue());
+                    }
                     continue;
                 }
 
@@ -316,6 +358,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     values = Collections.singletonList((String) value);
                 } else {
                     values = (List<String>) value;
+                }
+
+                if (UserModel.USERNAME.equals(key) || UserModel.EMAIL.equals(key)) {
+                    values = values.stream().map(KeycloakModelUtils::toLowerCaseSafe).collect(Collectors.toList());
                 }
 
                 newAttributes.put(key, Collections.unmodifiableList(values));
@@ -351,7 +397,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         if (!email.isEmpty() && realm.isRegistrationEmailAsUsername()) {
             List<String> lowerCaseEmailList = email.stream()
                     .filter(Objects::nonNull)
-                    .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
             setUserName(newAttributes, lowerCaseEmailList);
@@ -362,7 +407,30 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             }
         }
 
+        if (isAllowUnmanagedAttribute()) {
+            newAttributes.putAll(unmanagedAttributes);
+        }
+
         return newAttributes;
+    }
+
+    private boolean isAllowUnmanagedAttribute() {
+        UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
+
+        if (unmanagedAttributePolicy == null) {
+            // unmanaged attributes disabled
+            return false;
+        }
+
+        switch (unmanagedAttributePolicy) {
+            case ADMIN_EDIT:
+            case ADMIN_VIEW:
+                // unmanaged attributes only available through the admin context
+                return UserProfileContext.USER_API.equals(context);
+        }
+
+        // allow unmanaged attributes if enabled to all contexts
+        return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy);
     }
 
     private void setUserName(Map<String, List<String>> newAttributes, List<String> lowerCaseEmailList) {
@@ -390,7 +458,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return false;
         }
 
-        if (metadataByAttribute.containsKey(name)) {
+        if (isManagedAttribute(name)) {
             return true;
         }
 
@@ -404,6 +472,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         // checks whether the attribute is a core attribute
         return isRootAttribute(name);
+    }
+
+    private boolean isManagedAttribute(String name) {
+        return metadataByAttribute.containsKey(name);
     }
 
     /**
@@ -433,5 +505,10 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return false;
+    }
+
+    @Override
+    public Map<String, List<String>> getUnmanagedAttributes() {
+        return unmanagedAttributes;
     }
 }

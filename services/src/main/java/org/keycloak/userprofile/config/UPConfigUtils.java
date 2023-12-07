@@ -18,6 +18,7 @@ package org.keycloak.userprofile.config;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -74,6 +75,17 @@ public class UPConfigUtils {
      */
     public static UPConfig readConfig(InputStream is) throws IOException {
         return JsonSerialization.readValue(is, UPConfig.class);
+    }
+
+    /**
+     * Parse configuration of user-profile from String
+     *
+     * @param rawConfig Configuration in String format
+     * @return object representation of the configuration
+     * @throws IOException if JSON configuration can't be loaded (eg due to JSON format errors etc)
+     */
+    public static UPConfig parseConfig(String rawConfig) throws IOException {
+        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
     }
 
     /**

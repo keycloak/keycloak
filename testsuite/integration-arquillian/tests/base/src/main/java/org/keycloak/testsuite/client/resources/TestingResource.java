@@ -19,13 +19,13 @@ package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.Profile;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
-import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.Consumes;

@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Fail over to the secondary site"
 summary="This describes the automatic and operational procedures necessary"
-preview="true" >
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
 
 This {section} describes the steps to fail over from primary site to secondary site in a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
 

@@ -19,6 +19,7 @@
 
 package org.keycloak.userprofile;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +106,9 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         try {
-            for (Map.Entry<String, List<String>> attribute : attributes.getWritable().entrySet()) {
+            Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
+
+            for (Map.Entry<String, List<String>> attribute : writable.entrySet()) {
                 String name = attribute.getKey();
                 List<String> currentValue = user.getAttributeStream(name)
                         .filter(Objects::nonNull).collect(Collectors.toList());

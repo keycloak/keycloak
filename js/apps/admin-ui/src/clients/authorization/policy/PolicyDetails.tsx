@@ -198,7 +198,7 @@ export default function PolicyDetails() {
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
-          role="view-clients"
+          role="anyone" // if you get this far it means you have access
         >
           <FormProvider {...form}>
             <NameDescription isDisabled={isDisabled} prefix="policy" />

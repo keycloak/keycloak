@@ -15,7 +15,7 @@
         <adapter.container>tomcat</adapter.container>
 
         <maven.settings.file/>
-        <springboot.version.option>2.4</springboot.version.option>
+        <springboot.version.option>2.7</springboot.version.option>
         <spring.boot.adapter.version>${project.version}</spring.boot.adapter.version>
 
         <app.server.debug.port>5006</app.server.debug.port>
@@ -226,16 +226,9 @@
         </profile>
 
         <profile>
-            <id>springboot24</id>
+            <id>springboot27</id>
             <properties>
-                <springboot.version.option>2.4</springboot.version.option>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>springboot26</id>
-            <properties>
-                <springboot.version.option>2.6</springboot.version.option>
+                <springboot.version.option>2.7</springboot.version.option>
             </properties>
         </profile>
 

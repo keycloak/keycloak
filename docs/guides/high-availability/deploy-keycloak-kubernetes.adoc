@@ -5,6 +5,7 @@
 title="Deploy {project_name} for HA with the {project_name} Operator"
 summary="Building block for a Keycloak deployment"
 preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.
@@ -33,14 +34,15 @@ include::examples/generated/keycloak.yaml[tag=keycloak]
 Adjust this number to meet the needs of your system.
 As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
 See the <@links.ha id="concepts-database-connections" /> {section} for details.
-<2> To be able to analyze the system under load, enable the metrics endpoint.
+<2> Enable additional features for multi-site support like the loadbalancer probe `/lb-check`.
+<3> To be able to analyze the system under load, enable the metrics endpoint.
 The disadvantage of the setting is that the metrics will be available at the external {project_name} endpoint, so you must add a filter so that the endpoint is not available from the outside.
 Use a reverse proxy in front of {project_name} to filter out those URLs.
-<3> The default setting for the internal JGroup thread pools is 200 threads maximum.
+<4> The default setting for the internal JGroup thread pools is 200 threads maximum.
 The number of all {project_name} threads in the StatefulSet should not exceed the number of JGroup threads to avoid a JGroup thread pool exhaustion which could stall {project_name} request processing.
 You might consider limiting the number of {project_name} threads further because multiple concurrent threads will lead to throttling by Kubernetes once the requested CPU limit is reached.
 See the <@links.ha id="concepts-threads" /> {section} for details.
-<4> The JVM options set additional parameters:
+<5> The JVM options set additional parameters:
 * `jgroups.thread_dumps_threshold` ensures that a log message "`thread pool is full`" appears once the JGroup thread pool is full for the first time.
 See the <@links.ha id="concepts-threads" /> {section} for details.
 * Adjust the memory settings for the heap.

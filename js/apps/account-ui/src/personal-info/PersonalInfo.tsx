@@ -7,6 +7,7 @@ import {
   Spinner,
 } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
+import { TFunction } from "i18next";
 import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { ErrorOption, useForm } from "react-hook-form";
@@ -16,6 +17,7 @@ import {
   setUserProfileServerError,
   useAlerts,
 } from "ui-shared";
+
 import {
   getPersonalInfo,
   getSupportedLocales,
@@ -65,7 +67,7 @@ const PersonalInfo = () => {
         { responseData: { errors: error as any } },
         (name: string | number, error: unknown) =>
           setError(name as string, error as ErrorOption),
-        (key: TFuncKey, param?: object) => t(key, { ...param }),
+        ((key: TFuncKey, param?: object) => t(key, param as any)) as TFunction,
       );
     }
   };
@@ -87,7 +89,10 @@ const PersonalInfo = () => {
           form={form}
           userProfileMetadata={userProfileMetadata}
           supportedLocales={supportedLocales}
-          t={(key: unknown, params) => t(key as TFuncKey, { ...params })}
+          t={
+            ((key: unknown, params) =>
+              t(key as TFuncKey, params as any)) as TFunction
+          }
           renderer={(attribute) =>
             attribute.name === "email" &&
             updateEmailFeatureEnabled &&

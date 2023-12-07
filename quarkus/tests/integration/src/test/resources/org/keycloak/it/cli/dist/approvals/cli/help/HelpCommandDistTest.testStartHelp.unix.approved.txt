@@ -76,17 +76,17 @@ Feature:
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage,
-                       multi-site, par, preview, recovery-codes, scripts, step-up-authentication,
-                       token-exchange, transient-users, update-email, web-authn.
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage,
-                       multi-site, par, preview, recovery-codes, scripts, step-up-authentication,
-                       token-exchange, transient-users, update-email, web-authn.
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 
 Hostname:
 
@@ -117,7 +117,7 @@ Hostname:
                        URL this option should be enabled. Default: false.
 --hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
-HTTP/TLS:
+HTTP(S):
 
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
@@ -151,14 +151,14 @@ HTTP/TLS:
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     The trust store which holds the certificate information of the certificates to
-                       trust.
+                     DEPRECATED: The trust store which holds the certificate information of the
+                       certificates to trust.
 --https-trust-store-password <password>
-                     The password of the trust store file.
+                     DEPRECATED: The password of the trust store file.
 --https-trust-store-type <type>
-                     The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                     DEPRECATED: The type of the trust store file. If not given, the type is
+                       automatically detected based on the file name. If 'fips-mode' is set to
+                       'strict' and no value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -245,6 +245,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
 
 Security:
 

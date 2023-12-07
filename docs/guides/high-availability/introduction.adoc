@@ -4,13 +4,14 @@
 <@tmpl.guide
 title="Multi-site deployments"
 summary="Connect multiple {project_name} deployments in different sites to increase the overall availability"
-preview="true" >
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
 
 {project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan; load balancers can distribute the load evenly across those instances.
 Those setups are intended for a transparent network on a single site.
 
-The Keycloak high-availability guide goes one step further to describe setups across multiple sites.
-While this setup adds additional complexity, that extra amount of high availability may be needed for some enviroments.
+The {project_name} high-availability guide goes one step further to describe setups across multiple sites.
+While this setup adds additional complexity, that extra amount of high availability may be needed for some environments.
 
 The different {sections} introduce the necessary concepts and building blocks.
 For each building block, a blueprint shows how to set a fully functional example.

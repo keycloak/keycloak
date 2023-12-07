@@ -2,8 +2,24 @@
 
 The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
 
-== Automatic certificate management for SAML identity providers
+= Truststore Improvements
+
+Keycloak introduces an improved truststores configuration options. The Keycloak truststore is now used across the server: for outgoing connections, mTLS, database drivers and more. It's no longer needed to configure separate truststores for individual areas. To configure the truststore, you can put your truststores files or certificates in the default `conf/truststores`, or use the new `truststore-paths` config option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+= Automatic certificate management for SAML identity providers
 
 The SAML identity providers can now be configured to automatically download the signing certificates from the IDP entity metadata descriptor endpoint. In order to use the new feature the option `Metadata descriptor URL` should be configured in the provider (URL where the IDP metadata information with the certificates is published) and `Use metadata descriptor URL` needs to be `ON`. The certificates are automatically downloaded and cached in the `public-key-storage` SPI from that URL. The certificates can also be reloaded or imported from the admin console, using the action combo in the provider page.
 
 See the https://www.keycloak.org/docs/latest/server_admin/index.html#saml-v2-0-identity-providers[documentation] for more details about the new options.
+
+= Non-blocking health check for load balancers
+
+A new health check endpoint available at `/lb-check` was added.
+The execution is running in the event loop which means this check is responsive also in overloaded situations when Keycloak needs to handle many requests waiting in request queue.
+This behavior is useful, for example, in multi-site deployment where we do not want to fail over to the other site under heavy load.
+The endpoint is currently checking availability of the embedded and external Infinispan caches. Other checks may be added later.
+
+
+This endpoint is not available by default.
+To enable it, run Keycloak with feature `multi-site`.
+Proceed to https://www.keycloak.org/server/features[Enabling and disabling features] guide for more details.

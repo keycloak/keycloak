@@ -35,7 +35,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class AttributeMetadata {
+public class AttributeMetadata {
 
     public static final Predicate<AttributeContext> ALWAYS_TRUE = context -> true;
     public static final Predicate<AttributeContext> ALWAYS_FALSE = context -> false;

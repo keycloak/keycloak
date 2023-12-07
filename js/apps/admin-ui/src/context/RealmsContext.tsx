@@ -34,7 +34,7 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
       }
 
       try {
-        return await fetchAdminUI<string[]>("ui-ext/realms", {});
+        return await fetchAdminUI<string[]>("ui-ext/realms/names", {});
       } catch (error) {
         if (error instanceof NetworkError && error.response.status < 500) {
           return [];

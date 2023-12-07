@@ -5,6 +5,7 @@
 title="Deploy an AWS Route 53 loadbalancer"
 summary="Building block for a loadbalancer"
 preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This topic describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup. These instructions are intended for used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
@@ -90,6 +91,7 @@ aws elb describe-load-balancers \
     }
 ]
 ----
+<1> Utilise the Hosted Zone ID retrieved in the previous step
 +
 . Create Route53 health checks
 +
@@ -108,7 +110,7 @@ function createHealthCheck() {
   --health-check-config '
   {
     "Type": "HTTPS",
-    "ResourcePath": "/health/live",
+    "ResourcePath": "/lb-check",
     "FullyQualifiedDomainName": "'$1'",
     "Port": 443,
     "RequestInterval": 30,

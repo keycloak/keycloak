@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -58,15 +57,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.storage.StorageId;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
-import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
-import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -1768,5 +1762,83 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
         assertTrue(profile.getAttributes().contains(UserModel.FIRST_NAME));
         assertTrue(profile.getAttributes().contains(UserModel.LAST_NAME));
+    }
+
+    @Test
+    public void testUnmanagedPolicy() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUnmanagedPolicy);
+    }
+
+    private static void testUnmanagedPolicy(KeycloakSession session) throws IOException {
+        UPConfig config = new UPConfig();
+        UPAttribute bar = new UPAttribute("bar");
+        UPAttributePermissions permissions = new UPAttributePermissions();
+
+        permissions.setEdit(Set.of("user", "admin"));
+
+        bar.setPermissions(permissions);
+
+        config.addAttribute(bar);
+
+        UserProfileProvider provider = getUserProfileProvider(session);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        // can't create attribute if policy is disabled
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("foo", List.of("foo"));
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        assertFalse(user.getAttributes().containsKey("foo"));
+
+        // user already set with an unmanaged attribute, and it should be visible if policy is adminEdit
+        user.setSingleAttribute("foo", "foo");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        assertFalse(profile.getAttributes().contains("foo"));
+        config.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_EDIT);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        assertTrue(profile.getAttributes().contains("foo"));
+        assertFalse(profile.getAttributes().isReadOnly("foo"));
+
+        // user already set with an unmanaged attribute, and it should be visible if policy is adminView but read-only
+        config.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        assertTrue(profile.getAttributes().contains("foo"));
+        assertTrue(profile.getAttributes().isReadOnly("foo"));
+
+        // user already set with an unmanaged attribute, but it is not available to user-facing contexts
+        config.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        assertFalse(profile.getAttributes().contains("foo"));
+
+        // user already set with an unmanaged attribute, and it is available to all contexts
+        config.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        assertTrue(profile.getAttributes().contains("foo"));
+        assertFalse(profile.getAttributes().isReadOnly("foo"));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        assertTrue(profile.getAttributes().contains("foo"));
+        assertFalse(profile.getAttributes().isReadOnly("foo"));
+    }
+
+    @Test
+    public void testAttributeNormalization() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeNormalization);
+    }
+
+    private static void testAttributeNormalization(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, "TesT");
+        attributes.put(UserModel.EMAIL, "TesT@TesT.org");
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        Attributes profileAttributes = profile.getAttributes();
+        assertEquals(attributes.get(UserModel.USERNAME).toLowerCase(), profileAttributes.getFirstValue(UserModel.USERNAME));
+        assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirstValue(UserModel.EMAIL));
     }
 }

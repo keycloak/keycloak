@@ -129,7 +129,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/> <!--5-->
             </distributed-cache>
             <!--end::keycloak-ispn-remotestore[] -->
             <distributed-cache name="authenticationSessions" owners="2" statistics="true">
@@ -158,7 +157,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
             <distributed-cache name="offlineSessions" owners="2" statistics="true">
                 <expiration lifespan="-1"/>
@@ -186,7 +184,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
             <distributed-cache name="clientSessions" owners="2" statistics="true">
                 <expiration lifespan="-1"/>
@@ -213,7 +210,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
             <distributed-cache name="offlineClientSessions" owners="2" statistics="true">
                 <expiration lifespan="-1"/>
@@ -240,7 +236,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
             <distributed-cache name="loginFailures" owners="2" statistics="true">
                 <expiration lifespan="-1"/>
@@ -267,7 +262,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
             <local-cache name="authorization" simple-cache="true" statistics="true">
                 <encoding>
@@ -342,7 +336,6 @@ data:
                         </security>
                     </remote-store>
                 </persistence>
-                <state-transfer enabled="false"/>
             </distributed-cache>
         </cache-container>
     </infinispan>
@@ -713,10 +706,6 @@ spec:
             path: /
             pathType: ImplementationSpecific
 ---
-
-# Source: keycloak/templates/cockroach-operator/cockroach-operator.yaml
-# sourced from https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/install/operator.yaml
----
 # Source: keycloak/templates/keycloak.yaml
 # There are several callouts in this YAML marked with `# <1>' etc. See 'running/keycloak-deployment.adoc` for the details.
 # tag::keycloak[]
@@ -744,6 +733,9 @@ spec:
     passwordSecret:
       name: keycloak-db-secret
       key: password
+  features:
+    enabled:
+      - multi-site # <2>
   # tag::keycloak-ispn[]
   additionalOptions:
     - name: cache-config-file # <1>
@@ -752,7 +744,7 @@ spec:
       # end::keycloak-ispn[]
 
       value: json
-    - name: metrics-enabled # <2>
+    - name: metrics-enabled # <3>
       value: 'true'
     # tag::keycloak-ispn[]
     - name: remote-store-host # <2>
@@ -778,7 +770,7 @@ spec:
       # end::keycloak-ispn[]
       metadata:
         annotations:
-          checksum/config: c6c58fd5275c8f2be97e8dd2a535901ad5f3a6ad281890361c84e3f4b36c95f8-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3--302cb302c7823761a9780d87abdb954ae8b71460dbf49779dbda7c66069b7938-v1.27.0
+          checksum/config: c6c58fd5275c8f2be97e8dd2a535901ad5f3a6ad281890361c84e3f4b36c95f8-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3--56f92cd9012613402e2a7a61aded0f218d077b8c6345b22922ca7bf1a5c64984-v1.27.0
       # tag::keycloak[]
       # tag::keycloak-ispn[]
       spec:
@@ -788,7 +780,7 @@ spec:
         containers:
           - env:
               # end::keycloak-ispn[]
-              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <3>
+              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <4>
                 value: "200"
               # end::keycloak[]
               # tag::keycloak-queue-size[]
@@ -810,7 +802,7 @@ spec:
                     optional: false
                 # tag::keycloak[]
               # tag::keycloak-ispn[]
-              - name: JAVA_OPTS_APPEND # <4>
+              - name: JAVA_OPTS_APPEND # <5>
                 value: >
                   -Djgroups.thread_dumps_threshold=1 -Djboss.site.name=keycloak
 
@@ -834,7 +826,7 @@ spec:
             #       - 'true'
             # tag::keycloak-ispn[]
             volumeMounts:
-              - name: kcb-infinispan-cache-config # <5>
+              - name: kcb-infinispan-cache-config # <4>
                 mountPath: /opt/keycloak/conf/kcb-infinispan-cache-remote-store-config.xml
                 subPath: kcb-infinispan-cache-remote-store-config.xml
                 readOnly: true

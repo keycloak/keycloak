@@ -59,17 +59,17 @@ Feature:
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage,
-                       multi-site, par, preview, recovery-codes, scripts, step-up-authentication,
-                       token-exchange, transient-users, update-email, web-authn.
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, map-storage,
-                       multi-site, par, preview, recovery-codes, scripts, step-up-authentication,
-                       token-exchange, transient-users, update-email, web-authn.
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 
 Config:
 
@@ -129,6 +129,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
 
 Import:
 
