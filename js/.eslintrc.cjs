@@ -4,6 +4,7 @@ module.exports = {
   ignorePatterns: [
     "node_modules",
     "dist",
+    "target",
     "keycloak-theme",
     "server",
     // Keycloak JS follows a completely different and outdated style, so we'll exclude it for now.
