@@ -77,7 +77,7 @@ echo_header "Checkout '$TARGET_REMOTE/$TARGET_BRANCH' to '$PR_BRANCH'"
 git checkout $TARGET_REMOTE/$TARGET_BRANCH -B $PR_BRANCH
 
 echo_header "Cherry-pick $MERGE_COMMIT"
-git cherry-pick $MERGE_COMMIT
+git cherry-pick -x $MERGE_COMMIT
 
 echo_header "Push '$PR_BRANCH' to 'origin' remote"
 git push origin $PR_BRANCH:$PR_BRANCH --set-upstream
