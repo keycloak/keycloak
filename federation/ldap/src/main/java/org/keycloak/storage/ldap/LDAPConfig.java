@@ -199,6 +199,20 @@ public class LDAPConfig {
         return Boolean.parseBoolean(pagination);
     }
 
+    public int getMaxConditions() {
+        String string = config.getFirst(LDAPConstants.MAX_CONDITIONS);
+        if (string != null) {
+            try {
+                int max = Integer.parseInt(string);
+                if (max > 0) {
+                    return max;
+                }
+            } catch (NumberFormatException e) {
+            }
+        }
+        return LDAPConstants.DEFAULT_MAX_CONDITIONS;
+    }
+
     public int getBatchSizeForSync() {
         String pageSizeConfig = config.getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC);
         return pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
