@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileContext;
@@ -128,8 +130,28 @@ public class UPConfigUtils {
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
+            errors.addAll(validateRootAttributes(config));
         } else {
             errors.add("UserProfile configuration without 'attributes' section is not allowed");
+        }
+
+        return errors;
+    }
+
+    private static List<String> validateRootAttributes(UPConfig config) {
+        List<UPAttribute> attributes = config.getAttributes();
+
+        if (attributes == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).collect(Collectors.toList());
+
+        for (String name : Arrays.asList(UserModel.USERNAME, UserModel.EMAIL)) {
+            if (!attributeNames.contains(name)) {
+                errors.add("The attribute '" + name + "' can not be removed");
+            }
         }
 
         return errors;
@@ -179,7 +201,7 @@ public class UPConfigUtils {
         
         if (attributeConfig.getGroup() != null) {
             if (!groups.contains(attributeConfig.getGroup())) {
-                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");                
+                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");
             }
         }
         
@@ -302,6 +324,14 @@ public class UPConfigUtils {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
+        }
+    }
+
+    public static UPConfig parseDefaultConfig() {
+        try {
+            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration", e);
         }
     }
 }

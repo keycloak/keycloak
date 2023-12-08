@@ -22,12 +22,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
@@ -46,6 +49,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -1159,7 +1165,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", " + VALIDATIONS_LENGTH + "}"
                 + "]}";
 
-        setUserProfileConfiguration(customConfig);
+        UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
 
         RealmResource realmRes = testRealm();
         disableDynamicUserProfile(realmRes, false);
@@ -1167,7 +1173,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         enableDynamicUserProfile(realm);
         testRealm().update(realm);
 
-        JsonTestUtils.assertJsonEquals(customConfig, realmRes.users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), realmRes.users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
@@ -1186,8 +1192,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         testRealm().users().get(userId).update(ur);
     }
 
-    protected void setUserProfileConfiguration(String configuration) {
-        setUserProfileConfiguration(testRealm(), configuration);
+    protected UPConfig setUserProfileConfiguration(String configuration) {
+        return setUserProfileConfiguration(testRealm(), configuration);
     }
 
     public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
@@ -1214,10 +1220,27 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
+    public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
         try {
             UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
+
+            if (config != null) {
+                UPAttribute username = config.getAttribute(UserModel.USERNAME);
+
+                if (username == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.USERNAME));
+                }
+
+                UPAttribute email = config.getAttribute(UserModel.EMAIL);
+
+                if (email == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_USER, ROLE_ADMIN)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
+                }
+            }
+
             testRealm.users().userProfile().update(config);
+
+            return config;
         } catch (IOException ioe) {
             throw new RuntimeException("Failed to read configuration", ioe);
         }

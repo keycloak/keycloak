@@ -61,7 +61,7 @@ public class UserTestWithUserProfile extends UserTest {
         UPConfig upConfig = realm.users().userProfile().getConfiguration();
 
         for (String name : managedAttributes) {
-            upConfig.addAttribute(createAttributeMetadata(name));
+            upConfig.addOrReplaceAttribute(createAttributeMetadata(name));
         }
 
         VerifyProfileTest.setUserProfileConfiguration(realm, JsonSerialization.writeValueAsString(upConfig));

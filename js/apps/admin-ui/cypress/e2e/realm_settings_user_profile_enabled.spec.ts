@@ -131,6 +131,8 @@ describe("User profile tabs", () => {
   {
     "attributes": [
       {
+  "name": "email"{downArrow},
+      {
   "name": "username",
   "validations": {
     "length": {
