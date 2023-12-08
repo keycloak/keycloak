@@ -26,6 +26,8 @@ if ! [ -x "$(command -v gh)" ]; then
   error "The GitHub CLI is not installed. See: https://github.com/cli/cli#installation"
 fi
 
+gh auth status
+
 if ! [ -x "$(command -v jq)" ]; then
   error "The jq CLI is not installed. See: https://jqlang.github.io/jq/download/"
 fi
