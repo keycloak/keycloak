@@ -42,7 +42,7 @@ git fetch $TARGET_REMOTE
 PR_STATE=$(gh pr view $PR --json state 2>/dev/null | jq -r .state)
 
 if [ "$PR_STATE" == "" ]; then
-  error "PR #$PR not found. Make sure the PR exists, and that it's been merged."
+  error "PR #$PR not found. Make sure the PR exists, and that it's been merged, and your gh repo is set to keycloak/keycloak"
 elif [ "$PR_STATE" != "MERGED" ]; then
   error "PR #$PR not merged yet. Only merged PRs can be backported."
 fi
@@ -83,3 +83,6 @@ git push origin $PR_BRANCH:$PR_BRANCH --set-upstream
 
 echo_header "Opening web browser to create pull request"
 gh pr create -B $TARGET_BRANCH -f -w
+
+echo_header "Checkout to 'main' branch"
+git checkout main
