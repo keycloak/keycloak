@@ -19,6 +19,11 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
@@ -27,6 +32,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +68,13 @@ public final class Utils {
         var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
         labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
         return labels;
+    }
+
+    public static <T extends HasMetadata> Optional<T> getByName(Class<T> clazz, Function<Keycloak, String> nameFunction, Keycloak primary, Context<Keycloak> context) {
+        InformerEventSource<T, Keycloak> ies = (InformerEventSource<T, Keycloak>) context
+                .eventSourceRetriever().getResourceEventSourceFor(clazz);
+    
+        return ies.get(new ResourceID(nameFunction.apply(primary), primary.getMetadata().getNamespace()));
     }
 
 }
