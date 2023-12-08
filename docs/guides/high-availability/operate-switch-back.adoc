@@ -70,8 +70,6 @@ When deploying {project_name} using the {project_name} Operator, change the numb
 
 Both {jdgserver_name} clusters are in sync and the switchover from secondary back to the primary site can be performed.
 
-include::partials/infinispan/infinispan-cli-batch.adoc[leveloffset=4]
-
 === AWS Aurora Database
 
 include::partials/aurora/aurora-failover.adoc[]
@@ -80,5 +78,9 @@ include::partials/aurora/aurora-failover.adoc[]
 
 If switching over to the secondary site has been triggered by changing the health endpoint, edit the health check in AWS to point to a correct endpoint (`health/live`).
 After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
+
+== Further reading
+
+See <@links.ha id="concepts-infinispan-cli-batch" /> on how to automate Infinispan CLI commands.
 
 </@tmpl.guide>

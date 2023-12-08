@@ -24,6 +24,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="concepts-database-connections" />
 * <@links.ha id="concepts-threads" />
 * <@links.ha id="concepts-memory-and-cpu-sizing" />
+* <@links.ha id="concepts-infinispan-cli-batch" />
 
 == Blueprints for building blocks
 
