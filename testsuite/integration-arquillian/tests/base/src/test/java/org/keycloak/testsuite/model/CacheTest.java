@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.model;
 
-import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -44,62 +43,44 @@ import org.keycloak.representations.idm.RealmRepresentation;
  */
 public class CacheTest extends AbstractTestRealmKeycloakTest {
 
-	private ClientModel testApp = null;
-	private int grantedRolesCount=0;
-	private RealmModel realm = null;
-	private UserModel user = null;
-	
-	 @Override
-	    public void configureTestRealm(RealmRepresentation testRealm) {
-	    }
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
 
-	 @Test
-	    public void testStaleCache() throws Exception {
-            Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
-		 testingClient.server().run(session -> {
-		 	String appId = null;
-	        {
-	            // load up cache
+    @Test
+    public void testStaleCache() throws Exception {
+        testingClient.server().run(session -> {
+            // load up cache
+            RealmModel realm = session.realms().getRealmByName("test");
+            assertTrue(realm instanceof RealmAdapter);
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            assertTrue(testApp instanceof ClientAdapter);
+            assertNotNull(testApp);
+            String appId = testApp.getId();
+            assertTrue(testApp.isEnabled());
 
-	            RealmModel realm = session.realms().getRealmByName("test");
-	            assertTrue(realm instanceof RealmAdapter);
-	            ClientModel testApp = realm.getClientByClientId("test-app");
-	            assertTrue(testApp instanceof ClientAdapter);
-	            assertNotNull(testApp);
-	            appId = testApp.getId();
-	            assertTrue(testApp.isEnabled());
-	     
-	        
-	       
-	            // update realm, then get an AppModel and change it.  The AppModel would not be a cache adapter
+            // update realm, then get an AppModel and change it.  The AppModel would not be a cache adapter
+            realm = session.realms().getRealmsStream().filter(r -> {
+                assertTrue(r instanceof RealmAdapter);
+                return "test".equals(r.getName());
+            }).findFirst().orElse(null);
 
-	            realm = session.realms().getRealmsStream().filter(r -> {
-					assertTrue(r instanceof RealmAdapter);
-					if ("test".equals(r.getName()))
-						return true;
-					return false;
-				}).findFirst().orElse(null);
+            assertNotNull(realm);
 
-	            assertNotNull(realm);
+            realm.setAccessCodeLifespanLogin(200);
+            testApp = realm.getClientByClientId("test-app");
 
-	            realm.setAccessCodeLifespanLogin(200);
-	            testApp = realm.getClientByClientId("test-app");
+            assertNotNull(testApp);
+            testApp.setEnabled(false);
 
-	            assertNotNull(testApp);
-	            testApp.setEnabled(false);
-	        
-	        
-	        // make sure that app cache was flushed and enabled changed
-	        
-	       
-	            realm = session.realms().getRealmByName("test");
-	            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
-	            testApp = session.clients().getClientById(realm, appId);
-	            Assert.assertFalse(testApp.isEnabled());
-	        
-	        }
-		 });
-		 }
+            // make sure that app cache was flushed and enabled changed
+            realm = session.realms().getRealmByName("test");
+            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
+            testApp = session.clients().getClientById(realm, appId);
+            Assert.assertFalse(testApp.isEnabled());
+        });
+    }
+
     @Test
     public void testAddUserNotAddedToCache() {
 

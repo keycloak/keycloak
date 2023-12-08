@@ -49,23 +49,18 @@ public class ModelTestExecutor extends LocalTestExecuter {
             super.execute(event);
         } else {
             TestResult result = new TestResult();
-            if (annotation.skipForMapStorage()) {
-                result = TestResult.skipped();
-            }
-            else {
-                try {
-                    // Model test - wrap the call inside the
-                    TestContext ctx = testContext.get();
-                    KeycloakTestingClient testingClient = ctx.getTestingClient();
-                    testingClient.server().runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
+            try {
+                // Model test - wrap the call inside the
+                TestContext ctx = testContext.get();
+                KeycloakTestingClient testingClient = ctx.getTestingClient();
+                testingClient.server().runModelTest(testMethod.getDeclaringClass().getName(), testMethod.getName());
 
-                    result.setStatus(TestResult.Status.PASSED);
-                } catch (Throwable e) {
-                    result.setStatus(TestResult.Status.FAILED);
-                    result.setThrowable(e);
-                } finally {
-                    result.setEnd(System.currentTimeMillis());
-                }
+                result.setStatus(TestResult.Status.PASSED);
+            } catch (Throwable e) {
+                result.setStatus(TestResult.Status.FAILED);
+                result.setThrowable(e);
+            } finally {
+                result.setEnd(System.currentTimeMillis());
             }
 
             // Need to use reflection this way...
