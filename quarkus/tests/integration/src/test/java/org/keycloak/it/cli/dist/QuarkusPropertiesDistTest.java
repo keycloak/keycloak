@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.function.Consumer;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -130,16 +132,16 @@ public class QuarkusPropertiesDistTest {
     void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("config-keystore-password must be specified");
-        cliResult.assertNoBuild();
     }
 
+    @Disabled("Ensuring config-keystore is used only at runtime removes proactive validation of the path when only the keystore is used")
     @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
     @Order(10)
     void testMissingSmallRyeKeyStorePathProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
         cliResult.assertError("config-keystore must be specified");
-        cliResult.assertNoBuild();
     }
 
     @Test
@@ -149,7 +151,6 @@ public class QuarkusPropertiesDistTest {
     void testInvalidSmallRyeKeyStorePathProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("java.lang.IllegalArgumentException: config-keystore path does not exist: /invalid/path");
-        cliResult.assertNoBuild();
     }
 
     @Test
@@ -160,7 +161,7 @@ public class QuarkusPropertiesDistTest {
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("DEBUG"));
-        cliResult.assertBuild();
+        cliResult.assertStarted();
     }
 
     @Test
