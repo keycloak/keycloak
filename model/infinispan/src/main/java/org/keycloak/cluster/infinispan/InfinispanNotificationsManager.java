@@ -158,17 +158,9 @@ public class InfinispanNotificationsManager {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
             Retry.executeWithBackoff((int iteration) -> {
                 try {
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this put that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
-                    }
+                    DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
+                            workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS)
+                    );
                 } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
@@ -250,10 +242,9 @@ public class InfinispanNotificationsManager {
                         https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
                         Tracked in https://github.com/keycloak/keycloak/issues/9871
                     */
-                    Object value;
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        value = remoteCache.get(key);
-                    }
+                    Object value = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
+                            remoteCache.get(key)
+                    );
                     eventReceived(key, (Serializable) value);
 
                 });
