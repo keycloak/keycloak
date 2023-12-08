@@ -30,6 +30,14 @@ public class UPAttributeSelector {
 
     private Set<String> scopes;
 
+    public UPAttributeSelector() {
+        // for reflection
+    }
+
+    public UPAttributeSelector(Set<String> scopes) {
+        this.scopes = scopes;
+    }
+
     public Set<String> getScopes() {
         return scopes;
     }
