@@ -56,6 +56,8 @@ import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 
+import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
+
 /**
  * Impl for sending infinispan messages across cluster and listening to them
  *
@@ -274,7 +276,9 @@ public class InfinispanNotificationsManager {
 
     private void eventReceived(String key, Serializable obj) {
         if (!(obj instanceof WrapperClusterEvent)) {
-            if (obj == null) {
+            // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
+            // It is still good to have the warning in case of real events return null because they have been, for example, expired
+            if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
                 logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
             }
             return;
