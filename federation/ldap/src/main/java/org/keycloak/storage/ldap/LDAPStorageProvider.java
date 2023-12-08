@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingException;
+import javax.naming.directory.SearchControls;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
@@ -91,7 +92,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import org.keycloak.utils.StreamsUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -266,23 +267,26 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-    	 try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
-             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-             Condition attrCondition = conditionsBuilder.equal(attrName, attrValue);
-             ldapQuery.addWhereCondition(attrCondition);
+        List<LDAPObject> ldapObjects;
+        if (LDAPConstants.LDAP_ID.equals(attrName)) {
+            // search by UUID attribute
+            LDAPObject ldapObject = loadLDAPUserByUuid(realm, attrValue);
+            ldapObjects = ldapObject == null? Collections.emptyList() : Collections.singletonList(ldapObject);
+        } else if (LDAPConstants.LDAP_ENTRY_DN.equals(attrName)) {
+            // search by DN attribute
+            LDAPObject ldapObject = loadLDAPUserByDN(realm, LDAPDn.fromString(attrValue));
+            ldapObjects = ldapObject == null? Collections.emptyList() : Collections.singletonList(ldapObject);
+        } else {
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-             List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+                Condition attrCondition = conditionsBuilder.equal(attrName, attrValue);
+                ldapQuery.addWhereCondition(attrCondition);
+                ldapObjects = ldapQuery.getResultList();
+            }
+        }
 
-             return ldapObjects.stream().map(ldapUser -> {
-                 String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-                 UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
-                 if (localUser == null) {
-                     return importUserFromLDAP(session, realm, ldapUser);
-                 } else {
-                     return proxy(realm, localUser, ldapUser, false);
-                 }
-             });
-         }
+        return ldapObjects.stream().map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
     }
 
     public boolean synchronizeRegistrations() {
@@ -369,7 +373,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 searchLDAP(realm, search, firstResult, maxResults) :
                 searchLDAPByAttributes(realm, params, firstResult, maxResults);
 
-        return paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
+        return StreamsUtil.paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
             .map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
     }
 
@@ -975,6 +979,18 @@ public class LDAPStorageProvider implements UserStorageProvider,
             Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, uuid);
             ldapQuery.addWhereCondition(usernameCondition);
 
+            return ldapQuery.getFirstResult();
+        }
+    }
+
+    public LDAPObject loadLDAPUserByDN(RealmModel realm, LDAPDn dn) {
+        if (dn == null || !dn.isDescendantOf(LDAPDn.fromString(ldapIdentityStore.getConfig().getUsersDn()))) {
+            // no need to search
+            return null;
+        }
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            ldapQuery.setSearchDn(dn.toString());
+            ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
             return ldapQuery.getFirstResult();
         }
     }

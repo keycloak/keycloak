@@ -61,6 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.naming.NameNotFoundException;
 import javax.naming.directory.AttributeInUseException;
 import javax.naming.directory.NoSuchAttributeException;
 import javax.naming.directory.SchemaViolationException;
@@ -285,6 +286,12 @@ public class LDAPIdentityStore implements IdentityStore {
                     results.add(populateAttributedType(result, identityQuery));
                 }
             }
+        } catch (NameNotFoundException e) {
+            if (identityQuery.getSearchScope() == SearchControls.OBJECT_SCOPE) {
+                // if searching in base (dn search) return empty as entry does not exist
+                return Collections.emptyList();
+            }
+            throw new ModelException("Querying of LDAP failed " + identityQuery, e);
         } catch (Exception e) {
             throw new ModelException("Querying of LDAP failed " + identityQuery, e);
         }
