@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -334,7 +333,6 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
      */
     @Test
     public void test04_syncRoleMappings() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();

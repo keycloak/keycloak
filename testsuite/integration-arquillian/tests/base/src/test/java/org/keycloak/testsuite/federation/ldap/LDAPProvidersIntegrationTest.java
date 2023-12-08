@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -755,7 +754,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testHardcodedAttributeMapperTest() throws Exception {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Create hardcoded mapper for "description"
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -1043,7 +1041,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchWithCustomLDAPFilter() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Add custom filter for searching users
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -1242,7 +1239,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-9002
     @Test
     public void testSearchWithPartiallyCachedUser() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             UserStorageUtil.userCache(session).clear();
         });
@@ -1269,7 +1265,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             UserStorageUtil.userCache(session).clear();
         });
@@ -1313,7 +1308,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testCacheUser() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         String userId = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ctx.getLdapModel().setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);

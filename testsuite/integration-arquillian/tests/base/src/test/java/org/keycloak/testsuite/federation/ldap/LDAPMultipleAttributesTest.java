@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -106,7 +105,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testUserImport() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             UserStorageUtil.userCache(session).clear();
@@ -122,7 +120,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testModel() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             UserStorageUtil.userCache(session).clear();

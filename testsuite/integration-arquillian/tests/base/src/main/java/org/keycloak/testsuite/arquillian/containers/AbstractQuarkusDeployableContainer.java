@@ -194,12 +194,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
-            if (!storeProvider.isMapStore()) {
-                if ("local".equals(cacheMode)) {
-                    commands.add("--cache=local");
-                } else {
-                    commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-                }
+            if ("local".equals(cacheMode)) {
+                commands.add("--cache=local");
+            } else {
+                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
             }
 
             if (configuration.getFipsMode() != FipsMode.DISABLED) {
