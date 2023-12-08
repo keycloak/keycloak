@@ -33,6 +33,14 @@ public class UPGroup {
     private String displayDescription;
     private Map<String, Object> annotations;
 
+    public UPGroup() {
+        // for reflection
+    }
+
+    public UPGroup(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }

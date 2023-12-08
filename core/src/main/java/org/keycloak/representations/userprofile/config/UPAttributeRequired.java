@@ -33,6 +33,15 @@ public class UPAttributeRequired {
     private Set<String> roles;
     private Set<String> scopes;
 
+    public UPAttributeRequired() {
+        // for reflection
+    }
+
+    public UPAttributeRequired(Set<String> roles, Set<String> scopes) {
+        this.roles = roles;
+        this.scopes = scopes;
+    }
+
     /**
      * Check if this config means that the attribute is ALWAYS required.
      * 

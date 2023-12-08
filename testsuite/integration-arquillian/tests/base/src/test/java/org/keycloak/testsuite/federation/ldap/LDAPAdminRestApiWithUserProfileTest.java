@@ -108,7 +108,7 @@ public class LDAPAdminRestApiWithUserProfileTest extends LDAPAdminRestApiTest {
 
         attribute.setPermissions(permissions);
 
-        upConfig.addAttribute(attribute);
+        upConfig.addOrReplaceAttribute(attribute);
 
         setUserProfileConfiguration(testRealm(), writeValueAsString(upConfig));
     }
