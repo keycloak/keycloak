@@ -19,7 +19,6 @@ package org.keycloak.testsuite.federation.storage;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -325,8 +324,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDailyEviction() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -348,10 +345,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         testIsCached();
 
     }
+
     @Test
     public void testWeeklyEviction() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -376,10 +372,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         testIsCached();
 
     }
+
     @Test
     public void testMaxLifespan() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -417,8 +412,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIsCached() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
@@ -430,8 +423,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testNoCache() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {

@@ -88,11 +88,9 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
 
-        if (isJpaRealmProvider()) {
-            Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
-            ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
-            log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
-        }
+        Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
+        ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
+        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
     }
 
     @Override
