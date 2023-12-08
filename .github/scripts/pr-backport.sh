@@ -2,6 +2,7 @@
 
 TARGET_REMOTE=upstream
 KEYCLOAK_REPO=https://github.com/keycloak/keycloak
+WORK_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 PR=$1
 TARGET=$2
@@ -84,5 +85,5 @@ git push origin $PR_BRANCH:$PR_BRANCH --set-upstream
 echo_header "Opening web browser to create pull request"
 gh pr create -B $TARGET_BRANCH -f -w
 
-echo_header "Checkout to 'main' branch"
-git checkout main
+echo_header "Checkout to $WORK_BRANCH branch"
+git checkout $WORK_BRANCH
