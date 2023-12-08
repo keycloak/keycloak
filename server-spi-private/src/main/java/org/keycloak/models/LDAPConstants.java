@@ -79,6 +79,8 @@ public class LDAPConstants {
     public static final String READ_TIMEOUT = "readTimeout";
     // Could be discovered by rootDse supportedControl: 1.2.840.113556.1.4.319
     public static final String PAGINATION = "pagination";
+    public static final String MAX_CONDITIONS = "maxConditions";
+    public static final int DEFAULT_MAX_CONDITIONS = 64;
 
     public static final String EDIT_MODE = "editMode";
 
