@@ -127,6 +127,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce checking if a client is the one to which an intent was issued in a use case where an intent is issued before starting an authorization code flow to get an access token like UK OpenBanking
 * Enforce prohibiting implicit and hybrid flow
 * Enforce checking if a PAR request includes necessary parameters included by an authorization request
+* Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
 
 [[_client_policy_profile]]
 === Profile

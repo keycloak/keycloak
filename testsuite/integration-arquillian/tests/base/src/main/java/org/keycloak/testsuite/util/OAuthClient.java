@@ -970,6 +970,10 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
+        }
+
         UrlEncodedFormEntity formEntity;
         try {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
