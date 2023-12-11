@@ -74,4 +74,8 @@ No action required.
 
 No action required.
 
+== Further reading
+
+See <@links.ha id="concepts-infinispan-cli-batch" /> on how to automate Infinispan CLI commands.
+
 </@tmpl.guide>

@@ -43,7 +43,7 @@ These commands must be executed on both {ocp} clusters.
 A service account is required to establish a connection between clusters.
 The {ispn-operator} uses it to inspect the network configuration from the remote site and to configure the local {jdgserver_name} cluster accordingly.
 +
-For more details, see the {operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
+For more details, see the {infinispan-operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
 +
 
 .. First, create the service account and generate an access token in both {ocp} clusters.
@@ -86,7 +86,7 @@ In this {section}, {jdgserver_name} uses an {ocp} Route for the cross-site commu
 It uses the SNI extension of TLS to direct the traffic to the correct Pods.
 To achieve that, JGroups use TLS sockets, which require a Keystore and Truststore with the correct certificates.
 +
-For more information, see the {operator-docs}#securing-cross-site-connections_cross-site[Securing Cross Site Connections] documentation or this https://developers.redhat.com/learn/openshift/cross-site-and-cross-applications-red-hat-openshift-and-red-hat-data-grid[Red Hat Developer Guide].
+For more information, see the {infinispan-operator-docs}#securing-cross-site-connections_cross-site[Securing Cross Site Connections] documentation or this https://developers.redhat.com/learn/openshift/cross-site-and-cross-applications-red-hat-openshift-and-red-hat-data-grid[Red Hat Developer Guide].
 +
 Upload the Keystore and the Truststore in an {ocp} Secret.
 The secret contains the file content, the password to access it, and the type of the store.
@@ -124,7 +124,7 @@ NOTE: Keystore and Truststore must be uploaded in both {ocp} clusters.
 
 . Create an {jdgserver_name} Cluster with Cross-Site enabled
 +
-The {operator-docs}#setting-up-xsite[Setting Up Cross-Site] documentation provides all the information on how to create and configure your {jdgserver_name} cluster with cross-site enabled, including the previous steps.
+The {infinispan-operator-docs}#setting-up-xsite[Setting Up Cross-Site] documentation provides all the information on how to create and configure your {jdgserver_name} cluster with cross-site enabled, including the previous steps.
 +
 A basic example is provided in this {section} using the credentials, tokens, and TLS Keystore/Truststore created by the commands from the previous steps.
 +
@@ -161,8 +161,8 @@ include::examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 {project_name} requires the following caches to be present: `sessions`, `actionTokens`, `authenticationSessions`, `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `work`.
 +
-The {jdgserver_name} {operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
-Cross-site needs to be enabled per cache as documented by {xsite-docs}[Cross Site Documentation].
+The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
+Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
 The documentation contains more details about the options used by this {section}.
 The following example shows the Cache CR for `{site-a}`.
 +
