@@ -23,3 +23,9 @@ The endpoint is currently checking availability of the embedded and external Inf
 This endpoint is not available by default.
 To enable it, run Keycloak with feature `multi-site`.
 Proceed to https://www.keycloak.org/server/features[Enabling and disabling features] guide for more details.
+
+= Keycloak CR Optimized Field
+
+The Keycloak CR now includes an `startOptimized` field, which may be used to override the default assumption about whether to use the `--optimized` flag for the start command. 
+As a result, you can use the CR to configure build time options also when a custom Keycloak image is used.
+
