@@ -1096,6 +1096,30 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void getSubGroups() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("parent");
+        parent = createGroup(realm, parent);
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("child");
+        Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+        attributes.put("attribute1", Arrays.asList("value1", "value2"));
+        child.setAttributes(attributes);
+
+        addSubGroup(realm, parent, child);
+
+        // Check brief and full retrieval of subgroups of parent
+        boolean briefRepresentation = true;
+        assertNull(realm.groups().group(parent.getId()).getSubGroups(null, null, briefRepresentation).get(0).getAttributes());
+
+        briefRepresentation = false;
+        assertThat(realm.groups().group(parent.getId()).getSubGroups(null, null, briefRepresentation).get(0).getAttributes().get("attribute1"), containsInAnyOrder("value1", "value2"));
+    }
+
+    @Test
     public void searchAndCountGroups() throws Exception {
         String firstGroupId = "";
 
