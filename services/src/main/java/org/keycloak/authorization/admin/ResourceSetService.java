@@ -44,6 +44,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -67,12 +68,14 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
@@ -131,11 +134,11 @@ public class ResourceSetService {
         return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+    public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -153,9 +156,9 @@ public class ResourceSetService {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@PathParam("resource-id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
@@ -174,11 +177,11 @@ public class ResourceSetService {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @GET
     @NoCache
     @Produces("application/json")
-    public Response findById(@PathParam("id") String id) {
+    public Response findById(@PathParam("resource-id") String id) {
         return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
@@ -194,11 +197,11 @@ public class ResourceSetService {
         return Response.ok(toRepresentation.apply(model)).build();
     }
 
-    @Path("{id}/scopes")
+    @Path("{resource-id}/scopes")
     @GET
     @NoCache
     @Produces("application/json")
-    public Response getScopes(@PathParam("id") String id) {
+    public Response getScopes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
@@ -237,11 +240,11 @@ public class ResourceSetService {
         return Response.ok(scopes).build();
     }
 
-    @Path("{id}/permissions")
+    @Path("{resource-id}/permissions")
     @GET
     @NoCache
     @Produces("application/json")
-    public Response getPermissions(@PathParam("id") String id) {
+    public Response getPermissions(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
@@ -295,11 +298,11 @@ public class ResourceSetService {
         return Response.ok(representation).build();
     }
 
-    @Path("{id}/attributes")
+    @Path("{resource-id}/attributes")
     @GET
     @NoCache
     @Produces("application/json")
-    public Response getAttributes(@PathParam("id") String id) {
+    public Response getAttributes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);

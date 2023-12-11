@@ -96,7 +96,7 @@ public class CookieHelper {
         Set<String> ret = getInternalCookieValue(session, name);
         if (ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find any cookies with name '{0}', trying '{1}'", name, legacy);
+            logger.debugv("Could not find any cookies with name {0}, trying {1}", name, legacy);
             ret = getInternalCookieValue(session, legacy);
         }
         return ret;

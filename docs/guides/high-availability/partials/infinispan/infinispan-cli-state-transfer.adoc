@@ -81,7 +81,7 @@ site push-site-status --cache=work
 }
 ----
 +
-Check the table in {xsite-docs}#rest_v2_xsite_state_push_cross-site-operations-rest[this section for the Cross-Site Documentation] for the possible status values.
+Check the table in {infinispan-xsite-docs}#rest_v2_xsite_state_push_cross-site-operations-rest[this section for the Cross-Site Documentation] for the possible status values.
 +
 If an error is reported, repeat the state transfer for that specific cache.
 +

@@ -19,11 +19,7 @@
 :cluster-name: infinispan
 
 // Other common attributes
-:operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
-:xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
 :ocp: OpenShift
-:ispn: Infinispan
 :ispn-operator: Infinispan Operator
-:kc: Keycloak
 :site-a: Site-A
 :site-b: Site-B

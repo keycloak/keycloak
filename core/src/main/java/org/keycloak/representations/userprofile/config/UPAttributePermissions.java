@@ -33,6 +33,15 @@ public class UPAttributePermissions {
     private Set<String> view = Collections.emptySet();
     private Set<String> edit = Collections.emptySet();
 
+    public UPAttributePermissions() {
+        // for reflection
+    }
+
+    public UPAttributePermissions(Set<String> view, Set<String> edit) {
+        this.view = view;
+        this.edit = edit;
+    }
+
     public Set<String> getView() {
         return view;
     }

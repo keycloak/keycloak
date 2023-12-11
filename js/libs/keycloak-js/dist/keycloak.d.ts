@@ -208,6 +208,11 @@ export interface KeycloakInitOptions {
 	 * of the OIDC 1.0 specification.
 	 */
 	locale?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakLoginOptions {
@@ -289,6 +294,11 @@ export interface KeycloakLogoutOptions {
 	 * Specifies the uri to redirect to after logout.
 	 */
 	redirectUri?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }

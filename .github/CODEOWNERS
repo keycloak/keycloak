@@ -34,6 +34,7 @@
 /quarkus/                                                   @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/server/                                        @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/operator/                                      @keycloak/cloud-native-maintainers @keycloak/maintainers
+/integration/client-cli/admin-cli                           @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Store (@keycloak/store-maintainers)

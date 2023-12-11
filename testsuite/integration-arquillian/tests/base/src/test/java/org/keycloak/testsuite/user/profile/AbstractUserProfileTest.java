@@ -104,7 +104,7 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
             Map<String, Object> validatorConfig = new HashMap<>();
             validatorConfig.put("min", 3);
             attribute.addValidation("length", validatorConfig);
-            config.addAttribute(attribute);
+            config.addOrReplaceAttribute(attribute);
         }
         String newConfig = JsonSerialization.writeValueAsString(config);
         return newConfig;

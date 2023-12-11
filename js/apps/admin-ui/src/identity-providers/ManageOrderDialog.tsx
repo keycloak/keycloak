@@ -17,27 +17,24 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../utils/useFetch";
 
 type ManageOrderDialogProps = {
-  providers: IdentityProviderRepresentation[];
   onClose: () => void;
 };
 
-export const ManageOrderDialog = ({
-  providers,
-  onClose,
-}: ManageOrderDialogProps) => {
+export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
-  const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!),
-  );
+  const [providers, setProviders] =
+    useState<IdentityProviderRepresentation[]>();
+  const [order, setOrder] = useState<string[]>([]);
 
   const onDragStart = (id: string) => {
     setAlias(id);
@@ -57,11 +54,24 @@ export const ManageOrderDialog = ({
     setOrder(providerOrder);
   };
 
+  useFetch(
+    () => adminClient.identityProviders.find(),
+    (providers) => {
+      setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
+      setOrder(providers.map((provider) => provider.alias!));
+    },
+    [],
+  );
+
+  if (!providers) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <Modal
       variant={ModalVariant.small}
       title={t("manageDisplayOrder")}
-      isOpen={true}
+      isOpen
       onClose={onClose}
       actions={[
         <Button

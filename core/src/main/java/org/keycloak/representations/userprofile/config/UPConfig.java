@@ -50,14 +50,19 @@ public class UPConfig {
         this.attributes = attributes;
     }
 
-    public UPConfig addAttribute(UPAttribute attribute) {
+    public UPConfig addOrReplaceAttribute(UPAttribute attribute) {
         if (attributes == null) {
             attributes = new ArrayList<>();
         }
 
+        removeAttribute(attribute.getName());
         attributes.add(attribute);
 
         return this;
+    }
+
+    public boolean removeAttribute(String name) {
+        return attributes != null && attributes.removeIf(attribute -> attribute.getName().equals(name));
     }
 
     public List<UPGroup> getGroups() {
