@@ -446,7 +446,7 @@ public class OAuthClient {
             e.printStackTrace();
         }
 
-        // load the trustore
+        // load the truststore
         KeyStore truststore = null;
         try {
             truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
