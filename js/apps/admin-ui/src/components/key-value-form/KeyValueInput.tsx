@@ -165,7 +165,9 @@ export const KeyValueInput = ({
       className="pf-u-p-0"
       variant="xs"
     >
-      <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
+      <EmptyStateBody>
+        {t("missingAttributes", { name: "attributes" })}
+      </EmptyStateBody>
       <Button
         data-testid={`${name}-add-row`}
         variant="link"
