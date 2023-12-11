@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 import static org.keycloak.util.JsonSerialization.readValue;
 
 import java.io.InputStream;
@@ -49,6 +48,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -632,7 +632,7 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionId));
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
@@ -1080,7 +1080,8 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
+    public GroupRepresentation getGroupByPath(@PathParam("path") List<PathSegment> pathSegments) {
+        String[] path = pathSegments.stream().map(PathSegment::getPath).toArray(String[]::new);
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");

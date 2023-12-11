@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Switch back to the primary site"
 summary="This describes the operational procedures necessary"
-preview="true" >
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
 
 These procedures switch back to the primary site back after a failover or switchover to the secondary site.
 In a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.

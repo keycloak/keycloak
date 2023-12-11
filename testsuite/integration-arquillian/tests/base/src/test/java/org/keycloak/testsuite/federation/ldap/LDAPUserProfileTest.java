@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -42,7 +41,6 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
@@ -52,7 +50,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.userprofile.AbstractUserProfileProvider.USER_METADATA_GROUP;
+import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -70,12 +68,6 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
     @Override
     protected LDAPRule getLDAPRule() {
         return ldapRule;
-    }
-
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Override

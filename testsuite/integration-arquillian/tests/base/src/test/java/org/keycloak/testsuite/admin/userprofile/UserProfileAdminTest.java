@@ -44,6 +44,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.testsuite.util.JsonTestUtils;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -66,7 +67,7 @@ public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Test
     public void testSetDefaultConfig() {
-        UPConfig config = new UPConfig().addAttribute(new UPAttribute("test"));
+        UPConfig config = UPConfigUtils.parseDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
         UserProfileResource userProfile = testRealm().users().userProfile();
         userProfile.update(config);
         getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));

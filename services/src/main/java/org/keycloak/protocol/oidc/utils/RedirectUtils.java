@@ -73,7 +73,7 @@ public class RedirectUtils {
                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
             }
-            resolveValidRedirects.add(lowerCaseHostname(validRedirect));
+            resolveValidRedirects.add(validRedirect);
         }
         return resolveValidRedirects;
     }
@@ -114,7 +114,7 @@ public class RedirectUtils {
             // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
             String decodedRedirectUri = decodeRedirectUri(redirectUri);
             URI decodedRedirect = toUri(decodedRedirectUri);
-            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect, true);
+            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect);
             if (decodedRedirectUri == null) return null;
 
             String r = decodedRedirectUri;
@@ -139,7 +139,7 @@ public class RedirectUtils {
             }
 
             // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
-            redirectUri = getNormalizedRedirectUri(originalRedirect, false);
+            redirectUri = getNormalizedRedirectUri(originalRedirect);
 
             // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
             if (valid == null) {
@@ -157,7 +157,7 @@ public class RedirectUtils {
             String scheme = decodedRedirect.getScheme();
             if (valid != null && scheme != null) {
                 // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
-                if (!valid.startsWith(scheme.toLowerCase() + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
                     logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
                     valid = null;
                 }
@@ -187,13 +187,10 @@ public class RedirectUtils {
         return uri;
     }
 
-    private static String getNormalizedRedirectUri(URI uri, boolean lower) {
+    private static String getNormalizedRedirectUri(URI uri) {
         String redirectUri = null;
         if (uri != null) {
             redirectUri = uri.normalize().toString();
-            if (lower) {
-                redirectUri = lowerCaseHostname(redirectUri);
-            }
         }
         return redirectUri;
     }
@@ -235,18 +232,6 @@ public class RedirectUtils {
         }
         logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
         return null;
-    }
-
-    private static String lowerCaseHostname(String redirectUri) {
-        // lower case host and scheme which are case-insensitive by spec
-        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
-        if (uriBuilder.getScheme() != null) {
-            uriBuilder.scheme(uriBuilder.getScheme().toLowerCase());
-        }
-        if (uriBuilder.getHost() != null) {
-            uriBuilder.host(uriBuilder.getHost().toLowerCase());
-        }
-        return uriBuilder.buildAsString();
     }
 
     private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {

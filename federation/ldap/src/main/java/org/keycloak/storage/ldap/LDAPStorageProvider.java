@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,11 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingException;
+import javax.naming.directory.SearchControls;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
@@ -62,7 +65,6 @@ import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.ReadOnlyException;
@@ -73,6 +75,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.storage.adapter.UpdateOnlyChangeUserModelDelegate;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
@@ -89,16 +92,15 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.userprofile.AbstractUserProfileProvider;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
-import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.UserProfileUtil;
 
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import org.keycloak.utils.StreamsUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -274,24 +276,27 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-    	 try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
-             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        List<LDAPObject> ldapObjects;
+        if (LDAPConstants.LDAP_ID.equals(attrName)) {
+            // search by UUID attribute
+            LDAPObject ldapObject = loadLDAPUserByUuid(realm, attrValue);
+            ldapObjects = ldapObject == null? Collections.emptyList() : Collections.singletonList(ldapObject);
+        } else if (LDAPConstants.LDAP_ENTRY_DN.equals(attrName)) {
+            // search by DN attribute
+            LDAPObject ldapObject = loadLDAPUserByDN(realm, LDAPDn.fromString(attrValue));
+            ldapObjects = ldapObject == null? Collections.emptyList() : Collections.singletonList(ldapObject);
+        } else {
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-             Condition attrCondition = conditionsBuilder.equal(attrName, attrValue, EscapeStrategy.DEFAULT);
-             ldapQuery.addWhereCondition(attrCondition);
+                Condition attrCondition = conditionsBuilder.equal(attrName, attrValue, EscapeStrategy.DEFAULT);
+                ldapQuery.addWhereCondition(attrCondition);
 
-             List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+                ldapObjects = ldapQuery.getResultList();
+            }
+        }
 
-             return ldapObjects.stream().map(ldapUser -> {
-                 String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-                 UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
-                 if (localUser == null) {
-                     return importUserFromLDAP(session, realm, ldapUser);
-                 } else {
-                     return proxy(realm, localUser, ldapUser, false);
-                 }
-             });
-         }
+        return ldapObjects.stream().map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
     }
 
     public boolean synchronizeRegistrations() {
@@ -378,7 +383,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 searchLDAP(realm, search, firstResult, maxResults) :
                 searchLDAPByAttributes(realm, params, firstResult, maxResults);
 
-        return paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
+        return StreamsUtil.paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
             .map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
     }
 
@@ -422,6 +427,53 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
         return result;
+    }
+
+    private Stream<LDAPObject> loadUsersByDNsChunk(RealmModel realm, String rdnAttr, Collection<LDAPDn> dns) {
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            final LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            final Set<LDAPDn> dnSet = new HashSet<>(dns);
+            final Condition[] conditions = dns.stream()
+                    .map(dn -> conditionsBuilder.equal(rdnAttr, dn.getFirstRdn().getAttrValue(rdnAttr)))
+                    .toArray(Condition[]::new);
+            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions));
+            return ldapQuery.getResultList().stream().filter(ldapUser -> dnSet.contains(ldapUser.getDn()));
+        }
+    }
+
+    public Stream<UserModel> loadUsersByDNs(RealmModel realm, Collection<LDAPDn> dns, int firstResult, int maxResults) {
+        final String rdnAttr = ldapIdentityStore.getConfig().getRdnLdapAttribute();
+        final LDAPDn usersDn = LDAPDn.fromString(ldapIdentityStore.getConfig().getUsersDn());
+        final int chunkSize = ldapIdentityStore.getConfig().getMaxConditions();
+        return StreamsUtil.chunkedStream(
+                        dns.stream().filter(dn -> dn.getFirstRdn().getAttrValue(rdnAttr) != null && dn.isDescendantOf(usersDn)),
+                        chunkSize)
+                .map(chunk -> loadUsersByDNsChunk(realm, rdnAttr, chunk))
+                .flatMap(Function.identity())
+                .skip(firstResult)
+                .limit(maxResults)
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
+    }
+
+    private Stream<LDAPObject> loadUsersByUniqueAttributeChunk(RealmModel realm, String uidName, Collection<String> uids) {
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            Condition[] conditions = uids.stream()
+                    .map(uid -> conditionsBuilder.equal(uidName, uid))
+                    .toArray(Condition[]::new);
+            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions));
+            return ldapQuery.getResultList().stream();
+        }
+    }
+
+    public Stream<UserModel> loadUsersByUniqueAttribute(RealmModel realm, String uidName, Collection<String> uids, int firstResult, int maxResults) {
+        final int chunkSize = ldapIdentityStore.getConfig().getMaxConditions();
+        return StreamsUtil.chunkedStream(uids.stream(), chunkSize)
+                .map(chunk -> loadUsersByUniqueAttributeChunk(realm, uidName, chunk))
+                .flatMap(Function.identity())
+                .skip(firstResult)
+                .limit(maxResults)
+                .map(ldapUser -> importUserFromLDAP(session, realm, ldapUser));
     }
 
     /**
@@ -911,6 +963,18 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
+    public LDAPObject loadLDAPUserByDN(RealmModel realm, LDAPDn dn) {
+        if (dn == null || !dn.isDescendantOf(LDAPDn.fromString(ldapIdentityStore.getConfig().getUsersDn()))) {
+            // no need to search
+            return null;
+        }
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            ldapQuery.setSearchDn(dn.getLdapName());
+            ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
+            return ldapQuery.getFirstResult();
+        }
+    }
+
     private Predicate<LDAPObject> filterLocalUsers(RealmModel realm) {
         return ldapObject -> UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, LDAPUtils.getUsername(ldapObject, LDAPStorageProvider.this.ldapIdentityStore.getConfig())) == null;
     }
@@ -1027,23 +1091,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
             metadataAttributes.add(KerberosConstants.KERBEROS_PRINCIPAL);
         }
 
-        AttributeGroupMetadata metadataGroup = lookupMetadataGroup();
+        AttributeGroupMetadata metadataGroup = UserProfileUtil.lookupUserMetadataGroup(session);
 
         for (String attrName : metadataAttributes) {
-            // In case that attributes like LDAP_ID, KERBEROS_PRINCIPAL are explicitly defined on user profile, we can prefer defined configuration
-            if (!metadata.getAttribute(attrName).isEmpty()) {
-                logger.debugf("Ignore adding metadata attribute '%s' to user profile by LDAP provider '%s' as attribute is already defined on user profile.", attrName, getModel().getName());
-            } else {
-                logger.debugf("Adding metadata attribute '%s' to user profile by LDAP provider '%s' for user profile context '%s'.", attrName, getModel().getName(), metadata.getContext().toString());
-                AttributeMetadata attributeMetadata = metadata.addAttribute(attrName, guiOrder++, Collections.emptyList())
-                        .addWriteCondition(AttributeMetadata.ALWAYS_FALSE)  // Not writable for anyone
-                        .addReadCondition(onlyAdminCondition) // Read-only for administrators
-                        .setRequired(AttributeMetadata.ALWAYS_FALSE);
-
-                if (metadataGroup != null) {
-                     attributeMetadata.setAttributeGroupMetadata(metadataGroup);
-                }
-                attributeMetadata.setSelector(ldapUsersSelector);
+            boolean attributeAdded = UserProfileUtil.addMetadataAttributeToUserProfile(attrName, metadata, metadataGroup, ldapUsersSelector, guiOrder++, getModel().getName());
+            if (!attributeAdded) {
+                guiOrder--;
             }
         }
 
@@ -1053,15 +1106,5 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 attrMetadata.addWriteCondition(ldapUsersSelector.negate());
             }
         }
-    }
-
-    private AttributeGroupMetadata lookupMetadataGroup() {
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UPConfig config = provider.getConfiguration();
-        return config.getGroups().stream()
-                .filter(upGroup -> AbstractUserProfileProvider.USER_METADATA_GROUP.equals(upGroup.getName()))
-                .map(upGroup -> new AttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations()))
-                .findAny()
-                .orElse(null);
     }
 }

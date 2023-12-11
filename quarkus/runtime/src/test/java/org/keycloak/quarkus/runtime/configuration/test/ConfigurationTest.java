@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
@@ -293,6 +292,8 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--db=dev-mem" + ARG_SEPARATOR + "--db-username=other");
         config = createConfig();
         assertEquals("sa", config.getConfigValue("quarkus.datasource.username").getValue());
+        // should be untransformed
+        assertEquals("other", config.getConfigValue("kc.db-username").getValue());
 
         System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-username=other");
         config = createConfig();
@@ -300,17 +301,20 @@ public class ConfigurationTest {
 
         System.setProperty(CLI_ARGS, "--db=postgres");
         config = createConfig();
+        // username should not be set, either as the quarkus or kc property
         assertEquals(null, config.getConfigValue("quarkus.datasource.username").getValue());
+        assertEquals(null, config.getConfigValue("kc.db-username").getValue());
     }
 
     @Test
     public void testDatabaseKindProperties() {
-        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-url=jdbc:postgresql://localhost/keycloak");
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-url=jdbc:postgresql://localhost/keycloak" + ARG_SEPARATOR + "--db-username=postgres");
         SmallRyeConfig config = createConfig();
         assertEquals("org.hibernate.dialect.PostgreSQLDialect",
             config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:postgresql://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("postgresql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+        assertEquals("postgres", config.getConfigValue("quarkus.datasource.username").getValue());
     }
 
     @Test

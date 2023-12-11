@@ -12,11 +12,13 @@ import {
   InputGroup,
   Switch,
 } from "@patternfly/react-core";
+import { TFunction } from "i18next";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HelpItem, UserProfileFields } from "ui-shared";
+
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
@@ -218,7 +220,10 @@ export const UserForm = ({
             userProfileMetadata={userProfileMetadata}
             hideReadOnly={!user}
             supportedLocales={realm.supportedLocales || []}
-            t={(key: unknown, params) => t(key as string, { ...params })}
+            t={
+              ((key: unknown, params) =>
+                t(key as string, params as any)) as TFunction
+            }
           />
         </>
       ) : (
@@ -397,7 +402,7 @@ export const UserForm = ({
           component={
             !user?.id
               ? (props) => (
-                  <Link {...props} to={toUsers({ realm: realm.id! })} />
+                  <Link {...props} to={toUsers({ realm: realm.realm! })} />
                 )
               : undefined
           }

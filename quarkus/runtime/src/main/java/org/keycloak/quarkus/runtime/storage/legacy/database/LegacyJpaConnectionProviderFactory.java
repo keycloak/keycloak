@@ -40,7 +40,6 @@ import io.quarkus.arc.Arc;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
-import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -50,9 +49,8 @@ import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.dblock.DBLockGlobalLockProvider;
-import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -62,8 +60,7 @@ import org.keycloak.quarkus.runtime.storage.database.jpa.AbstractJpaConnectionPr
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory,
-        EnvironmentDependentProviderFactory {
+public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(LegacyJpaConnectionProviderFactory.class);
@@ -288,24 +285,25 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
     }
 
     private void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
-        GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-        globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
             updater.update(connection, schema);
-            return null;
-        });
+        } finally {
+            dbLock2.releaseLock();
+        }
     }
 
     private void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session,
             JpaUpdaterProvider updater) {
-        GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-        globalLock.withLock(DBLockGlobalLockProvider.DATABASE, innerSession -> {
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+        dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
             updater.export(connection, schema, databaseUpdateFile);
-            return null;
-        });
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        } finally {
+            dbLock2.releaseLock();
+        }
     }
 }

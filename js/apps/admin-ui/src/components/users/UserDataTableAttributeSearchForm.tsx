@@ -1,4 +1,4 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   ActionGroup,
   Alert,
@@ -13,14 +13,15 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import { Form } from "react-router-dom";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { isBundleKey, unWrap } from "../../user/utils";
 import { CheckIcon } from "@patternfly/react-icons";
-import { useAlerts } from "../alert/Alerts";
 import { ReactNode, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Form } from "react-router-dom";
+import { label } from "ui-shared";
+
+import { useAlerts } from "../alert/Alerts";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { UserAttribute } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
@@ -153,11 +154,7 @@ export function UserDataTableAttributeSearchForm({
           {profile.attributes?.map((option) => (
             <SelectOption
               key={option.name}
-              value={
-                (isBundleKey(option.displayName)
-                  ? t(unWrap(option.displayName!))
-                  : option.displayName) || option.name
-              }
+              value={label(t, option.displayName!, option.name)}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectAttributeKeyOpen(false);

@@ -18,6 +18,7 @@
 package org.keycloak.keys.infinispan;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
@@ -25,7 +26,6 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -35,14 +35,15 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory, EnvironmentDependentProviderFactory {
+public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProviderFactory.class);
 
@@ -53,11 +54,36 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
 
     private int minTimeBetweenRequests;
+    private int maxCacheTime;
 
     @Override
     public PublicKeyStorageProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanPublicKeyStorageProvider(session, keysCache, tasksInProgress, minTimeBetweenRequests);
+        return new InfinispanPublicKeyStorageProvider(session, keysCache, tasksInProgress, minTimeBetweenRequests, maxCacheTime);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                    .name("minTimeBetweenRequests")
+                    .type("int")
+                    .helpText("Minimum interval in seconds between two requests to retrieve the new public keys. "
+                            + "The server will always try to download new public keys when a single key is requested and not found. "
+                            + "However it will avoid the download if the previous refresh was done less than 10 seconds ago (by default). "
+                            + "This behavior is used to avoid DoS attacks against the external keys endpoint.")
+                    .defaultValue(10)
+                    .add()
+                .property()
+                    .name("maxCacheTime")
+                    .type("int")
+                    .helpText("Maximum interval in seconds that keys are cached when they are retrieved via all keys methods. "
+                            + "When all keys for the entry are retrieved there is no way to detect if a key is missing "
+                            + "(different to the case when the key is retrieved via ID for example). "
+                            + "In that situation this option forces a refresh from time to time. Default 24 hours.")
+                    .defaultValue(24*60*60)
+                    .add()
+                .build();
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -72,8 +98,15 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
 
     @Override
     public void init(Config.Scope config) {
+        // minTimeBetweenRequests is used when getting a key via name or
+        // predicate to avoid doing calls very sooon when a key is missing
         minTimeBetweenRequests = config.getInt("minTimeBetweenRequests", 10);
-        log.debugf("minTimeBetweenRequests is %d", minTimeBetweenRequests);
+
+        // maxCacheTime is used to reload keys when retrieved via all getKeys
+        // a refresh is ensured for that method from time to time
+        maxCacheTime = config.getInt("maxCacheTime", 24*60*60); // 24 hours
+
+        log.debugf("minTimeBetweenRequests is %d maxCacheTime is %d", minTimeBetweenRequests, maxCacheTime);
     }
 
     @Override
@@ -127,11 +160,6 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
         } else {
             return null;
         }
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
     private static class SessionAndKeyHolder {

@@ -37,8 +37,6 @@ import java.util.stream.IntStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.startsWith;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
-
 
 @RequireProvider(UserSessionProvider.class)
 public class UserSessionConcurrencyTest extends KeycloakModelTest {
@@ -87,7 +85,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     RealmModel realm = session.realms().getRealm(realmId);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
 
-                    UserSessionModel uSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, uId));
+                    UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
                     AuthenticatedClientSessionModel cSession = uSession.getAuthenticatedClientSessionByClient(client.getId());
                     if (cSession == null) {
                         wasWriting.set(true);

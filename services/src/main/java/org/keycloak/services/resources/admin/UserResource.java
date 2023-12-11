@@ -60,10 +60,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.UserProfileAttributeMetadata;
-import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -85,12 +82,9 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.BadRequestException;
@@ -110,7 +104,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
-import org.keycloak.validate.Validators;
 
 import java.net.URI;
 import java.text.MessageFormat;
@@ -132,7 +125,6 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.services.resources.admin.UserProfileResource.createUserProfileMetadata;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * Base resource for managing users
@@ -366,7 +358,7 @@ public class UserResource {
         String sessionState = auth.adminAuth().getToken().getSessionState();
         if (authenticatedRealm.getId().equals(realm.getId()) && sessionState != null) {
             sameRealm = true;
-            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authenticatedRealm, sessionState));
+            UserSessionModel userSession = session.sessions().getUserSession(authenticatedRealm, sessionState);
             AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.expireAuthSessionCookie(realm, session.getContext().getUri(), session);

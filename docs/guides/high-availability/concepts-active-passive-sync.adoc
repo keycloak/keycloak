@@ -4,7 +4,8 @@
 <@tmpl.guide
 title="Concepts for active-passive deployments"
 summary="Understanding an active-passive deployment with synchronous replication"
-preview="true" >
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
 
 This topic describes a highly available active/passive setup and the behavior to expect. It outlines the requirements of the high availability active/passive architecture and describes the benefits and tradeoffs.
 
@@ -62,13 +63,11 @@ Monitoring is necessary to detect degraded setups.
 
 | {jdgserver_name} cluster failure
 | If the {jdgserver_name} cluster fails in the active site, {project_name} will not be able to communicate with the external {jdgserver_name}, and the {project_name} service will be unavailable.
-Manual switchover to the secondary site is recommended.
-Future versions will detect this situation and do an automatic failover.
+The loadbalancer will detect the situation as `/lb-check` returns an error, and will fail over to the other site.
 
-When the {jdgserver_name} cluster is restored, its data will be out-of-sync with {project_name}.
-Manual operations are required to get {jdgserver_name} in the primary site in sync with the secondary site.
-| Loss of service
-| Human intervention required
+The setup is degraded until the {jdgserver_name} cluster is restored and the session data is re-synchronized to the primary.
+| No data loss^3^
+| Seconds to minutes (depending on load balancer setup)
 
 | Connectivity {jdgserver_name}
 | If the connectivity between the two sites is lost, session information cannot be sent to the other site.

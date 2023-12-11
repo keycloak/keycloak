@@ -2,10 +2,12 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
+import { TFunction } from "i18next";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { isUserProfileError, setUserProfileServerError } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
@@ -15,7 +17,6 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
-import { isUserProfileError, setUserProfileServerError } from "ui-shared";
 import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
@@ -71,9 +72,8 @@ export default function CreateUser() {
       );
     } catch (error) {
       if (isUserProfileError(error)) {
-        setUserProfileServerError(error, form.setError, (key, param) =>
-          t(key as string, { ...param }),
-        );
+        setUserProfileServerError(error, form.setError, ((key, param) =>
+          t(key as string, param as any)) as TFunction);
       } else {
         addError("userCreateError", error);
       }

@@ -3079,8 +3079,6 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void testUpdateCredentialLabelForFederatedUser() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-
         // Create user federation
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("memory");

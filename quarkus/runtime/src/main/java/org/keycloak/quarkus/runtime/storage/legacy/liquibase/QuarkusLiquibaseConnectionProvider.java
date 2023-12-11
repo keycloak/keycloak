@@ -28,12 +28,10 @@ import liquibase.Scope;
 import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import liquibase.Liquibase;
 import liquibase.database.Database;
@@ -46,8 +44,7 @@ import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 
-public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider,
-        EnvironmentDependentProviderFactory {
+public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider {
 
     private static final Logger logger = Logger.getLogger(QuarkusLiquibaseConnectionProvider.class);
 
@@ -151,10 +148,5 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     @Override
     public int order() {
         return 100;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

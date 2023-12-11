@@ -6,16 +6,13 @@ import {
   TextInputProps,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { type TFunction } from "i18next";
 import { Fragment, useEffect, useMemo } from "react";
 import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
+
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
-import {
-  TranslationFunction,
-  UserFormFields,
-  fieldName,
-  labelAttribute,
-} from "./utils";
+import { UserFormFields, fieldName, labelAttribute } from "./utils";
 
 export const MultiInputComponent = ({
   t,
@@ -37,7 +34,7 @@ export const MultiInputComponent = ({
 );
 
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
-  t: TranslationFunction;
+  t: TFunction;
   name: FieldPath<UserFormFields>;
   form: UseFormReturn<UserFormFields>;
   addButtonLabel?: string;

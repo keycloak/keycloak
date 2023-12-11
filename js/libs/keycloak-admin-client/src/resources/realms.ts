@@ -53,7 +53,7 @@ export class Realms extends Resource {
     void
   >({
     method: "PUT",
-    path: "/{realm}",
+    path: "/{realm}/ui-ext",
     urlParamKeys: ["realm"],
   });
 

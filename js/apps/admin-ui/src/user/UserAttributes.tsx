@@ -7,13 +7,24 @@ import {
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import { UserFormFields, toUserFormFields } from "./form-state";
+import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 
 type UserAttributesProps = {
   user: UserRepresentation;
   save: (user: UserFormFields) => void;
+  upConfig?: UserProfileConfig;
+  isUserProfileEnabled: boolean;
 };
 
-export const UserAttributes = ({ user, save }: UserAttributesProps) => {
+export const UserAttributes = ({
+  user,
+  save,
+  upConfig,
+  isUserProfileEnabled,
+}: UserAttributesProps) => {
   const form = useFormContext<UserFormFields>();
 
   return (
@@ -25,8 +36,13 @@ export const UserAttributes = ({ user, save }: UserAttributesProps) => {
         reset={() =>
           form.reset({
             ...form.getValues(),
-            attributes: toUserFormFields(user, false).attributes,
+            attributes: toUserFormFields(user, isUserProfileEnabled).attributes,
           })
+        }
+        name={isUserProfileEnabled ? "unmanagedAttributes" : "attributes"}
+        isDisabled={
+          UnmanagedAttributePolicy.AdminView ==
+          upConfig?.unmanagedAttributePolicy
         }
       />
     </PageSection>
