@@ -45,7 +45,29 @@ spec:
 
 [NOTE]
 ====
-With custom images, every build time option is passed either through a dedicated field or the `additionalOptions` is ignored.
+With custom images, every build time option passed either through a dedicated field or the `additionalOptions` is ignored.
 ====
+
+=== Non-optimized custom image
+
+While it is considered a best practice use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimzed` field to `false` as shown in this example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  image: quay.io/my-company/my-keycloak:latest
+  startOptimized: false
+  http:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
+----
+
+Keep in mind this will incur the re-augmentation cost on every start.
 
 </@tmpl.guide>
