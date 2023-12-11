@@ -125,9 +125,9 @@ public class ResourceServerService {
     @Path("/settings")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response exportSettings() {
+    public ResourceServerRepresentation exportSettings() {
         this.auth.realm().requireManageAuthorization();
-        return Response.ok(ModelToRepresentation.toResourceServerRepresentation(session, client)).build();
+        return ModelToRepresentation.toResourceServerRepresentation(session, client);
     }
 
     @Path("/import")
