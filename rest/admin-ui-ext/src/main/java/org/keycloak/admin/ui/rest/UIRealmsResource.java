@@ -18,13 +18,18 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 public class UIRealmsResource {
 
     private final KeycloakSession session;
+    private final AdminPermissionEvaluator auth;
 
-    public UIRealmsResource(KeycloakSession session) {
+    public UIRealmsResource(KeycloakSession session,
+                            AdminPermissionEvaluator auth) {
         this.session = session;
+        this.auth = auth;
     }
 
     @GET
@@ -46,7 +51,8 @@ public class UIRealmsResource {
             )}
     )
     public Stream<String> getRealmNames() {
-        Stream<String> realms = session.realms().getRealmsStream().filter(Objects::nonNull).map(RealmModel::getName);
+        Stream<String> realms = session.realms().getRealmsStream().filter(Objects::nonNull).filter(r ->
+                AdminPermissions.realms(session, auth.adminAuth()).isAdmin(r)).map(RealmModel::getName);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 }
