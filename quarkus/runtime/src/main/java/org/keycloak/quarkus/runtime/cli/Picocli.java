@@ -333,7 +333,7 @@ public final class Picocli {
                         }
                     }
                     if (!metadata.getNewOptionsKeys().isEmpty()) {
-                        sb.append(" Consider using ");
+                        sb.append(" Use ");
                         sb.append(String.join(", ", metadata.getNewOptionsKeys()));
                         sb.append(".");
                     }
@@ -655,7 +655,7 @@ public final class Picocli {
             }
             if (!deprecatedMetadata.getNewOptionsKeys().isEmpty()) {
                 String s = deprecatedMetadata.getNewOptionsKeys().size() > 1 ? "s" : "";
-                deprecatedDetails.add("Consider non-deprecated option" + s + ": " + String.join(", ", deprecatedMetadata.getNewOptionsKeys()) + ".");
+                deprecatedDetails.add("Use the following option" + s + " instead: " + String.join(", ", deprecatedMetadata.getNewOptionsKeys()) + ".");
             }
 
             transformedDesc.insert(0, "@|bold DEPRECATED.|@ ");
