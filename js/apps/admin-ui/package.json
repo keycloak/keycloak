@@ -106,7 +106,7 @@
     "jsdom": "^23.0.1",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.22.1",
-    "ts-node": "^10.9.1",
+    "ts-node": "^10.9.2",
     "uuid": "^9.0.1",
     "vite": "^5.0.6",
     "vite-plugin-checker": "^0.6.2",
