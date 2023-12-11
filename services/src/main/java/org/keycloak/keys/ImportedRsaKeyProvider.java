@@ -44,7 +44,7 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
         String certificatePem = model.getConfig().getFirst(Attributes.CERTIFICATE_KEY);
 
         PrivateKey privateKey = PemUtils.decodePrivateKey(privateRsaKeyPem);
-        if(privateKey == null) {
+        if (privateKey == null) {
             throw new RuntimeException("Key not found on the server. Check key for " + ImportedRsaKeyProviderFactory.ID + " in realm " + realm.getName());
         }
         PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
