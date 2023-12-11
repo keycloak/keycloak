@@ -16,6 +16,30 @@ export class ClientRegistrationPage extends CommonPage {
     return this;
   }
 
+  createAnonymousPolicy() {
+    cy.findByTestId("createPolicy-anonymous").click();
+    return this;
+  }
+
+  createAuthenticatedPolicy() {
+    cy.findByTestId("createPolicy-authenticated").click();
+    return this;
+  }
+
+  findAndSelectInAnonymousPoliciesTable(policy: string) {
+    cy.findByTestId("clientRegistration-anonymous")
+      .find("tr")
+      .contains(policy)
+      .click();
+  }
+
+  findAndSelectInAuthenticatedPoliciesTable(policy: string) {
+    cy.findByTestId("clientRegistration-authenticated")
+      .find("tr")
+      .contains(policy)
+      .click();
+  }
+
   selectRow(name: string) {
     cy.findAllByTestId(name).click();
     return this;

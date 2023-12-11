@@ -240,6 +240,10 @@ export default class RealmSettingsPage extends CommonPage {
   #publicKeyBtn = ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
   #realmSettingsEventsTab = new RealmSettingsEventsTab();
   #realmId = 'input[aria-label="Copyable input"]';
+  #securityDefensesHeadersSaveBtn = "headers-form-tab-save";
+  #securityDefensesBruteForceSaveBtn = "brute-force-tab-save";
+  #securityDefensesHeadersTab = "security-defenses-headers-tab";
+  #securityDefensesBruteForceTab = "security-defenses-brute-force-tab";
 
   #realmName?: string;
   constructor(realmName?: string) {
@@ -1252,6 +1256,24 @@ export default class RealmSettingsPage extends CommonPage {
 
   goToSecurityDefensesTab() {
     cy.findByTestId(this.securityDefensesTab).click();
+    return this;
+  }
+
+  saveSecurityDefensesHeaders() {
+    cy.findByTestId(this.#securityDefensesHeadersSaveBtn).click();
+  }
+
+  saveSecurityDefensesBruteForce() {
+    cy.findByTestId(this.#securityDefensesBruteForceSaveBtn).click();
+  }
+
+  goToSecurityDefensesHeadersTab() {
+    cy.findByTestId(this.#securityDefensesHeadersTab).click();
+    return this;
+  }
+
+  goToSecurityDefensesBruteForceTab() {
+    cy.findByTestId(this.#securityDefensesBruteForceTab).click();
     return this;
   }
 
