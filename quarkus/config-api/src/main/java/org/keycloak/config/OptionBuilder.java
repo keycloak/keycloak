@@ -1,9 +1,8 @@
 package org.keycloak.config;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -119,18 +118,18 @@ public class OptionBuilder<T> {
         return this;
     }
 
-    public OptionBuilder<T> deprecatedWithNote(String note) {
+    public OptionBuilder<T> deprecated(String note) {
         this.deprecatedMetadata = new DeprecatedMetadata(null, note);
         return this;
     }
 
-    public OptionBuilder<T> deprecated(String... newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(Arrays.asList(newOptionsKeys), null);
+    public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
+        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, null);
         return this;
     }
 
-    public OptionBuilder<T> deprecatedWithNote(String note, String... newOptionsKeys) {
-        this.deprecatedMetadata = new DeprecatedMetadata(Arrays.asList(newOptionsKeys), note);
+    public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
+        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, note);
         return this;
     }
 

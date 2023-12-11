@@ -30,6 +30,7 @@ import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurrentBuiltTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.utils.StringUtil.isNotBlank;
@@ -48,12 +49,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 import org.keycloak.config.DeprecatedMetadata;
@@ -316,8 +315,13 @@ public final class Picocli {
 
                 mapper.getDeprecatedMetadata().ifPresent(d -> {
                     DeprecatedMetadata metadata = (DeprecatedMetadata) d;
+                    String optionName = mapper.getFrom();
+                    if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
+                        optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
+                    }
+
                     StringBuilder sb = new StringBuilder("\t- ");
-                    sb.append(mapper.getFrom());
+                    sb.append(optionName);
                     if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
                         sb.append(":");
                     }
@@ -596,7 +600,7 @@ public final class Picocli {
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
-                        .description(getTransformedOptionDescription(mapper))
+                        .description(getDecoratedOptionDescription(mapper))
                         .paramLabel(mapper.getParamLabel())
                         .completionCandidates(new Iterable<String>() {
                             @Override
@@ -631,26 +635,36 @@ public final class Picocli {
         }
     }
 
-    private static String getTransformedOptionDescription(PropertyMapper<?> mapper) {
+    private static String getDecoratedOptionDescription(PropertyMapper<?> mapper) {
         StringBuilder transformedDesc = new StringBuilder(mapper.getDescription());
+
+        if (mapper.getType() != Boolean.class && !mapper.getExpectedValues().isEmpty()) {
+            transformedDesc.append(" Possible values are: " + String.join(", ", mapper.getExpectedValues()) + ".");
+        }
+
+        mapper.getDefaultValue().map(d -> " Default: " + d + ".").ifPresent(transformedDesc::append);
 
         mapper.getDeprecatedMetadata().ifPresent(deprecatedMetadata -> {
             List<String> deprecatedDetails = new ArrayList<>();
-            if (deprecatedMetadata.getNote() != null) {
-                deprecatedDetails.add(deprecatedMetadata.getNote());
+            String note = deprecatedMetadata.getNote();
+            if (note != null) {
+                if (!note.endsWith(".")) {
+                    note += ".";
+                }
+                deprecatedDetails.add(note);
             }
             if (!deprecatedMetadata.getNewOptionsKeys().isEmpty()) {
-                deprecatedDetails.add("Use: " + String.join(", ", deprecatedMetadata.getNewOptionsKeys()) + ".");
+                String s = deprecatedMetadata.getNewOptionsKeys().size() > 1 ? "s" : "";
+                deprecatedDetails.add("Consider non-deprecated option" + s + ": " + String.join(", ", deprecatedMetadata.getNewOptionsKeys()) + ".");
             }
 
-            StringBuilder deprecateDesc = new StringBuilder("@|bold DEPRECATED.");
+            transformedDesc.insert(0, "@|bold DEPRECATED.|@ ");
             if (!deprecatedDetails.isEmpty()) {
-                deprecateDesc
-                        .append(" ")
-                        .append(String.join(" ", deprecatedDetails));
+                transformedDesc
+                        .append(" @|bold ")
+                        .append(String.join(" ", deprecatedDetails))
+                        .append("|@");
             }
-            deprecateDesc.append("|@ -- ");
-            transformedDesc.insert(0, deprecateDesc);
         });
 
         return transformedDesc.toString();

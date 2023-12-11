@@ -1,5 +1,7 @@
 package org.keycloak.config;
 
+import java.util.Set;
+
 public class ProxyOptions {
 
     public enum Headers {
@@ -37,7 +39,7 @@ public class ProxyOptions {
             .category(OptionCategory.PROXY)
             .description("The proxy address forwarding mode if the server is behind a reverse proxy.")
             .defaultValue(Mode.none)
-            .deprecated(PROXY_HEADERS.getKey())
+            .deprecated(Set.of(PROXY_HEADERS.getKey()))
             .build();
 
     public static final Option<Boolean> PROXY_FORWARDED_HOST = new OptionBuilder<>("proxy-forwarded-host", Boolean.class)

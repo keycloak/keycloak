@@ -19,25 +19,26 @@ package org.keycloak.config;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class DeprecatedMetadata {
-    private final List<String> newOptionsKeys;
+    private final Set<String> newOptionsKeys;
     private final String note;
 
     public DeprecatedMetadata() {
-        newOptionsKeys = Collections.emptyList();
+        newOptionsKeys = Collections.emptySet();
         note = null;
     }
 
-    public DeprecatedMetadata(List<String> newOptionsKeys, String note) {
-        this.newOptionsKeys = newOptionsKeys == null ? Collections.emptyList() : Collections.unmodifiableList(newOptionsKeys);
+    public DeprecatedMetadata(Set<String> newOptionsKeys, String note) {
+        this.newOptionsKeys = newOptionsKeys == null ? Collections.emptySet() : Collections.unmodifiableSet(newOptionsKeys);
         this.note = note;
     }
 
-    public List<String> getNewOptionsKeys() {
+    public Set<String> getNewOptionsKeys() {
         return newOptionsKeys;
     }
 

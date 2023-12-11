@@ -90,13 +90,13 @@ public class HttpOptions {
     public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The trust store which holds the certificate information of the certificates to trust.")
-            .deprecatedWithNote("Use the System Truststore instead, see the docs for details.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option HTTPS_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-trust-store-password", String.class)
             .category(OptionCategory.HTTP)
             .description("The password of the trust store file.")
-            .deprecatedWithNote("Use the System Truststore instead, see the docs for details.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
@@ -104,7 +104,7 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
-            .deprecatedWithNote("Use the System Truststore instead, see the docs for details.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)

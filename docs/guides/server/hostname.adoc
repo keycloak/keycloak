@@ -40,7 +40,7 @@ Most of the time, it should be enough to set the `hostname` option in order to c
 When using the `hostname` option the server is going to resolve the HTTP scheme, port, and path, automatically so that:
 
 * `https` scheme is used unless you set `hostname-strict-https=false`
-* if the `proxy-headers` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-port` configuration option
+* if the `proxy-headers` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-url` configuration option
 
 However, if you want to set not only the host but also a scheme, port, and path, you can set the `hostname-url` option:
 
