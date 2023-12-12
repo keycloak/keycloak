@@ -63,6 +63,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
     }
+
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, true);
@@ -135,15 +136,13 @@ public class DefaultAuthenticationFlows {
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
 
-        if (!migrate) {
-            execution = new AuthenticationExecutionModel();
-            execution.setParentFlow(registrationFormFlow.getId());
-            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-            execution.setAuthenticator("registration-terms-and-conditions");
-            execution.setPriority(70);
-            execution.setAuthenticatorFlow(false);
-            realm.addAuthenticatorExecution(execution);
-        }
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(registrationFormFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("registration-terms-and-conditions");
+        execution.setPriority(70);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
     }
 
     public static void browserFlow(RealmModel realm) {
