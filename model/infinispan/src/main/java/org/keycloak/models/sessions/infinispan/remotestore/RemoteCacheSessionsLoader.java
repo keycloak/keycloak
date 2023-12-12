@@ -33,6 +33,7 @@ import org.infinispan.client.hotrod.impl.operations.OperationsFactory;
 import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
@@ -141,7 +142,11 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
             }
         }
 
-        decoratedCache.putAll(remoteEntries);
+        DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
+                // With Infinispan 14.0.21/14.0.19, we've seen deadlocks in tests where this future never completed when shutting down the internal Infinispan.
+                // Therefore, prevent the shutdown of the internal Infinispan during this step.
+                decoratedCache.putAll(remoteEntries)
+        );
 
         log.debugf("Successfully finished loading sessions from cache '%s' . Segment: %d, Count of sessions loaded: %d", cache.getName(), ctx.getSegment(), countLoaded);
 
