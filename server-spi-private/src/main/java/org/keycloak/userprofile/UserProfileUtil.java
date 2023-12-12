@@ -20,11 +20,23 @@
 package org.keycloak.userprofile;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.validate.Validators;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -81,5 +93,71 @@ public class UserProfileUtil {
             attributeMetadata.setSelector(userFederationUsersSelector);
             return true;
         }
+    }
+
+    /**
+     * Returns whether the attribute with the given {@code name} is a root attribute.
+     *
+     * @param name the attribute name
+     * @return
+     */
+    public static boolean isRootAttribute(String name) {
+        return UserModel.USERNAME.equals(name)
+                || UserModel.EMAIL.equals(name)
+                || UserModel.FIRST_NAME.equals(name)
+                || UserModel.LAST_NAME.equals(name)
+                || UserModel.LOCALE.equals(name);
+    }
+
+    public static org.keycloak.representations.idm.UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
+        Attributes profileAttributes = profile.getAttributes();
+        Map<String, List<String>> am = profileAttributes.getReadable();
+
+        if(am == null)
+            return null;
+        Map<String, List<String>> unmanagedAttributes = profileAttributes.getUnmanagedAttributes();
+
+        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
+                .map(profileAttributes::getMetadata)
+                .filter(Objects::nonNull)
+                .filter(attributeMetadata -> !unmanagedAttributes.containsKey(attributeMetadata.getName()))
+                .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
+                .map(sam -> toRestMetadata(sam, session, profile))
+                .collect(Collectors.toList());
+
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UPConfig config = provider.getConfiguration();
+
+        List<UserProfileAttributeGroupMetadata> groups = config.getGroups().stream().map(new Function<UPGroup, UserProfileAttributeGroupMetadata>() {
+            @Override
+            public UserProfileAttributeGroupMetadata apply(UPGroup upGroup) {
+                return new UserProfileAttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations());
+            }
+        }).collect(Collectors.toList());
+
+        return new org.keycloak.representations.idm.UserProfileMetadata(attributes, groups);
+    }
+
+    private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {
+        String group = null;
+
+        if (am.getAttributeGroupMetadata() != null) {
+            group = am.getAttributeGroupMetadata().getName();
+        }
+
+        return new UserProfileAttributeMetadata(am.getName(),
+                am.getAttributeDisplayName(),
+                profile.getAttributes().isRequired(am.getName()),
+                profile.getAttributes().isReadOnly(am.getName()),
+                group,
+                am.getAnnotations(),
+                toValidatorMetadata(am, session));
+    }
+
+    private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){
+        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
+        return am.getValidators() == null ? null : am.getValidators().stream()
+                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
     }
 }

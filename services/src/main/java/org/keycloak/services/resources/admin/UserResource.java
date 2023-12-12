@@ -123,7 +123,6 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
-import static org.keycloak.services.resources.admin.UserProfileResource.createUserProfileMetadata;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
@@ -184,7 +183,7 @@ public class UserResource {
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
-            Map<String, List<String>> attributes = new HashMap<>(rep.toAttributes());
+            Map<String, List<String>> attributes = new HashMap<>(rep.getRawAttributes());
 
             if (rep.getAttributes() == null) {
                 // include existing attributes in case no attributes are set so that validation takes into account the existing
@@ -302,7 +301,9 @@ public class UserResource {
     ) {
         auth.users().requireView(user);
 
-        UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, user);
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(USER_API, user);
+        UserRepresentation rep = profile.toRepresentation();
 
         if (realm.isIdentityFederationEnabled()) {
             List<FederatedIdentityRepresentation> reps = getFederatedIdentities(user).collect(Collectors.toList());
@@ -314,16 +315,8 @@ public class UserResource {
         }
         rep.setAccess(auth.users().getAccess(user));
 
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = provider.create(USER_API, user);
-        Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable(false);
-
-        if (rep.getAttributes() != null) {
-            rep.setAttributes(readableAttributes);
-        }
-
-        if (userProfileMetadata) {
-            rep.setUserProfileMetadata(createUserProfileMetadata(session, profile));
+        if (!userProfileMetadata) {
+            rep.setUserProfileMetadata(null);
         }
 
         return rep;

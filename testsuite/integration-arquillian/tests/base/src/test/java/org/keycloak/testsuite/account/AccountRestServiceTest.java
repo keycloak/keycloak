@@ -79,6 +79,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -278,7 +279,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals("Brady", user.getLastName());
         assertEquals("test-user@localhost", user.getEmail());
         assertFalse(user.isEmailVerified());
-        assertTrue(user.getAttributes().isEmpty());
+        assertNull(user.getAttributes());
     }
 
     @Test
@@ -288,7 +289,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
-        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -316,7 +317,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            user.setAttributes(originalAttributes);
             SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
@@ -379,7 +379,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
-        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+        assertNull(user.getAttributes());
+        user.setAttributes(new HashMap<>());
 
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -417,7 +418,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            user.setAttributes(originalAttributes);
             SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
@@ -431,7 +431,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
-        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -460,12 +460,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user = updateAndGet(user);
 
-            if (isDeclarativeUserProfile()) {
-                assertEquals(2, user.getAttributes().size());
-                assertTrue(user.getAttributes().get("attr1").isEmpty());
-            } else {
-                assertEquals(1, user.getAttributes().size());
-            }
+            assertEquals(1, user.getAttributes().size());
             assertEquals(2, user.getAttributes().get("attr2").size());
             assertThat(user.getAttributes().get("attr2"), containsInAnyOrder("val2", "val3"));
 
@@ -522,7 +517,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
-            user.setAttributes(originalAttributes);
             SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(204, response.getStatus());
@@ -556,6 +550,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testUpdateProfileCannotChangeThroughAttributes() throws IOException {
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
         try {

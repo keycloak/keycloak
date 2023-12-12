@@ -75,7 +75,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
                     return context;
                 }
 
-                List<String> email = attributeContext.getAttributes().getValues(UserModel.EMAIL);
+                List<String> email = attributeContext.getAttributes().get(UserModel.EMAIL);
 
                 if (UserModel.USERNAME.equals(attributeName) && collectionEquals(values, email)) {
                     return context;
