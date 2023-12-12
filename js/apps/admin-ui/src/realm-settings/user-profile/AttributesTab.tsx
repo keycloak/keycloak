@@ -54,7 +54,7 @@ export const AttributesTab = () => {
       );
 
       save(
-        { attributes: updatedAttributes!, groups: config.groups },
+        { ...config, attributes: updatedAttributes!, groups: config.groups },
         {
           successMessageKey: "deleteAttributeSuccess",
           errorMessageKey: "deleteAttributeError",
