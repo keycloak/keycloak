@@ -131,16 +131,16 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.6)
+        version: 3.5.0(vite@5.0.7)
       lightningcss:
         specifier: ^1.22.1
         version: 1.22.1
       vite:
-        specifier: ^5.0.6
-        version: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+        specifier: ^5.0.7
+        version: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.6)
+        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.7)
 
   apps/admin-ui:
     dependencies:
@@ -258,7 +258,7 @@ importers:
         version: 9.0.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.6)
+        version: 3.5.0(vite@5.0.7)
       cypress:
         specifier: ^13.6.1
         version: 13.6.1
@@ -281,11 +281,11 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       vite:
-        specifier: ^5.0.6
-        version: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+        specifier: ^5.0.7
+        version: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.6)
+        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.7)
       vitest:
         specifier: ^1.0.4
         version: 1.0.4(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1)
@@ -414,19 +414,19 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.6)
+        version: 3.5.0(vite@5.0.7)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.6.1)
       vite:
-        specifier: ^5.0.6
-        version: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+        specifier: ^5.0.7
+        version: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.6)
+        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.7)
       vite-plugin-dts:
         specifier: ^3.6.4
-        version: 3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.6)
+        version: 3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.7)
 
   libs/ui-shared:
     dependencies:
@@ -469,22 +469,22 @@ importers:
         version: 18.2.17
       '@vitejs/plugin-react-swc':
         specifier: ^3.5.0
-        version: 3.5.0(vite@5.0.6)
+        version: 3.5.0(vite@5.0.7)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
         version: 2.2.4(rollup@4.6.1)
       vite:
-        specifier: ^5.0.6
-        version: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+        specifier: ^5.0.7
+        version: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
-        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.6)
+        version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.7)
       vite-plugin-dts:
         specifier: ^3.6.4
-        version: 3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.6)
+        version: 3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.7)
       vite-plugin-lib-inject-css:
         specifier: ^1.3.0
-        version: 1.3.0(vite@5.0.6)
+        version: 1.3.0(vite@5.0.7)
       vitest:
         specifier: ^1.0.4
         version: 1.0.4(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1)
@@ -2179,13 +2179,13 @@ packages:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
 
-  /@vitejs/plugin-react-swc@3.5.0(vite@5.0.6):
+  /@vitejs/plugin-react-swc@3.5.0(vite@5.0.7):
     resolution: {integrity: sha512-1PrOvAaDpqlCV+Up8RkAh9qaiUjoDUcjtttyhXDKw53XA6Ve16SOp6cCOpRs8Dj8DqUQs6eTW5YkLcLJjrXAig==}
     peerDependencies:
       vite: ^4 || ^5
     dependencies:
       '@swc/core': 1.3.96
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@swc/helpers'
     dev: true
@@ -7013,7 +7013,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -7025,7 +7025,7 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-checker@0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.6):
+  /vite-plugin-checker@0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.7):
     resolution: {integrity: sha512-YvvvQ+IjY09BX7Ab+1pjxkELQsBd4rPhWNw8WLBeFVxu/E7O+n6VYAqNsKdK/a2luFlX/sMpoWdGFfg4HvwdJQ==}
     engines: {node: '>=14.16'}
     peerDependencies:
@@ -7071,14 +7071,14 @@ packages:
       strip-ansi: 6.0.1
       tiny-invariant: 1.3.1
       typescript: 5.3.3
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vscode-languageclient: 7.0.0
       vscode-languageserver: 7.0.0
       vscode-languageserver-textdocument: 1.0.11
       vscode-uri: 3.0.8
     dev: true
 
-  /vite-plugin-dts@3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.6):
+  /vite-plugin-dts@3.6.4(@types/node@20.10.4)(rollup@4.6.1)(typescript@5.3.3)(vite@5.0.7):
     resolution: {integrity: sha512-yOVhUI/kQhtS6lCXRYYLv2UUf9bftcwQK9ROxCX2ul17poLQs02ctWX7+vXB8GPRzH8VCK3jebEFtPqqijXx6w==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -7094,7 +7094,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       kolorist: 1.8.0
       typescript: 5.3.3
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vue-tsc: 1.8.22(typescript@5.3.3)
     transitivePeerDependencies:
       - '@types/node'
@@ -7102,18 +7102,18 @@ packages:
       - supports-color
     dev: true
 
-  /vite-plugin-lib-inject-css@1.3.0(vite@5.0.6):
+  /vite-plugin-lib-inject-css@1.3.0(vite@5.0.7):
     resolution: {integrity: sha512-Rldq36U9TDlpDom3yoLybfJtzn897+oMKdX0+fxbVYnYjRGnTtaFfnMmfOckH8GQ3cvGAKv9Ai1PWyE0amIbjg==}
     peerDependencies:
       vite: '*'
     dependencies:
       magic-string: 0.30.5
       picocolors: 1.0.0
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
     dev: true
 
-  /vite@5.0.6(@types/node@20.10.4)(lightningcss@1.22.1):
-    resolution: {integrity: sha512-MD3joyAEBtV7QZPl2JVVUai6zHms3YOmLR+BpMzLlX2Yzjfcc4gTgNi09d/Rua3F4EtC8zdwPU8eQYyib4vVMQ==}
+  /vite@5.0.7(@types/node@20.10.4)(lightningcss@1.22.1):
+    resolution: {integrity: sha512-B4T4rJCDPihrQo2B+h1MbeGL/k/GMAHzhQ8S0LjQ142s6/+l3hHTT095ORvsshj4QCkoWu3Xtmob5mazvakaOw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -7194,7 +7194,7 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.8.1
-      vite: 5.0.6(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.7(@types/node@20.10.4)(lightningcss@1.22.1)
       vite-node: 1.0.4(@types/node@20.10.4)(lightningcss@1.22.1)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
