@@ -32,8 +32,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class UPConfig {
 
     public enum UnmanagedAttributePolicy {
+
+        /**
+         * Unmanaged attributes are enabled and available from any context.
+         */
         ENABLED,
+
+        /**
+         * Unmanaged attributes are only available as read-only and only through the management interfaces.
+         */
         ADMIN_VIEW,
+
+        /**
+         * Unmanaged attributes are only available as read-write and only through the management interfaces.
+         */
         ADMIN_EDIT
     }
 

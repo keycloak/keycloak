@@ -1529,20 +1529,12 @@ public class UserTest extends AbstractAdminTest {
         String user2Id = createUser(user2);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(2, user1.getAttributes().size());
-        }
+        assertEquals(2, user1.getAttributes().size());
         assertAttributeValue("value1user1", user1.getAttributes().get("attr1"));
         assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
 
         user2 = realm.users().get(user2Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user2.getAttributes().size());
-        } else {
-            assertEquals(2, user2.getAttributes().size());
-        }
+        assertEquals(2, user2.getAttributes().size());
         assertAttributeValue("value1user2", user2.getAttributes().get("attr1"));
         vals = user2.getAttributes().get("attr2");
         assertEquals(2, vals.size());
@@ -1554,11 +1546,7 @@ public class UserTest extends AbstractAdminTest {
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(3, user1.getAttributes().size());
-        }
+        assertEquals(3, user1.getAttributes().size());
         assertAttributeValue("value3user1", user1.getAttributes().get("attr1"));
         assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
         assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
@@ -1567,11 +1555,7 @@ public class UserTest extends AbstractAdminTest {
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(2, user1.getAttributes().size());
-        }
+        assertEquals(2, user1.getAttributes().size());
         assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
         assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
@@ -1580,11 +1564,7 @@ public class UserTest extends AbstractAdminTest {
         updateUser(realm.users().get(user1Id), user1);
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNotNull(user1.getAttributes());
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(2, user1.getAttributes().size());
-        }
+        assertEquals(2, user1.getAttributes().size());
 
         // empty attributes should remove attributes
         user1.setAttributes(Collections.emptyMap());
@@ -1602,21 +1582,13 @@ public class UserTest extends AbstractAdminTest {
 
         realm.users().get(user1Id).update(user1);
         user1 = realm.users().get(user1Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(2, user1.getAttributes().size());
-        }
+        assertEquals(2, user1.getAttributes().size());
 
         user1.getAttributes().remove("foo");
 
         realm.users().get(user1Id).update(user1);
         user1 = realm.users().get(user1Id).toRepresentation();
-        if (isDeclarativeUserProfile()) {
-            assertEquals(managedAttributes.size(), user1.getAttributes().size());
-        } else {
-            assertEquals(1, user1.getAttributes().size());
-        }
+        assertEquals(1, user1.getAttributes().size());
     }
 
     @Test
@@ -1669,11 +1641,7 @@ public class UserTest extends AbstractAdminTest {
         user1 = realm.users().get(user1Id).toRepresentation();
         assertEquals("foo", user1.getAttributes().get("usercertificate").get(0));
         assertEquals("bar", user1.getAttributes().get("saml.persistent.name.id.for.foo").get(0));
-        if (isDeclarativeUserProfile()) {
-            assertTrue(user1.getAttributes().get(LDAPConstants.LDAP_ID).isEmpty());
-        } else {
-            assertFalse(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID));
-        }
+        assertFalse(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID));
     }
 
     @Test
