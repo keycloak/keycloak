@@ -235,16 +235,8 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
-
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this get that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
                     Object value = DefaultInfinispanConnectionProviderFactory.runWithReadLockOnCacheManager(() ->
+                            // We've seen deadlocks in Infinispan 14.x when shutting down Infinispan concurrently, therefore wrapping this
                             remoteCache.get(key)
                     );
                     eventReceived(key, (Serializable) value);
