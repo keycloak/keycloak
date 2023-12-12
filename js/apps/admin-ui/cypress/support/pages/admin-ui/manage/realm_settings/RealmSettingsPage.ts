@@ -244,6 +244,7 @@ export default class RealmSettingsPage extends CommonPage {
   #securityDefensesBruteForceSaveBtn = "brute-force-tab-save";
   #securityDefensesHeadersTab = "security-defenses-headers-tab";
   #securityDefensesBruteForceTab = "security-defenses-brute-force-tab";
+  #clientProfileLink = 'table[aria-label="Profiles"] tbody a';
 
   #realmName?: string;
   constructor(realmName?: string) {
@@ -1052,6 +1053,11 @@ export default class RealmSettingsPage extends CommonPage {
     return this;
   }
 
+  searchNonExistingClientProfile(name: string) {
+    new ListingPage().searchItem(name, false);
+    return this;
+  }
+
   shouldNotHaveConditionsConfigured() {
     cy.get(this.#clientPolicy).click();
     cy.get('h2[class*="kc-emptyConditions"]').should(
@@ -1284,6 +1290,11 @@ export default class RealmSettingsPage extends CommonPage {
 
   goToTokensTab() {
     cy.findByTestId(this.tokensTab).click();
+    return this;
+  }
+
+  goToClientProfileByNameLink(profileName: string) {
+    cy.get(this.#clientProfileLink).contains(profileName).click();
     return this;
   }
 }
