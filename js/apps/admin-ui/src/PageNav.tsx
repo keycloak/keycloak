@@ -13,19 +13,21 @@ import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
+import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 
 import "./page-nav.css";
 
-type LeftNavProps = { title: string; path: string };
+type LeftNavProps = { title: string; path: string; id?: string };
 
-const LeftNav = ({ title, path }: LeftNavProps) => {
+const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const route = routes.find(
-    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path,
+    (route) =>
+      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === id || path,
   );
 
   const accessAllowed =
@@ -123,7 +125,8 @@ export const PageNav = () => {
                 <LeftNav
                   key={p.id}
                   title={p.id}
-                  path="/page" //{toPage({ pageId: p.id }).pathname!}
+                  path={toPage({ providerId: p.id }).pathname!}
+                  id="/page-section"
                 />
               ))}
             </NavGroup>

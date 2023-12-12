@@ -10,15 +10,18 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.ui.extend.UiPageProvider;
 import org.keycloak.services.ui.extend.UiTabProvider;
 import org.keycloak.services.ui.extend.UiTabProviderFactory;
+import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.ThemeProviderFactory;
 import org.keycloak.theme.ThemeSelectorProvider;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class ThemeUiTab implements UiPageProvider, UiTabProviderFactory<ComponentModel> {
+public class ThemeUiTab implements UiTabProvider, UiTabProviderFactory<ComponentModel> {
 
     private KeycloakSession session;
 
@@ -53,7 +56,9 @@ public class ThemeUiTab implements UiPageProvider, UiTabProviderFactory<Componen
 //            final Theme theme = session.theme().getTheme(Theme.Type.LOGIN.name(), Theme.Type.LOGIN);
             builder.property()
                     .name("loginTheme")
+                    .label("Select a theme")
                     .helpText("Select theme for login, OTP, grant, registration and forgot password pages.")
+                    .type(ProviderConfigProperty.STRING_TYPE)
                     .add();
             //.options(theme.)
 
@@ -61,5 +66,17 @@ public class ThemeUiTab implements UiPageProvider, UiTabProviderFactory<Componen
 //            throw new RuntimeException(e);
 //        }
         return builder.build();
+    }
+
+    @Override
+    public String getPath() {
+        return "/:realm/clients/:clientId/:tab";
+    }
+
+    @Override
+    public Map<String, String> getParams() {
+        Map<String, String> params = new HashMap<>();
+        params.put("tab", "theme");
+        return params;
     }
 }

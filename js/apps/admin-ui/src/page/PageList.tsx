@@ -7,22 +7,23 @@ import {
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { IRowData } from "@patternfly/react-table";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
-import { toDetailPage } from "./routes";
-import { useTranslation } from "react-i18next";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../components/alert/Alerts";
-import { IRowData } from "@patternfly/react-table";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { PageListParams, toDetailPage } from "./routes";
 
 export const PAGE_PROVIDER = "org.keycloak.services.ui.extend.UiPageProvider";
+export const TAB_PROVIDER = "org.keycloak.services.ui.extend.UiTabProvider";
 
 const DetailLink = (obj: ComponentRepresentation) => {
   const { realm } = useRealm();
@@ -39,6 +40,7 @@ export default function PageList() {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
+  const { providerId } = useParams<PageListParams>();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -48,8 +50,7 @@ export default function PageList() {
   const { componentTypes } = useServerInfo();
   const pages = componentTypes?.[PAGE_PROVIDER];
 
-  // Here the providerId should be used instead
-  const page = pages?.[0]!;
+  const page = pages?.find((p) => p.id === providerId)!;
 
   useFetch(
     async () => adminClient.realms.findOne({ realm: realmName }),
