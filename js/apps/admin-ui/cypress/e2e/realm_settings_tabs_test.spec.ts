@@ -131,6 +131,42 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.saveThemes();
   });
 
+  describe("Go to security defenses tab", () => {
+    it("Realm header settings- update single input", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToSecurityDefensesTab();
+      cy.get("#xFrameOptions").clear().type("DENY");
+      realmSettingsPage.saveSecurityDefensesHeaders();
+      masthead.checkNotificationMessage("Realm successfully updated");
+    });
+    it("Realm header settings- update all inputs", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToSecurityDefensesTab();
+      cy.get("#xFrameOptions").clear().type("SAMEORIGIN");
+      cy.get("#contentSecurityPolicy").clear().type("default-src 'self'");
+      cy.get("#strictTransportSecurity").clear().type("max-age=31536000");
+      cy.get("#xContentTypeOptions").clear().type("nosniff");
+      cy.get("#xRobotsTag").clear().type("none");
+      cy.get("#xXSSProtection").clear().type("1; mode=block");
+      cy.get("#strictTransportSecurity").clear().type("max-age=31537000");
+      cy.get("#referrerPolicy").clear().type("referrer");
+      realmSettingsPage.saveSecurityDefensesHeaders();
+      masthead.checkNotificationMessage("Realm successfully updated");
+    });
+    it("Brute force detection- update values", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToSecurityDefensesTab();
+      realmSettingsPage.goToSecurityDefensesBruteForceTab();
+      cy.get("#bruteForceProtected").click({ force: true });
+      cy.findByTestId("waitIncrementSeconds").type("1");
+      cy.findByTestId("maxFailureWaitSeconds").type("1");
+      cy.findByTestId("maxDeltaTimeSeconds").type("1");
+      cy.findByTestId("minimumQuickLoginWaitSeconds").type("1");
+      realmSettingsPage.saveSecurityDefensesBruteForce();
+      masthead.checkNotificationMessage("Realm successfully updated");
+    });
+  });
+
   describe("Accessibility tests for realm settings", () => {
     beforeEach(() => {
       loginPage.logIn();
