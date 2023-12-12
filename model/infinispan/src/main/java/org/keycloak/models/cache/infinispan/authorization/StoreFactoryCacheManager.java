@@ -118,7 +118,8 @@ public class StoreFactoryCacheManager extends CacheManager {
 
         if (resources != null) {
             for (String resource : resources) {
-                invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId, false));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId, true));
                 if (Objects.nonNull(scopes)) {
                     for (String scope : scopes) {
                         invalidations.add(StoreFactoryCacheSession.getPolicyByResourceScope(scope, resource, serverId));
@@ -129,7 +130,8 @@ public class StoreFactoryCacheManager extends CacheManager {
 
         if (resourceTypes != null) {
             for (String type : resourceTypes) {
-                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceType(type, serverId));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceType(type, serverId, false));
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceType(type, serverId, true));
             }
         }
 

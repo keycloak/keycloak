@@ -16,12 +16,16 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import jakarta.persistence.EntityTransaction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -36,6 +40,8 @@ import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -76,6 +82,29 @@ public class JPAPolicyStore implements PolicyStore {
         entity.setName(representation.getName());
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
 
+        // ensure that we associate policies with scopes when relevant at creation
+        if(representation.getScopes() != null) {
+            Set<ScopeEntity> scopes = representation.getScopes().stream()
+                .map(scopeId -> provider.getStoreFactory().getScopeStore().findById(resourceServer.getRealm(), resourceServer, scopeId))
+                .filter(Objects::nonNull)
+                .map(scope -> ScopeAdapter.toEntity(entityManager, scope))
+                .collect(Collectors.toSet());
+            entity.setScopes(scopes);
+        }
+
+        if(representation.getResources() != null) {
+            // ensure that we associate policies with the relevant resources at creation
+            Set<ResourceEntity> resources = representation.getResources().stream()
+                .map(resourceId -> provider.getStoreFactory().getResourceStore().findById(resourceServer.getRealm(), resourceServer, resourceId))
+                .filter(Objects::nonNull)
+                .map(resource -> ResourceAdapter.toEntity(entityManager, resource))
+                .collect(Collectors.toSet());
+            entity.setResources(resources);
+        }
+
+        entity.setDecisionStrategy(representation.getDecisionStrategy());
+        entity.setLogic(representation.getLogic());
+
         this.entityManager.persist(entity);
         this.entityManager.flush();
         Policy model = new PolicyAdapter(entity, entityManager, provider.getStoreFactory());
@@ -86,6 +115,13 @@ public class JPAPolicyStore implements PolicyStore {
     public void delete(RealmModel realm, String id) {
         PolicyEntity policy = entityManager.find(PolicyEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
+            // hibernate can't deal with FK restraint when you delete the non-owning side
+            // so we need to delete specifically all of this policy's entries in rootPolicies
+            for(PolicyEntity rootPolicy : policy.getRootPolicies()) {
+                rootPolicy.getAssociatedPolicies().remove(policy);
+            }
+            policy.getRootPolicies().clear();
+            entityManager.merge(policy);
             this.entityManager.remove(policy);
         }
     }
@@ -209,9 +245,13 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
-        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResource", PolicyEntity.class);
-
+    public void findByResource(ResourceServer resourceServer, Boolean includeScopes, Resource resource, Consumer<Policy> consumer) {
+        TypedQuery<PolicyEntity> query;
+        if(Boolean.TRUE.equals(includeScopes)) {
+            query = entityManager.createNamedQuery("findPolicyIdByResource", PolicyEntity.class);
+        } else {
+            query = entityManager.createNamedQuery("findPolicyIdByResourceNoScope", PolicyEntity.class);
+        }
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("resourceId", resource.getId());
         query.setParameter("serverId", resourceServer.getId());
@@ -225,8 +265,14 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResourceType(ResourceServer resourceServer, String resourceType, Consumer<Policy> consumer) {
-        TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
+    public void findByResourceType(ResourceServer resourceServer, Boolean allPolicies, String resourceType, Consumer<Policy> consumer) {
+        TypedQuery<PolicyEntity> query;
+        if(Boolean.FALSE.equals(allPolicies)) {
+            query = entityManager.createNamedQuery("findPolicyIdByNullResourceType", PolicyEntity.class);
+        } else {
+            query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
+        }
+
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", resourceType);

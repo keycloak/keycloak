@@ -591,13 +591,11 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         resource.setOwnerManagedAccess(true);
         resource.setOwner("marta");
         resource.addScope("Scope A", "Scope B", "Scope C");
-
         resource = getAuthzClient().protection().resource().create(resource);
 
         PermissionResponse ticketResponse = getAuthzClient().protection().permission().create(new PermissionRequest(resource.getId(), "Scope A"));
 
         AuthorizationRequest request = new AuthorizationRequest();
-
         request.setTicket(ticketResponse.getTicket());
 
         try {
@@ -609,44 +607,43 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         }
 
         List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().findByResource(resource.getId());
-
         assertEquals(1, tickets.size());
 
         PermissionTicketRepresentation ticket = tickets.get(0);
-
         ticket.setGranted(true);
-
+        // have marta/admin grant access to the ticket, which creates a uma policy with a nested policy to grant access to the requesting user
         getAuthzClient().protection().permission().update(ticket);
 
         AuthorizationResponse authzResponse = getAuthzClient().authorization("kolo", "password").authorize(request);
-
         assertNotNull(authzResponse);
 
+        // Create another UMA permission that has a nested role permission, not associated with the ticket grant above
         UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
-
         permission.setName("Custom User-Managed Permission");
         permission.addScope("Scope A");
         permission.addRole("role_a");
-
         ProtectionResource protection = getAuthzClient().protection("marta", "password");
-
         permission = protection.policy(resource.getId()).create(permission);
 
         getAuthzClient().authorization("kolo", "password").authorize(request);
 
+        // when we revoke the ticket we also delete it from the ticket store, so kolo will no longer have access via the ticket, and we should remove it
+        // from the request to avoid an invalid_ticket error
         ticket.setGranted(false);
-
         getAuthzClient().protection().permission().update(ticket);
+        request.setTicket(null);
 
-        getAuthzClient().authorization("kolo", "password").authorize(request);
-
+        // however kolo should still have access to the resource because of the extra UMA Permission we created
         permission = getAuthzClient().protection("marta", "password").policy(resource.getId()).findById(permission.getId());
-
         assertNotNull(permission);
 
+        // tickets get granted and provide direct access to a requesting party. If we have permissions otherwise we need to request access directly
+        request.addPermission(resource.getId(), "Scope A");
+        getAuthzClient().authorization("kolo", "password").authorize(request);
+
+        // finally let's also change the role on the permission, which should now cause kolo to lose access to the resource
         permission.removeRole("role_a");
         permission.addRole("role_b");
-
         getAuthzClient().protection("marta", "password").policy(resource.getId()).update(permission);
 
         try {
@@ -657,7 +654,6 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         }
 
         request = new AuthorizationRequest();
-
         request.addPermission(resource.getId());
 
         try {
@@ -667,6 +663,10 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             assertTrue(AuthorizationDeniedException.class.isInstance(e));
         }
 
+        // let's make the permission work for kolo again but then immediately delete it. Kolo should still not have access to the resource
+        permission.removeRole("role_b");
+        permission.addRole("role_a");
+        getAuthzClient().protection("marta", "password").policy(resource.getId()).update(permission);
         getAuthzClient().protection("marta", "password").policy(resource.getId()).delete(permission.getId());
 
         try {

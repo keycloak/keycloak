@@ -66,18 +66,6 @@ public class JPAResourceServerStore implements ResourceServerStore {
         String id = client.getId();
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return;
-        //This didn't work, had to loop through and remove each policy individually
-        //entityManager.createNamedQuery("deletePolicyByResourceServer")
-        //        .setParameter("serverId", id).executeUpdate();
-
-        {
-            TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
-            query.setParameter("serverId", id);
-            List<String> result = query.getResultList();
-            for (String policyId : result) {
-                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
-            }
-        }
 
         {
             TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
@@ -87,6 +75,18 @@ public class JPAResourceServerStore implements ResourceServerStore {
             List<String> result = query.getResultList();
             for (String permissionId : result) {
                 entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
+            }
+        }
+
+        //This didn't work, had to loop through and remove each policy individually
+        //entityManager.createNamedQuery("deletePolicyByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
+            query.setParameter("serverId", id);
+            List<String> result = query.getResultList();
+            for (String policyId : result) {
+                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
             }
         }
 

@@ -405,8 +405,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
-                policyStore.findByResource(resourceServer, resource, consumer);
+            public void findByResource(ResourceServer resourceServer, Boolean includeScopes, Resource resource, Consumer<Policy> consumer) {
+                policyStore.findByResource(resourceServer, includeScopes, resource, consumer);
             }
 
             @Override
@@ -440,8 +440,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
-                policyStore.findByResourceType(resourceServer, type, policyConsumer);
+            public void findByResourceType(ResourceServer resourceServer, Boolean allPolicies, String type, Consumer<Policy> policyConsumer) {
+                policyStore.findByResourceType(resourceServer, allPolicies, type, policyConsumer);
             }
         };
     }

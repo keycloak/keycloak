@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.jpa.entities;
 
+import jakarta.persistence.ManyToMany;
 import java.util.*;
 
 import jakarta.persistence.Access;
@@ -34,7 +35,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -57,11 +57,13 @@ import org.keycloak.representations.idm.authorization.Logic;
                 @NamedQuery(name="findPolicyIdByServerId", query="select p.id from PolicyEntity p where  p.resourceServer.id = :serverId "),
                 @NamedQuery(name="findPolicyIdByName", query="select p from PolicyEntity p left join fetch p.associatedPolicies a where  p.resourceServer.id = :serverId  and p.name = :name"),
                 @NamedQuery(name="findPolicyIdByResource", query="select p from PolicyEntity p inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId)"),
-                @NamedQuery(name="findPolicyIdByScope", query="select pe from PolicyEntity pe inner join pe.scopes s where pe.type = 'scope' and pe.resourceServer.id = :serverId and s.id in (:scopeIds)"),
-                @NamedQuery(name="findPolicyIdByResourceScope", query="select pe from PolicyEntity pe inner join pe.resources r inner join pe.scopes s where pe.resourceServer.id = :serverId and pe.type = 'scope' and s.id in (:scopeIds) and r.id in (:resourceId)"),
-                @NamedQuery(name="findPolicyIdByNullResourceScope", query="select pe from PolicyEntity pe left join fetch pe.config c inner join pe.scopes s  where pe.resourceServer.id = :serverId and pe.type = 'scope' and pe.resources is empty and s.id in (:scopeIds) and not exists (select pec from pe.config pec where KEY(pec) = 'defaultResourceType')"),
+                @NamedQuery(name="findPolicyIdByResourceNoScope", query="select p from PolicyEntity p left join fetch p.scopes s inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId) and p.scopes is empty"),
+                @NamedQuery(name="findPolicyIdByScope", query="select pe from PolicyEntity pe inner join pe.scopes s where pe.resourceServer.id = :serverId and s.id in (:scopeIds)"),
+                @NamedQuery(name="findPolicyIdByResourceScope", query="select pe from PolicyEntity pe inner join pe.resources r inner join pe.scopes s where pe.resourceServer.id = :serverId and s.id in (:scopeIds) and r.id in (:resourceId)"),
+                @NamedQuery(name="findPolicyIdByNullResourceScope", query="select pe from PolicyEntity pe left join fetch pe.config c inner join pe.scopes s  where pe.resourceServer.id = :serverId and pe.resources is empty and s.id in (:scopeIds) and not exists (select pec from pe.config pec where KEY(pec) = 'defaultResourceType')"),
                 @NamedQuery(name="findPolicyIdByType", query="select p.id from PolicyEntity p where p.resourceServer.id = :serverId and p.type = :type"),
-                @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c inner join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
+                @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c left join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
+                @NamedQuery(name="findPolicyIdByNullResourceType", query="select p from PolicyEntity p inner join p.config c left join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and p.resources is empty and KEY(c) = 'defaultResourceType' and c like :type"),
                 @NamedQuery(name="findPolicyIdByDependentPolices", query="select p.id from PolicyEntity p inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (ap.resourceServer.id = :serverId and ap.id = :policyId)"),
                 @NamedQuery(name="deletePolicyByResourceServer", query="delete from PolicyEntity p where p.resourceServer.id = :serverId")
         }
@@ -101,17 +103,20 @@ public class PolicyEntity {
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = {})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "ASSOCIATED_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "ASSOCIATED_POLICY_ID"))
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     private Set<PolicyEntity> associatedPolicies;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {})
+    @ManyToMany(mappedBy = "associatedPolicies")
+    private Set<PolicyEntity> rootPolicies;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "RESOURCE_ID"))
     private Set<ResourceEntity> resources;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     private Set<ScopeEntity> scopes;
 
@@ -216,6 +221,43 @@ public class PolicyEntity {
 
     public void setAssociatedPolicies(Set<PolicyEntity> associatedPolicies) {
         this.associatedPolicies = associatedPolicies;
+    }
+
+    public Set<PolicyEntity> getRootPolicies() {
+        if (rootPolicies == null) {
+            rootPolicies = new HashSet<>();
+        }
+        return rootPolicies;
+    }
+
+    public void addAssociatedPolicy(PolicyEntity policy) {
+        getAssociatedPolicies().add(policy);
+        policy.getRootPolicies().add(this);
+    }
+
+    public void removeAssociatedPolicy(PolicyEntity policy) {
+        getAssociatedPolicies().remove(policy);
+        policy.getRootPolicies().remove(this);
+    }
+
+    public void addScope(ScopeEntity scope) {
+        getScopes().add(scope);
+        scope.getPolicies().add(this);
+    }
+
+    public void removeScope(ScopeEntity scope) {
+        getScopes().remove(scope);
+        scope.getPolicies().remove(this);
+    }
+
+    public void addResource(ResourceEntity resource) {
+        getResources().add(resource);
+        resource.getPolicies().add(this);
+    }
+
+    public void removeResource(ResourceEntity resource) {
+        getResources().remove(resource);
+        resource.getPolicies().remove(this);
     }
 
     public String getOwner() {
