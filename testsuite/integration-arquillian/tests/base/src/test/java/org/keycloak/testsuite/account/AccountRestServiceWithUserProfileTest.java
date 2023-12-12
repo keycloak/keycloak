@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -292,6 +293,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
         try {
@@ -303,13 +305,13 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             user.setEmail("bobby@localhost");
             user.setFirstName("Homer");
             user.setLastName("Simpsons");
-            user.getAttributes().put("attr1", Collections.singletonList("val1"));
-            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+            user.getAttributes().put("attr1", Collections.singletonList("val11"));
+            user.getAttributes().put("attr2", Collections.singletonList("val22"));
 
+            events.clear();
             user = updateAndGet(user);
 
             //skip login to the REST API event
-            events.poll();
             events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
                 .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
                 .detail(Details.PREVIOUS_EMAIL, originalEmail)
@@ -318,7 +320,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
                 .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
                 .detail(Details.UPDATED_FIRST_NAME, "Homer")
                 .detail(Details.UPDATED_LAST_NAME, "Simpsons")
-                .detail(Details.PREF_UPDATED+"attr2", "val2")
+                .detail(Details.PREF_UPDATED+"attr2", "val22")
                 .assertEvent();
             events.assertEmpty();
             
@@ -379,22 +381,23 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         realmRep.setInternationalizationEnabled(false);
         testRealm().update(realmRep);
         UserRepresentation user = getUser();
+        user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
         try {
             user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
             user = updateAndGet(user);
-            assertNull(user.getAttributes().get(UserModel.LOCALE));
+            assertNull(user.getAttributes());
 
             realmRep.setInternationalizationEnabled(true);
             testRealm().update(realmRep);
 
-            user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
+            user.singleAttribute(UserModel.LOCALE, "pt_BR");
             user = updateAndGet(user);
             assertEquals("pt_BR", user.getAttributes().get(UserModel.LOCALE).get(0));
 
             user.getAttributes().remove(UserModel.LOCALE);
             user = updateAndGet(user);
-            assertNull(user.getAttributes().get(UserModel.LOCALE));
+            assertNull(user.getAttributes());
 
             UserProfileMetadata metadata = user.getUserProfileMetadata();
 
@@ -406,7 +409,6 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
             testRealm().update(realmRep);
-            user.getAttributes().remove(UserModel.LOCALE);
             updateAndGet(user);
         }
     }

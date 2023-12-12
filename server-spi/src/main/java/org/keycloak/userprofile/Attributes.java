@@ -19,19 +19,37 @@
 
 package org.keycloak.userprofile;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import org.keycloak.models.UserModel;
 import org.keycloak.validate.ValidationError;
 
 /**
  * <p>This interface wraps the attributes associated with a user profile. Different operations are provided to access and
  * manage these attributes.
+ *
+ * <p>Attributes are classified as:</p>
+ * <ul>
+ * <li>Managed
+ * <li>Unmanaged
+ * </ul>
+ *
+ * <p>A <i>managed</i> attribute is any attribute defined in the user profile configuration. Therefore, they are known by
+ * the server and can be managed accordingly.
+ *
+ * <p>A <i>unmanaged</i> attributes is any attribute <b>not</b> defined in the user profile configuration. Therefore, the server
+ * does not know about them and they cannot use capabilities provided by the server. However, they can still be managed by
+ * administrators by setting any of the {@link org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy}.
+ *
+ * <p>Any attribute available from this interface has a corresponding {@link AttributeMetadata}</p>. The metadata describes
+ * the settings for a given attribute so that the server can communicate to a caller the constraints
+ * (see {@link org.keycloak.representations.userprofile.config.UPConfig} and the availability of the attribute in
+ * a given {@link UserProfileContext}.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -49,8 +67,8 @@ public interface Attributes {
      *
      * @return the first value
      */
-    default String getFirstValue(String name) {
-        List<String> values = getValues(name);
+    default String getFirst(String name) {
+        List<String> values = ofNullable(get(name)).orElse(List.of());
 
         if (values.isEmpty()) {
             return null;
@@ -66,16 +84,16 @@ public interface Attributes {
      *
      * @return the attribute values
      */
-    List<String> getValues(String name);
+    List<String> get(String name);
 
     /**
      * Checks whether an attribute is read-only.
      *
-     * @param key
+     * @param name the attribute name
      *
-     * @return
+     * @return {@code true} if the attribute is read-only. Otherwise, {@code false}
      */
-    boolean isReadOnly(String key);
+    boolean isReadOnly(String name);
 
     /**
      * Validates the attribute with the given {@code name}.
@@ -105,7 +123,7 @@ public interface Attributes {
     Set<String> nameSet();
 
     /**
-     * Returns all attributes that can be written.
+     * Returns all the attributes with read-write permissions in a particular {@link UserProfileContext}.
      *
      * @return the attributes
      */
@@ -131,52 +149,23 @@ public interface Attributes {
     boolean isRequired(String name);
 
     /**
-     * Similar to {{@link #getReadable(boolean)}} but with the possibility to add or remove
-     * the root attributes.
+     * Returns only the attributes that have read permissions in a particular {@link UserProfileContext}.
      *
-     * @param includeBuiltin if the root attributes should be included.
-     * @return the attributes with read/write permission.
-     */
-    default Map<String, List<String>> getReadable(boolean includeBuiltin) {
-        return getReadable().entrySet().stream().filter(entry -> {
-            if (includeBuiltin) {
-                return true;
-            }
-            if (isRootAttribute(entry.getKey())) {
-                if (UserModel.LOCALE.equals(entry.getKey()) && !entry.getValue().isEmpty()) {
-                    // locale is different form of built-in attribute in the sense it is related to a
-                    // specific feature (i18n) and does not have a top-level attribute in the user representation
-                    // the locale should be available from the attribute map if not empty
-                    return true;
-                }
-                return false;
-            }
-            return true;
-        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    /**
-     * Returns only the attributes that have read/write permissions.
-     *
-     * @return the attributes with read/write permission.
+     * @return the attributes with read permission.
      */
     Map<String, List<String>> getReadable();
 
     /**
-     * Returns whether the attribute with the given {@code name} is a root attribute.
+     * Returns the attributes as a {@link Map} that are accessible to a particular {@link UserProfileContext}.
      *
-     * @param name the attribute name
-     * @return
+     * @return a map with all the attributes
      */
-    default boolean isRootAttribute(String name) {
-        return UserModel.USERNAME.equals(name)
-                || UserModel.EMAIL.equals(name)
-                || UserModel.FIRST_NAME.equals(name)
-                || UserModel.LAST_NAME.equals(name)
-                || UserModel.LOCALE.equals(name);
-    }
-
     Map<String, List<String>> toMap();
 
+    /**
+     * Returns a {@link Map} holding any unmanaged attribute.
+     *
+     * @return a map with any unmanaged attribute
+     */
     Map<String, List<String>> getUnmanagedAttributes();
 }

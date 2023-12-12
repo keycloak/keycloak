@@ -19,6 +19,8 @@
 package org.keycloak.testsuite.account;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
 
@@ -99,7 +101,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
     private void testAccountUpdateAttributeExpectFailure(String attrName, boolean deniedForAdminAsWell) throws IOException {
         // Attribute not yet supposed to be on the user
         UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        assertThat(user.getAttributes().keySet(), not(contains(attrName)));
+        assertThat(Optional.ofNullable(user.getAttributes()).orElse(Map.of()).keySet(), not(contains(attrName)));
 
         // Assert not possible to add the attribute to the user
         user.singleAttribute(attrName, "foo");
@@ -147,7 +149,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
     private void testAccountUpdateAttributeExpectSuccess(String attrName) throws IOException {
         // Attribute not yet supposed to be on the user
         UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        assertThat(user.getAttributes().keySet(), not(contains(attrName)));
+        assertThat(Optional.ofNullable(user.getAttributes()).orElse(Map.of()).keySet(), not(contains(attrName)));
 
         // Assert not possible to add the attribute to the user
         user.singleAttribute(attrName, "foo");
