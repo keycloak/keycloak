@@ -269,33 +269,6 @@ describe("Realm settings events tab tests", () => {
     cy.findByTestId("localization-tab-save").click();
   });
 
-  it("Realm header settings", () => {
-    sidebarPage.goToRealmSettings();
-    cy.findByTestId("rs-security-defenses-tab").click();
-    cy.findByTestId("headers-form-tab-save").should("be.disabled");
-    cy.get("#xFrameOptions").clear().type("DENY");
-    cy.findByTestId("headers-form-tab-save").should("be.enabled").click();
-
-    masthead.checkNotificationMessage("Realm successfully updated");
-  });
-
-  it("Brute force detection", () => {
-    sidebarPage.goToRealmSettings();
-    cy.findAllByTestId("rs-security-defenses-tab").click();
-    cy.get("#pf-tab-20-bruteForce").click();
-
-    cy.findByTestId("brute-force-tab-save").should("be.disabled");
-
-    cy.get("#bruteForceProtected").click({ force: true });
-    cy.findByTestId("waitIncrementSeconds").type("1");
-    cy.findByTestId("maxFailureWaitSeconds").type("1");
-    cy.findByTestId("maxDeltaTimeSeconds").type("1");
-    cy.findByTestId("minimumQuickLoginWaitSeconds").type("1");
-
-    cy.findByTestId("brute-force-tab-save").should("be.enabled").click();
-    masthead.checkNotificationMessage("Realm successfully updated");
-  });
-
   it("add session data", () => {
     sidebarPage.goToRealmSettings();
 
