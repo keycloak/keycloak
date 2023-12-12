@@ -116,6 +116,7 @@
       "resourceUrl": "${resourceUrl}",
       "logo": "${properties.logo!""}",
       "logoUrl": "${properties.logoUrl!""}",
+      "locale": "${locale}",
       "features": {
             "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
             "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},

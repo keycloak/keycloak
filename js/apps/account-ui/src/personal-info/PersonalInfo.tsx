@@ -29,7 +29,7 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
-import { TFuncKey } from "../i18n";
+import { TFuncKey, i18n } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 const PersonalInfo = () => {
@@ -58,6 +58,12 @@ const PersonalInfo = () => {
   const onSubmit = async (user: UserRepresentation) => {
     try {
       await savePersonalInfo(user);
+      const locale = user.attributes?.["locale"]?.toString();
+      i18n.changeLanguage(locale, (error) => {
+        if (error) {
+          console.warn("Error(s) loading locale", locale, error);
+        }
+      });
       keycloak?.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
