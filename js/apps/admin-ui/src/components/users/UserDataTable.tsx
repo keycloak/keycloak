@@ -1,6 +1,6 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -49,6 +49,51 @@ export type UserAttribute = {
   value: string;
 };
 
+const UserDetailLink = (user: BruteUser) => {
+  const { realm } = useRealm();
+  return (
+    <Link to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username} <StatusRow user={user} />
+    </Link>
+  );
+};
+
+type StatusRowProps = {
+  user: BruteUser;
+};
+
+const StatusRow = ({ user }: StatusRowProps) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.enabled && (
+        <Label color="red" icon={<InfoCircleIcon />}>
+          {t("disabled")}
+        </Label>
+      )}
+      {user.bruteForceStatus?.disabled && (
+        <Label color="orange" icon={<WarningTriangleIcon />}>
+          {t("temporaryLocked")}
+        </Label>
+      )}
+    </>
+  );
+};
+
+const ValidatedEmail = (user: UserRepresentation) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {!user.emailVerified && (
+        <Tooltip content={t("notVerified")}>
+          <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
+        </Tooltip>
+      )}{" "}
+      {emptyFormatter()(user.email)}
+    </>
+  );
+};
+
 export function UserDataTable() {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -88,21 +133,12 @@ export function UserDataTable() {
     },
     ([storageProviders, realm, profile]) => {
       setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled[0] === "true"),
+        storageProviders.filter((p) => p.config?.enabled?.[0] === "true"),
       );
       setRealm(realm);
       setProfile(profile);
     },
     [],
-  );
-
-  const UserDetailLink = (user: UserRepresentation) => (
-    <Link
-      key={user.username}
-      to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
-    >
-      {user.username}
-    </Link>
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {
@@ -169,40 +205,6 @@ export function UserDataTable() {
       }
     },
   });
-
-  const StatusRow = (user: BruteUser) => {
-    return (
-      <>
-        {!user.enabled && (
-          <Label key={user.id} color="red" icon={<InfoCircleIcon />}>
-            {t("disabled")}
-          </Label>
-        )}
-        {user.bruteForceStatus?.disabled && (
-          <Label key={user.id} color="orange" icon={<WarningTriangleIcon />}>
-            {t("temporaryLocked")}
-          </Label>
-        )}
-        {user.enabled && !user.bruteForceStatus?.disabled && "—"}
-      </>
-    );
-  };
-
-  const ValidatedEmail = (user: UserRepresentation) => {
-    return (
-      <>
-        {!user.emailVerified && (
-          <Tooltip
-            key={`email-verified-${user.id}`}
-            content={<>{t("notVerified")}</>}
-          >
-            <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
-          </Tooltip>
-        )}{" "}
-        {emptyFormatter()(user.email)}
-      </>
-    );
-  };
 
   const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
@@ -321,7 +323,7 @@ export function UserDataTable() {
       <DeleteConfirm />
       <UnlockUsersConfirm />
       <KeycloakDataTable
-        isSearching
+        isSearching={searchUser !== "" || activeFilters.length !== 0}
         key={key}
         loader={loader}
         isPaginated
@@ -385,11 +387,6 @@ export function UserDataTable() {
             name: "firstName",
             displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "status",
-            displayKey: "status",
-            cellRenderer: StatusRow,
           },
         ]}
       />

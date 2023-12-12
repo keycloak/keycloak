@@ -208,7 +208,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (Optional.ofNullable(containerBuilder.getArgs()).orElse(List.of()).isEmpty()) {
             containerBuilder.withArgs("--verbose", "start");
         }
-        if (customImage.isPresent()) {
+        if (Boolean.TRUE.equals(keycloakCR.getSpec().getStartOptimized())
+                || keycloakCR.getSpec().getStartOptimized() == null
+                        && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
         containerBuilder.addToArgs(0, getJGroupsParameter(keycloakCR));

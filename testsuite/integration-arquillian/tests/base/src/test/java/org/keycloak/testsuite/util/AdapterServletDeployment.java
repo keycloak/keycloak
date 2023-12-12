@@ -24,6 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 
 /**
  * Expects a structure like adapter-test directory
@@ -81,7 +82,7 @@ public class AdapterServletDeployment {
     public static void addContextXml(Archive archive, String contextPath) {
         // hardcoded for now
         try {
-            String contextXmlContent = IOUtils.toString(tomcatContext.openStream())
+            String contextXmlContent = IOUtils.toString(tomcatContext.openStream(), Charset.defaultCharset())
                     .replace("%CONTEXT_PATH%", contextPath);
             archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
         } catch (IOException ex) {

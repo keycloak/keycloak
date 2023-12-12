@@ -42,7 +42,6 @@ import javax.xml.namespace.QName;
 import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;

@@ -67,8 +67,6 @@ public class Profile {
 
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
 
-        MAP_STORAGE("New store", Type.EXPERIMENTAL),
-
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
         DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
@@ -86,7 +84,7 @@ public class Profile {
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
+        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak server", Type.DEFAULT),
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
@@ -97,6 +95,8 @@ public class Profile {
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
+
+        MULTI_SITE("Multi-site support", Type.PREVIEW),
         ;
 
         private final Type type;

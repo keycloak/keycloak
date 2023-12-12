@@ -106,6 +106,8 @@ public final class Constants {
     // Groups already assigned by a mapper when updating brokered users.
     public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
 
+    public static final String MAPPER_SESSION_NOTES = "MAPPER_SESSION_NOTES";
+
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
 

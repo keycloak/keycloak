@@ -89,9 +89,9 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
-  searchItem(searchValue: string, wait = true) {
+  searchItem(searchValue: string, wait = true, realm = "master") {
     if (wait) {
-      const searchUrl = `/admin/realms/master/**/*${searchValue}*`;
+      const searchUrl = `/admin/realms/${realm}/**/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
 

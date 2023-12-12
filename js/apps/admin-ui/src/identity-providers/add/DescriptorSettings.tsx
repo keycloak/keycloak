@@ -59,6 +59,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
+  const useMetadataDescriptorUrl = useWatch({
+    control,
+    name: "config.useMetadataDescriptorUrl",
+  });
+
   const principalType = useWatch({
     control,
     name: "config.principalType",
@@ -482,14 +487,56 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         isReadOnly={readOnly}
       />
       {validateSignature === "true" && (
-        <FormGroupField label="validatingX509Certs">
-          <KeycloakTextArea
-            id="validatingX509Certs"
-            data-testid="validatingX509Certs"
+        <>
+          <FormGroup
+            label={t("metadataDescriptorUrl")}
+            labelIcon={
+              <HelpItem
+                helpText={t("metadataDescriptorUrlHelp")}
+                fieldLabelId="metadataDescriptorUrl"
+              />
+            }
+            isRequired={useMetadataDescriptorUrl === "true"}
+            validated={
+              errors.config?.metadataDescriptorUrl
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
+            fieldId="metadataDescriptorUrl"
+            helperTextInvalid={t("required")}
+          >
+            <KeycloakTextInput
+              type="url"
+              id="metadataDescriptorUrl"
+              data-testid="metadataDescriptorUrl"
+              isReadOnly={readOnly}
+              validated={
+                errors.config?.metadataDescriptorUrl
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
+              {...register("config.metadataDescriptorUrl", {
+                required: useMetadataDescriptorUrl === "true",
+              })}
+            />
+          </FormGroup>
+          <SwitchField
+            field="config.useMetadataDescriptorUrl"
+            label="useMetadataDescriptorUrl"
+            data-testid="useMetadataDescriptorUrl"
             isReadOnly={readOnly}
-            {...register("config.signingCertificate")}
-          ></KeycloakTextArea>
-        </FormGroupField>
+          />
+          {useMetadataDescriptorUrl !== "true" && (
+            <FormGroupField label="validatingX509Certs">
+              <KeycloakTextArea
+                id="validatingX509Certs"
+                data-testid="validatingX509Certs"
+                isReadOnly={readOnly}
+                {...register("config.signingCertificate")}
+              ></KeycloakTextArea>
+            </FormGroupField>
+          )}
+        </>
       )}
       <SwitchField
         field="config.signSpMetadata"

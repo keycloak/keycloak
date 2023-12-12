@@ -59,6 +59,7 @@ const ProtocolMappers = ({
       loader={() => Promise.resolve(protocolMappers)}
       ariaLabelKey="effectiveProtocolMappers"
       searchPlaceholderKey="searchForProtocol"
+      data-testid="effective-protocol-mappers"
       columns={[
         {
           name: "mapperName",
@@ -97,6 +98,7 @@ const EffectiveRoles = ({
       loader={() => Promise.resolve(effectiveRoles)}
       ariaLabelKey="effectiveRoleScopeMappings"
       searchPlaceholderKey="searchForRole"
+      data-testid="effective-role-scope-mappings"
       columns={[
         {
           name: "name",
@@ -362,6 +364,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveProtocolMappers"
               aria-controls="effectiveProtocolMappers"
+              data-testid="effective-protocol-mappers-tab"
               eventKey={0}
               title={
                 <TabTitleText>
@@ -379,6 +382,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveRoleScopeMappings"
               aria-controls="effectiveRoleScopeMappings"
+              data-testid="effective-role-scope-mappings-tab"
               eventKey={1}
               title={
                 <TabTitleText>
@@ -396,6 +400,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedAccessToken"
               aria-controls="generatedAccessToken"
+              data-testid="generated-access-token-tab"
               eventKey={2}
               title={
                 <TabTitleText>
@@ -413,6 +418,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedIdToken"
               aria-controls="generatedIdToken"
+              data-testid="generated-id-token-tab"
               eventKey={3}
               title={
                 <TabTitleText>
@@ -430,6 +436,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedUserInfo"
               aria-controls="generatedUserInfo"
+              data-testid="generated-user-info-tab"
               eventKey={4}
               title={
                 <TabTitleText>

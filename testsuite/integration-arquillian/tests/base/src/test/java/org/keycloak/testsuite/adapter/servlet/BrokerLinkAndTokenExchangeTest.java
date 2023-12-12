@@ -24,6 +24,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -33,6 +34,8 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
@@ -62,6 +65,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -148,6 +152,9 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     @Page
     private ClientApp appPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
     @Override
     public void beforeAuthTest() {
     }
@@ -157,6 +164,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(CHILD_IDP);
         realm.setEnabled(true);
+        realm.setEventsEnabled(true);
         ClientRepresentation servlet = new ClientRepresentation();
         servlet.setClientId(ClientApp.DEPLOYMENT_NAME);
         servlet.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -830,6 +838,12 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             UserRepresentation newUser = childRealm.users().search(PARENT3_USERNAME).get(0);
             Assert.assertNotNull(newUser.getAttributes());
             Assert.assertTrue(newUser.getAttributes().containsKey("claim-to-broker"));
+            events.expect(EventType.REGISTER)
+                    .realm(childRealm.toRepresentation())
+                    .client("exchange-linking")
+                    .user(newUser)
+                    .detail(Details.IDENTITY_PROVIDER, PARENT_IDP)
+                    .assertEvent(childRealm.getEvents().get(1));
 
             // cleanup remove the user
             childRealm.users().get(token.getSubject()).remove();

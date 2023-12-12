@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import org.keycloak.common.Profile.Feature;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -29,7 +28,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedGroupStorageProviderFactory;
@@ -39,7 +37,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
 
-import org.junit.BeforeClass;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -60,11 +57,6 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             getCleanup().addComponentId(id);
             return id;
         }
-    }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Before

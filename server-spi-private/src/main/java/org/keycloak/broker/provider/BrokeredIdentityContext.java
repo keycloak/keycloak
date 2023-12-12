@@ -18,6 +18,7 @@ package org.keycloak.broker.provider;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.ArrayList;
@@ -159,6 +160,28 @@ public class BrokeredIdentityContext {
 
     public void setContextData(Map<String, Object> contextData) {
         this.contextData = contextData;
+    }
+
+    private Map<String, String> getSessionNotes() {
+        HashMap<String, String> sessionNotes = (HashMap<String, String>) this.contextData.get(Constants.MAPPER_SESSION_NOTES);
+        if (sessionNotes == null) {
+            sessionNotes = new HashMap<>();
+            this.contextData.put(Constants.MAPPER_SESSION_NOTES, sessionNotes);
+        }
+        return sessionNotes;
+    }
+
+    public void setSessionNote(String key, String value) {
+        if(authenticationSession != null) {
+            authenticationSession.setUserSessionNote(key, value);
+        }
+        else {
+            getSessionNotes().put(key, value);
+        }
+    }
+
+    public void addSessionNotesToUserSession(UserSessionModel userSession) {
+        getSessionNotes().forEach((k, v) -> userSession.setNote(k, v));
     }
 
     // Set the attribute, which will be available on "Update profile" page and in authenticators

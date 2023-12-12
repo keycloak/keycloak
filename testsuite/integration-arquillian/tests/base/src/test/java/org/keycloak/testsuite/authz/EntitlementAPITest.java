@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;

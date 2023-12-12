@@ -44,13 +44,13 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.3.1",
-    "@types/chai": "^4.3.10",
-    "@types/lodash-es": "^4.17.11",
-    "@types/mocha": "^10.0.5",
-    "@types/node": "^20.9.2",
+    "@types/chai": "^4.3.11",
+    "@types/lodash-es": "^4.17.12",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.4",
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.2"
   },
   "author": {
     "name": "Red Hat, Inc.",

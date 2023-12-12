@@ -22,6 +22,7 @@ package org.keycloak.crypto;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,5 +72,14 @@ public class PublicKeysWrapper {
         }
 
         return potentialMatches.findFirst().orElse(null);
+    }
+
+    /**
+     * Returns the first key that matches the predicate.
+     * @param predicate The predicate
+     * @return The first key that matches the predicate or null
+     */
+    public KeyWrapper getKeyByPredicate(Predicate<KeyWrapper> predicate) {
+        return keys.stream().filter(predicate).findFirst().orElse(null);
     }
 }

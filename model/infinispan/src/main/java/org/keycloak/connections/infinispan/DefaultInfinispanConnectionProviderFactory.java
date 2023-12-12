@@ -38,7 +38,6 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -46,13 +45,16 @@ import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
@@ -64,8 +66,9 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, EnvironmentDependentProviderFactory {
+public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
 
+    private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
     private Config.Scope config;
@@ -85,24 +88,54 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, topologyInfo);
     }
 
+    /*
+        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+        that acquires a writeLock and this removal that acquires a readLock.
+        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+        Tracked in https://github.com/keycloak/keycloak/issues/9871
+    */
+    public static void runWithReadLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static <T> T runWithReadLockOnCacheManager(Supplier<T> task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            return task.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static void runWithWriteLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.writeLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public void close() {
-        /*
-            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-            that acquires a writeLock and this removal that acquires a readLock.
-            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-            Tracked in https://github.com/keycloak/keycloak/issues/9871
-        */
-        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+        runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null && !containerManaged) {
                 cacheManager.stop();
             }
             if (remoteCacheProvider != null) {
                 remoteCacheProvider.stop();
             }
-        }
+        });
     }
 
     @Override
@@ -119,7 +152,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void postInit(KeycloakSessionFactory factory) {
         factory.register((ProviderEvent event) -> {
             if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, session -> { registerSystemWideListeners(session); });
+                KeycloakModelUtils.runJobInTransaction(factory, this::registerSystemWideListeners);
             }
         });
     }
@@ -505,10 +538,5 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             }
         });
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

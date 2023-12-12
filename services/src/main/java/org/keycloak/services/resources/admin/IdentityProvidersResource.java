@@ -159,6 +159,8 @@ public class IdentityProvidersResource {
             IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(session, inputStream);
+            // add the URL just if needed by the identity provider
+            config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
             return config;
         } finally {
             try {

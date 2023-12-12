@@ -95,7 +95,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.19.Final</infinispan.version>
+        <infinispan.version>14.0.21.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.5.Final</infinispan.protostream.processor.version>
 
         <!--JAKARTA-->
@@ -166,7 +166,7 @@
         <mssql-jdbc.version>12.2.0.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
+        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
@@ -213,17 +213,19 @@
         <tomcat9.version>9.0.16</tomcat9.version>
 
         <!-- Spring Boot versions, used for tests -->
-        <spring-boot24.version>2.4.13</spring-boot24.version>
-        <spring-boot26.version>2.6.1</spring-boot26.version>
+        <spring-boot27.version>2.7.14</spring-boot27.version>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+        <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
+        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
         <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
+        
+        <!-- Used to test SAML Galleon feature-pack layers discovery -->
+        <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -1345,6 +1347,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1724,6 +1732,20 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${jboss-servlet-api_4.0_spec}</version>
+            </dependency>
+            
+            <!-- Galleon layer testing with WildFly Glow -->
+            <dependency>
+                <groupId>org.wildfly.glow</groupId>
+                <artifactId>wildfly-glow-core</artifactId>
+                <scope>test</scope>
+                <version>${version.org.wildfly.glow}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.glow</groupId>
+                <artifactId>wildfly-glow-maven-resolver</artifactId>
+                <scope>test</scope>
+                <version>${version.org.wildfly.glow}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

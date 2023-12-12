@@ -6,6 +6,7 @@ import {
   ButtonVariant,
   Divider,
   DropdownItem,
+  DropdownSeparator,
   Form,
   PageSection,
   Tab,
@@ -13,7 +14,13 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ScrollForm } from "ui-shared";
@@ -79,6 +86,23 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+  const { addAlert, addError } = useAlerts();
+  const { setValue, formState, control } = useFormContext();
+
+  const validateSignature = useWatch({
+    control,
+    name: "config.validateSignature",
+  });
+
+  const useMetadataDescriptorUrl = useWatch({
+    control,
+    name: "config.useMetadataDescriptorUrl",
+  });
+
+  const metadataDescriptorUrl = useWatch({
+    control,
+    name: "config.metadataDescriptorUrl",
+  });
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias: displayName }),
@@ -101,6 +125,41 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     },
   });
 
+  const importSamlKeys = async (
+    providerId: string,
+    metadataDescriptorUrl: string,
+  ) => {
+    try {
+      const result = await adminClient.identityProviders.importFromUrl({
+        providerId: providerId,
+        fromUrl: metadataDescriptorUrl,
+      });
+      if (result.signingCertificate) {
+        setValue(`config.signingCertificate`, result.signingCertificate);
+        addAlert(t("importKeysSuccess"), AlertVariant.success);
+      } else {
+        addError("importKeysError", t("importKeysErrorNoSigningCertificate"));
+      }
+    } catch (error) {
+      addError("importKeysError", error);
+    }
+  };
+
+  const reloadSamlKeys = async (alias: string) => {
+    try {
+      const result = await adminClient.identityProviders.reloadKeys({
+        alias: alias,
+      });
+      if (result) {
+        addAlert(t("reloadKeysSuccess"), AlertVariant.success);
+      } else {
+        addAlert(t("reloadKeysSuccessButFalse"), AlertVariant.warning);
+      }
+    } catch (error) {
+      addError("reloadKeysError", error);
+    }
+  };
+
   return (
     <>
       <DisableConfirm />
@@ -114,6 +173,40 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         )}
         divider={false}
         dropdownItems={[
+          ...(provider?.providerId?.includes("saml") &&
+          validateSignature === "true" &&
+          useMetadataDescriptorUrl === "true" &&
+          metadataDescriptorUrl &&
+          !formState.isDirty &&
+          value
+            ? [
+                <DropdownItem
+                  key="reloadKeys"
+                  onClick={() => reloadSamlKeys(provider.alias!)}
+                >
+                  {t("reloadKeys")}
+                </DropdownItem>,
+              ]
+            : provider?.providerId?.includes("saml") &&
+                validateSignature === "true" &&
+                useMetadataDescriptorUrl !== "true" &&
+                metadataDescriptorUrl &&
+                !formState.isDirty
+              ? [
+                  <DropdownItem
+                    key="importKeys"
+                    onClick={() =>
+                      importSamlKeys(
+                        provider.providerId!,
+                        metadataDescriptorUrl,
+                      )
+                    }
+                  >
+                    {t("importKeys")}
+                  </DropdownItem>,
+                ]
+              : []),
+          <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
           </DropdownItem>,
@@ -249,6 +342,7 @@ export default function DetailSettings() {
           providerId,
         },
       );
+      reset(p);
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
       addError("updateErrorIdentityProvider", error);

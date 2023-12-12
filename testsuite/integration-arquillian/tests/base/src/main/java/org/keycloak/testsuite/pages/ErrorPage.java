@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UIUtils;

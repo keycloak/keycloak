@@ -61,8 +61,7 @@ runs:
       shell: bash
       # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
-        MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-        ./mvnw install dependency:resolve -nsu -V -B -e -DskipTests -DskipExamples $MVN_HTTP_CONFIG ${{ env.MVN_PROFILES}}
+        ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples ${{ env.MVN_PROFILES}}
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts

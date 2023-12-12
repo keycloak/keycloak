@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -1546,7 +1547,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).resetPasswordEmail();
+                realm.users().get(user.getId()).executeActionsEmail(List.of(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
             }
         }, Resource.USER, true);
         invoke(new Invocation() {
@@ -1798,9 +1799,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void partialExport() {
-        // re-enable as part of https://github.com/keycloak/keycloak/issues/14291
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         invoke(realm -> realm.partialExport(false, false), clients.get("view-realm"), false);
         invoke(realm -> realm.partialExport(false, false), clients.get("manage-realm"), true);
         invoke(realm -> realm.partialExport(true, false), clients.get("manage-realm"), false);

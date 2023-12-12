@@ -77,12 +77,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -530,7 +530,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             Object empty = idToken.getOtherClaims().get("empty");
-            assertThat((empty == null ? null : (String) empty), isEmptyOrNullString());
+            assertThat((empty == null ? null : (String) empty), is(emptyOrNullString()));
             Object nulll = idToken.getOtherClaims().get("null");
             assertNull(nulll);
 

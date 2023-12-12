@@ -16,13 +16,10 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventStoreSpi;
 import org.keycloak.events.EventType;
-import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.junit.Test;
 

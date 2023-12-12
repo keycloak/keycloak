@@ -131,6 +131,8 @@ describe("User profile tabs", () => {
   {
     "attributes": [
       {
+  "name": "email"{downArrow},
+      {
   "name": "username",
   "validations": {
     "length": {
@@ -170,6 +172,7 @@ describe("User profile tabs", () => {
       cy.findByTestId("edit-username-switch").should("have.value", "off");
       // Create user
       sidebarPage.goToUsers();
+      cy.wait(1000);
       createUserPage.goToCreateUser();
       cy.findByTestId("username").type("testuser7");
       cy.findByTestId("create-user").click();

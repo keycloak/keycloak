@@ -19,5 +19,26 @@
                 <include>pinned-guides</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/getting-started</directory>
+            <outputDirectory>/generated-guides/getting-started/</outputDirectory>
+            <includes>
+                <include>pinned-guides</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/operator</directory>
+            <outputDirectory>/generated-guides/operator/</outputDirectory>
+            <includes>
+                <include>pinned-guides</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/high-availability</directory>
+            <outputDirectory>/generated-guides/high-availability/</outputDirectory>
+            <includes>
+                <include>pinned-guides</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

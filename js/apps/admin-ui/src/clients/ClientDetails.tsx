@@ -195,11 +195,13 @@ export default function ClientDetails() {
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const hasManageAuthorization = hasAccess("manage-authorization");
+  const hasViewAuthorization = hasAccess("view-authorization");
   const hasManageClients = hasAccess("manage-clients");
   const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
   const permissionsEnabled =
-    isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
+    isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+    (hasManageAuthorization || hasViewAuthorization);
 
   const navigate = useNavigate();
 
@@ -507,6 +509,7 @@ export default function ClientDetails() {
                 >
                   <Tab
                     id="setup"
+                    data-testid="clientScopesSetupTab"
                     title={<TabTitleText>{t("setup")}</TabTitleText>}
                     {...clientScopesSetupTab}
                   >
@@ -519,6 +522,7 @@ export default function ClientDetails() {
                   </Tab>
                   <Tab
                     id="evaluate"
+                    data-testid="clientScopesEvaluateTab"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                     {...clientScopesEvaluateTab}
                   >
@@ -530,83 +534,98 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.authorizationServicesEnabled && hasManageAuthorization && (
-              <Tab
-                id="authorization"
-                data-testid="authorizationTab"
-                title={<TabTitleText>{t("authorization")}</TabTitleText>}
-                {...authorizationTab}
-              >
-                <RoutableTabs
-                  mountOnEnter
-                  unmountOnExit
-                  defaultLocation={toAuthorizationTab({
-                    realm,
-                    clientId,
-                    tab: "settings",
-                  })}
+            {client!.authorizationServicesEnabled &&
+              (hasManageAuthorization || hasViewAuthorization) && (
+                <Tab
+                  id="authorization"
+                  data-testid="authorizationTab"
+                  title={<TabTitleText>{t("authorization")}</TabTitleText>}
+                  {...authorizationTab}
                 >
-                  <Tab
-                    id="settings"
-                    data-testid="authorizationSettings"
-                    title={<TabTitleText>{t("settings")}</TabTitleText>}
-                    {...authorizationSettingsTab}
+                  <RoutableTabs
+                    mountOnEnter
+                    unmountOnExit
+                    defaultLocation={toAuthorizationTab({
+                      realm,
+                      clientId,
+                      tab: "settings",
+                    })}
                   >
-                    <AuthorizationSettings clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="resources"
-                    data-testid="authorizationResources"
-                    title={<TabTitleText>{t("resources")}</TabTitleText>}
-                    {...authorizationResourcesTab}
-                  >
-                    <AuthorizationResources clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="scopes"
-                    data-testid="authorizationScopes"
-                    title={<TabTitleText>{t("scopes")}</TabTitleText>}
-                    {...authorizationScopesTab}
-                  >
-                    <AuthorizationScopes clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="policies"
-                    data-testid="authorizationPolicies"
-                    title={<TabTitleText>{t("policies")}</TabTitleText>}
-                    {...authorizationPoliciesTab}
-                  >
-                    <AuthorizationPolicies clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="permissions"
-                    data-testid="authorizationPermissions"
-                    title={<TabTitleText>{t("permissions")}</TabTitleText>}
-                    {...authorizationPermissionsTab}
-                  >
-                    <AuthorizationPermissions clientId={clientId} />
-                  </Tab>
-                  {hasViewUsers && (
                     <Tab
-                      id="evaluate"
-                      data-testid="authorizationEvaluate"
-                      title={<TabTitleText>{t("evaluate")}</TabTitleText>}
-                      {...authorizationEvaluateTab}
+                      id="settings"
+                      data-testid="authorizationSettings"
+                      title={<TabTitleText>{t("settings")}</TabTitleText>}
+                      {...authorizationSettingsTab}
                     >
-                      <AuthorizationEvaluate client={client} save={save} />
+                      <AuthorizationSettings clientId={clientId} />
                     </Tab>
-                  )}
-                  <Tab
-                    id="export"
-                    data-testid="authorizationExport"
-                    title={<TabTitleText>{t("export")}</TabTitleText>}
-                    {...authorizationExportTab}
-                  >
-                    <AuthorizationExport />
-                  </Tab>
-                </RoutableTabs>
-              </Tab>
-            )}
+                    <Tab
+                      id="resources"
+                      data-testid="authorizationResources"
+                      title={<TabTitleText>{t("resources")}</TabTitleText>}
+                      {...authorizationResourcesTab}
+                    >
+                      <AuthorizationResources
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="scopes"
+                      data-testid="authorizationScopes"
+                      title={<TabTitleText>{t("scopes")}</TabTitleText>}
+                      {...authorizationScopesTab}
+                    >
+                      <AuthorizationScopes
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="policies"
+                      data-testid="authorizationPolicies"
+                      title={<TabTitleText>{t("policies")}</TabTitleText>}
+                      {...authorizationPoliciesTab}
+                    >
+                      <AuthorizationPolicies
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="permissions"
+                      data-testid="authorizationPermissions"
+                      title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                      {...authorizationPermissionsTab}
+                    >
+                      <AuthorizationPermissions
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    {hasViewUsers && (
+                      <Tab
+                        id="evaluate"
+                        data-testid="authorizationEvaluate"
+                        title={<TabTitleText>{t("evaluate")}</TabTitleText>}
+                        {...authorizationEvaluateTab}
+                      >
+                        <AuthorizationEvaluate client={client} save={save} />
+                      </Tab>
+                    )}
+                    {hasAccess("manage-authorization") && (
+                      <Tab
+                        id="export"
+                        data-testid="authorizationExport"
+                        title={<TabTitleText>{t("export")}</TabTitleText>}
+                        {...authorizationExportTab}
+                      >
+                        <AuthorizationExport />
+                      </Tab>
+                    )}
+                  </RoutableTabs>
+                </Tab>
+              )}
             {client!.serviceAccountsEnabled && hasViewUsers && (
               <Tab
                 id="serviceAccount"

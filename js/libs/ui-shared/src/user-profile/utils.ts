@@ -1,5 +1,6 @@
 import { UserProfileAttributeMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { TFunction } from "i18next";
 import { FieldPath } from "react-hook-form";
 
 export type KeyValueType = { key: string; value: string };
@@ -23,18 +24,17 @@ export type UserProfileError = {
   responseData: ErrorArray | FieldError;
 };
 
-export const isBundleKey = (displayName?: string) =>
-  displayName?.includes("${");
+const isBundleKey = (displayName?: string) => displayName?.includes("${");
 export const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
-  t: TranslationFunction,
+  t: TFunction,
   text: string | undefined,
   fallback: string | undefined,
 ) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
 
 export const labelAttribute = (
-  t: TranslationFunction,
+  t: TFunction,
   attribute: UserProfileAttributeMetadata,
 ) => label(t, attribute.displayName, attribute.name);
 
@@ -44,14 +44,15 @@ export const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);
 
 export const fieldName = (name?: string) =>
-  `${
-    isRootAttribute(name) ? "" : "attributes."
-  }${name}` as FieldPath<UserFormFields>;
+  `${isRootAttribute(name) ? "" : "attributes."}${name?.replaceAll(
+    ".",
+    "🍺",
+  )}` as FieldPath<UserFormFields>;
 
 export function setUserProfileServerError<T>(
   error: UserProfileError,
   setError: (field: keyof T, params: object) => void,
-  t: TranslationFunction,
+  t: TFunction,
 ) {
   (
     ((error.responseData as ErrorArray).errors !== undefined
@@ -105,7 +106,50 @@ function hasRequiredValidators(
 }
 
 export function isUserProfileError(error: unknown): error is UserProfileError {
-  return !!(error as UserProfileError).responseData;
+  // Check if the error is an object with a 'responseData' property.
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("responseData" in error)
+  ) {
+    return false;
+  }
+
+  const { responseData } = error;
+
+  if (isFieldError(responseData)) {
+    return true;
+  }
+
+  // Check if 'responseData' is an object with an 'errors' property that is an array.
+  if (
+    typeof responseData !== "object" ||
+    responseData === null ||
+    !("errors" in responseData) ||
+    !Array.isArray(responseData.errors)
+  ) {
+    return false;
+  }
+
+  // Check if all errors are field errors.
+  return responseData.errors.every(isFieldError);
 }
 
-export type TranslationFunction = (key: unknown, params?: object) => string;
+function isFieldError(error: unknown): error is FieldError {
+  // Check if the error is an object.
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  // Check if the error object has a 'field' property that is a string.
+  if (!("field" in error) || typeof error.field !== "string") {
+    return false;
+  }
+
+  // Check if the error object has an 'errorMessage' property that is a string.
+  if (!("errorMessage" in error) || typeof error.errorMessage !== "string") {
+    return false;
+  }
+
+  return true;
+}

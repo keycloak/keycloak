@@ -21,6 +21,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
@@ -68,7 +68,6 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -131,11 +130,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     @Override
     public RealmResource testRealmResource() {
         return adminClient.realm("test");
-    }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @BeforeClass
@@ -319,7 +313,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected OAuthClient.AccessTokenResponse assertAuthenticationSuccess(String codeUrl) throws Exception {
-        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), "UTF-8");
+        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), StandardCharsets.UTF_8);
         String code = null;
         String state = null;
         for (NameValuePair pair : pairs) {

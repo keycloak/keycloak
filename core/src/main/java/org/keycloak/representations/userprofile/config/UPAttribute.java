@@ -49,6 +49,26 @@ public class UPAttribute {
         this.name = name != null ? name.trim() : null;
     }
 
+    public UPAttribute(String name, UPGroup group) {
+        this(name);
+        this.group = group.getName();
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions, UPAttributeRequired required, UPAttributeSelector selector) {
+        this(name);
+        this.permissions = permissions;
+        this.required = required;
+        this.selector = selector;
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions, UPAttributeRequired required) {
+        this(name, permissions, required, null);
+    }
+
+    public UPAttribute(String name, UPAttributePermissions permissions) {
+        this(name, permissions, null);
+    }
+
     public String getName() {
         return name;
     }

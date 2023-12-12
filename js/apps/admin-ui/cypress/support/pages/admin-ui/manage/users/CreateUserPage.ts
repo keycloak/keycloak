@@ -2,7 +2,6 @@ export default class CreateUserPage {
   usernameInput: string;
   usersEmptyState: string;
   emptyStateCreateUserBtn: string;
-  searchPgCreateUserBtn: string;
   addUserBtn: string;
   joinGroupsBtn: string;
   joinBtn: string;
@@ -14,7 +13,6 @@ export default class CreateUserPage {
 
     this.usersEmptyState = "empty-state";
     this.emptyStateCreateUserBtn = "no-users-found-empty-action";
-    this.searchPgCreateUserBtn = "create-new-user";
     this.addUserBtn = "add-user";
     this.joinGroupsBtn = "join-groups-button";
     this.joinBtn = "join-button";
@@ -35,10 +33,10 @@ export default class CreateUserPage {
 
   goToCreateUser() {
     cy.get("body").then((body) => {
-      if (body.find("[data-testid=search-users-title]").length > 0) {
-        cy.findByTestId(this.searchPgCreateUserBtn).click({ force: true });
-      } else {
+      if (body.find(`[data-testid=${this.addUserBtn}]`).length > 0) {
         cy.findByTestId(this.addUserBtn).click({ force: true });
+      } else {
+        cy.findByTestId(this.emptyStateCreateUserBtn).click({ force: true });
       }
     });
 

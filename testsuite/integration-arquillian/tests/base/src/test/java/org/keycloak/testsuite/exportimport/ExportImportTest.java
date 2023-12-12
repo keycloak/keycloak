@@ -21,11 +21,9 @@ import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
@@ -43,7 +41,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
@@ -51,7 +48,6 @@ import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.JsonUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,12 +78,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 public class ExportImportTest extends AbstractKeycloakTest {
 
     private static final String TEST_REALM = "test-realm";
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        // Disabled temporarily, re-enable once export/import functionality is implemented for map storage
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -205,10 +195,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
         RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
-        // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
+        // There should be 5 files in target directory (1 realm, 16 users, 5 users per file)
         // (+ additional user service-account-test-app-authz that should not be there ???)
         File[] files = new File(targetDirPath).listFiles();
-        assertEquals(4, files.length);
+        assertEquals(5, files.length);
     }
 
     @Test
@@ -284,8 +274,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         realmRes.update(realmRep);
 
         //add some non-default config
-        VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
-        
+        UPConfig persistedConfig = VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
+
         //export
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
         exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
@@ -308,7 +298,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());
         assertThat(config.size(), equalTo(1));
-        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT, UPConfig.class);
+        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), JsonSerialization.writeValueAsString(persistedConfig), UPConfig.class);
     }
 
     @Test

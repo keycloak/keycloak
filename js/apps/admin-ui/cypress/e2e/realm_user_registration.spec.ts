@@ -1,4 +1,5 @@
 import ListingPage from "../support/pages/admin-ui/ListingPage";
+import ClientRolesTab from "../support/pages/admin-ui/manage/clients/ClientRolesTab";
 import UserRegistration, {
   GroupPickerDialog,
 } from "../support/pages/admin-ui/manage/realm_settings/UserRegistration";
@@ -18,6 +19,7 @@ describe("Realm settings - User registration tab", () => {
   const listingPage = new ListingPage();
   const groupPicker = new GroupPickerDialog();
   const userRegistration = new UserRegistration();
+  const rolesTab = new ClientRolesTab();
 
   const groupName = "The default group";
 
@@ -39,6 +41,11 @@ describe("Realm settings - User registration tab", () => {
     userRegistration.selectRow(role).assign();
     masthead.checkNotificationMessage("Associated roles have been added");
     listingPage.searchItem(role, false).itemExist(role);
+
+    sidebarPage.goToRealmRoles();
+    listingPage.goToItemDetails("admin");
+    rolesTab.goToUsersInRoleTab();
+    cy.findByTestId("users-in-role-table").contains("admin");
   });
 
   it("Remove admin role", () => {

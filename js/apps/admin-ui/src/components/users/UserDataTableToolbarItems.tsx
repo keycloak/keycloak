@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   ButtonVariant,
@@ -109,6 +109,7 @@ export function UserDataTableToolbarItems({
           }}
           onClear={() => {
             setSearchUser("");
+            refresh();
           }}
         />
       </ToolbarItem>

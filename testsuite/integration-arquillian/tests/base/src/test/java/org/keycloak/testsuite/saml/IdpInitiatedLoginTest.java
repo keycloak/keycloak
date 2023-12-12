@@ -18,7 +18,7 @@ package org.keycloak.testsuite.saml;
 
 import java.io.Closeable;
 import java.io.IOException;
-import org.junit.Assert;
+
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;

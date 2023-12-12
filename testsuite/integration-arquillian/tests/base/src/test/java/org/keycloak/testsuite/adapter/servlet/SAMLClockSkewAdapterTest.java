@@ -24,11 +24,9 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -51,6 +49,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
 public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
@@ -141,6 +140,7 @@ public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP6, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP71, skip = true)
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_EAP8, skip = true)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_JETTY94, skip = true)
     public void testClockSkewTomcat() throws Exception {
 

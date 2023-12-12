@@ -78,10 +78,10 @@ public class ProfileTest {
             Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
+            Profile.Feature.MULTI_SITE,
             Profile.Feature.RECOVERY_CODES,
             Profile.Feature.SCRIPTS,
             Profile.Feature.TOKEN_EXCHANGE,
-            Profile.Feature.MAP_STORAGE,
             Profile.Feature.DECLARATIVE_USER_PROFILE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
             Profile.Feature.UPDATE_EMAIL,
@@ -93,7 +93,7 @@ public class ProfileTest {
             disabledFeatures.add(Profile.Feature.KERBEROS);
         }
         assertEquals(profile.getDisabledFeatures(), disabledFeatures);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ACCOUNT3, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ACCOUNT3, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.MULTI_SITE, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
     }
 
     @Test

@@ -113,10 +113,12 @@ public class ServerInfoAdminResource {
                                 Collectors.toMap(
                                         ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
                                         clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
-                                        (l1, l2) -> listCombiner(l1, l2)
-                                                .stream()
-                                                .sorted()
-                                                .collect(Collectors.toList()),
+                                        (l1, l2) -> {
+                                            List<String> result = listCombiner(l1, l2);
+                                            return result.stream()
+                                                    .sorted()
+                                                    .collect(Collectors.toList());
+                                        },
                                         HashMap::new
                                 )
                         );

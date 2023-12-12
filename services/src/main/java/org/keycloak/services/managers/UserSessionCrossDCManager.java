@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -72,7 +71,7 @@ public class UserSessionCrossDCManager {
             // in case the auth session was removed, we fall back to the identity cookie
             // we are here doing the user session lookup twice, however the second lookup is going to make sure the
             // session exists in remote caches
-            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(kcSession, () -> authenticateIdentityCookie(kcSession, realm, true));
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(kcSession, realm, true);
 
             if (authResult != null && authResult.getSession() != null) {
                 sessionCookies = Collections.singletonList(authResult.getSession().getId());
@@ -84,9 +83,9 @@ public class UserSessionCrossDCManager {
             String sessionId = authSessionId.getDecodedId();
 
             // This will remove userSession "locally" if it doesn't exist on remoteCache
-            lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null));
+            kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null);
 
-            UserSessionModel userSession = lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSession(realm, sessionId));
+            UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessionId);
 
             if (userSession != null) {
                 asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
