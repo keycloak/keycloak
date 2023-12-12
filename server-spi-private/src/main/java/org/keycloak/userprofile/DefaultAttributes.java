@@ -19,6 +19,8 @@
 
 package org.keycloak.userprofile;
 
+import static java.util.Collections.emptyList;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.Constants;
@@ -38,6 +42,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 
@@ -68,7 +73,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     private final Map<String, AttributeMetadata> metadataByAttribute;
     private final UPConfig upConfig;
     protected final UserModel user;
-    private Map<String, List<String>> unmanagedAttributes = new HashMap<>();
+    private final Map<String, List<String>> unmanagedAttributes = new HashMap<>();
 
     public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
             UserProfileMetadata profileMetadata,
@@ -82,28 +87,28 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     @Override
-    public boolean isReadOnly(String attributeName) {
-        if (!isManagedAttribute(attributeName)) {
+    public boolean isReadOnly(String name) {
+        if (!isManagedAttribute(name)) {
             return !isAllowEditUnmanagedAttribute();
         }
 
-        if (UserModel.USERNAME.equals(attributeName)) {
+        if (UserModel.USERNAME.equals(name)) {
             if (isServiceAccountUser()) {
                 return true;
             }
         }
 
-        if (UserModel.EMAIL.equals(attributeName)) {
+        if (UserModel.EMAIL.equals(name)) {
             if (isServiceAccountUser()) {
                 return false;
             }
         }
 
-        if (isReadOnlyFromMetadata(attributeName) || isReadOnlyInternalAttribute(attributeName)) {
+        if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
             return true;
         }
 
-        return getMetadata(attributeName) == null;
+        return getMetadata(name) == null;
     }
 
     private boolean isAllowEditUnmanagedAttribute() {
@@ -156,9 +161,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(attribute.getKey()))
-                .map(Collections::singletonList).orElse(Collections.emptyList()));
+                .map(Collections::singletonList).orElse(emptyList()));
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
-                .map(Collections::singletonList).orElse(Collections.emptyList()));
+                .map(Collections::singletonList).orElse(emptyList()));
 
         Boolean result = null;
 
@@ -172,12 +177,15 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     continue;
                 }
 
-                if (user != null && metadata.isReadOnly(attributeContext)
-                        && CollectionUtil.collectionEquals(user.getAttributeStream(name).collect(Collectors.toList()), attribute.getValue())) {
-                    // allow update if the value was already wrong in the user and is read-only in this context
-                    logger.warnf("User '%s' attribute '%s' has previous validation errors %s but is read-only in context %s.",
-                            user.getUsername(), name, vc.getErrors(), attributeContext.getContext());
-                    continue;
+                if (user != null && metadata.isReadOnly(attributeContext)) {
+                    List<String> value = user.getAttributeStream(name).filter(StringUtil::isNotBlank).collect(Collectors.toList());
+                    List<String> newValue = attribute.getValue().stream().filter(StringUtil::isNotBlank).collect(Collectors.toList());
+                    if (CollectionUtil.collectionEquals(value, newValue)) {
+                        // allow update if the value was already wrong in the user and is read-only in this context
+                        logger.debugf("User '%s' attribute '%s' has previous validation errors %s but is read-only in context %s.",
+                                user.getUsername(), name, vc.getErrors(), attributeContext.getContext());
+                        continue;
+                    }
                 }
 
                 if (result == null) {
@@ -198,7 +206,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     @Override
-    public List<String> getValues(String name) {
+    public List<String> get(String name) {
         return getOrDefault(name, EMPTY_VALUE);
     }
 
@@ -236,21 +244,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     @Override
     public AttributeMetadata getMetadata(String name) {
         if (unmanagedAttributes.containsKey(name)) {
-            return new AttributeMetadata(name, Integer.MAX_VALUE) {
-                final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
-
-                @Override
-                public boolean canView(AttributeContext context) {
-                    return canEdit(context)
-                            || (UnmanagedAttributePolicy.ADMIN_VIEW.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
-                }
-
-                @Override
-                public boolean canEdit(AttributeContext context) {
-                    return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy)
-                            || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
-                }
-            };
+            return createUnmanagedAttributeMetadata(name);
         }
 
         return Optional.ofNullable(metadataByAttribute.get(name))
@@ -265,9 +259,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         for (String name : nameSet()) {
             AttributeMetadata metadata = getMetadata(name);
 
-            if (metadata == null
-                    || !metadata.canView(createAttributeContext(metadata))
-                    || !metadata.isSelected(createAttributeContext(metadata))) {
+            if (metadata == null) {
+                attributes.remove(name);
+                continue;
+            }
+
+            AttributeContext attributeContext = createAttributeContext(metadata);
+
+            if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
                 attributes.remove(name);
             }
         }
@@ -277,7 +276,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public Map<String, List<String>> toMap() {
-        return this;
+        return Collections.unmodifiableMap(this);
     }
 
     protected boolean isServiceAccountUser() {
@@ -342,7 +341,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
                 if (!isSupportedAttribute(key)) {
                     if (!isManagedAttribute(key) && isAllowUnmanagedAttribute()) {
-                        unmanagedAttributes.put(key, (List<String>) entry.getValue());
+                        unmanagedAttributes.put(key, normalizeAttributeValues(key, entry.getValue()));
                     }
                     continue;
                 }
@@ -351,18 +350,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     key = key.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
                 }
 
-                Object value = entry.getValue();
-                List<String> values;
-
-                if (value instanceof String) {
-                    values = Collections.singletonList((String) value);
-                } else {
-                    values = (List<String>) value;
-                }
-
-                if (UserModel.USERNAME.equals(key) || UserModel.EMAIL.equals(key)) {
-                    values = values.stream().map(KeycloakModelUtils::toLowerCaseSafe).collect(Collectors.toList());
-                }
+                List<String> values = normalizeAttributeValues(key, entry.getValue());
 
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
@@ -378,28 +366,24 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             AttributeMetadata metadata = metadataByAttribute.get(attributeName);
 
             if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
-                values = user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE);
+                values = normalizeAttributeValues(attributeName, user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE));
             }
 
             newAttributes.put(attributeName, values);
         }
 
         if (user != null) {
-            List<String> username = newAttributes.getOrDefault(UserModel.USERNAME, Collections.emptyList());
+            List<String> username = newAttributes.getOrDefault(UserModel.USERNAME, emptyList());
 
             if (username.isEmpty() && isReadOnly(UserModel.USERNAME)) {
                 setUserName(newAttributes, Collections.singletonList(user.getUsername()));
             }
         }
 
-        List<String> email = newAttributes.getOrDefault(UserModel.EMAIL, Collections.emptyList());
+        List<String> email = newAttributes.getOrDefault(UserModel.EMAIL, emptyList());
 
         if (!email.isEmpty() && realm.isRegistrationEmailAsUsername()) {
-            List<String> lowerCaseEmailList = email.stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            setUserName(newAttributes, lowerCaseEmailList);
+            setUserName(newAttributes, email);
 
             if (user != null && isReadOnly(UserModel.EMAIL)) {
                 newAttributes.put(UserModel.EMAIL, Collections.singletonList(user.getEmail()));
@@ -412,6 +396,24 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return newAttributes;
+    }
+
+    private List<String> normalizeAttributeValues(String name, Object value) {
+        List<String> values;
+
+        if (value instanceof String) {
+            values = Collections.singletonList((String) value);
+        } else {
+            values = (List<String>) value;
+        }
+
+        Stream<String> valuesStream = Optional.ofNullable(values).orElse(EMPTY_VALUE).stream().filter(Objects::nonNull);
+
+        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+            valuesStream = valuesStream.map(KeycloakModelUtils::toLowerCaseSafe);
+        }
+
+        return valuesStream.collect(Collectors.toList());
     }
 
     private boolean isAllowUnmanagedAttribute() {
@@ -466,12 +468,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return true;
         }
 
-        if (isReadOnlyInternalAttribute(name)) {
-            return true;
-        }
-
-        // checks whether the attribute is a core attribute
-        return isRootAttribute(name);
+        return isReadOnlyInternalAttribute(name);
     }
 
     private boolean isManagedAttribute(String name) {
@@ -510,5 +507,23 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     @Override
     public Map<String, List<String>> getUnmanagedAttributes() {
         return unmanagedAttributes;
+    }
+
+    private AttributeMetadata createUnmanagedAttributeMetadata(String name) {
+        return new AttributeMetadata(name, Integer.MAX_VALUE) {
+            final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
+
+            @Override
+            public boolean canView(AttributeContext context) {
+                return canEdit(context)
+                        || (UnmanagedAttributePolicy.ADMIN_VIEW.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+            }
+
+            @Override
+            public boolean canEdit(AttributeContext context) {
+                return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy)
+                        || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+            }
+        };
     }
 }

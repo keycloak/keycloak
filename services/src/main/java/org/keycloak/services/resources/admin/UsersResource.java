@@ -154,7 +154,7 @@ public class UsersResource {
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
 
-        UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
+        UserProfile profile = profileProvider.create(USER_API, rep.getRawAttributes());
 
         try {
             Response response = UserResource.validateUserProfile(profile, session, auth.adminAuth());
