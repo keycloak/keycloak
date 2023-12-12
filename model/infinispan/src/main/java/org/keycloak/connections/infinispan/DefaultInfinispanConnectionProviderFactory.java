@@ -89,12 +89,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     /*
-        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-        that acquires a writeLock and this removal that acquires a readLock.
-        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-        Tracked in https://github.com/keycloak/keycloak/issues/9871
+        Workaround for Infinispan 12.1.7.Final and tested until 14.0.19.Final to prevent a deadlock while
+        DefaultInfinispanConnectionProviderFactory is shutting down. Kept as a permanent solution and considered
+        good enough after a lot of analysis went into this difficult to reproduce problem.
+        See https://github.com/keycloak/keycloak/issues/9871 for the discussion.
     */
     public static void runWithReadLockOnCacheManager(Runnable task) {
         Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
