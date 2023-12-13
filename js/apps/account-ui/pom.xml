@@ -140,7 +140,7 @@
 <![CDATA[
     <#if properties.scripts?has_content>
       <#list properties.scripts?split(' ') as script>
-      <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+        <script src="${resourceUrl}/${script}"></script>
       </#list>
     </#if>
     <#if properties.styles?has_content>
