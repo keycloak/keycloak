@@ -327,6 +327,17 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             if (rc != null) {
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
+
+                    // If scopes are configured, we will use scope-based selector and require the attribute just if scope is
+                    // in current authenticationSession (either default scope or by 'scope' parameter)
+                    if (rc.getScopes() != null && !rc.getScopes().isEmpty()) {
+                        if (UPConfigUtils.canBeAuthFlowContext(context)) {
+                            required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                        } else {
+                            // Scopes not available for admin and account contexts
+                            required = AttributeMetadata.ALWAYS_FALSE;
+                        }
+                    }
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
