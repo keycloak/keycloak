@@ -39,6 +39,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
@@ -71,11 +72,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
-        String email = profile.getAttributes().getFirstValue(UserModel.EMAIL);
-
-        String username = profile.getAttributes().getFirstValue(UserModel.USERNAME);
-        String firstName = profile.getAttributes().getFirstValue(UserModel.FIRST_NAME);
-        String lastName = profile.getAttributes().getFirstValue(UserModel.LAST_NAME);
+        Attributes attributes = profile.getAttributes();
+        String email = attributes.getFirst(UserModel.EMAIL);
+        String username = attributes.getFirst(UserModel.USERNAME);
+        String firstName = attributes.getFirst(UserModel.FIRST_NAME);
+        String lastName = attributes.getFirst(UserModel.LAST_NAME);
         context.getEvent().detail(Details.EMAIL, email);
 
         context.getEvent().detail(Details.USERNAME, username);
@@ -92,7 +93,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
             if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
-                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+                context.getEvent().detail(Details.EMAIL, attributes.getFirst(UserModel.EMAIL));
             }
 
             if (pve.hasError(Messages.EMAIL_EXISTS)) {

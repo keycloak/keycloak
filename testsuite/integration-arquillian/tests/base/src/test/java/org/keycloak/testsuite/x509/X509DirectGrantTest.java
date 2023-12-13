@@ -267,8 +267,6 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginCertificateExpired() throws Exception {
-        Assume.assumeFalse("Time offset is causing integer overflow. With the old store it works, because root authentication session has also timestamp overflown, this is not true for the new store so the test is failing.", keycloakUsingProviderWithId(AuthenticationSessionProvider.class, "map"));
-
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                     .setCertValidationEnabled(true)

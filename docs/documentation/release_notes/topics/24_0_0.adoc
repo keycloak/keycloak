@@ -34,3 +34,18 @@ As a result, you can use the CR to configure build time options also when a cust
 It is now possible to separately enable parsing of either `Forwarded` or `X-Forwarded-*` headers via the new `--proxy-headers` option.
 For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
 The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Breaking changes to the User Profile SPI
+
+In this release, there are changes to the User Profile SPI that might impact existing implementations based on this SPI. For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Changes to the user representation in both Admin API and Account contexts
+
+In this release, we are encapsulating the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) by moving them to a base/abstract class in order to align how these attributes
+are marshalled and unmarshalled when using both Admin and Account REST APIs.
+
+This strategy provides consistency in how attributes are managed by clients and makes sure they conform to the user profile
+configuration set to a realm.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].

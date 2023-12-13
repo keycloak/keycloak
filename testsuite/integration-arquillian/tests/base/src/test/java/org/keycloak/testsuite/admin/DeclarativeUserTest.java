@@ -37,6 +37,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,6 @@ import jakarta.ws.rs.core.Response;
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class DeclarativeUserTest extends AbstractAdminTest {
 
-    private static final String LOCALE_ATTR_KEY = "locale";
     private static final String TEST_REALM_USER_MANAGER_NAME = "test-realm-user-manager";
     private static final String REQUIRED_ATTR_KEY = "required-attr";
 
@@ -121,29 +121,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testReturnAllConfiguredAttributesEvenIfNotSet() {
-        UserRepresentation user1 = new UserRepresentation();
-        user1.setUsername("user1");
-        user1.singleAttribute("attr1", "value1user1");
-        user1.singleAttribute("attr2", "value2user1");
-        String user1Id = createUser(user1);
-
-        user1 = realm.users().get(user1Id).toRepresentation();
-        Map<String, List<String>> attributes = user1.getAttributes();
-        assertEquals(4, attributes.size());
-        List<String> attr1 = attributes.get("attr1");
-        assertEquals(1, attr1.size());
-        assertEquals("value1user1", attr1.get(0));
-        List<String> attr2 = attributes.get("attr2");
-        assertEquals(1, attr2.size());
-        assertEquals("value2user1", attr2.get(0));
-        List<String> attrCustomA = attributes.get("custom-a");
-        assertTrue(attrCustomA.isEmpty());
-        assertTrue(attributes.containsKey("custom-a"));
-        assertTrue(attributes.containsKey("aName"));
-    }
-
-    @Test
     public void testDoNotReturnAttributeIfNotReadble() {
         UserRepresentation user1 = new UserRepresentation();
         user1.setUsername("user1");
@@ -153,7 +130,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         Map<String, List<String>> attributes = user1.getAttributes();
-        assertEquals(4, attributes.size());
+        assertEquals(2, attributes.size());
         assertFalse(attributes.containsKey("custom-hidden"));
 
         setUserProfileConfiguration(this.realm, "{\"attributes\": ["
@@ -170,8 +147,8 @@ public class DeclarativeUserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         attributes = user1.getAttributes();
-        assertEquals(5, attributes.size());
-        assertTrue(attributes.containsKey("custom-hidden"));
+        assertEquals(2, attributes.size());
+        assertFalse(attributes.containsKey("custom-hidden"));
     }
 
     @Test
@@ -200,12 +177,17 @@ public class DeclarativeUserTest extends AbstractAdminTest {
 
         UserResource userResource = realm.users().get(user1Id);
         user1 = userResource.toRepresentation();
-        Map<String, List<String>> attributes = user1.getAttributes();
-        attributes.put("attr2", Collections.singletonList(""));
+        assertNull(user1.getAttributes());
+        user1.singleAttribute("attr2", "");
         // should be able to update the user when a read-only attribute has an empty or null value
         userResource.update(user1);
-        attributes.put("attr2", null);
+        user1 = userResource.toRepresentation();
+        assertNull(user1.getAttributes());
+        user1.setAttributes(new HashMap<>());
+        user1.getAttributes().put("attr2", null);
         userResource.update(user1);
+        user1 = userResource.toRepresentation();
+        assertNull(user1.getAttributes());
     }
 
     @Test
@@ -288,7 +270,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             realm.update(realmRep);
 
             user1 = userResource.toRepresentation();
-            assertNull(user1.getAttributes().get(UserModel.LOCALE));
+            assertNull(user1.getAttributes());
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
             realm.update(realmRep);

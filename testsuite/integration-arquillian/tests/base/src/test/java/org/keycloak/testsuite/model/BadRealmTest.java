@@ -31,7 +31,7 @@ public class BadRealmTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @ModelTest(skipForMapStorage = true) // when map storage is enabled, the id is always converted into a valid UUID.
+    @ModelTest
     public void testBadRealmId(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
         try {

@@ -117,6 +117,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             }
             return new DefaultAttributes(context, attributes, user, metadata, session);
         }
+
         return new LegacyAttributes(context, attributes, user, metadata, session);
     }
 
@@ -153,11 +154,11 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             @Override
             public UserModel apply(Attributes attributes) {
                 if (user == null) {
-                    String userName = attributes.getFirstValue(UserModel.USERNAME);
+                    String userName = attributes.getFirst(UserModel.USERNAME);
 
                     // fallback to email in case email is allowed
                     if (userName == null) {
-                        userName = attributes.getFirstValue(UserModel.EMAIL);
+                        userName = attributes.getFirst(UserModel.EMAIL);
                     }
 
                     user = session.users().addUser(session.getContext().getRealm(), userName);
