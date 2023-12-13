@@ -98,7 +98,7 @@ export default function FlowDetails() {
   );
 
   const executeChange = async (
-    ex: AuthenticationFlowRepresentation,
+    ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
   ) => {
     try {
@@ -111,23 +111,47 @@ export default function FlowDetails() {
           });
         }
 
-        await adminClient.authenticationManagement.delExecution({ id });
-        const result =
-          await adminClient.authenticationManagement.addExecutionToFlow({
-            flow: change.parent?.displayName! || flow?.alias!,
-            provider: ex.providerId!,
-          });
-
-        if (config.id) {
-          const newConfig = {
-            id: result.id,
-            alias: config.alias,
-            config: config.config,
-          };
-          await adminClient.authenticationManagement.createConfig(newConfig);
+        try {
+          await adminClient.authenticationManagement.delExecution({ id });
+        } catch {
+          // skipping already deleted execution
         }
+        if ("authenticationFlow" in ex) {
+          const executionFlow = ex as ExpandableExecution;
+          const result =
+            await adminClient.authenticationManagement.addFlowToFlow({
+              flow: change.parent?.displayName! || flow?.alias!,
+              alias: executionFlow.displayName!,
+              description: executionFlow.description!,
+              provider: ex.providerId!,
+              type: "basic-flow",
+            });
+          id = result.id!;
+          ex.executionList?.forEach((e, i) =>
+            executeChange(e, {
+              parent: { ...ex, id: result.id },
+              newIndex: i,
+              oldIndex: i,
+            }),
+          );
+        } else {
+          const result =
+            await adminClient.authenticationManagement.addExecutionToFlow({
+              flow: change.parent?.displayName! || flow?.alias!,
+              provider: ex.providerId!,
+            });
 
-        id = result.id!;
+          if (config.id) {
+            const newConfig = {
+              id: result.id,
+              alias: config.alias,
+              config: config.config,
+            };
+            await adminClient.authenticationManagement.createConfig(newConfig);
+          }
+
+          id = result.id!;
+        }
       }
       const times = change.newIndex - change.oldIndex;
       for (let index = 0; index < Math.abs(times); index++) {
