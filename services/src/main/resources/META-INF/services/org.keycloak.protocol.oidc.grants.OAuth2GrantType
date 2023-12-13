@@ -1,0 +1,9 @@
+org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantType
+org.keycloak.protocol.oidc.grants.ClientCredentialsGrantType
+org.keycloak.protocol.oidc.grants.PermissionGrantType
+org.keycloak.protocol.oidc.grants.RefreshTokenGrantType
+org.keycloak.protocol.oidc.grants.ResourceOwnerPasswordCredentialsGrantType
+org.keycloak.protocol.oidc.grants.TokenExchangeGrantType
+org.keycloak.protocol.oidc.grants.ciba.CibaGrantType
+org.keycloak.protocol.oidc.grants.device.DeviceGrantType
+
