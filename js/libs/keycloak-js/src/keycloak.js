@@ -592,7 +592,9 @@ function Keycloak (config) {
                     kc.userInfo = JSON.parse(req.responseText);
                     promise.setSuccess(kc.userInfo);
                 } else {
-                    promise.setError();
+                    promise.setError({
+                        status: req.status,
+                    });
                 }
             }
         }
