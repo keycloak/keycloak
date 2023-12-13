@@ -2,6 +2,7 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ public class OptionBuilder<T> {
     private String description;
     private Optional<T> defaultValue;
     private Supplier<List<String>> expectedValues;
+    private DeprecatedMetadata deprecatedMetadata;
 
     public OptionBuilder(String key, Class<T> type) {
         this(key, type, null);
@@ -111,12 +113,32 @@ public class OptionBuilder<T> {
         return this;
     }
 
+    public OptionBuilder<T> deprecated() {
+        this.deprecatedMetadata = new DeprecatedMetadata();
+        return this;
+    }
+
+    public OptionBuilder<T> deprecated(String note) {
+        this.deprecatedMetadata = new DeprecatedMetadata(null, note);
+        return this;
+    }
+
+    public OptionBuilder<T> deprecated(Set<String> newOptionsKeys) {
+        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, null);
+        return this;
+    }
+
+    public OptionBuilder<T> deprecated(String note, Set<String> newOptionsKeys) {
+        this.deprecatedMetadata = new DeprecatedMetadata(newOptionsKeys, note);
+        return this;
+    }
+
 
     public Option<T> build() {
         if (auxiliaryType != null) {
-            return new MultiOption<T>(type, auxiliaryType, key, category, hidden, build, description, defaultValue, expectedValues);
+            return new MultiOption<T>(type, auxiliaryType, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
         } else {
-            return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues);
+            return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, deprecatedMetadata);
         }
     }
 

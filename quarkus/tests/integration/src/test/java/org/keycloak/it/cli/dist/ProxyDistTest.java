@@ -46,7 +46,8 @@ public class ProxyDistTest {
         assertFrontEndUrl("http://mykeycloak.org:8080", "http://mykeycloak.org:8080/");
         assertFrontEndUrl("http://localhost:8080", "http://mykeycloak.org:8080/");
         assertFrontEndUrl("https://localhost:8443", "https://mykeycloak.org:8443/");
-        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
+        assertForwardedHeaderIsIgnored();
+        assertXForwardedHeadersAreIgnored();
     }
 
     @Test
@@ -58,12 +59,47 @@ public class ProxyDistTest {
     @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge" })
     public void testForwardedHeadersWithEdge() {
-        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://test:1234/admin"));
+        assertForwardedHeader();
     }
 
     @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=reencrypt" })
     public void testXForwardedHeadersWithReencrypt() {
+        assertXForwardedHeaders();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=passthrough" })
+    public void testProxyHeadersIgnoredWithPassthrough() {
+        assertForwardedHeaderIsIgnored();
+        assertXForwardedHeadersAreIgnored();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=forwarded" })
+    public void testForwardedProxyHeaders() {
+        assertForwardedHeader();
+        assertXForwardedHeadersAreIgnored();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=xforwarded" })
+    public void testXForwardedProxyHeaders() {
+        assertForwardedHeaderIsIgnored();
+        assertXForwardedHeaders();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=xforwarded", "--proxy=reencrypt" })
+    public void testProxyHeadersTakePrecedenceOverProxyReencryptOption() {
+        assertForwardedHeaderIsIgnored();
+        assertXForwardedHeaders();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy-headers=xforwarded", "--proxy=none" })
+    public void testProxyHeadersTakePrecedenceOverProxyNoneOption() {
+        assertForwardedHeaderIsIgnored();
         assertXForwardedHeaders();
     }
 
@@ -74,6 +110,14 @@ public class ProxyDistTest {
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin"));
     }
 
+    private void assertForwardedHeader() {
+        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://test:1234/admin"));
+    }
+
+    private void assertForwardedHeaderIsIgnored() {
+        given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080"));
+    }
+
     private void assertXForwardedHeaders() {
         given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://test:8080/admin"));
         given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://test:8080/admin"));
@@ -81,6 +125,14 @@ public class ProxyDistTest {
         //given().header("X-Forwarded-Host", "mykeycloak.org").when().get("https://localhost:8443/admin/master/console").then().body(containsString("<script src=\"/js/keycloak.js?version="));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("https://localhost/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().body(containsString("https://localhost:8443/admin"));
+    }
+
+    private void assertXForwardedHeadersAreIgnored() {
+        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().body(containsString("http://mykeycloak.org:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
+        given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().body(containsString("https://localhost:8443/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
+        given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().body(containsString("http://localhost:8080/admin"));
     }
 
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {
