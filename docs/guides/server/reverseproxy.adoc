@@ -8,11 +8,29 @@ title="Using a reverse proxy"
 summary="Learn how to configure {project_name} together with a reverse proxy, api gateway, or load balancer."
 includedOptions="proxy proxy-* hostname-path hostname-url http-relative-path">
 
-Distributed environments frequently require the use of a reverse proxy.
-For {project_name}, your choice of proxy modes depends on the TLS termination in your environment.
+Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
+
+== Configure the reverse proxy headers
+
+{project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
+
+* By default if the option is not specified, no reverse proxy headers are parsed.
+* `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
+* `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
+
+For example:
+
+<@kc.start parameters="--proxy-headers forwarded"/>
+
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
+If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
 == Proxy modes
-The following proxy modes are available:
+NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
+
+For {project_name}, your choice of proxy modes depends on the TLS termination in your environment. The following proxy modes are available:
 
 edge:: Enables communication through HTTP between the proxy and {project_name}.
 This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with {project_name} using HTTP.
@@ -24,26 +42,15 @@ Different keys and certificates are used on the reverse proxy as well as on {pro
 passthrough:: The proxy forwards the HTTPS connection to {project_name} without terminating TLS.
 The secure connections between the server and clients are based on the keys and certificates used by the {project_name} server.
 
-== Configure the proxy mode in {project_name}
-To select the proxy mode, enter this command:
-
-<@kc.start parameters="--proxy <mode>"/>
-
-== Configure the reverse proxy
-
-Some {project_name} features rely on the assumption that the remote address of the HTTP request connecting to {project_name} is the real IP address of the clients machine.
-
 When in **edge** or **reencrypt** proxy mode, {project_name} will parse the following headers and expects the reverse proxy to set them:
 
 * `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
-* Non-standard `X-Forwarded`
 * Non-standard `X-Forwarded-*`, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`
 
-To set these headers, consult the documentation for your reverse proxy.
+=== Configure the proxy mode in {project_name}
+To select the proxy mode, enter this command:
 
-Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
-If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address.
-This precaution can be more critical if you do any deny or allow listing of IP addresses.
+<@kc.start parameters="--proxy <mode>"/>
 
 == Different context-path on reverse proxy
 
@@ -56,7 +63,7 @@ Alternatively you can also change the context path of {project_name} itself to m
 
 By default, {project_name} needs to know under which hostname it will be called. If your reverse proxy is configured to check for the correct hostname, you can set {project_name} to accept any hostname.
 
-<@kc.start parameters="--proxy <mode> --hostname-strict=false"/>
+<@kc.start parameters="--proxy-headers=forwarded|xforwarded --hostname-strict=false"/>
 
 == Enable sticky sessions
 

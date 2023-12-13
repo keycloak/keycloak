@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.hostname;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.config.ProxyOptions.PROXY;
+import static org.keycloak.config.ProxyOptions.PROXY_HEADERS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 import static org.keycloak.urls.UrlType.ADMIN;
@@ -289,7 +290,13 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
-        noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+
+        if (getKcConfigValue(PROXY_HEADERS.getKey()).getValue() != null) { // proxy-headers option was explicitly configured
+            noProxy = false;
+        } else { // falling back to proxy option
+            noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+        }
+
         defaultTlsPort = Integer.parseInt(httpsPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
