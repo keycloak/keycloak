@@ -59,12 +59,12 @@ public class HttpOptions {
             .defaultValue("TLSv1.3,TLSv1.2")
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a server certificate or certificate chain in PEM format.")
             .build();
 
-    public static final Option HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
+    public static final Option<File> HTTPS_CERTIFICATE_KEY_FILE = new OptionBuilder<>("https-certificate-key-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The file path to a private key in PEM format.")
             .build();
@@ -90,11 +90,13 @@ public class HttpOptions {
     public static final Option HTTPS_TRUST_STORE_FILE = new OptionBuilder<>("https-trust-store-file", File.class)
             .category(OptionCategory.HTTP)
             .description("The trust store which holds the certificate information of the certificates to trust.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option HTTPS_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-trust-store-password", String.class)
             .category(OptionCategory.HTTP)
             .description("The password of the trust store file.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<String> HTTPS_TRUST_STORE_TYPE = new OptionBuilder<>("https-trust-store-type", String.class)
@@ -102,6 +104,7 @@ public class HttpOptions {
             .description("The type of the trust store file. " +
                     "If not given, the type is automatically detected based on the file name. " +
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
+            .deprecated("Use the System Truststore instead, see the docs for details.")
             .build();
 
     public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
@@ -110,4 +113,11 @@ public class HttpOptions {
             .description("Enables or disables the HTTP/s and Socket serving.")
             .defaultValue(Boolean.TRUE)
             .build();
+
+    public static final Option<Integer> HTTP_MAX_QUEUED_REQUESTS = new OptionBuilder<>("http-max-queued-requests", Integer.class)
+            .category(OptionCategory.HTTP)
+            .description("Maximum number of queued HTTP requests. " +
+                         "Use this to shed load in an overload situation. Excess requests will return a \"503 Server not Available\" response.")
+            .build();
+
 }

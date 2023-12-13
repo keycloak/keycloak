@@ -13,7 +13,7 @@ import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(10);
   const [key, setKey] = useState(0);
@@ -40,9 +40,9 @@ export const UserRegistration = () => {
         compositeArray,
       );
       setKey(key + 1);
-      addAlert(t("roles:addAssociatedRolesSuccess"), AlertVariant.success);
+      addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roles:addAssociatedRolesError", error);
+      addError("addAssociatedRolesError", error);
     }
   };
 
@@ -56,6 +56,7 @@ export const UserRegistration = () => {
         id="roles"
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
+        data-testid="default-roles-tab"
       >
         <RoleMapping
           name={realm.defaultRole!.name!}
@@ -69,6 +70,7 @@ export const UserRegistration = () => {
         id="groups"
         eventKey={20}
         title={<TabTitleText>{t("defaultGroups")}</TabTitleText>}
+        data-testid="default-groups-tab"
       >
         <DefaultsGroupsTab />
       </Tab>

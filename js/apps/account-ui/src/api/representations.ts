@@ -87,16 +87,9 @@ export interface UserProfileMetadata {
   attributes: UserProfileAttributeMetadata[];
 }
 
-export interface UserRepresentation {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  emailVerified: boolean;
+export type UserRepresentation = any & {
   userProfileMetadata: UserProfileMetadata;
-  attributes: { [index: string]: string[] };
-}
+};
 
 export interface CredentialRepresentation {
   id: string;

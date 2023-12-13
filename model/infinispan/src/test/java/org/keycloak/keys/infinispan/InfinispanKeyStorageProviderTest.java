@@ -50,6 +50,7 @@ public class InfinispanKeyStorageProviderTest {
     Cache<String, PublicKeysEntry> keys = getKeysCache();
     Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
     int minTimeBetweenRequests = 10;
+    int maxCacheTime = 600;
 
     @Before
     public void before() {
@@ -127,7 +128,7 @@ public class InfinispanKeyStorageProviderTest {
 
         @Override
         public void run() {
-            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests);
+            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests, maxCacheTime);
             provider.getPublicKey(modelKey, "kid1", null, new SampleLoader(modelKey));
         }
 

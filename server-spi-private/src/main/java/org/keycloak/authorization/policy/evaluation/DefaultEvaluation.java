@@ -150,7 +150,7 @@ public class DefaultEvaluation implements Evaluation {
                 }
 
                 RealmModel realm = session.getContext().getRealm();
-                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupId);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupId);
 
                 if (Objects.isNull(group)) {
                     return false;
@@ -226,7 +226,7 @@ public class DefaultEvaluation implements Evaluation {
             public boolean isGroupInRole(String id, String role) {
                 KeycloakSession session = authorizationProvider.getKeycloakSession();
                 RealmModel realm = session.getContext().getRealm();
-                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, id);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, id);
 
                 return RoleUtils.hasRoleFromGroup(group, realm.getRole(role), false);
             }

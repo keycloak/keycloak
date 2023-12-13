@@ -79,6 +79,8 @@ public final class Constants {
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";
+
+    public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 
     public static final String KC_ACTION = "kc_action";
@@ -103,6 +105,8 @@ public final class Constants {
 
     // Groups already assigned by a mapper when updating brokered users.
     public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
+
+    public static final String MAPPER_SESSION_NOTES = "MAPPER_SESSION_NOTES";
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
@@ -149,5 +153,7 @@ public final class Constants {
 
     public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
     public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+
+    public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
 }

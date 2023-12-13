@@ -16,10 +16,10 @@
  */
 package org.keycloak.operator.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
@@ -28,42 +28,37 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.Constants;
+
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
-import jakarta.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+import jakarta.inject.Inject;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
-public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport> {
+@ControllerConfiguration(
+dependents = {
+    @Dependent(type = KeycloakRealmImportSecretDependentResource.class)
+})
+public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport> {
 
     @Inject
     KubernetesClient client;
 
-    @Inject
-    ObjectMapper jsonMapper;
+    volatile KeycloakRealmImportJobDependentResource jobDependentResource;
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
-        InformerConfiguration<Job> jobIC = InformerConfiguration
-                .from(Job.class)
-                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace())
-                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
-                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
-                .build();
-
-        return EventSourceInitializer.nameEventSources(new InformerEventSource<>(jobIC, context));
+        this.jobDependentResource = new KeycloakRealmImportJobDependentResource();
+        this.jobDependentResource.setKubernetesClient(context.getClient());
+        return EventSourceInitializer.nameEventSourcesFromDependentResource(context, jobDependentResource);
     }
 
     @Override
@@ -75,12 +70,18 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
         var statusBuilder = new KeycloakRealmImportStatusBuilder();
 
-        var realmImportSecret = new KeycloakRealmImportSecret(client, realm, jsonMapper);
-        realmImportSecret.createOrUpdateReconciled();
+        Job existingJob = context.getSecondaryResource(Job.class).orElse(null);
+        StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class).inNamespace(realm.getMetadata().getNamespace())
+                .withName(realm.getSpec().getKeycloakCRName()).get();
 
-        var realmImportJob = new KeycloakRealmImportJob(client, realm, realmImportSecret.getSecretName());
-        realmImportJob.createOrUpdateReconciled();
-        realmImportJob.updateStatus(statusBuilder);
+        if (existingDeployment != null) {
+            context.managedDependentResourceContext().put(StatefulSet.class, existingDeployment);
+            if (getReadyReplicas(existingDeployment) > 0) {
+                jobDependentResource.reconcile(realm, context);
+            }
+        }
+
+        updateStatus(statusBuilder, realm, existingJob, existingDeployment);
 
         var status = statusBuilder.build();
 
@@ -114,4 +115,54 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         realm.setStatus(status);
         return ErrorStatusUpdateControl.updateStatus(realm);
     }
+
+    public void updateStatus(KeycloakRealmImportStatusBuilder status, KeycloakRealmImport realmCR, Job existingJob, StatefulSet existingDeployment) {
+        if (existingDeployment == null) {
+            status.addErrorMessage("No existing Deployment found, waiting for it to be created");
+            return;
+        }
+
+        if (getReadyReplicas(existingDeployment) < 1) {
+            status.addErrorMessage("Deployment not yet ready, waiting for it to be ready");
+            return;
+        }
+
+        if (existingJob == null) {
+            Log.info("Job about to start");
+            status.addStartedMessage("Import Job will start soon");
+        } else {
+            Log.info("Job already executed - not recreating");
+            var oldStatus = existingJob.getStatus();
+            var lastReportedStatus = realmCR.getStatus();
+
+            if (oldStatus == null) {
+                Log.info("Job started");
+                status.addStartedMessage("Import Job started");
+            } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
+                if (!lastReportedStatus.isDone()) {
+                    Log.info("Job finished performing a rolling restart of the deployment");
+                    rollingRestart(realmCR); // could be based upon a hash annotation on the deployment instead
+                }
+                status.addDone();
+            } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
+                Log.info("Job Failed");
+                status.addErrorMessage("Import Job failed");
+            } else {
+                Log.info("Job running");
+                status.addStartedMessage("Import Job running");
+            }
+        }
+    }
+
+    private Integer getReadyReplicas(StatefulSet existingDeployment) {
+        return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
+    }
+
+    private void rollingRestart(KeycloakRealmImport realmCR) {
+        client.apps().statefulSets()
+                .inNamespace(realmCR.getMetadata().getNamespace())
+                .withName(realmCR.getSpec().getKeycloakCRName())
+                .rolling().restart();
+    }
+
 }

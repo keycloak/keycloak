@@ -31,6 +31,8 @@ import java.util.function.BiFunction;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import org.jboss.logging.Logger;
+import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
@@ -59,6 +61,8 @@ public class PropertyMapper<T> {
     private final String paramLabel;
     private final String envVarFormat;
     private String cliFormat;
+
+    private static final Logger logger = Logger.getLogger(PropertyMapper.class);
 
     PropertyMapper(Option<T> option, String to, BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
                    String mapFrom, String paramLabel, boolean mask) {
@@ -111,10 +115,10 @@ public class PropertyMapper<T> {
                     }
                 }
 
-                return transformValue(ofNullable(parentValue == null ? null : parentValue.getValue()), context);
+                return transformValue(name, ofNullable(parentValue == null ? null : parentValue.getValue()), context, null);
             }
 
-            ConfigValue defaultValue = transformValue(this.option.getDefaultValue().map(Objects::toString), context);
+            ConfigValue defaultValue = transformValue(name, this.option.getDefaultValue().map(Objects::toString), context, null);
 
             if (defaultValue != null) {
                 return defaultValue;
@@ -124,19 +128,13 @@ public class PropertyMapper<T> {
             ConfigValue current = context.proceed(name);
 
             if (current != null) {
-                return transformValue(ofNullable(current.getValue()), context);
+                return transformValue(name, ofNullable(current.getValue()), context, current.getConfigSourceName());
             }
 
             return current;
         }
 
-        Optional<String> configValue = ofNullable(config.getValue());
-
-        if (config.getName().equals(name)) {
-            return config;
-        }
-
-        ConfigValue transformedValue = transformValue(configValue, context);
+        ConfigValue transformedValue = transformValue(name, ofNullable(config.getValue()), context, config.getConfigSourceName());
 
         // we always fallback to the current value from the property we are mapping
         if (transformedValue == null) {
@@ -196,13 +194,18 @@ public class PropertyMapper<T> {
         return mask;
     }
 
-    private ConfigValue transformValue(Optional<String> value, ConfigSourceInterceptorContext context) {
+    public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
+        return option.getDeprecatedMetadata();
+    }
+
+    private ConfigValue transformValue(String name, Optional<String> value, ConfigSourceInterceptorContext context, String configSourceName) {
         if (value == null) {
             return null;
         }
 
-        if (mapper == null) {
-            return ConfigValue.builder().withName(to).withValue(value.orElse(null)).build();
+        if (mapper == null || (mapFrom == null && name.equals(getFrom()))) {
+            // no mapper set or requesting a property that does not depend on other property, just return the value from the config source
+            return ConfigValue.builder().withName(name).withValue(value.orElse(null)).withConfigSourceName(configSourceName).build();
         }
 
         Optional<String> mappedValue = mapper.apply(value, context);
@@ -211,7 +214,8 @@ public class PropertyMapper<T> {
             return null;
         }
 
-        return ConfigValue.builder().withName(to).withValue(mappedValue.get()).withRawValue(value.orElse(null)).build();
+        return ConfigValue.builder().withName(name).withValue(mappedValue.get()).withRawValue(value.orElse(null))
+                .withConfigSourceName(configSourceName).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {

@@ -1,0 +1,75 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for configuring thread pools"
+summary="Understand these concepts to avoid resource exhaustion and congestion"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
+tileVisible="false" >
+
+
+This section is intended when you want to understand the considerations and best practices on how to configure thread pools connection pools for {project_name}.
+For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-kubernetes" />.
+
+== Concepts
+
+=== Quarkus executor pool
+
+{project_name} requests, as well as all probes, are handled by the Quarkus executor pool.
+
+The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-config#quarkus-core_quarkus.thread-pool.max-threads[`quarkus.thread-pool.max-threads`] and has a maximum size of at least 200 threads.
+Depending on the available CPU cores, it can grow even larger.
+Threads are created as needed, and will end when no longer needed, so the system will scale up and down as needed.
+
+When running on Kubernetes, adjust the number of worker threads to avoid creating more load than what the CPU limit for the Pod to avoid throttling, which would lead to congestion.
+When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
+Congestion would result in longer response times and an increased memory usage, and eventually an unstable system.
+
+Ideally, you should start with a low limit of threads and adjust it accordingly to the target throughput and response time.
+When the load and the number of threads increases, the bottleneck will usually be the database connections.
+Once a request cannot acquire a database connection, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
+The caller will receive a response with a 5xx HTTP status code indicating a server side error.
+
+With the number of threads in the executor pool being an order of magnitude larger than the number of database connections and with requests failing when no database connection is available within the https://quarkus.io/guides/all-config#quarkus-agroal_quarkus.datasource.jdbc.acquisition-timeout[`quarkus.datasource.jdbc.acquisition-timeout`] (5 seconds default), this is somewhat of a https://en.wikipedia.org/wiki/Demand_response#Load_shedding[load-shedding behavior] where it returns an error response instead of queueing requests for an indefinite amount of time.
+
+=== JGroups connection pool
+
+The combined number of executor threads in all {project_name} nodes in the cluster should not exceed the number of threads available in JGroups thread pool to avoid the error `org.jgroups.util.ThreadPool: thread pool is full`.
+To see the error the first time it happens, the system property `jgroups.thread_dumps_threshold` needs to be set to `1`, as otherwise the message appears only after 10000 threads have been rejected.
+
+--
+include::partials/threads/executor-jgroups-thread-calculation.adoc[]
+--
+
+Use the metrics `vendor_jgroups_tcp_get_thread_pool_size` to monitor the total JGroup threads in the pool and `vendor_jgroups_tcp_get_thread_pool_size_active` for the threads active in the pool.
+This is useful to monitor that limiting the Quarkus thread pool size keeps the number of active JGroup threads below the maximum JGroup thread pool size.
+
+[#load-shedding]
+=== Load Shedding
+
+By default, {project_name} will queue all incoming requests infinitely, even if the request processing stalls.
+This will use additional memory in the Pod, can exhaust resources in the load balancers, and the requests will eventually time out on the client side without the client knowing if the request has been processed.
+To limit the number of queued requests in {project_name}, set an additional Quarkus configuration option.
+
+Configure `quarkus.thread-pool.queue-size` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded.
+Assuming a {project_name} Pod processes around 200 requests per second, a queue of 1000 would lead to maximum waiting times of around 5 seconds.
+
+// KC22.0.6 - this is still 500
+When this setting is active, requests that exceed the number of queued requests will return with an HTTP 503 error.
+{project_name} logs the error message in its log.
+
+[#probes]
+=== Probes
+
+All health probes are handled in the Quarkus executor worker pool by default.
+Only the liveness probe is non-blocking.
+Future version of {project_name} and Quarkus plan to have other probes also being non-blocking.
+
+=== OS Resources
+
+In order for Java to create threads, when running on Linux it needs to have file handles available.
+Therefore, the number of open files (as retrieved as `ulimit -n` on Linux) need to provide head-space for {project_name} to increase the number of threads needed.
+Each thread will also consume memory, and the container memory limits need to be set to a value that allows for this or the Pod will be killed by Kubernetes.
+
+</@tmpl.guide>

@@ -37,12 +37,12 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributePermissions;
-import org.keycloak.userprofile.config.UPAttributeRequired;
-import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.representations.userprofile.config.UPGroup;
 
 /**
  * Unit test for {@link UPConfigUtils} functionality
@@ -198,7 +198,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         UPConfig config = loadValidConfig();
         //we run this test without KeycloakSession so validator configs are not validated here
 
-        UPAttribute attConfig = config.getAttributes().get(1);
+        UPAttribute attConfig = config.getAttributes().get(2);
 
         attConfig.setName(null);
         List<String> errors = validate(session, config);
@@ -209,7 +209,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, errors.size());
 
         // duplicate attribute name
-        attConfig.setName("firstName");
+        attConfig.setName("lastName");
         errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 

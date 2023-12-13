@@ -60,6 +60,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -107,6 +108,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -282,6 +284,41 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
         assertEquals("123456", refreshedToken.getNonce());
+    }
+
+    @Test
+    public void refreshTokenWithDifferentIssuer() throws Exception {
+        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final int httpPort = 8666;
+        final int httpsPort = 8667;
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
+        proxy.start();
+
+        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        Assert.assertEquals(400, response.getStatusCode());
+        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+
+        proxy.stop();
+
+        oauth.baseUrl(AUTH_SERVER_ROOT);
     }
 
     @Test

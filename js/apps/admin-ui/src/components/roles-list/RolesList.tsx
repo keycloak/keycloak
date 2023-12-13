@@ -71,7 +71,7 @@ export const RolesList = ({
   toDetail,
   isReadOnly,
 }: RolesListProps) => {
-  const { t } = useTranslation(messageBundle);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
@@ -88,11 +88,11 @@ export const RolesList = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "roles:roleDeleteConfirm",
-    messageKey: t("roles:roleDeleteConfirmDialog", {
+    titleKey: "roleDeleteConfirm",
+    messageKey: t("roleDeleteConfirmDialog", {
       selectedRoleName: selectedRole ? selectedRole!.name : "",
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -106,9 +106,9 @@ export const RolesList = ({
           ]);
         }
         setSelectedRole(undefined);
-        addAlert(t("roles:roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("roles:roleDeleteError", error);
+        addError("roleDeleteError", error);
       }
     },
   });
@@ -123,8 +123,8 @@ export const RolesList = ({
       <KeycloakDataTable
         key={selectedRole ? selectedRole.id : "roleList"}
         loader={loader!}
-        ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="roles:searchFor"
+        ariaLabelKey="roleList"
+        searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
         toolbarItem={
           !isReadOnly && (
@@ -141,7 +141,7 @@ export const RolesList = ({
             ? []
             : [
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (role) => {
                     setSelectedRole(role);
                     if (
@@ -160,7 +160,7 @@ export const RolesList = ({
         columns={[
           {
             name: "name",
-            displayKey: "roles:roleName",
+            displayKey: "roleName",
             cellRenderer: (row) => (
               <RoleDetailLink
                 {...row}
@@ -172,20 +172,22 @@ export const RolesList = ({
           },
           {
             name: "composite",
-            displayKey: "roles:composite",
+            displayKey: "composite",
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "description",
-            displayKey: "common:description",
+            displayKey: "description",
             cellFormatters: [emptyFormatter()],
           },
         ]}
         emptyState={
           <ListEmptyState
             hasIcon={true}
-            message={t("noRoles")}
-            instructions={isReadOnly ? "" : t("noRolesInstructions")}
+            message={t(`noRoles-${messageBundle}`)}
+            instructions={
+              isReadOnly ? "" : t(`noRolesInstructions-${messageBundle}`)
+            }
             primaryActionText={isReadOnly ? "" : t("createRole")}
             onPrimaryAction={() => navigate(toCreate)}
           />

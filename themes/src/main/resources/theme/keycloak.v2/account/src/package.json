@@ -3,28 +3,21 @@
   "version": "1.0.0",
   "description": "keycloak account management written in React",
   "scripts": {
-    "build": "snowpack --optimize && npm run check-types && npm run babel && npm run move-web_modules && npm run copy-pf-resources",
+    "build": "snowpack --optimize && pnpm run check-types && pnpm run babel && pnpm run move-web_modules",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
-    "babel:watch": "npm run babel -- --watch",
-    "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
-    "check-types:watch": "npm run check-types -- -w",
-    "lint": "eslint ./app/**/*.ts*",
-    "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources",
-    "copy-pf-resources": "npm run move-app-css && npm run copy-base-css && npm run copy-fonts && npm run copy-pficon && npm run copy-addons",
-    "move-app-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx mv app.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
-    "copy-base-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx cp node_modules/@patternfly/react-core/dist/styles/base.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
-    "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts && shx cp -r node_modules/@patternfly/react-core/dist/styles/assets/fonts/* ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/",
-    "copy-pficon": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon && shx cp node_modules/@patternfly/react-core/dist/styles/assets/pficon/pficon.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon",
-    "copy-addons": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/patternfly && shx cp node_modules/@patternfly/patternfly/patternfly-addons.css ../../../keycloak/common/resources/web_modules/@patternfly/patternfly"
+    "babel:watch": "pnpm run babel -- --watch",
+    "check-types": "tsc",
+    "check-types:watch": "pnpm run check-types -- -w",
+    "move-web_modules": "shx mv web_modules ../resources"
   },
   "keywords": [],
   "author": "Stan Silvert",
   "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^4.125.3",
-    "@patternfly/react-core": "^4.147.0",
-    "@patternfly/react-icons": "^4.11.8",
-    "@patternfly/react-styles": "^4.11.8",
+    "@patternfly/patternfly": "^4.224.5",
+    "@patternfly/react-core": "^4.278.0",
+    "@patternfly/react-icons": "^4.93.7",
+    "@patternfly/react-styles": "^4.92.8",
     "react": "npm:@pika/react@^16.13.1",
     "react-dom": "npm:@pika/react-dom@^16.13.1",
     "react-router-dom": "^4.3.1"
@@ -41,17 +34,11 @@
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^4.3.1",
-    "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "@typescript-eslint/parser": "^5.30.7",
     "chokidar": "^3.5.3",
-    "eslint": "^8.20.0",
-    "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-jsx-a11y": "^6.6.1",
-    "eslint-plugin-react": "^7.30.1",
     "rollup-plugin-postcss": "^2.5.0",
     "shx": "^0.3.4",
     "snowpack": "^1.7.1",
-    "typescript": "^4.7.4"
+    "typescript": "^5.2.2"
   },
-  "repository": {}
+  "packageManager": "pnpm@8.10.0"
 }

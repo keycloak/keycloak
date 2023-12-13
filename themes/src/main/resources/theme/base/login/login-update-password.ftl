@@ -5,19 +5,23 @@
         ${msg("updatePasswordTitle")}
     <#elseif section = "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
-            <input type="text" id="username" name="username" value="${username}" autocomplete="username"
-                   readonly="readonly" style="display:none;"/>
-            <input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
-
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="password-new" class="${properties.kcLabelClass!}">${msg("passwordNew")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}"
-                           autofocus autocomplete="new-password"
-                           aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
-                    />
+                    <div class="${properties.kcInputGroup!}">
+                        <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}"
+                               autofocus autocomplete="new-password"
+                               aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
+                        />
+                        <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
+                                aria-controls="password-new"  data-password-toggle
+                                data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
+                                data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+                            <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
+                        </button>
+                    </div>
 
                     <#if messagesPerField.existsError('password')>
                         <span id="input-error-password" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -32,11 +36,19 @@
                     <label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password-confirm" name="password-confirm"
-                           class="${properties.kcInputClass!}"
-                           autocomplete="new-password"
-                           aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
-                    />
+                    <div class="${properties.kcInputGroup!}">
+                        <input type="password" id="password-confirm" name="password-confirm"
+                               class="${properties.kcInputClass!}"
+                               autocomplete="new-password"
+                               aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
+                        />
+                        <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
+                                aria-controls="password-confirm"  data-password-toggle
+                                data-icon-show="${properties.kcFormPasswordVisibilityIconShow!}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide!}"
+                                data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+                            <i class="${properties.kcFormPasswordVisibilityIconShow!}" aria-hidden="true"></i>
+                        </button>
+                    </div>
 
                     <#if messagesPerField.existsError('password-confirm')>
                         <span id="input-error-password-confirm" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -60,5 +72,6 @@
                 </div>
             </div>
         </form>
+        <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     </#if>
 </@layout.registrationLayout>

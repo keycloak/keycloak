@@ -8,16 +8,16 @@ enum ClientsTab {
 }
 
 export default class ClientsPage extends CommonPage {
-  private clientsListTab = new ClientsListTab();
-  private initialAccessTokenTab = new InitialAccessTokenTab();
+  #clientsListTab = new ClientsListTab();
+  #initialAccessTokenTab = new InitialAccessTokenTab();
 
   goToClientsListTab() {
     this.tabUtils().clickTab(ClientsTab.ClientsList);
-    return this.clientsListTab;
+    return this.#clientsListTab;
   }
 
   goToInitialAccessTokenTab() {
     this.tabUtils().clickTab(ClientsTab.InitialAccessToken);
-    return this.initialAccessTokenTab;
+    return this.#initialAccessTokenTab;
   }
 }

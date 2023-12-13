@@ -16,6 +16,8 @@
  */
 package org.keycloak.storage;
 
+import java.util.Map;
+import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
@@ -26,8 +28,6 @@ import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class GroupStorageManager extends AbstractStorageManager<GroupStorageProvider, GroupStorageProviderModel> implements GroupProvider {
 
@@ -56,6 +56,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        return localStorage().getGroupByName(realm, parent, name);
+    }
+
+    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> local = localStorage().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
         Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupProvider.class,
@@ -80,6 +85,7 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
 
         return Stream.concat(local, ext);
     }
+
     /* GROUP PROVIDER METHODS - provided only by local storage (e.g. not supported by storage providers) */
 
     @Override
@@ -108,13 +114,8 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        return localStorage().getTopLevelGroupsStream(realm);
-    }
-
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return localStorage().getTopLevelGroupsStream(realm, firstResult, maxResults);
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return localStorage().getTopLevelGroupsStream(realm, search, exact, firstResult, maxResults);
     }
 
     @Override

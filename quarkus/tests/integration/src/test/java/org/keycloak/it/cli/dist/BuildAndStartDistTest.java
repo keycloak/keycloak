@@ -41,7 +41,7 @@ public class BuildAndStartDistTest {
     void testBuildAndStart(KeycloakDistribution dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         // start using based on the build options set via CLI
-        CLIResult cliResult = rawDist.run("build", "--storage=chm");
+        CLIResult cliResult = rawDist.run("build");
         cliResult.assertBuild();
         cliResult = rawDist.run("start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
         cliResult.assertNoBuild();
@@ -50,7 +50,7 @@ public class BuildAndStartDistTest {
         // start using based on the build options set via conf file
         rawDist.setProperty("http-enabled", "true");
         rawDist.setProperty("hostname-strict", "false");
-        rawDist.setProperty("storage", "chm");
+        rawDist.setProperty("http-relative-path", "/auth");
         cliResult = rawDist.run("build");
         cliResult.assertBuild();
         cliResult = rawDist.run("start", OPTIMIZED_BUILD_OPTION_LONG);
@@ -62,7 +62,7 @@ public class BuildAndStartDistTest {
         cliResult.assertStarted();
 
         // remove the build option from conf file to force a build during start
-        rawDist.removeProperty("storage");
+        rawDist.removeProperty("http-relative-path");
         cliResult = rawDist.run("start");
         cliResult.assertBuild();
         cliResult.assertStarted();

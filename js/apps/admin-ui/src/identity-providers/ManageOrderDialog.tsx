@@ -17,51 +17,61 @@ import {
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../utils/useFetch";
 
 type ManageOrderDialogProps = {
-  providers: IdentityProviderRepresentation[];
   onClose: () => void;
 };
 
-export const ManageOrderDialog = ({
-  providers,
-  onClose,
-}: ManageOrderDialogProps) => {
-  const { t } = useTranslation("identity-providers");
+export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
-  const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!),
-  );
+  const [providers, setProviders] =
+    useState<IdentityProviderRepresentation[]>();
+  const [order, setOrder] = useState<string[]>([]);
 
   const onDragStart = (id: string) => {
     setAlias(id);
-    setLiveText(t("common:onDragStart", { item: id }));
+    setLiveText(t("onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: alias }));
+    setLiveText(t("onDragMove", { item: alias }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("common:onDragCancel"));
+    setLiveText(t("onDragCancel"));
   };
 
   const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("common:onDragFinish", { list: providerOrder }));
+    setLiveText(t("onDragFinish", { list: providerOrder }));
     setOrder(providerOrder);
   };
+
+  useFetch(
+    () => adminClient.identityProviders.find(),
+    (providers) => {
+      setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
+      setOrder(providers.map((provider) => provider.alias!));
+    },
+    [],
+  );
+
+  if (!providers) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <Modal
       variant={ModalVariant.small}
       title={t("manageDisplayOrder")}
-      isOpen={true}
+      isOpen
       onClose={onClose}
       actions={[
         <Button
@@ -79,13 +89,13 @@ export const ManageOrderDialog = ({
               await Promise.all(updates);
               addAlert(t("orderChangeSuccess"));
             } catch (error) {
-              addError("identity-providers:orderChangeError", error);
+              addError("orderChangeError", error);
             }
 
             onClose();
           }}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -94,7 +104,7 @@ export const ManageOrderDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -120,7 +130,7 @@ export const ManageOrderDialog = ({
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton aria-label={t("common-help:dragHelp")} />
+                <DataListDragButton aria-label={t("dragHelp")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[

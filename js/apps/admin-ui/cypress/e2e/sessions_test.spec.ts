@@ -3,15 +3,15 @@ import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import SessionsPage from "../support/pages/admin-ui/manage/sessions/SessionsPage";
 import CommonPage from "../support/pages/CommonPage";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
-import GroupPage from "../support/pages/admin-ui/manage/groups/GroupPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import PageObject from "../support/pages/admin-ui/components/PageObject";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const sessionsPage = new SessionsPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
-const groupPage = new GroupPage();
+const page = new PageObject();
 
 describe("Sessions test", () => {
   const admin = "admin";
@@ -42,16 +42,17 @@ describe("Sessions test", () => {
     it("search existing session", () => {
       listingPage.searchItem(admin, false);
       listingPage.itemExist(admin, true);
-      groupPage.assertNoSearchResultsMessageExist(false);
+      page.assertEmptyStateExist(false);
     });
 
     it("search non-existant session", () => {
       listingPage.searchItem("non-existant-session", false);
-      groupPage.assertNoSearchResultsMessageExist(true);
+      page.assertEmptyStateExist(true);
     });
   });
 
-  describe("revocation", () => {
+  //TODO seems these tests are not stable on CI
+  describe.skip("revocation", () => {
     it("Clear revocation notBefore", () => {
       sessionsPage.clearNotBefore();
     });

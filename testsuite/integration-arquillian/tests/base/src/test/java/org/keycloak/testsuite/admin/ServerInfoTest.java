@@ -32,7 +32,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -56,8 +55,8 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getProviders().get("authenticator"));
 
         assertNotNull(info.getThemes());
-        // Not checking account themes for now as old account console is going to be removed soon, which would remove "keycloak" theme. So that is just to avoid another "test to update" when it is removed :)
         assertNotNull(info.getThemes().get("account"));
+        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v2", "custom-account-provider");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
         Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");
@@ -89,11 +88,9 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
 
-        if (isJpaRealmProvider()) {
-            Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
-            ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
-            log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
-        }
+        Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
+        ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
+        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
     }
 
     @Override

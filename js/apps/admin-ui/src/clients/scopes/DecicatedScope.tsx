@@ -25,7 +25,7 @@ type DedicatedScopeProps = {
 export const DedicatedScope = ({
   client: initialClient,
 }: DedicatedScopeProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);
@@ -61,7 +61,7 @@ export const DedicatedScope = ({
 
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -72,7 +72,7 @@ export const DedicatedScope = ({
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
       setClient(newClient);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -88,16 +88,16 @@ export const DedicatedScope = ({
           label={t("fullScopeAllowed")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:fullScopeAllowed")}
-              fieldLabelId="clients:fullScopeAllowed"
+              helpText={t("fullScopeAllowedHelp")}
+              fieldLabelId="fullScopeAllowed"
             />
           }
           fieldId="fullScopeAllowed"
         >
           <Switch
             id="fullScopeAllowed"
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
             isChecked={client.fullScopeAllowed}
             onChange={update}
             aria-label={t("fullScopeAllowed")}

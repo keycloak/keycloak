@@ -197,7 +197,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 )}
                             </FormGroup>
                         )}
-                        {!this.isUpdateEmailFeatureEnabled && fields.email != undefined && <FormGroup
+                        {!this.isUpdateEmailFeatureEnabled && <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
                             helperTextInvalid={this.state.errors.email}
@@ -237,10 +237,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 </TextInput>
                                 {this.isUpdateEmailActionEnabled && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
                                     <KeycloakContext.Consumer>
-                                        { (keycloak: KeycloakService) => (
+                                        { (keycloak) => (
                                             <Button id="update-email-btn"
                                                     variant="link"
-                                                    onClick={() => this.handleEmailUpdate(keycloak)}
+                                                    onClick={() => this.handleEmailUpdate(keycloak!)}
                                                     icon={<ExternalLinkSquareAltIcon/>}
                                                     iconPosition="right">
                                                 <Msg msgKey="updateEmail" />
@@ -250,58 +250,56 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 }
                             </InputGroup>
                         </FormGroup> }
-                        { fields.firstName != undefined && <FormGroup
-                                label={Msg.localize("firstName")}
-                                fieldId="first-name"
-                                helperTextInvalid={this.state.errors.firstName}
+                        <FormGroup
+                            label={Msg.localize("firstName")}
+                            fieldId="first-name"
+                            helperTextInvalid={this.state.errors.firstName}
+                            validated={
+                                this.state.errors.firstName !== ""
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default
+                            }
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="first-name"
+                                name="firstName"
+                                maxLength={254}
+                                value={fields.firstName}
+                                onChange={this.handleChange}
                                 validated={
                                     this.state.errors.firstName !== ""
                                         ? ValidatedOptions.error
                                         : ValidatedOptions.default
                                 }
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="text"
-                                    id="first-name"
-                                    name="firstName"
-                                    maxLength={254}
-                                    value={fields.firstName}
-                                    onChange={this.handleChange}
-                                    validated={
-                                        this.state.errors.firstName !== ""
-                                            ? ValidatedOptions.error
-                                            : ValidatedOptions.default
-                                    }
-                                ></TextInput>
-                            </FormGroup>
-                        }
-                        {fields.lastName != undefined && <FormGroup
-                                label={Msg.localize("lastName")}
-                                fieldId="last-name"
-                                helperTextInvalid={this.state.errors.lastName}
+                            ></TextInput>
+                        </FormGroup>
+                        <FormGroup
+                            label={Msg.localize("lastName")}
+                            fieldId="last-name"
+                            helperTextInvalid={this.state.errors.lastName}
+                            validated={
+                                this.state.errors.lastName !== ""
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default
+                            }
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="last-name"
+                                name="lastName"
+                                maxLength={254}
+                                value={fields.lastName}
+                                onChange={this.handleChange}
                                 validated={
                                     this.state.errors.lastName !== ""
                                         ? ValidatedOptions.error
                                         : ValidatedOptions.default
                                 }
-                            >
-                                <TextInput
-                                    isRequired
-                                    type="text"
-                                    id="last-name"
-                                    name="lastName"
-                                    maxLength={254}
-                                    value={fields.lastName}
-                                    onChange={this.handleChange}
-                                    validated={
-                                        this.state.errors.lastName !== ""
-                                            ? ValidatedOptions.error
-                                            : ValidatedOptions.default
-                                    }
-                                ></TextInput>
-                            </FormGroup>
-                        }
+                            ></TextInput>
+                        </FormGroup>
                         {features.isInternationalizationEnabled && (
                             <FormGroup
                                 label={Msg.localize("selectLocale")}
@@ -359,11 +357,11 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             </GridItem>
                             <GridItem span={4}>
                                 <KeycloakContext.Consumer>
-                                    {(keycloak: KeycloakService) => (
+                                    {(keycloak) => (
                                         <Button
                                             id="delete-account-btn"
                                             variant="danger"
-                                            onClick={() => this.handleDelete(keycloak)}
+                                            onClick={() => this.handleDelete(keycloak!)}
                                             className="delete-button"
                                         >
                                             <Msg msgKey="doDelete" />

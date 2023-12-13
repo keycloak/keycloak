@@ -16,10 +16,11 @@ Options:
 
 Cache:
 
---cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
-                       is used to create a cluster between multiple server nodes. A 'local' cache
-                       disables clustering and is intended for development and testing purposes.
-                       Possible values are: ispn, local. Default: ispn.
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -71,16 +72,18 @@ Feature:
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
+                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       transient-users, update-email, web-authn.
 
 Hostname:
 
@@ -108,11 +111,14 @@ Hostname:
                        URL this option should be enabled. Default: false.
 --hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
-HTTP/TLS:
+HTTP(S):
 
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a
@@ -139,14 +145,17 @@ HTTP/TLS:
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     The trust store which holds the certificate information of the certificates to
-                       trust.
+                     DEPRECATED. The trust store which holds the certificate information of the
+                       certificates to trust. Use the System Truststore instead, see the docs for
+                       details.
 --https-trust-store-password <password>
-                     The password of the trust store file.
+                     DEPRECATED. The password of the trust store file. Use the System Truststore
+                       instead, see the docs for details.
 --https-trust-store-type <type>
-                     The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                     DEPRECATED. The type of the trust store file. If not given, the type is
+                       automatically detected based on the file name. If 'fips-mode' is set to
+                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
+                       Truststore instead, see the docs for details.
 
 Health:
 
@@ -163,8 +172,13 @@ Metrics:
 
 Proxy:
 
---proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none, edge, reencrypt, passthrough. Default: none.
+--proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
+                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
+                       Default: none. Use the following option instead: proxy-headers.
+--proxy-headers <headers>
+                     The proxy headers that should be accepted by the server. Misconfiguration
+                       might leave the server exposed to security vulnerabilities. Takes precedence
+                       over the deprecated proxy option. Possible values are: forwarded, xforwarded.
 
 Vault:
 
@@ -221,6 +235,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
 
 Security:
 

@@ -57,7 +57,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
@@ -398,7 +398,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private void testECDSASignatureLength(String clientSignedToken, String alg) {
         String encodedSignature = clientSignedToken.split("\\.",3)[2];
         byte[] signature = Base64Url.decode(encodedSignature);
-        assertEquals(ECDSASignatureProvider.ECDSA.valueOf(alg).getSignatureLength(), signature.length);
+        assertEquals(ECDSAAlgorithm.getSignatureLength(alg), signature.length);
     }
 
     private String getClientSignedToken(String alg) throws Exception {
@@ -1508,10 +1508,10 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             if (isClaimEnabled("subject")) reqToken.subject(clientId);
             if (isClaimEnabled("audience")) reqToken.audience(realmInfoUrl);
 
-            int now = Time.currentTime();
-            if (isClaimEnabled("issuedAt")) reqToken.issuedAt(now);
-            if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());
-            if (isClaimEnabled("notBefore")) reqToken.notBefore(now);
+            long now = Time.currentTime();
+            if (isClaimEnabled("issuedAt")) reqToken.iat(now);
+            if (isClaimEnabled("expiration")) reqToken.exp(now + getTokenTimeout());
+            if (isClaimEnabled("notBefore")) reqToken.nbf(now);
 
             return reqToken;
         }
@@ -1623,10 +1623,10 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
-        reqToken.expiration(now + 10);
-        reqToken.notBefore(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
 
         return reqToken;
     }

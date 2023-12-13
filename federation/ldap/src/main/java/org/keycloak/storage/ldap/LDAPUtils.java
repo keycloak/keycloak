@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.naming.directory.SearchControls;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.LDAPConstants;
@@ -137,6 +138,12 @@ public class LDAPUtils {
                 .collect(Collectors.toList());
         ldapQuery.addMappers(mapperModels);
 
+        String kerberosPrincipalAttr = ldapProvider.getKerberosConfig().getKerberosPrincipalAttribute();
+        if (kerberosPrincipalAttr != null) {
+            ldapQuery.addReturningLdapAttribute(kerberosPrincipalAttr);
+            ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
+        }
+
         return ldapQuery;
     }
 
@@ -224,7 +231,7 @@ public class LDAPUtils {
      */
     public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         String membership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-        ldapProvider.getLdapIdentityStore().addMemberToGroup(ldapParent.getDn().toString(), memberAttrName, membership);
+        ldapProvider.getLdapIdentityStore().addMemberToGroup(ldapParent.getDn().getLdapName(), memberAttrName, membership);
     }
 
     /**
@@ -239,7 +246,7 @@ public class LDAPUtils {
      */
     public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         String userMembership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-        ldapProvider.getLdapIdentityStore().removeMemberFromGroup(ldapParent.getDn().toString(), memberAttrName, userMembership);
+        ldapProvider.getLdapIdentityStore().removeMemberFromGroup(ldapParent.getDn().getLdapName(), memberAttrName, userMembership);
     }
 
     /**
@@ -326,7 +333,7 @@ public class LDAPUtils {
 
     private static LDAPQuery createLdapQueryForRangeAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
         LDAPQuery q = new LDAPQuery(ldapProvider);
-        q.setSearchDn(ldapObject.getDn().toString());
+        q.setSearchDn(ldapObject.getDn().getLdapName());
         q.setSearchScope(SearchControls.OBJECT_SCOPE);
         q.addReturningLdapAttribute(name + ";range=" + (ldapObject.getCurrentRange(name) + 1) + "-*");
         return q;
@@ -376,5 +383,18 @@ public class LDAPUtils {
         }
 
         return userModelProperties;
+    }
+
+    public static String getDefaultKerberosUserPrincipalAttribute(String vendor) {
+        if (vendor != null) {
+            switch (vendor) {
+                case LDAPConstants.VENDOR_RHDS:
+                    return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB_PRINCIPAL_NAME;
+                case LDAPConstants.VENDOR_ACTIVE_DIRECTORY:
+                    return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_USER_PRINCIPAL_NAME;
+            }
+        }
+
+        return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME;
     }
 }

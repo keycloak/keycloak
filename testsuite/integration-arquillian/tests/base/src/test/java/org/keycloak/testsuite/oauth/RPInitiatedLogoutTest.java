@@ -452,13 +452,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Completely invalid redirect uri
         driver.navigate().to(oauth.getLogoutUrl().postLogoutRedirectUri("https://invalid").idTokenHint(idTokenString).build());
         errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, "https://invalid").assertEvent();
+        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                .client(AssertEvents.DEFAULT_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, "https://invalid")
+                .assertEvent();
 
         // Redirect uri of different client in the realm should fail as well
         String rootUrlClientRedirectUri = UriUtils.getOrigin(APP_REDIRECT_URI) + "/foo/bar";
         driver.navigate().to(oauth.getLogoutUrl().postLogoutRedirectUri(rootUrlClientRedirectUri).idTokenHint(idTokenString).build());
         errorPage.assertCurrent();
-        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, rootUrlClientRedirectUri).assertEvent();
+        events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                .client(AssertEvents.DEFAULT_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, rootUrlClientRedirectUri)
+                .assertEvent();
 
         // Session still authenticated
         MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
@@ -510,7 +516,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // expected
         }
 
-        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
@@ -600,7 +606,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Logout confirmation page not shown as id_token_hint was included.
         // Redirected back to the application with expected "state"
-        events.expectLogout(tokenResponse.getSessionState()).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("third-party").assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
@@ -762,7 +768,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // expected
         }
 
-        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
@@ -837,7 +843,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Deutsch", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
             WaitUtils.waitForPageToLoad();
-            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
 
             // Remove ui_locales from logout request. Default locale should be set
             tokenResponse = loginUser();
@@ -846,7 +852,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
             WaitUtils.waitForPageToLoad();
-            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(tokenResponse.getSessionState()).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         }
     }
 

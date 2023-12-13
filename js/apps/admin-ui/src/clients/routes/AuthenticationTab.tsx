@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type AuthorizationTab =
@@ -23,14 +23,15 @@ const ClientDetails = lazy(() => import("../ClientDetails"));
 export const AuthorizationRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/authorization/:tab",
   element: <ClientDetails />,
-  breadcrumb: (t) => t("clients:clientSettings"),
+  breadcrumb: (t) => t("clientSettings"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("view-authorization", "manage-authorization"),
   },
 };
 
 export const toAuthorizationTab = (
   params: AuthorizationParams,
 ): Partial<Path> => ({
-  pathname: generatePath(AuthorizationRoute.path, params),
+  pathname: generateEncodedPath(AuthorizationRoute.path, params),
 });

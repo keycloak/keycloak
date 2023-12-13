@@ -48,7 +48,7 @@ public abstract class AbstractParEndpoint {
     }
 
     protected void checkSsl() {
-        ClientConnection clientConnection = session.getContext().getContextObject(ClientConnection.class);
+        ClientConnection clientConnection = session.getContext().getConnection();
 
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required", Response.Status.FORBIDDEN);
@@ -70,7 +70,7 @@ public abstract class AbstractParEndpoint {
 
             cors.allowedOrigins(session, client);
 
-            if (client == null || client.isPublicClient()) {
+            if (client == null) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
         } catch (Exception e) {

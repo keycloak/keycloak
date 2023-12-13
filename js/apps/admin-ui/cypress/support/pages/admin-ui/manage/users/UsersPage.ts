@@ -4,17 +4,17 @@ import ListingPage from "../../ListingPage";
 const listingPage = new ListingPage();
 
 export default class UsersPage extends PageObject {
-  private userListTabLink = "listTab";
-  private permissionsTabLink = "permissionsTab";
+  #userListTabLink = "listTab";
+  #permissionsTabLink = "permissionsTab";
 
   public goToUserListTab() {
-    cy.findByTestId(this.userListTabLink).click();
+    cy.findByTestId(this.#userListTabLink).click();
 
     return this;
   }
 
   public goToPermissionsTab() {
-    cy.findByTestId(this.permissionsTabLink).click();
+    cy.findByTestId(this.#permissionsTabLink).click();
 
     return this;
   }

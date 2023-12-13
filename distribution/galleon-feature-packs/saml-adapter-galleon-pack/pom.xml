@@ -31,14 +31,8 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wildfly.version>27.0.0.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.0.Final</wildfly.core.version>
-
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
-        <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
-        <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
-        <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-keycloak</outputDirectory>
+        <license.directory>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses</license.directory>
     </properties>
     <dependencies>
         <dependency>
@@ -109,7 +103,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -185,7 +179,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-ee-galleon-pack</artifactId>
             <version>${wildfly.version}</version>
             <type>zip</type>
@@ -221,7 +215,7 @@
             <plugin>
                 <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-galleon-maven-plugin</artifactId>
-                <version>${version.org.wildfly.galleon-plugins}</version>
+                <version>${org.wildfly.galleon-plugins.version}</version>
                 <dependencies>
                     <!--
                         feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated
@@ -236,7 +230,7 @@
                     <dependency>
                         <groupId>org.wildfly.common</groupId>
                         <artifactId>wildfly-common</artifactId>
-                        <version>${wildfly.common.version}</version>
+                        <version>${wildfly.common.wildfly.aligned.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -256,9 +250,50 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
+                <groupId>org.wildfly.maven.plugins</groupId>
+                <artifactId>licenses-plugin</artifactId>
+                <version>${org.wildfly.maven.plugins.licenses-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>update-licenses-xml</id>
+                        <goals>
+                            <goal>insert-versions</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <generateVersionProperty>true</generateVersionProperty>
+                            <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+                            <licensesConfigFiles>
+                                <licensesConfigFile>${basedir}/target/resources/license/licenses.xml</licensesConfigFile>
+                            </licensesConfigFiles>
+                            <licensesOutputFile>${license.directory}/keycloak-saml-adapter-galleon-pack-licenses.xml</licensesOutputFile>
+                            <excludedArtifacts>wildfly-common-ee-dependency-management|wildfly-ee-galleon-pack|wildfly-legacy-ee-bom|wildfly-standard-ee-bom\z</excludedArtifacts>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.galleon-plugins</groupId>
+                        <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                        <configuration>
+                            <config-file>wildfly-feature-pack-build-eap.xml</config-file>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

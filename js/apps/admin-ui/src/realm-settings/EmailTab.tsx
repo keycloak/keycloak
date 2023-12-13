@@ -14,19 +14,17 @@ import {
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../components/password-input/PasswordInput";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
 import useToggle from "../utils/useToggle";
-
 import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
@@ -34,11 +32,13 @@ type RealmSettingsEmailTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
+type FormFields = Omit<RealmRepresentation, "users" | "federatedUsers">;
+
 export const RealmSettingsEmailTab = ({
   realm,
   save,
 }: RealmSettingsEmailTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
@@ -51,7 +51,7 @@ export const RealmSettingsEmailTab = ({
     reset: resetForm,
     getValues,
     formState: { errors },
-  } = useForm<RealmRepresentation>({ defaultValues: realm });
+  } = useForm<FormFields>({ defaultValues: realm });
 
   const reset = () => resetForm(realm);
   const watchFromValue = watch("smtpServer.from", "");
@@ -91,7 +91,7 @@ export const RealmSettingsEmailTab = ({
       );
       addAlert(t("testConnectionSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:testConnectionError", error);
+      addError("testConnectionError", error);
     }
     toggleTest();
   };
@@ -110,7 +110,7 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-display-name"
             isRequired
             validated={errors.smtpServer?.from ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            helperTextInvalid={t("emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -129,8 +129,8 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-from-display-name"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:fromDisplayName")}
-                fieldLabelId="realm-settings:authentication"
+                helpText={t("fromDisplayNameHelp")}
+                fieldLabelId="authentication"
               />
             }
           >
@@ -145,7 +145,7 @@ export const RealmSettingsEmailTab = ({
             label={t("replyTo")}
             fieldId="kc-reply-to"
             validated={errors.smtpServer?.replyTo ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            helperTextInvalid={t("emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -162,8 +162,8 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-reply-to-display-name"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:replyToDisplayName")}
-                fieldLabelId="realm-settings:replyToDisplayName"
+                helpText={t("replyToDisplayNameHelp")}
+                fieldLabelId="replyToDisplayName"
               />
             }
           >
@@ -178,8 +178,8 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-envelope-from"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:envelopeFrom")}
-                fieldLabelId="realm-settings:envelopeFrom"
+                helpText={t("envelopeFromHelp")}
+                fieldLabelId="envelopeFrom"
               />
             }
           >
@@ -206,7 +206,7 @@ export const RealmSettingsEmailTab = ({
             fieldId="kc-host"
             isRequired
             validated={errors.smtpServer?.host ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               id="kc-host"
@@ -265,8 +265,8 @@ export const RealmSettingsEmailTab = ({
                 <Switch
                   id="kc-authentication-switch"
                   data-testid="email-authentication-switch"
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value === "true"}
                   onChange={(value) => {
                     field.onChange("" + value);
@@ -283,7 +283,7 @@ export const RealmSettingsEmailTab = ({
                 fieldId="kc-username"
                 isRequired
                 validated={errors.smtpServer?.user ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
               >
                 <KeycloakTextInput
                   id="kc-username"
@@ -298,11 +298,11 @@ export const RealmSettingsEmailTab = ({
                 fieldId="kc-username"
                 isRequired
                 validated={errors.smtpServer?.password ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
                 labelIcon={
                   <HelpItem
-                    helpText={t("realm-settings-help:password")}
-                    fieldLabelId="realm-settings:password"
+                    helpText={t("passwordHelp")}
+                    fieldLabelId="password"
                   />
                 }
               >
@@ -361,7 +361,7 @@ export const RealmSettingsEmailTab = ({
                 type="submit"
                 data-testid="email-tab-save"
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
             </ActionListItem>
             <ActionListItem>
@@ -377,7 +377,7 @@ export const RealmSettingsEmailTab = ({
                 isLoading={isTesting}
                 spinnerAriaValueText={t("testingConnection")}
               >
-                {t("common:testConnection")}
+                {t("testConnection")}
               </Button>
             </ActionListItem>
             <ActionListItem>
@@ -386,7 +386,7 @@ export const RealmSettingsEmailTab = ({
                 onClick={reset}
                 data-testid="email-tab-revert"
               >
-                {t("common:revert")}
+                {t("revert")}
               </Button>
             </ActionListItem>
           </ActionGroup>

@@ -40,7 +40,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -117,7 +120,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 readOutput();
             }
         } catch (Exception cause) {
-            stop();
+            try {
+                stop();
+            } catch (Exception stopException) {
+                cause.addSuppressed(stopException);
+            }
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
@@ -258,11 +265,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
+        Exception ex = null;
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 throw new IllegalStateException(
-                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
 
             if (!keycloak.isAlive()) {
@@ -287,6 +295,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                     break;
                 }
             } catch (Exception ignore) {
+                ex = ignore;
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -314,12 +323,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
         TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
             }
@@ -389,6 +401,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             if (!inited || (reCreate || !dPath.toFile().exists())) {
                 FileUtil.deleteDirectory(dPath);
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
+
+                if (System.getProperty("product") != null) {
+                    // JDBC drivers might be excluded if running as a product build
+                    copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
+                    copyProvider(dPath, "com.oracle.database.jdbc", "ojdbc11");
+                    copyProvider(dPath, "com.oracle.database.nls", "orai18n");
+                }
             }
 
             // make sure script is executable
@@ -525,8 +544,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     public void copyProvider(String groupId, String artifactId) {
+        copyProvider(getDistPath(), groupId, artifactId);
+    }
+
+    private static void copyProvider(Path distPath, String groupId, String artifactId) {
         try {
-            Files.copy(Maven.resolveArtifact(groupId, artifactId), getDistPath().resolve("providers").resolve(artifactId + ".jar"));
+            Files.copy(Maven.resolveArtifact(groupId, artifactId), distPath.resolve("providers").resolve(artifactId + ".jar"));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
         }

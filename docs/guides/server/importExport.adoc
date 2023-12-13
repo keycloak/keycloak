@@ -18,19 +18,19 @@ Increasing this to a larger number leads to an exponentially increasing executio
 
 == Providing options for database connection parameters
 
-When using the `export` and the `import` commands below, Keycloak needs to know how to connect to the database where the information about realms, clients, users and other entities is stored.
+When using the `export` and the `import` commands below, {project_name} needs to know how to connect to the database where the information about realms, clients, users and other entities is stored.
 As described in <@links.server id="configuration"/> that information can be provided as command line parameters, environment variables or a configuration file.
 Use the `--help` command line option for each command to see the available options.
 
 Some of the configuration options are build time configuration options.
-As default, Keycloak will re-build automatically for the `export` and `import` commands if it detects a change of a build time parameter.
+As default, {project_name} will re-build automatically for the `export` and `import` commands if it detects a change of a build time parameter.
 
-If you have built an optimized version of Keycloak with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have Keycloak skip the build check for a faster startup time.
+If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have Keycloak skip the build check for a faster startup time.
 When doing this, remove the build time options from the command line and keep only the runtime options.
 
 == Exporting a Realm to a Directory
 
-To export a realm, you can use the `export` command. Your Keycloak server instance must not be started when invoking this command.
+To export a realm, you can use the `export` command. Your {project_name} server instance must not be started when invoking this command.
 
 <@kc.export parameters="--help"/>
 
@@ -73,7 +73,7 @@ If you do not specify a specific realm to export, all realms are exported. To ex
 
 == Importing a Realm from a Directory
 
-To import a realm, you can use the `import` command. Your Keycloak server instance must not be started when invoking this command.
+To import a realm, you can use the `import` command. Your {project_name} server instance must not be started when invoking this command.
 
 <@kc.import parameters="--help"/>
 
@@ -102,7 +102,7 @@ You are also able to import realms when the server is starting by using the `--i
 
 When you set the `--import-realm` option, the server is going to try to import any realm configuration file from the `data/import` directory. Only regular files using the `.json` extension are read from this directory, sub-directories are ignored.
 
-NOTE: For the https://quay.io/keycloak/keycloak[published containers], the import directory is `/opt/keycloak/data/import`
+NOTE: For the {project_name} containers, the import directory is `/opt/keycloak/data/import`
 
 If a realm already exists in the server, the import operation is skipped. The main reason behind this behavior is to avoid re-creating
 realms and potentially loose state between server restarts.

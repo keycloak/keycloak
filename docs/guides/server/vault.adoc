@@ -3,13 +3,13 @@
 
 <@tmpl.guide
 title="Using a vault"
-summary="Learn how to use and configure a vault in Keycloak"
+summary="Learn how to use and configure a vault in {project_name}"
 priority=30
 includedOptions="vault vault-*">
 
-Keycloak provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
+{project_name} provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
 
-The file-based vault implementation is especially useful for Kubernetes/OpenShift secrets. You can mount Kubernetes secrets into the Keycloak Container, and the data fields will be available in the mounted folder with a flat-file structure.
+The file-based vault implementation is especially useful for Kubernetes/OpenShift secrets. You can mount Kubernetes secrets into the {project_name} Container, and the data fields will be available in the mounted folder with a flat-file structure.
 
 The Java KeyStore-based vault implementation is useful for storing secrets in bare metal installations. You can use the KeyStore vault, which is encrypted using a password.
 
@@ -21,7 +21,7 @@ Secrets stored in the vaults can be used at the following places of the Administ
 * Obtain the OIDC identity providers Client Secret when integrating external identity providers
 
 == Enabling a vault
-For enabling the file-based vault you need to build Keycloak first using the following build option:
+For enabling the file-based vault you need to build {project_name} first using the following build option:
 
 <@kc.build parameters="--vault=file"/>
 
@@ -37,7 +37,7 @@ Kubernetes/OpenShift secrets are basically mounted files. To configure a directo
 <@kc.start parameters="--vault-dir=/my/path"/>
 
 === Realm-specific secret files
-Kubernetes/OpenShift Secrets are used on a per-realm basis in Keycloak, which requires a naming convention for the file in place:
+Kubernetes/OpenShift Secrets are used on a per-realm basis in {project_name}, which requires a naming convention for the file in place:
 [source, bash]
 ----
 ${r"${vault.<realmname>_<secretname>}"}
@@ -67,7 +67,7 @@ and then enter a value you want to store in the vault. Note that the format of t
 
 This by default results to storing the value in a form of generic PBEKey (password based encryption) within SecretKeyEntry.
 
-You can then start Keycloak using the following runtime options:
+You can then start {project_name} using the following runtime options:
 
 <@kc.start parameters=" --vault-file=/path/to/keystore.p12 --vault-pass=<value> --vault-type=<value>"/>
 

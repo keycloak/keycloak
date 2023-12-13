@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   ButtonVariant,
@@ -11,13 +11,14 @@ import {
   SearchInput,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { ArrowRightIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import { useAccess } from "../../context/access/Access";
-import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
-import { ArrowRightIcon } from "@patternfly/react-icons";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
 import { UserAttribute } from "./UserDataTable";
+import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 
 type UserDataTableToolbarItemsProps = {
   realm: RealmRepresentation;
@@ -56,7 +57,7 @@ export function UserDataTableToolbarItems({
   createAttributeSearchChips,
   searchUserWithAttributes,
 }: UserDataTableToolbarItemsProps) {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const [kebabOpen, setKebabOpen] = useState(false);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
 
@@ -108,6 +109,7 @@ export function UserDataTableToolbarItems({
           }}
           onClear={() => {
             setSearchUser("");
+            refresh();
           }}
         />
       </ToolbarItem>
@@ -145,6 +147,7 @@ export function UserDataTableToolbarItems({
           icon={<ArrowRightIcon />}
           variant="control"
           onClick={searchUserWithAttributes}
+          aria-label={t("searchAttributes")}
         />
       </>
     );

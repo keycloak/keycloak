@@ -21,6 +21,8 @@ import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 
+import static org.keycloak.connections.infinispan.InfinispanUtil.getRemoteStores;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -40,8 +42,15 @@ public class CacheDecorators {
      * @param cache
      * @return Cache with the flags applied.
      */
-    public static <K, V> AdvancedCache<K, V> skipCacheLoaders(Cache<K, V> cache) {
-        return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE);
+    public static <K, V> AdvancedCache<K, V> skipCacheLoadersIfRemoteStoreIsEnabled(Cache<K, V> cache) {
+        if (!getRemoteStores(cache).isEmpty()) {
+            // Disabling of the cache load and cache store is only needed when a remote store is used and handled separately.
+            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE);
+        } else {
+            // If there is no remote store, use write through for all stores of the cache.
+            // Mixing remote and non-remote caches is not supported.
+            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+        }
     }
 
     /**
@@ -49,8 +58,15 @@ public class CacheDecorators {
      * @param cache
      * @return Cache with the flags applied.
      */
-    public static <K, V> AdvancedCache<K, V> skipCacheStore(Cache<K, V> cache) {
-        return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE);
+    public static <K, V> AdvancedCache<K, V> skipCacheStoreIfRemoteCacheIsEnabled(Cache<K, V> cache) {
+        if (!getRemoteStores(cache).isEmpty()) {
+            // Disabling of the cache load and cache store is only needed when a remote store is used and handled separately.
+            return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE);
+        } else {
+            // If there is no remote store, use write through for all stores of the cache.
+            // Mixing remote and non-remote caches is not supported.
+            return cache.getAdvancedCache();
+        }
     }
 
 }

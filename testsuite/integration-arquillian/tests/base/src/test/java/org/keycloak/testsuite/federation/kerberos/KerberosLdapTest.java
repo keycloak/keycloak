@@ -22,10 +22,8 @@ import java.util.List;
 import jakarta.ws.rs.core.Response;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -33,7 +31,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
@@ -67,18 +64,12 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         return getUserStorageConfiguration("kerberos-ldap", LDAPStorageProviderFactory.PROVIDER_NAME);
     }
 
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-    }
-
     @Test
     public void spnegoLoginTest() throws Exception {
         assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
         // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
-        assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", false);
+        assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);
     }
 
     @Test

@@ -18,11 +18,9 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -69,6 +67,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -100,7 +99,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -124,7 +122,13 @@ public class RepresentationToModel {
 
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
+        KeycloakContext context = session.getContext();
+        try {
+            context.setRealm(newRealm);
+            session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
+        } finally {
+            context.setRealm(null);
+        }
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
@@ -711,10 +715,10 @@ public class RepresentationToModel {
         return session.getProvider(DatastoreProvider.class).getExportImportManager().createUser(newRealm, userRep);
     }
 
-    public static void createGroups(UserRepresentation userRep, RealmModel newRealm, UserModel user) {
+    public static void createGroups(KeycloakSession session, UserRepresentation userRep, RealmModel newRealm, UserModel user) {
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
                 if (group == null) {
                     throw new RuntimeException("Unable to find group specified by path: " + path);
 

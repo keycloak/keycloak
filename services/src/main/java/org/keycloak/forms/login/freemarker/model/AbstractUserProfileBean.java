@@ -3,6 +3,7 @@ package org.keycloak.forms.login.freemarker.model;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -11,6 +12,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 
@@ -88,7 +90,14 @@ public abstract class AbstractUserProfileBean {
     private List<Attribute> toAttributes(Map<String, List<String>> attributes, boolean writeableOnly) {
         if(attributes == null)
             return null;
-        return attributes.keySet().stream().map(name -> profile.getAttributes().getMetadata(name)).filter((am) -> writeableOnly ? !profile.getAttributes().isReadOnly(am.getName()) : true).map(Attribute::new).sorted().collect(Collectors.toList());
+        Attributes profileAttributes = profile.getAttributes();
+        return attributes.keySet().stream().map(profileAttributes::getMetadata)
+                .filter(Objects::nonNull)
+                .filter((am) -> writeableOnly ? !profileAttributes.isReadOnly(am.getName()) : true)
+                .filter((am) -> !profileAttributes.getUnmanagedAttributes().containsKey(am.getName()))
+                .map(Attribute::new)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     /**

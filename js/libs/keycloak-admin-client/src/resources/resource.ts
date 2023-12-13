@@ -2,7 +2,7 @@ import type { KeycloakAdminClient } from "../client.js";
 import { Agent, RequestArgs } from "./agent.js";
 
 export default class Resource<ParamType = {}> {
-  private agent: Agent;
+  #agent: Agent;
   constructor(
     client: KeycloakAdminClient,
     settings: {
@@ -11,7 +11,7 @@ export default class Resource<ParamType = {}> {
       getBaseUrl?: () => string;
     } = {},
   ) {
-    this.agent = new Agent({
+    this.#agent = new Agent({
       client,
       ...settings,
     });
@@ -23,7 +23,7 @@ export default class Resource<ParamType = {}> {
     payload?: PayloadType & ParamType,
     options?: Pick<RequestArgs, "catchNotFound">,
   ) => Promise<ResponseType>) => {
-    return this.agent.request(args);
+    return this.#agent.request(args);
   };
 
   // update request will take three types: query, payload and response
@@ -37,6 +37,6 @@ export default class Resource<ParamType = {}> {
     query: QueryType & ParamType,
     payload: PayloadType,
   ) => Promise<ResponseType>) => {
-    return this.agent.updateRequest(args);
+    return this.#agent.updateRequest(args);
   };
 }

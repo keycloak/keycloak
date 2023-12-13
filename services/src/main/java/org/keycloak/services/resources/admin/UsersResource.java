@@ -34,9 +34,10 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -69,6 +70,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.models.utils.KeycloakModelUtils.findGroupByPath;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
@@ -152,7 +154,7 @@ public class UsersResource {
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
 
-        UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
+        UserProfile profile = profileProvider.create(USER_API, rep.getRawAttributes());
 
         try {
             Response response = UserResource.validateUserProfile(profile, session, auth.adminAuth());
@@ -164,7 +166,7 @@ public class UsersResource {
 
             UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
-            RepresentationToModel.createGroups(rep, realm, user);
+            RepresentationToModel.createGroups(session, rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
@@ -200,7 +202,7 @@ public class UsersResource {
 
         List<GroupModel> groups = Optional.ofNullable(rep.getGroups())
                 .orElse(Collections.emptyList())
-                .stream().map(path -> findGroupByPath(realm, path))
+                .stream().map(path -> findGroupByPath(session, realm, path))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -224,9 +226,18 @@ public class UsersResource {
      * @param id User id
      * @return
      */
-    @Path("{id}")
-    public UserResource user(final @PathParam("id") String id) {
-        UserModel user = session.users().getUserById(realm, id);
+    @Path("{user-id}")
+    public UserResource user(final @PathParam("user-id") String id) {
+        UserModel user = null;
+        if (LightweightUserAdapter.isLightweightUser(id)) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, LightweightUserAdapter.getLightweightUserId(id));
+            if (userSession != null) {
+                user = userSession.getUser();
+            }
+        } else {
+            user = session.users().getUserById(realm, id);
+        }
+
         if (user == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("User not found");

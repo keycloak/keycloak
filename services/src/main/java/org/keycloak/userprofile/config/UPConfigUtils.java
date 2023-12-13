@@ -18,10 +18,12 @@ package org.keycloak.userprofile.config;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +37,9 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
@@ -75,6 +80,17 @@ public class UPConfigUtils {
     }
 
     /**
+     * Parse configuration of user-profile from String
+     *
+     * @param rawConfig Configuration in String format
+     * @return object representation of the configuration
+     * @throws IOException if JSON configuration can't be loaded (eg due to JSON format errors etc)
+     */
+    public static UPConfig parseConfig(String rawConfig) throws IOException {
+        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+    }
+
+    /**
      * Validate object representation of the configuration. Validations:
      * <ul>
      * <li>defaultProfile is defined and exists in profiles</li>
@@ -107,13 +123,35 @@ public class UPConfigUtils {
 
     private static List<String> validateAttributes(KeycloakSession session, UPConfig config) {
         List<String> errors = new ArrayList<>();
-        Set<String> groups = config.getGroups().stream().map(g -> g.getName()).collect(Collectors.toSet()); 
+        Set<String> groups = config.getGroups().stream()
+                .map(g -> g.getName())
+                .collect(Collectors.toSet());
         
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
+            errors.addAll(validateRootAttributes(config));
         } else {
             errors.add("UserProfile configuration without 'attributes' section is not allowed");
+        }
+
+        return errors;
+    }
+
+    private static List<String> validateRootAttributes(UPConfig config) {
+        List<UPAttribute> attributes = config.getAttributes();
+
+        if (attributes == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).collect(Collectors.toList());
+
+        for (String name : Arrays.asList(UserModel.USERNAME, UserModel.EMAIL)) {
+            if (!attributeNames.contains(name)) {
+                errors.add("The attribute '" + name + "' can not be removed");
+            }
         }
 
         return errors;
@@ -163,7 +201,7 @@ public class UPConfigUtils {
         
         if (attributeConfig.getGroup() != null) {
             if (!groups.contains(attributeConfig.getGroup())) {
-                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");                
+                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");
             }
         }
         
@@ -250,36 +288,13 @@ public class UPConfigUtils {
     }
 
     /**
-     * Break string to substrings of given length.
-     * 
-     * @param src to break
-     * @param partLength
-     * @return list of string parts, never null (but can be empty if src is null)
-     */
-    public static List<String> getChunks(String src, int partLength) {
-        List<String> ret = new ArrayList<>();
-        if (src != null) {
-            int pieces = (src.length() / partLength) + 1;
-            for (int i = 0; i < pieces; i++) {
-                if ((i + 1) < pieces)
-                    ret.add(src.substring(i * partLength, (i + 1) * partLength));
-                else if (i == 0 || (i * partLength) < src.length())
-                    ret.add(src.substring(i * partLength));
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * Check if context CAN BE part of the AuthenticationFlow.
      * 
      * @param context to check
      * @return true if context CAN BE part of the auth flow
      */
     public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT
-                && context != UserProfileContext.ACCOUNT_OLD;
+        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
     }
 
     /**
@@ -309,6 +324,14 @@ public class UPConfigUtils {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
+        }
+    }
+
+    public static UPConfig parseDefaultConfig() {
+        try {
+            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration", e);
         }
     }
 }

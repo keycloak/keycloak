@@ -17,8 +17,6 @@
 
 package org.keycloak.models;
 
-import org.keycloak.storage.SearchableModelField;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -28,23 +26,6 @@ import org.keycloak.util.EnumWithStableIndex;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface UserSessionModel {
-
-    class SearchableFields {
-        public static final SearchableModelField<UserSessionModel> ID       = new SearchableModelField<>("id", String.class);
-
-        /**
-         * Represents the corresponding offline user session for the online user session.
-         * null if there is no corresponding offline user session.
-         */
-        public static final SearchableModelField<UserSessionModel> CORRESPONDING_SESSION_ID = new SearchableModelField<>("correspondingSessionId", String.class);
-        public static final SearchableModelField<UserSessionModel> REALM_ID = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<UserSessionModel> USER_ID  = new SearchableModelField<>("userId", String.class);
-        public static final SearchableModelField<UserSessionModel> CLIENT_ID  = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<UserSessionModel> BROKER_SESSION_ID  = new SearchableModelField<>("brokerSessionId", String.class);
-        public static final SearchableModelField<UserSessionModel> BROKER_USER_ID  = new SearchableModelField<>("brokerUserId", String.class);
-        public static final SearchableModelField<UserSessionModel> IS_OFFLINE  = new SearchableModelField<>("isOffline", Boolean.class);
-        public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Long.class);
-    }
 
     /**
      * Represents the corresponding online/offline user session.
@@ -83,7 +64,7 @@ public interface UserSessionModel {
 
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
-     * @return 
+     * @return
      */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
     /**
@@ -133,6 +114,13 @@ public interface UserSessionModel {
         public static State valueOfInteger(Integer id) {
             return id == null ? null : BY_ID.get(id);
         }
+    }
+
+    /**
+     * @return Persistence state of the session
+     */
+    default SessionPersistenceState getPersistenceState() {
+        return SessionPersistenceState.PERSISTENT;
     }
 
     /**

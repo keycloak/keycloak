@@ -1,14 +1,14 @@
 export default class AttributesTab {
-  private saveAttributeBtn = "save-attributes";
-  private addAttributeBtn = "attributes-add-row";
-  private attributesTab = "attributes";
-  private keyInput = "attributes-key";
-  private valueInput = "attributes-value";
-  private removeBtn = "attributes-remove";
-  private emptyState = "attributes-empty-state";
+  #saveAttributeBtn = "save-attributes";
+  #addAttributeBtn = "attributes-add-row";
+  #attributesTab = "attributes";
+  #keyInput = "attributes-key";
+  #valueInput = "attributes-value";
+  #removeBtn = "attributes-remove";
+  #emptyState = "attributes-empty-state";
 
   public goToAttributesTab() {
-    cy.findByTestId(this.attributesTab).click();
+    cy.findByTestId(this.#attributesTab).click();
 
     return this;
   }
@@ -16,18 +16,18 @@ export default class AttributesTab {
   public addAttribute(key: string, value: string) {
     this.addAnAttributeButton();
 
-    cy.findAllByTestId(this.keyInput)
+    cy.findAllByTestId(this.#keyInput)
       .its("length")
       .then((length) => {
-        this.keyInputAt(length - 1).type(key, { force: true });
-        this.valueInputAt(length - 1).type(value, { force: true });
+        this.#keyInputAt(length - 1).type(key, { force: true });
+        this.#valueInputAt(length - 1).type(value, { force: true });
       });
 
     return this;
   }
 
   public save() {
-    cy.findByTestId(this.saveAttributeBtn).click();
+    cy.findByTestId(this.#saveAttributeBtn).click();
     return this;
   }
 
@@ -37,13 +37,13 @@ export default class AttributesTab {
   }
 
   public deleteAttributeButton(row: number) {
-    this.removeButtonAt(row).click({ force: true });
+    this.#removeButtonAt(row).click({ force: true });
     return this;
   }
 
   public addAnAttributeButton() {
     cy.wait(1000);
-    cy.findByTestId(this.addAttributeBtn).click();
+    cy.findByTestId(this.#addAttributeBtn).click();
     return this;
   }
 
@@ -55,23 +55,23 @@ export default class AttributesTab {
   }
 
   public assertEmpty() {
-    cy.findByTestId(this.emptyState).should("exist");
+    cy.findByTestId(this.#emptyState).should("exist");
   }
 
   public assertRowItemsEqualTo(amount: number) {
-    cy.findAllByTestId(this.keyInput).its("length").should("be.eq", amount);
+    cy.findAllByTestId(this.#keyInput).its("length").should("be.eq", amount);
     return this;
   }
 
-  private keyInputAt(index: number) {
-    return cy.findAllByTestId(this.keyInput).eq(index);
+  #keyInputAt(index: number) {
+    return cy.findAllByTestId(this.#keyInput).eq(index);
   }
 
-  private valueInputAt(index: number) {
-    return cy.findAllByTestId(this.valueInput).eq(index);
+  #valueInputAt(index: number) {
+    return cy.findAllByTestId(this.#valueInput).eq(index);
   }
 
-  private removeButtonAt(index: number) {
-    return cy.findAllByTestId(this.removeBtn).eq(index);
+  #removeButtonAt(index: number) {
+    return cy.findAllByTestId(this.#removeBtn).eq(index);
   }
 }

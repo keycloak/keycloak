@@ -10,16 +10,16 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 
 export default class MembersTab extends GroupDetailPage {
-  private addMemberEmptyStateBtn = "no-users-found-empty-action";
-  private addMemberBtn = "addMember";
-  private includeSubGroupsCheck = "includeSubGroupsCheck";
+  #addMemberEmptyStateBtn = "no-users-found-empty-action";
+  #addMemberBtn = "addMember";
+  #includeSubGroupsCheck = "includeSubGroupsCheck";
 
   public openAddMemberModal(emptyState: boolean) {
     cy.intercept("GET", "*/admin/realms/master/users?first=*").as("get");
     if (emptyState) {
-      cy.findByTestId(this.addMemberEmptyStateBtn).click();
+      cy.findByTestId(this.#addMemberEmptyStateBtn).click();
     } else {
-      cy.findByTestId(this.addMemberBtn).click();
+      cy.findByTestId(this.#addMemberBtn).click();
     }
     sidebarPage.waitForPageLoad();
     return this;
@@ -44,18 +44,18 @@ export default class MembersTab extends GroupDetailPage {
   }
 
   public leaveGroupSelectedUsers() {
-    this.clickToolbarAction("Leave group");
+    this.clickToolbarAction("Leave");
     return this;
   }
 
   public leaveGroupUserItem(username: string) {
     listingPage.clickRowDetails(username);
-    listingPage.clickDetailMenu("Leave group");
+    listingPage.clickDetailMenu("Leave");
     return this;
   }
 
   public clickCheckboxIncludeSubGroupUsers() {
-    cy.findByTestId(this.includeSubGroupsCheck).click();
+    cy.findByTestId(this.#includeSubGroupsCheck).click();
     return this;
   }
 

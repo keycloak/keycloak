@@ -22,7 +22,7 @@ type Row = {
 };
 
 export const RequiredActions = () => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [actions, setActions] = useState<Row[]>();
@@ -78,7 +78,7 @@ export const RequiredActions = () => {
       refresh();
       addAlert(t("updatedRequiredActionSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updatedRequiredActionError", error);
+      addError("updatedRequiredActionError", error);
     }
   };
 
@@ -107,7 +107,7 @@ export const RequiredActions = () => {
 
       addAlert(t("updatedRequiredActionSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updatedRequiredActionError", error);
+      addError("updatedRequiredActionError", error);
     }
   };
 
@@ -131,16 +131,16 @@ export const RequiredActions = () => {
       columns={[
         {
           name: "name",
-          displayKey: "authentication:requiredActions",
+          displayKey: "requiredActions",
         },
         {
           name: "enabled",
-          displayKey: "common:enabled",
+          displayKey: "enabled",
           cellRenderer: (row) => (
             <Switch
               id={`enable-${toKey(row.name)}`}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={row.enabled}
               onChange={() => {
                 updateAction(row.data, "enabled");
@@ -151,14 +151,14 @@ export const RequiredActions = () => {
         },
         {
           name: "default",
-          displayKey: "authentication:setAsDefaultAction",
-          thTooltipText: "authentication-help:authDefaultActionTooltip",
+          displayKey: "setAsDefaultAction",
+          thTooltipText: "authDefaultActionTooltip",
           cellRenderer: (row) => (
             <Switch
               id={`default-${toKey(row.name)}`}
-              label={t("common:on")}
+              label={t("on")}
               isDisabled={!row.enabled}
-              labelOff={!row.enabled ? t("disabledOff") : t("common:off")}
+              labelOff={!row.enabled ? t("disabledOff") : t("off")}
               isChecked={row.defaultAction}
               onChange={() => {
                 updateAction(row.data, "defaultAction");

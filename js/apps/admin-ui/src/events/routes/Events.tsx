@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type EventsTab = "user-events" | "admin-events";
@@ -15,7 +15,7 @@ const EventsSection = lazy(() => import("../EventsSection"));
 export const EventsRoute: AppRouteObject = {
   path: "/:realm/events",
   element: <EventsSection />,
-  breadcrumb: (t) => t("events:title"),
+  breadcrumb: (t) => t("titleEvents"),
   handle: {
     access: "view-events",
   },
@@ -30,6 +30,6 @@ export const toEvents = (params: EventsParams): Partial<Path> => {
   const path = params.tab ? EventsRouteWithTab.path : EventsRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

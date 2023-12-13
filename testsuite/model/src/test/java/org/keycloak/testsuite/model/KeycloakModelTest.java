@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
@@ -46,9 +45,6 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.UserSpi;
-import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
-import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
-import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.Provider;
@@ -66,7 +62,6 @@ import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,8 +115,6 @@ import org.keycloak.models.DeploymentStateProviderFactory;
  * @author hmlnarik
  */
 public abstract class KeycloakModelTest {
-    public static final String KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS = "keycloak.modeltests.retry-transactions";
-
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();
     protected final Logger log = Logger.getLogger(getClass());
@@ -239,7 +232,6 @@ public abstract class KeycloakModelTest {
       .add(ClientSpi.class)
       .add(ComponentFactorySpi.class)
       .add(ClusterSpi.class)
-      .add(GlobalLockProviderSpi.class)
       .add(EventStoreSpi.class)
       .add(ExecutorsSpi.class)
       .add(GroupSpi.class)
@@ -575,37 +567,20 @@ public abstract class KeycloakModelTest {
     }
 
     protected <T, R> R inComittedTransaction(T parameter, BiFunction<KeycloakSession, T, R> what, BiConsumer<KeycloakSession, T> onCommit, BiConsumer<KeycloakSession, T> onRollback) {
-        if (Boolean.parseBoolean(System.getProperty(KEYCLOAK_MODELTESTS_RETRY_TRANSACTIONS, "false"))) {
-            return KeycloakModelUtils.runJobInRetriableTransaction(getFactory(), session -> {
-                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
-                    @Override
-                    protected void commitImpl() {
-                        if (onCommit != null) { onCommit.accept(session, parameter); }
-                    }
+        return KeycloakModelUtils.runJobInTransactionWithResult(getFactory(), session -> {
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    if (onCommit != null) { onCommit.accept(session, parameter); }
+                }
 
-                    @Override
-                    protected void rollbackImpl() {
-                        if (onRollback != null) { onRollback.accept(session, parameter); }
-                    }
-                });
-                return what.apply(session, parameter);
-            }, 5, 100);
-        } else {
-            return KeycloakModelUtils.runJobInTransactionWithResult(getFactory(), session -> {
-                session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
-                    @Override
-                    protected void commitImpl() {
-                        if (onCommit != null) { onCommit.accept(session, parameter); }
-                    }
-
-                    @Override
-                    protected void rollbackImpl() {
-                        if (onRollback != null) { onRollback.accept(session, parameter); }
-                    }
-                });
-                return what.apply(session, parameter);
+                @Override
+                protected void rollbackImpl() {
+                    if (onRollback != null) { onRollback.accept(session, parameter); }
+                }
             });
-        }
+            return what.apply(session, parameter);
+        });
     }
 
     /**
@@ -645,22 +620,11 @@ public abstract class KeycloakModelTest {
     }
 
     /**
-     * Moves time on the Keycloak server as well as on the remote Infinispan server if the Infinispan is used.
-     * @param seconds time offset in seconds by which Keycloak (and Infinispan) server time is moved
+     * Moves time on the Keycloak server
+     * @param seconds time offset in seconds by which Keycloak server time is moved
      */
     protected void setTimeOffset(int seconds) {
         inComittedTransaction(session -> {
-            // move time on Hot Rod server if present
-            HotRodConnectionProvider hotRodConnectionProvider = session.getProvider(HotRodConnectionProvider.class);
-            if (hotRodConnectionProvider != null) {
-                RemoteCache<Object, Object> scriptCache = hotRodConnectionProvider.getRemoteCache(DefaultHotRodConnectionProviderFactory.SCRIPT_CACHE);
-                if (scriptCache != null) {
-                    Map<String, Object> param = new HashMap<>();
-                    param.put("timeService", seconds);
-                    Object returnFromTask = scriptCache.execute("InfinispanTimeServiceTask", param);
-                    LOG.info(returnFromTask);
-                }
-            }
             Time.setOffset(seconds);
         });
     }

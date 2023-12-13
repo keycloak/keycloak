@@ -15,13 +15,31 @@
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
         <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
-        <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
         <!-- ignore folders for incremental builds by the maven build cache plugin -->
-        <maven.build.cache.exclude.1>${project.basedir}/src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.1>
-        <maven.build.cache.exclude.2>${project.basedir}/src/main/resources/theme/keycloak/common/resources/web_modules</maven.build.cache.exclude.2>
-        <maven.build.cache.exclude.3>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.3>
-        <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
+        <maven.build.cache.exclude.value.1>src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.value.1>
+        <maven.build.cache.exclude.value.2>src/main/resources/theme/keycloak/common/resources/vendor</maven.build.cache.exclude.value.2>
+        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.value.3>
+        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.value.4>
+        <maven.build.cache.exclude.value.6>src/main/resources/theme/keycloak.v2/account/resources</maven.build.cache.exclude.value.6>
+        <maven.build.cache.exclude.glob.6>*.js</maven.build.cache.exclude.glob.6>
+        <maven.build.cache.exclude.value.7>src/main/resources/theme/keycloak.v2/account/resources</maven.build.cache.exclude.value.7>
+        <maven.build.cache.exclude.glob.7>*.js.map</maven.build.cache.exclude.glob.7>
+        <maven.build.cache.exclude.value.8>src/main/resources/theme/keycloak.v2/account/resources/public/app.css</maven.build.cache.exclude.value.8>
+        <maven.build.cache.exclude.value.9>src/main/resources/theme/keycloak.v2/account/web_modules</maven.build.cache.exclude.value.9>
+        <maven.build.cache.exclude.value.10>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.10>
+        <maven.build.cache.exclude.value.11>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.11>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <resources>
@@ -33,6 +51,8 @@
                     <exclude>**/mkdirp/**</exclude>
                     <exclude>**/package.json</exclude>
                     <exclude>**/package-lock.json</exclude>
+                    <exclude>**/pnpm-lock.yaml</exclude>
+                    <exclude>**/pnpm-workspace.yaml</exclude>
                     <exclude>**/component.json</exclude>
                     <exclude>**/composer.json</exclude>
                     <exclude>**/npm-shrinkwrap.json</exclude>
@@ -78,6 +98,8 @@
                     <excludes>
                         <exclude>**/node_modules/**/*</exclude>
                         <exclude>**/web_modules/**/*</exclude>
+                        <exclude>**/*.js.map</exclude>
+                        <exclude>**/account/resources/*.js</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -124,43 +146,33 @@
                         <groupId>com.github.eirslett</groupId>
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
-                            <!-- Download NPM tools -->
                             <execution>
-                                <id>setup-node</id>
+                                <id>install-node-and-pnpm-account2</id>
                                 <goals>
-                                    <goal>install-node-and-npm</goal>
+                                    <goal>install-node-and-pnpm</goal>
                                 </goals>
-                                <phase>initialize</phase>
                             </execution>
-                            <!-- Compile stuff -->
                             <execution>
-                                <id>compile-account2</id>
+                                <id>pnpm-install-account2</id>
                                 <goals>
-                                    <goal>npm</goal>
+                                    <goal>pnpm</goal>
                                 </goals>
-                                <phase>generate-resources</phase>
                                 <configuration>
+                                    <arguments>${pnpm.args.install}</arguments>
                                     <workingDirectory>${dir.account2}</workingDirectory>
-                                    <arguments>run build --scripts-prepend-node-path</arguments>
                                 </configuration>
                             </execution>
-                            <!-- Download NPM packages -->
                             <execution>
-                                <id>npm-install-account2</id>
-                                <phase>initialize</phase>
+                                <id>run-build-account2</id>
                                 <goals>
-                                    <goal>npm</goal>
+                                    <goal>pnpm</goal>
                                 </goals>
                                 <configuration>
+                                    <arguments>run build</arguments>
                                     <workingDirectory>${dir.account2}</workingDirectory>
-                                    <arguments>${args.npm.install}</arguments>
                                 </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <nodeVersion>${node.version}</nodeVersion>
-                            <installDirectory>../</installDirectory>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -189,31 +201,33 @@
                         <groupId>com.github.eirslett</groupId>
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
-                            <!-- Download NPM tools -->
                             <execution>
-                                <id>setup-node</id>
+                                <id>install-node-and-pnpm-common</id>
                                 <goals>
-                                    <goal>install-node-and-npm</goal>
+                                    <goal>install-node-and-pnpm</goal>
                                 </goals>
-                                <phase>initialize</phase>
                             </execution>
-                            <!-- Download NPM packages -->
                             <execution>
-                                <id>npm-install-common</id>
-                                <phase>initialize</phase>
+                                <id>pnpm-install-common</id>
                                 <goals>
-                                    <goal>npm</goal>
+                                    <goal>pnpm</goal>
                                 </goals>
                                 <configuration>
+                                    <arguments>${pnpm.args.install}</arguments>
                                     <workingDirectory>${dir.common}</workingDirectory>
-                                    <arguments>${args.npm.install}</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pnpm-build-common</id>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                    <workingDirectory>${dir.common}</workingDirectory>
                                 </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <nodeVersion>${node.version}</nodeVersion>
-                            <installDirectory>../</installDirectory>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

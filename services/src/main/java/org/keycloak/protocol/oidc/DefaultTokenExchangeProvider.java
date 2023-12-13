@@ -33,6 +33,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -45,6 +46,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
@@ -513,6 +515,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
+        context.addSessionNotesToUserSession(userSession);
+
         return exchangeClientToClient(user, userSession, null, false);
     }
 
@@ -520,11 +524,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
 
         String providerId = identityProviderConfig.getAlias();
-
-        // do we need this?
-        //AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
-        //context.setAuthenticationSession(authenticationSession);
-        //session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
         Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
@@ -535,12 +534,15 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
-                context.getUsername(), context.getToken());
+        UserModel user = null;
+        if (! context.getIdpConfig().isTransientUsers()) {
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                    context.getUsername(), context.getToken());
 
-        UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+        }
 
-        if (user == null) {
+        if (user == null || context.getIdpConfig().isTransientUsers()) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
@@ -570,17 +572,22 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
             }
 
-
-            user = session.users().addUser(realm, username);
+            if (context.getIdpConfig().isTransientUsers()) {
+                user = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
+            } else {
+                user = session.users().addUser(realm, username);
+            }
             user.setEnabled(true);
             user.setEmail(context.getEmail());
             user.setFirstName(context.getFirstName());
             user.setLastName(context.getLastName());
 
 
-            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            if (! context.getIdpConfig().isTransientUsers()) {
+                FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                        context.getModelUsername(), context.getToken());
+                session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            }
 
             context.getIdp().importNewUser(session, realm, user, context);
 
@@ -593,6 +600,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
                 user.setEmailVerified(true);
             }
+
+            event.clone()
+                    .event(EventType.REGISTER)
+                    .user(user.getId())
+                    .detail(Details.REGISTER_METHOD, "token-exchange")
+                    .detail(Details.EMAIL, user.getEmail())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .success();
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);

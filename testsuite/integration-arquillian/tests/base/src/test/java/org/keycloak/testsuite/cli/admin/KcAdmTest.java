@@ -284,6 +284,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
+    public void testUserLoginWithAngleBrackets() {
+        KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm test --user 'special>>character' --password '<password>'");
+
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user special>>character of realm test", exe.stderrLines().get(0));
+    }
+
+    @Test
     public void testUserLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test user login with interaction - provide user password after prompted for it
@@ -610,4 +618,30 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec exec = execute("add-roles --uusername=testuser --rolename offline_access --target-realm=demorealm");
         Assert.assertEquals(0, exec.exitCode());
     }
+
+    @Test
+    public void testCsvFormat() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv");
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().startsWith("\""));
+    }
+
+    @Test
+    public void testCsvFormatWithMissingFields() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --fields foo");
+        // nothing valid was selected, should be blank
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().isBlank());
+    }
+
+    @Test
+    public void testCompressedCsv() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --compressed");
+        // should contain an error message
+        assertExitCodeAndStreamSizes(exec, 0, 0, 1);
+    }
+
 }

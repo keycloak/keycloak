@@ -169,7 +169,6 @@
 		</div>
 		</#list>
 	</#if>	
-	</select>
 </#macro>
 
 <#macro selectOptionLabelText attribute option>

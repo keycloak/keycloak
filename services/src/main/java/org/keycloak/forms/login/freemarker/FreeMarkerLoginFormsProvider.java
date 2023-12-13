@@ -46,6 +46,7 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.forms.login.freemarker.model.AuthenticationSessionBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
@@ -226,6 +227,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("statusCode", status.getStatusCode());
         }
 
+
+        if (!isDetachedAuthenticationSession()) {
+            if ((AuthenticationSessionModel.Action.AUTHENTICATE.name().equals(authenticationSession.getAction())) ||
+                (AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name().equals(authenticationSession.getAction())) ||
+                (AuthenticationSessionModel.Action.OAUTH_GRANT.name().equals(authenticationSession.getAction()))) {
+                setAttribute("authenticationSession", new AuthenticationSessionBean(authenticationSession.getParentSession().getId(), authenticationSession.getTabId()));
+            }
+        }
+
         switch (page) {
             case LOGIN_CONFIG_TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, getTotpUriBuilder()));
@@ -289,6 +299,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case UPDATE_USER_PROFILE:
                 attributes.put("profile", new VerifyProfileBean(user, formData, session));
+                userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+                attributes.put("user", new ProfileBean(userCtx, formData));
                 break;
             case IDP_REVIEW_USER_PROFILE:
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -306,7 +318,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
     
     private boolean isDynamicUserProfile() {
-        return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
+        return session.getProvider(UserProfileProvider.class).isEnabled(realm);
     }
 
     /**

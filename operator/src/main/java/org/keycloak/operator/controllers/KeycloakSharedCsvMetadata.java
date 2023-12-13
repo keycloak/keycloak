@@ -16,8 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
-import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
 @CSVMetadata(
     version = "KCOP_NEXT",
@@ -41,7 +41,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
     },
     links = {
         @CSVMetadata.Link(
-            url = "https://www.keycloak.org/docs/latest/server_installation/index.html#_operator",
+            url = "https://www.keycloak.org/guides#operator",
             name = "Documentation"
         ),
         @CSVMetadata.Link(

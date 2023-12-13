@@ -40,7 +40,8 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class FuseUtils {
@@ -268,7 +269,7 @@ public class FuseUtils {
     private static Matcher<String> resultToMatcher(Result result) {
         switch (result) {
             case EMPTY:
-                return isEmptyString();
+                return is(emptyString());
             case OK:
                 return not(anyOf(
                         containsString("Insufficient credentials"),

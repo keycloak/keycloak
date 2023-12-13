@@ -69,6 +69,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -218,9 +219,9 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
             assertTrue(oidcConfig.getFrontChannelLogoutSupported());
 
-            // DPoP
-            Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+            // DPoP - negative test for preview profile - see testDpopSigningAlgValuesSupportedWithDpop for actual test
+            assertNull("dpop_signing_alg_values_supported should not be present unless DPoP feature is enabled",
+                    oidcConfig.getDpopSigningAlgValuesSupported());
         } finally {
             client.close();
         }
@@ -396,6 +397,22 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
             assertEquals(oidcConfig.getGrantTypesSupported().size(),8);
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
+    public void testDpopSigningAlgValuesSupportedWithDpop() throws IOException {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+
+            // DPoP
+            Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
         } finally {
             client.close();
         }

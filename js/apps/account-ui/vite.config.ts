@@ -9,11 +9,13 @@ export default defineConfig({
     port: 8080,
   },
   build: {
-    target: "ES2022",
-  },
-  resolve: {
-    // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
-    mainFields: ["module"],
+    sourcemap: true,
+    target: "esnext",
+    modulePreload: false,
+    cssMinify: "lightningcss",
+    rollupOptions: {
+      external: ["react", "react/jsx-runtime", "react-dom"],
+    },
   },
   plugins: [react(), checker({ typescript: true })],
 });

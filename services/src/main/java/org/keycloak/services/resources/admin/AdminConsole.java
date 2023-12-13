@@ -231,7 +231,7 @@ public class AdminConsole {
             if (createRealmRole != null) {
                 createRealm = user.hasRole(createRealmRole);
             }
-            addMasterRealmAccess(user, currentRealm, realmAccess);
+            addMasterRealmAccess(user, currentRealm != null ? currentRealm : realm.getName(), realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);

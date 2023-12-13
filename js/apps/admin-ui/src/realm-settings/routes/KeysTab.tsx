@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type KeySubTab = "list" | "providers";
@@ -15,12 +15,12 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const KeysRoute: AppRouteObject = {
   path: "/:realm/realm-settings/keys/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("realm-settings:keys"),
+  breadcrumb: (t) => t("keys"),
   handle: {
     access: "view-realm",
   },
 };
 
 export const toKeysTab = (params: KeysParams): Partial<Path> => ({
-  pathname: generatePath(KeysRoute.path, params),
+  pathname: generateEncodedPath(KeysRoute.path, params),
 });

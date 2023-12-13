@@ -19,7 +19,7 @@ package org.keycloak.testsuite.broker;
 import java.io.Closeable;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;

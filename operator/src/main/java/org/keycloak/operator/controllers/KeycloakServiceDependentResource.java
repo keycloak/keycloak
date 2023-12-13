@@ -25,15 +25,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
@@ -43,15 +41,8 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
     public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
         @Override
         public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return getService(KeycloakServiceDependentResource::getServiceName, primary, context);
+            return Utils.getByName(Service.class, KeycloakServiceDependentResource::getServiceName, primary, context);
         }
-    }
-
-    public static Optional<Service> getService(Function<Keycloak, String> nameFunction, Keycloak primary, Context<Keycloak> context) {
-        InformerEventSource<Service, Keycloak> ies = (InformerEventSource<Service, Keycloak>) context
-                .eventSourceRetriever().getResourceEventSourceFor(Service.class);
-
-        return ies.get(new ResourceID(nameFunction.apply(primary), primary.getMetadata().getNamespace()));
     }
 
     public KeycloakServiceDependentResource() {
@@ -59,7 +50,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
     }
 
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
-        var builder = new ServiceSpecBuilder().withSelector(OperatorManagedResource.allInstanceLabels(keycloak));
+        var builder = new ServiceSpecBuilder().withSelector(Utils.allInstanceLabels(keycloak));
 
         boolean tlsConfigured = isTlsConfigured(keycloak);
         Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
@@ -81,7 +72,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                 .withName(getServiceName(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
-                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withSpec(getServiceSpec(primary))
                 .build();

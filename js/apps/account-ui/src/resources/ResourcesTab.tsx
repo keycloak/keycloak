@@ -154,7 +154,9 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             <Th aria-hidden="true" />
             <Th>{t("resourceName")}</Th>
             <Th>{t("application")}</Th>
-            <Th>{!isShared ? t("permissionRequests") : ""}</Th>
+            <Th aria-hidden={isShared}>
+              {!isShared ? t("permissionRequests") : ""}
+            </Th>
           </Tr>
         </Thead>
         {resources.map((resource, index) => (
@@ -164,6 +166,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
           >
             <Tr>
               <Td
+                data-testid={`expand-${resource.name}`}
                 expand={
                   !isShared
                     ? {

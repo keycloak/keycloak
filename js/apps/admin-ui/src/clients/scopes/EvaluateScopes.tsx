@@ -57,24 +57,25 @@ const ProtocolMappers = ({
     <KeycloakDataTable
       key={key}
       loader={() => Promise.resolve(protocolMappers)}
-      ariaLabelKey="clients:effectiveProtocolMappers"
-      searchPlaceholderKey="clients:searchForProtocol"
+      ariaLabelKey="effectiveProtocolMappers"
+      searchPlaceholderKey="searchForProtocol"
+      data-testid="effective-protocol-mappers"
       columns={[
         {
           name: "mapperName",
-          displayKey: "common:name",
+          displayKey: "name",
         },
         {
           name: "containerName",
-          displayKey: "clients:parentClientScope",
+          displayKey: "parentClientScope",
         },
         {
           name: "type.category",
-          displayKey: "common:category",
+          displayKey: "category",
         },
         {
           name: "type.priority",
-          displayKey: "common:priority",
+          displayKey: "priority",
         },
       ]}
     />
@@ -95,16 +96,17 @@ const EffectiveRoles = ({
     <KeycloakDataTable
       key={key}
       loader={() => Promise.resolve(effectiveRoles)}
-      ariaLabelKey="client:effectiveRoleScopeMappings"
-      searchPlaceholderKey="clients:searchForRole"
+      ariaLabelKey="effectiveRoleScopeMappings"
+      searchPlaceholderKey="searchForRole"
+      data-testid="effective-role-scope-mappings"
       columns={[
         {
           name: "name",
-          displayKey: "clients:role",
+          displayKey: "role",
         },
         {
           name: "containerId",
-          displayKey: "clients:origin",
+          displayKey: "origin",
         },
       ]}
     />
@@ -113,7 +115,7 @@ const EffectiveRoles = ({
 
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { enabled } = useHelp();
   const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
@@ -228,7 +230,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
         {enabled && (
           <TextContent className="keycloak__section_intro__help">
             <Text>
-              <QuestionCircleIcon /> {t("clients-help:evaluateExplain")}
+              <QuestionCircleIcon /> {t("evaluateExplain")}
             </Text>
           </TextContent>
         )}
@@ -238,8 +240,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             fieldId="scopeParameter"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:scopeParameter")}
-                fieldLabelId="clients:scopeParameter"
+                helpText={t("scopeParameterHelp")}
+                fieldLabelId="scopeParameter"
               />
             }
           >
@@ -282,7 +284,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               <UserSelect
                 name="user"
                 label="users"
-                helpText={t("clients-help:user")}
+                helpText={t("userHelp")}
                 defaultValue=""
                 variant={SelectVariant.typeahead}
                 isRequired
@@ -362,13 +364,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveProtocolMappers"
               aria-controls="effectiveProtocolMappers"
+              data-testid="effective-protocol-mappers-tab"
               eventKey={0}
               title={
                 <TabTitleText>
                   {t("effectiveProtocolMappers")}{" "}
                   <HelpItem
-                    fieldLabelId="clients:effectiveProtocolMappers"
-                    helpText={t("clients-help:effectiveProtocolMappers")}
+                    fieldLabelId="effectiveProtocolMappers"
+                    helpText={t("effectiveProtocolMappersHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -379,13 +382,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveRoleScopeMappings"
               aria-controls="effectiveRoleScopeMappings"
+              data-testid="effective-role-scope-mappings-tab"
               eventKey={1}
               title={
                 <TabTitleText>
                   {t("effectiveRoleScopeMappings")}{" "}
                   <HelpItem
-                    fieldLabelId="clients:effectiveRoleScopeMappings"
-                    helpText={t("clients-help:effectiveRoleScopeMappings")}
+                    fieldLabelId="effectiveRoleScopeMappings"
+                    helpText={t("effectiveRoleScopeMappingsHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -396,13 +400,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedAccessToken"
               aria-controls="generatedAccessToken"
+              data-testid="generated-access-token-tab"
               eventKey={2}
               title={
                 <TabTitleText>
                   {t("generatedAccessToken")}{" "}
                   <HelpItem
-                    fieldLabelId="clients:generatedAccessToken"
-                    helpText={t("clients-help:generatedAccessToken")}
+                    fieldLabelId="generatedAccessToken"
+                    helpText={t("generatedAccessTokenHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -413,13 +418,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedIdToken"
               aria-controls="generatedIdToken"
+              data-testid="generated-id-token-tab"
               eventKey={3}
               title={
                 <TabTitleText>
                   {t("generatedIdToken")}{" "}
                   <HelpItem
-                    fieldLabelId="clients:generatedIdToken"
-                    helpText={t("clients-help:generatedIdToken")}
+                    fieldLabelId="generatedIdToken"
+                    helpText={t("generatedIdTokenHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -430,13 +436,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedUserInfo"
               aria-controls="generatedUserInfo"
+              data-testid="generated-user-info-tab"
               eventKey={4}
               title={
                 <TabTitleText>
                   {t("generatedUserInfo")}{" "}
                   <HelpItem
-                    fieldLabelId="clients:generatedUserInfo"
-                    helpText={t("clients-help:generatedUserInfo")}
+                    fieldLabelId="generatedUserInfo"
+                    helpText={t("generatedUserInfoHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />

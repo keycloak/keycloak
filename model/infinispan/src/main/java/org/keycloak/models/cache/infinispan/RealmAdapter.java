@@ -800,6 +800,11 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByAuthenticationFlowBindingOverrides(this, overrides, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults) {
         return cacheSession.getClientsStream(this, firstResult, maxResults);
     }

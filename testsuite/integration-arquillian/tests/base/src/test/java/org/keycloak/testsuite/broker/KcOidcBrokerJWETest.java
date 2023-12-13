@@ -16,18 +16,43 @@
  */
 package org.keycloak.testsuite.broker;
 
+import static java.util.Optional.ofNullable;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+
+import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.utils.DefaultKeyProviders;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * <p>Tests the broker using a JWE encrypted token for id token and user info. The test
@@ -113,5 +138,61 @@ public class KcOidcBrokerJWETest extends AbstractBrokerTest {
                 return realm;
             }
         };
+    }
+
+    @Test
+    public void testIdentityClaimsFromUserInfoEndpoint() {
+        configureUserInfoEndpointMappers();
+        testLogInAsUserInIDP();
+        UsersResource users = realmsResouce().realm(bc.consumerRealmName()).users();
+        List<UserRepresentation> usersRep = users.search(bc.getUserLogin(), true);
+        assertFalse(usersRep.isEmpty());
+        UserRepresentation userRep = usersRep.get(0);
+        List<String> expectedAttribute = ofNullable(userRep.getAttributes()).orElse(Map.of()).getOrDefault("user-info", List.of());
+        assertFalse(expectedAttribute.isEmpty());
+        assertEquals("true", expectedAttribute.get(0));
+    }
+
+    private void configureUserInfoEndpointMappers() {
+        RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
+        ClientRepresentation client = providerRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm()).get(0);
+
+        ProtocolMapperRepresentation claimMapper = new ProtocolMapperRepresentation();
+        claimMapper.setName("custom-claim-hardcoded-mapper");
+        claimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        claimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "user-info");
+        config.put(HardcodedClaim.CLAIM_VALUE, "true");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "false");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "false");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_RESPONSE, "false");
+        claimMapper.setConfig(config);
+        ClientResource clientResource = providerRealm.clients().get(client.getId());
+        ProtocolMappersResource protocolMappers = clientResource.getProtocolMappers();
+        List<ProtocolMapperRepresentation> mappers = protocolMappers.getMappersPerProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ProtocolMapperRepresentation mapper = mappers.stream().filter(new Predicate<ProtocolMapperRepresentation>() {
+            @Override
+            public boolean test(ProtocolMapperRepresentation mapper) {
+                return UserPropertyMapper.PROVIDER_ID.equals(mapper.getProtocolMapper())
+                        && mapper.getConfig().getOrDefault(ProtocolMapperUtils.USER_ATTRIBUTE, "").equals("email");
+            }
+        }).findAny().orElse(null);
+        clientResource.getProtocolMappers().delete(mapper.getId());
+        client.getProtocolMappers().add(claimMapper);
+        clientResource.update(client);
+
+        IdentityProviderResource idp = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
+        IdentityProviderMapperRepresentation attributeMapper = new IdentityProviderMapperRepresentation();
+        attributeMapper.setName("attribute-mapper");
+        attributeMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        attributeMapper.setIdentityProviderAlias(bc.getIDPAlias());
+        attributeMapper.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString())
+                .put(UserAttributeMapper.CLAIM, "user-info")
+                .put(UserAttributeMapper.USER_ATTRIBUTE, "user-info")
+                .build());
+        idp.addMapper(attributeMapper);
     }
 }

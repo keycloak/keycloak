@@ -19,12 +19,10 @@ package org.keycloak.testsuite.federation.storage;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
@@ -44,7 +42,6 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
@@ -79,7 +76,6 @@ import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.junit.BeforeClass;
 
 /**
  * Test that clients can override auth flows
@@ -111,11 +107,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         String id = ApiUtil.getCreatedId(resp);
         getCleanup().addComponentId(id);
         return id;
-    }
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Before
@@ -333,8 +324,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDailyEviction() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -356,10 +345,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         testIsCached();
 
     }
+
     @Test
     public void testWeeklyEviction() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -384,10 +372,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         testIsCached();
 
     }
+
     @Test
     public void testMaxLifespan() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {
@@ -425,8 +412,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIsCached() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
@@ -438,8 +423,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testNoCache() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         testIsCached();
 
         testingClient.server().run(session -> {

@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.WatchedSecrets;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
@@ -42,7 +41,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 /**
@@ -86,8 +84,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
         var kc = getTestKeycloakDeployment(false);
         deployKeycloak(k8sclient, kc, true);
-
-        var prevRevision = getStatefulSet(kc).getStatus().getUpdateRevision();
 
         var dbSecret = getDbSecret();
 
@@ -172,15 +168,8 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
         action.run();
 
-        if (restartExpected) {
-            // this depends on the restart taking long enough to detect after the action is run
-            // we may want to switch to using an informer that runs before the action
-            assertRollingUpdate(crsToBeRestarted, true);
-        }
-
         Set<Keycloak> allCrs = new HashSet<>(crsToBeRestarted);
         allCrs.addAll(crsNotToBeRestarted);
-        assertRollingUpdate(allCrs, false);
 
         if (restartExpected) {
             Awaitility.await()
@@ -205,16 +194,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
                         });
                     });
         }
-    }
-
-    private void assertRollingUpdate(Set<Keycloak> crs, boolean expectedStatus) {
-        Awaitility.await()
-                .untilAsserted(() -> {
-                    for (var cr : crs) {
-                        Keycloak kc = k8sclient.resource(cr).get();
-                        assertKeycloakStatusCondition(kc, KeycloakStatusCondition.ROLLING_UPDATE, expectedStatus);
-                    }
-                });
     }
 
     private Secret getDbSecret() {

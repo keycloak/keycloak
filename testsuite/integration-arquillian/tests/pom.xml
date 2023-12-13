@@ -1534,6 +1534,7 @@
                                     <auth.server.migration>true</auth.server.migration>
                                     <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>
                                     <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
+                                    <auth.server.feature>declarative-user-profile</auth.server.feature>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -1670,12 +1671,6 @@
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>
                     <version>1.0.13</version>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-apps-servlets</artifactId>
-                    <version>${project.version}</version>
                 </dependency>
 
                 <dependency>
@@ -1946,6 +1941,40 @@
             <properties>
                 <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:PermSize=${surefire.memory.metaspace} -XX:MaxPermSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
             </properties>
+        </profile>
+
+        <profile>
+            <id>app-server-eap8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap8</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-servlets-jakarta</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>not-app-server-eap8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>!eap8</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
         </profile>
 
         <profile>

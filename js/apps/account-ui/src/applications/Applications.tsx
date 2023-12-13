@@ -81,7 +81,7 @@ const Applications = () => {
             <span style={{ visibility: "hidden", height: 55 }}>
               <DataListToggle
                 id="applications-list-header-invisible-toggle"
-                aria-controls="hidden"
+                aria-controls="applications-list-content"
               />
             </span>
             <DataListItemCells
@@ -122,20 +122,28 @@ const Applications = () => {
                 onClick={() => toggleOpen(application.clientId)}
                 isExpanded={application.open}
                 id={`toggle-${application.clientId}`}
+                aria-controls={`content-${application.clientId}`}
               />
               <DataListItemCells
                 className="pf-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
-                    <Button
-                      className="pf-u-pl-0 title-case"
-                      component="a"
-                      variant="link"
-                      onClick={() => window.open(application.effectiveUrl)}
-                    >
-                      {application.clientName || application.clientId}{" "}
-                      <ExternalLinkAltIcon />
-                    </Button>
+                    {application.effectiveUrl && (
+                      <Button
+                        className="pf-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        onClick={() => window.open(application.effectiveUrl)}
+                      >
+                        {application.clientName || application.clientId}{" "}
+                        <ExternalLinkAltIcon />
+                      </Button>
+                    )}
+                    {!application.effectiveUrl && (
+                      <span>
+                        {application.clientName || application.clientId}
+                      </span>
+                    )}
                   </DataListCell>,
                   <DataListCell
                     width={2}
@@ -154,8 +162,11 @@ const Applications = () => {
             </DataListItemRow>
 
             <DataListContent
+              id={`content-${application.clientId}`}
               className="pf-u-pl-4xl"
-              aria-label={t("applicationDetails")}
+              aria-label={t("applicationDetails", {
+                clientId: application.clientId,
+              })}
               isHidden={!application.open}
             >
               <DescriptionList>
@@ -246,7 +257,7 @@ const Applications = () => {
                       buttonVariant="secondary"
                       onContinue={() => removeConsent(application.clientId)}
                     >
-                      {t("removeModalMessage", [application.clientId])}
+                      {t("removeModalMessage", { name: application.clientId })}
                     </ContinueCancelModal>
                   </GridItem>
                   <GridItem>

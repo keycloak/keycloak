@@ -26,7 +26,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaEncKeyProviderFactory;

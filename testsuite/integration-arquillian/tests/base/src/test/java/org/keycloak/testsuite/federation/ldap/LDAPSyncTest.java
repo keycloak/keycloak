@@ -455,7 +455,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, group1);
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             ctx.getRealm().updateComponent(mapperModel);
 
             // sync groups to Keycloak
@@ -466,7 +466,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1");
             String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
             Assert.assertEquals("group1 - description", kcGroup1.getFirstAttribute(descriptionAttrName));
@@ -499,7 +499,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // load previously synced group (a new group has been created in Keycloak)
-            GroupModel kcGroup5 = KeycloakModelUtils.findGroupByPath(appRealm, "/group5");
+            GroupModel kcGroup5 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group5");
             String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
             Assert.assertEquals("group5 - description", kcGroup5.getFirstAttribute(descriptionAttrName));
@@ -587,7 +587,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            GroupModel user8Group = KeycloakModelUtils.findGroupByPath(appRealm, "/user8group");
+            GroupModel user8Group = KeycloakModelUtils.findGroupByPath(session, appRealm, "/user8group");
             Assert.assertNotNull(user8Group);
             UserModel user8 = session.users().getUserByUsername(appRealm, "user8");
             Assert.assertNotNull(user8);

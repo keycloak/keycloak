@@ -21,13 +21,16 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
+
 import org.keycloak.operator.Constants;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @CSVMetadata(
     description="Represents a Keycloak Realm Import",
@@ -46,5 +49,10 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "policies")
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "resources")
 public class KeycloakRealmImport extends CustomResource<KeycloakRealmImportSpec, KeycloakRealmImportStatus> implements Namespaced {
+
+    @JsonIgnore
+    public String getRealmName() {
+        return this.getSpec().getRealm().getRealm();
+    }
 
 }

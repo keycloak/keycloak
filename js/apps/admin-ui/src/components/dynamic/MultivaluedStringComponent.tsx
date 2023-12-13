@@ -12,18 +12,18 @@ export const MultiValuedStringComponent = ({
   defaultValue,
   helpText,
   stringify,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const fieldName = convertToName(name!);
 
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <MultiLineInput
         aria-label={t(label!)}

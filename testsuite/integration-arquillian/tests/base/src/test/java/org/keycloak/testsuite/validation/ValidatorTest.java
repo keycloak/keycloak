@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.Collections;
 import java.util.Locale;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,7 +33,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.validate.ValidationContext;
-import org.keycloak.validate.Validators;
+import org.keycloak.validate.BuiltinValidators;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -51,21 +50,21 @@ public class ValidatorTest extends AbstractTestRealmKeycloakTest {
     }
 
     private static void testDateValidator(KeycloakSession session) {
-        assertTrue(Validators.dateValidator().validate(null, new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate(null, new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("", new ValidationContext(session)).isValid());
 
         // defaults to Locale.ENGLISH as per default locale selector
-        assertFalse(Validators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
-        assertFalse(Validators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
         RealmModel realm = session.getContext().getRealm();
 
         realm.setInternationalizationEnabled(true);
         realm.setDefaultLocale(Locale.FRANCE.getLanguage());
 
-        assertTrue(Validators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
-        assertTrue(Validators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
-        assertFalse(Validators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("13/12/21", new ValidationContext(session)).isValid());
+        assertTrue(BuiltinValidators.dateValidator().validate("13/12/2021", new ValidationContext(session)).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("12/13/2021", new ValidationContext(session)).isValid());
 
         UserModel alice = session.users().getUserByUsername(realm, "alice");
 
@@ -75,6 +74,6 @@ public class ValidatorTest extends AbstractTestRealmKeycloakTest {
 
         context.getAttributes().put(UserModel.class.getName(), alice);
 
-        assertFalse(Validators.dateValidator().validate("13/12/2021", context).isValid());
+        assertFalse(BuiltinValidators.dateValidator().validate("13/12/2021", context).isValid());
     }
 }

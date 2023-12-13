@@ -30,7 +30,7 @@ import { DeleteScopeDialog } from "./DeleteScopeDialog";
 type FormFields = Omit<ScopeRepresentation, "resources">;
 
 export default function ScopeDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
   const navigate = useNavigate();
 
@@ -55,7 +55,7 @@ export default function ScopeDetails() {
           scopeId,
         });
         if (!scope) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         return scope;
       }
@@ -91,7 +91,7 @@ export default function ScopeDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("clients:scopeSaveError", error);
+      addError("scopeSaveError", error);
     }
   };
 
@@ -107,9 +107,7 @@ export default function ScopeDetails() {
         }
       />
       <ViewHeader
-        titleKey={
-          scopeId ? scope?.name! : t("clients:createAuthorizationScope")
-        }
+        titleKey={scopeId ? scope?.name! : t("createAuthorizationScope")}
         dropdownItems={
           scopeId
             ? [
@@ -118,7 +116,7 @@ export default function ScopeDetails() {
                   data-testid="delete-resource"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -127,19 +125,16 @@ export default function ScopeDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          role="view-clients"
+          role="manage-authorization"
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormGroup
-            label={t("common:name")}
+            label={t("name")}
             fieldId="name"
             labelIcon={
-              <HelpItem
-                helpText={t("clients-help:scopeName")}
-                fieldLabelId="name"
-              />
+              <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
@@ -159,7 +154,7 @@ export default function ScopeDetails() {
             fieldId="displayName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:scopeDisplayName")}
+                helpText={t("scopeDisplayNameHelp")}
                 fieldLabelId="displayName"
               />
             }
@@ -170,10 +165,7 @@ export default function ScopeDetails() {
             label={t("iconUri")}
             fieldId="iconUri"
             labelIcon={
-              <HelpItem
-                helpText={t("clients-help:iconUri")}
-                fieldLabelId="clients:iconUri"
-              />
+              <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
             }
           >
             <KeycloakTextInput id="iconUri" {...register("iconUri")} />
@@ -185,7 +177,7 @@ export default function ScopeDetails() {
                 type="submit"
                 data-testid="save"
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
 
               {!scope ? (
@@ -203,7 +195,7 @@ export default function ScopeDetails() {
                     ></Link>
                   )}
                 >
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               ) : (
                 <Button
@@ -211,7 +203,7 @@ export default function ScopeDetails() {
                   data-testid="revert"
                   onClick={() => reset({ ...scope })}
                 >
-                  {t("common:revert")}
+                  {t("revert")}
                 </Button>
               )}
             </div>

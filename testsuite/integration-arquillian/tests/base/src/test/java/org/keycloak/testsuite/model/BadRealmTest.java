@@ -1,8 +1,6 @@
 package org.keycloak.testsuite.model;
 
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -33,7 +31,7 @@ public class BadRealmTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @ModelTest(skipForMapStorage = true) // when map storage is enabled, the id is always converted into a valid UUID.
+    @ModelTest
     public void testBadRealmId(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
         try {

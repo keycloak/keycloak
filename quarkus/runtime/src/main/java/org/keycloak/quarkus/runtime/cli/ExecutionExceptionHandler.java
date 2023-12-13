@@ -42,6 +42,11 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
 
     @Override
     public int handleExecutionException(Exception cause, CommandLine cmd, ParseResult parseResult) {
+        if (cause instanceof PropertyException) {
+            PrintWriter writer = cmd.getErr();
+            writer.println(cmd.getColorScheme().errorText(cause.getMessage()));
+            return ShortErrorMessageHandler.getInvalidInputExitCode(cause, cmd);
+        }
         error(cmd.getErr(), "Failed to run '" + parseResult.subcommands().stream()
                 .map(ParseResult::commandSpec)
                 .map(CommandLine.Model.CommandSpec::name)

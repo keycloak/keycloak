@@ -70,7 +70,6 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 

@@ -72,10 +72,8 @@ public class RedirectUtils {
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
-                resolveValidRedirects.add(validRedirect);
-            } else {
-                resolveValidRedirects.add(validRedirect);
             }
+            resolveValidRedirects.add(validRedirect);
         }
         return resolveValidRedirects;
     }
@@ -107,6 +105,12 @@ public class RedirectUtils {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
         } else {
+            URI originalRedirect = toUri(redirectUri);
+            if (originalRedirect == null) {
+                // invalid URI passed as redirectUri
+                return null;
+            }
+
             // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
             String decodedRedirectUri = decodeRedirectUri(redirectUri);
             URI decodedRedirect = toUri(decodedRedirectUri);
@@ -135,15 +139,18 @@ public class RedirectUtils {
             }
 
             // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
-            URI redirect = toUri(redirectUri);
-            redirectUri = getNormalizedRedirectUri(redirect);
+            redirectUri = getNormalizedRedirectUri(originalRedirect);
 
             // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
             if (valid == null) {
                 valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
             }
 
-            if (valid != null && redirectUri.startsWith("/")) {
+            if (valid != null && !originalRedirect.isAbsolute()) {
+                // return absolute if the original URI is relative
+                if (!redirectUri.startsWith("/")) {
+                    redirectUri = "/" + redirectUri;
+                }
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
 
@@ -169,7 +176,7 @@ public class RedirectUtils {
     private static URI toUri(String redirectUri) {
         URI uri = null;
         if (redirectUri != null) {
-        try {
+            try {
                 uri = URI.create(redirectUri);
             } catch (IllegalArgumentException cause) {
                 logger.debug("Invalid redirect uri", cause);
@@ -184,7 +191,6 @@ public class RedirectUtils {
         String redirectUri = null;
         if (uri != null) {
             redirectUri = uri.normalize().toString();
-            redirectUri = lowerCaseHostname(redirectUri);
         }
         return redirectUri;
     }
@@ -196,12 +202,14 @@ public class RedirectUtils {
         int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
 
         try {
-            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri).preserveDefaultPort();
+            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
             String origQuery = uriBuilder.getQuery();
             String origFragment = uriBuilder.getFragment();
+            String origUserInfo = uriBuilder.getUserInfo();
             String encodedRedirectUri = uriBuilder
                     .replaceQuery(null)
                     .fragment(null)
+                    .userInfo(null)
                     .buildAsString();
             String decodedRedirectUri = null;
 
@@ -209,9 +217,10 @@ public class RedirectUtils {
                 decodedRedirectUri = Encode.decode(encodedRedirectUri);
                 if (decodedRedirectUri.equals(encodedRedirectUri)) {
                     // URL is decoded. We can return it (after attach original query and fragment)
-                    return KeycloakUriBuilder.fromUri(decodedRedirectUri).preserveDefaultPort()
+                    return KeycloakUriBuilder.fromUri(decodedRedirectUri, false).preserveDefaultPort()
                             .replaceQuery(origQuery)
                             .fragment(origFragment)
+                            .userInfo(origUserInfo)
                             .buildAsString();
                 } else {
                     // Next attempt
@@ -223,15 +232,6 @@ public class RedirectUtils {
         }
         logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
         return null;
-    }
-
-    private static String lowerCaseHostname(String redirectUri) {
-        int n = redirectUri.indexOf('/', 7);
-        if (n == -1) {
-            return redirectUri.toLowerCase();
-        } else {
-            return redirectUri.substring(0, n).toLowerCase() + redirectUri.substring(n);
-        }
     }
 
     private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {

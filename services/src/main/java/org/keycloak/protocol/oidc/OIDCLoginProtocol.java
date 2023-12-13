@@ -279,7 +279,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
             } catch (ClientPolicyException cpe) {
                 event.error(cpe.getError());
-                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+                new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
@@ -333,12 +333,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
             redirectUri.addParam(OAuth2Constants.STATE, state);
         }
 
-        if (error == Error.PASSIVE_LOGIN_REQUIRED || error == Error.PASSIVE_INTERACTION_REQUIRED) {
-            // passive check error, just delete the tabId maintaining session and don't reset the restart cookie
-            new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
-        } else {
-            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
-        }
+        // Remove authenticationSession from current tab
+        new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+
         return redirectUri.build();
     }
 
@@ -384,6 +381,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public Response finishBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession) {
         event.event(EventType.LOGOUT);
+        event.client(logoutSession.getClient());
 
         String redirectUri = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
         if (redirectUri != null) {

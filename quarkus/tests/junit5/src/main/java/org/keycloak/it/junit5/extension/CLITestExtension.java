@@ -35,8 +35,10 @@ import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
+import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +61,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private KeycloakDistribution dist;
     private final Set<String> testSysProps = new HashSet<>();
     private DatabaseContainer databaseContainer;
+    private InfinispanContainer infinispanContainer;
     private CLIResult result;
 
     @Override
@@ -88,6 +91,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         configureDatabase(context);
+        infinispanContainer = configureExternalInfinispan(context);
 
         if (distConfig != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
@@ -191,6 +195,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (databaseContainer != null && databaseContainer.isRunning()) {
             databaseContainer.stop();
             databaseContainer = null;
+        }
+        if (infinispanContainer != null && infinispanContainer.isRunning()) {
+            infinispanContainer.stop();
         }
         result = null;
         if (RAW.equals(DistributionType.getCurrent().orElse(RAW))) {
@@ -324,8 +331,24 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
     }
 
+    private static InfinispanContainer configureExternalInfinispan(ExtensionContext context) {
+        if (getAnnotationFromTestContext(context, WithExternalInfinispan.class) != null) {
+            InfinispanContainer infinispanContainer = new InfinispanContainer();
+            infinispanContainer.start();
+            return infinispanContainer;
+        }
+
+        return null;
+    }
+
     private static WithDatabase getDatabaseConfig(ExtensionContext context) {
-        return context.getTestClass().orElse(Object.class).getDeclaredAnnotation(WithDatabase.class);
+        return getAnnotationFromTestContext(context, WithDatabase.class);
+    }
+
+    private static <T extends Annotation> T getAnnotationFromTestContext(ExtensionContext context, Class<T> annotationClass) {
+        return context.getTestClass().map(c -> c.getDeclaredAnnotation(annotationClass))
+                .or(() -> context.getTestMethod().map(m -> m.getAnnotation(annotationClass)))
+                .orElse(null);
     }
 
     private void configureDevServices() {

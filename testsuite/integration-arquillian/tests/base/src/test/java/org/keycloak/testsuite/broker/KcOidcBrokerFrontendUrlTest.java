@@ -17,7 +17,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.ReverseProxy;
 
 public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {

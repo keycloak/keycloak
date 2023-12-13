@@ -361,6 +361,15 @@ public class FlowTest extends AbstractAuthenticationTest {
         } catch (ClientErrorException exception){
             //expoected
         }
+
+        //try to update old flow with an alias with illegal characters
+        testFlow.setAlias("New(Flow");
+        try {
+            authMgmtResource.updateFlow(found.getId(), testFlow);
+        } catch (ClientErrorException exception){
+            //expected
+        }
+
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow
@@ -453,7 +462,6 @@ public class FlowTest extends AbstractAuthenticationTest {
 
     @Test
     public void failWithLongDescription() throws IOException {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
         ContainerAssume.assumeAuthServerQuarkus();
         AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
                 .filter(new Predicate<AuthenticationFlowRepresentation>() {

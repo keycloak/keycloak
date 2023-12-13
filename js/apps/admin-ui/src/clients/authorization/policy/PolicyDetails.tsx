@@ -62,7 +62,7 @@ const COMPONENTS: {
 export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export default function PolicyDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
   const navigate = useNavigate();
   const form = useForm();
@@ -89,7 +89,7 @@ export default function PolicyDetails() {
         ]);
 
         if (!result[0]) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
 
         return {
@@ -139,14 +139,14 @@ export default function PolicyDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("clients:policySaveError", error);
+      addError("policySaveError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePolicy",
-    messageKey: "clients:deletePolicyConfirm",
-    continueButtonLabel: "clients:confirm",
+    titleKey: "deletePolicy",
+    messageKey: "deletePolicyConfirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPolicy({
@@ -156,7 +156,7 @@ export default function PolicyDetails() {
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
         navigate(toAuthorizationTab({ realm, clientId: id, tab: "policies" }));
       } catch (error) {
-        addError("clients:policyDeletedError", error);
+        addError("policyDeletedError", error);
       }
     },
   });
@@ -178,9 +178,7 @@ export default function PolicyDetails() {
       <DeleteConfirm />
       <ViewHeader
         titleKey={
-          policyId
-            ? policy?.name!
-            : t("clients:createPolicyOfType", { policyType })
+          policyId ? policy?.name! : t("createPolicyOfType", { policyType })
         }
         dropdownItems={
           policyId
@@ -190,7 +188,7 @@ export default function PolicyDetails() {
                   data-testid="delete-policy"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -200,7 +198,7 @@ export default function PolicyDetails() {
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(onSubmit)}
-          role="view-clients"
+          role="anyone" // if you get this far it means you have access
         >
           <FormProvider {...form}>
             <NameDescription isDisabled={isDisabled} prefix="policy" />
@@ -216,7 +214,7 @@ export default function PolicyDetails() {
                 type="submit"
                 data-testid="save"
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
 
               <Button
@@ -233,7 +231,7 @@ export default function PolicyDetails() {
                   />
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </div>
           </ActionGroup>

@@ -1,14 +1,13 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
 import { AlertVariant, PageSection, Text } from "@patternfly/react-core";
 import type { TFunction } from "i18next";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
-
+import { ScrollForm } from "ui-shared";
 import type { AddAlertFunction } from "../components/alert/Alerts";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { convertAttributeNameToForm, toUpperCase } from "../util";
+import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
 import { AuthenticationOverrides } from "./advanced/AuthenticationOverrides";
 import { ClusteringPanel } from "./advanced/ClusteringPanel";
@@ -16,7 +15,6 @@ import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
 import { RevocationPanel } from "./advanced/RevocationPanel";
-import type { FormFields, SaveOptions } from "./ClientDetails";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -52,7 +50,7 @@ export type AdvancedProps = {
 };
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const openIdConnect = "openid-connect";
 
   const { setValue } = useFormContext();
@@ -75,6 +73,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   return (
     <PageSection variant="light" className="pf-u-py-0">
       <ScrollForm
+        label={t("jumpToSection")}
         sections={[
           {
             title: t("revocation"),
@@ -92,7 +91,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:fineGrainOpenIdConnectConfiguration")}
+                  {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Text>
                 <FineGrainOpenIdConnect
                   save={save}
@@ -128,7 +127,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:openIdConnectCompatibilityModes")}
+                  {t("openIdConnectCompatibilityModesHelp")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
                   save={() => save()}
@@ -150,7 +149,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:fineGrainSamlEndpointConfig")}
+                  {t("fineGrainSamlEndpointConfigHelp")}
                 </Text>
                 <FineGrainSamlEndpointConfig
                   save={() => save()}
@@ -177,10 +176,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t(
-                    "clients-help:advancedSettings" +
-                      toUpperCase(protocol || ""),
-                  )}
+                  {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Text>
                 <AdvancedSettings
                   protocol={protocol}
@@ -202,7 +198,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:authenticationOverrides")}
+                  {t("authenticationOverridesHelp")}
                 </Text>
                 <AuthenticationOverrides
                   protocol={protocol}

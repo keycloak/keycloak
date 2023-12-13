@@ -35,7 +35,7 @@ export const ImportKeyDialog = ({
   save,
   toggleDialog,
 }: ImportKeyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useForm<ImportFile>();
   const { control, handleSubmit } = form;
 
@@ -84,20 +84,20 @@ export const ImportKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <TextContent>
-        <Text>{t("clients-help:generateKeysDescription")}</Text>
+        <Text>{t("generateKeysDescription")}</Text>
       </TextContent>
       <Form className="pf-u-pt-lg">
         <FormGroup
           label={t("archiveFormat")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:archiveFormat")}
-              fieldLabelId="clients:archiveFormat"
+              helpText={t("archiveFormatHelp")}
+              fieldLabelId="archiveFormat"
             />
           }
           fieldId="archiveFormat"

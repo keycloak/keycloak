@@ -1,10 +1,10 @@
 package org.keycloak.config;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class SecurityOptions {
 

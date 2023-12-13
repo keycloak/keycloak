@@ -1,8 +1,8 @@
 export default class GroupModal {
-  private openPartialImport = "openPartialImportModal";
+  #openPartialImport = "openPartialImportModal";
 
   open() {
-    cy.findByTestId(this.openPartialImport).click();
+    cy.findByTestId(this.#openPartialImport).click();
     return this;
   }
 

@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -227,6 +228,7 @@ public class RoleMapperResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
     @Operation( summary = "Add realm-level role mappings to the user")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void addRealmRoleMappings(@Parameter(description = "Roles to add") List<RoleRepresentation> roles) {
         managePermission.require();
 

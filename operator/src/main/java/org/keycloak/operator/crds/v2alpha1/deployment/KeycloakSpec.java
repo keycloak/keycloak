@@ -16,23 +16,23 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {
@@ -43,6 +43,9 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
+
+    @JsonPropertyDescription("Set to force the behavior of the --optimized flag for the start command. If left unspecified the operator will assume custom images have already been augmented.")
+    private Boolean startOptimized;
 
     @JsonPropertyDescription("Secret(s) that might be used when pulling an image from a private container image registry or repository.")
     private List<LocalObjectReference> imagePullSecrets;
@@ -170,5 +173,13 @@ public class KeycloakSpec {
 
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
         this.additionalOptions = additionalOptions;
+    }
+
+    public Boolean getStartOptimized() {
+        return startOptimized;
+    }
+
+    public void setStartOptimized(Boolean optimized) {
+        this.startOptimized = optimized;
     }
 }

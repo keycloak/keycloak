@@ -7,9 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# NPM
-node_modules
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -20,11 +17,6 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
-
-# Cypress
-assets
-**/cypress.env.json
-**/cypress/downloads
 
 # Optional eslint cache
 .eslintcache

@@ -32,6 +32,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -88,8 +90,14 @@ public class KeyResource {
         r.setType(key.getType());
         r.setAlgorithm(key.getAlgorithmOrDefault());
         r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
-        r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
         r.setUse(key.getUse());
+
+        X509Certificate cert = key.getCertificate();
+        if (cert != null) {
+            r.setCertificate(PemUtils.encodeCertificate(cert));
+            r.setValidTo(cert.getNotAfter() != null ? cert.getNotAfter().getTime() : null);
+        }
+
         return r;
     }
 }

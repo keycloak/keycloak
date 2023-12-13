@@ -29,10 +29,16 @@ import {
   convertToFormValues,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { useFetch } from "../utils/useFetch";
+import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
 type RealmSettingsGeneralTabProps = {
-  realm: RealmRepresentation;
-  save: (realm: RealmRepresentation) => void;
+  realm: UIRealmRepresentation;
+  save: (realm: UIRealmRepresentation) => void;
 };
 
 type FormFields = Omit<RealmRepresentation, "groups">;
@@ -41,7 +47,7 @@ export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
   const {
@@ -56,6 +62,18 @@ export const RealmSettingsGeneralTab = ({
 
   const requireSslTypes = ["all", "external", "none"];
 
+  const [userProfileConfig, setUserProfileConfig] =
+    useState<UserProfileConfig>();
+  const unmanagedAttributePolicies = [
+    UnmanagedAttributePolicy.Disabled,
+    UnmanagedAttributePolicy.Enabled,
+    UnmanagedAttributePolicy.AdminView,
+    UnmanagedAttributePolicy.AdminEdit,
+  ];
+  const [isUnmanagedAttributeOpen, setIsUnmanagedAttributeOpen] =
+    useState(false);
+  const [isUserProfileEnabled, setUserProfileEnabled] = useState(false);
+
   const setupForm = () => {
     convertToFormValues(realm, setValue);
     if (realm.attributes?.["acr.loa.map"]) {
@@ -68,7 +86,14 @@ export const RealmSettingsGeneralTab = ({
         result,
       );
     }
+    setUserProfileEnabled(realm.attributes?.["userProfileEnabled"] === "true");
   };
+
+  useFetch(
+    () => adminClient.users.getProfile({ realm: realmName }),
+    (config) => setUserProfileConfig(config),
+    [],
+  );
 
   useEffect(setupForm, []);
 
@@ -78,7 +103,15 @@ export const RealmSettingsGeneralTab = ({
         isHorizontal
         role="manage-realm"
         className="pf-u-mt-lg"
-        onSubmit={handleSubmit(save)}
+        onSubmit={handleSubmit((data) => {
+          if (
+            UnmanagedAttributePolicy.Disabled ===
+            userProfileConfig?.unmanagedAttributePolicy
+          ) {
+            userProfileConfig.unmanagedAttributePolicy = undefined;
+          }
+          save({ ...data, upConfig: userProfileConfig });
+        })}
       >
         <FormGroup
           label={t("realmId")}
@@ -91,10 +124,10 @@ export const RealmSettingsGeneralTab = ({
             name="realm"
             control={control}
             rules={{
-              required: { value: true, message: t("common:required") },
+              required: { value: true, message: t("required") },
               pattern: {
                 value: /^[a-zA-Z0-9-_]+$/,
-                message: t("realm:invalidRealmName"),
+                message: t("invalidRealmName"),
               },
             }}
             defaultValue=""
@@ -122,8 +155,8 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-frontend-url"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:frontendUrl")}
-              fieldLabelId="realm-settings:frontendUrl"
+              helpText={t("frontendUrlHelp")}
+              fieldLabelId="frontendUrl"
             />
           }
         >
@@ -138,8 +171,8 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-require-ssl"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:requireSsl")}
-              fieldLabelId="realm-settings:requireSsl"
+              helpText={t("requireSslHelp")}
+              fieldLabelId="requireSsl"
             />
           }
         >
@@ -174,12 +207,12 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("clients:acrToLoAMapping")}
+          label={t("acrToLoAMapping")}
           fieldId="acrToLoAMapping"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:acrToLoAMapping")}
-              fieldLabelId="clients:acrToLoAMapping"
+              helpText={t("acrToLoAMappingHelp")}
+              fieldLabelId="acrToLoAMapping"
             />
           }
         >
@@ -194,8 +227,8 @@ export const RealmSettingsGeneralTab = ({
           label={t("userManagedAccess")}
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:userManagedAccess")}
-              fieldLabelId="realm-settings:userManagedAccess"
+              helpText={t("userManagedAccessHelp")}
+              fieldLabelId="userManagedAccess"
             />
           }
           fieldId="kc-user-managed-access"
@@ -208,8 +241,8 @@ export const RealmSettingsGeneralTab = ({
               <Switch
                 id="kc-user-managed-access"
                 data-testid="user-managed-access-switch"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("userManagedAccess")}
@@ -223,8 +256,8 @@ export const RealmSettingsGeneralTab = ({
             label={t("userProfileEnabled")}
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:userProfileEnabled")}
-                fieldLabelId="realm-settings:userProfileEnabled"
+                helpText={t("userProfileEnabledHelp")}
+                fieldLabelId="userProfileEnabled"
               />
             }
             fieldId="kc-user-profile-enabled"
@@ -241,23 +274,59 @@ export const RealmSettingsGeneralTab = ({
                 <Switch
                   id="kc-user-profile-enabled"
                   data-testid="user-profile-enabled-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(value) => {
+                    field.onChange(value.toString());
+                    setUserProfileEnabled(value);
+                  }}
                   aria-label={t("userProfileEnabled")}
                 />
               )}
             />
           </FormGroup>
         )}
+        {isUserProfileEnabled && (
+          <FormGroup
+            label={t("unmanagedAttributes")}
+            fieldId="kc-user-profile-unmanaged-attribute-policy"
+            labelIcon={
+              <HelpItem
+                helpText={t("unmanagedAttributesHelpText")}
+                fieldLabelId="unmanagedAttributes"
+              />
+            }
+          >
+            <Select
+              toggleId="kc-user-profile-unmanaged-attribute-policy"
+              onToggle={() =>
+                setIsUnmanagedAttributeOpen(!isUnmanagedAttributeOpen)
+              }
+              onSelect={(_, value) => {
+                if (userProfileConfig) {
+                  userProfileConfig.unmanagedAttributePolicy =
+                    value as UnmanagedAttributePolicy;
+                  setUserProfileConfig(userProfileConfig);
+                }
+                setIsUnmanagedAttributeOpen(false);
+              }}
+              selections={userProfileConfig?.unmanagedAttributePolicy}
+              variant={SelectVariant.single}
+              isOpen={isUnmanagedAttributeOpen}
+            >
+              {unmanagedAttributePolicies.map((policy) => (
+                <SelectOption key={policy} value={policy}>
+                  {t(`unmanagedAttributePolicy.${policy}`)}
+                </SelectOption>
+              ))}
+            </Select>
+          </FormGroup>
+        )}
         <FormGroup
           label={t("endpoints")}
           labelIcon={
-            <HelpItem
-              helpText={t("realm-settings-help:endpoints")}
-              fieldLabelId="realm-settings:endpoints"
-            />
+            <HelpItem helpText={t("endpointsHelp")} fieldLabelId="endpoints" />
           }
           fieldId="kc-endpoints"
         >
@@ -288,14 +357,14 @@ export const RealmSettingsGeneralTab = ({
             data-testid="general-tab-save"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="general-tab-revert"
             variant="link"
             onClick={setupForm}
           >
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

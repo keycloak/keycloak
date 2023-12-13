@@ -13,17 +13,17 @@ export const StringComponent = ({
   helpText,
   defaultValue,
   isDisabled = false,
+  required,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { register } = useFormContext();
 
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <KeycloakTextInput
         id={name!}

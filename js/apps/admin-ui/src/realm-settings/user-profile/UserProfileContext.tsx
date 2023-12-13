@@ -1,4 +1,4 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { AlertVariant } from "@patternfly/react-core";
 import { PropsWithChildren, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -55,17 +55,14 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
       setIsSaving(false);
       setRefreshCount(refreshCount + 1);
       addAlert(
-        t(options?.successMessageKey ?? "realm-settings:userProfileSuccess"),
+        t(options?.successMessageKey ?? "userProfileSuccess"),
         AlertVariant.success,
       );
 
       return true;
     } catch (error) {
       setIsSaving(false);
-      addError(
-        options?.errorMessageKey ?? "realm-settings:userProfileError",
-        error,
-      );
+      addError(options?.errorMessageKey ?? "userProfileError", error);
 
       return false;
     }

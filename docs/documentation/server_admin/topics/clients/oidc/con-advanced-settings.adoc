@@ -2,7 +2,10 @@
 = Advanced configuration
 [role="_abstract"]
 
-After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.  For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.
+ifeval::[{project_community}==true]
+For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+endif::[]
 
 == Advanced tab
 
@@ -120,7 +123,7 @@ In the following cases, {project_name} will verify the client sending the access
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
 * A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This verification is done only for public clients as described above.
 
-See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop[OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)] for more details.
+See https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP)] for more details.
 
 [NOTE]
 ====

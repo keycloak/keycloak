@@ -30,7 +30,7 @@ export const UserSelect = ({
   isRequired,
   variant = SelectVariant.typeaheadMulti,
 }: UserSelectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -81,12 +81,10 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={
-        <HelpItem helpText={helpText!} fieldLabelId={`clients:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
     >
       <Controller
         name={name!}

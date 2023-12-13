@@ -7,13 +7,20 @@ export enum Feature {
   Kerberos = "KERBEROS",
   DynamicScopes = "DYNAMIC_SCOPES",
   DPoP = "DPOP",
+  DeviceFlow = "DEVICE_FLOW",
+  TransientUsers = "TRANSIENT_USERS",
 }
 
 export default function useIsFeatureEnabled() {
-  const { profileInfo } = useServerInfo();
-  const disabledFilters = profileInfo?.disabledFeatures ?? [];
+  const { features } = useServerInfo();
 
   return function isFeatureEnabled(feature: Feature) {
-    return !disabledFilters.includes(feature);
+    if (!features) {
+      return false;
+    }
+    return features
+      .filter((f) => f.enabled)
+      .map((f) => f.name)
+      .includes(feature);
   };
 }

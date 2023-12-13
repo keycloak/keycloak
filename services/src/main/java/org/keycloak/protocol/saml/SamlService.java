@@ -144,8 +144,6 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
-
 
 /**
  * Resource class for the saml connect token service
@@ -1164,7 +1162,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        UserSessionModel userSessionModel = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionMapping.get(SamlProtocol.USER_SESSION_ID)));
+        UserSessionModel userSessionModel = session.sessions().getUserSession(realm, sessionMapping.get(SamlProtocol.USER_SESSION_ID));
         if (userSessionModel == null) {
             logger.errorf("UserSession with id: %s, that corresponds to artifact: %s does not exist.", sessionMapping.get(SamlProtocol.USER_SESSION_ID), artifact);
             return emptyArtifactResponseMessage(artifactResolveMessage, null);

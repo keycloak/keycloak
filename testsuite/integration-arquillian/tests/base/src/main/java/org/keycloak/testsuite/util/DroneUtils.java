@@ -78,7 +78,7 @@ public final class DroneUtils {
             if (f.getAnnotation(Page.class) != null
                     && AbstractPage.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     Object o = f.get(target);
                     AbstractPage page = (AbstractPage) o;
@@ -89,7 +89,7 @@ public final class DroneUtils {
                 }
             } else if (f.getName().equals("driver") && WebDriver.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     f.set(target, driver);
 
@@ -99,7 +99,7 @@ public final class DroneUtils {
                 }
             } else if (f.getName().equals("oauth") && OAuthClient.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     Object o = f.get(target);
                     ((OAuthClient) o).setDriver(driver);

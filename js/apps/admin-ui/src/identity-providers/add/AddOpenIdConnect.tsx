@@ -25,7 +25,7 @@ type DiscoveryIdentity = IdentityProviderRepresentation & {
 };
 
 export default function AddOpenIdConnect() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isKeycloak = pathname.includes("keycloak-oidc");
@@ -49,7 +49,7 @@ export default function AddOpenIdConnect() {
         ...provider,
         providerId: id,
       });
-      addAlert(t("createSuccess"), AlertVariant.success);
+      addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);
       navigate(
         toIdentityProvider({
           realm,
@@ -59,7 +59,7 @@ export default function AddOpenIdConnect() {
         }),
       );
     } catch (error) {
-      addError("identity-providers:createError", error);
+      addError("createIdentityProviderError", error);
     }
   };
 
@@ -77,7 +77,7 @@ export default function AddOpenIdConnect() {
             isHorizontal
             onSubmit={handleSubmit(onSubmit)}
           >
-            <OIDCGeneralSettings id={id} />
+            <OIDCGeneralSettings />
             <OpenIdConnectSettings />
             <OIDCAuthentication />
             <ActionGroup>
@@ -87,7 +87,7 @@ export default function AddOpenIdConnect() {
                 type="submit"
                 data-testid="createProvider"
               >
-                {t("common:add")}
+                {t("add")}
               </Button>
               <Button
                 variant="link"
@@ -96,7 +96,7 @@ export default function AddOpenIdConnect() {
                   <Link {...props} to={toIdentityProviders({ realm })} />
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           </FormAccess>

@@ -23,6 +23,7 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -49,6 +50,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
@@ -201,6 +203,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
+                .property().name(LDAPConstants.REFERRAL)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
                 .property().name(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
@@ -212,6 +217,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(KerberosConstants.KERBEROS_REALM)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(KerberosConstants.DEBUG)
@@ -429,10 +437,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
             realm.addComponentModel(mapperModel);
         }
-        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
-        if (Boolean.valueOf(allowKerberosCfg)) {
+
+        LDAPProviderKerberosConfig kerberosConfig = new LDAPProviderKerberosConfig(model);
+        if (kerberosConfig.isAllowKerberosAuthentication()) {
             CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                     AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        }
+
+        if (kerberosConfig.getKerberosPrincipalAttribute() == null) {
+            String defaultKerberosUserPrincipalAttr = LDAPUtils.getDefaultKerberosUserPrincipalAttribute(ldapConfig.getVendor());
+            model.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, defaultKerberosUserPrincipalAttr);
+            realm.updateComponent(model);
         }
 
         // In case that "Sync Registration" is ON and the LDAP v3 Password-modify extension is ON, we will create hardcoded mapper to create

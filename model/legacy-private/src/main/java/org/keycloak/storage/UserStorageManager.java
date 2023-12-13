@@ -70,13 +70,15 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserStorageManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
-        implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
+        implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent, UserProfileDecorator {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -146,11 +148,25 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         credentialAuthenticationStream = Stream.concat(credentialAuthenticationStream,
                 getCredentialProviders(session, CredentialAuthentication.class));
 
-        return credentialAuthenticationStream
+        CredentialValidationOutput result = null;
+        for (CredentialAuthentication credentialAuthentication : credentialAuthenticationStream
                 .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
-                .map(credentialAuthentication -> credentialAuthentication.authenticate(realm, input))
-                .filter(Objects::nonNull)
-                .findFirst().orElse(null);
+                .collect(Collectors.toList())) {
+            CredentialValidationOutput validationOutput = credentialAuthentication.authenticate(realm, input);
+            if (Objects.nonNull(validationOutput)) {
+                CredentialValidationOutput.Status status = validationOutput.getAuthStatus();
+                if (status == CredentialValidationOutput.Status.AUTHENTICATED || status == CredentialValidationOutput.Status.CONTINUE || status == CredentialValidationOutput.Status.FAILED) {
+                    logger.tracef("Attempt to authenticate credential '%s' with provider '%s' finished with '%s'.", input.getType(), credentialAuthentication, status);
+                    if (status == CredentialValidationOutput.Status.AUTHENTICATED) {
+                        logger.tracef("Authenticated user is '%s'", validationOutput.getAuthenticatedUser().getUsername());
+                    }
+                    result = validationOutput;
+                    break;
+                }
+            }
+            logger.tracef("Did not authenticate user by provider '%s' with the credential type '%s'. Will try to fallback to other user storage providers", credentialAuthentication, input.getType());
+        }
+        return result;
     }
 
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
@@ -375,7 +391,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (user != null) {
             user = importValidation(realm, user);
             // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
-            if (email.equalsIgnoreCase(user.getEmail())) {
+            if (user != null && email.equalsIgnoreCase(user.getEmail())) {
                 return user;
             }
         }
@@ -408,6 +424,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
                 return ((UserQueryMethodsProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery);
+            }
+            else if (provider instanceof UserFederatedStorageProvider) {
+                return ((UserFederatedStorageProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery).
+                        map(id -> getUserById(realm, id));
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
@@ -766,6 +786,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             if (provider != null ) {
                 provider.onCache(realm, user, delegate);
             }
+        }
+    }
+
+    @Override
+    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+        for (UserProfileDecorator decorator : getEnabledStorageProviders(session.getContext().getRealm(), UserProfileDecorator.class)
+                .collect(Collectors.toList())) {
+            decorator.decorateUserProfile(realm, metadata);
         }
     }
 }

@@ -20,26 +20,21 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventStoreSpi;
 import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.events.MapEventStoreProviderFactory;
-import org.keycloak.models.map.storage.file.FileMapStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assume.assumeFalse;
 
 /**
  *
@@ -64,12 +59,6 @@ public class EventQueryTest extends KeycloakModelTest {
 
     @Test
     public void testClear() {
-        // Skip the test if EventProvider == File
-        String evProvider = CONFIG.getConfig().get(EventStoreSpi.NAME + ".provider");
-        String evMapStorageProvider = CONFIG.getConfig().get(EventStoreSpi.NAME + ".map.storage-auth-events.provider");
-        assumeFalse(MapEventStoreProviderFactory.PROVIDER_ID.equals(evProvider) &&
-                (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
-
         inRolledBackTransaction(null, (session, t) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             eventStore.clear();
@@ -149,81 +138,35 @@ public class EventQueryTest extends KeycloakModelTest {
         });
     }
 
-
     @Test
-    @RequireProvider(value = EventStoreProvider.class, only = "map")
-    public void testEventExpiration() {
+    public void testEventDetailsLongValue() {
+        String v1 = RandomStringUtils.random(1000, true, true);
+        String v2 = RandomStringUtils.random(1000, true, true);
+        String v3 = RandomStringUtils.random(1000, true, true);
+        String v4 = RandomStringUtils.random(1000, true, true);
+
         withRealm(realmId, (session, realm) -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
-            // Set expiration so no event is valid
-            realm.setEventsExpiration(5);
-            Event e = createAuthEventForUser(session, realm, "u1");
-            eventStore.onEvent(e);
+            Map<String, String> details = Map.of("k1", v1, "k2", v2, "k3", v3, "k4", v4);
 
-            // Set expiration to 1000 seconds
-            realm.setEventsExpiration(1000);
-            e = createAuthEventForUser(session, realm, "u2");
-            eventStore.onEvent(e);
+            Event event = createAuthEventForUser(session, realm, "u1");
+            event.setDetails(details);
+
+            session.getProvider(EventStoreProvider.class).onEvent(event);
 
             return null;
         });
 
-        setTimeOffset(10);
+        withRealm(realmId, (session, realm) -> {
+            List<Event> events = session.getProvider(EventStoreProvider.class).createQuery().realm(realmId).getResultStream().collect(Collectors.toList());
+            assertThat(events, hasSize(1));
+            Map<String, String> details = events.get(0).getDetails();
 
-        try {
-            withRealm(realmId, (session, realm) -> {
-                EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-
-                Set<Event> events = eventStore.createQuery()
-                        .realm(realmId)
-                        .getResultStream().collect(Collectors.toSet());
-
-                assertThat(events, hasSize(1));
-                assertThat(events.iterator().next().getUserId(), equalTo("u2"));
-                return null;
-            });
-        } finally {
-            setTimeOffset(0);
-        }
-
-
-    }
-
-    @Test
-    @RequireProvider(value = EventStoreProvider.class, only = "map")
-    public void testEventsClearedOnRealmRemoval() {
-        // Create another realm
-        String newRealmId = inComittedTransaction(null, (session, t) -> {
-            RealmModel realm = session.realms().createRealm("events-realm");
-            realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
-
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            Event e = createAuthEventForUser(session, realm, "u1");
-            eventStore.onEvent(e);
-
-            AdminEvent ae = new AdminEvent();
-            ae.setRealmId(realm.getId());
-            eventStore.onEvent(ae, false);
-
-            return realm.getId();
-        });
-
-        // Check if events were created
-        inComittedTransaction(session -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(1L));
-            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(1L));
-        });
-
-        // Remove realm
-        inComittedTransaction((Consumer<KeycloakSession>) session -> session.realms().removeRealm(newRealmId));
-
-        // Check events were removed
-        inComittedTransaction(session -> {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            assertThat(eventStore.createQuery().realm(newRealmId).getResultStream().count(), is(0L));
-            assertThat(eventStore.createAdminQuery().realm(newRealmId).getResultStream().count(), is(0L));
+            assertThat(details.get("k1"), equalTo(v1));
+            assertThat(details.get("k2"), equalTo(v2));
+            assertThat(details.get("k3"), equalTo(v3));
+            assertThat(details.get("k4"), equalTo(v4));
+            return null;
         });
     }
 

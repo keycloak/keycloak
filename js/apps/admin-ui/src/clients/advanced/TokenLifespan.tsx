@@ -32,7 +32,7 @@ export const TokenLifespan = ({
   defaultValue,
   units,
 }: TokenLifespanProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [focused, setFocused] = useState(false);
@@ -49,12 +49,7 @@ export const TokenLifespan = ({
     <FormGroup
       label={t(id)}
       fieldId={id}
-      labelIcon={
-        <HelpItem
-          helpText={t(`clients-help:${id}`)}
-          fieldLabelId={`clients:${id}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${id}Help`)} fieldLabelId={id} />}
     >
       <Controller
         name={name}

@@ -16,18 +16,11 @@
  */
 package org.keycloak.testsuite.utils.arquillian;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
+import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
@@ -40,9 +33,22 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
+
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementValue;
 
 /**
  *
@@ -267,6 +273,42 @@ public class DeploymentArchiveProcessorUtils {
 
         modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
         modifyDocElementAttribute(doc, "SP", "logoutPage", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
+    }
+
+    public static void useJakartaEEServletClass(Archive<?> archive, String adapterConfigPath) {
+        final String SERVLET_TAG = "servlet";
+        final String SERVLET_CLASS_TAG = "servlet-class";
+        final String JAVAX_APPLICATION = "javax.ws.rs.core.Application";
+        final String JAKARTA_APPLICATION = "jakarta.ws.rs.core.Application";
+
+        final Asset configAsset = Optional.ofNullable(archive.get(adapterConfigPath))
+                .map(Node::getAsset)
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Cannot find '%s' config path", adapterConfigPath)));
+
+        try (InputStream configStream = configAsset.openStream()) {
+            final Document doc = IOUtil.loadXML(configStream);
+            final NodeList servletNodeList = doc.getElementsByTagName(SERVLET_TAG);
+
+            if (servletNodeList.getLength() == 1) {
+                final int servletClassCount = doc.getElementsByTagName(SERVLET_CLASS_TAG).getLength();
+
+                if (servletClassCount == 0) {
+                    final Element servletClassElement = doc.createElement(SERVLET_CLASS_TAG);
+                    servletClassElement.setTextContent(JAKARTA_APPLICATION);
+                    servletNodeList.item(0).appendChild(servletClassElement);
+                    log.infof("Appending '%s' tag with Jakarta application class to '%s'\n", SERVLET_CLASS_TAG, archive.getName());
+                } else if (servletClassCount == 1) {
+                    modifyDocElementValue(doc, SERVLET_CLASS_TAG, JAVAX_APPLICATION, JAKARTA_APPLICATION);
+                    log.infof("Modifying 'servlet-class' tag to use Jakarta application class in '%s'\n", SERVLET_CLASS_TAG, archive.getName());
+                } else {
+                    log.error(String.format("Invalid count of '%s' tags for '%s'\n", SERVLET_CLASS_TAG, archive.getName()));
+                    return;
+                }
+                archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static String getAuthServerUrl() {

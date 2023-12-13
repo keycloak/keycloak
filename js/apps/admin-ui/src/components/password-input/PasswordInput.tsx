@@ -17,7 +17,7 @@ const PasswordInputBase = ({
   innerRef,
   ...rest
 }: PasswordInputProps) => {
-  const { t } = useTranslation("common-help");
+  const { t } = useTranslation();
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>

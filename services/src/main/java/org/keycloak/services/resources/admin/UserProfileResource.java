@@ -16,23 +16,45 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
+
+import java.util.Collections;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.validate.Validators;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -54,17 +76,31 @@ public class UserProfileResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
-    public String getConfiguration() {
+    @Operation(description = "Get the configuration for the user profile")
+    public UPConfig getConfiguration() {
         auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
+    @GET
+    @Path("/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(description = "Get the UserProfileMetadata from the configuration")
+    public UserProfileMetadata getMetadata() {
+        auth.requireAnyAdminRole();
+        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
+        return createUserProfileMetadata(session, profile);
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
-    public Response update(String text) {
+    @Operation(description = "Set the configuration for the user profile")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
+    public Response update(
+            @RequestBody(content = @Content(schema = @Schema(implementation = UPConfig.class))) String text) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
 
@@ -77,5 +113,4 @@ public class UserProfileResource {
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
-
 }

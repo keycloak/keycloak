@@ -19,14 +19,12 @@ package org.keycloak.testsuite.broker;
 import java.util.Collections;
 import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -39,7 +37,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
@@ -145,7 +142,6 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     @Test
     @Ignore // Ignore should be removed by https://github.com/keycloak/keycloak/issues/20441
     public void testAccountLinkWithUserStorageProvider() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
 
         String childUsername = PassThroughFederatedUserStorageProvider.PASSTHROUGH_USERNAME;
         String childPassword = PassThroughFederatedUserStorageProvider.INITIAL_PASSWORD;
@@ -184,7 +180,6 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, testIdpToDelete);
 
         // Create user federation
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
 
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("memory");

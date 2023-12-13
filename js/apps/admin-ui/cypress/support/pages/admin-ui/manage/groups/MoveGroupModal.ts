@@ -1,8 +1,8 @@
 import ModalUtils from "../../../../util/ModalUtils";
 
 export default class MoveGroupModal extends ModalUtils {
-  private moveButton = "groups:moveHere-button";
-  private title = ".pf-c-modal-box__title";
+  #moveButton = "moveHere-button";
+  #title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {
     cy.findByTestId(groupName).click();
@@ -15,12 +15,12 @@ export default class MoveGroupModal extends ModalUtils {
   }
 
   checkTitle(title: string) {
-    cy.get(this.title).should("have.text", title);
+    cy.get(this.#title).should("have.text", title);
     return this;
   }
 
   clickMove() {
-    cy.findByTestId(this.moveButton).click();
+    cy.findByTestId(this.#moveButton).click();
     return this;
   }
 }

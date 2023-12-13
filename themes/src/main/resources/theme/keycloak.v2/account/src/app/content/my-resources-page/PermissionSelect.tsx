@@ -50,17 +50,22 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
     };
   }
 
-  private onSelect = (_event: React.MouseEvent | React.ChangeEvent, selection: ScopeValue): void => {
+  private onSelect = (event: React.MouseEvent | React.ChangeEvent, value: string | SelectOptionObject): void => {
     const { selected } = this.state;
     const { onSelect } = this.props;
-    if (selected.includes(selection)) {
+
+    if (!(value instanceof ScopeValue)) {
+      return;
+    }
+
+    if (selected.includes(value)) {
       this.setState(
-        prevState => ({ selected: prevState.selected.filter(item => item !== selection) }),
+        prevState => ({ selected: prevState.selected.filter(item => item !== value) }),
         () => onSelect(this.state.selected.map(sv => sv.value))
       );
     } else {
       this.setState(
-        prevState => ({ selected: [...prevState.selected, selection] }),
+        prevState => ({ selected: [...prevState.selected, value] }),
         () => onSelect(this.state.selected.map(sv => sv.value))
       );
     }

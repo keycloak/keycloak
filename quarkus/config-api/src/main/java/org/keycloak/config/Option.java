@@ -14,8 +14,9 @@ public class Option<T> {
     private final String description;
     private final Optional<T> defaultValue;
     private final Supplier<List<String>> expectedValues;
+    private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -24,6 +25,7 @@ public class Option<T> {
         this.description = getDescriptionByCategorySupportLevel(description);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
+        this.deprecatedMetadata = deprecatedMetadata;
     }
 
     public Class<T> getType() {
@@ -54,6 +56,10 @@ public class Option<T> {
         return expectedValues.get();
     }
 
+    public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
+        return Optional.ofNullable(deprecatedMetadata);
+    }
+
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {
         return new Option<T>(
             this.type,
@@ -63,7 +69,8 @@ public class Option<T> {
             this.buildTime,
             this.description,
             Optional.ofNullable(defaultValue),
-            this.expectedValues
+            this.expectedValues,
+            this.deprecatedMetadata
         );
     }
 

@@ -113,7 +113,7 @@ export const ShareTheResource = ({
 
   return (
     <Modal
-      title={t("shareTheResource", [resource.name])}
+      title={t("shareTheResource", { name: resource.name })}
       variant="medium"
       isOpen={open}
       onClose={onClose}
@@ -121,7 +121,7 @@ export const ShareTheResource = ({
         <Button
           key="confirm"
           variant="primary"
-          id="done"
+          data-testid="done"
           isDisabled={!isValid}
           type="submit"
           form="share-form"
@@ -147,6 +147,7 @@ export const ShareTheResource = ({
           <InputGroup>
             <KeycloakTextInput
               id="users"
+              data-testid="users"
               placeholder={t("usernamePlaceholder")}
               validated={
                 errors.usernames
@@ -160,7 +161,7 @@ export const ShareTheResource = ({
             <Button
               key="add-user"
               variant="primary"
-              id="add"
+              data-testid="add"
               onClick={() => append({ value: "" })}
               isDisabled={isDisabled}
             >

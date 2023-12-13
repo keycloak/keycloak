@@ -1,0 +1,68 @@
+= Keycloak JS imports might need to be updated
+
+If you are loading Keycloak JS directly from the Keycloak server this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, etc. you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+
+[source,js]
+----
+// Before
+import Keycloak from 'keycloak-js/dist/keycloak.js';
+import AuthZ from 'keycloak-js/dist/keycloak-authz.js';
+
+// After
+import Keycloak from 'keycloak-js';
+import AuthZ from 'keycloak-js/authz';
+----
+
+= Truststore Changes
+
+The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated, please use the new default location for truststore material, `conf/truststores`, or specify your desired paths via the `truststore-paths` option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
+
+= Deprecated `--proxy` option
+
+The `--proxy` option has been deprecated and will be removed in a future release. The following table explains how the deprecated option maps to supported options.
+
+[%autowidth,cols="a,a"]
+|===
+| Deprecated usage | New usage
+
+|`kc.sh` (no `proxy` option set)
+|`kc.sh`
+|`kc.sh --proxy none`
+|`kc.sh`
+|`kc.sh --proxy edge`
+|`kc.sh --proxy-headers forwarded\|xforwarded --http-enabled true`
+|`kc.sh --proxy passthrough`
+|`kc.sh --hostname-port 80\|443` (depending if HTTPS is used)
+|`kc.sh --proxy reencrypt`
+|`kc.sh --proxy-headers forwarded\|xforwarded`
+|===
+
+NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
+the case before for `--proxy edge` and `--proxy reencrypt`).
+
+= Breaking changes to the User Profile SPI
+
+If you are using the User Profile SPI in your extension, you might be impacted by the API changes introduced in this release.
+
+The `org.keycloak.userprofile.Attributes` interface includes the following changes:
+
+* Method `getValues` was renamed to `get` to make it more aligned with the same operation from a regular Java `Map`
+* Method `isRootAttribute` was moved to the utility class `org.keycloak.userprofile.UserProfileUtil.isRootAttribute`
+* Method `getFirstValue` was renamed to `getFirst` to make it less verbose
+* Method `getReadable(boolean)` was removed and now all attributes (including root attributes) are returned whenever they have read rights.
+
+= Changes to the user representation in both Admin API and Account contexts
+
+Both `org.keycloak.representations.idm.UserRepresentation` and `org.keycloak.representations.account.UserRepresentation` representation classes have changed
+so that the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) have a consistent representation when fetching or sending
+the representation payload to the Admin and Account APIS, respectively.
+
+The `username`, `email`, `firstName`, `lastName`, and `locale` attributes were moved to a new `org.keycloak.representations.idm.AbstractUserRepresentation` base class.
+
+Also the `getAttributes` method is targeted for representing only custom attributes, so you should not expect any root attribute in the map returned by this method. This method is
+mainly targeted for clients when updating or fetching any custom attribute for a give user.
+
+In order to resolve all the attributes including the root attributes, a new `getRawAttributes` method was added so that the resulting map also includes the root attributes. However,
+this method is not available from the representation payload and it is targeted to be used by the server when managing user profiles.

@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientRoleTab =
@@ -21,12 +21,12 @@ const RealmRoleTabs = lazy(() => import("../../realm-roles/RealmRoleTabs"));
 export const ClientRoleRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/roles/:id/:tab" as const,
   element: <RealmRoleTabs />,
-  breadcrumb: (t) => t("roles:roleDetails"),
+  breadcrumb: (t) => t("roleDetails"),
   handle: {
     access: "view-clients",
   },
 } satisfies AppRouteObject;
 
 export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({
-  pathname: generatePath(ClientRoleRoute.path, params),
+  pathname: generateEncodedPath(ClientRoleRoute.path, params),
 });

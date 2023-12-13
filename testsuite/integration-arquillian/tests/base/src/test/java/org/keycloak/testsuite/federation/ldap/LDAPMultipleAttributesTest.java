@@ -18,13 +18,10 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -36,7 +33,6 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -71,12 +67,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         return ldapRule;
     }
 
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-    }
-
     @Override
     protected void afterImportTestRealm() {
         testingClient.server().run(session -> {
@@ -105,8 +95,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");
             ldapClient.setManagementUrl("/ldap-portal");
-            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("postalCode", "postal_code", "postal_code", "String", true, true, true));
-            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("street", "street", "street", "String", true, true, false));
+            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("postalCode", "postal_code", "postal_code", "String", true, true, true, true));
+            ldapClient.addProtocolMapper(UserAttributeMapper.createClaimMapper("street", "street", "street", "String", true, true, true, false));
             ldapClient.addScopeMapping(appRealm.getRole("user"));
             ldapClient.setSecret("password");
         });
@@ -115,7 +105,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testUserImport() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             UserStorageUtil.userCache(session).clear();
@@ -131,7 +120,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testModel() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             UserStorageUtil.userCache(session).clear();
@@ -235,7 +223,6 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
         oauth.doLogout(response.getRefreshToken(), "password");
     }
-
 
 
 }

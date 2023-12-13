@@ -75,13 +75,13 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm", "--storage=chm");
+        dist.run("start-dev", "--import-realm");
         dist.run("export", "--file=../data/import/realm.json");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("chm").toAbsolutePath());
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
 
-        CLIResult result = dist.run("start-dev", "--import-realm", "--storage=chm");
+        CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertMessage("Realm 'master' already exists. Import skipped");
     }
@@ -89,13 +89,13 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportSingleRealm(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm", "--storage=chm");
+        dist.run("start-dev", "--import-realm");
         dist.run("export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("chm").toAbsolutePath());
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
 
-        CLIResult result = dist.run("start-dev", "--import-realm", "--storage=chm");
+        CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertNoMessage("Not importing realm master from file");
     }
@@ -103,14 +103,14 @@ public class ImportAtStartupDistTest {
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromDirCreatedByExport(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm", "--storage=chm");
+        dist.run("start-dev", "--import-realm");
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("import").toAbsolutePath());
         dist.run("export", "--dir=../data/import");
 
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("chm").toAbsolutePath());
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
 
-        CLIResult result = dist.run("start-dev", "--import-realm", "--storage=chm");
+        CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertNoMessage("Not importing realm master from file");
     }
