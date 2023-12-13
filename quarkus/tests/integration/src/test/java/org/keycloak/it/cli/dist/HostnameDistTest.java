@@ -73,6 +73,13 @@ public class HostnameDistTest {
     }
 
     @Test
+    @Launch({ "start", "--hostname=mykeycloak.org", "--proxy-headers=forwarded" })
+    public void testUseDefaultPortsWhenProxyHeadersIsSet() {
+        assertFrontEndUrl("http://mykeycloak.org:8080", "https://mykeycloak.org/");
+        assertFrontEndUrl("https://mykeycloak.org:8443", "https://mykeycloak.org/");
+    }
+
+    @Test
     @Launch({ "start", "--hostname=mykeycloak.org", "--proxy=edge", "--hostname-strict-https=false" })
     public void testUseDefaultPortsWhenProxyIsSetNoStrictHttps() {
         assertFrontEndUrl("http://mykeycloak.org:8080", "http://mykeycloak.org/");

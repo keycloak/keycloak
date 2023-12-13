@@ -19,6 +19,29 @@ The `spi-truststore-file-*` options and the truststore related options `https-tr
 
 The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
 
+= Deprecated `--proxy` option
+
+The `--proxy` option has been deprecated and will be removed in a future release. The following table explains how the deprecated option maps to supported options.
+
+[%autowidth,cols="a,a"]
+|===
+| Deprecated usage | New usage
+
+|`kc.sh` (no `proxy` option set)
+|`kc.sh`
+|`kc.sh --proxy none`
+|`kc.sh`
+|`kc.sh --proxy edge`
+|`kc.sh --proxy-headers forwarded\|xforwarded --http-enabled true`
+|`kc.sh --proxy passthrough`
+|`kc.sh --hostname-port 80\|443` (depending if HTTPS is used)
+|`kc.sh --proxy reencrypt`
+|`kc.sh --proxy-headers forwarded\|xforwarded`
+|===
+
+NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
+the case before for `--proxy edge` and `--proxy reencrypt`).
+
 = Breaking changes to the User Profile SPI
 
 If you are using the User Profile SPI in your extension, you might be impacted by the API changes introduced in this release.

@@ -31,6 +31,8 @@ import java.util.function.BiFunction;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import org.jboss.logging.Logger;
+import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
@@ -59,6 +61,8 @@ public class PropertyMapper<T> {
     private final String paramLabel;
     private final String envVarFormat;
     private String cliFormat;
+
+    private static final Logger logger = Logger.getLogger(PropertyMapper.class);
 
     PropertyMapper(Option<T> option, String to, BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
                    String mapFrom, String paramLabel, boolean mask) {
@@ -188,6 +192,10 @@ public class PropertyMapper<T> {
 
     boolean isMask() {
         return mask;
+    }
+
+    public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
+        return option.getDeprecatedMetadata();
     }
 
     private ConfigValue transformValue(String name, Optional<String> value, ConfigSourceInterceptorContext context, String configSourceName) {
