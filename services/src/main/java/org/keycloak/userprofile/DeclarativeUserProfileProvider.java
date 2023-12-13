@@ -54,6 +54,7 @@ import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
 
@@ -68,7 +69,8 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     public static final String UP_COMPONENT_CONFIG_KEY = "kc.user.profile.config";
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
-    protected static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata"; // TODO:mposolda should it be here or rather on factory?
+    protected static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
+    protected static final String PARSED_UP_CONFIG_COMPONENT_KEY = "kc.parsed.up.config";
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
@@ -95,7 +97,6 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     private final boolean isDeclarativeConfigurationEnabled;
     private final String providerId;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
-    private final String defaultRawConfig;
     protected final UPConfig parsedDefaultRawConfig;
 
     public DeclarativeUserProfileProvider(KeycloakSession session, DeclarativeUserProfileProviderFactory factory) {
@@ -103,7 +104,6 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         this.providerId = factory.getId();
         this.isDeclarativeConfigurationEnabled = factory.isDeclarativeConfigurationEnabled();
         this.contextualMetadataRegistry = factory.getContextualMetadataRegistry();
-        this.defaultRawConfig = factory.getDefaultRawConfig();
         this.parsedDefaultRawConfig = factory.getParsedDefaultRawConfig();
     }
 
@@ -214,42 +214,41 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         RealmModel realm = session.getContext().getRealm();
 
         if (!isEnabled(realm)) {
-            return getParsedConfig(defaultRawConfig);
+            return parsedDefaultRawConfig.clone();
         }
 
         Optional<ComponentModel> component = getComponentModel();
 
         if (component.isPresent()) {
-            String cfg = getConfigJsonFromComponentModel(component.get());
-
-            if (isBlank(cfg)) {
-                return getParsedConfig(defaultRawConfig);
-            }
-
-            return getParsedConfig(cfg);
+            UPConfig cfg = getConfigFromComponentModel(component.get()).clone();
+            return cfg == null ? parsedDefaultRawConfig.clone() : cfg;
         }
 
-        return getParsedConfig(defaultRawConfig);
+        return parsedDefaultRawConfig.clone();
     }
 
     @Override
-    public void setConfiguration(String configuration) {
+    public void setConfiguration(UPConfig configuration) {
         RealmModel realm = session.getContext().getRealm();
         Optional<ComponentModel> optionalComponent = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
 
         // Avoid creating componentModel and then removing it right away
-        if (!optionalComponent.isPresent() && isBlank(configuration)) return;
+        if (!optionalComponent.isPresent() && configuration == null) return;
 
         ComponentModel component = optionalComponent.isPresent() ? optionalComponent.get() : createComponentModel();
 
         removeConfigJsonFromComponentModel(component);
 
-        if (isBlank(configuration)) {
+        if (configuration == null) {
             realm.removeComponent(component);
             return;
         }
 
-        component.getConfig().putSingle(UP_COMPONENT_CONFIG_KEY, configuration);
+        try {
+            component.getConfig().putSingle(UP_COMPONENT_CONFIG_KEY, JsonSerialization.writeValueAsString(configuration));
+        } catch (IOException ioe) {
+            throw new RuntimeException("Cannot write component config", ioe);
+        }
 
         realm.updateComponent(component);
     }
@@ -475,11 +474,23 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return new AttributeValidatorMetadata(validator, ValidatorConfig.builder().config(validatorConfig).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build());
     }
 
-    private String getConfigJsonFromComponentModel(ComponentModel model) {
+    private UPConfig getConfigFromComponentModel(ComponentModel model) {
         if (model == null)
             return null;
 
-        return model.get(UP_COMPONENT_CONFIG_KEY);
+        UPConfig cfg = model.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
+        if (cfg != null) {
+            return cfg;
+        }
+
+        String rawConfig = model.get(UP_COMPONENT_CONFIG_KEY);
+        if (rawConfig == null) {
+            return null;
+        } else {
+            cfg = getParsedConfig(rawConfig);
+            model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
+            return cfg;
+        }
     }
 
     private void removeConfigJsonFromComponentModel(ComponentModel model) {
@@ -500,7 +511,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Function<UserProfileContext, UserProfileMetadata> createUserDefinedProfileDecorator(KeycloakSession session, UserProfileMetadata decoratedMetadata, ComponentModel component) {
         return (c) -> {
-            UPConfig parsedConfig = getParsedConfig(getConfigJsonFromComponentModel(component));
+            UPConfig parsedConfig = getConfigFromComponentModel(component);
 
             //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
             List<String> errors = UPConfigUtils.validate(session, parsedConfig);

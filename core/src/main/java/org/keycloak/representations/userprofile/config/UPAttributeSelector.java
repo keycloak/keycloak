@@ -18,6 +18,7 @@
  */
 package org.keycloak.representations.userprofile.config;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -26,7 +27,7 @@ import java.util.Set;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPAttributeSelector {
+public class UPAttributeSelector implements Cloneable {
 
     private Set<String> scopes;
 
@@ -51,4 +52,8 @@ public class UPAttributeSelector {
         return "UPAttributeSelector [scopes=" + scopes + "]";
     }
 
+    @Override
+    protected UPAttributeSelector clone() {
+        return new UPAttributeSelector(scopes == null ? null : new HashSet<>(scopes));
+    }
 }

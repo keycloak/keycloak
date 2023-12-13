@@ -54,7 +54,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
         UserProfileProvider provider = getUserProfileProvider(session);
         assertEquals(CustomUserProfileProvider.class.getName(), provider.getClass().getName());
         assertTrue(provider instanceof  CustomUserProfileProvider);
-        provider.setConfiguration(UPConfigUtils.readDefaultConfig());
+        provider.setConfiguration(UPConfigUtils.parseDefaultConfig());
         Optional<ComponentModel> component = getComponentModel(session);
         assertTrue(component.isPresent());
         assertEquals("custom-user-profile", component.get().getProviderId());
@@ -66,12 +66,10 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testInvalidConfiguration(KeycloakSession session) {
-        UserProfileProvider provider = getUserProfileProvider(session);
-
         try {
-            provider.setConfiguration("{\"validateConfigAttribute\": true}");
+            setConfiguration(session, "{\"validateConfigAttribute\": true}");
             fail("Should fail validation");
-        } catch (ComponentValidationException ve) {
+        } catch (RuntimeException ve) {
             // OK
         }
     }
