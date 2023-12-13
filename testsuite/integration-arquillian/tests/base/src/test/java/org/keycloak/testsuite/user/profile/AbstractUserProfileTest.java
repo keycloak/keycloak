@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Before;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -209,7 +210,11 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
 
             @Override
             public String getClientNote(String name) {
-                return null;
+                if (OAuth2Constants.SCOPE.equals(name) && scopes != null && !scopes.isEmpty()) {
+                    return String.join(" ", scopes);
+                } else {
+                    return null;
+                }
             }
 
             @Override
