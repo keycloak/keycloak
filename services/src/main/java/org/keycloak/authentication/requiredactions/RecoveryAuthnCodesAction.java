@@ -1,6 +1,5 @@
 package org.keycloak.authentication.requiredactions;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.keycloak.Config;
@@ -10,6 +9,7 @@ import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
 import org.keycloak.credential.CredentialProvider;
@@ -89,8 +89,6 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
         CredentialProvider recoveryCodeCredentialProvider;
         MultivaluedMap<String, String> httpReqParamsMap;
-        Long generatedAtTime;
-        String generatedUserLabel;
 
         recoveryCodeCredentialProvider = reqActionContext.getSession().getProvider(CredentialProvider.class,
                 RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
@@ -98,12 +96,22 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
         event.detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
 
         httpReqParamsMap = reqActionContext.getHttpRequest().getDecodedFormParameters();
-        List<String> generatedCodes = new ArrayList<>(
-                Arrays.asList(httpReqParamsMap.getFirst(FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN).split(",")));
-        generatedAtTime = Long.parseLong(httpReqParamsMap.getFirst(FIELD_GENERATED_AT_HIDDEN));
-        generatedUserLabel = httpReqParamsMap.getFirst(FIELD_USER_LABEL_HIDDEN);
+        final String generatedCodesString = httpReqParamsMap.getFirst(FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN);
+        final String generatedAtTimeString = httpReqParamsMap.getFirst(FIELD_GENERATED_AT_HIDDEN);
+        final String generatedUserLabel = httpReqParamsMap.getFirst(FIELD_USER_LABEL_HIDDEN);
 
-        RecoveryAuthnCodesCredentialModel credentialModel = createFromValues(generatedCodes, generatedAtTime, generatedUserLabel);
+        if (!generatedAtTimeString.equals(reqActionContext.getAuthenticationSession().getAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_AT_NOTE))
+                || !generatedCodesString.equals(reqActionContext.getAuthenticationSession().getAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_RECOVERY_AUTHN_CODES_NOTE))) {
+            // authn codes have been tampered, sent them again
+            requiredActionChallenge(reqActionContext);
+            return;
+        }
+
+        reqActionContext.getAuthenticationSession().removeAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_AT_NOTE);
+        reqActionContext.getAuthenticationSession().removeAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_RECOVERY_AUTHN_CODES_NOTE);
+
+        List<String> generatedCodes = Arrays.asList(generatedCodesString.split(","));
+        RecoveryAuthnCodesCredentialModel credentialModel = createFromValues(generatedCodes, Long.valueOf(generatedAtTimeString), generatedUserLabel);
 
         if ("on".equals(httpReqParamsMap.getFirst("logout-sessions"))) {
             AuthenticatorUtil.logoutOtherSessions(reqActionContext);

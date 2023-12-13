@@ -27,6 +27,9 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
 public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
+    public static final String GENERATED_RECOVERY_AUTHN_CODES_NOTE = "RecoveryAuthnCodes.generatedRecoveryAuthnCodes";
+    public static final String GENERATED_AT_NOTE = "RecoveryAuthnCodes.generatedAt";
+
     public RecoveryAuthnCodesFormAuthenticator(KeycloakSession keycloakSession) {
     }
 
