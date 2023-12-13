@@ -19,6 +19,7 @@
 
 package org.keycloak.representations.userprofile.config;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -26,7 +27,7 @@ import java.util.Map;
  *
  * @author <a href="joerg.matysiak@bosch.io">Jörg Matysiak</a>
  */
-public class UPGroup {
+public class UPGroup implements Cloneable {
 
     private String name;
     private String displayHeader;
@@ -71,5 +72,14 @@ public class UPGroup {
 
     public void setAnnotations(Map<String, Object> annotations) {
         this.annotations = annotations;
+    }
+
+    @Override
+    protected UPGroup clone() {
+        UPGroup group = new UPGroup(this.name);
+        group.setDisplayHeader(displayHeader);
+        group.setDisplayDescription(displayDescription);
+        group.setAnnotations(this.annotations == null ? null : new HashMap<>(this.annotations));
+        return group;
     }
 }

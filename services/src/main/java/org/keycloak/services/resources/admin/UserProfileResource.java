@@ -32,29 +32,20 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
-import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
-import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.representations.userprofile.config.UPGroup;
-import org.keycloak.validate.Validators;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -99,13 +90,12 @@ public class UserProfileResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Set the configuration for the user profile")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
-    public Response update(
-            @RequestBody(content = @Content(schema = @Schema(implementation = UPConfig.class))) String text) {
+    public Response update(UPConfig config) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
 
         try {
-            t.setConfiguration(text);
+            t.setConfiguration(config);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
