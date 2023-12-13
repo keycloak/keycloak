@@ -93,3 +93,7 @@ node
 
 # SDKMAM environment file
 .sdkmanrc
+
+# vscode and related files
+.vscode
+.devcontainer
