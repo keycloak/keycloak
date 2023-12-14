@@ -36,6 +36,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserProfileMetadata;
@@ -54,14 +56,15 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 public class UserProfileResource {
 
     protected final KeycloakSession session;
-
+    protected final AdminEventBuilder adminEvent;
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.USER_PROFILE);
     }
 
     @GET
@@ -100,6 +103,11 @@ public class UserProfileResource {
             //show validation result containing details about error
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
+
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(config)
+                .success();
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
