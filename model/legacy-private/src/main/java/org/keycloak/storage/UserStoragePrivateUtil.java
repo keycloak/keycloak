@@ -26,6 +26,12 @@ import org.keycloak.storage.datastore.LegacyDatastoreProvider;
  */
 public class UserStoragePrivateUtil {
     public static UserProvider userLocalStorage(KeycloakSession session) {
-        return ((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+        DatastoreProvider datastoreProvider = session.getProvider(DatastoreProvider.class);
+        if(datastoreProvider instanceof LegacyDatastoreProvider) {
+            LegacyDatastoreProvider legacyDatastoreProvider = (LegacyDatastoreProvider) datastoreProvider;
+            return legacyDatastoreProvider.userLocalStorage();
+        } else {
+            return datastoreProvider.users();
+        }
     }
 }
