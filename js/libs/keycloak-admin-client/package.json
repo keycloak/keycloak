@@ -40,7 +40,7 @@
     "camelize-ts": "^3.0.0",
     "lodash-es": "^4.17.21",
     "url-join": "^5.0.0",
-    "url-template": "^3.1.0"
+    "url-template": "^3.1.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.3.1",
