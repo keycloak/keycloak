@@ -67,6 +67,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
+    public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
+
     static final String JGROUPS_DNS_QUERY_PARAM = "-Djgroups.dns.query=";
 
     public static final String OPTIMIZED_ARG = "--optimized";
@@ -323,9 +325,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
         // accumulate the env vars in priority order - unsupported, first class, additional
-        var envVars = new ArrayList<>(Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
-                .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new))
-                .values());
+        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
+
+        // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
+        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").build());
+
+        var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         // watch the secrets used by secret key - we don't currently expect configmaps, optional refs, or watch the initial-admin
