@@ -44,7 +44,10 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -61,6 +64,8 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -161,6 +166,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
     protected AppPage appPage;
@@ -1193,7 +1201,14 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     protected UPConfig setUserProfileConfiguration(String configuration) {
-        return setUserProfileConfiguration(testRealm(), configuration);
+        assertAdminEvents.clear();
+        UPConfig result = setUserProfileConfiguration(testRealm(), configuration);
+        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME,
+                OperationType.UPDATE, AdminEventPaths.userProfilePath(), ResourceType.USER_PROFILE);
+        Assert.assertTrue("Incorrect representation in event", StringUtils.isBlank(configuration)
+                ? StringUtils.isBlank(adminEvent.getRepresentation())
+                : StringUtils.isNotBlank(adminEvent.getRepresentation()));
+        return result;
     }
 
     public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
