@@ -71,6 +71,12 @@ public class OIDCAttributeMapperHelper {
     public static final String INCLUDE_IN_INTROSPECTION_LABEL = "includeInIntrospection.label";
     public static final String INCLUDE_IN_INTROSPECTION_HELP_TEXT = "includeInIntrospection.tooltip";
 
+    public static final String INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN = "lightweight.claim";
+
+    public static final String INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN_LABEL = "includeInLightweight.label";
+
+    public static final String INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN_HELP_TEXT = "includeInLightweight.tooltip";
+
     private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
 
     /**
@@ -392,6 +398,10 @@ public class OIDCAttributeMapperHelper {
         return "true".equals(includeInIntrospection);
     }
 
+    public static boolean includeInLightweightAccessToken(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN));
+    }
+
     public static void addAttributeConfig(List<ProviderConfigProperty> configProperties, Class<? extends ProtocolMapper> protocolMapperClass) {
         addTokenClaimNameConfig(configProperties);
         addJsonTypeConfig(configProperties);
@@ -443,6 +453,14 @@ public class OIDCAttributeMapperHelper {
             property.setDefaultValue("true");
             property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
             configProperties.add(property);
+
+            ProviderConfigProperty property2 = new ProviderConfigProperty();
+            property2.setName(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN);
+            property2.setLabel(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN_LABEL);
+            property2.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property2.setDefaultValue("false");
+            property2.setHelpText(INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN_HELP_TEXT);
+            configProperties.add(property2);
         }
 
         if (UserInfoTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
