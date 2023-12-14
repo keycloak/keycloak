@@ -19,6 +19,7 @@
 package org.keycloak.representations.userprofile.config;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -82,4 +83,21 @@ public class UPAttributeRequired implements Cloneable {
         return new UPAttributeRequired(roles, scopes);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(roles, scopes);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPAttributeRequired other = (UPAttributeRequired) obj;
+        return Objects.equals(this.roles, other.roles)
+                && Objects.equals(this.scopes, other.scopes);
+    }
 }

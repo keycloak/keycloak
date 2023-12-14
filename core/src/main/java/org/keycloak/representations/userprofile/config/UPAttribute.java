@@ -21,6 +21,7 @@ package org.keycloak.representations.userprofile.config;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Configuration of the Attribute.
@@ -169,5 +170,29 @@ public class UPAttribute implements Cloneable {
         attr.setSelector(this.selector == null ? null : this.selector.clone());
         attr.setGroup(this.group);
         return attr;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPAttribute other = (UPAttribute) obj;
+        return Objects.equals(this.name, other.name)
+                && Objects.equals(this.displayName, other.displayName)
+                && Objects.equals(this.group, other.group)
+                && Objects.equals(this.validations, other.validations)
+                && Objects.equals(this.annotations, other.annotations)
+                && Objects.equals(this.required, other.required)
+                && Objects.equals(this.permissions, other.permissions)
+                && Objects.equals(this.selector, other.selector);
     }
 }

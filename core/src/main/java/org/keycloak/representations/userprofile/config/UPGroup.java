@@ -21,6 +21,7 @@ package org.keycloak.representations.userprofile.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Configuration of the attribute group.
@@ -81,5 +82,25 @@ public class UPGroup implements Cloneable {
         group.setDisplayDescription(displayDescription);
         group.setAnnotations(this.annotations == null ? null : new HashMap<>(this.annotations));
         return group;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPGroup other = (UPGroup) obj;
+        return Objects.equals(this.name, other.name)
+                && Objects.equals(this.displayHeader, other.displayHeader)
+                && Objects.equals(this.displayDescription, other.displayDescription)
+                && Objects.equals(this.annotations, other.annotations);
     }
 }
