@@ -88,6 +88,9 @@ public class KeystoreUtil {
                 throw new RuntimeException("Couldn't load key with alias '" + keyAlias + "' from keystore");
             }
             PublicKey publicKey = keyStore.getCertificate(keyAlias).getPublicKey();
+            if (publicKey == null) {
+                throw new RuntimeException("Couldn't load public key with alias '" + keyAlias + "' from keystore");
+            }
             return new KeyPair(publicKey, privateKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
