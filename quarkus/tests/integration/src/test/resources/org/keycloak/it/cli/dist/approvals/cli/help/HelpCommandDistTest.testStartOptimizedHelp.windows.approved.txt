@@ -14,6 +14,7 @@ Options:
                        'data/import' directory.
 --optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
 
 Database:
 
