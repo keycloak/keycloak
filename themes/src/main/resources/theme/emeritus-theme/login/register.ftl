@@ -176,3 +176,5 @@
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     </#if>
 </@layout.registrationLayout>
+<script defer type="module" src="${url.resourcesPath}/js/trackpointUtil.js"></script>
+<script defer type="module" src="${url.resourcesPath}/js/cookie.min.js" onload="window.onCookieJsLoad({basePath: '${url.resourcesPath}', screenName: 'sign_up_page', realm: '${realm.displayName}'})"></script>
