@@ -23,3 +23,4 @@ org.keycloak.services.clientpolicy.executor.RegistrationAccessTokenRotationDisab
 org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory
 org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory
+org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory
