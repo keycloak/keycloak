@@ -20,13 +20,13 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
@@ -50,38 +50,9 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         if (!isRebuild() && !Environment.isRebuildCheck()) {
             return iter;
         }
-        return new Iterator<T>() {
-            T next;
-            boolean isNull;
-
-            @Override
-            public boolean hasNext() {
-                while (next == null && !isNull) {
-                    if (!iter.hasNext()) {
-                        return false;
-                    }
-                    T value = iter.next();
-                    if (!isRuntime(nameFunc.apply(value))) {
-                        next = value;
-                        isNull = next == null;
-                    }
-                }
-                return true;
-            }
-
-            @Override
-            public T next() {
-                if (next == null && !isNull && !hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                T value = next;
-                next = null;
-                isNull = false;
-                return value;
-            }
-        };
+        return new FilterIterator<>(iter, item -> !isRuntime(nameFunc.apply(item)));
     }
-
+    
     static boolean isRuntime(String name) {
         PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
         return mapper != null && mapper.isRunTime();
