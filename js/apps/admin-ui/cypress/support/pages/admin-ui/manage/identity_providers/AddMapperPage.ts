@@ -115,6 +115,7 @@ export default class AddMapperPage {
       .contains("Advanced Attribute to Role")
       .click();
 
+    cy.findByTestId("attributes-add-row").click();
     cy.get(this.#attributesKeyInput).clear();
     cy.get(this.#attributesKeyInput).type("key");
 
@@ -394,6 +395,7 @@ export default class AddMapperPage {
 
     cy.findByTestId(this.#idpMapperSelect).contains("Claim to Role").click();
 
+    cy.findByTestId("claims-add-row").click();
     const keyValue = new LegacyKeyValueInput("config.claims");
 
     keyValue.fillKeyValue({ key: "key", value: "value" });
