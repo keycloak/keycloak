@@ -36,7 +36,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.crypto.Algorithm.ES256;
 import static org.keycloak.crypto.Algorithm.ES512;
-import static org.keycloak.crypto.Algorithm.RS256;
+import static org.keycloak.crypto.Algorithm.RS384;
 import static org.keycloak.crypto.Algorithm.RS512;
 
 /**
@@ -61,7 +61,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesRSA() {
-        assertPublicKeyAlgorithms(false, null, Lists.newArrayList(RS256, ES512));
+        assertPublicKeyAlgorithms(false, null, Lists.newArrayList(RS384, ES512));
     }
 
     @Test
