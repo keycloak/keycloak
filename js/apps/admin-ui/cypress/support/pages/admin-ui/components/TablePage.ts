@@ -44,16 +44,45 @@ export default class TablePage extends CommonElements {
   }
 
   selectRowItemAction(itemName: string, actionItemName: string) {
+    this.#getRowItemAction(itemName, actionItemName).click();
+    return this;
+  }
+
+  assertRowItemActionExist(itemName: string, actionItemName: string) {
+    this.#getRowItemAction(itemName, actionItemName).should("exist");
+    return this;
+  }
+
+  assertRowItemActionDoesNotExist(itemName: string, actionItemName: string) {
     cy.get(
       (this.#tableInModal ? ".pf-c-modal-box.pf-m-md " : "") +
         this.#tableRowItem,
     )
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(".pf-c-dropdown__toggle")
-      .click();
-    cy.get(this.dropdownMenuItem).contains(actionItemName).click();
+      .then(($tbody) => {
+        if ($tbody.find(".pf-c-dropdown__toggle").length > 0) {
+          $tbody.find(".pf-c-dropdown__toggle").click();
+          cy.get(this.dropdownMenuItem)
+            .contains(actionItemName)
+            .should("not.exist");
+        }
+      });
     return this;
+  }
+
+  #getRowItemAction(itemName: string, actionItemName: string) {
+    return cy
+      .get(
+        (this.#tableInModal ? ".pf-c-modal-box.pf-m-md " : "") +
+          this.#tableRowItem,
+      )
+      .contains(itemName)
+      .parentsUntil("tbody")
+      .find(".pf-c-dropdown__toggle")
+      .click()
+      .get(this.dropdownMenuItem)
+      .contains(actionItemName);
   }
 
   typeValueToRowItem(row: number, column: number, value: string) {
