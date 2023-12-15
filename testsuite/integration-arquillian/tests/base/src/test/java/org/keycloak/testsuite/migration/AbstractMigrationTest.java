@@ -63,6 +63,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -110,6 +112,7 @@ import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
@@ -393,6 +396,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo23_0_0(boolean testUserProfileMigration) {
         if (testUserProfileMigration) testUserProfile(migrationRealm2);
         testRegistrationProfileFormActionRemoved(migrationRealm2);
+    }
+
+    protected void testMigrationTo24_0_0(boolean testUserProfileMigration) {
+        if (testUserProfileMigration) {
+            testUserProfileEnabledByDefault(migrationRealm);
+            testUnmanagedAttributePolicySet(migrationRealm, UnmanagedAttributePolicy.ENABLED);
+            testUserProfileEnabledByDefault(migrationRealm2);
+            testUnmanagedAttributePolicySet(migrationRealm2, null);
+        }
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -1079,6 +1091,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo23_0_0(testUserProfileMigration);
     }
 
+    protected void testMigrationTo24_x(boolean testUserProfileMigration) {
+        testMigrationTo24_0_0(testUserProfileMigration);
+    }
+
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
@@ -1182,5 +1198,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         log.info("testing realm attributes migration");
         Map<String, String> realmAttributes = migrationRealm.toRepresentation().getAttributes();
         assertEquals("custom_value", realmAttributes.get("custom_attribute"));
+    }
+
+    private void testUserProfileEnabledByDefault(RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        Map<String, String> attributes = rep.getAttributes();
+        String userProfileEnabled = attributes.get(REALM_USER_PROFILE_ENABLED);
+        assertTrue(Boolean.parseBoolean(userProfileEnabled));
+    }
+
+    private void testUnmanagedAttributePolicySet(RealmResource realm, UnmanagedAttributePolicy policy) {
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
+        assertEquals(policy, upConfig.getUnmanagedAttributePolicy());
     }
 }
