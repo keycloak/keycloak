@@ -219,11 +219,11 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                     if (isSelfSigned(cax509cert)) {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
                         trustedRootCerts.put(principal, cax509cert);
-                        log.debug("Trusted root CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                        log.debug("Trusted root CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     } else {
                         X500Principal principal = cax509cert.getSubjectX500Principal();
                         intermediateCerts.put(principal, cax509cert);
-                        log.debug("Intermediate CA found in trustore : alias : " + alias + " | Subject DN : " + principal);
+                        log.debug("Intermediate CA found in truststore : alias : " + alias + " | Subject DN : " + principal);
                     }
                 } else
                     log.info("Skipping certificate with alias [" + alias + "] from truststore, because it's not an X509Certificate");

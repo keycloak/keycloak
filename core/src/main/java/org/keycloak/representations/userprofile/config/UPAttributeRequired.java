@@ -18,6 +18,7 @@
  */
 package org.keycloak.representations.userprofile.config;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -28,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPAttributeRequired {
+public class UPAttributeRequired implements Cloneable {
 
     private Set<String> roles;
     private Set<String> scopes;
@@ -72,6 +73,13 @@ public class UPAttributeRequired {
     @Override
     public String toString() {
         return "UPAttributeRequired [isAlways=" + isAlways() + ", roles=" + roles + ", scopes=" + scopes + "]";
+    }
+
+    @Override
+    protected UPAttributeRequired clone() {
+        Set<String> scopes = this.scopes == null ? null : new HashSet<>(this.scopes);
+        Set<String> roles = this.roles == null ? null : new HashSet<>(this.roles);
+        return new UPAttributeRequired(roles, scopes);
     }
 
 }

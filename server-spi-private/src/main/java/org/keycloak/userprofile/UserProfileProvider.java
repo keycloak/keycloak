@@ -74,20 +74,20 @@ public interface UserProfileProvider extends Provider {
      * Get current UserProfile configuration.
      *
      * @return current UserProfile configuration
-     * @see #setConfiguration(String)
+     * @see #setConfiguration(UPConfig)
      */
     UPConfig getConfiguration();
 
     /**
      * Set new UserProfile configuration. It is persisted inside of the provider.
      *
-     * @param configuration to be set
+     * @param configuration to be set. It can be null and in this case, userProfile implementation will switch to use the default configuration
      * @throws RuntimeException if configuration is invalid (exact exception class
      *                          depends on the implementation) or configuration
      *                          can't be persisted.
      * @see #getConfiguration()
      */
-    void setConfiguration(String configuration);
+    void setConfiguration(UPConfig configuration);
 
     /**
      * Returns whether the declarative provider is enabled to a realm

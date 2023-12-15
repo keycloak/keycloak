@@ -21,6 +21,8 @@ package org.keycloak.representations.userprofile.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -29,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPConfig {
+public class UPConfig implements Cloneable {
 
     public enum UnmanagedAttributePolicy {
 
@@ -119,5 +121,20 @@ public class UPConfig {
     @Override
     public String toString() {
         return "UPConfig [attributes=" + attributes + ", groups=" + groups + "]";
+    }
+
+    @Override
+    public UPConfig clone() {
+        UPConfig cfg = new UPConfig();
+
+        cfg.setUnmanagedAttributePolicy(this.unmanagedAttributePolicy);
+        if (attributes != null) {
+            cfg.setAttributes(attributes.stream().map(UPAttribute::clone).collect(Collectors.toList()));
+        }
+        if (groups != null) {
+            cfg.setGroups(groups.stream().map(UPGroup::clone).collect(Collectors.toList()));
+        }
+
+        return cfg;
     }
 }
