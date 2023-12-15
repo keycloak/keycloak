@@ -86,10 +86,6 @@ div#offline-session-max-label > .pf-c-form__group-label {
   width: 85%;
 }
 
-.add-provider-modal > div.pf-c-modal-box__body {
-  overflow: visible;
-}
-
 .pf-c-content.messageBundleDescription {
   max-width: 1024px;
   padding-bottom: var(--pf-global--spacer--lg);
