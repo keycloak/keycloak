@@ -79,7 +79,7 @@ export default function PageList() {
         addAlert(t("itemDeletedSuccess"));
         refresh();
       } catch (error) {
-        addError("clientDeleteError", error);
+        addError("itemSaveError", error);
       }
     },
   });
@@ -119,7 +119,7 @@ export default function PageList() {
           { name: "id", cellRenderer: DetailLink },
           ...page.properties.slice(0, 3).map((p) => ({
             name: `config.${p.name}[0]`,
-            displayKey: p.name,
+            displayKey: p.label,
           })),
         ]}
         ariaLabelKey="list"

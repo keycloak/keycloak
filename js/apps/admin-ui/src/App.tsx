@@ -24,44 +24,44 @@ import { AuthWall } from "./root/AuthWall";
 
 const AppContexts = ({ children }: PropsWithChildren) => (
   <ErrorBoundaryProvider>
-    <RealmsProvider>
-      <RealmContextProvider>
-        <WhoAmIContextProvider>
-          <RecentRealmsProvider>
-            <AccessContextProvider>
-              <Help>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </Help>
-            </AccessContextProvider>
-          </RecentRealmsProvider>
-        </WhoAmIContextProvider>
-      </RealmContextProvider>
-    </RealmsProvider>
+    <ServerInfoProvider>
+      <RealmsProvider>
+        <RealmContextProvider>
+          <WhoAmIContextProvider>
+            <RecentRealmsProvider>
+              <AccessContextProvider>
+                <Help>
+                  <AlertProvider>
+                    <SubGroups>{children}</SubGroups>
+                  </AlertProvider>
+                </Help>
+              </AccessContextProvider>
+            </RecentRealmsProvider>
+          </WhoAmIContextProvider>
+        </RealmContextProvider>
+      </RealmsProvider>
+    </ServerInfoProvider>
   </ErrorBoundaryProvider>
 );
 
 export const App = () => {
   return (
-    <ServerInfoProvider>
-      <AppContexts>
-        <Page
-          header={<Header />}
-          isManagedSidebar
-          sidebar={<PageNav />}
-          breadcrumb={<PageBreadCrumbs />}
-          mainContainerId={mainPageContentId}
-        >
-          <ErrorBoundaryFallback fallback={ErrorRenderer}>
-            <Suspense fallback={<KeycloakSpinner />}>
-              <AuthWall>
-                <Outlet />
-              </AuthWall>
-            </Suspense>
-          </ErrorBoundaryFallback>
-        </Page>
-      </AppContexts>
-    </ServerInfoProvider>
+    <AppContexts>
+      <Page
+        header={<Header />}
+        isManagedSidebar
+        sidebar={<PageNav />}
+        breadcrumb={<PageBreadCrumbs />}
+        mainContainerId={mainPageContentId}
+      >
+        <ErrorBoundaryFallback fallback={ErrorRenderer}>
+          <Suspense fallback={<KeycloakSpinner />}>
+            <AuthWall>
+              <Outlet />
+            </AuthWall>
+          </Suspense>
+        </ErrorBoundaryFallback>
+      </Page>
+    </AppContexts>
   );
 };

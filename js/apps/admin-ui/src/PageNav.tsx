@@ -27,7 +27,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { realm } = useRealm();
   const route = routes.find(
     (route) =>
-      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === id || path,
+      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === (id || path),
   );
 
   const accessAllowed =

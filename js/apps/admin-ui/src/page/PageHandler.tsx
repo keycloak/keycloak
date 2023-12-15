@@ -68,15 +68,19 @@ export const PageHandler = ({
       } else {
         await adminClient.components.create(updatedComponent);
       }
-      addAlert("Successful saved / updated");
+      addAlert("itemSaveSuccessful");
     } catch (error) {
-      addError("Error: {{error}}", error);
+      addError("itemSaveError", error);
     }
   };
 
   return (
     <PageSection variant="light">
-      <Form isHorizontal onSubmit={form.handleSubmit(onSubmit)}>
+      <Form
+        isHorizontal
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="keycloak__form"
+      >
         <FormProvider {...form}>
           <DynamicComponents properties={page.properties} />
         </FormProvider>
