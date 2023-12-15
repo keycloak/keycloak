@@ -26,7 +26,7 @@ Currently only Secrets are supported.
 
 == Trust Kubernetes CA
 
-The cert for the Kubernetes CA is added automatically to your Keycloak pods managed by the operator.
+The cert for the Kubernetes CA is added automatically to your {project_name} Pods managed by the Operator.
 
 = Automatic certificate management for SAML identity providers
 
