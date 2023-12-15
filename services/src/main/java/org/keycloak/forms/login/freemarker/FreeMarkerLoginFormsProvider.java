@@ -91,7 +91,6 @@ import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
 /**
@@ -161,13 +160,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case UPDATE_PROFILE:
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, new UserUpdateProfileContext(realm, user));
-
                 actionMessage = Messages.UPDATE_PROFILE;
-                if(isDynamicUserProfile()) {
-                    page = LoginFormsPages.UPDATE_USER_PROFILE;
-                } else {
-                    page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
-                }
+                page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_EMAIL:
                 actionMessage = Messages.UPDATE_EMAIL;
@@ -187,9 +181,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case VERIFY_PROFILE:
                 UpdateProfileContext verifyProfile = new UserUpdateProfileContext(realm, user);
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, verifyProfile);
-
                 actionMessage = Messages.UPDATE_PROFILE;
-                page = LoginFormsPages.UPDATE_USER_PROFILE;
+                page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             default:
                 return Response.serverError().build();
@@ -247,6 +240,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));
                 break;
             case LOGIN_UPDATE_PROFILE:
+                attributes.put("profile", new VerifyProfileBean(user, formData, session));
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("user", new ProfileBean(userCtx, formData));
                 break;
@@ -274,9 +268,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
             case REGISTER:
-                if(isDynamicUserProfile()) {
-                    page = LoginFormsPages.REGISTER_USER_PROFILE;
-                }
                 RegisterBean rb = new RegisterBean(formData,session);
                 //legacy bean for static template
                 attributes.put("register", rb);
@@ -297,11 +288,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case SAML_POST_FORM:
                 attributes.put("samlPost", new SAMLPostFormBean(formData));
                 break;
-            case UPDATE_USER_PROFILE:
-                attributes.put("profile", new VerifyProfileBean(user, formData, session));
-                userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
-                attributes.put("user", new ProfileBean(userCtx, formData));
-                break;
             case IDP_REVIEW_USER_PROFILE:
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
@@ -317,10 +303,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
     
-    private boolean isDynamicUserProfile() {
-        return session.getProvider(UserProfileProvider.class).isEnabled(realm);
-    }
-
     /**
      * Get sure that correct hostname and path is used for totp form.
      * Relevant when running in proxy mode.
@@ -646,15 +628,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             setMessage(MessageType.WARNING, Messages.UPDATE_PROFILE);
         }
 
-        if(isDynamicUserProfile()) {
-            UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
-            if(userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW)
-                return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
-            else
-                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE);
-        } else {
-            return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+        UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+
+        if (userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW) {
+            return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
         }
+
+        return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
     }
 
     @Override

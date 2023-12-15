@@ -337,22 +337,20 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         if (attributes != null) {
             for (Map.Entry<String, ?> entry : attributes.entrySet()) {
-                String key = entry.getKey();
+                String name = entry.getKey();
 
-                if (!isSupportedAttribute(key)) {
-                    if (!isManagedAttribute(key) && isAllowUnmanagedAttribute()) {
-                        unmanagedAttributes.put(key, normalizeAttributeValues(key, entry.getValue()));
+                if (!isSupportedAttribute(name)) {
+                    if (!isManagedAttribute(name) && isAllowUnmanagedAttribute()) {
+                        String normalizedName = normalizeAttributeName(name);
+                        unmanagedAttributes.put(normalizedName, normalizeAttributeValues(normalizedName, entry.getValue()));
                     }
                     continue;
                 }
 
-                if (key.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
-                    key = key.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
-                }
+                String normalizedName = normalizeAttributeName(name);
+                List<String> values = normalizeAttributeValues(normalizedName, entry.getValue());
 
-                List<String> values = normalizeAttributeValues(key, entry.getValue());
-
-                newAttributes.put(key, Collections.unmodifiableList(values));
+                newAttributes.put(normalizedName, Collections.unmodifiableList(values));
             }
         }
 
@@ -396,6 +394,13 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return newAttributes;
+    }
+
+    private static String normalizeAttributeName(String name) {
+        if (name.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
+            return name.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
+        }
+        return name;
     }
 
     private List<String> normalizeAttributeValues(String name, Object value) {
@@ -472,7 +477,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private boolean isManagedAttribute(String name) {
-        return metadataByAttribute.containsKey(name);
+        return metadataByAttribute.containsKey(normalizeAttributeName(name));
     }
 
     /**

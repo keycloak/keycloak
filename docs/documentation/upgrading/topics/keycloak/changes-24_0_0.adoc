@@ -70,3 +70,40 @@ this method is not available from the representation payload and it is targeted 
 = `https-client-auth` is a build time option
 
 Option `https-client-auth` had been treated as a run time option, however this is not supported by Quarkus. The option needs to be handled at build time instead.
+
+= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+
+These templates are responsible for rendering both update profile (when the `Update Profile` required action is enabled to a user)
+and registration pages, respectively.
+
+If you use a custom theme to change these templates, they will function as expect because only the content is updated.
+However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
+changing the built-in templates by using all the capabilities provided by this feature.
+
+Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are longer necessary and removed in this release:
+
+* `update-user-profile.ftl`
+* `register-user-profile.ftl`
+
+If you were using the `declarative-user-profile` feature in previously releases with customizations to the above templates,
+update the `login-update-profile.ftl` and `register.ftl` accordingly.
+
+= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
+to update profile when users are authenticating to a realm.
+
+By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
+and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
+
+If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
+to the new template.
