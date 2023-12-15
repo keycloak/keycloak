@@ -71,3 +71,20 @@ This strategy provides consistency in how attributes are managed by clients and 
 configuration set to a realm.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
