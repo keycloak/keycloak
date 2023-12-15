@@ -9,8 +9,7 @@ import {
 import { CubesIcon } from "@patternfly/react-icons";
 import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { useMatch, useNavigate } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
@@ -30,6 +29,7 @@ import { toUser, UserRoute } from "../user/routes/User";
 import { toUsers } from "../user/routes/Users";
 import { isLightweightUser } from "../user/utils";
 import useFormatDate from "../utils/useFormatDate";
+import { IRowData } from "@patternfly/react-table";
 
 export type ColumnName =
   | "username"
@@ -146,7 +146,12 @@ export default function SessionsTable({
     },
   });
 
-  async function onClickSignOut(session: UserSessionRepresentation) {
+  async function onClickSignOut(
+    event: React.MouseEvent,
+    rowIndex: number,
+    rowData: IRowData,
+  ) {
+    const session = rowData.data as UserSessionRepresentation;
     await adminClient.realms.deleteSession({ realm, session: session.id! });
 
     if (session.userId === whoAmI.getUserId()) {
@@ -179,12 +184,17 @@ export default function SessionsTable({
           )
         }
         columns={columns}
-        actions={[
-          {
-            title: t("signOut"),
-            onRowClick: onClickSignOut,
-          } as Action<UserSessionRepresentation>,
-        ]}
+        actionResolver={(rowData: IRowData) => {
+          if (rowData.data.type === "OFFLINE") {
+            return [];
+          }
+          return [
+            {
+              title: t("signOut"),
+              onClick: onClickSignOut,
+            } as Action<UserSessionRepresentation>,
+          ];
+        }}
         emptyState={
           <ListEmptyState
             hasIcon
