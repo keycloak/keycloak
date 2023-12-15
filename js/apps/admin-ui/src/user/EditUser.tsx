@@ -103,13 +103,13 @@ export default function EditUser() {
         adminClient.users.findOne({
           id: id!,
           userProfileMetadata: true,
-        }) as UIUserRepresentation,
+        }) as UIUserRepresentation | undefined,
         adminClient.attackDetection.findOne({ id: id! }),
         getUnmanagedAttributes(id!),
         adminClient.users.getProfile({ realm: realmName }),
       ]),
-    ([realm, user, attackDetection, unmanagedAttributes, upConfig]) => {
-      if (!user || !realm || !attackDetection) {
+    ([realm, userData, attackDetection, unmanagedAttributes, upConfig]) => {
+      if (!userData || !realm || !attackDetection) {
         throw new Error(t("notFound"));
       }
 
@@ -117,8 +117,9 @@ export default function EditUser() {
         isFeatureEnabled(Feature.DeclarativeUserProfile) &&
         realm.attributes?.userProfileEnabled === "true";
 
+      const { userProfileMetadata, ...user } = userData;
       setUserProfileMetadata(
-        isUserProfileEnabled ? user.userProfileMetadata : undefined,
+        isUserProfileEnabled ? userProfileMetadata : undefined,
       );
 
       if (isUserProfileEnabled) {
