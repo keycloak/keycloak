@@ -194,6 +194,7 @@ public class LogoutEndpoint {
         ClientModel client = clientId == null ? null : realm.getClientByClientId(clientId);
         if (clientId != null && client == null) {
             logger.warnf("Client '%s' not found.", clientId);
+            logger.warnf("vunet 197");
             forcedConfirmation = true;
         }
 
@@ -214,6 +215,9 @@ public class LogoutEndpoint {
             client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientByClientId(idToken.getIssuedFor());
             if (client != null) {
                 confirmationNeeded = false;
+            }
+            else {
+                logger.warnf("vunet 220. Error getting client_id from id_token_hint");
             }
         } else {
             // Check client_id and id_token_hint point to the same client
@@ -284,13 +288,17 @@ public class LogoutEndpoint {
         if (authResult != null) {
             userSession = authResult.getSession();
             if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.getSession().getId())) {
-                forcedConfirmation = true;
+                logger.warnf("Session id from cookie ('%s') does not match session id from ID token ('%s')", authResult.getSession().getId(), idToken.getSessionState());
+                // forcedConfirmation = true;
             }
         } else {
             // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
             // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
             if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
                 confirmationNeeded = false;
+            }
+            else {
+                logger.warnf("vunet 300");
             }
         }
 
