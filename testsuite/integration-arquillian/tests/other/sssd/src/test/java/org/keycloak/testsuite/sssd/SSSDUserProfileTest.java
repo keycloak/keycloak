@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.sssd;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -205,7 +206,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertFalse(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
             Assert.assertFalse(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
-            updateProfilePage.prepareUpdate().otherProfileAttribute("postal_code", "123456").submit();
+            updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
 
@@ -257,7 +258,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertTrue(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
-            updateProfilePage.prepareUpdate().otherProfileAttribute("postal_code", "123456").submit();
+            updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
 

@@ -145,8 +145,28 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             }
 
             @Override
+            public void setFirstName(String firstName) {
+                userCtx.setFirstName(firstName);
+            }
+
+            @Override
+            public void setEmail(String email) {
+                userCtx.setEmail(email);
+            }
+
+            @Override
+            public void setLastName(String lastName) {
+                userCtx.setLastName(lastName);
+            }
+
+            @Override
             public String getUsername() {
                 return userCtx.getUsername();
+            }
+
+            @Override
+            public void setUsername(String username) {
+                userCtx.setUsername(username);
             }
 
             @Override
