@@ -419,7 +419,7 @@ public interface TestingResource {
     void disableTruststoreSpi();
 
     /**
-     * Temporarily changes the trustore SPI with another hostname verification policy. Call reenableTruststoreSpi to revert.
+     * Temporarily changes the truststore SPI with another hostname verification policy. Call reenableTruststoreSpi to revert.
      * @param hostnamePolicy The hostname verification policy to set
      */
     @GET
