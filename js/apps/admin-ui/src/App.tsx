@@ -20,21 +20,28 @@ import { SubGroups } from "./groups/SubGroupsContext";
 import { AuthWall } from "./root/AuthWall";
 
 const AppContexts = ({ children }: PropsWithChildren) => (
-  <RealmsProvider>
-    <RealmContextProvider>
-      <WhoAmIContextProvider>
-        <RecentRealmsProvider>
-          <AccessContextProvider>
-            <Help>
-              <AlertProvider>
-                <SubGroups>{children}</SubGroups>
-              </AlertProvider>
-            </Help>
-          </AccessContextProvider>
-        </RecentRealmsProvider>
-      </WhoAmIContextProvider>
-    </RealmContextProvider>
-  </RealmsProvider>
+  <ErrorBoundary
+    FallbackComponent={ErrorRenderer}
+    onReset={() =>
+      (window.location.href = window.location.origin + window.location.pathname)
+    }
+  >
+    <RealmsProvider>
+      <RealmContextProvider>
+        <WhoAmIContextProvider>
+          <RecentRealmsProvider>
+            <AccessContextProvider>
+              <Help>
+                <AlertProvider>
+                  <SubGroups>{children}</SubGroups>
+                </AlertProvider>
+              </Help>
+            </AccessContextProvider>
+          </RecentRealmsProvider>
+        </WhoAmIContextProvider>
+      </RealmContextProvider>
+    </RealmsProvider>
+  </ErrorBoundary>
 );
 
 export const App = () => {
@@ -47,21 +54,13 @@ export const App = () => {
         breadcrumb={<PageBreadCrumbs />}
         mainContainerId={mainPageContentId}
       >
-        <ErrorBoundary
-          FallbackComponent={ErrorRenderer}
-          onReset={() =>
-            (window.location.href =
-              window.location.origin + window.location.pathname)
-          }
-        >
-          <ServerInfoProvider>
-            <Suspense fallback={<KeycloakSpinner />}>
-              <AuthWall>
-                <Outlet />
-              </AuthWall>
-            </Suspense>
-          </ServerInfoProvider>
-        </ErrorBoundary>
+        <ServerInfoProvider>
+          <Suspense fallback={<KeycloakSpinner />}>
+            <AuthWall>
+              <Outlet />
+            </AuthWall>
+          </Suspense>
+        </ServerInfoProvider>
       </Page>
     </AppContexts>
   );
