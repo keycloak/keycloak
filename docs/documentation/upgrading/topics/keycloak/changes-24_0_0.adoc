@@ -144,6 +144,18 @@ and potentially introduce unexpected changes and behavior that should only affec
 If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
 to the new template.
 
+= Sequential loading of offline sessions and remote sessions
+
+Starting with this release, the first member of a Keycloak cluster will load remote sessions sequentially instead of in parallel.
+If offline session preloading is enabled, those will be loaded sequentially as well.
+
+The previous code led to high resource-consumption across the cluster at startup and was challenging to analyze in production environments and could lead to complex failure scenarios if a node was restarted during loading.
+Therefore, it was changed to sequential session loading.
+
+For offline sessions, the default in this and previous versions of Keycloak is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
+Setups that have offline session preloading enabled should migrate to a setup where offline-session preloading is disabled.
+
+
 = Infinispan metrics use labels for cache manager and cache names
 
 When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.

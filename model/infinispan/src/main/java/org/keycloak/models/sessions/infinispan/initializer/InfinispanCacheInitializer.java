@@ -18,10 +18,7 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.infinispan.Cache;
-import org.infinispan.commons.CacheException;
 import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.manager.ClusterExecutor;
-import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -29,18 +26,14 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.Serializable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
 /**
- * Startup initialization for reading persistent userSessions to be filled into infinispan/memory . In cluster,
- * the initialization is distributed among all cluster nodes, so the startup time is even faster
+ * Startup initialization for reading persistent userSessions to be filled into infinispan/memory.
  *
- * Implementation is pretty generic and doesn't contain any "userSession" specific stuff. All logic related to how are sessions loaded is in the SessionLoader implementation
+ * Implementation is pretty generic and doesn't contain any "userSession" specific stuff. All logic related to how sessions are loaded is in the SessionLoader implementation
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -119,119 +112,72 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
     }
 
     protected void startLoadingImpl(InitializerState state, SessionLoader.LoaderContext loaderCtx) {
-        // Assume each worker has same processor's count
-        int processors = Runtime.getRuntime().availableProcessors();
-
-        Transport transport = workCache.getCacheManager().getTransport();
-
-        // Every worker iteration will be executed on single node. Use 3 failover attempts for each segment (should be sufficient in all cases)
-        ClusterExecutor clusterExecutor = workCache.getCacheManager().executor()
-                .singleNodeSubmission(3);
-
         int errors = 0;
         int segmentToLoad = 0;
 
-        //try {
-            SessionLoader.WorkerResult previousResult = null;
-            SessionLoader.WorkerResult nextResult = null;
-            int distributedWorkersCount = 0;
-            boolean firstTryForSegment = true;
+        SessionLoader.WorkerResult previousResult = null;
+        SessionLoader.WorkerResult nextResult = null;
+        int distributedWorkersCount = 1;
 
-            while (segmentToLoad < state.getSegmentsCount()) {
-                if (firstTryForSegment) {
-                    // do not change the node count if it's not the first try
-                    int nodesCount = transport==null ? 1 : transport.getMembers().size();
-                    distributedWorkersCount = processors * nodesCount;
-                }
+        while (segmentToLoad < state.getSegmentsCount()) {
 
-                log.debugf("Starting next iteration with %d workers", distributedWorkersCount);
+            log.debugf("Starting next iteration with %d workers", distributedWorkersCount);
 
-                List<Integer> segments = state.getSegmentsToLoad(segmentToLoad, distributedWorkersCount);
+            List<Integer> segments = state.getSegmentsToLoad(segmentToLoad, distributedWorkersCount);
 
-                if (log.isTraceEnabled()) {
-                    log.trace("unfinished segments for this iteration: " + segments);
-                }
+            if (log.isTraceEnabled()) {
+                log.trace("unfinished segments for this iteration: " + segments);
+            }
 
-                List<CompletableFuture<Void>> futures = new LinkedList<>();
-                final Queue<SessionLoader.WorkerResult> results = new ConcurrentLinkedQueue<>();
+            final Queue<SessionLoader.WorkerResult> results = new ConcurrentLinkedQueue<>();
 
-                CompletableFuture<Void> completableFuture = null;
-                for (Integer segment : segments) {
-                    SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(loaderCtx, segment, segment - segmentToLoad, previousResult);
+            for (Integer segment : segments) {
+                SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(loaderCtx, segment, segment - segmentToLoad, previousResult);
 
-                    SessionInitializerWorker worker = new SessionInitializerWorker();
-                    worker.setWorkerEnvironment(loaderCtx, workerCtx, sessionLoader, workCache.getName());
+                SessionInitializerWorker worker = new SessionInitializerWorker();
+                worker.setWorkerEnvironment(loaderCtx, workerCtx, sessionLoader);
 
-                    completableFuture = clusterExecutor.submitConsumer(worker, (address, workerResult, throwable) -> {
-                        log.tracef("Calling triConsumer on address %s, throwable message: %s, segment: %s", address, throwable == null ? "null" : throwable.getMessage(),
-                                workerResult == null ? null : workerResult.getSegment());
+                results.add(worker.apply(sessionFactory));
+            }
 
-                        if (throwable != null) {
-                            throw new CacheException(throwable);
-                        }
-                        results.add(workerResult);
-                    });
+            boolean anyFailure = false;
 
-                    futures.add(completableFuture);
-                }
-
-                boolean anyFailure = false;
-
-                // Make sure that all workers are finished
-                for (CompletableFuture<Void> future : futures) {
-                    try {
-                        future.get();
-                    } catch (InterruptedException ie) {
-                        anyFailure = true;
-                        errors++;
-                        log.error("Interruped exception when computed future. Errors: " + errors, ie);
-                    } catch (ExecutionException ee) {
-                        anyFailure = true;
-                        errors++;
-                        log.error("ExecutionException when computed future. Errors: " + errors, ee);
-                    }
-                }
-
-                // Check the results
-                for (SessionLoader.WorkerResult result : results) {
-                    if (result.isSuccess()) {
-                        state.markSegmentFinished(result.getSegment());
-                        if (result.getSegment() == segmentToLoad + distributedWorkersCount - 1) {
-                            // last result for next iteration when complete
-                            nextResult = result;
-                        }
-                    } else {
-                        if (log.isTraceEnabled()) {
-                            log.tracef("Segment %d failed to compute", result.getSegment());
-                        }
-                        anyFailure = true;
-                    }
-                }
-
-                if (errors >= maxErrors) {
-                    throw new RuntimeException("Maximum count of worker errors occured. Limit was " + maxErrors + ". See server.log for details");
-                }
-
-                if (!anyFailure) {
-                    // everything is OK, prepare the new row
-                    segmentToLoad += distributedWorkersCount;
-                    firstTryForSegment = true;
-                    previousResult = nextResult;
-                    nextResult = null;
-                    if (log.isTraceEnabled()) {
-                        log.debugf("New initializer state is: %s", state);
+            // Check the results
+            for (SessionLoader.WorkerResult result : results) {
+                if (result.isSuccess()) {
+                    state.markSegmentFinished(result.getSegment());
+                    if (result.getSegment() == segmentToLoad + distributedWorkersCount - 1) {
+                        // last result for next iteration when complete
+                        nextResult = result;
                     }
                 } else {
-                    // some segments failed, try to load unloaded segments
-                    firstTryForSegment = false;
+                    if (log.isTraceEnabled()) {
+                        log.tracef("Segment %d failed to compute", result.getSegment());
+                    }
+                    anyFailure = true;
                 }
             }
 
-            // Push the state after computation is finished
-            saveStateToCache(state);
+            if (errors >= maxErrors) {
+                throw new RuntimeException("Maximum count of worker errors occured. Limit was " + maxErrors + ". See server.log for details");
+            }
 
-            // Loader callback after the task is finished
-            this.sessionLoader.afterAllSessionsLoaded(this);
+            if (!anyFailure) {
+                // everything is OK, prepare the new row
+                segmentToLoad += distributedWorkersCount;
+                previousResult = nextResult;
+                nextResult = null;
+                if (log.isTraceEnabled()) {
+                    log.debugf("New initializer state is: %s", state);
+                }
+            }
+        }
+
+        // Push the state after computation is finished
+        saveStateToCache(state);
+
+        // Loader callback after the task is finished
+        this.sessionLoader.afterAllSessionsLoaded(this);
 
     }
 }
