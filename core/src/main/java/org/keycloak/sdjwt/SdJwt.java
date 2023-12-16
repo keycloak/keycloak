@@ -1,0 +1,165 @@
+package org.keycloak.sdjwt;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+import org.keycloak.crypto.SignatureSignerContext;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+
+/**
+ * Main entry class for selective disclosure jwt (SD-JWT).
+ * 
+ * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
+ * 
+ */
+public class SdJwt {
+    private static final String DELIMITER = "~";
+
+    private final IssuerSignedJWT issuerSignedJWT;
+    private final List<SdJwtClaim> claims;
+    private final Optional<KeyBindingJWT> keyBindingJWT;
+    private final List<String> disclosures;
+
+    private Optional<String> sdJwtString = Optional.empty();
+
+    public SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, Optional<KeyBindingJWT> keyBindingJWT,
+            SignatureSignerContext signer) {
+        claims = new ArrayList<>();
+        claimSet.fields()
+                .forEachRemaining(entry -> claims.add(createClaim(entry.getKey(), entry.getValue(), disclosureSpec)));
+
+        this.issuerSignedJWT = IssuerSignedJWT.builder().withClaims(claims).withSigner(signer).build();
+
+        this.disclosures = getDisclosureStrings(claims);
+
+        this.keyBindingJWT = keyBindingJWT == null
+                ? Optional.empty()
+                : keyBindingJWT;
+
+    }
+
+    public SdJwt(String sdJwtDString) {
+        this.sdJwtString = Optional.of(sdJwtDString);
+
+        int disclosureStart = sdJwtDString.indexOf(DELIMITER);
+        int disclosureEnd = sdJwtDString.lastIndexOf(DELIMITER);
+
+        String issuerSignedJWTString = sdJwtDString.substring(0, disclosureStart);
+        String disclosuresString = sdJwtDString.substring(disclosureStart + 1, disclosureEnd);
+        String keyBindingJWTString = sdJwtDString.substring(disclosureEnd + 1);
+
+        this.issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
+        this.claims = Collections.emptyList();
+
+        String[] disclosureArray = disclosuresString.split(DELIMITER);
+        this.disclosures = Arrays.asList(disclosureArray);
+
+        this.keyBindingJWT = keyBindingJWTString.isEmpty()
+                ? Optional.empty()
+                : Optional.of(new KeyBindingJWT(keyBindingJWTString));
+
+    }
+
+    public String toSdJwtString() {
+        List<String> parts = new ArrayList<>();
+
+        parts.add(issuerSignedJWT.toJws());
+        parts.addAll(disclosures);
+        parts.add(keyBindingJWT.isPresent() ? keyBindingJWT.get().toJws() : "");
+
+        return String.join(DELIMITER, parts);
+    }
+
+    private static List<String> getDisclosureStrings(List<SdJwtClaim> claims) {
+        List<String> disclosureStrings = new ArrayList<>();
+        claims.stream()
+                .map(SdJwtClaim::getDisclosureStrings)
+                .forEach(disclosureStrings::addAll);
+        return Collections.unmodifiableList(disclosureStrings);
+    }
+
+    @Override
+    public String toString() {
+        return sdJwtString.orElseGet(() -> {
+            String sdString = toSdJwtString();
+            sdJwtString = Optional.of(sdString);
+            return sdString;
+        });
+    }
+
+    private SdJwtClaim createClaim(String claimName, JsonNode claimValue, DisclosureSpec disclosureSpec) {
+        DisclosureSpec.DisclosureData disclosureData = disclosureSpec.getUndisclosedClaim(SdJwtClaimName.of(claimName));
+
+        if (disclosureData != null) {
+            return createUndisclosedClaim(claimName, claimValue, disclosureData.getSalt());
+        } else {
+            return createArrayOrVisibleClaim(claimName, claimValue, disclosureSpec);
+        }
+    }
+
+    private SdJwtClaim createUndisclosedClaim(String claimName, JsonNode claimValue, SdJwtSalt salt) {
+        return UndisclosedClaim.builder()
+                .withClaimName(claimName)
+                .withClaimValue(claimValue)
+                .withSalt(salt)
+                .build();
+    }
+
+    private SdJwtClaim createArrayOrVisibleClaim(String claimName, JsonNode claimValue, DisclosureSpec disclosureSpec) {
+        Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts = disclosureSpec
+                .getUndisclosedArrayElt(SdJwtClaimName.of(claimName));
+        if (undisclosedArrayElts != null) {
+            return createArrayDisclosure(claimName, claimValue, undisclosedArrayElts);
+        } else {
+            return VisibleSdJwtClaim.builder()
+                    .withClaimName(claimName)
+                    .withClaimValue(claimValue)
+                    .build();
+        }
+    }
+
+    private SdJwtClaim createArrayDisclosure(String claimName, JsonNode claimValue,
+            Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts) {
+        ArrayNode arrayNode = validateArrayNode(claimName, claimValue);
+        ArrayDisclosure.Builder arrayDisclosureBuilder = ArrayDisclosure.builder().withClaimName(claimName);
+
+        IntStream.range(0, arrayNode.size())
+                .forEach(i -> processArrayElement(arrayDisclosureBuilder, arrayNode.get(i),
+                        undisclosedArrayElts.get(i)));
+
+        return arrayDisclosureBuilder.build();
+    }
+
+    private ArrayNode validateArrayNode(String claimName, JsonNode claimValue) {
+        return Optional.of(claimValue)
+                .filter(v -> v.getNodeType() == JsonNodeType.ARRAY)
+                .map(v -> (ArrayNode) v)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Expected array for claim with name: " + claimName));
+    }
+
+    private void processArrayElement(ArrayDisclosure.Builder builder, JsonNode elementValue,
+            DisclosureSpec.DisclosureData disclosureData) {
+        if (disclosureData != null) {
+            builder.withUndisclosedElement(elementValue);
+        } else {
+            builder.withVisibleElement(elementValue);
+        }
+    }
+
+    public IssuerSignedJWT getIssuerSignedJWT() {
+        return issuerSignedJWT;
+    }
+
+    public List<String> getDisclosures() {
+        return disclosures;
+    }
+}
