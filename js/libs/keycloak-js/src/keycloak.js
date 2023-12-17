@@ -567,7 +567,9 @@ function Keycloak (config) {
                     kc.profile = JSON.parse(req.responseText);
                     promise.setSuccess(kc.profile);
                 } else {
-                    promise.setError();
+                    promise.setError({
+                        status: req.status,
+                    });
                 }
             }
         }
