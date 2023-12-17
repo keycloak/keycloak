@@ -131,6 +131,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
 * Enforce <<_using_lightweight_access_token, using lightweight access token>>
 * Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
+* Enforce a valid redirect URI that the OAuth 2.1 specification requires
 
 [[_client_policy_profile]]
 === Profile
