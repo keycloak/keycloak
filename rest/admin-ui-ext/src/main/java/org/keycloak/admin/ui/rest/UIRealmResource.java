@@ -75,15 +75,7 @@ public class UIRealmResource {
             return;
         }
 
-        String rawUpConfig;
-
-        try {
-            rawUpConfig = JsonSerialization.writeValueAsString(upConfig);
-        } catch (IOException e) {
-            throw new InternalServerErrorException("Failed to parse user profile config", e);
-        }
-
-        Response response = new UserProfileResource(session, auth).update(rawUpConfig);
+        Response response = new UserProfileResource(session, auth).update(upConfig);
 
         if (isSuccessful(response)) {
             return;

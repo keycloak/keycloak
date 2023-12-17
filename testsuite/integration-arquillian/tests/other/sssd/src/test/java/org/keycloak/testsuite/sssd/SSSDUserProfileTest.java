@@ -239,7 +239,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for admin firstName and lastName remains removed, the rest editable
             UserResource testResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
             UserRepresentation test = testResource.toRepresentation(true);
-            assertUser(test, "test-user@localhost", "test-user@localhost", "Tom", "Brady", null);
+            assertUser(test, "test-user@localhost", "test-user@localhost", null, null, null);
             assertProfileAttributes(test, null, false, "username", "email", "postal_code");
             Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.FIRST_NAME));
             Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.LAST_NAME));

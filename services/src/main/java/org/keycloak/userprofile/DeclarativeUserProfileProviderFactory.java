@@ -87,7 +87,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     private boolean isDeclarativeConfigurationEnabled;
 
-    private String defaultRawConfig;
     private UPConfig parsedDefaultRawConfig;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
@@ -200,12 +199,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     @Override
     public void init(Config.Scope config) {
         isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
-        defaultRawConfig = UPConfigUtils.readDefaultConfig();
-        try {
-            parsedDefaultRawConfig = UPConfigUtils.parseConfig(defaultRawConfig);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to parse default user profile configuration", cause);
-        }
+        parsedDefaultRawConfig = UPConfigUtils.parseDefaultConfig();
 
         // make sure registry is clear in case of re-deploy
         contextualMetadataRegistry.clear();
@@ -444,10 +438,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     protected boolean isDeclarativeConfigurationEnabled() {
         return isDeclarativeConfigurationEnabled;
-    }
-
-    protected String getDefaultRawConfig() {
-        return defaultRawConfig;
     }
 
     protected UPConfig getParsedDefaultRawConfig() {

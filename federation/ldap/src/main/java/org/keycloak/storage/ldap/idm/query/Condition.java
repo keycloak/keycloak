@@ -36,11 +36,15 @@ public interface Condition {
      */
     void updateParameterName(String modelParamName, String ldapParamName);
 
-
     void applyCondition(StringBuilder filter);
 
     void setBinary(boolean binary);
 
     boolean isBinary();
 
+    default String toFilter() {
+        StringBuilder sb = new StringBuilder();
+        applyCondition(sb);
+        return sb.toString();
+    }
 }

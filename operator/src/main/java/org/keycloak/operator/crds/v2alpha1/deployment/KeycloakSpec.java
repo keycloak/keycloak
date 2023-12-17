@@ -25,10 +25,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -83,6 +86,9 @@ public class KeycloakSpec {
     @JsonProperty("hostname")
     @JsonPropertyDescription("In this section you can configure Keycloak hostname and related properties.")
     private HostnameSpec hostnameSpec;
+
+    @JsonPropertyDescription("In this section you can configure Keycloak truststores.")
+    private Map<String, Truststore> truststores = new LinkedHashMap<>();
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -182,4 +188,16 @@ public class KeycloakSpec {
     public void setStartOptimized(Boolean optimized) {
         this.startOptimized = optimized;
     }
+
+    public Map<String, Truststore> getTruststores() {
+        return truststores;
+    }
+
+    public void setTruststores(Map<String, Truststore> truststores) {
+        if (truststores == null) {
+            truststores = new LinkedHashMap<>();
+        }
+        this.truststores = truststores;
+    }
+
 }
