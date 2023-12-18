@@ -6,7 +6,7 @@ To make it easy to secure client applications, it is beneficial to realize the f
 
 * Setting policies on what configuration a client can have
 * Validation of client configurations
-* Conformance to a required security standards and profiles such as Financial-grade API (FAPI)and OAuth 2.1
+* Conformance to a required security standards and profiles such as Financial-grade API (FAPI) and OAuth 2.1
 
 To realize these points in a unified way, _Client Policies_ concept is introduced.
 

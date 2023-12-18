@@ -300,7 +300,7 @@
               "client-jwt",
               "client-x509"
             ],
-             "default-client-authenticator": "client-jwt"
+            "default-client-authenticator": "client-jwt"
           }
         },
         {
@@ -319,6 +319,44 @@
         },
         {
           "executor": "holder-of-key-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "reject-implicit-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "reject-ropc-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "oauth-2-1-for-public-client",
+      "description": "Client profile, which enforce public clients to conform 'OAuth 2.1' specification.",
+      "executors": [
+        {
+          "executor": "secure-redirect-uris-enforcer",
+          "configuration": {
+            "allow-ipv4-loopback-address": "true",
+            "allow-ipv6-loopback-address": "true",
+            "allow-private-use-uri-scheme": "true"
+          }
+        },
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "dpop-bind-enforcer",
           "configuration": {
             "auto-configure": "true"
           }
