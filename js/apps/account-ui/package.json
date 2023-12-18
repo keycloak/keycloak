@@ -33,7 +33,7 @@
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "lightningcss": "^1.22.1",
-    "vite": "^5.0.8",
+    "vite": "^5.0.10",
     "vite-plugin-checker": "^0.6.2"
   },
   "wireit": {
