@@ -91,9 +91,6 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-cipher-suites <ciphers>
                      The cipher suites to use. If none is given, a reasonable default is selected.
---https-client-auth <auth>
-                     Configures the server to require/request client authentication. Possible
-                       values are: none, request, required. Default: none.
 --https-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files.

@@ -36,6 +36,7 @@ import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper<T> {
@@ -92,7 +93,7 @@ public class PropertyMapper<T> {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
         }
 
-        if (isRebuild() && isRunTime() && name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+        if ((isRebuild() || Environment.isRebuildCheck()) && isRunTime()) {
             // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
             return ConfigValue.builder().withName(name).build();
         }
