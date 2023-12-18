@@ -40,7 +40,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -117,7 +120,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 readOutput();
             }
         } catch (Exception cause) {
-            stop();
+            try {
+                stop();
+            } catch (Exception stopException) {
+                cause.addSuppressed(stopException);
+            }
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
