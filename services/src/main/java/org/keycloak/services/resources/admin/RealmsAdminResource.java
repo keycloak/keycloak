@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -134,6 +135,7 @@ public class RealmsAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Import a realm. Imports a realm from a full representation of that realm.", description = "Realm name must be unique.")
+    @APIResponse(responseCode = "201", description = "Created")
     public Response importRealm(InputStream requestBody) {
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
