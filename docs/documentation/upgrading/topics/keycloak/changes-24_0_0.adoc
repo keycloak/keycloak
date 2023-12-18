@@ -66,3 +66,7 @@ mainly targeted for clients when updating or fetching any custom attribute for a
 
 In order to resolve all the attributes including the root attributes, a new `getRawAttributes` method was added so that the resulting map also includes the root attributes. However,
 this method is not available from the representation payload and it is targeted to be used by the server when managing user profiles.
+
+= `https-client-auth` is a build time option
+
+Option `https-client-auth` had been treated as a run time option, however this is not supported by Quarkus. The option needs to be handled at build time instead.
