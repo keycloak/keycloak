@@ -100,4 +100,4 @@ node_modules
 .sdkmanrc
 
 # JENV
-*.java-version
+.java-version
