@@ -403,7 +403,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return name;
     }
 
-    private List<String> normalizeAttributeValues(String name, Object value) {
+    protected List<String> normalizeAttributeValues(String name, Object value) {
         List<String> values;
 
         if (value instanceof String) {
