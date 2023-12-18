@@ -12,6 +12,8 @@ side may need to be still done manually or through some other third-party soluti
 ==== OAuth 2.1 client profiles
 
 To make sure that your clients are OAuth 2.1 compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
-and link them to the global client profiles for OAuth 2.1 support, which are automatically available in each realm. You can use `oauth-2-1-for-confidential-client` profile for confidential clients.
+and link them to the global client profiles for OAuth 2.1 support, which are automatically available in each realm. You can use either `oauth-2-1-for-confidential-client` profile for confidential clients or `oauth-2-1-for-public-client` profile for public clients.
 
 NOTE: OAuth 2.1 specification is still a draft and it may change in the future. Hence the {project_name} built-in OAuth 2.1 client profiles can change as well.
+
+NOTE: When using OAuth 2.1 profile for public clients, it is recommended to use DPoP preview feature as described in the link:{adminguide_link}#_dpop-bound-tokens[{adminguide_name}] because DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.
