@@ -277,6 +277,7 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>
