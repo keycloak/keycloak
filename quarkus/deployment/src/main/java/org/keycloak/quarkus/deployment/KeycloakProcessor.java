@@ -215,7 +215,6 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(ConfigBuildItem.class)
     void initConfig(KeycloakRecorder recorder) {
-        Config.init(new MicroProfileConfigProvider());
         recorder.initConfig();
     }
 
@@ -666,7 +665,6 @@ class KeycloakProcessor {
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
             Map<String, ProviderFactory> preConfiguredProviders) {
-        Config.init(new MicroProfileConfigProvider());
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ProviderManager pm = getProviderManager(classLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();

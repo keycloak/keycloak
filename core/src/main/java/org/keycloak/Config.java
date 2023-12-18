@@ -24,9 +24,9 @@ import java.util.Set;
  */
 public class Config {
 
-    private static ConfigProvider configProvider = new SystemPropertiesConfigProvider();
+    private static volatile ConfigProvider configProvider = new SystemPropertiesConfigProvider();
 
-    public static void init(ConfigProvider configProvider) {
+    public static synchronized void init(ConfigProvider configProvider) {
         Config.configProvider = configProvider;
     }
 
