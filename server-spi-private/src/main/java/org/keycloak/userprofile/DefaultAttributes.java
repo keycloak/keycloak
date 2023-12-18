@@ -60,7 +60,7 @@ import org.keycloak.validate.ValidationError;
  */
 public class DefaultAttributes extends HashMap<String, List<String>> implements Attributes {
 
-    private static Logger logger = Logger.getLogger(DefaultAttributes.class);
+    private static final Logger logger = Logger.getLogger(DefaultAttributes.class);
 
     /**
      * To reference dynamic attributes that can be configured as read-only when setting up the provider.
@@ -403,6 +403,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return name;
     }
 
+    /**
+     * Intentionally kept to protected visibility to allow for custom normalization logic while clients adopt User Profile
+     */
     protected List<String> normalizeAttributeValues(String name, Object value) {
         List<String> values;
 
