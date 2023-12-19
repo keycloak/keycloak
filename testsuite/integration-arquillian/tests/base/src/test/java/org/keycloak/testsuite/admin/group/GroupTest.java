@@ -1251,6 +1251,31 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void removeAllGroupAttributes() {
+        final var realm = adminClient.realms().realm("test");
+        final var groupName = "remove-all-attributes-group";
+
+        final Map<String, List<String>> initialAttributes = Map.of("test-key", List.of("test-val"));
+        final var groupToCreate =
+                GroupBuilder.create().name(groupName).attributes(initialAttributes).build();
+        final var groupsResource = realm.groups();
+        try (final Response response = groupsResource.add(groupToCreate)) {
+            final var groupId = ApiUtil.getCreatedId(response);
+
+            final var groupResource = groupsResource.group(groupId);
+            final var createdGroup = groupResource.toRepresentation();
+            assertThat(createdGroup.getAttributes(), equalTo(initialAttributes));
+
+            final var groupToUpdate =
+                    GroupBuilder.create().name(groupName).attributes(Collections.emptyMap()).build();
+            groupResource.update(groupToUpdate);
+
+            final var updatedGroup = groupResource.toRepresentation();
+            assertThat(updatedGroup.getAttributes(), anEmptyMap());
+        }
+    }
+
+    @Test
     public void testBriefRepresentationOnGroupMembers() {
         RealmResource realm = adminClient.realms().realm("test");
         String groupName = "brief-grouptest-group";
