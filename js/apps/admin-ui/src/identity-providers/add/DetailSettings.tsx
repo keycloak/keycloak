@@ -430,19 +430,12 @@ export default function DetailSettings() {
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && (
-            <>
-              <GeneralSettings create={false} id={alias} />
-              {providerInfo && (
-                <DynamicComponents
-                  stringify
-                  properties={providerInfo.properties}
-                />
-              )}
-            </>
-          )}
+          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
           {isOIDC && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
+          {providerInfo && (
+            <DynamicComponents stringify properties={providerInfo.properties} />
+          )}
         </FormAccess>
       ),
     },
