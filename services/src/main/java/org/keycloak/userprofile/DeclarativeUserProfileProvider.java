@@ -266,10 +266,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
 
-        // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
-        if (parsedConfig == null
-                || context == UserProfileContext.UPDATE_EMAIL
-        ) {
+        if (parsedConfig == null) {
             return decoratedMetadata;
         }
 
