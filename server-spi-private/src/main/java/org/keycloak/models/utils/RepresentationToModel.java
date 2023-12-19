@@ -1241,7 +1241,7 @@ public class RepresentationToModel {
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
 
         if (provider == null) {
-            throw new RuntimeException("Could find policy provider with type [" + model.getType() + "]");
+            throw new RuntimeException("Couldn't find policy provider with type [" + model.getType() + "]");
         }
 
         if (representation instanceof PolicyRepresentation) {
