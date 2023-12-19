@@ -20,22 +20,36 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.protocols.TCP_NIO2;
+import org.jgroups.protocols.UDP;
+import org.jgroups.util.TLS;
+import org.jgroups.util.TLSClientAuth;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import static org.keycloak.config.CachingOptions.CACHE_TLS_ENABLED_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_TLS_KEYSTORE_FILE_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_FILE_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY;
 
 public class CacheManagerFactory {
 
+    private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
+
     private String config;
-    private boolean metricsEnabled;
+    private final boolean metricsEnabled;
     private DefaultCacheManager cacheManager;
     private Future<DefaultCacheManager> cacheManagerFuture;
     private ExecutorService executor;
@@ -68,12 +82,7 @@ public class CacheManagerFactory {
     }
 
     private ExecutorService createThreadPool() {
-        return Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "keycloak-cache-init");
-            }
-        });
+        return Executors.newSingleThreadExecutor(r -> new Thread(r, "keycloak-cache-init"));
     }
 
     private DefaultCacheManager startCacheManager() {
@@ -129,8 +138,50 @@ public class CacheManagerFactory {
     private void configureTransportStack(ConfigurationBuilderHolder builder) {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
 
+        var transportConfig = builder.getGlobalConfigurationBuilder().transport();
         if (transportStack != null && !transportStack.isBlank()) {
-            builder.getGlobalConfigurationBuilder().transport().defaultTransport().stack(transportStack);
+            transportConfig.defaultTransport().stack(transportStack);
         }
+
+        if (booleanProperty(CACHE_TLS_ENABLED_PROPERTY)) {
+            validateTlsAvailable(transportConfig.build());
+            var tls = new TLS()
+                    .enabled(true)
+                    .setKeystorePath(stringProperty(CACHE_TLS_KEYSTORE_FILE_PROPERTY))
+                    .setKeystorePassword(stringProperty(CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY))
+                    .setKeystoreType("pkcs12")
+                    .setTruststorePath(stringProperty(CACHE_TLS_TRUSTSTORE_FILE_PROPERTY))
+                    .setTruststorePassword(stringProperty(CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY))
+                    .setTruststoreType(stringProperty(CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY))
+                    .setClientAuth(TLSClientAuth.NEED)
+                    .setProtocols(new String[]{"TLSv1.3"});
+            transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
+        }
+    }
+
+    private void validateTlsAvailable(GlobalConfiguration config) {
+        var stackName = config.transport().stack();
+        if (stackName == null) {
+            // unable to validate
+            return;
+        }
+        for (var protocol : config.transport().jgroups().configurator(stackName).getProtocolStack()) {
+            var name = protocol.getProtocolName();
+            if (name.equals(UDP.class.getSimpleName()) ||
+                    name.equals(UDP.class.getName()) ||
+                    name.equals(TCP_NIO2.class.getSimpleName()) ||
+                    name.equals(TCP_NIO2.class.getName())) {
+                throw new RuntimeException("Cache TLS is not available with protocol " + name);
+            }
+        }
+
+    }
+
+    private static boolean booleanProperty(String propertyName) {
+        return Configuration.getOptionalKcValue(propertyName).map(Boolean::parseBoolean).orElse(Boolean.FALSE);
+    }
+
+    private static String stringProperty(String propertyName) {
+        return Configuration.getOptionalKcValue(propertyName).orElse(null);
     }
 }

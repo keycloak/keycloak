@@ -4,6 +4,14 @@ import java.io.File;
 
 public class CachingOptions {
 
+    private static final String CACHE_TLS_PREFIX = "cache-embedded-mtls";
+    public static final String CACHE_TLS_ENABLED_PROPERTY = CACHE_TLS_PREFIX + "-enabled";
+    public static final String CACHE_TLS_KEYSTORE_FILE_PROPERTY = CACHE_TLS_PREFIX + "-key-store-file";
+    public static final String CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY = CACHE_TLS_PREFIX + "-key-store-password";
+    public static final String CACHE_TLS_TRUSTSTORE_FILE_PROPERTY = CACHE_TLS_PREFIX + "-trust-store-file";
+    public static final String CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_TLS_PREFIX + "-trust-store-password";
+    public static final String CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY = CACHE_TLS_PREFIX + "-trust-store-type";
+
     public enum Mechanism {
         ispn,
         local
@@ -38,6 +46,47 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<Boolean> CACHE_TLS = new OptionBuilder<>(CACHE_TLS_ENABLED_PROPERTY, Boolean.class)
+            .category(OptionCategory.CACHE)
+            .description("Encrypts the network communication between Keycloak servers.")
+            .defaultValue(Boolean.FALSE)
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_TLS_KEYSTORE = new OptionBuilder<>(CACHE_TLS_KEYSTORE_FILE_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("The Keystore file path. The Keystore must contain the certificate to use by the TLS protocol. " +
+                    "By default, it lookup 'jgroups-keystore.p12' under conf/ directory.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_TLS_KEYSTORE_PASSWORD = new OptionBuilder<>(CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("The password to access the Keystore.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_TLS_TRUSTSTORE = new OptionBuilder<>(CACHE_TLS_TRUSTSTORE_FILE_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("The Truststore file path. " +
+                    "It should contain the trusted certificates or the Certificate Authority that signed the certificates. " +
+                    "By default, it lookup 'jgroups-truststore.p12' under conf/ directory.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_TLS_TRUSTSTORE_PASSWORD = new OptionBuilder<>(CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("The password to access the Truststore.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_TLS_TRUSTSTORE_TYPE = new OptionBuilder<>(CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("The Truststore format. It defaults to PKCS#12 format.")
+            .defaultValue("pkcs12")
             .buildTime(true)
             .build();
 }
