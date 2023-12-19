@@ -74,7 +74,7 @@ public final class Build extends AbstractCommand implements Runnable {
         exitWithErrorIfDevProfileIsSetAndNotStartDev();
 
         System.setProperty("quarkus.launch.rebuild", "true");
-        validateNonCliConfig();
+        validateConfig();
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 

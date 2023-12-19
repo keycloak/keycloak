@@ -37,6 +37,7 @@ import io.smallrye.config.SmallRyeConfig;
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -101,7 +102,7 @@ public final class Environment {
 
     public static String getProfile() {
         String profile = System.getProperty(PROFILE);
-        
+
         if (profile == null) {
             profile = System.getenv(ENV_PROFILE);
         }
@@ -132,7 +133,7 @@ public final class Environment {
         if (profile == null) {
             profile = defaultProfile;
         }
-        
+
         return profile;
     }
 
@@ -249,7 +250,7 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
+            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesProfileConfigResolver(QuarkusProfileConfigResolver::getConfig), new PropertiesFileProfileConfigResolver());
         }
 
         return profile;
