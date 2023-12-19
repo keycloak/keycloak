@@ -24,6 +24,10 @@ spec:
 
 Currently only Secrets are supported.
 
+== Trust Kubernetes CA
+
+The cert for the Kubernetes CA is added automatically to your {project_name} Pods managed by the Operator.
+
 = Automatic certificate management for SAML identity providers
 
 The SAML identity providers can now be configured to automatically download the signing certificates from the IDP entity metadata descriptor endpoint. In order to use the new feature the option `Metadata descriptor URL` should be configured in the provider (URL where the IDP metadata information with the certificates is published) and `Use metadata descriptor URL` needs to be `ON`. The certificates are automatically downloaded and cached in the `public-key-storage` SPI from that URL. The certificates can also be reloaded or imported from the admin console, using the action combo in the provider page.
@@ -65,5 +69,22 @@ are marshalled and unmarshalled when using both Admin and Account REST APIs.
 
 This strategy provides consistency in how attributes are managed by clients and makes sure they conform to the user profile
 configuration set to a realm.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].

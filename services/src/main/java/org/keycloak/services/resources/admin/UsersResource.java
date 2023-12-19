@@ -70,7 +70,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.models.utils.KeycloakModelUtils.findGroupByPath;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
@@ -460,7 +459,7 @@ public class UsersResource {
      */
     @Path("profile")
     public UserProfileResource userProfile() {
-        return new UserProfileResource(session, auth);
+        return new UserProfileResource(session, auth, adminEvent);
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

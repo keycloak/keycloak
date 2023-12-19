@@ -98,3 +98,6 @@ node_modules
 
 # SDKMAM environment file
 .sdkmanrc
+
+# JENV
+.java-version

@@ -65,6 +65,9 @@ HTTP(S):
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a
                        '/'. Default: /.
+--https-client-auth <auth>
+                     Configures the server to require/request client authentication. Possible
+                       values are: none, request, required. Default: none.
 
 Health:
 
