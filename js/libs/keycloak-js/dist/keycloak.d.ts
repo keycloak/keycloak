@@ -52,6 +52,17 @@ export interface Acr {
 	essential: boolean;
 }
 
+export interface KeycloakFactoryAdapter {
+	processCallback: (oauth: unknown, promise: unknown) => void;
+	parseCallback: (url: string) => object;
+	createPromise: () => {
+	  setSuccess: (result?: unknown) => void;
+	  setError: (result?: unknown) => void;
+	  promise: Promise<unknown>;
+	};
+	kc: Keycloak;
+}
+
 export interface KeycloakInitOptions {
 	/**
 	 * Adds a [cryptographic nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce)
@@ -97,18 +108,7 @@ export interface KeycloakInitOptions {
 	'cordova' |
 	'cordova-native' |
 	KeycloakAdapter |
-	(
-		(
-			processCallback: (oauth: unknown, promise: unknown) => void,
-			parseCallback: (url: string) => object,
-			createPromise: () => {
-				setSuccess: (result?: unknown) => void;
-				setError: (result?: unknown) => void;
-				promise: Promise<unknown>;
-			},
-			kc: Keycloak,
-		) => KeycloakAdapter
-	);
+	((params: KeycloakFactoryAdapter) => KeycloakAdapter);
 	
 	/**
 	 * Specifies an action to do on load.
