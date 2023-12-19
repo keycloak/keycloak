@@ -294,20 +294,20 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
             if (rc != null) {
-                if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
+                if (rc.isAlways() || context.isRoleForContext(rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
 
                     // If scopes are configured, we will use scope-based selector and require the attribute just if scope is
                     // in current authenticationSession (either default scope or by 'scope' parameter)
                     if (rc.getScopes() != null && !rc.getScopes().isEmpty()) {
-                        if (UPConfigUtils.canBeAuthFlowContext(context)) {
+                        if (context.canBeAuthFlowContext()) {
                             required = (c) -> requestedScopePredicate(c, rc.getScopes());
                         } else {
                             // Scopes not available for admin and account contexts
                             required = AttributeMetadata.ALWAYS_FALSE;
                         }
                     }
-                } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
+                } else if (context.canBeAuthFlowContext() && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
                     required = (c) -> requestedScopePredicate(c, rc.getScopes());
@@ -322,7 +322,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 Set<String> editRoles = permissions.getEdit();
 
                 if (!editRoles.isEmpty()) {
-                    writeAllowed = ac -> UPConfigUtils.isRoleForContext(ac.getContext(), editRoles);
+                    writeAllowed = ac -> ac.getContext().isRoleForContext(editRoles);
                 }
 
                 Set<String> viewRoles = permissions.getView();
@@ -336,7 +336,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isBuiltInAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(attributeName) && context.canBeAuthFlowContext() && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
@@ -368,7 +368,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
 
                 if (UserModel.EMAIL.equals(attributeName)) {
-                    if (UserProfileContext.USER_API.equals(context)) {
+                    if (context.isAdminContext()) {
                         required = new Predicate<AttributeContext>() {
                             @Override
                             public boolean test(AttributeContext context) {
@@ -447,7 +447,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
             Set<String> viewRoles) {
-        return ac -> UPConfigUtils.isRoleForContext(ac.getContext(), viewRoles) || canEdit.test(ac);
+        return ac -> ac.getContext().isRoleForContext(viewRoles) || canEdit.test(ac);
     }
 
     /**
