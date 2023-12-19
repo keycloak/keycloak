@@ -92,7 +92,7 @@ import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
-import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
+import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getEmailLink;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 
@@ -393,7 +393,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
             MimeMessage message = greenMail.getReceivedMessages()[0];
 
-            String verificationUrl = getPasswordResetEmailLink(message);
+            String verificationUrl = getEmailLink(message);
 
             driver.navigate().to(verificationUrl.trim());
 
