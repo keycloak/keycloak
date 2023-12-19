@@ -17,7 +17,6 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class GroupRepresentation {
     // For an individual group these are the sufficient minimum fields
     // to identify a group and operate on it in a basic way
