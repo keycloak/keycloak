@@ -21,11 +21,11 @@ export default class UserDetailsPage extends PageObject {
     super();
     this.saveBtn = "save-user";
     this.cancelBtn = "cancel-create-user";
-    this.emailInput = "email-input";
+    this.emailInput = "email";
     this.emailValue = () => "example" + "_" + uuid() + "@example.com";
-    this.firstNameInput = "firstName-input";
+    this.firstNameInput = "firstName";
     this.firstNameValue = "firstname";
-    this.lastNameInput = "lastName-input";
+    this.lastNameInput = "lastName";
     this.lastNameValue = "lastname";
     this.requiredUserActions = [RequiredActionAlias.UPDATE_PASSWORD];
     this.identityProviderLinksTab = "identity-provider-links-tab";

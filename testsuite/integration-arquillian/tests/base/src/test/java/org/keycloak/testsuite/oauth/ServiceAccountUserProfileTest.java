@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -38,8 +37,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -47,7 +44,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
 
     private static String userId;
@@ -116,7 +112,6 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         realm.user(serviceAccountUser);
 
         RealmRepresentation realmRep = realm.build();
-        VerifyProfileTest.enableDynamicUserProfile(realmRep);
         testRealms.add(realmRep);
     }
 

@@ -139,7 +139,6 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
     public void importUserProfile() throws Exception {
         final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/import-userprofile.json"), StandardCharsets.UTF_8);
 

@@ -9,10 +9,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.enableDynamicUserProfile;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.setUserProfileConfiguration;
 
 import org.junit.After;
@@ -21,7 +19,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -29,7 +26,6 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
@@ -50,7 +46,6 @@ import jakarta.ws.rs.core.Response;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class DeclarativeUserTest extends AbstractAdminTest {
 
     private static final String TEST_REALM_USER_MANAGER_NAME = "test-realm-user-manager";
@@ -63,7 +58,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         RealmRepresentation realmRep = realm.toRepresentation();
         realmRep.setInternationalizationEnabled(true);
         realmRep.setSupportedLocales(new HashSet<>(Arrays.asList("en", "de")));
-        enableDynamicUserProfile(realmRep);
         realm.update(realmRep);
         setUserProfileConfiguration(realm, "{\"attributes\": ["
                 + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"

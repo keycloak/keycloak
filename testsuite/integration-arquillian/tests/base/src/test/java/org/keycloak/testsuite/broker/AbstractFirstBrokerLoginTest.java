@@ -64,17 +64,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     
     @Rule
     public AssertEvents events = new AssertEvents(this);
-    
-    protected void enableDynamicUserProfile() {
-        
-        RealmResource rr = adminClient.realm(bc.consumerRealmName());
-        
-        RealmRepresentation testRealm = rr.toRepresentation();
-        
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
-
-        rr.update(testRealm);
-    }
 
 
     /**
