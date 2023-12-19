@@ -92,7 +92,23 @@ export interface KeycloakInitOptions {
 	 * });
 	 * ```
 	 */
-	adapter?: 'default' | 'cordova' | 'cordova-native' | KeycloakAdapter;
+	adapter?:
+	'default' |
+	'cordova' |
+	'cordova-native' |
+	KeycloakAdapter |
+	(
+		(
+			processCallback: (oauth: unknown, promise: unknown) => void,
+			parseCallback: (url: string) => object,
+			createPromise: () => {
+				setSuccess: (result?: unknown) => void;
+				setError: (result?: unknown) => void;
+				promise: Promise<unknown>;
+			},
+			kc: Keycloak,
+		) => KeycloakAdapter
+	);
 	
 	/**
 	 * Specifies an action to do on load.

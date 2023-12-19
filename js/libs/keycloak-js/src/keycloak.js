@@ -63,6 +63,13 @@ function Keycloak (config) {
 
         if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
             adapter = loadAdapter(initOptions.adapter);
+        } else if (initOptions && typeof initOptions.adapter === 'function') {
+            adapter = initOptions.adapter({
+                processCallback,
+                parseCallback,
+                createPromise,
+                kc,
+            });
         } else if (initOptions && typeof initOptions.adapter === "object") {
             adapter = initOptions.adapter;
         } else {
