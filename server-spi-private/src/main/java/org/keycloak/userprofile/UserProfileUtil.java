@@ -81,7 +81,7 @@ public class UserProfileUtil {
             return false;
         } else {
             logger.tracef("Adding metadata attribute '%s' to user profile by user storage provider '%s' for user profile context '%s'.", attrName, storageProviderName, metadata.getContext().toString());
-            Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext() == UserProfileContext.USER_API;
+            Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext().isAdminContext();
             AttributeMetadata attributeMetadata = metadata.addAttribute(attrName, guiOrder, Collections.emptyList())
                     .addWriteCondition(AttributeMetadata.ALWAYS_FALSE)  // Not writable for anyone
                     .addReadCondition(onlyAdminCondition) // Read-only for administrators

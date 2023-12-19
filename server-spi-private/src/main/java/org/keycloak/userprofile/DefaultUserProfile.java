@@ -257,7 +257,7 @@ public final class DefaultUserProfile implements UserProfile {
         UserProfileContext context = metadata.getContext();
         R rep;
 
-        if (UserProfileContext.USER_API.equals(context)) {
+        if (context.isAdminContext()) {
             RealmModel realm = session.getContext().getRealm();
             rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
         } else {
