@@ -241,6 +241,19 @@ Or to use directly in HTML templates add the following to a custom HTML template
 <img src="${url.resourcesPath}/img/image.jpg">
 ----
 
+==== Adding an image to a email theme
+
+To make images available to the theme add them to the `<THEME TYPE>/email/resources/img` directory of your theme. These can be used from within directly in HTML templates.
+
+For example to add an image to the `mytheme` copy an image to `themes/mytheme/email/resources/img/logo.jpg`.
+
+To use directly in HTML templates add the following to a custom HTML template:
+
+[source,html]
+----
+<img src="${url.resourcesUrl}/img/image.jpg">
+----
+
 ==== Messages
 
 Text in the templates is loaded from message bundles. A theme that extends another theme will inherit all messages from the parent's message bundle and you can
