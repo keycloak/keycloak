@@ -52,7 +52,6 @@ import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-standalone-connection.properties";
@@ -188,39 +187,31 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
     @Test
     public void testUserProfile() throws Exception {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        VerifyProfileTest.enableDynamicUserProfile(realm);
-        testRealmResource().update(realm);
+        assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
-        try {
-            assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+        // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
 
-            // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
-            UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
-            UserRepresentation john = johnResource.toRepresentation(true);
-            Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
+        // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
+        UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
+        Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
+        Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
 
-            // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
-            UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
-            Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
-            Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
+        // Test Update profile
+        john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
 
-            // Test Update profile
-            john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
-            johnResource.update(john);
+        Response spnegoResponse = spnegoLogin("hnelson", "secret");
+        Assert.assertEquals(200, spnegoResponse.getStatus());
+        String responseText = spnegoResponse.readEntity(String.class);
+        Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
+        spnegoResponse.close();
 
-            Response spnegoResponse = spnegoLogin("hnelson", "secret");
-            Assert.assertEquals(200, spnegoResponse.getStatus());
-            String responseText = spnegoResponse.readEntity(String.class);
-            Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-            Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
-            spnegoResponse.close();
-
-            john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
-            johnResource.update(john);
-        } finally {
-            VerifyProfileTest.disableDynamicUserProfile(testRealmResource());
-        }
+        john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
     }
 
 }

@@ -56,6 +56,8 @@ import org.keycloak.testsuite.util.AccountHelper;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.WaitUtils;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -611,7 +613,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    protected UserRepresentation getUser(String userId) {
+    private UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();
     }
 
