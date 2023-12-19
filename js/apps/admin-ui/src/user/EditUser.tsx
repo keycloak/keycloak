@@ -34,7 +34,6 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
@@ -64,7 +63,6 @@ export default function EditUser() {
   const { hasAccess } = useAccess();
   const { id } = useParams<UserParams>();
   const { realm: realmName } = useRealm();
-  const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<UserFormFields>({ mode: "onChange" });
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [user, setUser] = useState<UIUserRepresentation>();
@@ -113,27 +111,15 @@ export default function EditUser() {
         throw new Error(t("notFound"));
       }
 
-      const isUserProfileEnabled =
-        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-        realm.attributes?.userProfileEnabled === "true";
-
       const { userProfileMetadata, ...user } = userData;
-      setUserProfileMetadata(
-        isUserProfileEnabled ? userProfileMetadata : undefined,
+      setUserProfileMetadata(userProfileMetadata);
+      user.unmanagedAttributes = unmanagedAttributes;
+      user.attributes = filterManagedAttributes(
+        user.attributes,
+        unmanagedAttributes,
       );
 
-      if (isUserProfileEnabled) {
-        user.unmanagedAttributes = unmanagedAttributes;
-        user.attributes = filterManagedAttributes(
-          user.attributes,
-          unmanagedAttributes,
-        );
-      }
-
-      if (
-        upConfig.unmanagedAttributePolicy !== undefined ||
-        !isUserProfileEnabled
-      ) {
+      if (upConfig.unmanagedAttributePolicy !== undefined) {
         setUnmanagedAttributesEnabled(true);
       }
 
@@ -146,7 +132,7 @@ export default function EditUser() {
 
       setBruteForced({ isBruteForceProtected, isLocked });
 
-      form.reset(toUserFormFields(user, isUserProfileEnabled));
+      form.reset(toUserFormFields(user));
     },
     [refreshCount],
   );
@@ -258,7 +244,7 @@ export default function EditUser() {
         ]}
         onToggle={(value) =>
           save({
-            ...toUserFormFields(user, !!userProfileMetadata),
+            ...toUserFormFields(user),
             enabled: value,
           })
         }
@@ -295,12 +281,7 @@ export default function EditUser() {
                   title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   {...attributesTab}
                 >
-                  <UserAttributes
-                    user={user}
-                    save={save}
-                    upConfig={upConfig}
-                    isUserProfileEnabled={!!userProfileMetadata}
-                  />
+                  <UserAttributes user={user} save={save} upConfig={upConfig} />
                 </Tab>
               )}
               <Tab

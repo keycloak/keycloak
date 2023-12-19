@@ -26,11 +26,13 @@ import jakarta.ws.rs.core.Response;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -51,6 +53,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 
@@ -64,6 +67,12 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     @Override
     protected boolean isImportEnabled() {
         return false;
+    }
+
+    @Before
+    public void enableUserProfileUnmanagedAttributes() {
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
 

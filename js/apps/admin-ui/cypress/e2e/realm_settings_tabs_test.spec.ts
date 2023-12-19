@@ -40,15 +40,8 @@ describe("Realm settings tabs tests", () => {
     return this;
   };
 
-  it("shows the 'user profile' tab if enabled", () => {
+  it("shows the 'user profile' tab", () => {
     sidebarPage.goToRealmSettings();
-    cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
-    realmSettingsPage.toggleSwitch(
-      realmSettingsPage.profileEnabledSwitch,
-      false,
-    );
-    realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
-    masthead.checkNotificationMessage("Realm successfully updated");
     cy.findByTestId(realmSettingsPage.userProfileTab).should("exist");
   });
 

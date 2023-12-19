@@ -394,11 +394,7 @@ export const UserForm = ({
         <Button
           data-testid="cancel-create-user"
           variant="link"
-          onClick={
-            user?.id
-              ? () => reset(toUserFormFields(user, !!userProfileMetadata))
-              : undefined
-          }
+          onClick={user?.id ? () => reset(toUserFormFields(user)) : undefined}
           component={
             !user?.id
               ? (props) => (

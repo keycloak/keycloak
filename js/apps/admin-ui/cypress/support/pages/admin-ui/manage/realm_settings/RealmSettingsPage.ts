@@ -67,7 +67,6 @@ export default class RealmSettingsPage extends CommonPage {
   supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "user-managed-access-switch";
-  profileEnabledSwitch = "user-profile-enabled-switch";
   userRegSwitch = "user-reg-switch";
   forgotPwdSwitch = "forgot-pw-switch";
   rememberMeSwitch = "remember-me-switch";
@@ -233,6 +232,7 @@ export default class RealmSettingsPage extends CommonPage {
   #realmDisplayName = "#kc-display-name";
   #frontEndURL = "#kc-frontend-url";
   #requireSSL = "#kc-require-ssl";
+  #unmanagedAttributes = "#kc-user-profile-unmanaged-attribute-policy";
   #fromDisplayName = "from-display-name";
   #replyToEmail = "#kc-reply-to";
   #port = "#kc-port";
@@ -319,6 +319,12 @@ export default class RealmSettingsPage extends CommonPage {
     return this;
   }
 
+  getUnmanagedAttributes(option: string) {
+    cy.get(this.#unmanagedAttributes).contains(option);
+
+    return this;
+  }
+
   fillDisplayName(displayName: string) {
     cy.get(this.#realmDisplayName).clear().type(displayName);
   }
@@ -349,6 +355,14 @@ export default class RealmSettingsPage extends CommonPage {
 
   fillRequireSSL(option: string) {
     cy.get(this.#requireSSL)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(option)
+      .click();
+  }
+
+  fillUnmanagedAttributes(option: string) {
+    cy.get(this.#unmanagedAttributes)
       .click()
       .get(".pf-c-select__menu-item")
       .contains(option)

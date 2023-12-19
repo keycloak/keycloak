@@ -85,8 +85,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
-    private boolean isDeclarativeConfigurationEnabled;
-
     private UPConfig parsedDefaultRawConfig;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
@@ -198,7 +196,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     @Override
     public void init(Config.Scope config) {
-        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
         parsedDefaultRawConfig = UPConfigUtils.parseDefaultConfig();
 
         // make sure registry is clear in case of re-deploy
@@ -313,12 +310,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      * @return the metadata
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
-        if (isDeclarativeConfigurationEnabled) {
-            // default metadata for each context is based on the default realm configuration
-            return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
-        }
-
-        return metadata;
+        // default metadata for each context is based on the default realm configuration
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -460,10 +453,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     // GETTER METHODS FOR INTERNAL FIELDS
-
-    protected boolean isDeclarativeConfigurationEnabled() {
-        return isDeclarativeConfigurationEnabled;
-    }
 
     protected UPConfig getParsedDefaultRawConfig() {
         return parsedDefaultRawConfig;

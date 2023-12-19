@@ -22,15 +22,23 @@ package org.keycloak.testsuite.theme;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -52,10 +60,17 @@ public class CustomRegistrationTemplateTest extends AbstractTestRealmKeycloakTes
     @Page
     protected AppPage appPage;
 
+    private UPConfig upConfig;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setRegistrationAllowed(true);
         testRealm.setLoginTheme("address");
+    }
+
+    @Before
+    public void onBefore() {
+        upConfig = updateUserProfileConfiguration();
     }
 
     @Test
@@ -65,6 +80,50 @@ public class CustomRegistrationTemplateTest extends AbstractTestRealmKeycloakTes
         Map<String, List<String>> attributes = user.getAttributes();
         assertFalse(attributes.isEmpty());
         assertCustomAttributes(attributes);
+    }
+
+    @Test
+    public void testUnmanagedAttributeEnabled() {
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        UserRepresentation user = register();
+        assertCustomAttributes(user.getAttributes());
+    }
+
+    @Test
+    public void testUnmanagedAttributeAdminEdit() {
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        UserRepresentation user = register();
+        assertNull(user.getAttributes());
+    }
+
+    @Test
+    public void testUnmanagedAttributeDisabled() {
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        UserRepresentation user = register();
+        assertNull(user.getAttributes());
+    }
+
+    private UPConfig updateUserProfileConfiguration() {
+        UPConfig upCOnfig = testRealm().users().userProfile().getConfiguration();
+        upCOnfig.setUnmanagedAttributePolicy(null);
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("street", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("locality", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("region", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("postal_code", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("country", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        testRealm().users().userProfile().update(upCOnfig);
+        return upCOnfig;
     }
 
     protected static void assertCustomAttributes(Map<String, List<String>> attributes) {
@@ -93,9 +152,6 @@ public class CustomRegistrationTemplateTest extends AbstractTestRealmKeycloakTes
     }
 
     private void navigateToRegistrationPage() {
-        RealmRepresentation realm = testRealm().toRepresentation();
-        realm.setRegistrationAllowed(true);
-        testRealm().update(realm);
         loginPage.open();
         loginPage.clickRegister();
     }

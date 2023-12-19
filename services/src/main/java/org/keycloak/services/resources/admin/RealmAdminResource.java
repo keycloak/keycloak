@@ -385,12 +385,6 @@ public class RealmAdminResource {
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
-                if (realm.getAttribute(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.FALSE)) {
-                    // add the user profile attribute if enabled
-                    Map<String, String> attrs = Optional.ofNullable(rep.getAttributes()).orElse(new HashMap<>());
-                    attrs.put(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-                    rep.setAttributes(attrs);
-                }
             }
 
             if (auth.realm().canViewIdentityProviders()) {

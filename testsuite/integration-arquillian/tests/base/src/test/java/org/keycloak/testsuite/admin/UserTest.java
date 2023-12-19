@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.WebApplicationException;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -32,9 +32,9 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -63,12 +63,17 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -87,6 +92,7 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -180,8 +186,18 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Before
-    public void beforeUserTest() {
+    public void beforeUserTest() throws IOException {
         createAppClientInRealm(REALM_NAME);
+
+        VerifyProfileTest.setUserProfileConfiguration(realm, null);
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
+
+        for (String name : managedAttributes) {
+            upConfig.addOrReplaceAttribute(createAttributeMetadata(name));
+        }
+
+        VerifyProfileTest.setUserProfileConfiguration(realm, JsonSerialization.writeValueAsString(upConfig));
+
         assertAdminEvents.clear();
     }
 
@@ -1241,16 +1257,27 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void wildcardSearch() {
-        Assume.assumeFalse("Default validators do not allow special chars", isDeclarativeUserProfile());
-        createUser("0user\\\\0", "email0@emal");
-        createUser("1user\\\\", "email1@emal");
-        createUser("2user\\\\%", "email2@emal");
-        createUser("3user\\\\*", "email3@emal");
-        createUser("4user\\\\_", "email4@emal");
+        UserProfileResource upResource = realm.users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        Map<String, Object> prohibitedCharsOrigCfg = upConfig.getAttribute(UserModel.USERNAME).getValidations().get(UsernameProhibitedCharactersValidator.ID);
+        upConfig.getAttribute(UserModel.USERNAME).getValidations().remove(UsernameProhibitedCharactersValidator.ID);
+        upResource.update(upConfig);
+        assertAdminEvents.clear();
 
-        assertThat(realm.users().search("*", null, null), hasSize(5));
-        assertThat(realm.users().search("*user\\", null, null), hasSize(5));
-        assertThat(realm.users().search("\"2user\\\\%\"", null, null), hasSize(1));
+        try {
+            createUser("0user\\\\0", "email0@emal");
+            createUser("1user\\\\", "email1@emal");
+            createUser("2user\\\\%", "email2@emal");
+            createUser("3user\\\\*", "email3@emal");
+            createUser("4user\\\\_", "email4@emal");
+
+            assertThat(realm.users().search("*", null, null), hasSize(5));
+            assertThat(realm.users().search("*user\\", null, null), hasSize(5));
+            assertThat(realm.users().search("\"2user\\\\%\"", null, null), hasSize(1));
+        } finally {
+            upConfig.getAttribute(UserModel.USERNAME).addValidation(UsernameProhibitedCharactersValidator.ID, prohibitedCharsOrigCfg);
+            upResource.update(upConfig);
+        }
     }
 
     @Test
@@ -2465,20 +2492,16 @@ public class UserTest extends AbstractAdminTest {
 
         UserRepresentation update = new UserRepresentation();
         update.setId(userId);
-        if (isDeclarativeUserProfile()) {
-            // user profile requires sending all attributes otherwise they are removed
-            update.setEmail(email);
-        }
+        // user profile requires sending all attributes otherwise they are removed
+        update.setEmail(email);
+
         update.setAttributes(Map.of("phoneNumber", List.of("123")));
         updateUser(realm.users().get(userId), update);
 
         UserRepresentation updated = realm.users().get(userId).toRepresentation();
         assertThat(updated.getUsername(), equalTo(userName));
-        if (isDeclarativeUserProfile()) {
-            assertThat(updated.getAttributes().get("phoneNumber"), equalTo(List.of("123")));
-        } else {
-            assertThat(updated.getAttributes(), equalTo(Map.of("phoneNumber", List.of("123"))));
-        }
+        assertThat(updated.getAttributes().get("phoneNumber"), equalTo(List.of("123")));
+
         assertThat(updated.getEmail(), equalTo(email));
     }
 
@@ -2494,9 +2517,7 @@ public class UserTest extends AbstractAdminTest {
 
         try {
             updateUser(user, userRep);
-            if (isDeclarativeUserProfile()) {
-                fail("Should fail because realm does not allow edit username");
-            }
+            fail("Should fail because realm does not allow edit username");
         } catch (BadRequestException expected) {
             ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
             assertEquals("error-user-attribute-read-only", error.getErrorMessage());
@@ -2869,26 +2890,42 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void defaultMaxResults() {
-        UsersResource users = adminClient.realms().realm("test").users();
+        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upResource.update(upConfig);
 
-        for (int i = 0; i < 110; i++) {
-            users.create(UserBuilder.create().username("test-" + i).addAttribute("aName", "aValue").build()).close();
+        try {
+            UsersResource users = adminClient.realms().realm("test").users();
+
+            for (int i = 0; i < 110; i++) {
+                users.create(UserBuilder.create().username("test-" + i).addAttribute("aName", "aValue").build()).close();
+            }
+
+            List<UserRepresentation> result = users.search("test", null, null);
+            assertEquals(100, result.size());
+            for (UserRepresentation user : result) {
+                assertThat(user.getAttributes(), Matchers.notNullValue());
+                assertThat(user.getAttributes().keySet(), Matchers.hasSize(1));
+                assertThat(user.getAttributes(), Matchers.hasEntry(is("aName"), Matchers.contains("aValue")));
+            }
+
+            assertEquals(105, users.search("test", 0, 105).size());
+            assertEquals(111, users.search("test", 0, 1000).size());
+        } finally {
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
         }
-
-        List<UserRepresentation> result = users.search("test", null, null);
-        assertEquals(100, result.size());
-        for (UserRepresentation user : result) {
-            assertThat(user.getAttributes(), Matchers.notNullValue());
-            assertThat(user.getAttributes().keySet(), Matchers.hasSize(1));
-            assertThat(user.getAttributes(), Matchers.hasEntry(is("aName"), Matchers.contains("aValue")));
-        }
-
-        assertEquals(105, users.search("test", 0, 105).size());
-        assertEquals(111, users.search("test", 0, 1000).size());
     }
 
     @Test
     public void defaultMaxResultsBrief() {
+        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upResource.update(upConfig);
+
+        try {
         UsersResource users = adminClient.realms().realm("test").users();
 
         for (int i = 0; i < 110; i++) {
@@ -2899,6 +2936,10 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(100, result.size());
         for (UserRepresentation user : result) {
             assertThat(user.getAttributes(), Matchers.nullValue());
+        }
+        } finally {
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
         }
     }
 
@@ -3461,7 +3502,75 @@ public class UserTest extends AbstractAdminTest {
         );
     }
 
-    protected boolean isDeclarativeUserProfile() {
-        return false;
+    @Test
+    public void testUserProfileMetadata() {
+        String userId = createUser("user-metadata", "user-metadata@keycloak.org");
+        UserRepresentation user = realm.users().get(userId).toRepresentation(true);
+        UserProfileMetadata metadata = user.getUserProfileMetadata();
+        assertNotNull(metadata);
+
+        for (String name : managedAttributes) {
+            assertNotNull(metadata.getAttributeMetadata(name));
+        }
+    }
+
+    @Test
+    public void testUsernameReadOnlyIfEmailAsUsernameEnabled() {
+        switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
+        String userId = createUser("user-metadata", "user-metadata@keycloak.org");
+        UserRepresentation user = realm.users().get(userId).toRepresentation(true);
+        UserProfileMetadata metadata = user.getUserProfileMetadata();
+        assertNotNull(metadata);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
+        assertNotNull(username);
+        assertTrue(username.isReadOnly());
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
+        assertNotNull(email);
+        assertFalse(email.isReadOnly());
+    }
+
+    @Test
+    public void testEmailNotReadOnlyIfEmailAsUsernameEnabledAndEditUsernameDisabled() {
+        switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
+        RealmRepresentation rep = realm.toRepresentation();
+        assertFalse(rep.isEditUsernameAllowed());
+        String userId = createUser("user-metadata", "user-metadata@keycloak.org");
+        UserRepresentation user = realm.users().get(userId).toRepresentation(true);
+        UserProfileMetadata metadata = user.getUserProfileMetadata();
+        assertNotNull(metadata);
+        UserProfileAttributeMetadata username = metadata.getAttributeMetadata(UserModel.USERNAME);
+        assertNotNull(username);
+        assertTrue(username.isReadOnly());
+        UserProfileAttributeMetadata email = metadata.getAttributeMetadata(UserModel.EMAIL);
+        assertNotNull(email);
+        assertFalse(email.isReadOnly());
+    }
+
+    @Test
+    public void testDefaultCharacterValidationOnUsername() {
+        List<String> invalidNames = List.of("1user\\\\", "2user\\\\%", "3user\\\\*", "4user\\\\_");
+
+        for (String invalidName : invalidNames) {
+            try {
+                createUser(invalidName, "test@invalid.org");
+                fail("Should fail because the username contains invalid characters");
+            } catch (WebApplicationException bre) {
+                assertEquals(400, bre.getResponse().getStatus());
+                ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("error-username-invalid-character", error.getErrorMessage());
+            }
+        }
+    }
+
+    private UPAttribute createAttributeMetadata(String name) {
+        UPAttribute attribute = new UPAttribute();
+        attribute.setName(name);
+        UPAttributePermissions permissions = new UPAttributePermissions();
+        permissions.setEdit(Set.of("user", "admin"));
+        attribute.setPermissions(permissions);
+        this.managedAttributes.add(name);
+        return attribute;
     }
 }

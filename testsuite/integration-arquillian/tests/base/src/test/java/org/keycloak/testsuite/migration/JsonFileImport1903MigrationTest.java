@@ -17,10 +17,8 @@
 package org.keycloak.testsuite.migration;
 
 import org.junit.Test;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -31,7 +29,6 @@ import java.util.Map;
 /**
  * Tests that we can import json file from previous version. MigrationTest only tests DB.
  */
-@EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
 public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override

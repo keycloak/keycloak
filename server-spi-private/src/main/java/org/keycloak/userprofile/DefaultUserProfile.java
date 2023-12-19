@@ -56,7 +56,6 @@ public final class DefaultUserProfile implements UserProfile {
     private final Function<Attributes, UserModel> userSupplier;
     private final Attributes attributes;
     private final KeycloakSession session;
-    private final boolean isUserProfileEnabled;
     private boolean validated;
     private UserModel user;
 
@@ -67,8 +66,6 @@ public final class DefaultUserProfile implements UserProfile {
         this.attributes = attributes;
         this.user = user;
         this.session = session;
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        isUserProfileEnabled = provider.isEnabled(session.getContext().getRealm());
     }
 
     @Override
@@ -226,7 +223,7 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                boolean isUnmanagedAttribute = isUserProfileEnabled && metadata.getAttribute(name).isEmpty();
+                boolean isUnmanagedAttribute = metadata.getAttribute(name).isEmpty();
                 String value = isUnmanagedAttribute ? null : values.stream().findFirst().orElse(null);
 
                 if (UserModel.USERNAME.equals(name)) {

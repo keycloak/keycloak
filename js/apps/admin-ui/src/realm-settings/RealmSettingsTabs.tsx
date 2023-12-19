@@ -417,16 +417,13 @@ export const RealmSettingsTabs = ({
               </RoutableTabs>
             </Tab>
           )}
-          {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-            realm.attributes?.userProfileEnabled === "true" && (
-              <Tab
-                title={<TabTitleText>{t("userProfile")}</TabTitleText>}
-                data-testid="rs-user-profile-tab"
-                {...userProfileTab}
-              >
-                <UserProfileTab />
-              </Tab>
-            )}
+          <Tab
+            title={<TabTitleText>{t("userProfile")}</TabTitleText>}
+            data-testid="rs-user-profile-tab"
+            {...userProfileTab}
+          >
+            <UserProfileTab />
+          </Tab>
           <Tab
             title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
             data-testid="rs-userRegistration-tab"

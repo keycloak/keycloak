@@ -31,6 +31,7 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
         RealmRepresentation testRealm = new RealmRepresentation();
         testRealm.setRealm("test_" + RandomStringUtils.randomAlphabetic(5));
         testRealm.setEnabled(true);
+        testRealm.setEditUsernameAllowed(true);
         return testRealm;
     }
 
