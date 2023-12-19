@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -43,8 +42,6 @@ import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -56,13 +53,11 @@ import org.keycloak.userprofile.config.UPConfigUtils;
  * @author rmartinc
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         // enable user profile and add sssd provider in the realm
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
         ComponentExportRepresentation sssdComp = new ComponentExportRepresentation();
         sssdComp.setName(PROVIDER_NAME);
         sssdComp.setProviderId(PROVIDER_NAME);

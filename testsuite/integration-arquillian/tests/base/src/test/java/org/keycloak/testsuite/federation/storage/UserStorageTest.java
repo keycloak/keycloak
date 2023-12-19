@@ -11,6 +11,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
@@ -44,6 +45,7 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -160,6 +162,9 @@ public class UserStorageTest extends AbstractAuthTest {
         propProviderRWId = addComponent(newPropProviderRW());
 
         createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
+
+        UserProfileResource userProfileRes = testRealmResource().users().userProfile();
+        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
     }
 
     @After

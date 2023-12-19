@@ -56,7 +56,7 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
         userTemplateImporterMapper.setName("custom-username-import-mapper");
         userTemplateImporterMapper.setIdentityProviderMapper(UsernameTemplateMapper.PROVIDER_ID);
         userTemplateImporterMapper.setConfig(ImmutableMap.<String, String>builder()
-                .put(UsernameTemplateMapper.TEMPLATE, "${ALIAS}:${CLAIM.sub}")
+                .put(UsernameTemplateMapper.TEMPLATE, "${ALIAS}_${CLAIM.sub}")
                 .build());
 
         IdentityProviderMapperRepresentation jwtClaimsAttrMapper = new IdentityProviderMapperRepresentation();
@@ -75,22 +75,6 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
      * See: KEYCLOAK-8100
      */
     @Test
-    public void usernameShouldBeDerivedFromAliasAndIdpSubClaim() {
-
-        logInAsUserInIDP();
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
-        UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserEmail(), 0, 1).get(0);
-
-        String username = user.getUsername();
-
-        assertEquals("Should render alias:sub as Username", bc.getIDPAlias() + ":" + idpUserId, username);
-    }
-
-    /**
-     * See: KEYCLOAK-8100
-     */
-    @Test
     public void userAttributeShouldBeDerivedFromIdpSubClaim() {
 
         logInAsUserInIDP();
@@ -99,5 +83,8 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserEmail(), 0, 1).get(0);
 
         assertEquals("Should render idpSub as mappedSub attribute", idpUserId, user.getAttributes().get("mappedSub").get(0));
+
+        String username = user.getUsername();
+        assertEquals("Should render alias:sub as Username", bc.getIDPAlias() + "_" + idpUserId, username);
     }
 }

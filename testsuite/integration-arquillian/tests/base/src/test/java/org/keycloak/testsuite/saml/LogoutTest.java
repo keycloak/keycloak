@@ -128,7 +128,7 @@ public class LogoutTest extends AbstractSamlTest {
             .targetAttributeSamlResponse()
             .targetUri(getSamlBrokerUrl(REALM_NAME))
             .build()
-          .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
+          .updateProfile().username("aaa").email("a@b.c").firstName("A").lastName("B").build()
           .followOneRedirect()
 
           // Now returning back to the app

@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -36,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -66,10 +68,6 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected ErrorPage errorPage;
-    
-    protected boolean isDynamicForm() {
-        return false;
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -177,11 +175,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
-        else
-            Assert.assertEquals("Please specify first name.", updateProfilePage.getInputErrors().getFirstNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
         events.assertEmpty();
     }
@@ -203,10 +197,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
-        else
-            Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
         events.assertEmpty();
     }
@@ -350,37 +341,47 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Test
     public void updateProfileWithoutRemoveCustomAttributes() {
-        UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        UserResource user = adminClient.realm("test").users().get(userRep.getId());
+        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        upResource.update(upConfig);
 
-        userRep.setAttributes(new HashMap<>());
-        userRep.getAttributes().put("custom", Arrays.asList("custom"));
+        try {
+            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+            UserResource user = adminClient.realm("test").users().get(userRep.getId());
 
-        user.update(userRep);
+            userRep.setAttributes(new HashMap<>());
+            userRep.getAttributes().put("custom", Arrays.asList("custom"));
 
-        loginPage.open();
+            user.update(userRep);
 
-        loginPage.login("test-user@localhost", "password");
+            loginPage.open();
 
-        updateProfilePage.assertCurrent();
-        assertFalse(updateProfilePage.isCancelDisplayed());
+            loginPage.login("test-user@localhost", "password");
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
+            updateProfilePage.assertCurrent();
+            assertFalse(updateProfilePage.isCancelDisplayed());
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+            updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
-        events.expectLogin().assertEvent();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        // assert user is really updated in persistent store
-        userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Assert.assertEquals("New first", userRep.getFirstName());
-        Assert.assertEquals("New last", userRep.getLastName());
-        Assert.assertEquals("new@email.com", userRep.getEmail());
-        Assert.assertEquals("test-user@localhost", userRep.getUsername());
-        Assert.assertNotNull(userRep.getAttributes());
-        Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
+            events.expectLogin().assertEvent();
+
+            // assert user is really updated in persistent store
+            userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+            Assert.assertEquals("New first", userRep.getFirstName());
+            Assert.assertEquals("New last", userRep.getLastName());
+            Assert.assertEquals("new@email.com", userRep.getEmail());
+            Assert.assertEquals("test-user@localhost", userRep.getUsername());
+            Assert.assertNotNull(userRep.getAttributes());
+            Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
+        } finally {
+            upConfig.setUnmanagedAttributePolicy(null);
+            upResource.update(upConfig);
+        }
     }
 
 }
