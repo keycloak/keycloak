@@ -23,6 +23,7 @@ public class RegexPolicyRepresentation extends AbstractPolicyRepresentation {
 
     private String targetClaim;
     private String pattern;
+    private boolean targetContextAttributes;
 
     @Override
     public String getType() {
@@ -43,6 +44,14 @@ public class RegexPolicyRepresentation extends AbstractPolicyRepresentation {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
+    }
+
+    public boolean isTargetContextAttributes() {
+        return targetContextAttributes;
+    }
+
+    public void setTargetContextAttributes(boolean targetContextAttributes) {
+        this.targetContextAttributes = targetContextAttributes;
     }
 
 }
