@@ -95,3 +95,17 @@ In this release, the server will render the update profile page when the user is
 first time using the `idp-review-user-profile.ftl` template.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Performing actions on behalf of another user is not longer possible when the user is already authenticated
+
+In this release, you can no longer perform actions such as email verification if the user is already authenticated
+and the action is bound to another user. For instance, a user can not complete the verification email flow if the email link
+is bound to a different account.
+
+= Changes to the email verification flow
+
+In this release, if a user tries to follow the link to verify the email and the email was previously verified, a proper message
+will be shown.
+
+In addition to that, a new error (`EMAIL_ALREADY_VERIFIED`) event will be fired to indicate an attempt to verify an already verified email. You can
+use this event to track possible attempts to hijack user accounts in case the link has leaked or to alert users if they do not recognize the action.
