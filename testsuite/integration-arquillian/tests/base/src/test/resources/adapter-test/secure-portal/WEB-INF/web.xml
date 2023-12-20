@@ -23,10 +23,20 @@
 
     <module-name>secure-portal</module-name>
 
+    <filter>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <filter-class>org.keycloak.testsuite.adapter.filter.AdapterActionsFilter</filter-class>
+    </filter>
+
     <servlet>
         <servlet-name>Servlet</servlet-name>
         <servlet-class>org.keycloak.testsuite.adapter.servlet.CallAuthenticatedServlet</servlet-class>
     </servlet>
+
+    <filter-mapping>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>
