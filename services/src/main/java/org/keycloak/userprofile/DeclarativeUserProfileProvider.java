@@ -137,7 +137,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
-        UserProfileMetadata metadata = configureUserProfile(contextualMetadataRegistry.get(context), session);
+        UserProfileMetadata defaultMetadata = contextualMetadataRegistry.get(context);
+
+        if (defaultMetadata == null) {
+            // some contexts (and their metadata) are available enabled when the corresponding feature is enabled
+            throw new RuntimeException("No metadata is bound to the " + context + " context");
+        }
+
+        UserProfileMetadata metadata = configureUserProfile(defaultMetadata, session);
         Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
         return new DefaultUserProfile(metadata, profileAttributes, createUserFactory(), user, session);
     }
@@ -266,10 +273,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
 
-        // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
-        if (parsedConfig == null
-                || context == UserProfileContext.UPDATE_EMAIL
-        ) {
+        if (parsedConfig == null) {
             return decoratedMetadata;
         }
 
@@ -278,6 +282,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
+
+            if (!context.isAttributeSupported(attributeName)) {
+                // attributes not supported by the context are ignored
+                // for instance, only support email attribute when at the UPDATE_EMAIL context
+                continue;
+            }
+
             List<AttributeValidatorMetadata> validators = new ArrayList<>();
             Map<String, Map<String, Object>> validationsConfig = attrConfig.getValidations();
 
