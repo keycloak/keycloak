@@ -36,7 +36,6 @@ import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -114,7 +113,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(offlineTokenPage);
 
             RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
-            assertThat(refreshToken, notNullValue());
             assertThat(TokenUtil.TOKEN_TYPE_OFFLINE, is(refreshToken.getType()));
             assertThat(refreshToken.getExp(), nullValue());
 
@@ -170,7 +168,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(offlineTokenPage);
 
             final RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
-            assertThat(refreshToken, notNullValue());
             assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Assert refresh works with increased time
@@ -235,7 +232,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(offlineTokenPage);
 
             RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
-            assertThat(refreshToken, notNullValue());
             assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Check that the client scopes have been granted by the user

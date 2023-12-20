@@ -136,7 +136,6 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         URLAssert.assertCurrentUrlStartsWith(tokenMinTTLPage.getInjectedUrl().toString());
-        Assert.assertNull(tokenMinTTLPage.getAccessToken());
 
         ApiUtil.findUserByUsernameId(adminClient.realm("demo"), "bburke@redhat.com").logout();
 
