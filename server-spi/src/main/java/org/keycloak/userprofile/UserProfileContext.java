@@ -20,9 +20,13 @@
 package org.keycloak.userprofile;
 
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
 import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
+
+import org.keycloak.models.UserModel;
+import org.keycloak.utils.StringUtil;
 
 /**
  * <p>This interface represents the different contexts from where user profiles are managed. The core contexts are already
@@ -62,17 +66,24 @@ public enum UserProfileContext {
 
     /**
      * In this context, a user profile is managed by themselves when updating their email through an application initiated action.
+     * In this context, only the {@link UserModel#EMAIL} attribute is supported.
      */
-    UPDATE_EMAIL(false, true, false);
-    
+    UPDATE_EMAIL(false, true, false, Set.of(UserModel.EMAIL)::contains);
+
     private final boolean resetEmailVerified;
+    private final Predicate<String> attributeSelector;
     private final boolean adminContext;
     private final boolean authFlowContext;
     
-    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified){
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified, Predicate<String> attributeSelector){
         this.adminContext = adminContext;
         this.authFlowContext = authFlowContext;
         this.resetEmailVerified = resetEmailVerified;
+        this.attributeSelector = attributeSelector;
+    }
+
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified){
+        this(adminContext, authFlowContext, resetEmailVerified, StringUtil::isNotBlank);
     }
 
     /**
@@ -111,5 +122,8 @@ public enum UserProfileContext {
     private String getContextRole() {
         return isAdminContext() ? ROLE_ADMIN : ROLE_USER;
     }
-    
+
+    public boolean isAttributeSupported(String name) {
+        return attributeSelector.test(name);
+    }
 }
