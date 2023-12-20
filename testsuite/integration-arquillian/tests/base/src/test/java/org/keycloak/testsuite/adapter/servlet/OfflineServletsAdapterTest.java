@@ -34,6 +34,7 @@ import org.openqa.selenium.By;
 import java.io.Closeable;
 import java.io.IOException;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -70,6 +71,11 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
     private final String DEFAULT_USERNAME = "test-user@localhost";
     private final String DEFAULT_PASSWORD = "password";
     private final String OFFLINE_CLIENT_ID = "offline-client";
+
+    /**
+     * URL in the deployment that doesn't require authentication and which therefore can be used to trigger activities in the actionfilter.
+     */
+    private static final String UNSECURED_URL = "unsecured/foo";
 
     @Deployment(name = OfflineToken.DEPLOYMENT_NAME)
     protected static WebArchive offlineClient() {
@@ -149,7 +155,7 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             loginPage.assertCurrent();
         } finally {
             events.clear();
-            resetTimeOffsetAuthenticated();
+            resetTimeOffset();
         }
     }
 
@@ -197,7 +203,7 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             loginPage.assertCurrent();
         } finally {
             events.clear();
-            resetTimeOffsetAuthenticated();
+            resetTimeOffset();
         }
     }
 
@@ -243,39 +249,31 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         } finally {
             events.clear();
-            resetTimeOffsetAuthenticated();
+            resetTimeOffset();
         }
     }
 
     private void setAdapterAndServerTimeOffset(int timeOffset) {
-        super.setAdapterAndServerTimeOffset(timeOffset, offlineTokenPage.toString());
+        super.setAdapterAndServerTimeOffset(timeOffset, offlineTokenPage.toString() + UNSECURED_URL);
     }
 
-    private void resetTimeOffsetAuthenticated() {
-        resetTimeOffsetAuthenticated(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+    @Override
+    public void resetTimeOffset() {
+        setAdapterServletTimeOffset(0, offlineTokenPage.toString() + UNSECURED_URL);
+        super.resetTimeOffset();
     }
-    /**
-     * Reset time offset for remote environment.
-     * After the token expiration, process of re-authentication is necessary.
-     *
-     * @param username
-     * @param password
-     */
-    private void resetTimeOffsetAuthenticated(String username, String password) {
-        if (testContext.getAppServerInfo().isUndertow()) {
-            setAdapterAndServerTimeOffset(0);
-            return;
-        }
-        super.setAdapterServletTimeOffset(0, offlineTokenPage.toString());
 
-        if (loginPage.isCurrent()) {
-            loginPage.login(username, password);
-            waitForPageToLoad();
-            AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
-        }
-        setTimeOffset(0);
-        // Improve stability of the cleanup and have more time for synchronizing auth and app server living in different JVMs
-        pause(400);
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        // after each re-import, ensure that the information stored in JWKPublicKeyLocator is reset
+        String resetDeploymentUri = UriBuilder.fromUri(offlineTokenPage.toString() + UNSECURED_URL)
+                .queryParam(AdapterActionsFilter.RESET_DEPLOYMENT_PARAM, "true")
+                .build().toString();
+        driver.navigate().to(resetDeploymentUri);
+        waitForPageToLoad();
+
+        assertThat(driver.getPageSource(), containsString("Restarted PublicKeyLocator"));
+        super.afterAbstractKeycloakTestRealmImport();
     }
-    
+
 }
