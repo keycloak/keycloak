@@ -281,8 +281,14 @@ public class PathConfigMatcher extends PathMatcher<PathConfig> {
                 ResourceRepresentation resourceDescription = protectedResource.findById(id);
 
                 if (resourceDescription.getUris() != null && !resourceDescription.getUris().isEmpty()) {
-                    for(PathConfig pathConfig : PathConfig.createPathConfigs(resourceDescription)) {
-                        paths.put(pathConfig.getPath(), pathConfig);
+                    for (PathConfig pathConfig : PathConfig.createPathConfigs(resourceDescription)) {
+                        PathConfig currentPathConfig = paths.get(pathConfig.getPath());
+                        if (currentPathConfig == null) {
+                            paths.put(pathConfig.getPath(), pathConfig);
+                        } else {
+                            currentPathConfig.getMethods().addAll(pathConfig.getMethods());
+                            currentPathConfig.getScopes().addAll(pathConfig.getScopes());
+                        }
                     }
                 }
             }
