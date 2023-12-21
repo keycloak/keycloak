@@ -45,7 +45,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;

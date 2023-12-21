@@ -22,7 +22,7 @@ import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;

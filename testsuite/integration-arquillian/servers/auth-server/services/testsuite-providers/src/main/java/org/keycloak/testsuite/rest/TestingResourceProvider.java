@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import static java.util.Objects.requireNonNull;
+
+import jakarta.ws.rs.core.CacheControl;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -63,6 +66,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
@@ -1144,5 +1148,17 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return rootAuthSession.getAuthenticationSessions().size();
     }
 
+    @GET
+    @Path("/no-cache-annotated-endpoint")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Integer programmaticMaxAgeValue) {
+        requireNonNull(programmaticMaxAgeValue);
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(programmaticMaxAgeValue);
+
+        return Response.noContent().cacheControl(cacheControl).build();
+    }
 
 }
