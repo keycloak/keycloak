@@ -128,6 +128,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce prohibiting implicit and hybrid flow
 * Enforce checking if a PAR request includes necessary parameters included by an authorization request
 * Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
+* Enforce <<_using_lightweight_access_token, using lightweight access token>>
 
 [[_client_policy_profile]]
 === Profile
