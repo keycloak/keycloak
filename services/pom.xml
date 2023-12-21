@@ -330,6 +330,67 @@
                                         <toc/>
                                         <toc-position>left</toc-position>
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
+                                        <!-- Boolean attributes are passed as defined/undefined to AsciiDoc, not at their literal value -->
+                                        <project_community>true</project_community>
+                                        <project_product>false</project_product>
+                                    </attributes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-raw-openapi-definition</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
+                                            <includes>
+                                                <include>**/openapi.yaml</include>
+                                                <include>**/openapi.json</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>generate-docs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>process-asciidoc</goal>
+                                </goals>
+                                <configuration combine.children="append">
+                                    <attributes combine.children="append">
+                                        <project_community>false</project_community>
+                                        <project_product>true</project_product>
                                     </attributes>
                                 </configuration>
                             </execution>
@@ -338,5 +399,6 @@
                 </plugins>
             </build>
         </profile>
+
     </profiles>
 </project>
