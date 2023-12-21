@@ -1,6 +1,6 @@
 package org.keycloak.examples.domainextension.rest;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.examples.domainextension.CompanyRepresentation;
 import org.keycloak.examples.domainextension.spi.ExampleService;
 import org.keycloak.models.KeycloakSession;
