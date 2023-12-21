@@ -867,26 +867,21 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return new TestJavascriptResource(session);
     }
 
-    private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
-        doWithProperties(file, props -> {
-            props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState);
-        });
-    }
-
-    private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
-        doWithProperties(file, props -> {
-            props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile));
-        });
-    }
-
-    private void doWithProperties(File file, Consumer<Properties> callback) {
-
+    private void doWithProperties(Consumer<Properties> callback) {
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        if (jbossServerConfigDir == null) {
+            return;
+        }
+        File file = new File(jbossServerConfigDir, "keycloak.conf");
+        if (!file.exists()) {
+            file = new File(jbossServerConfigDir, "profile.properties");
+        }
         Properties properties = new Properties();
         if (file.isFile() && file.exists()) {
             try (FileInputStream fis = new FileInputStream(file)) {
                 properties.load(fis);
             } catch (IOException e) {
-                throw new RuntimeException("Unable to read profile.properties file");
+                throw new RuntimeException("Unable to read file " + file.getName());
             }
         }
 
@@ -899,7 +894,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             properties.store(fos, null);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to write to profile.properties file");
+            throw new RuntimeException("Unable to write file " + file.getName());
         }
     }
 
@@ -942,12 +937,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         FeatureDeployerUtil.initBeforeChangeFeature(feature);
 
-        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-        if (jbossServerConfigDir != null) {
-            File file = new File(jbossServerConfigDir, "profile.properties");
-            unsetFeatureInProfileFile(file, feature);
-        }
+        doWithProperties(props -> {
+            props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureKey));
+        });
     }
 
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
@@ -974,11 +966,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
             if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
                 FeatureDeployerUtil.initBeforeChangeFeature(feature);
 
-                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-                // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-                if (jbossServerConfigDir != null) {
-                    setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
-                }
+                doWithProperties(props -> {
+                    props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(feature), shouldEnable ? "enabled" : "disabled");
+                });
 
                 Profile current = Profile.getInstance();
 

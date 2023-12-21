@@ -1,4 +1,6 @@
-package org.keycloak.common.profile;
+package org.keycloak.testsuite;
+
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,7 +26,7 @@ public class PropertiesFileProfileConfigResolver extends PropertiesProfileConfig
                 }
             }
         } catch (IOException e) {
-            throw new ProfileException("Failed to load profile propeties file", e);
+            throw new RuntimeException("Failed to load profile propeties file", e);
         }
         return properties;
     }
