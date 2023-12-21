@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
