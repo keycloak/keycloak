@@ -329,6 +329,8 @@ public class DefaultTokenManager implements TokenManager {
         LogoutToken token = new LogoutToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
+        // From the spec "OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1" at https://openid.net/specs/openid-connect-backchannel-1_0.html
+        // "OPs are encouraged to use short expiration times in Logout Tokens, preferably at most two minutes in the future [...]"
         token.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
