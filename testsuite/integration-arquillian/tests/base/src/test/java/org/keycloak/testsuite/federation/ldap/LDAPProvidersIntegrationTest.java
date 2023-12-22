@@ -1182,6 +1182,24 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNotNull(session.users().getUserByUsername(appRealm, "johnkeycloak"));
         });
 
+        // change username
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
+
+            // change username locally
+            user.setUsername("johnkeycloak-renamed");
+        });
+
+        // check user is found just once
+        List<UserRepresentation> users = testRealm().users().search("johnkeycloak", 0, 2);
+        Assert.assertEquals("More than one user is found", 1, users.size());
+        List<ComponentRepresentation> components = testRealm().components().query(
+                testRealm().toRepresentation().getId(), UserStorageProvider.class.getName(), "test-ldap");
+        Assert.assertEquals("LDAP component not found", 1, users.size());
+        Assert.assertEquals(components.iterator().next().getId(), users.iterator().next().getFederationLink());
+
         // Revert
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
