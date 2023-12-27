@@ -263,8 +263,8 @@ public class UserInfoEndpoint {
         // Existence of authenticatedClientSession for our client already handled before
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
-        // Retrieve by latest scope parameter
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        // Retrieve by access token scope parameter
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
 
         AccessToken userInfo = new AccessToken();
 

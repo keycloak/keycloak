@@ -122,7 +122,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             case ENABLED:
                 return true;
             case ADMIN_EDIT:
-                return UserProfileContext.USER_API.equals(context);
+                return context.isAdminContext();
         }
 
         return false;
@@ -436,7 +436,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             case ADMIN_EDIT:
             case ADMIN_VIEW:
                 // unmanaged attributes only available through the admin context
-                return UserProfileContext.USER_API.equals(context);
+                return context.isAdminContext();
         }
 
         // allow unmanaged attributes if enabled to all contexts
@@ -524,13 +524,13 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             @Override
             public boolean canView(AttributeContext context) {
                 return canEdit(context)
-                        || (UnmanagedAttributePolicy.ADMIN_VIEW.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+                        || (UnmanagedAttributePolicy.ADMIN_VIEW.equals(unmanagedAttributePolicy) && context.getContext().isAdminContext());
             }
 
             @Override
             public boolean canEdit(AttributeContext context) {
                 return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy)
-                        || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && UserProfileContext.USER_API.equals(context.getContext()));
+                        || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && context.getContext().isAdminContext());
             }
         };
     }

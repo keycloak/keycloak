@@ -608,4 +608,8 @@ ul#kc-totp-supported-apps {
     align-items: baseline;
     margin-bottom: 16px;
 }
+
+#certificate_subjectDN {
+    overflow-wrap: break-word
+}
 /* End Recovery codes */

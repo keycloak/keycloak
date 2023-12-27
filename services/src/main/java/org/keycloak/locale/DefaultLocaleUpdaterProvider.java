@@ -16,7 +16,11 @@
  */
 package org.keycloak.locale;
 
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -24,13 +28,11 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.ReadOnlyException;
 
-import jakarta.ws.rs.core.UriInfo;
-
 public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 
     private static final Logger logger = Logger.getLogger(LocaleSelectorProvider.class);
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
 
     public DefaultLocaleUpdaterProvider(KeycloakSession session) {
         this.session = session;
@@ -38,10 +40,18 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 
     @Override
     public void updateUsersLocale(UserModel user, String locale) {
-        if (!locale.equals(user.getFirstAttribute("locale"))) {
+        final String previousLocale = user.getFirstAttribute("locale");
+        if (!locale.equals(previousLocale)) {
             try {
+                EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
+                        .event(EventType.UPDATE_PROFILE)
+                        .user(user)
+                        .client(session.getContext().getClient())
+                        .detail(Details.PREF_PREVIOUS + UserModel.LOCALE, previousLocale)
+                        .detail(Details.PREF_UPDATED + UserModel.LOCALE, locale);
                 user.setSingleAttribute(UserModel.LOCALE, locale);
                 updateLocaleCookie(locale);
+                event.success();
             } catch (ReadOnlyException e) {
                 logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
             }

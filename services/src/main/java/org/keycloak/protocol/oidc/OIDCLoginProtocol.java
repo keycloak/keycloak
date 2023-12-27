@@ -50,6 +50,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
@@ -331,6 +332,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
+        }
+
+        // RFC 9207 support + compatibility flag
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(session.getContext().getClient());
+        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         }
 
         // Remove authenticationSession from current tab

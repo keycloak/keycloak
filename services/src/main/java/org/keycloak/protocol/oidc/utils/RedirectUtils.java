@@ -248,13 +248,24 @@ public class RedirectUtils {
         return sb.toString();
     }
 
+    // removes the queryString, fragment and userInfo from the redirect
+    // to avoid comparing this when wildcards are used
+    private static String stripOffRedirectForWildcard(String redirect) {
+        return KeycloakUriBuilder.fromUri(redirect, false)
+                .preserveDefaultPort()
+                .userInfo(null)
+                .replaceQuery(null)
+                .fragment(null)
+                .buildAsString();
+    }
+
     // return the String that matched the redirect or null if not matched
     private static String matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
         logger.tracef("matchesRedirects: redirect URL to check: %s, allow wildcards: %b, Configured valid redirect URLs: %s", redirect, allowWildcards, validRedirects);
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
-                // strip off the query component - we don't check them when wildcards are effective
-                String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
+                // strip off the userInfo, query or fragment components - we don't check them when wildcards are effective
+                String r = stripOffRedirectForWildcard(redirect);
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);

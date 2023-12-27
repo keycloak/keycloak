@@ -138,7 +138,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             return token;
         }
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
         AccessToken smallToken = getAccessTokenFromStoredData(token, userSession);
         return tokenManager.transformIntrospectionAccessToken(session, smallToken, userSession, clientSessionCtx);
     }

@@ -165,6 +165,12 @@ export const AttributeGeneralSettings = () => {
           <Divider />
           <FormGroup
             label={t("enabledWhen")}
+            labelIcon={
+              <HelpItem
+                helpText={t("enabledWhenTooltip")}
+                fieldLabelId="enabled-when"
+              />
+            }
             fieldId="enabledWhen"
             hasNoPaddingTop
           >
@@ -296,6 +302,12 @@ export const AttributeGeneralSettings = () => {
               </FormGroup>
               <FormGroup
                 label={t("requiredWhen")}
+                labelIcon={
+                  <HelpItem
+                    helpText={t("requiredWhenTooltip")}
+                    fieldLabelId="required-when"
+                  />
+                }
                 fieldId="requiredWhen"
                 hasNoPaddingTop
               >
