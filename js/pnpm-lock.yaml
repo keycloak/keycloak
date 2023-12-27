@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@types/node':
-        specifier: ^20.10.4
-        version: 20.10.4
+        specifier: ^20.10.5
+        version: 20.10.5
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.16.0
         version: 6.16.0(@typescript-eslint/parser@6.16.0)(eslint@8.55.0)(typescript@5.3.3)
@@ -137,7 +137,7 @@ importers:
         version: 1.22.1
       vite:
         specifier: ^5.0.10
-        version: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+        version: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.10)
@@ -276,19 +276,19 @@ importers:
         version: 1.22.1
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.10.4)(typescript@5.3.3)
+        version: 10.9.2(@types/node@20.10.5)(typescript@5.3.3)
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
       vite:
         specifier: ^5.0.10
-        version: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+        version: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.10)
       vitest:
         specifier: ^1.1.0
-        version: 1.1.0(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1)
+        version: 1.1.0(@types/node@20.10.5)(jsdom@23.0.1)(lightningcss@1.22.1)
 
   apps/keycloak-server:
     dependencies:
@@ -339,8 +339,8 @@ importers:
         specifier: ^10.0.6
         version: 10.0.6
       '@types/node':
-        specifier: ^20.10.4
-        version: 20.10.4
+        specifier: ^20.10.5
+        version: 20.10.5
       chai:
         specifier: ^4.3.10
         version: 4.3.10
@@ -349,7 +349,7 @@ importers:
         version: 10.2.0
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.10.4)(typescript@5.3.3)
+        version: 10.9.2(@types/node@20.10.5)(typescript@5.3.3)
 
   libs/keycloak-js:
     dependencies:
@@ -420,13 +420,13 @@ importers:
         version: 2.2.4(rollup@4.9.0)
       vite:
         specifier: ^5.0.10
-        version: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+        version: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.10)
       vite-plugin-dts:
         specifier: ^3.7.0
-        version: 3.7.0(@types/node@20.10.4)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10)
+        version: 3.7.0(@types/node@20.10.5)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10)
 
   libs/ui-shared:
     dependencies:
@@ -475,19 +475,19 @@ importers:
         version: 2.2.4(rollup@4.9.0)
       vite:
         specifier: ^5.0.10
-        version: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+        version: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vite-plugin-checker:
         specifier: ^0.6.2
         version: 0.6.2(eslint@8.55.0)(typescript@5.3.3)(vite@5.0.10)
       vite-plugin-dts:
         specifier: ^3.7.0
-        version: 3.7.0(@types/node@20.10.4)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10)
+        version: 3.7.0(@types/node@20.10.5)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10)
       vite-plugin-lib-inject-css:
         specifier: ^1.3.0
         version: 1.3.0(vite@5.0.10)
       vitest:
         specifier: ^1.1.0
-        version: 1.1.0(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1)
+        version: 1.1.0(@types/node@20.10.5)(jsdom@23.0.1)(lightningcss@1.22.1)
 
 packages:
 
@@ -916,24 +916,24 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@microsoft/api-extractor-model@7.28.3(@types/node@20.10.4):
+  /@microsoft/api-extractor-model@7.28.3(@types/node@20.10.5):
     resolution: {integrity: sha512-wT/kB2oDbdZXITyDh2SQLzaWwTOFbV326fP0pUwNW00WeliARs0qjmXBWmGWardEzp2U3/axkO3Lboqun6vrig==}
     dependencies:
       '@microsoft/tsdoc': 0.14.2
       '@microsoft/tsdoc-config': 0.16.2
-      '@rushstack/node-core-library': 3.62.0(@types/node@20.10.4)
+      '@rushstack/node-core-library': 3.62.0(@types/node@20.10.5)
     transitivePeerDependencies:
       - '@types/node'
     dev: true
 
-  /@microsoft/api-extractor@7.39.0(@types/node@20.10.4):
+  /@microsoft/api-extractor@7.39.0(@types/node@20.10.5):
     resolution: {integrity: sha512-PuXxzadgnvp+wdeZFPonssRAj/EW4Gm4s75TXzPk09h3wJ8RS3x7typf95B4vwZRrPTQBGopdUl+/vHvlPdAcg==}
     hasBin: true
     dependencies:
-      '@microsoft/api-extractor-model': 7.28.3(@types/node@20.10.4)
+      '@microsoft/api-extractor-model': 7.28.3(@types/node@20.10.5)
       '@microsoft/tsdoc': 0.14.2
       '@microsoft/tsdoc-config': 0.16.2
-      '@rushstack/node-core-library': 3.62.0(@types/node@20.10.4)
+      '@rushstack/node-core-library': 3.62.0(@types/node@20.10.5)
       '@rushstack/rig-package': 0.5.1
       '@rushstack/ts-command-line': 4.17.1
       colors: 1.2.5
@@ -1510,7 +1510,7 @@ packages:
     dev: true
     optional: true
 
-  /@rushstack/node-core-library@3.62.0(@types/node@20.10.4):
+  /@rushstack/node-core-library@3.62.0(@types/node@20.10.5):
     resolution: {integrity: sha512-88aJn2h8UpSvdwuDXBv1/v1heM6GnBf3RjEy6ZPP7UnzHNCqOHA2Ut+ScYUbXcqIdfew9JlTAe3g+cnX9xQ/Aw==}
     peerDependencies:
       '@types/node': '*'
@@ -1518,7 +1518,7 @@ packages:
       '@types/node':
         optional: true
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
       colors: 1.2.5
       fs-extra: 7.0.1
       import-lazy: 4.0.0
@@ -1722,7 +1722,7 @@ packages:
       dom-accessibility-api: 0.5.16
       lodash: 4.17.21
       redent: 3.0.0
-      vitest: 1.1.0(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1)
+      vitest: 1.1.0(@types/node@20.10.5)(jsdom@23.0.1)(lightningcss@1.22.1)
     dev: true
 
   /@testing-library/react@14.1.2(react-dom@18.2.0)(react@18.2.0):
@@ -1965,7 +1965,7 @@ packages:
   /@types/gunzip-maybe@1.4.2:
     resolution: {integrity: sha512-2uqXZg1jTCKE1Pjbab8qb74+f2+i9h/jz8rQ+jRR+zaNJF75zWwrpbX8/TjF4m56m3KFOg9umHdCJ074KwiVxg==}
     dependencies:
-      '@types/node': 20.10.3
+      '@types/node': 20.10.4
     dev: false
 
   /@types/json-schema@7.0.14:
@@ -1996,14 +1996,14 @@ packages:
       undici-types: 5.26.5
     dev: true
 
-  /@types/node@20.10.3:
-    resolution: {integrity: sha512-XJavIpZqiXID5Yxnxv3RUDKTN5b81ddNC3ecsA0SoFXz/QU8OGBwZGMomiq0zw+uuqbL/krztv/DINAQ/EV4gg==}
+  /@types/node@20.10.4:
+    resolution: {integrity: sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==}
     dependencies:
       undici-types: 5.26.5
     dev: false
 
-  /@types/node@20.10.4:
-    resolution: {integrity: sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==}
+  /@types/node@20.10.5:
+    resolution: {integrity: sha512-nNPsNE65wjMxEKI93yOP+NPGGBJz/PoN3kZsVLee0XMiJolxSekEVD8wRwBUBqkwc7UWop0edW50yrCQW4CyRw==}
     dependencies:
       undici-types: 5.26.5
 
@@ -2045,14 +2045,14 @@ packages:
   /@types/tar-fs@2.0.4:
     resolution: {integrity: sha512-ipPec0CjTmVDWE+QKr9cTmIIoTl7dFG/yARCM5MqK8i6CNLIG1P8x4kwDsOQY1ChZOZjH0wO9nvfgBvWl4R3kA==}
     dependencies:
-      '@types/node': 20.10.3
+      '@types/node': 20.10.4
       '@types/tar-stream': 3.1.2
     dev: false
 
   /@types/tar-stream@3.1.2:
     resolution: {integrity: sha512-qnIpUItVb5u8jl3kbrHofkM40ggO3YKSzc7TWqLYjDdwlrL7CiEAkDySaGfeUBLtC50RTfh2acdz51ItUbV7pQ==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
     dev: false
 
   /@types/uuid@9.0.7:
@@ -2063,7 +2063,7 @@ packages:
     resolution: {integrity: sha512-Km7XAtUIduROw7QPgvcft0lIupeG8a8rdKL8RiSyKvlE7dYY31fEn41HVuQsRFDuROA8tA4K2UVL+WdfFmErBA==}
     requiresBuild: true
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
     dev: true
     optional: true
 
@@ -2209,7 +2209,7 @@ packages:
       vite: ^4 || ^5
     dependencies:
       '@swc/core': 1.3.96
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@swc/helpers'
     dev: true
@@ -6771,7 +6771,7 @@ packages:
       typescript: 5.3.3
     dev: true
 
-  /ts-node@10.9.2(@types/node@20.10.4)(typescript@5.3.3):
+  /ts-node@10.9.2(@types/node@20.10.5)(typescript@5.3.3):
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
     peerDependencies:
@@ -6790,7 +6790,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
       acorn: 8.11.2
       acorn-walk: 8.3.0
       arg: 4.1.3
@@ -7024,7 +7024,7 @@ packages:
       extsprintf: 1.4.1
     dev: true
 
-  /vite-node@1.1.0(@types/node@20.10.4)(lightningcss@1.22.1):
+  /vite-node@1.1.0(@types/node@20.10.5)(lightningcss@1.22.1):
     resolution: {integrity: sha512-jV48DDUxGLEBdHCQvxL1mEh7+naVy+nhUUUaPAZLd3FJgXuxQiewHcfeZebbJ6onDqNGkP4r3MhQ342PRlG81Q==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -7033,7 +7033,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -7091,14 +7091,14 @@ packages:
       strip-ansi: 6.0.1
       tiny-invariant: 1.3.1
       typescript: 5.3.3
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vscode-languageclient: 7.0.0
       vscode-languageserver: 7.0.0
       vscode-languageserver-textdocument: 1.0.11
       vscode-uri: 3.0.8
     dev: true
 
-  /vite-plugin-dts@3.7.0(@types/node@20.10.4)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10):
+  /vite-plugin-dts@3.7.0(@types/node@20.10.5)(rollup@4.9.0)(typescript@5.3.3)(vite@5.0.10):
     resolution: {integrity: sha512-np1uPaYzu98AtPReB8zkMnbjwcNHOABsLhqVOf81b3ol9b5M2wPcAVs8oqPnOpr6Us+7yDXVauwkxsk5+ldmRA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -7108,13 +7108,13 @@ packages:
       vite:
         optional: true
     dependencies:
-      '@microsoft/api-extractor': 7.39.0(@types/node@20.10.4)
+      '@microsoft/api-extractor': 7.39.0(@types/node@20.10.5)
       '@rollup/pluginutils': 5.1.0(rollup@4.9.0)
       '@vue/language-core': 1.8.26(typescript@5.3.3)
       debug: 4.3.4(supports-color@8.1.1)
       kolorist: 1.8.0
       typescript: 5.3.3
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
       vue-tsc: 1.8.26(typescript@5.3.3)
     transitivePeerDependencies:
       - '@types/node'
@@ -7129,10 +7129,10 @@ packages:
     dependencies:
       magic-string: 0.30.5
       picocolors: 1.0.0
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
     dev: true
 
-  /vite@5.0.10(@types/node@20.10.4)(lightningcss@1.22.1):
+  /vite@5.0.10(@types/node@20.10.5)(lightningcss@1.22.1):
     resolution: {integrity: sha512-2P8J7WWgmc355HUMlFrwofacvr98DAjoE52BfdbwQtyLH06XKwaL/FMnmKM2crF0iX4MpmMKoDlNCB1ok7zHCw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -7160,7 +7160,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
       esbuild: 0.19.5
       lightningcss: 1.22.1
       postcss: 8.4.32
@@ -7169,7 +7169,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@1.1.0(@types/node@20.10.4)(jsdom@23.0.1)(lightningcss@1.22.1):
+  /vitest@1.1.0(@types/node@20.10.5)(jsdom@23.0.1)(lightningcss@1.22.1):
     resolution: {integrity: sha512-oDFiCrw7dd3Jf06HoMtSRARivvyjHJaTxikFxuqJjO76U436PqlVw1uLn7a8OSPrhSfMGVaRakKpA2lePdw79A==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -7194,7 +7194,7 @@ packages:
       jsdom:
         optional: true
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.10.5
       '@vitest/expect': 1.1.0
       '@vitest/runner': 1.1.0
       '@vitest/snapshot': 1.1.0
@@ -7214,8 +7214,8 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.8.1
-      vite: 5.0.10(@types/node@20.10.4)(lightningcss@1.22.1)
-      vite-node: 1.1.0(@types/node@20.10.4)(lightningcss@1.22.1)
+      vite: 5.0.10(@types/node@20.10.5)(lightningcss@1.22.1)
+      vite-node: 1.1.0(@types/node@20.10.5)(lightningcss@1.22.1)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
