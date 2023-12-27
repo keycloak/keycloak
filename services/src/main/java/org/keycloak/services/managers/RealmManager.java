@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
@@ -177,7 +178,8 @@ public class RealmManager {
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
 
         adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
-        String baseUrl = "/admin/" + realm.getName() + "/console/";
+
+        String baseUrl = UriBuilder.fromPath( "/admin/{realmName}/console/").build(realm.getName()).toString();
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
         adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
@@ -422,7 +424,8 @@ public class RealmManager {
             accountClient.setFullScopeAllowed(false);
 
             accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
-            String baseUrl = "/realms/" + realm.getName() + "/account/";
+
+            String baseUrl = UriBuilder.fromPath( "/realms/{realmName}/account/").build(realm.getName()).toString();
             accountClient.setBaseUrl(baseUrl);
             accountClient.addRedirectUri(baseUrl + "*");
             accountClient.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
