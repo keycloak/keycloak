@@ -214,7 +214,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
-            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
+            addContextualProfileMetadata(configureUserProfile(createUpdateEmailProfile(UPDATE_EMAIL, readOnlyValidator)));
         }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
@@ -377,6 +377,31 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
+
+        metadata.addAttribute(UserModel.EMAIL, -1,
+                        DeclarativeUserProfileProviderFactory::editEmailCondition,
+                        DeclarativeUserProfileProviderFactory::readEmailCondition,
+                        new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, false)),
+                        new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
+                        new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID),
+                        new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
+                .setAttributeDisplayName("${email}");
+
+        List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
+
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
+
+        if (readOnlyValidator != null) {
+            readonlyValidators.add(readOnlyValidator);
+        }
+
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
+
+        return metadata;
+    }
+
+    private UserProfileMetadata createUpdateEmailProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata metadata = new UserProfileMetadata(context);
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         DeclarativeUserProfileProviderFactory::editEmailCondition,

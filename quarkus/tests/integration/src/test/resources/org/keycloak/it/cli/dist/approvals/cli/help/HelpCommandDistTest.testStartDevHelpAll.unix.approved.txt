@@ -13,6 +13,7 @@ Options:
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
+-v, --verbose        Print out error details when running this command.
 
 Cache:
 
