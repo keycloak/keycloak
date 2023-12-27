@@ -78,9 +78,10 @@ on the user profile configuration set to a realm:
 
 * `login-update-profile.ftl`
 * `register.ftl`
+* `update-email.ftl`
 
-These templates are responsible for rendering both update profile (when the `Update Profile` required action is enabled to a user)
-and registration pages, respectively.
+These templates are responsible for rendering the update profile (when the `Update Profile` required action is enabled to a user),
+the registration, and the update email (when the `UPDATE_EMAIL` feature is enabled) pages, respectively.
 
 If you use a custom theme to change these templates, they will function as expect because only the content is updated.
 However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid

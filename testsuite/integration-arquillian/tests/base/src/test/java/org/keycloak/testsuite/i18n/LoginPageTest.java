@@ -27,16 +27,20 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -76,6 +80,8 @@ public class LoginPageTest extends AbstractI18NTest {
     @Page
     protected OAuthGrantPage grantPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -228,9 +234,20 @@ public class LoginPageTest extends AbstractI18NTest {
         Cookie localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
         assertEquals("de", localeCookie.getValue());
 
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        String userId = user.toRepresentation().getId();
         loginPage.login("test-user@localhost", "password");
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        events.expect(EventType.UPDATE_PROFILE)
+                .user(userId)
+                .client("test-app")
+                .detail(Details.PREF_UPDATED + UserModel.LOCALE, "de")
+                .assertEvent();
+        events.expectLogin()
+                .user(userId)
+                .client("test-app")
+                .assertEvent();
+
         UserRepresentation userRep = user.toRepresentation();
         assertEquals("de", userRep.getAttributes().get("locale").get(0));
 

@@ -79,6 +79,7 @@ on the user profile configuration set to a realm:
 
 * `login-update-profile.ftl`
 * `register.ftl`
+* `update-email.ftl`
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
 

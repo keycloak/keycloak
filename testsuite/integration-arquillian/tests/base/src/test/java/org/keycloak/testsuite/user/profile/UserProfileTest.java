@@ -47,6 +47,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -61,6 +62,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -75,6 +77,7 @@ import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
@@ -1860,4 +1863,44 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals(attributes.get(UserModel.USERNAME).toLowerCase(), profileAttributes.getFirst(UserModel.USERNAME));
         assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirst(UserModel.EMAIL));
     }
+
+    @EnableFeature(Feature.UPDATE_EMAIL)
+    @Test
+    public void testEmailAttributeInUpdateEmailContext() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
+    }
+
+    private static void testEmailAttributeInUpdateEmailContext(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, String> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, userName);
+        attributes.put(UserModel.EMAIL, userName + "@keycloak.org");
+        attributes.put(UserModel.FIRST_NAME, "Joe");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+
+        profile = provider.create(UserProfileContext.UPDATE_EMAIL, user);
+        containsInAnyOrder(profile.getAttributes().nameSet(), UserModel.EMAIL);
+
+        UPConfig upConfig = provider.getConfiguration();
+        upConfig.addOrReplaceAttribute(new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_USER)), new UPAttributeRequired(Set.of(UserProfileConstants.ROLE_USER), Set.of())));
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+        profile.update();
+
+        upConfig = provider.getConfiguration();
+        upConfig.getAttribute(UserModel.EMAIL).getValidations().put(LengthValidator.ID, Map.of("min", "1", "max", "2"));
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.UPDATE_EMAIL, attributes, user);
+        try {
+            profile.update();
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
+            assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
+        }
+     }
 }

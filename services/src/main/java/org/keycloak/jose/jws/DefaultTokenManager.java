@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
@@ -54,6 +55,7 @@ import org.keycloak.util.TokenUtil;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -327,6 +329,9 @@ public class DefaultTokenManager implements TokenManager {
         LogoutToken token = new LogoutToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
+        // From the spec "OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1" at https://openid.net/specs/openid-connect-backchannel-1_0.html
+        // "OPs are encouraged to use short expiration times in Logout Tokens, preferably at most two minutes in the future [...]"
+        token.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
         token.addAudience(client.getClientId());
