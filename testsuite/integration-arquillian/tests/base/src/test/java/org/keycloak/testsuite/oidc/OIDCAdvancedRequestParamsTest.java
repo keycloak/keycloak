@@ -263,6 +263,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void promptNoneNotLogged() {
+
+        String expectedIssuer = oauth.doWellKnownRequest(oauth.getRealm()).getIssuer();
+
         // Send request with prompt=none
         driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
 
@@ -273,6 +276,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert error response was sent because not logged in
         OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertEquals(expectedIssuer, resp.getIssuer());
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 

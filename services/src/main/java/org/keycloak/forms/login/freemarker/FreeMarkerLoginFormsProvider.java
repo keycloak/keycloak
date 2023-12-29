@@ -164,6 +164,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_EMAIL:
+                UpdateProfileContext updateEmailContext = new UserUpdateProfileContext(realm,user);
+                attributes.put("user",new ProfileBean(updateEmailContext,formData));
                 actionMessage = Messages.UPDATE_EMAIL;
                 page = LoginFormsPages.UPDATE_EMAIL;
                 break;
@@ -245,7 +247,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("user", new ProfileBean(userCtx, formData));
                 break;
             case UPDATE_EMAIL:
-                attributes.put("email", new EmailBean(user, formData));
+                EmailBean emailBean = new EmailBean(user, formData, session);
+                attributes.put("profile", emailBean);
+                // only for backward compatibility but should be removed once declarative user profile is supported
+                attributes.put("email", emailBean);
                 break;
             case LOGIN_IDP_LINK_CONFIRM:
             case LOGIN_IDP_LINK_EMAIL:

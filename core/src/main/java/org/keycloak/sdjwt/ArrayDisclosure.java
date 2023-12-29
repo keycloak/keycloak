@@ -18,10 +18,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 public class ArrayDisclosure extends AbstractSdJwtClaim {
     private final List<SdJwtArrayElement> elements;
     private JsonNode visibleClaimValue = null;
+    private final List<DecoyArrayElement> decoyElements;
 
-    private ArrayDisclosure(SdJwtClaimName claimName, List<SdJwtArrayElement> elements) {
+    private ArrayDisclosure(SdJwtClaimName claimName, List<SdJwtArrayElement> elements, List<DecoyArrayElement> decoyElements) {
         super(claimName);
-        this.elements = Collections.unmodifiableList(elements == null ? Collections.emptyList() : elements);
+        this.elements = elements;
+        this.decoyElements = decoyElements;
     }
 
     /**
@@ -32,11 +34,22 @@ public class ArrayDisclosure extends AbstractSdJwtClaim {
         if (visibleClaimValue != null)
             return visibleClaimValue;
 
-        final ArrayNode n = SdJwtUtils.mapper.createArrayNode();
+        List<JsonNode> visibleElts = new ArrayList<>();
         elements.stream()
-                .filter(Objects::nonNull)
-                .forEach(e -> n.add(e.getVisibleValue(hashAlgo)));
+        .filter(Objects::nonNull)
+        .forEach(e -> visibleElts.add(e.getVisibleValue(hashAlgo)));
 
+        decoyElements.stream()
+        .filter(Objects::nonNull)
+        .forEach(e -> {
+            if(e.getIndex() < visibleElts.size())
+                visibleElts.add(e.getIndex(), e.getVisibleValue(hashAlgo));
+            else
+                visibleElts.add(e.getVisibleValue(hashAlgo));
+        });
+
+        final ArrayNode n = SdJwtUtils.mapper.createArrayNode();
+        visibleElts.forEach(n::add);
         visibleClaimValue = n;
         return visibleClaimValue;
     }
@@ -56,7 +69,8 @@ public class ArrayDisclosure extends AbstractSdJwtClaim {
 
     public static class Builder {
         private SdJwtClaimName claimName;
-        private List<SdJwtArrayElement> elements = new ArrayList<>();
+        private final List<SdJwtArrayElement> elements = new ArrayList<>();
+        private final List<DecoyArrayElement> decoyElements = new ArrayList<>();
 
         public Builder withClaimName(String claimName) {
             this.claimName = new SdJwtClaimName(claimName);
@@ -68,8 +82,8 @@ public class ArrayDisclosure extends AbstractSdJwtClaim {
             return this;
         }
 
-        public Builder withUndisclosedElement(JsonNode elementValue) {
-            SdJwtSalt sdJwtSalt = new SdJwtSalt(SdJwtUtils.randomSalt());
+        public Builder withUndisclosedElement(SdJwtSalt salt, JsonNode elementValue) {
+            SdJwtSalt sdJwtSalt = salt == null ? new SdJwtSalt(SdJwtUtils.randomSalt()) : salt;
             this.elements.add(UndisclosedArrayElement.builder()
                     .withSalt(sdJwtSalt)
                     .withArrayElement(elementValue)
@@ -77,17 +91,14 @@ public class ArrayDisclosure extends AbstractSdJwtClaim {
             return this;
         }
 
-        public Builder withUndisclosedElement(String salt, JsonNode elementValue) {
-            SdJwtSalt sdJwtSalt = new SdJwtSalt(salt == null ? SdJwtUtils.randomSalt() : salt);
-            this.elements.add(UndisclosedArrayElement.builder()
-                    .withSalt(sdJwtSalt)
-                    .withArrayElement(elementValue)
-                    .build());
-            return this;
+        public void withDecoyElt(Integer position, SdJwtSalt salt) {
+            SdJwtSalt sdJwtSalt = salt == null ? new SdJwtSalt(SdJwtUtils.randomSalt()) : salt;
+            DecoyArrayElement decoyElement = DecoyArrayElement.builder().withSalt(sdJwtSalt).atIndex(position).build();
+            this.decoyElements.add(decoyElement);
         }
 
         public ArrayDisclosure build() {
-            return new ArrayDisclosure(claimName, elements);
+            return new ArrayDisclosure(claimName, Collections.unmodifiableList(elements), Collections.unmodifiableList(decoyElements));
         }
     }
 

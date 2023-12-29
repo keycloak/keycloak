@@ -52,7 +52,9 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -61,6 +63,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
+import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -106,6 +109,7 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
@@ -493,6 +497,69 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(200, response3.getStatusCode());
 
         events.expectRefresh(refreshToken1.getId(), sessionId).assertEvent();
+    }
+
+
+    @Test
+    public void refreshTokenReuseTokenWithoutRefreshTokensRevokedWithLessScopes() throws Exception {
+        //add phone,address as optional scope and request them
+        ClientScopeRepresentation phoneScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"phone".equals(clientScope.getName())).findFirst().get();
+        ClientScopeRepresentation addressScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"address".equals(clientScope.getName())).findFirst().get();
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(phoneScope.getId(),false);
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(addressScope.getId(),false);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            String optionalScope = "phone address";
+            oauth.scope(optionalScope);
+            OAuthClient.AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "email phone";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(200, response2.getStatusCode());
+            AbstractOIDCScopeTest.assertScopes("openid email phone profile",  response2.getScope());
+            RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+            assertNotNull(refreshToken2);
+            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken2.getScope());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshTokenReuseTokenScopeParameterNotInRefreshToken() throws Exception {
+        try {
+            //scope parameter consists scope that is not part of scope refresh token => error thrown
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "openid email ssh_public_key";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(400, response2.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_SCOPE, response2.getError());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
     }
 
     @Test

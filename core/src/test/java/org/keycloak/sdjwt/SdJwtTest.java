@@ -15,23 +15,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwtTest {
-
-    @Test
-    public void testToSdJwtString() {
-        // Test the toSdJwtString method with different scenarios:
-        // - IssuerSignedJWT and no claims, no keyBindingJWT
-        // - IssuerSignedJWT with claims and no keyBindingJWT
-        // - IssuerSignedJWT with claims and keyBindingJWT
-        // Verify the format and correctness of the output string
-    }
-
-    @Test
-    public void testToString() {
-        // Test that toString returns the correct serialized JWT
-        // Test that calling toString multiple times returns the same string (to verify
-        // caching)
-    }
-
     // Additional tests can be written to cover edge cases, error conditions,
     // and any other functionality specific to the SdJwt class.
     @Test
@@ -79,4 +62,58 @@ public class SdJwtTest {
         SignatureSignerContext issuerSignerContext = TestSettings.getInstance().getIssuerSignerContext();
         assertNotNull(issuerSignerContext);
     }
+
+    @Test
+    public void testA1_Example2_with_nested_disclosure_and_decoy_claims() {
+        DisclosureSpec addrDisclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedClaim("street_address", "AJx-095VPrpTtN4QMOqROA")
+                .withUndisclosedClaim("locality", "Pc33JM2LchcU_lHggv_ufQ")
+                .withUndisclosedClaim("region", "G02NSrQfjFXQ7Io09syajA")
+                .withUndisclosedClaim("country", "lklxF5jMYlGTPUovMNIvCA")
+                .withDecoyClaim("2GLC42sKQveCfGfryNRN9w")
+                .withDecoyClaim("eluV5Og3gSNII8EYnsxA_A")
+                .withDecoyClaim("6Ij7tM-a5iVPGboS5tmvVA")
+                .withDecoyClaim("eI8ZWm9QnKPpNPeNenHdhQ")
+                .build();
+
+        DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedClaim("sub", "2GLC42sKQveCfGfryNRN9w")
+                .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
+                .withUndisclosedClaim("family_name", "6Ij7tM-a5iVPGboS5tmvVA")
+                .withUndisclosedClaim("email", "eI8ZWm9QnKPpNPeNenHdhQ")
+                .withUndisclosedClaim("phone_number", "Qg_O64zqAxe412a108iroA")
+                .withUndisclosedClaim("birthdate", "yytVbdAPGcgl2rI4C9GSog")
+                .withDecoyClaim("AJx-095VPrpTtN4QMOqROA")
+                .withDecoyClaim("G02NSrQfjFXQ7Io09syajA")
+                .build();
+
+        // Read claims provided by the holder
+        JsonNode holderClaimSet = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-holder-claims.json");
+
+        // Read claims provided by the holder
+        JsonNode addressClaimSet = holderClaimSet.get("address");
+        SdJwt addrSdJWT = new SdJwt(addrDisclosureSpec, addressClaimSet, Optional.empty(), null);
+        IssuerSignedJWT addrIssuerJWT = addrSdJWT.getIssuerSignedJWT();
+
+        JsonNode addPayload = addrIssuerJWT.getPayload();
+        ((ObjectNode) addPayload).remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
+
+        JsonNode expectedAddrPayload = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-address-payload.json");
+        assertEquals(expectedAddrPayload, addPayload);
+
+        ((ObjectNode) holderClaimSet).set("address", addPayload);
+
+        // Read claims added by the issuer
+        JsonNode issuerClaimSet = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-issuer-claims.json");
+
+        // Merge both
+        ((ObjectNode) holderClaimSet).setAll((ObjectNode) issuerClaimSet);
+
+        SdJwt sdJwt = new SdJwt(disclosureSpec, holderClaimSet, Optional.empty(), null);
+        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
+
+        JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-issuer-payload.json");
+        assertEquals(expected, jwt.getPayload());
+    }
+
 }
