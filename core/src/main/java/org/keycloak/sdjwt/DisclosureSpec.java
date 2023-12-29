@@ -69,6 +69,7 @@ public class DisclosureSpec {
         private final List<DisclosureData> decoyClaims = new ArrayList<>();
         private final Map<SdJwtClaimName, Map<Integer, DisclosureData>> undisclosedArrayElts = new HashMap<>();
         private final Map<SdJwtClaimName, Map<Integer, DisclosureData>> decoyArrayElts = new HashMap<>();
+        private DisclosureRedList redListedClaimNames;
 
         public Builder withUndisclosedClaim(String claimName, String salt) {
             this.undisclosedClaims.put(SdJwtClaimName.of(claimName), DisclosureData.of(salt));
@@ -99,7 +100,15 @@ public class DisclosureSpec {
             return this;
         }
 
+        public Builder withRedListedClaimNames(DisclosureRedList redListedClaimNames) {
+            this.redListedClaimNames = redListedClaimNames;
+            return this;
+        }
+
         public DisclosureSpec build() {
+            // Validate redlist
+            validateRedList();
+
             Map<SdJwtClaimName, Map<Integer, DisclosureData>> undisclosedArrayEltMap = new HashMap<>();
             undisclosedArrayElts.forEach((k, v) -> {
                 undisclosedArrayEltMap.put(k, Collections.unmodifiableMap((v)));
@@ -114,6 +123,28 @@ public class DisclosureSpec {
                     Collections.unmodifiableList(decoyClaims),
                     Collections.unmodifiableMap(undisclosedArrayEltMap),
                     Collections.unmodifiableMap(decoyArrayEltMap));
+        }
+
+        private void validateRedList(){
+            // Work with default if none set.
+            if(redListedClaimNames==null) {
+                redListedClaimNames = DisclosureRedList.defaultList;
+            }
+            
+            // Validate undisclosed claims
+            if (redListedClaimNames.containsRedListedClaimNames(undisclosedClaims.keySet())) {
+                throw new IllegalArgumentException("UndisclosedClaims contains red listed claim names");
+            }
+
+            // Validate undisclosed array claims
+            if (redListedClaimNames.containsRedListedClaimNames(undisclosedArrayElts.keySet())) {
+                throw new IllegalArgumentException("UndisclosedArrays with red listed claim names");
+            }
+
+            // Validate undisclosed claims
+            if (redListedClaimNames.containsRedListedClaimNames(decoyArrayElts.keySet())) {
+                throw new IllegalArgumentException("decoyArrayElts contains red listed claim names");
+            }
         }
     }
 
