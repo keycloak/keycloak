@@ -2,8 +2,6 @@ package org.keycloak.sdjwt;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Optional;
-
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +23,11 @@ public class ArrayElementDisclosureTest {
                 .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
                 .build();
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, claimSet, Optional.empty(), null);
+        SdJwt sdJwt = SdJwt.builder()
+                .withDisclosureSpec(disclosureSpec)
+                .withClaimSet(claimSet)
+                .build();
+                
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload-udisclosed-array-ellement.json");
@@ -46,7 +48,10 @@ public class ArrayElementDisclosureTest {
                 .withDecoyArrayElt("nationalities", 1, "5bPs1IquZNa0hkaFzzzZNw")
                 .build();
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, claimSet, Optional.empty(), null);
+        SdJwt sdJwt = SdJwt.builder()
+                .withDisclosureSpec(disclosureSpec)
+                .withClaimSet(claimSet)
+                .build();
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload-decoy-array-ellement.json");

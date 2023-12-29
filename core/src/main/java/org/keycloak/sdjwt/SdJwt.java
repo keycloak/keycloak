@@ -14,6 +14,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Main entry class for selective disclosure jwt (SD-JWT).
@@ -27,11 +28,11 @@ public class SdJwt {
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
     private final Optional<KeyBindingJWT> keyBindingJWT;
-    private final List<String> disclosures;
+    private final List<String> disclosures = new ArrayList<>();
 
     private Optional<String> sdJwtString = Optional.empty();
 
-    public SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, Optional<KeyBindingJWT> keyBindingJWT,
+    private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts, Optional<KeyBindingJWT> keyBindingJWT,
             SignatureSignerContext signer) {
         claims = new ArrayList<>();
         claimSet.fields()
@@ -39,7 +40,8 @@ public class SdJwt {
 
         this.issuerSignedJWT = IssuerSignedJWT.builder().withClaims(claims).withDecoyClaims(createdDecoyClaims(disclosureSpec)).withSigner(signer).build();
 
-        this.disclosures = getDisclosureStrings(claims);
+        nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
+        this.disclosures.addAll(getDisclosureStrings(claims));
 
         this.keyBindingJWT = keyBindingJWT == null
                 ? Optional.empty()
@@ -67,12 +69,26 @@ public class SdJwt {
         this.claims = Collections.emptyList();
 
         String[] disclosureArray = disclosuresString.split(DELIMITER);
-        this.disclosures = Arrays.asList(disclosureArray);
+        this.disclosures.addAll(Arrays.asList(disclosureArray));
 
         this.keyBindingJWT = keyBindingJWTString.isEmpty()
                 ? Optional.empty()
                 : Optional.of(new KeyBindingJWT(keyBindingJWTString));
 
+    }
+
+    /**
+     * Prepare to a nested payload to this SD-JWT.
+     * 
+     * droping the algo claim.
+     * 
+     * @param nestedSdJwt
+     * @return
+     */
+    public JsonNode asNestedPayload() {
+        JsonNode nestedPayload = issuerSignedJWT.getPayload();
+        ((ObjectNode) nestedPayload).remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
+        return nestedPayload;
     }
 
     public String toSdJwtString() {
@@ -179,5 +195,47 @@ public class SdJwt {
 
     public List<String> getDisclosures() {
         return disclosures;
+    }
+
+    // builder for SdJwt
+    public static class Builder {
+        private DisclosureSpec disclosureSpec;
+        private JsonNode claimSet;
+        private Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
+        private SignatureSignerContext signer;
+        private final List<SdJwt> nestedSdJwts = new ArrayList<>();
+
+        public Builder withDisclosureSpec(DisclosureSpec disclosureSpec) {
+            this.disclosureSpec = disclosureSpec;
+            return this;
+        }
+
+        public Builder withClaimSet(JsonNode claimSet) {
+            this.claimSet = claimSet;
+            return this;
+        }
+
+        public Builder withKeyBindingJWT(KeyBindingJWT keyBindingJWT) {
+            this.keyBindingJWT = Optional.of(keyBindingJWT);
+            return this;
+        }
+
+        public Builder withSigner(SignatureSignerContext signer) {
+            this.signer = signer;
+            return this;
+        }
+
+        public Builder withNestedSdJwt(SdJwt nestedSdJwt) {
+            nestedSdJwts.add(nestedSdJwt);
+            return this;
+        }
+
+        public SdJwt build() {
+            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, keyBindingJWT, signer);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 }

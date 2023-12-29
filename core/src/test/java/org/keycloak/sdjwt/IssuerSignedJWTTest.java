@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.Test;
 
@@ -76,7 +75,8 @@ public class IssuerSignedJWTTest {
                 .withUndisclosedClaim("address", "INhOGJnu82BAtsOwiCJc_A")
                 .withUndisclosedClaim("birthdate", "d0l3jsh5sBzj2oEhZxrJGw").build();
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, claimSet, Optional.empty(), null);
+        SdJwt sdJwt = SdJwt.builder().withDisclosureSpec(disclosureSpec).withClaimSet(claimSet).build();
+
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload.json");
@@ -106,7 +106,10 @@ public class IssuerSignedJWTTest {
         // Merge both
         ((ObjectNode) holderClaimSet).setAll((ObjectNode) issuerClaimSet);
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, holderClaimSet, Optional.empty(), null);
+        SdJwt sdJwt = SdJwt.builder()
+            .withDisclosureSpec(disclosureSpec)
+            .withClaimSet(holderClaimSet)
+            .build();
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s3.3-issuer-payload.json");
