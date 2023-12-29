@@ -38,7 +38,12 @@ public class SdJwt {
         claimSet.fields()
                 .forEachRemaining(entry -> claims.add(createClaim(entry.getKey(), entry.getValue(), disclosureSpec)));
 
-        this.issuerSignedJWT = IssuerSignedJWT.builder().withClaims(claims).withDecoyClaims(createdDecoyClaims(disclosureSpec)).withSigner(signer).build();
+        this.issuerSignedJWT = IssuerSignedJWT.builder()
+            .withClaims(claims)
+            .withDecoyClaims(createdDecoyClaims(disclosureSpec))
+            .withNestedDisclosures(!nesteSdJwts.isEmpty())
+            .withSigner(signer)
+            .build();
 
         nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
         this.disclosures.addAll(getDisclosureStrings(claims));
