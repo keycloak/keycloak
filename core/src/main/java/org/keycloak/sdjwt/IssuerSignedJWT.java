@@ -37,27 +37,29 @@ public class IssuerSignedJWT extends SdJws {
         super(jwsString);
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, String hashAlg) {
-        super(generatePayloadString(claims, hashAlg));
+    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg) {
+        super(generatePayloadString(claims, decoyClaims, hashAlg));
     }
 
     private IssuerSignedJWT(JsonNode payload, JWSInput jwsInput) {
         super(payload, jwsInput);
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, String hashAlg, SignatureSignerContext signer) {
-        super(generatePayloadString(claims, hashAlg), signer);
+    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg, SignatureSignerContext signer) {
+        super(generatePayloadString(claims, decoyClaims, hashAlg), signer);
     }
 
     /*
      * Generates the payload of the issuer signed jwt from the list
      * of claims.
      */
-    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, String hashAlg) {
+    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
         final List<SdJwtClaim> claimsInternal = claims == null ? Collections.emptyList()
                 : Collections.unmodifiableList(claims);
+        final List<DecoyClaim> decoyClaimsInternal = decoyClaims == null ? Collections.emptyList()
+                : Collections.unmodifiableList(decoyClaims);
 
         try {
             // Check no dupplicate claim names
@@ -73,7 +75,7 @@ public class IssuerSignedJWT extends SdJws {
         // first filter all UndisclosedClaim
         // then sort by salt
         // then push digest into the sdArray
-        claimsInternal.stream()
+        List<String> digests = claimsInternal.stream()
                 .filter(claim -> claim instanceof UndisclosedClaim)
                 .map(claim -> (UndisclosedClaim) claim)
                 .collect(Collectors.toMap(UndisclosedClaim::getSalt, claim -> claim))
@@ -82,8 +84,12 @@ public class IssuerSignedJWT extends SdJws {
                 .map(Map.Entry::getValue)
                 .filter(Objects::nonNull)
                 .map(od -> od.getDisclosureDigest(hashAlg))
-                .sorted()
-                .forEach(sdArray::add);
+                .collect(Collectors.toList());
+
+        // add decoy claims
+        decoyClaimsInternal.stream().map(claim -> claim.getDisclosureDigest(hashAlg)).forEach(digests::add);
+
+        digests.stream().sorted().forEach(sdArray::add);
 
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
 
@@ -110,8 +116,8 @@ public class IssuerSignedJWT extends SdJws {
     }
 
     // SD JWT Claims
-    private static final String CLAIM_NAME_SELECTIVE_DISCLOSURE = "_sd";
-    private static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
+    public static final String CLAIM_NAME_SELECTIVE_DISCLOSURE = "_sd";
+    public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
 
     // Builder
     public static Builder builder() {
@@ -122,9 +128,15 @@ public class IssuerSignedJWT extends SdJws {
         private List<SdJwtClaim> claims;
         private String hashAlg;
         private SignatureSignerContext signer;
+        private List<DecoyClaim> decoyClaims;
 
         public Builder withClaims(List<SdJwtClaim> claims) {
             this.claims = claims;
+            return this;
+        }
+
+        public Builder withDecoyClaims(List<DecoyClaim> decoyClaims) {
+            this.decoyClaims = decoyClaims;
             return this;
         }
 
@@ -143,10 +155,11 @@ public class IssuerSignedJWT extends SdJws {
             hashAlg = hashAlg == null ? "sha-256" : hashAlg;
             // send an empty lise if claims not set.
             claims = claims == null ? Collections.emptyList() : claims;
+            decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;
             if (signer != null) {
-                return new IssuerSignedJWT(claims, hashAlg, signer);
+                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, signer);
             } else {
-                return new IssuerSignedJWT(claims, hashAlg);
+                return new IssuerSignedJWT(claims, decoyClaims, hashAlg);
             }
         }
     }

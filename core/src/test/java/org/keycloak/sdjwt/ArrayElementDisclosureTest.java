@@ -2,41 +2,54 @@ package org.keycloak.sdjwt;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.After;
-import org.junit.Before;
+import java.util.Optional;
+
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class ArrayElementDisclosureTest {
 
-    @Before
-    public void setUp() throws Exception {
-        SdJwtUtils.arrayEltSpaced = false;
-    }
+    @Test
+    public void testSdJwtWithUndiclosedArrayElements6_1() {
+        JsonNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
 
-    @After
-    public void tearDown() throws Exception {
-        SdJwtUtils.arrayEltSpaced = true;
+        DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedClaim("email", "JnwGqRFZjMprsoZobherdQ")
+                .withUndisclosedClaim("phone_number", "ffZ03jm_zeHyG4-yoNt6vg")
+                .withUndisclosedClaim("address", "INhOGJnu82BAtsOwiCJc_A")
+                .withUndisclosedClaim("birthdate", "d0l3jsh5sBzj2oEhZxrJGw")
+                .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
+                .build();
+
+        SdJwt sdJwt = new SdJwt(disclosureSpec, claimSet, Optional.empty(), null);
+        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
+
+        JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload-udisclosed-array-ellement.json");
+        assertEquals(expected, jwt.getPayload());
     }
 
     @Test
-    public void testToBase64urlEncoded() {
-        // Create an instance of UndisclosedArrayElement with the specified fields
-        // "lklxF5jMYlGTPUovMNIvCA", "FR"
-        UndisclosedArrayElement arrayElementDisclosure = UndisclosedArrayElement.builder()
-                .withSalt(new SdJwtSalt("lklxF5jMYlGTPUovMNIvCA"))
-                .withArrayElement(new TextNode("FR")).build();
+    public void testSdJwtWithUndiclosedAndDecoyArrayElements6_1() {
+        JsonNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
 
-        // Expected Base64 URL encoded string
-        String expected = "WyJsa2x4RjVqTVlsR1RQVW92TU5JdkNBIiwiRlIiXQ";
+        DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                .withUndisclosedClaim("email", "JnwGqRFZjMprsoZobherdQ")
+                .withUndisclosedClaim("phone_number", "ffZ03jm_zeHyG4-yoNt6vg")
+                .withUndisclosedClaim("address", "INhOGJnu82BAtsOwiCJc_A")
+                .withUndisclosedClaim("birthdate", "d0l3jsh5sBzj2oEhZxrJGw")
+                .withUndisclosedArrayElt("nationalities", 0, "Qg_O64zqAxe412a108iroA")
+                .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
+                .withDecoyArrayElt("nationalities", 1, "5bPs1IquZNa0hkaFzzzZNw")
+                .build();
 
-        // Assert that the base64 URL encoded string from the object matches the
-        // expected string
-        assertEquals(expected, arrayElementDisclosure.getDisclosureString());
+        SdJwt sdJwt = new SdJwt(disclosureSpec, claimSet, Optional.empty(), null);
+        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
+
+        JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload-decoy-array-ellement.json");
+        assertEquals(expected, jwt.getPayload());
     }
-
 }

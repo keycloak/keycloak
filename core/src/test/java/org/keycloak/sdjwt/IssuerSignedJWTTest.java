@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class IssuerSignedJWTTest {
-
     /**
      * If issuer decides to disclose everything, paylod of issuer signed JWT should
      * be same as the claim set.
@@ -83,6 +82,7 @@ public class IssuerSignedJWTTest {
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload.json");
         assertEquals(expected, jwt.getPayload());
     }
+    
 
     @Test
     public void testIssuerSignedJWTWithUndiclosedClaims3_3() {

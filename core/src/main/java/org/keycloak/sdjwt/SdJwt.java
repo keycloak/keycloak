@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.keycloak.crypto.SignatureSignerContext;
@@ -36,7 +37,7 @@ public class SdJwt {
         claimSet.fields()
                 .forEachRemaining(entry -> claims.add(createClaim(entry.getKey(), entry.getValue(), disclosureSpec)));
 
-        this.issuerSignedJWT = IssuerSignedJWT.builder().withClaims(claims).withSigner(signer).build();
+        this.issuerSignedJWT = IssuerSignedJWT.builder().withClaims(claims).withDecoyClaims(createdDecoyClaims(disclosureSpec)).withSigner(signer).build();
 
         this.disclosures = getDisclosureStrings(claims);
 
@@ -44,6 +45,12 @@ public class SdJwt {
                 ? Optional.empty()
                 : keyBindingJWT;
 
+    }
+
+    private List<DecoyClaim> createdDecoyClaims(DisclosureSpec disclosureSpec) {
+        return disclosureSpec.getDecoyClaims().stream()
+                .map(disclosureData -> DecoyClaim.builder().withSalt(disclosureData.getSalt()).build())
+                .collect(Collectors.toList());
     }
 
     public SdJwt(String sdJwtDString) {
@@ -114,10 +121,13 @@ public class SdJwt {
     }
 
     private SdJwtClaim createArrayOrVisibleClaim(String claimName, JsonNode claimValue, DisclosureSpec disclosureSpec) {
+        SdJwtClaimName sdJwtClaimName = SdJwtClaimName.of(claimName);
         Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts = disclosureSpec
-                .getUndisclosedArrayElt(SdJwtClaimName.of(claimName));
-        if (undisclosedArrayElts != null) {
-            return createArrayDisclosure(claimName, claimValue, undisclosedArrayElts);
+                .getUndisclosedArrayElts(sdJwtClaimName);
+        Map<Integer, DisclosureSpec.DisclosureData> decoyArrayElts = disclosureSpec.getDecoyArrayElts(sdJwtClaimName);
+
+        if (undisclosedArrayElts != null || decoyArrayElts != null) {
+            return createArrayDisclosure(claimName, claimValue, undisclosedArrayElts, decoyArrayElts);
         } else {
             return VisibleSdJwtClaim.builder()
                     .withClaimName(claimName)
@@ -127,13 +137,21 @@ public class SdJwt {
     }
 
     private SdJwtClaim createArrayDisclosure(String claimName, JsonNode claimValue,
-            Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts) {
+            Map<Integer, DisclosureSpec.DisclosureData> undisclosedArrayElts,
+            Map<Integer, DisclosureSpec.DisclosureData> decoyArrayElts) {
         ArrayNode arrayNode = validateArrayNode(claimName, claimValue);
         ArrayDisclosure.Builder arrayDisclosureBuilder = ArrayDisclosure.builder().withClaimName(claimName);
 
-        IntStream.range(0, arrayNode.size())
-                .forEach(i -> processArrayElement(arrayDisclosureBuilder, arrayNode.get(i),
-                        undisclosedArrayElts.get(i)));
+        if(undisclosedArrayElts!=null){
+            IntStream.range(0, arrayNode.size())
+                    .forEach(i -> processArrayElement(arrayDisclosureBuilder, arrayNode.get(i),
+                            undisclosedArrayElts.get(i)));
+        }
+        
+        if (decoyArrayElts != null) {
+            decoyArrayElts.entrySet().stream()
+                    .forEach(e -> arrayDisclosureBuilder.withDecoyElt(e.getKey(), e.getValue().getSalt()));
+        }
 
         return arrayDisclosureBuilder.build();
     }
@@ -149,7 +167,7 @@ public class SdJwt {
     private void processArrayElement(ArrayDisclosure.Builder builder, JsonNode elementValue,
             DisclosureSpec.DisclosureData disclosureData) {
         if (disclosureData != null) {
-            builder.withUndisclosedElement(elementValue);
+            builder.withUndisclosedElement(disclosureData.getSalt(), elementValue);
         } else {
             builder.withVisibleElement(elementValue);
         }
