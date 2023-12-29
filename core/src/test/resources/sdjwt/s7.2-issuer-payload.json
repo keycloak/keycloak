@@ -1,0 +1,15 @@
+{
+  "iss": "https://issuer.example.com",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "sub": "6c5c0a49-b589-431d-bae7-219122a9ec2c",
+  "address": {
+    "_sd": [
+      "6vh9bq-zS4GKM_7GpggVbYzzu6oOGXrmNVGPHP75Ud0",
+      "9gjVuXtdFROCgRrtNcGUXmF65rdezi_6Er_j76kmYyM",
+      "KURDPh4ZC19-3tiz-Df39V8eidy1oV3a3H1Da2N0g88",
+      "WN9r9dCBJ8HTCsS2jKASxTjEyW5m5x65_Z_2ro2jfXM"
+    ]
+  },
+  "_sd_alg": "sha-256"
+}

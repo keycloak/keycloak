@@ -37,23 +37,23 @@ public class IssuerSignedJWT extends SdJws {
         super(jwsString);
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg) {
-        super(generatePayloadString(claims, decoyClaims, hashAlg));
+    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg, boolean nestedDisclosures) {
+        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures));
     }
 
     private IssuerSignedJWT(JsonNode payload, JWSInput jwsInput) {
         super(payload, jwsInput);
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg, SignatureSignerContext signer) {
-        super(generatePayloadString(claims, decoyClaims, hashAlg), signer);
+    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg, boolean nestedDisclosures, SignatureSignerContext signer) {
+        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer);
     }
 
     /*
      * Generates the payload of the issuer signed jwt from the list
      * of claims.
      */
-    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg) {
+    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg, boolean nestedDisclosures) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
         final List<SdJwtClaim> claimsInternal = claims == null ? Collections.emptyList()
@@ -96,8 +96,9 @@ public class IssuerSignedJWT extends SdJws {
         if (sdArray.size() > 0) {
             // drop _sd claim if empty
             payload.set(CLAIM_NAME_SELECTIVE_DISCLOSURE, sdArray);
-            // No need to keep hash alg in here as there is no deigest
-            // in the payload. ToDo: raise issue with spec.
+        }
+        if (sdArray.size() > 0 || nestedDisclosures) {
+            // add sd alg only if ay disclosure.
             payload.put(CLAIM_NAME_SD_HASH_ALGORITHM, hashAlg);
         }
 
@@ -129,6 +130,7 @@ public class IssuerSignedJWT extends SdJws {
         private String hashAlg;
         private SignatureSignerContext signer;
         private List<DecoyClaim> decoyClaims;
+        private boolean nestedDisclosures;
 
         public Builder withClaims(List<SdJwtClaim> claims) {
             this.claims = claims;
@@ -150,6 +152,11 @@ public class IssuerSignedJWT extends SdJws {
             return this;
         }
 
+        public Builder withNestedDisclosures(boolean nestedDisclosures) {
+            this.nestedDisclosures = nestedDisclosures;
+            return this;
+        }
+
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? "sha-256" : hashAlg;
@@ -157,9 +164,9 @@ public class IssuerSignedJWT extends SdJws {
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;
             if (signer != null) {
-                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, signer);
+                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures, signer);
             } else {
-                return new IssuerSignedJWT(claims, decoyClaims, hashAlg);
+                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures);
             }
         }
     }
