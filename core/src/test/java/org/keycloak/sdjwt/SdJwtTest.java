@@ -3,8 +3,6 @@ package org.keycloak.sdjwt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.util.Optional;
-
 import org.junit.Test;
 import org.keycloak.crypto.SignatureSignerContext;
 
@@ -39,8 +37,12 @@ public class SdJwtTest {
         // Merge both
         ((ObjectNode) holderClaimSet).setAll((ObjectNode) issuerClaimSet);
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, holderClaimSet, Optional.empty(),
-                TestSettings.getInstance().getIssuerSignerContext());
+        SdJwt sdJwt = SdJwt.builder()
+                .withDisclosureSpec(disclosureSpec)
+                .withClaimSet(holderClaimSet)
+                .withSigner(TestSettings.getInstance().getIssuerSignerContext())
+                .build();
+
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s3.3-issuer-payload.json");
@@ -92,28 +94,40 @@ public class SdJwtTest {
 
         // Read claims provided by the holder
         JsonNode addressClaimSet = holderClaimSet.get("address");
-        SdJwt addrSdJWT = new SdJwt(addrDisclosureSpec, addressClaimSet, Optional.empty(), null);
-        IssuerSignedJWT addrIssuerJWT = addrSdJWT.getIssuerSignedJWT();
 
-        JsonNode addPayload = addrIssuerJWT.getPayload();
-        ((ObjectNode) addPayload).remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
-
+        // produce the nested sdJwt
+        SdJwt addrSdJWT = SdJwt.builder()
+                .withDisclosureSpec(addrDisclosureSpec)
+                .withClaimSet(addressClaimSet)
+                .build();
+        JsonNode addPayload = addrSdJWT.asNestedPayload();
         JsonNode expectedAddrPayload = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-address-payload.json");
         assertEquals(expectedAddrPayload, addPayload);
 
+        // Verify nested claim has 4 disclosures
+        assertEquals(4, addrSdJWT.getDisclosures().size());
+
+        // Set payload back into main claim set
         ((ObjectNode) holderClaimSet).set("address", addPayload);
 
-        // Read claims added by the issuer
+        // Read claims added by the issuer & merge both
         JsonNode issuerClaimSet = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-issuer-claims.json");
-
-        // Merge both
         ((ObjectNode) holderClaimSet).setAll((ObjectNode) issuerClaimSet);
 
-        SdJwt sdJwt = new SdJwt(disclosureSpec, holderClaimSet, Optional.empty(), null);
-        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
+        // produce the main sdJwt, adding nested sdJwts
+        SdJwt sdJwt = SdJwt.builder()
+                .withDisclosureSpec(disclosureSpec)
+                .withClaimSet(holderClaimSet)
+                .withNestedSdJwt(addrSdJWT)
+                .build();
 
+        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/a1.example2-issuer-payload.json");
         assertEquals(expected, jwt.getPayload());
+
+        // Verify all claims are present.
+        // 10 disclosures from 16 digests (6 decoy claims & decoy array elements)
+        assertEquals(10, sdJwt.getDisclosures().size());
     }
 
 }
