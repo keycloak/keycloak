@@ -83,8 +83,8 @@
     "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
     "react-hook-form": "^7.49.2",
-    "react-i18next": "^13.5.0",
-    "react-router-dom": "^6.21.0",
+    "react-i18next": "^14.0.0",
+    "react-router-dom": "^6.21.1",
     "reactflow": "^11.10.1",
     "ui-shared": "workspace:*",
     "use-react-router-breadcrumbs": "^4.0.1"
@@ -92,7 +92,7 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.1",
-    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/jest-dom": "^6.1.6",
     "@testing-library/react": "^14.1.2",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
@@ -101,7 +101,7 @@
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^9.0.7",
     "@vitejs/plugin-react-swc": "^3.5.0",
-    "cypress": "^13.6.1",
+    "cypress": "^13.6.2",
     "cypress-axe": "^1.5.0",
     "jsdom": "^23.0.1",
     "ldap-server-mock": "^6.0.1",
@@ -110,6 +110,6 @@
     "uuid": "^9.0.1",
     "vite": "^5.0.10",
     "vite-plugin-checker": "^0.6.2",
-    "vitest": "^1.0.4"
+    "vitest": "^1.1.0"
   }
 }
