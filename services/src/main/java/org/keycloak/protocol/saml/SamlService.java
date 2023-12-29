@@ -210,16 +210,17 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (isDestinationRequired() &&
-                    statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
-                event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
-                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
-                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-            }
-            if (! destinationValidator.validate(this.getExpectedDestinationUri(session), statusResponse.getDestination())) {
-                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
-                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
-                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            if (isDestinationRequired()) {
+                if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
+                    event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
+                    event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                    return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
+                if (! destinationValidator.validate(this.getExpectedDestinationUri(session), statusResponse.getDestination())) {
+                    event.detail(Details.REASON, Errors.INVALID_DESTINATION);
+                    event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                    return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
             }
 
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
