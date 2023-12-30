@@ -1,4 +1,4 @@
-package org.keycloak.sdjwt;
+package org.keycloak.sdjwt.sdjwtvp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -10,6 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -36,7 +39,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class TestCompareSdJwt {
 
-    public static void compare(SdJwt expectedSdJwt, SdJwt actualSdJwt) {
+    public static void compare(SdJwtVP expectedSdJwt, SdJwtVP actualSdJwt) {
         try {
             compareIssuerSignedJWT(expectedSdJwt.getIssuerSignedJWT(), actualSdJwt.getIssuerSignedJWT());
         } catch (JsonProcessingException e) {
@@ -64,10 +67,10 @@ public class TestCompareSdJwt {
         // We wont compare signatures.
     }
 
-    private static void compareDisclosures(SdJwt expectedSdJwt, SdJwt actualSdJwt) {
-        Set<JsonNode> expectedDisclosures = expectedSdJwt.getDisclosures().stream().map(TestCompareSdJwt::toJsonNode)
+    private static void compareDisclosures(SdJwtVP expectedSdJwt, SdJwtVP actualSdJwt) {
+        Set<JsonNode> expectedDisclosures = expectedSdJwt.getDisclosuresString().stream().map(TestCompareSdJwt::toJsonNode)
                 .collect(Collectors.toSet());
-        Set<JsonNode> actualDisclosures = expectedSdJwt.getDisclosures().stream().map(TestCompareSdJwt::toJsonNode)
+        Set<JsonNode> actualDisclosures = expectedSdJwt.getDisclosuresString().stream().map(TestCompareSdJwt::toJsonNode)
                 .collect(Collectors.toSet());
 
         assertEquals(expectedDisclosures.size(), actualDisclosures.size());

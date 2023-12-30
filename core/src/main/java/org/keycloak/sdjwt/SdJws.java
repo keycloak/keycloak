@@ -3,7 +3,9 @@ package org.keycloak.sdjwt;
 import java.io.IOException;
 import java.util.Objects;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -61,6 +63,17 @@ public class SdJws {
     protected static JWSInput sign(JsonNode payload, SignatureSignerContext signer) {
         String jwsString = new JWSBuilder().type("vc+sd-jwt").jsonContent(payload).sign(signer);
         return parse(jwsString);
+    }
+
+    public void verifySignature(SignatureVerifierContext verifier) throws VerificationException {
+        Objects.requireNonNull(verifier, "verifier must not be null");
+        try {
+            if (!verifier.verify(jwsInput.getEncodedSignatureInput().getBytes("UTF-8"), jwsInput.getSignature())) {
+                throw new VerificationException("Invalid jws signature");
+            }
+        } catch (Exception e) {
+            throw new VerificationException(e);
+        }
     }
 
     private static final JWSInput parse(String jwsString) {

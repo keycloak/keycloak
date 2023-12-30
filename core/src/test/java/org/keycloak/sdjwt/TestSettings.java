@@ -17,9 +17,11 @@ import java.util.Map;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -32,6 +34,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class TestSettings {
     public final SignatureSignerContext holderSigContext;
     public final SignatureSignerContext issuerSigContext;
+    public final SignatureVerifierContext holderVerifierContext;
+    public final SignatureVerifierContext issuerVerifierContext;
 
     private static TestSettings instance = null;
 
@@ -50,6 +54,14 @@ public class TestSettings {
         return holderSigContext;
     }
 
+    public SignatureVerifierContext getIssuerVerifierContext() {
+        return issuerVerifierContext;
+    }
+
+    public SignatureVerifierContext getHolderVerifierContext() {
+        return holderVerifierContext;
+    }
+
     // private constructor
     private TestSettings() {
         JsonNode testSettings = TestUtils.readClaimSet(getClass(), "sdjwt/test-settings.json");
@@ -57,6 +69,9 @@ public class TestSettings {
 
         holderSigContext = initSigContext(keySettings, "holder_key", "ES256", "holder");
         issuerSigContext = initSigContext(keySettings, "issuer_key", "ES256", "doc-signer-05-25-2022");
+
+        holderVerifierContext = initVerifierContext(keySettings, "holder_key", "ES256", "holder");
+        issuerVerifierContext = initVerifierContext(keySettings, "issuer_key", "ES256", "doc-signer-05-25-2022");
     }
 
     private static SignatureSignerContext initSigContext(JsonNode keySettings, String keyName, String algorithm,
@@ -66,12 +81,59 @@ public class TestSettings {
         return getSignatureSignerContext(keyPair, algorithm, kid);
     }
 
+    private static SignatureVerifierContext initVerifierContext(JsonNode keySettings, String keyName, String algorithm,
+            String kid) {
+        JsonNode keySetting = keySettings.get(keyName);
+        KeyPair keyPair = readKeyPair(keySetting);
+        return getSignatureVerifierContext(keyPair.getPublic(), algorithm, kid);
+    }
+
     private static KeyPair readKeyPair(JsonNode keySetting) {
         String curveName = keySetting.get("crv").asText();
         String base64UrlEncodedD = keySetting.get("d").asText();
         String base64UrlEncodedX = keySetting.get("x").asText();
         String base64UrlEncodedY = keySetting.get("y").asText();
         return readEcdsaKeyPair(curveName, base64UrlEncodedD, base64UrlEncodedX, base64UrlEncodedY);
+    }
+
+    public static SignatureVerifierContext verifierContextFrom(JsonNode keyData, String algorithm) {
+        PublicKey publicKey = readPublicKey(keyData);
+        return getSignatureVerifierContext(publicKey, algorithm, KeyUtils.createKeyId(publicKey));
+    }
+
+    private static PublicKey readPublicKey(JsonNode keyData) {
+        if(keyData.has("jwk")){
+            keyData = keyData.get("jwk");
+        }
+        String curveName = keyData.get("crv").asText();
+        String base64UrlEncodedX = keyData.get("x").asText();
+        String base64UrlEncodedY = keyData.get("y").asText();
+        return readEcdsaPublic(curveName, base64UrlEncodedX, base64UrlEncodedY);
+    }
+
+    private static PublicKey readEcdsaPublic(String curveName, String base64UrlEncodedX,
+            String base64UrlEncodedY) {
+
+        ECParameterSpec ecSpec = getECParameterSpec(ECDSA_CURVE_2_SPECS_NAMES.get(curveName));
+
+        byte[] xBytes = Base64Url.decode(base64UrlEncodedX);
+        byte[] yBytes = Base64Url.decode(base64UrlEncodedY);
+
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+
+            // Generate ECPrivateKey
+
+            // Instantiate ECPoint
+            BigInteger xValue = new BigInteger(1, xBytes);
+            BigInteger yValue = new BigInteger(1, yBytes);
+            ECPoint point = new ECPoint(xValue, yValue);
+
+            // Generate ECPublicKey
+            return keyFactory.generatePublic(new ECPublicKeySpec(point, ecSpec));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static KeyPair readEcdsaKeyPair(String curveName, String base64UrlEncodedD, String base64UrlEncodedX,
@@ -124,7 +186,6 @@ public class TestSettings {
 
     private static SignatureSignerContext getSignatureSignerContext(KeyPair keyPair, String algorithm, String kid) {
         KeyWrapper keyWrapper = new KeyWrapper();
-        keyWrapper.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
         keyWrapper.setAlgorithm(algorithm);
         keyWrapper.setPrivateKey(keyPair.getPrivate());
         keyWrapper.setPublicKey(keyPair.getPublic());
@@ -132,6 +193,16 @@ public class TestSettings {
         keyWrapper.setUse(KeyUse.SIG);
         keyWrapper.setKid(kid);
         return new AsymmetricSignatureSignerContext(keyWrapper);
+    }
+
+    private static SignatureVerifierContext getSignatureVerifierContext(PublicKey publicKey, String algorithm, String kid) {
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setAlgorithm(algorithm);
+        keyWrapper.setPublicKey(publicKey);
+        keyWrapper.setType(publicKey.getAlgorithm());
+        keyWrapper.setUse(KeyUse.SIG);
+        keyWrapper.setKid(kid);
+        return new AsymmetricSignatureVerifierContext(keyWrapper);
     }
 
     private static final Map<String, String> ECDSA_CURVE_2_SPECS_NAMES = new HashMap<>();

@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.util.Optional;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,11 +19,15 @@ import com.fasterxml.jackson.databind.ObjectWriter;
  */
 public class SdJwtUtils {
 
-    static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper mapper = new ObjectMapper();
     private static SecureRandom RANDOM = new SecureRandom();
 
     public static String encodeNoPad(byte[] bytes) {
         return Base64Url.encode(bytes);
+    }
+
+    public static String hashAndBase64EncodeNoPad(byte[] disclosureBytes, String hashAlg) {
+        return encodeNoPad(HashUtils.hash(hashAlg, disclosureBytes));
     }
 
     public static String requireNonEmpty(String str, String message) {

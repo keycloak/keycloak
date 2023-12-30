@@ -1,7 +1,6 @@
 package org.keycloak.sdjwt;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.sdjwt.vp.KeyBindingJWT;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -23,11 +23,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * 
  */
 public class SdJwt {
-    private static final String DELIMITER = "~";
+    public static final String DELIMITER = "~";
 
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
-    private final Optional<KeyBindingJWT> keyBindingJWT;
     private final List<String> disclosures = new ArrayList<>();
 
     private Optional<String> sdJwtString = Optional.empty();
@@ -47,39 +46,12 @@ public class SdJwt {
 
         nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
         this.disclosures.addAll(getDisclosureStrings(claims));
-
-        this.keyBindingJWT = keyBindingJWT == null
-                ? Optional.empty()
-                : keyBindingJWT;
-
     }
 
     private List<DecoyClaim> createdDecoyClaims(DisclosureSpec disclosureSpec) {
         return disclosureSpec.getDecoyClaims().stream()
                 .map(disclosureData -> DecoyClaim.builder().withSalt(disclosureData.getSalt()).build())
                 .collect(Collectors.toList());
-    }
-
-    public SdJwt(String sdJwtDString) {
-        this.sdJwtString = Optional.of(sdJwtDString);
-
-        int disclosureStart = sdJwtDString.indexOf(DELIMITER);
-        int disclosureEnd = sdJwtDString.lastIndexOf(DELIMITER);
-
-        String issuerSignedJWTString = sdJwtDString.substring(0, disclosureStart);
-        String disclosuresString = sdJwtDString.substring(disclosureStart + 1, disclosureEnd);
-        String keyBindingJWTString = sdJwtDString.substring(disclosureEnd + 1);
-
-        this.issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
-        this.claims = Collections.emptyList();
-
-        String[] disclosureArray = disclosuresString.split(DELIMITER);
-        this.disclosures.addAll(Arrays.asList(disclosureArray));
-
-        this.keyBindingJWT = keyBindingJWTString.isEmpty()
-                ? Optional.empty()
-                : Optional.of(new KeyBindingJWT(keyBindingJWTString));
-
     }
 
     /**
@@ -101,7 +73,7 @@ public class SdJwt {
 
         parts.add(issuerSignedJWT.toJws());
         parts.addAll(disclosures);
-        parts.add(keyBindingJWT.isPresent() ? keyBindingJWT.get().toJws() : "");
+        parts.add("");
 
         return String.join(DELIMITER, parts);
     }
