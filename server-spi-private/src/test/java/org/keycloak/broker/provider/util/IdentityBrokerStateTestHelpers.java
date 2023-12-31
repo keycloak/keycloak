@@ -1235,6 +1235,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+            return null;
+        }
+
+        @Override
+        public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+
+        }
+
+        @Override
         public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
             return null;
         }

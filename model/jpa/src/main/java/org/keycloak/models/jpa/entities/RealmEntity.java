@@ -222,6 +222,8 @@ public class RealmEntity {
     @Column(name="DOCKER_AUTH_FLOW")
     protected String dockerAuthenticationFlow;
 
+    @Column(name = "FIRST_BROKER_LOGIN_FLOW")
+    protected String firstBrokerLoginFlow;
 
     @Column(name="INTERNATIONALIZATION_ENABLED")
     protected boolean internationalizationEnabled;
@@ -807,6 +809,15 @@ public class RealmEntity {
 
     public RealmEntity setDockerAuthenticationFlow(String dockerAuthenticationFlow) {
         this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
+    }
+
+    public String getFirstBrokerLoginFlow() {
+        return firstBrokerLoginFlow;
+    }
+
+    public RealmEntity setFirstBrokerLoginFlow(String firstBrokerLoginFlow) {
+        this.firstBrokerLoginFlow = firstBrokerLoginFlow;
         return this;
     }
 

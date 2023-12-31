@@ -373,6 +373,9 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
+    AuthenticationFlowModel getFirstBrokerLoginFlow();
+    void setFirstBrokerLoginFlow(AuthenticationFlowModel flow);
+
     /**
      * Returns authentications flows as a stream.
      * @return Stream of {@link AuthenticationFlowModel}. Never returns {@code null}.

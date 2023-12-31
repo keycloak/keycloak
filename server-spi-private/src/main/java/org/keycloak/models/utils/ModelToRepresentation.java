@@ -469,6 +469,7 @@ public class ModelToRepresentation {
         if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getFirstBrokerLoginFlow() != null) rep.setFirstBrokerLoginFlow(realm.getFirstBrokerLoginFlow().getAlias());
 
         rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
 

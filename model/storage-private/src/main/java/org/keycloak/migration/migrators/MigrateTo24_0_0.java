@@ -21,10 +21,12 @@ package org.keycloak.migration.migrators;
 
 import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -60,6 +62,7 @@ public class MigrateTo24_0_0 implements Migration {
             updateUserProfileSettings(session);
             updateLdapProviderConfig(session);
             createHS512ComponentModelKey(session);
+            bindFirstBrokerLoginFlow(session);
         } finally {
             context.setRealm(null);
         }
@@ -102,5 +105,17 @@ public class MigrateTo24_0_0 implements Migration {
     private void createHS512ComponentModelKey(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         DefaultKeyProviders.createSecretProvider(realm);
+    }
+
+    private void bindFirstBrokerLoginFlow(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        String flowAlias = DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
+        AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
+        if (flow == null) {
+           LOG.debugf("No flow found for alias '%s'. Skipping.", flowAlias);
+           return;
+        }
+        realm.setFirstBrokerLoginFlow(flow);
+        LOG.debugf("Flow '%s' has been bound to realm %s as 'First broker login' flow", realm.getName());
     }
 }

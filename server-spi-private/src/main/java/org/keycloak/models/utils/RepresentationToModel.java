@@ -838,21 +838,21 @@ public class RepresentationToModel {
         identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
-        if (flowAlias == null) {
-            flowAlias = DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
+        if (flowAlias == null || flowAlias.trim().length() == 0) {
+            identityProviderModel.setFirstBrokerLoginFlowId(null);
+        } else {
+            AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
+            if (flowModel == null) {
+                throw new ModelException("No available authentication flow with alias: " + flowAlias);
+            }
+            identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
         }
-
-        AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
-        if (flowModel == null) {
-            throw new ModelException("No available authentication flow with alias: " + flowAlias);
-        }
-        identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
 
         flowAlias = representation.getPostBrokerLoginFlowAlias();
         if (flowAlias == null || flowAlias.trim().length() == 0) {
             identityProviderModel.setPostBrokerLoginFlowId(null);
         } else {
-            flowModel = realm.getFlowByAlias(flowAlias);
+            AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
             if (flowModel == null) {
                 throw new ModelException("No available authentication flow with alias: " + flowAlias);
             }
