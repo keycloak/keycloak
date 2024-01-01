@@ -58,7 +58,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -96,6 +95,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -213,11 +213,13 @@ public class RealmTest extends AbstractAdminTest {
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void createRealmRejectReservedChar() {
+    @Test
+    public void createRealmRejectReservedCharOrEmptyName() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-re;alm");
-        adminClient.realms().create(rep);
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
     }
 
     /**
@@ -460,11 +462,13 @@ public class RealmTest extends AbstractAdminTest {
         checkRealmEventsConfigRepresentation(repOrig, actual);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void updateRealmWithReservedCharInName() {
+    @Test
+    public void updateRealmWithReservedCharInNameOrEmptyName() {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setRealm("fo#o");
-        realm.update(rep);
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
     }
     
     @Test
