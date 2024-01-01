@@ -30,6 +30,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -167,6 +168,8 @@ public class RealmsAdminResource {
             logger.error("Password policy not met for user " + e.getUsername(), e);
             if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
+        } catch (ModelException e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 

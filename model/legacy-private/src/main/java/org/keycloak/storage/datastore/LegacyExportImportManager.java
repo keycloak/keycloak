@@ -97,8 +97,9 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 
 import jakarta.ws.rs.core.MediaType;
@@ -651,7 +652,12 @@ public class LegacyExportImportManager implements ExportImportManager {
 
 
     public static void renameRealm(RealmModel realm, String name) {
-        if (name.equals(realm.getName())) return;
+        if (name.equals(realm.getName())) {
+            return;
+        }
+        if (StringUtil.isBlank(name)) {
+            throw new ModelException("Realm name cannot be empty");
+        }
 
         String oldName = realm.getName();
 
