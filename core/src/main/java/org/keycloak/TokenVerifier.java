@@ -66,7 +66,7 @@ public class TokenVerifier<T extends JsonWebToken> {
         boolean test(T t) throws VerificationException;
     }
 
-    public static final Predicate<JsonWebToken> SUBJECT_EXISTS_CHECK = new Predicate<JsonWebToken>() {
+     public static final Predicate<JsonWebToken> SUBJECT_EXISTS_CHECK = new Predicate<JsonWebToken>() {
         @Override
         public boolean test(JsonWebToken t) throws VerificationException {
             String subject = t.getSubject();
