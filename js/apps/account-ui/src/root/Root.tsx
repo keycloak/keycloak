@@ -23,6 +23,7 @@ const ReferrerLink = () => {
 
   return searchParams.has("referrer_uri") ? (
     <Button
+      data-testid="referrer-link"
       component="a"
       href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
       variant="link"

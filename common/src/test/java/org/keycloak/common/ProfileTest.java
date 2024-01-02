@@ -71,7 +71,7 @@ public class ProfileTest {
             Profile.Feature.TRANSIENT_USERS,
             Profile.Feature.DPOP,
             Profile.Feature.FIPS,
-            Profile.Feature.ACCOUNT3,
+            Profile.Feature.ACCOUNT2,
             Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
@@ -89,7 +89,7 @@ public class ProfileTest {
             disabledFeatures.add(Profile.Feature.KERBEROS);
         }
         assertEquals(profile.getDisabledFeatures(), disabledFeatures);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ACCOUNT3, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.MULTI_SITE, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.MULTI_SITE, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
     }
 
     @Test
@@ -100,14 +100,14 @@ public class ProfileTest {
         try {
             Profile.configure(new PropertiesProfileConfigResolver(properties));
         } catch (ProfileException e) {
-            Assert.assertEquals("Feature account2 depends on disabled feature account-api", e.getMessage());
+            Assert.assertEquals("Feature account3 depends on disabled feature account-api", e.getMessage());
         }
     }
 
     @Test
     public void checkSuccessIfFeatureDisabledWithDisabledDependencies() {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature.account2", "disabled");
+        properties.setProperty("keycloak.profile.feature.account3", "disabled");
         properties.setProperty("keycloak.profile.feature.account_api", "disabled");
         Profile.configure(new PropertiesProfileConfigResolver(properties));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2));
