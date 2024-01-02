@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.domainextension.rest;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.testsuite.domainextension.CompanyRepresentation;
 import org.keycloak.testsuite.domainextension.spi.ExampleService;

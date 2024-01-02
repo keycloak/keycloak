@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.adapters.saml.SamlSession;

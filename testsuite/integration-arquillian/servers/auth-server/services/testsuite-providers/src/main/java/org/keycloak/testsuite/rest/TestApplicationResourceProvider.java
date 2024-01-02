@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
