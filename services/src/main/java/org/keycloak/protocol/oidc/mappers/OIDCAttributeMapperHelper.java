@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -307,16 +308,32 @@ public class OIDCAttributeMapperHelper {
         }
 
         // map value to the other claims map
-        mapClaim(split, attributeValue, jsonObject);
+        mapClaim(split, attributeValue, jsonObject, isMultivalued(mappingModel));
     }
 
-    private static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject) {
+    private static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject, boolean isMultivalued) {
         final int length = split.size();
         int i = 0;
         for (String component : split) {
             i++;
-            if (i == length) {
+            if (i == length && !isMultivalued) {
                 jsonObject.put(component, attributeValue);
+            } else if (i == length) {
+                Object values = jsonObject.get(component);
+                if (values == null) {
+                    jsonObject.put(component, attributeValue);
+                } else {
+                    Collection collectionValues = values instanceof Collection ? (Collection) values : Stream.of(values).collect(Collectors.toSet());
+                    if (attributeValue instanceof Collection) {
+                        ((Collection) attributeValue).stream().forEach(val -> {
+                            if (!collectionValues.contains(val))
+                                collectionValues.add(val);
+                        });
+                    } else if (!collectionValues.contains(attributeValue)) {
+                        collectionValues.add(attributeValue);
+                    }
+                    jsonObject.put(component, collectionValues);
+                }
             } else {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);

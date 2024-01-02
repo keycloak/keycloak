@@ -75,6 +75,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -197,6 +199,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
+            user.getAttributes().put("multi1", Stream.of("abc","bcd").collect(Collectors.toList()));
+            user.getAttributes().put("multi2", Stream.of("abc","cde").collect(Collectors.toList()));
             user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
             user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 3, \"b\": 4, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
@@ -219,6 +223,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("dotted phone", "phone", "home\\.phone", "String", true, true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("multi1", "multi1", "multi", "String", true, true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("multi2", "multi2", "multi", "String", true, true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, true, true,false)).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
@@ -309,6 +315,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertThat(jsonClaim.get("a"), instanceOf(int.class));
             assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
             assertThat(jsonClaim.get("d"), instanceOf(Map.class));
+
+            //assert that token claim is combination of two protocol mappers values
+            List <String> multiClaim = ( List <String>) accessToken.getOtherClaims().get("multi");
+            assertEquals(3, multiClaim.size());
+            assertThat(multiClaim, containsInAnyOrder("abc", "bcd", "cde"));
 
             oauth.idTokenHint(response.getIdToken()).openLogout();
         }
