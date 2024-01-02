@@ -317,7 +317,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      */
     private UriBuilder getTotpUriBuilder() {
         return uriInfo.getBaseUriBuilder()
-                .replacePath(uriInfo.getRequestUri().getPath())
+                .path(uriInfo.getPath())
                 .replaceQuery(uriInfo.getRequestUri().getQuery());
     }
 
