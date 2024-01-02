@@ -7,7 +7,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
-import { ReactNode, useMemo, useState } from "react";
+import { MouseEvent, ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
 
@@ -147,7 +147,7 @@ export default function SessionsTable({
   });
 
   async function onClickSignOut(
-    event: React.MouseEvent,
+    event: MouseEvent,
     rowIndex: number,
     rowData: IRowData,
   ) {
