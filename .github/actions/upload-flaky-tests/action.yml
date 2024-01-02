@@ -47,7 +47,6 @@ runs:
           echo "EOF" >> $GITHUB_OUTPUT
         fi
 
-    # Use v3 as uploads with the v4 version of the plugin seems not to be downloadable with the current GitHub Application we're using
     - uses: actions/upload-artifact@v3
       if: ${{ steps.flaky-tests.outputs.flakes }}
       with:
