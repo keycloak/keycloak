@@ -28,7 +28,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @LegacyStore
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: account3, admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, dpop, multi-site, recovery-codes, scripts, token-exchange, update-email";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: account3:v1, admin-fine-grained-authz:v1, client-secret-rotation:v1, declarative-user-profile:v1, dpop:v1, multi-site:v1, recovery-codes:v1, scripts:v1, token-exchange:v1, update-email:v1";
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
@@ -69,10 +69,16 @@ public class FeaturesDistTest {
 
     @Test
     @Launch({StartDev.NAME, "--features=token-exchange", "--features-disabled=token-exchange"})
-    public void testEnablePrecedenceOverDisable(LaunchResult result) {
+    public void testEnableDisableConflict(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStartedDevMode();
-        assertThat(cliResult.getOutput(), containsString("Preview features enabled: token-exchange"));
+        cliResult.assertError("token-exchange is in both the enabled and disabled feature lists");
+    }
+
+    @Test
+    @Launch({StartDev.NAME, "--features=token-exchange:v1", "--features-disabled=token-exchange"})
+    public void testEnableDisableConflictUsingVersioned(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Versioned feature token-exchange:v1 is not expected as token-exchange is already disabled");
     }
 
     @Test
@@ -82,7 +88,7 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
+                containsString("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1")));
         assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
     }
 
@@ -93,7 +99,7 @@ public class FeaturesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(
-                containsString("Preview features enabled: admin-fine-grained-authz, token-exchange")));
+                containsString("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1")));
         assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
     }
 

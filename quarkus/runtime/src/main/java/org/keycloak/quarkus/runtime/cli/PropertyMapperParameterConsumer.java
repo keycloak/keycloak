@@ -21,8 +21,6 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.Collection;
 import java.util.Stack;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.keycloak.utils.StringUtil;
 
@@ -58,22 +56,16 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
                     commandLine, "Missing required value for option '" + name + "' (" + argSpec.paramLabel() + ")." + getExpectedValuesMessage(argSpec.completionCandidates(), option.completionCandidates()));
         }
 
-        // consumes the value
-        String value = args.pop();
+        // consumes the value, actual value validation will be performed later
+        args.pop();
 
         if (!args.isEmpty() && isOptionValue(args.peek())) {
             throw new ParameterException(
                     commandLine, "Option '" + name + "' expects a single value (" + argSpec.paramLabel() + ")" + getExpectedValuesMessage(argSpec.completionCandidates(), option.completionCandidates()));
         }
-
-        if (isExpectedValue(StreamSupport.stream(option.completionCandidates().spliterator(), false).collect(Collectors.toList()), value)) {
-            return;
-        }
-
-        throw new ParameterException(commandLine, getErrorMessage(name, value, argSpec.completionCandidates(), option.completionCandidates()));
     }
 
-    static String getErrorMessage(String name, String value, Iterable<String> specCandidates, Iterable<String> optionCandidates) {
+    public static String getErrorMessage(String name, String value, Iterable<String> specCandidates, Iterable<String> optionCandidates) {
         return "Invalid value for option '" + name + "': " + value + "." + getExpectedValuesMessage(specCandidates, optionCandidates);
     }
 
@@ -85,7 +77,7 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
         return optionCandidates.iterator().hasNext() ? " Expected values are: " + String.join(", ", specCandidates) : "";
     }
 
-    static boolean isExpectedValue(Collection<String> expectedValues, String value) {
+    public static boolean isExpectedValue(Collection<String> expectedValues, String value) {
         if (expectedValues.isEmpty()) {
             // accept any
             return true;

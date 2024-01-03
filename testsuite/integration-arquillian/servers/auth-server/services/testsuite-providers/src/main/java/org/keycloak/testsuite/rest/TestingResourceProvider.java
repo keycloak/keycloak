@@ -24,7 +24,9 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -115,6 +117,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -869,13 +873,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
         doWithProperties(file, props -> {
-            props.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+            props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState);
         });
     }
 
     private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
         doWithProperties(file, props -> {
-            props.remove("feature." + featureProfile.toString().toLowerCase());
+            props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile));
         });
     }
 
@@ -951,36 +955,48 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
-        Profile.Feature feature;
+        Collection<Profile.Feature> features = null;
 
         try {
-            feature = Profile.Feature.valueOf(featureKey);
+            features = Arrays.asList(Profile.Feature.valueOf(featureKey));
         } catch (IllegalArgumentException e) {
+            Set<Feature> featureVersions = Profile.getFeatureVersions(featureKey);
+            if (!shouldEnable) {
+                features = featureVersions;
+            } else if (!featureVersions.isEmpty()) {
+                // the set is ordered by preferred feature
+                features = Arrays.asList(featureVersions.iterator().next());
+            }
+        }
+
+        if (features == null || features.isEmpty()) {
             System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
             throw new BadRequestException();
         }
 
-        if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
-            FeatureDeployerUtil.initBeforeChangeFeature(feature);
+        for (Feature feature : features) {
+            if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
+                FeatureDeployerUtil.initBeforeChangeFeature(feature);
 
-            String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-            // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
-            if (jbossServerConfigDir != null) {
-                setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
-            }
+                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+                // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+                if (jbossServerConfigDir != null) {
+                    setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
+                }
 
-            Profile current = Profile.getInstance();
+                Profile current = Profile.getInstance();
 
-            Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
-            updatedFeatures.putAll(current.getFeatures());
-            updatedFeatures.put(feature, shouldEnable);
+                Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
+                updatedFeatures.putAll(current.getFeatures());
+                updatedFeatures.put(feature, shouldEnable);
 
-            Profile.init(current.getName(), updatedFeatures);
+                Profile.init(current.getName(), updatedFeatures);
 
-            if (shouldEnable) {
-                FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
-            } else {
-                FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+                if (shouldEnable) {
+                    FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
+                } else {
+                    FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+                }
             }
         }
 
