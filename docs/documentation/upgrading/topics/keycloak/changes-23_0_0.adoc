@@ -114,6 +114,18 @@ it must instead be individual arguments
 bin/kc.sh start --help
 ```
 
+Similarly instead of
+
+```
+bin/kc.sh build "--db postgres"
+```
+
+it must instead be individual arguments
+
+```
+bin/kc.sh build --db postgres
+```
+
 The usage of individual arguments is also required in Dockerfile run commands.
 
 = Removed RegistrationProfile form action
