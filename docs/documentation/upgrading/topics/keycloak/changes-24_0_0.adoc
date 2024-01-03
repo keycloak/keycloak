@@ -13,6 +13,13 @@ import Keycloak from 'keycloak-js';
 import AuthZ from 'keycloak-js/authz';
 ----
 
+= Features Changes
+
+It is no longer allowed to have the same feature in both the `--features` and `--features-disabled` list.  The feature should appear in only one list.
+
+The usage of unversioned feature names, e.g. `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
+If you need more predictable behavior across releases, reference the particular version you want instead, e.g. `docker:v1`.
+
 = Truststore Changes
 
 The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated, please use the new default location for truststore material, `conf/truststores`, or specify your desired paths via the `truststore-paths` option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].

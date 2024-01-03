@@ -6,6 +6,12 @@ The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-expor
 
 Keycloak introduces an improved truststores configuration options. The Keycloak truststore is now used across the server: for outgoing connections, mTLS, database drivers and more. It's no longer needed to configure separate truststores for individual areas. To configure the truststore, you can put your truststores files or certificates in the default `conf/truststores`, or use the new `truststore-paths` config option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
 
+= Versioned Features
+
+Features now support versioning. For preserving backward compatibility all existing features (incl. `account2` and `account3`) are marked as version 1. Newly introduced feature will leverage the versioning allowing users to easily select between different implementations of desired features.
+
+For details refer to the https://www.keycloak.org/server/features[features guide].
+
 == Keycloak CR Truststores
 
 You may also take advantage of the new server-side handling of truststores via the Keycloak CR, for example:
