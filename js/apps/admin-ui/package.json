@@ -73,7 +73,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.7.11",
+    "i18next": "^23.7.14",
     "i18next-http-backend": "^2.4.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -97,7 +97,7 @@
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.45",
+    "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^9.0.7",
     "@vitejs/plugin-react-swc": "^3.5.0",
@@ -110,6 +110,6 @@
     "uuid": "^9.0.1",
     "vite": "^5.0.10",
     "vite-plugin-checker": "^0.6.2",
-    "vitest": "^1.1.0"
+    "vitest": "^1.1.1"
   }
 }

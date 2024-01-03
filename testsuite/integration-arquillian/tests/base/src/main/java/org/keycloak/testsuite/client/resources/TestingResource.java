@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -447,4 +447,7 @@ public interface TestingResource {
     @NoCache
     Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realm, @QueryParam("authSessionId") String authSessionId);
 
+    @GET
+    @Path("/no-cache-annotated-endpoint")
+    Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
 }
