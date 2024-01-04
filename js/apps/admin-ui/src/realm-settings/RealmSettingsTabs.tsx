@@ -33,7 +33,7 @@ import { convertFormValuesToObject, convertToFormValues } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
-import { LocalizationTab } from "./LocalizationTab";
+import { LocalizationTab } from "./localization/LocalizationTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { PartialExportDialog } from "./PartialExport";
 import { PartialImportDialog } from "./PartialImport";
@@ -340,12 +340,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-localization-tab"
             {...localizationTab}
           >
-            <LocalizationTab
-              key={key}
-              refresh={refresh}
-              save={save}
-              realm={realm}
-            />
+            <LocalizationTab key={key} save={save} realm={realm} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
