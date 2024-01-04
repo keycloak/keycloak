@@ -246,7 +246,9 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         UserPoliciesResource permissions = authorization.policies().user();
 
         try (Response response = permissions.create(representation)) {
+            assertResponseSuccessful(response);
             UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
+            getCleanup().addCleanup(() -> permissions.findById(created.getId()).remove());
             UserPolicyResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
         }
