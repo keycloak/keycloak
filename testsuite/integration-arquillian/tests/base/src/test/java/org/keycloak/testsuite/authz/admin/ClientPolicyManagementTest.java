@@ -204,7 +204,9 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         ClientPoliciesResource permissions = authorization.policies().client();
 
         try (Response response = permissions.create(representation)) {
+            assertResponseSuccessful(response);
             ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
+            getCleanup().addCleanup(() -> permissions.findById(created.getId()).remove());
             ClientPolicyResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
         }
