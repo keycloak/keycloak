@@ -431,7 +431,7 @@ export const RealmOverrides = ({
           >
             <Thead>
               <Tr>
-                <Th className="kc-realm-overrides-checkbox-td">
+                <Th className="pf-u-px-lg">
                   <input
                     type="checkbox"
                     aria-label={t("selectAll")}
@@ -440,8 +440,8 @@ export const RealmOverrides = ({
                     data-testid="selectAll"
                   />
                 </Th>
-                <Th className="kc-realm-overrides-header-td">{t("key")}</Th>
-                <Th className="kc-realm-overrides-header-td">{t("value")}</Th>
+                <Th className="pf-u-py-lg">{t("key")}</Th>
+                <Th className="pf-u-py-lg">{t("value")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
@@ -449,7 +449,7 @@ export const RealmOverrides = ({
               {tableRows.map((row, rowIndex) => (
                 <Tr key={(row.cells?.[0] as IRowCell).props.value}>
                   <Td
-                    className="kc-realm-overrides-checkbox-td"
+                    className="pf-u-px-lg"
                     select={{
                       rowIndex,
                       onSelect: (event) =>
@@ -462,11 +462,11 @@ export const RealmOverrides = ({
                       ),
                     }}
                   />
-                  <Td className="kc-realm-overrides-td" dataLabel={t("key")}>
+                  <Td className="pf-m-sm pf-u-px-sm" dataLabel={t("key")}>
                     {(row.cells?.[0] as IRowCell).props.value}
                   </Td>
                   <Td
-                    className="kc-realm-overrides-td"
+                    className="pf-m-sm pf-u-px-sm"
                     dataLabel={t("value")}
                     key={rowIndex}
                   >
@@ -479,14 +479,14 @@ export const RealmOverrides = ({
                     >
                       <FormGroup
                         fieldId="kc-bundleValue"
-                        className="kc-bundleValue-row"
+                        className="pf-u-display-inline-block"
                       >
                         {editStates[rowIndex] ? (
                           <>
                             <KeycloakTextInput
                               aria-label={t("editUserLabel")}
                               type="text"
-                              className="kc-bundleValue-rowEditInput"
+                              className="pf-u-w-initial"
                               data-testid={`editUserLabelInput-${rowIndex}`}
                               value={formValue}
                               onChange={(
@@ -498,14 +498,14 @@ export const RealmOverrides = ({
                             />
                             <Button
                               variant="link"
-                              className="kc-editUserLabelAcceptBtn"
+                              className="pf-m-plain"
                               data-testid={`editUserLabelAcceptBtn-${rowIndex}`}
                               type="submit"
                               icon={<CheckIcon />}
                             />
                             <Button
                               variant="link"
-                              className="kc-editBundleValue-cancelBtn"
+                              className="pf-m-plain"
                               data-testid={`editUserLabelCancelBtn-${rowIndex}`}
                               icon={<TimesIcon />}
                               onClick={() => {
@@ -535,7 +535,7 @@ export const RealmOverrides = ({
                               key={`edit-button-${rowIndex}`}
                               aria-label={t("editUserLabel")}
                               variant="link"
-                              className="kc-editBundleValue-btn"
+                              className="pf-m-plain"
                               data-testid={`editUserLabelBtn-${rowIndex}`}
                             >
                               <PencilAltIcon />
@@ -549,7 +549,7 @@ export const RealmOverrides = ({
                     <Dropdown
                       toggle={
                         <KebabToggle
-                          className="kc-realmOverrides-kebabToggle"
+                          className="pf-m-plain"
                           data-testid="realmOverrides-deleteKebabToggle"
                         />
                       }

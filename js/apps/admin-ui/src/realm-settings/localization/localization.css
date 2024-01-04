@@ -1,18 +1,3 @@
-.kc-editBundleValue-btn,
-.kc-editUserLabelAcceptBtn,
-.kc-editBundleValue-cancelBtn {
-  color: var(--pf-global--Color--200) !important;
-}
-
-.kc-realmOverrides-kebabToggle {
-  color: var(--pf-c-dropdown__toggle--m-plain--Color);
-  --pf-c-dropdown__toggle--before--BorderWidth: none;
-}
-
-.kc-realmOverrides-kebabToggle:hover {
-  color: var(--pf-c-dropdown__toggle--Color);
-}
-
 .kc__effective_message_bundles_search_selector_dropdown__toggle {
   --pf-c-dropdown__toggle--MinWidth: 21rem;
   position: relative;
@@ -21,57 +6,10 @@
 
 .kc__effective_message_bundles_search__form {
   --pf-c-form--m-horizontal__group-control--md--GridColumnWidth: 24rem;
-  margin: 0 var(--pf-global--spacer--lg) var(--pf-global--spacer--lg)
-    var(--pf-global--spacer--lg);
   --pf-c-form__group--m-action--MarginTop: 0rem;
   --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
 }
 
-.kc__effective_message_bundles_search__form_label {
-  --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
-  line-height: 0px;
-}
-
-.kc__effective_message_bundles_search__type_select .pf-c-select__menu {
-  max-height: 200px;
-  overflow: auto;
-}
-
-.kc-realm-overrides-checkbox-td {
-  padding: 15px var(--pf-c-table--cell--PaddingRight) 5px
-    var(--pf-c-table--cell--PaddingLeft) !important;
-}
-
-.kc-realm-overrides-header-td {
-  padding: 15px var(--pf-c-table--cell--PaddingRight) 10px
-    var(--pf-c-table--cell--PaddingLeft) !important;
-}
-
-.kc-realm-overrides-td {
-  font-size: var(--pf-global--FontSize--sm) !important;
-}
-
-.kc-realm-overrides-td {
-  padding: 5px var(--pf-c-table--cell--PaddingRight) 5px
-    var(--pf-c-table--cell--PaddingLeft) !important;
-}
-
-.kc__effectiveMessageBundlesSearchFormDisplay {
-  padding: 20px 0px 20px 17px;
-}
-
-.kc-bundleValue-row {
-  display: inline-block !important;
-}
-
-.kc-bundleValue-rowEditInput {
-  width: auto;
-}
-
 .pf-c-chip__text {
   overflow: visible;
-}
-
-.kc__effective_message_bundles_search__placeholder {
-  color: var(--pf-c-dropdown__menu-item--disabled--Color);
 }

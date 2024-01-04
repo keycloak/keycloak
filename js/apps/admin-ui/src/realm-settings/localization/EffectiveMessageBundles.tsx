@@ -178,20 +178,15 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="kc__effective_message_bundles_search__form"
+              className="kc__effective_message_bundles_search__form pf-u-mx-lg pf-u-mb-lg"
               data-testid="effectiveMessageBundlesSearchForm"
             >
-              <FormGroup
-                label={t("theme")}
-                fieldId="kc-theme"
-                className="kc__effective_message_bundles_search__form_label"
-              >
+              <FormGroup label={t("theme")} fieldId="kc-theme">
                 <Controller
                   name="theme"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      className="kc__effective_message_bundles_search__type_select"
                       name="theme"
                       data-testid="effective_message_bundles-theme-searchField"
                       chipGroupProps={{
@@ -243,17 +238,12 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup
-                label={t("themeType")}
-                fieldId="kc-themeType"
-                className="kc__effective_message_bundles_search__form_label"
-              >
+              <FormGroup label={t("themeType")} fieldId="kc-themeType">
                 <Controller
                   name="themeType"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      className="kc__effective_message_bundles_search__type_select"
                       name="themeType"
                       data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
@@ -293,7 +283,7 @@ export const EffectiveMessageBundles = ({
                           key="themeType_placeholder"
                           value="Select theme type"
                           label={t("selectThemeType")}
-                          className="kc__effective_message_bundles_search__placeholder"
+                          className="pf-m-plain"
                           isDisabled
                         />,
                       ].concat(
@@ -305,17 +295,12 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup
-                label={t("language")}
-                fieldId="kc-language"
-                className="kc__effective_message_bundles_search__form_label"
-              >
+              <FormGroup label={t("language")} fieldId="kc-language">
                 <Controller
                   name="locale"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      className="kc__effective_message_bundles_search__type_select"
                       name="language"
                       data-testid="effective-message-bundles-language-searchField"
                       chipGroupProps={{
@@ -360,7 +345,7 @@ export const EffectiveMessageBundles = ({
                           key="language_placeholder"
                           value="Select language"
                           label={t("selectLanguage")}
-                          className="kc__effective_message_bundles_search__placeholder"
+                          className="pf-m-plain"
                           isDisabled
                         />,
                       ].concat(
@@ -374,11 +359,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup
-                label={t("hasWords")}
-                fieldId="kc-hasWords"
-                className="kc__effective_message_bundles_search__form_label"
-              >
+              <FormGroup label={t("hasWords")} fieldId="kc-hasWords">
                 <Controller
                   name="hasWords"
                   control={control}
@@ -486,7 +467,7 @@ export const EffectiveMessageBundles = ({
   if (!searchPerformed) {
     return (
       <>
-        <div className="kc__effectiveMessageBundlesSearchFormDisplay">
+        <div className="pf-u-py-lg pf-u-pl-md">
           {effectiveMessageBunldesSearchFormDisplay()}
         </div>
         <Divider />
