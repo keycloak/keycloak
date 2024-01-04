@@ -92,6 +92,7 @@ import java.util.function.Consumer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
@@ -738,4 +739,13 @@ public abstract class AbstractKeycloakTest {
         }
         return in;
     }
+
+    protected void assertResponseSuccessful(Response response) {
+        try {
+            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
+        } catch (AssertionError ex) {
+            throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
+        }
+    }
+
 }
