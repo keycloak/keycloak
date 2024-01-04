@@ -283,9 +283,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
-        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/testing/blank");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
