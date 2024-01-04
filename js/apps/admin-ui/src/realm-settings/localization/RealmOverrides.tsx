@@ -48,8 +48,6 @@ import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import { AddMessageBundleModal } from "../AddMessageBundleModal";
 
-import "./localization.css";
-
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
   watchSupportedLocales: string[];

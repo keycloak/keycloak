@@ -28,8 +28,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 
-import "./localization.css";
-
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
 };
@@ -169,7 +167,6 @@ export const EffectiveMessageBundles = ({
               <DropdownToggle
                 data-testid="effectiveMessageBundlesSearchSelectorToggle"
                 onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="kc__effective_message_bundles_search_selector_dropdown__toggle"
               >
                 {t("searchForEffectiveMessageBundles")}
               </DropdownToggle>
@@ -178,7 +175,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="kc__effective_message_bundles_search__form pf-u-mx-lg pf-u-mb-lg"
+              className="pf-c-form pf-u-mx-lg pf-u-mb-lg"
               data-testid="effectiveMessageBundlesSearchForm"
             >
               <FormGroup label={t("theme")} fieldId="kc-theme">
