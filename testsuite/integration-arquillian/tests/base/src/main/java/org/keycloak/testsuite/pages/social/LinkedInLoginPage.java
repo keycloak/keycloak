@@ -31,7 +31,7 @@ public class LinkedInLoginPage extends AbstractSocialLoginPage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//button[text() = 'Sign in']")
+    @FindBy(xpath = "//button[(@type='submit') and (@aria-label='Sign in')]")
     private WebElement loginButton;
 
     @FindBy(name = "action")
