@@ -305,6 +305,7 @@
         <module>misc</module>
         <module>js</module>
         <module>quarkus</module>
+        <module>distribution</module>
     </modules>
 
     <dependencyManagement>
@@ -1932,13 +1933,6 @@
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
             </properties>
 
-        </profile>
-
-        <profile>
-            <id>distribution</id>
-            <modules>
-                <module>distribution</module>
-            </modules>
         </profile>
 
         <profile>

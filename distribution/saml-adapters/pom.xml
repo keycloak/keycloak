@@ -32,7 +32,15 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>tomcat-adapter-zip</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>tomcat-adapter-zip</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

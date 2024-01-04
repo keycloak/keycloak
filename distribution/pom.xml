@@ -42,11 +42,10 @@
 
     <modules>
         <module>adapters</module>
-        <module>saml-adapters</module>
         <module>feature-packs</module>
-        <module>galleon-feature-packs</module>
-        <module>licenses-common</module>
         <module>maven-plugins</module>
+        <module>licenses-common</module>
+        <module>saml-adapters</module>
     </modules>
 
     <repositories>
@@ -82,6 +81,12 @@
             <modules>
                 <module>api-docs-dist</module>
                 <module>downloads</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>galleon-feature-packs</module>
             </modules>
         </profile>
     </profiles>
