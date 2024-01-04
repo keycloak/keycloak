@@ -195,7 +195,7 @@ public class RedirectUtils {
         return redirectUri;
     }
 
-    // Decode redirectUri. We don't decode query and fragment as those can be encoded in the original URL.
+    // Decode redirectUri. Only path is decoded as other elements can be encoded in the original URL or cannot be encoded at all.
     // URL can be decoded multiple times (in case it was encoded multiple times, or some of it's parts were encoded multiple times)
     private static String decodeRedirectUri(String redirectUri) {
         if (redirectUri == null) return null;
@@ -203,28 +203,20 @@ public class RedirectUtils {
 
         try {
             KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
-            String origQuery = uriBuilder.getQuery();
-            String origFragment = uriBuilder.getFragment();
-            String origUserInfo = uriBuilder.getUserInfo();
-            String encodedRedirectUri = uriBuilder
-                    .replaceQuery(null)
-                    .fragment(null)
-                    .userInfo(null)
-                    .buildAsString();
-            String decodedRedirectUri = null;
+            if (uriBuilder.getPath() == null) {
+                return redirectUri;
+            }
+            String encodedPath = uriBuilder.getPath();
+            String decodedPath;
 
             for (int i = 0; i < MAX_DECODING_COUNT; i++) {
-                decodedRedirectUri = Encode.decode(encodedRedirectUri);
-                if (decodedRedirectUri.equals(encodedRedirectUri)) {
-                    // URL is decoded. We can return it (after attach original query and fragment)
-                    return KeycloakUriBuilder.fromUri(decodedRedirectUri, false).preserveDefaultPort()
-                            .replaceQuery(origQuery)
-                            .fragment(origFragment)
-                            .userInfo(origUserInfo)
-                            .buildAsString();
+                decodedPath = Encode.decode(encodedPath);
+                if (decodedPath.equals(encodedPath)) {
+                    // URL path is decoded. We can return it in the original redirect URI
+                    return uriBuilder.replacePath(decodedPath, false).buildAsString();
                 } else {
                     // Next attempt
-                    encodedRedirectUri = decodedRedirectUri;
+                    encodedPath = decodedPath;
                 }
             }
         } catch (IllegalArgumentException iae) {

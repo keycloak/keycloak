@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +27,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -260,17 +261,57 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
                 .update()) {
             oauth.responseMode(OIDCResponseMode.FORM_POST.value());
             oauth.responseType(OAuth2Constants.CODE);
-            oauth.redirectUri("/test?p=&gt;"); // set HTML entity &gt;
+            final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
+            oauth.redirectUri(redirectUri);
+            oauth.stateParamHardcoded(KeycloakModelUtils.generateId());
             oauth.doLogin("test-user@localhost", "password");
 
             WaitUtils.waitForPageToLoad();
             // if not properly encoded %3E would be received instead of &gt;
-            MatcherAssert.assertThat("Redirect page was not encoded", oauth.getDriver().getCurrentUrl(), Matchers.endsWith("/test?p=&gt;"));
+            Assert.assertEquals("Redirect page was not encoded", redirectUri, oauth.getDriver().getCurrentUrl());
+            String state = driver.findElement(By.id("state")).getText();
+            Assert.assertEquals(oauth.getState(), state);
+            Assert.assertNotNull(driver.findElement(By.id("code")).getText());
 
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
                     .session(AssertEvents.isUUID())
                     .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
+                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
+                    .assertEvent();
+        }
+    }
+
+    @Test
+    public void authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setRedirectUris(Collections.singletonList("*"))
+                .update()) {
+            oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
+            oauth.responseType(OAuth2Constants.CODE);
+            final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
+            oauth.redirectUri(redirectUri);
+            oauth.stateParamHardcoded(KeycloakModelUtils.generateId());
+            oauth.doLogin("test-user@localhost", "password");
+
+            WaitUtils.waitForPageToLoad();
+            // if not properly encoded %3E would be received instead of &gt;
+            Assert.assertEquals("Redirect page was not encoded", redirectUri, oauth.getDriver().getCurrentUrl());
+            String responseTokenEncoded = driver.findElement(By.id("response")).getText();
+            AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(responseTokenEncoded);
+            assertEquals("test-app", responseToken.getAudience()[0]);
+            Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
+            Assert.assertNull(responseToken.getOtherClaims().get("error"));
+            Assert.assertEquals(oauth.getState(), responseToken.getOtherClaims().get("state"));
+            Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
+
+            events.expect(EventType.LOGIN)
+                    .user(AssertEvents.isUUID())
+                    .session((String) responseToken.getOtherClaims().get("session_state"))
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
+                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
                     .assertEvent();
         }
     }
