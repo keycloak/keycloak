@@ -67,7 +67,7 @@ type: kubernetes.io/service-account-token
 [source,bash,subs="+attributes"]
 ----
 kubectl create sa -n {ns} {sa}
-kubectl policy add-role-to-user view -n {ns} -z {sa}
+oc policy add-role-to-user view -n {ns} -z {sa}
 kubectl create -f xsite-sa-secret-token.yaml
 kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-a}-token.txt
 ----
@@ -76,7 +76,7 @@ kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d 
 [source,bash,subs="+attributes"]
 ----
 kubectl create sa -n {ns} {sa}
-kubectl policy add-role-to-user view -n {ns} -z {sa}
+oc policy add-role-to-user view -n {ns} -z {sa}
 kubectl create -f xsite-sa-secret-token.yaml
 kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-b}-token.txt
 ----
