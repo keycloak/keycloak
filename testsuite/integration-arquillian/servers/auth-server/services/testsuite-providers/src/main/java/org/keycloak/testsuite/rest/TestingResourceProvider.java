@@ -68,7 +68,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
-import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
@@ -1177,4 +1176,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().cacheControl(cacheControl).build();
     }
 
+    @GET
+    @Path("/blank")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response getBlankPage() {
+        return Response.ok("<html><body></body></html>").build();
+    }
 }
