@@ -55,7 +55,7 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({"start", "--db-pasword mytestpw"})
+    @Launch({"start", "--db-pasword", "mytestpw"})
     public void failUnknownOptionWhitespaceSeparatorNotShowingValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
@@ -79,5 +79,12 @@ public class OptionValidationTest {
         assertEquals("Unknown option: '--db-pasword'\n" +
                 "Possible solutions: --db-driver, --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
+    }
+
+    @Test
+    @Launch({ "start", "--db postgres" })
+    void failSingleParamWithSpace(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Option: '--db postgres' is not expected to contain whitespace, please remove any unnecessary quoting/escaping");
     }
 }
