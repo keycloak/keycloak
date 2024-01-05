@@ -214,6 +214,51 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(existingUser, 1);
     }
 
+    @Test
+    public void testLinkAccountByReauthenticationWithWrongPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+
+        Runnable revertRegistrationAllowedModification = toggleRegistrationAllowed(bc.consumerRealmName(), true);
+        try {
+            String existingUser = createUser("consumer");
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+            try {
+                this.loginPage.findSocialButton(bc.getIDPAlias());
+                Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+            } catch (NoSuchElementException expected) {
+            }
+
+            try {
+                this.loginPage.clickRegister();
+                Assert.fail("Not expected to see register link");
+            } catch (NoSuchElementException expected) {
+            }
+
+            loginPage.login("consumer", "wrongpassword");
+            Assert.assertTrue(loginPage.isCurrent(bc.consumerRealmName()));
+
+            assertNumFederatedIdentities(existingUser, 0);
+
+            assertEquals("Invalid username or password.", loginPage.getInputError());
+
+            try {
+                this.loginPage.clickRegister();
+                Assert.fail("Not expected to see register link");
+            } catch (NoSuchElementException expected) {
+            }
+        } finally {
+            revertRegistrationAllowedModification.run();
+        }
+    }
+
     /**
      * KEYCLOAK-12870
      */
@@ -1278,4 +1323,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
     }
 
+    private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {
+        RealmResource consumerRealm = adminClient.realm(realmName);
+        RealmRepresentation realmRepresentation = consumerRealm.toRepresentation();
+        boolean genuineValue = realmRepresentation.isRegistrationAllowed();
+        realmRepresentation.setRegistrationAllowed(registrationAllowed);
+        consumerRealm.update(realmRepresentation);
+
+        return () -> toggleRegistrationAllowed(realmName, genuineValue);
+    }
 }
