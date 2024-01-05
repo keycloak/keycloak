@@ -18,6 +18,7 @@ public enum OptionCategory {
     SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
+    OPENAPI("OpenAPI", 150, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 
     private final String heading;
