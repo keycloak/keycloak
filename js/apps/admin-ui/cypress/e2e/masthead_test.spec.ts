@@ -18,8 +18,10 @@ describe("Masthead tests", () => {
     it("Go to account console and back to admin console", () => {
       sidebarPage.waitForPageLoad();
       masthead.accountManagement();
+      sidebarPage.waitForPageLoad();
       cy.get("h1").contains("Welcome to Keycloak account management");
       masthead.goToAdminConsole();
+      sidebarPage.waitForPageLoad();
       masthead.checkIsAdminUI();
     });
 
