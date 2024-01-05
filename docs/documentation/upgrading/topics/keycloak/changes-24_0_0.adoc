@@ -115,3 +115,23 @@ and potentially introduce unexpected changes and behavior that should only affec
 
 If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
 to the new template.
+
+= Infinispan metrics use labels for cache manager and cache names
+
+When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
+
+.Old metric example without labels
+----
+vendor_cache_manager_keycloak_cache_sessions_statistics_approximate_entries_in_memory{cache="sessions",node="..."}
+----
+
+.New metric example with labels
+----
+vendor_statistics_approximate_entries_in_memory{cache="sessions",cache_manager="keycloak",node="..."}
+----
+
+To revert the change for an installation, use a custom Infinispan XML configuration and change the configuration as follows:
+
+----
+<metrics names-as-tags="false" />
+----
