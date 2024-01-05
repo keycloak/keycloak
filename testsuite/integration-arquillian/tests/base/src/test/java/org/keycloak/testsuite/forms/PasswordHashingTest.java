@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.forms;
 
+import jakarta.ws.rs.BadRequestException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
@@ -40,8 +42,14 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import jakarta.ws.rs.BadRequestException;
 import java.security.spec.KeySpec;
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -114,7 +122,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
         assertEquals(1, credential.getPasswordCredentialData().getHashIterations());
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 1);
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", 1);
     }
 
     // KEYCLOAK-5282
@@ -139,7 +147,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         assertEquals(credentialId, credential.getId());
         assertArrayEquals(salt, credential.getPasswordSecretData().getSalt());
 
-        setPasswordPolicy("hashIterations(" + Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
+        setPasswordPolicy("hashIterations(" + Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
 
         AccountHelper.logout(adminClient.realm("test"), username);
 
@@ -154,7 +162,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testPasswordRehashedWhenCredentialImportedWithDifferentKeySize() {
-        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha512PasswordHashProviderFactory.ID + ") and hashIterations("+ Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha512PasswordHashProviderFactory.ID + ") and hashIterations(" + Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
 
         String username = "testPasswordRehashedWhenCredentialImportedWithDifferentKeySize";
         String password = "password";
@@ -169,7 +177,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
         UserRepresentation user = UserBuilder.create().username(username).password(encodedPassword).build();
-        ApiUtil.createUserWithAdminClient(adminClient.realm("test"),user);
+        ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
         loginPage.open();
         loginPage.login(username, password);
@@ -187,7 +195,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         createUser(username);
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", 20000);
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", Pbkdf2PasswordHashProviderFactory.DEFAULT_ITERATIONS);
     }
 
     @Test
@@ -197,7 +205,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         createUser(username);
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS);
     }
 
     @Test
@@ -207,7 +215,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         createUser(username);
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS);
     }
 
     @Test
@@ -217,7 +225,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         createUser(username);
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", 30000);
+        assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA512", Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS);
     }
 
     @Test
@@ -231,7 +239,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             createUser(username1);
 
             PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username1));
-            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500);
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS);
 
             // Now configure padding to bigger than 64. The verification without padding would fail as for longer padding than 64 characters, the hashes of the padded password and unpadded password would be different
             configurePaddingForKeycloak(65);
@@ -239,7 +247,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             createUser(username2);
 
             credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username2));
-            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", 27500, false);
+            assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA256", Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS, false);
 
         } finally {
             configurePaddingForKeycloak(originalPaddingLength);
@@ -295,4 +303,69 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         }, Integer.class);
     }
 
+    /**
+     * Simple test to compare runtimes of different password hashing configurations.
+     */
+//    @Test
+    public void testBenchmarkPasswordHashingConfigurations() {
+
+        int numberOfPasswords = 1000;
+        List<String> plainTextPasswords = IntStream.rangeClosed(1, numberOfPasswords).mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList());
+
+        Function<Runnable, Duration> timeit = runner -> {
+
+            long time = -System.nanoTime();
+            runner.run();
+            time += System.nanoTime();
+
+            return Duration.ofNanos((long) (time / ((double) plainTextPasswords.size())));
+        };
+
+        BiFunction<PasswordHashProvider, Integer, Long> hasher = (provider, iterations) -> {
+            long result = 0L;
+            for (String password : plainTextPasswords) {
+                String encoded = provider.encode(password, iterations);
+                result += encoded.hashCode();
+            }
+            return result;
+        };
+
+        var comparisons = List.of(
+                // this takes quite a long time. Run this with a low value numberOfPasswords, e.g. 1-10
+                // new PasswordHashComparison(new Pbkdf2PasswordHashProviderFactory(), 20_000, 1_300_000),
+
+                new PasswordHashComparison(new Pbkdf2Sha256PasswordHashProviderFactory(), 27_500, 600_000),
+                new PasswordHashComparison(new Pbkdf2Sha512PasswordHashProviderFactory(), 30_000, 210_000)
+        );
+
+        comparisons.forEach(comp -> {
+            Pbkdf2PasswordHashProvider hashProvider = (Pbkdf2PasswordHashProvider) comp.factory.create(null);
+            System.out.printf("Hashing %s password(s) with %s%n", plainTextPasswords.size(), hashProvider.getPbkdf2Algorithm());
+
+            var durationOld = timeit.apply(() -> hasher.apply(hashProvider, comp.iterationsOld));
+            System.out.printf("\tØ hashing duration with %d iterations: %sms%n", comp.iterationsOld, durationOld.toMillis());
+
+            var durationNew = timeit.apply(() -> hasher.apply(hashProvider, comp.iterationsNew));
+            System.out.printf("\tØ hashing duration with %d iterations: %sms%n", comp.iterationsNew, durationNew.toMillis());
+
+            var deltaTimeMillis = durationNew.toMillis() - durationOld.toMillis();
+            System.out.printf("\tDifference: +%s ms%n", deltaTimeMillis);
+        });
+    }
+
+
+    class PasswordHashComparison {
+
+        final PasswordHashProviderFactory factory;
+
+        final int iterationsOld;
+
+        final int iterationsNew;
+
+        public PasswordHashComparison(PasswordHashProviderFactory factory, int iterationsOld, int iterationsNew) {
+            this.factory = factory;
+            this.iterationsOld = iterationsOld;
+            this.iterationsNew = iterationsNew;
+        }
+    }
 }
