@@ -24,6 +24,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -91,6 +92,16 @@ public interface UserProvider extends Provider,
      * @param storageProviderId id of the user storage provider
      */
     void removeImportedUsers(RealmModel realm, String storageProviderId);
+
+    /**
+     * Removes any imported users from a specific User Storage Provider.
+     *
+     * @param realm a reference to the realm
+     * @param storageProviderId id of the user storage provider
+     * @param attributeKey
+     * @param excludedAttributeValues
+     */
+    default void removeImportedUsersButKeepThoseWithCertainAttributes(RealmModel realm, String storageProviderId, String attributeKey, Set<String> excludedAttributeValues) {};
 
     /**
      * Set federation link to {@code null} to imported users of a specific User Storage Provider

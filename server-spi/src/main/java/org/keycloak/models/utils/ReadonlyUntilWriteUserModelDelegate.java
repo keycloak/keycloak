@@ -18,7 +18,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.UserModelDelegate;
 
 import java.util.Collections;
 import java.util.List;

@@ -22,7 +22,7 @@ Test coverage
 To see test coverage via jacoco, set `jacoco.skip` property to `false`, e.g.:
 
 ```
-mvn test -Pjpa -Dtest=ClientModelTest -Djacoco.skip=false
+mvn test -Plegacy-jpa -Dtest=ClientModelTest -Djacoco.skip=false
 ```
 
 Then you can generate the coverage report by using the following command:
@@ -43,7 +43,7 @@ To do so, you set `libasyncProfilerPath` system property to the location of the
 async profiler library:
 
 ```
-mvn test -Pjpa -Dtest=ClientModelTest \
+mvn test -Plegacy-jpa -Dtest=ClientModelTest \
     -DlibasyncProfilerPath=/usr/local/async-profiler/build/libasyncProfiler.so 
 ```
 

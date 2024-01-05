@@ -53,7 +53,8 @@ import java.util.LinkedList;
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
-        @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
+        @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link"),
+        @NamedQuery(name="getUsersForRemovedFederatedUser", query="select u from UserEntity u join u.attributes attr where u.realmId = :realmId and u.federationLink = :link and attr.name = :name and attr.value not in :values")
 })
 @Entity
 @Table(name="USER_ENTITY", uniqueConstraints = {

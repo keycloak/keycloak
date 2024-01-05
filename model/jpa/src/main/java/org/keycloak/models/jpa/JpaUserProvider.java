@@ -445,6 +445,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
+    public void removeImportedUsersButKeepThoseWithCertainAttributes(RealmModel realm, String storageProviderId, String attributeName, Set<String> excludedAttributeValues) {
+        //TODO fix query
+        Stream<UserEntity> resultStream = em.createNamedQuery("getUsersForRemovedFederatedUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .setParameter("name", attributeName)
+                .setParameter("values", excludedAttributeValues).getResultStream();
+        //TODO do it all at once?
+        resultStream.forEach(this::removeUser);
+    }
+
+    @Override
     public void unlinkUsers(RealmModel realm, String storageProviderId) {
         em.createNamedQuery("unlinkUsers")
                 .setParameter("realmId", realm.getId())

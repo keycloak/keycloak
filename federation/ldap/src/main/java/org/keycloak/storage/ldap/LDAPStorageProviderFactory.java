@@ -23,7 +23,6 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -66,9 +65,11 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -504,10 +505,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
 
             // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
+            // Required to make validation an explicit step?
 
             logger.infof("Sync all users finished: %s", syncResult.getStatus());
             return syncResult;
         }
+
     }
 
     @Override
@@ -529,6 +532,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             logger.infof("Sync changed users finished: %s", result.getStatus());
             return result;
         }
+
+        //TODO remove since?
     }
 
     protected void syncMappers(KeycloakSessionFactory sessionFactory, final String realmId, final ComponentModel model) {
@@ -557,6 +562,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         final SynchronizationResult syncResult = new SynchronizationResult();
 
+        final Set<String> touchedLdapUUIDs = new HashSet<String>(1000);
+
         LDAPConfig ldapConfig = new LDAPConfig(fedModel.getConfig());
         boolean pagination = ldapConfig.isPagination();
         if (pagination) {
@@ -566,6 +573,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             while (nextPage) {
                 userQuery.setLimit(pageSize);
                 final List<LDAPObject> users = userQuery.getResultList();
+
+                touchedLdapUUIDs.addAll(users.stream().map(LDAPObject::getUuid).collect(Collectors.toSet()));
+
                 nextPage = userQuery.getPaginationContext().hasNextPage();
                 SynchronizationResult currentPageSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
                 syncResult.add(currentPageSync);
@@ -573,11 +583,24 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         } else {
             // LDAP pagination not available. Do everything in single transaction
             final List<LDAPObject> users = userQuery.getResultList();
+
+            touchedLdapUUIDs.addAll(users.stream().map(LDAPObject::getUuid).collect(Collectors.toSet()));
+
             SynchronizationResult currentSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
             syncResult.add(currentSync);
         }
 
+        var removedUsersSyncResult = removeUsersFromLocalStorage(sessionFactory, realmId, fedModel, touchedLdapUUIDs);
+
         return syncResult;
+    }
+
+    private SynchronizationResult removeUsersFromLocalStorage(KeycloakSessionFactory sessionFactory, String realmId, ComponentModel fedModel, Set<String> touchedLdapUUIDs) {
+        var result = new SynchronizationResult();
+
+        UserStoragePrivateUtil.userLocalStorage(sessionFactory.create()).removeImportedUsersButKeepThoseWithCertainAttributes(sessionFactory.create().realms().getRealm(realmId), fedModel.getId(), LDAPConstants.LDAP_ID, touchedLdapUUIDs);
+
+        return result;
     }
 
     /**

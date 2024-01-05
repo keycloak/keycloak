@@ -104,7 +104,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * @param user
      * @return
      */
-    protected UserModel importValidation(RealmModel realm, UserModel user, Boolean massOperation) {
+    protected UserModel importValidation(RealmModel realm, UserModel user) {
         if (user == null || user.getFederationLink() == null) return user;
 
         UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
@@ -128,12 +128,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (importedUserValidation == null) return user;
 
         // should validation be performed outside explicit sync?
-        if (massOperation && !model.isValidateUserListings()) {
+        if (!model.isValidateUserListings()) {
             // create a proxy delegate to be as useful as possible on existing data
             return new ReadonlyUntilWriteUserModelDelegate(user, () -> {
                 UserModel userProxyOrNull = getValidatedUserModel(realm, user, importedUserValidation);
                 if(userProxyOrNull==null) {
-                    //not not throw exception as the code before
+                    //not throw exception as the code before
                     logger.debugf("User was considered read only, but has not been found where it originally came from '%s'", user.getUsername());
                 }
                 return userProxyOrNull;
@@ -141,10 +141,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return getValidatedUserModel(realm, user, importedUserValidation);
-    }
-
-    protected UserModel importValidation(RealmModel realm, UserModel user) {
-       return importValidation(realm, user, false);
     }
 
     private UserModel getValidatedUserModel(RealmModel realm, UserModel user, ImportedUserValidation importedUserValidation) {
@@ -223,7 +219,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
 
     protected Stream<UserModel> importValidation(RealmModel realm, Stream<UserModel> users) {
-        return users.map(user -> importValidation(realm, user, true)).filter(Objects::nonNull);
+        return users.map(user -> importValidation(realm, user)).filter(Objects::nonNull);
     }
 
     @FunctionalInterface

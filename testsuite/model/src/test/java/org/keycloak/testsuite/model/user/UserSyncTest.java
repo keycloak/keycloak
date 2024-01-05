@@ -21,6 +21,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -30,6 +31,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.UserStorageManager;
+import org.keycloak.storage.datastore.LegacyDatastoreProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
@@ -43,6 +46,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.user.ImportSynchronization;
+import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -50,13 +54,18 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import javax.naming.directory.BasicAttribute;
 import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeThat;
 
 @RequireProvider(UserProvider.class)
@@ -246,5 +255,119 @@ public class UserSyncTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void testThrowsExceptionWhenValidationDisabledWithoutSyncEnabled() {
+        // Configure validation explicitly
+        var componentException = assertThrows(ComponentValidationException.class, () -> {
+            withRealm(realmId, (session, realm) -> {
+                UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+
+                // disable cache
+                providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+                providerModel.setValidateUserListings(false); //default, but explicit for this test
+                providerModel.setFullSyncPeriod(-1); //not allowed in compination with validation
+
+                realm.updateComponent(providerModel);
+
+                return null;
+            });
+        });
+
+        assertThat("Message is a valid translation key", componentException.getMessage(), equalTo("ldapErrorCantDisbleValidateUserListingsWithoutEnabledSync"));
+    }
+
+    @Test
+    public void testValidationIsExecutedForLocalSyncedUser() {
+        // Configure validation explicitly
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+
+            // enable validation
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            providerModel.setValidateUserListings(true); //default, but explicit for this test
+            realm.updateComponent(providerModel);
+
+            return null;
+        });
+
+        // create 1 user in LDAP
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user1", "User1FN", "User1LN", "user1@email.org", "Street One 1", "121");
+            return null;
+        });
+
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user1@email.org")), is(notNullValue()));
+        assertThat(withRealm(realmId, (session, realm) -> session.users().searchForUserStream(realm,Map.of("email","user1@email.org")).collect(Collectors.toList())),Matchers.iterableWithSize(1));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(1));
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, realm, ldapFedProvider.getLdapIdentityStore().getConfig(), "user1");
+            return null;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().searchForUserStream(realm,Map.of("email","user1@email.org")).collect(Collectors.toList())),Matchers.emptyIterable());
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user1@email.org")), is(nullValue()));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(0));
+    }
+
+    @Test
+    public void testValidationIsNotExecutedWithoutExplicitSyncForLocalSyncedUser() {
+        // Configure validation explicitly
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+
+            // disable validation
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            providerModel.setValidateUserListings(false); //default, but explicit for this test
+            providerModel.setFullSyncPeriod(100000); //must be enabled to disable validation
+
+            realm.updateComponent(providerModel);
+
+            return null;
+        });
+
+        // create 1 user in LDAP
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user1", "User1FN", "User1LN", "user1@email.org", "Street One 1", "121");
+            return null;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user1@email.org")), is(notNullValue()));
+        assertThat(withRealm(realmId, (session, realm) -> session.users().searchForUserStream(realm,Map.of("email","user1@email.org")).collect(Collectors.toList())),Matchers.iterableWithSize(1));
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, realm, ldapFedProvider.getLdapIdentityStore().getConfig(), "user1");
+            return null;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user1@email.org")), is(notNullValue()));
+        assertThat(withRealm(realmId, (session, realm) -> session.users().searchForUserStream(realm,Map.of("email","user1@email.org")).collect(Collectors.toList())),Matchers.iterableWithSize(1));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(1));
+
+        //distinguish mass operations from UserStorageManager does not work, because e.g. JpaUserProvider uses getUserById from mass-operation without forwarding the information
+        //in org.keycloak.models.jpa.JpaUserProvider.searchForUserStream(org.keycloak.models.RealmModel, java.util.Map<java.lang.String,java.lang.String>, java.lang.Integer, java.lang.Integer)
+        //for each user a getUserById is called --> through an interface we must not change
+
+        //syncAllUsers does not remove users that are not present
+
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.users().searchForUserStream(realm,Map.of("email","user1@email.org")).collect(Collectors.toList())), Matchers.emptyIterable());
+        assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user1@email.org")), is(nullValue()));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(0));
+
+    }
 }
 
