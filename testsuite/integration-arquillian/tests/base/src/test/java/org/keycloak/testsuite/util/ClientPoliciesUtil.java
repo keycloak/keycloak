@@ -48,6 +48,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
+import org.keycloak.services.clientpolicy.condition.ClientIdsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
@@ -391,6 +392,13 @@ public final class ClientPoliciesUtil {
         ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
         config.setType(type);
         config.setScopes(scopes);
+        return config;
+    }
+
+
+    public static ClientIdsCondition.Configuration createClientIdConditionConfig(List<String> ids) {
+        final var config = new ClientIdsCondition.Configuration();
+        config.setClientIds(ids);
         return config;
     }
 

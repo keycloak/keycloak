@@ -81,6 +81,9 @@ Client Role::
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
 
+Client Client-IDs::
+    Evaluates to true if a client's client-id is configured in the condition.
+
 Any Client::
     This condition always evaluates to true. It can be used for example to ensure that all clients in the particular realm are FAPI compliant.
 

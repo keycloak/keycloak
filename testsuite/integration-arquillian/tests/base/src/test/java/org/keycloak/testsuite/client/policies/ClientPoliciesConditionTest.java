@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientIdConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceHostsConditionConfig;
@@ -60,6 +61,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientIdsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
@@ -379,6 +381,51 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
             successfulLoginAndLogoutWithPKCE(clientId, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
         } catch (Exception e) {
             fail();
+        }
+    }
+
+    /**
+     * Tests the client id condition. It uses the PKCEEnforcerExecutor to test if the condition works correctly.
+     * It registers two clients. One has a policy that enforces PKCE on it via it's id. The other client is not PKCE enforced.
+     * At the end we test if everything behaves as expected.
+     */
+    @Test
+    public void testClientIdsCondition() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Mein erstes Profil")
+                        .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
+                                createPKCEEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+        String clientIdMatchingCondition = generateSuffixedName(CLIENT_NAME);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Mein erstes Beleid", Boolean.TRUE)
+                        .addCondition(ClientIdsConditionFactory.PROVIDER_ID,
+                                createClientIdConditionConfig(Arrays.asList(clientIdMatchingCondition, "other-id")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientIDNotMatchingCondition = generateSuffixedName("unrelated-client-id");
+        String clientSecret = "secret";
+        createClientByAdmin(clientIdMatchingCondition,
+                (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
+        createClientByAdmin(clientIDNotMatchingCondition,
+                (ClientRepresentation clientRep) -> clientRep.setSecret(clientSecret));
+
+        try {
+            successfulLoginAndLogout(clientIDNotMatchingCondition, clientSecret);
+
+            failLoginByNotFollowingPKCE(clientIdMatchingCondition);
+
+            successfulLoginAndLogoutWithPKCE(clientIdMatchingCondition, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
