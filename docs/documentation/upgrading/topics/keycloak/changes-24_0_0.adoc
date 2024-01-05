@@ -225,6 +225,51 @@ PUT /admin/realms/{realm}/users/{id}/execute-actions-email
 
 The compatibility mode for SAML encryption introduced in version 21 is now removed. The system property `keycloak.saml.deprecated.encryption` is not managed anymore by the server. The clients which still used the old signing key for encryption should update it from the new IDP configuration metadata.
 
+= Changes to Password Hashing
+
+In this release we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+
+As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
+Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed as follows:
+[%autowidth,cols="a,a,>a,>a"]
+|===
+| Provider ID | Algorithm | Old Iterations | New Iterations
+
+| `pbkdf2`   | `PBKDF2WithHmacSHA1` | 20.000 | 1.300.000
+| `pbkdf2-sha256` | `PBKDF2WithHmacSHA256` | 27.500 | 600.000
+| `pbkdf2-sha512` | `PBKDF2WithHmacSHA512` | 30.000 | 210.000
+|===
+
+If a realm does not explicitly configure a password policy with `hashAlgorithm` and `hashIterations`, then
+the new configuration will take effect on the next password based login, or when a user password is created or updated.
+
+Note that the increased iteration counts can have a significant impact on the required CPU resources.
+
+== Performance of new password hashing configuration
+
+Tests on a machine with an Intel i9-8950HK CPU (12) @ 4.800GHz yielded the following &#8960; time differences for hashing 1000 passwords (averages from 3 runs).
+Note that the average duration for the `PBKDF2WithHmacSHA1` was computed with a lower number of passwords due to the long runtime.
+[%autowidth,cols="a,a,>a,>a,>a"]
+|===
+| Provider ID | Algorithm | Old duration | New duration | Difference
+
+| `pbkdf2` | `PBKDF2WithHmacSHA1`   | 122ms | 3.114ms | +2.992ms
+| `pbkdf2-sha256` | `PBKDF2WithHmacSHA256` |  20ms |   451ms |   +431ms
+| `pbkdf2-sha512` | `PBKDF2WithHmacSHA512` |  33ms |   224ms |   +191ms
+|===
+
+Users of the `pbkdf2` provider might need to explicitly reduce the
+number of hash iterations to regain acceptable performance.
+This can be done by configuring the hash iterations explicitly in the password policy of the realm.
+
+== How to keep using the old pbkdf2-sha256 password hashing?
+
+To keep the old password hashing for a realm, specify `hashAlgorithm` and `hashIterations` explicitly in the
+realm password policy.
+
+* `Hashing Algorithm: pbkdf2-sha256`
+* `Hashing Iterations: 27500`
+
 = Renaming JPA provider configuration options for migration
 
 After removal of the Map Store the following configuration options were renamed:
