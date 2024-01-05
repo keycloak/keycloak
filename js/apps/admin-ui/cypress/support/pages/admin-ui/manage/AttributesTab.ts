@@ -26,6 +26,16 @@ export default class AttributesTab {
     return this;
   }
 
+  public checkAttribute(key: string, exist: boolean) {
+    cy.findByTestId(this.#keyInput).should((exist ? "" : "not.") + "exist");
+
+    if (exist) {
+      cy.findAllByTestId(this.#keyInput).invoke("val").should("eq", "key_test");
+    }
+
+    return this;
+  }
+
   public save() {
     cy.findByTestId(this.#saveAttributeBtn).click();
     return this;
