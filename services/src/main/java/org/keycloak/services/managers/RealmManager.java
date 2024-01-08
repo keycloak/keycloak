@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -61,6 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Per request object
@@ -514,6 +516,9 @@ public class RealmManager {
             id = KeycloakModelUtils.generateId();
         } else {
             ReservedCharValidator.validate(id);
+        }
+        if (StringUtil.isBlank(rep.getRealm())) {
+            throw new ModelException("Realm name cannot be empty");
         }
 
         RealmModel realm = model.createRealm(id, rep.getRealm());
