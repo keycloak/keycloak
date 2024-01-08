@@ -238,6 +238,10 @@ export default class RealmSettingsPage extends CommonPage {
   #port = "#kc-port";
 
   #publicKeyBtn = ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
+  #localizationLocalesSubTab = "rs-localization-locales-tab";
+  #localizationRealmOverridesSubTab = "rs-localization-realm-overrides-tab";
+  #localizationEffectiveMessageBundlesSubTab =
+    "rs-localization-effective-message-bundles-tab";
   #realmSettingsEventsTab = new RealmSettingsEventsTab();
   #realmId = 'input[aria-label="Copyable input"]';
   #securityDefensesHeadersSaveBtn = "headers-form-tab-save";
@@ -456,7 +460,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.keyInput).type(key);
     cy.findByTestId(this.valueInput).type(value);
 
-    cy.findByTestId(this.confirmAddBundle).click();
+    cy.findByTestId(this.confirmAddBundle).click({ force: true });
 
     return this;
   }
@@ -1257,6 +1261,21 @@ export default class RealmSettingsPage extends CommonPage {
 
   goToLocalizationTab() {
     cy.findByTestId(this.localizationTab).click();
+    return this;
+  }
+
+  goToLocalizationLocalesSubTab() {
+    cy.findByTestId(this.#localizationLocalesSubTab).click();
+    return this;
+  }
+
+  goToLocalizationRealmOverridesSubTab() {
+    cy.findByTestId(this.#localizationRealmOverridesSubTab).click();
+    return this;
+  }
+
+  goToLocalizationEffectiveMessageBundlesSubTab() {
+    cy.findByTestId(this.#localizationEffectiveMessageBundlesSubTab).click();
     return this;
   }
 

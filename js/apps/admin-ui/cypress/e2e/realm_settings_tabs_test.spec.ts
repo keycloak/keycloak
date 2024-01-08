@@ -34,6 +34,12 @@ describe("Realm settings tabs tests", () => {
     await adminClient.deleteRealm(realmName);
   });
 
+  const addBundle = () => {
+    realmSettingsPage.addKeyValuePair("123", "abc");
+
+    return this;
+  };
+
   it("shows the 'user profile' tab if enabled", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
@@ -167,6 +173,109 @@ describe("Realm settings tabs tests", () => {
     });
   });
 
+  describe("Go to localization tab", () => {
+    it("Locales tab - Add locale", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationLocalesSubTab();
+
+      cy.findByTestId("internationalization-disabled").click({ force: true });
+
+      cy.get(realmSettingsPage.supportedLocalesTypeahead)
+        .click()
+        .get(".pf-c-select__menu-item")
+        .contains("Danish")
+        .click();
+      cy.get("#kc-l-supported-locales").click();
+
+      cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
+        "load",
+      );
+
+      cy.findByTestId("localization-tab-save").click();
+      cy.wait("@load");
+
+      masthead.checkNotificationMessage("Realm successfully updated");
+    });
+
+    it("Realm Overrides - Add and delete bundle", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationRealmOverridesSubTab();
+
+      addBundle();
+
+      masthead.checkNotificationMessage(
+        "Success! The message bundle has been added.",
+      );
+
+      cy.findByTestId("editable-rows-table")
+        .contains("td", "123")
+        .should("be.visible");
+
+      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.findByTestId("confirm").click();
+      masthead.checkNotificationMessage(
+        "Successfully removed message(s) from the bundle.",
+      );
+    });
+
+    it("Realm Overrides - Search for and delete bundle", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationRealmOverridesSubTab();
+
+      addBundle();
+
+      cy.get('input[aria-label="Search"]').type("123");
+
+      cy.findByTestId("editable-rows-table")
+        .contains("td", "123")
+        .should("be.visible");
+
+      cy.findByTestId("selectAll").click();
+      cy.get('[data-testid="toolbar-deleteBtn"] button').click();
+      cy.findByTestId("delete-selected-bundleBtn").click();
+      cy.findByTestId("confirm").click();
+      masthead.checkNotificationMessage(
+        "Successfully removed message(s) from the bundle.",
+      );
+    });
+
+    it("Realm Overrides - Edit and cancel edit message bundle", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationRealmOverridesSubTab();
+
+      addBundle();
+
+      cy.findByTestId("editUserLabelBtn-0").click();
+      cy.findByTestId("editUserLabelCancelBtn-0").click();
+
+      cy.findByTestId("editUserLabelBtn-0").click();
+      cy.findByTestId("editUserLabelInput-0").click().clear().type("def");
+      cy.findByTestId("editUserLabelAcceptBtn-0").click();
+
+      cy.findByTestId("editable-rows-table")
+        .contains("td", "def")
+        .should("be.visible");
+
+      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.findByTestId("confirm").click();
+
+      masthead.checkNotificationMessage(
+        "Successfully removed message(s) from the bundle.",
+      );
+    });
+
+    it("Effective Message Bundles - Check before search message", () => {
+      sidebarPage.goToRealmSettings();
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationEffectiveMessageBundlesSubTab();
+      cy.contains("h1", "Search for effective messages");
+    });
+  });
+
   describe("Accessibility tests for realm settings", () => {
     beforeEach(() => {
       loginPage.logIn();
@@ -226,16 +335,30 @@ describe("Realm settings tabs tests", () => {
       cy.checkA11y();
     });
 
-    it("Check a11y violations on localization tab", () => {
+    it("Check a11y violations on localization locales sub tab", () => {
       realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationLocalesSubTab();
       cy.checkA11y();
     });
 
-    it("Check a11y violations on localization tab/ adding message bundle", () => {
+    it("Check a11y violations on localization realm overrides sub tab", () => {
       realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationRealmOverridesSubTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on localization realm overrides sub tab/ adding message bundle", () => {
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationRealmOverridesSubTab();
       cy.findByTestId("add-bundle-button").click();
       cy.checkA11y();
       modalUtils.cancelModal();
+    });
+
+    it("Check a11y violations on localization effective message bundles sub tab", () => {
+      realmSettingsPage.goToLocalizationTab();
+      realmSettingsPage.goToLocalizationEffectiveMessageBundlesSubTab();
+      cy.checkA11y();
     });
 
     it("Check a11y violations on security defenses tab", () => {
