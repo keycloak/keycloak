@@ -1,6 +1,34 @@
+= Changes to the Welcome theme
+
+The 'welcome' theme has has been updated to use a new layout and now uses PatternFly 5, rather than PatternFly 3. If you are extending the theme, or providing your own, you may need to update it as follows:
+
+== Migrate from PatternFly 3 to PatternFly 5
+
+The welcome theme was one of the more outdated themes in Keycloak. It was originally based on PatternFly 3, but has now been updated to use PatternFly 5, skipping a major version in the process. This means that if your custom theme extends the built-in theme you will need to update it to use PatternFly 5 syntax. Consult the https://www.patternfly.org/get-started/develop/[PatternFly 5 documentation] for details.
+
+If you are still using PatternFly 3 in your own custom theme (not extending the built-in one), you can continue to use it, but PatternFly 3 support will be removed in a future release, so you should consider migrating to PatternFly 5 as soon as possible.
+
+== Automatic redirect the the Administration Console
+
+If the Administration Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
+
+== The `documentationUrl` and `displayCommunityLinks` properties have been removed.
+
+These properties were previously used for navigational elements that are now no longer present. If you are extending the built-in theme, you will need to remove these properties from your `theme.properties` file, as they no longer have any effect.
+
+== Assets are now loaded from 'common' resources
+
+Images such as the background, logo and favicon are now loaded from the 'common' resources, rather than the theme resources. This change means that if you are extending the built-in theme, and are overwriting these images, you will need to move them to the 'common' resources of your theme, and update your `theme.properties` file to include the new paths:
+
+[source,properties]
+----
+# This defaults to 'common/keycloak' if not set.
+import=common/your-theme-name
+----
+
 = Keycloak JS imports might need to be updated
 
-If you are loading Keycloak JS directly from the Keycloak server this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, etc. you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+If you are loading Keycloak JS directly from the Keycloak server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
 
 [source,js]
 ----
