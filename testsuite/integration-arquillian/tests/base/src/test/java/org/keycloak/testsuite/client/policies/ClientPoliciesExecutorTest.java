@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -28,6 +29,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientCond
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRedirectUrisExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRequestObjectExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureResponseTypeExecutor;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmEnforceExecutorConfig;
@@ -47,7 +49,6 @@ import java.util.Optional;
 import jakarta.ws.rs.BadRequestException;
 
 import org.apache.http.HttpResponse;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
@@ -93,6 +94,7 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
@@ -1540,5 +1542,161 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.requestUri(requestUri);
         successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
 
+    }
+
+    @Test
+    public void testSecureRedirectUrisExecutor_defaultConfiguration() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Secure Redirect Uris Test")
+                        .addExecutor(SecureRedirectUrisExecutorFactory.PROVIDER_ID, createSecureRedirectUrisExecutorConfig(null))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Secure Redirect Uris Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cid;
+
+        {
+            // success create a client
+            cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                    clientRep.setRedirectUris(
+                            Arrays.asList(
+                                    "https://example.org/auth/silent-callback.html",
+                                    "/realms/master/account/*"
+                            )
+                    ));
+        }
+
+        {
+            // success update a client
+            ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cid);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            clientRep.setRedirectUris(
+                    Arrays.asList(
+                            "https://example.org/realms/master/account",
+                            "/realms/master/broker/oidc/endpoint"
+                    )
+            );
+            clientResource.update(clientRep);
+        }
+
+        {
+            // fail on creating
+            assertThrows("Invalid Redirect Uri: not allowed HTTP", ClientPolicyException.class, () ->
+                    createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                            clientRep.setRedirectUris(
+                                    List.of("http://example.org")
+                            )));
+        }
+
+        {
+            // fail on updating
+            ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cid);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            clientRep.setRedirectUris(
+                    List.of("http://example.org")
+            );
+
+            assertThrows("Invalid Redirect Uri: not allowed HTTP", BadRequestException.class, () ->
+                    clientResource.update(clientRep));
+        }
+    }
+
+    @Test
+    public void testSecureRedirectUrisExecutor_allConfiguration() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Secure Redirect Uris Test")
+                        .addExecutor(SecureRedirectUrisExecutorFactory.PROVIDER_ID, createSecureRedirectUrisExecutorConfig(it -> {
+                            it.setAllowHttp(true);
+                            it.setAllowLoopbackInterface(true);
+                            it.setAllowPrivateUseSchema(true);
+                            it.setAllowWildcardContextPath(true);
+                            it.setPermittedDomains(List.of("oauth.redirect", "((dev|test)-)*example.org"));
+                        }))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Secure Redirect Uris Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cid;
+
+        {
+            // success create a client
+            cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                    clientRep.setRedirectUris(
+                            Arrays.asList(
+                                    "http://127.0.0.1:8080/*/realms/master",
+                                    "myapp://oauth.redirect",
+                                    "https://test-example.org/auth/admin"
+                            )
+                    ));
+        }
+
+        {
+            ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cid);
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            clientRep.setRedirectUris(
+                    Arrays.asList(
+                            "http://127.0.0.1:8080/*/realms/master",
+                            "myapp://oauth.redirect",
+                            "https://test-example.org/auth/admin"
+                    )
+            );
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testSecureRedirectUrisExecutor_allOpen() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Secure Redirect Uris Test")
+                        .addExecutor(SecureRedirectUrisExecutorFactory.PROVIDER_ID, createSecureRedirectUrisExecutorConfig(it -> it.setAllowOpen(true)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Secure Redirect Uris Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+
+        assertThrows("Invalid Redirect Uri: allow open redirect uris only in dev mode", ClientPolicyException.class, () ->
+                createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+                        clientRep.setRedirectUris(
+                                List.of(
+                                        "https://whaterver.org"
+                                )
+                        ))
+        );
     }
 }

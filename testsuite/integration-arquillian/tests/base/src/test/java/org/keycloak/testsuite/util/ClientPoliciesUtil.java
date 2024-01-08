@@ -63,6 +63,7 @@ import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
@@ -85,6 +86,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
@@ -415,6 +417,18 @@ public final class ClientPoliciesUtil {
     public static ClientUpdaterSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
         ClientUpdaterSourceRolesCondition.Configuration config = new ClientUpdaterSourceRolesCondition.Configuration();
         config.setRoles(roles);
+        return config;
+    }
+
+    public static SecureRedirectUrisExecutor.Configuration createSecureRedirectUrisExecutorConfig(
+        Consumer<SecureRedirectUrisExecutor.Configuration> apply
+    ) {
+        SecureRedirectUrisExecutor.Configuration config = new SecureRedirectUrisExecutor.Configuration();
+
+        if (apply != null) {
+            apply.accept(config);
+        }
+
         return config;
     }
 
