@@ -85,7 +85,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
 
             error.setError(getErrorCode(throwable));
-            
+            error.setErrorDescription("For more on this error consult the server log at the debug level.");
+
             return Response.status(statusCode)
                     .header(HttpHeaders.CONTENT_TYPE, jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
                     .entity(error)
@@ -125,11 +126,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (throwable instanceof JsonProcessingException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
-        
+
         if (throwable instanceof ModelDuplicateException) {
             status = Response.Status.CONFLICT.getStatusCode();
         }
-        
+
         return status;
     }
 

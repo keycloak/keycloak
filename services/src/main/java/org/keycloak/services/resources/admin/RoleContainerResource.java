@@ -143,7 +143,7 @@ public class RoleContainerResource extends RoleResource {
         auth.roles().requireManage(roleContainer);
 
         if (rep.getName() == null) {
-            throw new BadRequestException();
+            throw new BadRequestException("role has no name");
         }
 
         try {
