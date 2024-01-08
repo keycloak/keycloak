@@ -101,7 +101,6 @@ const Dashboard = () => {
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
   const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
-  const logo = environment.logo ? environment.logo : "/logo.svg";
 
   const sortedFeatures = useMemo(
     () => localeSort(serverInfo.features ?? [], mapByKey("name")),
@@ -164,12 +163,6 @@ const Dashboard = () => {
             <PageSection variant="light">
               <div className="pf-l-grid pf-u-ml-lg">
                 <div className="pf-l-grid__item pf-m-12-col">
-                  <Brand
-                    src={environment.resourceUrl + logo}
-                    id="logo"
-                    alt="Logo"
-                    className="keycloak__pageheader_brand"
-                  />
                   <Title
                     className="pf-u-font-weight-bold"
                     headingLevel="h2"
