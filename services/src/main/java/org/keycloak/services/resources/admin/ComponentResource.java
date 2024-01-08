@@ -145,7 +145,7 @@ public class ComponentResource {
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e);
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
 
@@ -184,7 +184,7 @@ public class ComponentResource {
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
     @DELETE
