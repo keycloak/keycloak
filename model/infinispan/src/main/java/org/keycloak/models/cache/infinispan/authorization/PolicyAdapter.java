@@ -58,9 +58,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     public Policy getDelegateForUpdate() {
         if (updated == null) {
             updated = modelSupplier.get();
+            if (updated == null) throw new IllegalStateException("Not found in database");
             String defaultResourceType = updated.getConfig().get("defaultResourceType");
             cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(modelSupplier), cached.getScopesIds(modelSupplier), defaultResourceType, cached.getResourceServerId());
-            if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
     }

@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.jpa.entities;
 
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import java.util.*;
 
 import jakarta.persistence.Access;
@@ -34,7 +36,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -57,11 +58,13 @@ import org.keycloak.representations.idm.authorization.Logic;
                 @NamedQuery(name="findPolicyIdByServerId", query="select p.id from PolicyEntity p where  p.resourceServer.id = :serverId "),
                 @NamedQuery(name="findPolicyIdByName", query="select p from PolicyEntity p left join fetch p.associatedPolicies a where  p.resourceServer.id = :serverId  and p.name = :name"),
                 @NamedQuery(name="findPolicyIdByResource", query="select p from PolicyEntity p inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId)"),
-                @NamedQuery(name="findPolicyIdByScope", query="select pe from PolicyEntity pe inner join pe.scopes s where pe.type = 'scope' and pe.resourceServer.id = :serverId and s.id in (:scopeIds)"),
-                @NamedQuery(name="findPolicyIdByResourceScope", query="select pe from PolicyEntity pe inner join pe.resources r inner join pe.scopes s where pe.resourceServer.id = :serverId and pe.type = 'scope' and s.id in (:scopeIds) and r.id in (:resourceId)"),
-                @NamedQuery(name="findPolicyIdByNullResourceScope", query="select pe from PolicyEntity pe left join fetch pe.config c inner join pe.scopes s  where pe.resourceServer.id = :serverId and pe.type = 'scope' and pe.resources is empty and s.id in (:scopeIds) and not exists (select pec from pe.config pec where KEY(pec) = 'defaultResourceType')"),
+                @NamedQuery(name="findPolicyIdByResourceNoScope", query="select p from PolicyEntity p left join fetch p.scopes s inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId) and p.scopes is empty"),
+                @NamedQuery(name="findPolicyIdByScope", query="select pe from PolicyEntity pe inner join pe.scopes s where pe.resourceServer.id = :serverId and s.id in (:scopeIds)"),
+                @NamedQuery(name="findPolicyIdByResourceScope", query="select pe from PolicyEntity pe inner join pe.resources r inner join pe.scopes s where pe.resourceServer.id = :serverId and s.id in (:scopeIds) and r.id in (:resourceId)"),
+                @NamedQuery(name="findPolicyIdByNullResourceScope", query="select pe from PolicyEntity pe left join fetch pe.config c inner join pe.scopes s  where pe.resourceServer.id = :serverId and pe.resources is empty and s.id in (:scopeIds) and not exists (select pec from pe.config pec where KEY(pec) = 'defaultResourceType')"),
                 @NamedQuery(name="findPolicyIdByType", query="select p.id from PolicyEntity p where p.resourceServer.id = :serverId and p.type = :type"),
-                @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c inner join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
+                @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c left join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
+                @NamedQuery(name="findPolicyIdByNullResourceType", query="select p from PolicyEntity p inner join p.config c left join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and p.resources is empty and KEY(c) = 'defaultResourceType' and c like :type"),
                 @NamedQuery(name="findPolicyIdByDependentPolices", query="select p.id from PolicyEntity p inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (ap.resourceServer.id = :serverId and ap.id = :policyId)"),
                 @NamedQuery(name="deletePolicyByResourceServer", query="delete from PolicyEntity p where p.resourceServer.id = :serverId")
         }

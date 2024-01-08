@@ -383,12 +383,14 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "policy.name." + name + "." + serverId;
     }
 
-    public static String getPolicyByResource(String resourceId, String serverId) {
-        return "policy.resource." + resourceId + "." + serverId;
+    public static String getPolicyByResource(String resourceId, String serverId, Boolean includeScopes) {
+        String key = "policy.resource." + resourceId + "." + serverId;
+        return Boolean.TRUE.equals(includeScopes) ? key : key + ".no.scope";
     }
 
-    public static String getPolicyByResourceType(String type, String serverId) {
-        return "policy.resource.type." + type + "." + serverId;
+    public static String getPolicyByResourceType(String type, String serverId, Boolean allPolicies) {
+        String key = "policy.resource.type." + type + "." + serverId;
+        return Boolean.TRUE.equals(allPolicies) ? key : key + ".no.resource";
     }
 
     public static String getPolicyByScope(String scope, String serverId) {
@@ -948,18 +950,18 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public List<Policy> findByResource(ResourceServer resourceServer, Resource resource) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
-            String cacheKey = getPolicyByResource(resource.getId(), resourceServerId);
+            String cacheKey = getPolicyByResource(resource.getId(), resourceServerId, true);
             return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResource(resourceServer, resource),
                     (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resource.getId(), policies.stream().map(Policy::getId).collect(Collectors.toSet()), resourceServerId), resourceServer);
         }
 
         @Override
-        public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
+        public void findByResource(ResourceServer resourceServer, Boolean includeScopes, Resource resource, Consumer<Policy> consumer) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
-            String cacheKey = getPolicyByResource(resource.getId(), resourceServerId);
+            String cacheKey = getPolicyByResource(resource.getId(), resourceServerId, includeScopes);
             cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> {
                         List<Policy> policies = new ArrayList<>();
-                        getPolicyStoreDelegate().findByResource(resourceServer, resource, new Consumer<Policy>() {
+                        getPolicyStoreDelegate().findByResource(resourceServer, includeScopes, resource, new Consumer<Policy>() {
                             @Override
                             public void accept(Policy policy) {
                                 consumer.andThen(policies::add)
@@ -975,18 +977,18 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public List<Policy> findByResourceType(ResourceServer resourceServer, String resourceType) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
-            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId);
+            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId, true);
             return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResourceType(resourceServer, resourceType),
                     (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceType, policies.stream().map(Policy::getId).collect(Collectors.toSet()), resourceServerId), resourceServer);
         }
 
         @Override
-        public void findByResourceType(ResourceServer resourceServer, String resourceType, Consumer<Policy> consumer) {
+        public void findByResourceType(ResourceServer resourceServer, Boolean allPolicies, String resourceType, Consumer<Policy> consumer) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
-            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId);
+            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId, allPolicies);
             cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> {
                         List<Policy> policies = new ArrayList<>();
-                        getPolicyStoreDelegate().findByResourceType(resourceServer, resourceType, new Consumer<Policy>() {
+                        getPolicyStoreDelegate().findByResourceType(resourceServer, allPolicies, resourceType, new Consumer<Policy>() {
                             @Override
                             public void accept(Policy policy) {
                                 consumer.andThen(policies::add)
