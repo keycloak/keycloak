@@ -1,6 +1,14 @@
+= New Welcome Page
+
+The 'welcome' page that is shown when a user starts Keycloak for the first time, has been redesigned to provide a better setup experience and has been upgraded to the latest version of https://www.patternfly.org/[PatternFly]. The page layout has been simplified and now includes only a form to register the administrative user. After completing the registration, the user is redirected directly to the Administration Console.
+
+image::images/new-welcome-screen.png["A screenshot of the new welcome page, showing a simplified layout with a user registration form."]
+
+If you are using a custom theme, you may need to update it to support the new welcome page. For more details consult the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Keycloak JS using `exports` field
 
-The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
 
 = Truststore Improvements
 
