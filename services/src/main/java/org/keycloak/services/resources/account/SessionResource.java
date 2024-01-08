@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
@@ -44,10 +47,12 @@ import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class SessionResource {
 
     private final KeycloakSession session;
@@ -70,6 +75,8 @@ public class SessionResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_SESSION)
+    @Operation(summary = "Get session information.")
     public Stream<SessionRepresentation> toRepresentation() {
         return session.sessions().getUserSessionsStream(realm, user).map(this::toRepresentation);
     }
@@ -83,6 +90,8 @@ public class SessionResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_SESSION)
+    @Operation(summary = "Get device activity information based on the active sessions.")
     public Collection<DeviceRepresentation> devices() {
         Map<String, DeviceRepresentation> reps = new HashMap<>();
         session.sessions().getUserSessionsStream(realm, user).forEach(s -> {
@@ -123,6 +132,8 @@ public class SessionResource {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_SESSION)
+    @Operation(summary = "Remove sessions.")
     public Response logout(@QueryParam("current") boolean removeCurrent) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         session.sessions().getUserSessionsStream(realm, user).filter(s -> removeCurrent || !isCurrentSession(s))
@@ -142,6 +153,8 @@ public class SessionResource {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_SESSION)
+    @Operation(summary = "Remove a specific session.")
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         UserSessionModel userSession = session.sessions().getUserSession(realm, id);

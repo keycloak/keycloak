@@ -26,6 +26,7 @@ public class KeycloakOpenAPI {
     public static class Profiles {
 
         public static final String ADMIN = "x-smallrye-profile-admin";
+        public static final String ACCOUNT = "x-smallrye-profile-account";
 
         private Profiles() { }
     }
@@ -55,6 +56,11 @@ public class KeycloakOpenAPI {
             public static final String ROOT = "Root";
             public static final String SCOPE_MAPPINGS = "Scope Mappings";
             public static final String USERS = "Users";
+            public static final String ACCOUNT = "Account";
+            public static final String ACCOUNT_RESOURCES = "Account Resources";
+            public static final String ACCOUNT_CREDENTIAL = "Account Credential";
+            public static final String ACCOUNT_LINKED_ACCOUNTS = "Account Linked Accounts";
+            public static final String ACCOUNT_SESSION = "Account Session";
             private Tags() { }
         }
 

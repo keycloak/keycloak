@@ -34,6 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
@@ -42,7 +49,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.utils.MediaType;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -50,6 +59,7 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class ResourceService extends AbstractResourceService {
 
     private final org.keycloak.authorization.model.Resource resource;
@@ -64,23 +74,27 @@ public class ResourceService extends AbstractResourceService {
 
     /**
      * Returns a {@link Resource} where the {@link #user} is the resource owner.
-     * 
+     *
      * @return the resource
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a Resource where the user is the resource owner.")
     public Resource getResource() {
         return new Resource(resource, provider);
     }
 
     /**
      * Returns a list of {@link Permission} containing the users to which the {@link #user} granted access to a resource.
-     * 
+     *
      * @return the users with access to a resource
      */
     @GET
     @Path("permissions")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a list of permissions containing the users to which the user granted access to a resource.")
     public Collection<Permission> toPermissions() {
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
@@ -90,7 +104,7 @@ public class ResourceService extends AbstractResourceService {
 
         Collection<ResourcePermission> resources = toPermissions(ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
-        
+
         if (!resources.isEmpty()) {
             permissions = resources.iterator().next().getPermissions();
         }
@@ -101,6 +115,17 @@ public class ResourceService extends AbstractResourceService {
     @GET
     @Path("user")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a user")
+    @APIResponse(
+            description = "User",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.OBJECT,
+                            implementation = UserRepresentation.class
+                    )
+            )
+    )
     public Response user(@QueryParam("value") String value) {
         try {
             final UserModel user = getUser(value);
@@ -120,13 +145,15 @@ public class ResourceService extends AbstractResourceService {
     @Path("permissions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Updates the permission set for a resource based on the given permissions.")
     public Response revoke(List<Permission> permissions) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
         if (permissions == null || permissions.isEmpty()) {
-            throw new BadRequestException("invalid_permissions");    
+            throw new BadRequestException("invalid_permissions");
         }
-        
+
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
         RealmModel realm = resourceServer.getRealm();
 
@@ -171,11 +198,11 @@ public class ResourceService extends AbstractResourceService {
                 for (String scope : permission.getScopes()) {
                     grantPermission(user, scope);
                 }
-                
+
                 // remove all tickets that are not within the requested permissions
                 for (PermissionTicket ticket : tickets) {
                     ticketStore.delete(realm, ticket.getId());
-                }                
+                }
             }
         }
 
@@ -190,19 +217,21 @@ public class ResourceService extends AbstractResourceService {
     @GET
     @Path("permissions/requests")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a list of permissions requests waiting for the user approval.")
     public Collection<Permission> getPermissionRequests() {
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
         filters.put(PermissionTicket.FilterOption.OWNER, user.getId());
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
-        
+
         Map<String, Permission> requests = new HashMap<>();
 
         for (PermissionTicket ticket : ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null)) {
             requests.computeIfAbsent(ticket.getRequester(), requester -> new Permission(ticket, provider)).addScope(ticket.getScope().getName());
         }
-        
+
         return requests.values();
     }
 
@@ -218,7 +247,7 @@ public class ResourceService extends AbstractResourceService {
         if (scope == null) {
             scope = scopeStore.findById(resourceServer.getRealm(), resourceServer, scopeId);
         }
-        
+
         return scope;
     }
 

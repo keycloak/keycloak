@@ -185,7 +185,7 @@ public class RealmsResource {
     }
 
     @Path("{realm}/account")
-    public Object getAccountService(final @PathParam("realm") String name) {
+    public AccountLoader getAccountService(final @PathParam("realm") String name) {
         resolveRealmAndUpdateSession(name);
         EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection());
         return new AccountLoader(session, event);

@@ -260,10 +260,10 @@
                         <groupId>io.smallrye</groupId>
                         <artifactId>smallrye-open-api-maven-plugin</artifactId>
                         <configuration>
-                            <scanProfiles>admin</scanProfiles>
+                            <scanProfiles>admin,account</scanProfiles>
                             <outputDirectory>${project.build.directory}/apidocs-rest/swagger/apidocs</outputDirectory>
-                            <infoTitle>Keycloak Admin REST API</infoTitle>
-                            <infoDescription>This is a REST API reference for the Keycloak Admin REST API.</infoDescription>
+                            <infoTitle>Keycloak REST API</infoTitle>
+                            <infoDescription>This is a REST API reference for the Keycloak REST API.</infoDescription>
                         </configuration>
                         <executions>
                             <execution>

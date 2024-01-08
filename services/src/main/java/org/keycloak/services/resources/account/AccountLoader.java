@@ -16,8 +16,18 @@
  */
 package org.keycloak.services.resources.account;
 
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
@@ -31,24 +41,17 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.theme.Theme;
 
-import jakarta.ws.rs.HttpMethod;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class AccountLoader {
 
     private final KeycloakSession session;
@@ -80,7 +83,7 @@ public class AccountLoader {
         UriInfo uriInfo = session.getContext().getUri();
 
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
-        
+
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
@@ -92,6 +95,24 @@ public class AccountLoader {
         }
     }
 
+    /**
+     * This needed to provide examples for Account API.
+     * Here we return a specific sub resource, so OpenAPI generator able to scan it.
+     */
+    @Path("/account-api-cors-example")
+    public CorsPreflightService getAccountApiCorsExample() {
+        throw new ForbiddenException();
+    }
+
+    /**
+     * This needed to provide examples for Account API.
+     * Here we return a specific sub resource, so OpenAPI generator able to scan it.
+     */
+    @Path("/account-api-example")
+    public AccountRestService getAccountApiExample() {
+        throw new ForbiddenException();
+    }
+
     @Path("{version : v\\d[0-9a-zA-Z_\\-]*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
@@ -99,6 +120,26 @@ public class AccountLoader {
             return new CorsPreflightService(request);
         }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
+    }
+
+    /**
+     * This needed to provide examples for Account API.
+     * Here we return a specific sub resource, so OpenAPI generator able to scan it.
+     */
+    @Path("{version : v\\d[0-9a-zA-Z_\\-]*}/account-api-cors-example")
+    @Produces(MediaType.APPLICATION_JSON)
+    public CorsPreflightService getVersionedAccountApiCorsExample(final @PathParam("version") String version) {
+        throw new ForbiddenException();
+    }
+
+    /**
+     * This needed to provide examples for Account API.
+     * Here we return a specific sub resource, so OpenAPI generator able to scan it.
+     */
+    @Path("{version : v\\d[0-9a-zA-Z_\\-]*}/account-api-example")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AccountRestService getVersionedAccountApiExample(final @PathParam("version") String version) {
+        throw new ForbiddenException();
     }
 
     private Theme getTheme(KeycloakSession session) {
@@ -150,11 +191,11 @@ public class AccountLoader {
     }
 
     private AccountResourceProvider getAccountResourceProvider(Theme theme) {
-      try {
-        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
-          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
-        }
-      } catch (IOException ignore) {}
-      return session.getProvider(AccountResourceProvider.class);
+        try {
+            if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+                return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+            }
+        } catch (IOException ignore) {}
+        return session.getProvider(AccountResourceProvider.class);
     }
 }

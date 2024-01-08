@@ -45,6 +45,13 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -63,16 +70,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.account.ClientRepresentation;
-import org.keycloak.representations.account.ConsentRepresentation;
-import org.keycloak.representations.account.ConsentScopeRepresentation;
-import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.account.*;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
@@ -89,6 +94,7 @@ import org.keycloak.userprofile.ValidationException.Error;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class AccountRestService {
 
     private final HttpRequest request;
@@ -100,7 +106,7 @@ public class AccountRestService {
     private final KeycloakSession session;
     private final EventBuilder event;
     private final Auth auth;
-    
+
     private final RealmModel realm;
     private final UserModel user;
     private final Locale locale;
@@ -119,7 +125,7 @@ public class AccountRestService {
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
-    
+
     /**
      * Get account information.
      *
@@ -129,6 +135,8 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Get account information.")
     public UserRepresentation account(final @QueryParam("userProfileMetadata") Boolean userProfileMetadata) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
@@ -149,6 +157,8 @@ public class AccountRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Update account.")
     public Response updateAccount(UserRepresentation rep) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
@@ -187,7 +197,7 @@ public class AccountRestService {
                     AttributeMetadata am = userProfileAttributes.getMetadata(p.toString());
                     if(am != null)
                         ret[i++] = am.getAttributeDisplayName();
-                    else 
+                    else
                         ret[i++] = p.toString();
                 } else {
                     ret[i++] = p.toString();
@@ -226,6 +236,8 @@ public class AccountRestService {
 
     @Path("supportedLocales")
     @GET
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "List supported locales.")
     public List<String> supportedLocales() {
         return auth.getRealm().getSupportedLocalesStream().collect(Collectors.toList());
     }
@@ -275,6 +287,17 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Returns the consent for the client with the given client id.")
+    @APIResponse(
+            description = "Consent",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.OBJECT,
+                            implementation = ConsentRepresentation.class
+                    )
+            )
+    )
     public Response getConsent(final @PathParam("clientId") String clientId) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
@@ -300,6 +323,8 @@ public class AccountRestService {
      */
     @Path("/applications/{clientId}/consent")
     @DELETE
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Deletes the consent for the client with the given client id.")
     public Response revokeConsent(final @PathParam("clientId") String clientId) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_CONSENT);
@@ -329,6 +354,17 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Creates or updates the consent of the given, requested consent for the client with the given client id. Returns the appropriate REST response.")
+    @APIResponse(
+            description = "Consent",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.OBJECT,
+                            implementation = ConsentRepresentation.class
+                    )
+            )
+    )
     public Response grantConsent(final @PathParam("clientId") String clientId,
                                  final ConsentRepresentation consent) {
         event.event(EventType.GRANT_CONSENT);
@@ -346,6 +382,17 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Creates or updates the consent of the given, requested consent for the client with the given client id. Returns the appropriate REST response.")
+    @APIResponse(
+            description = "Consent",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.OBJECT,
+                            implementation = ConsentRepresentation.class
+                    )
+            )
+    )
     public Response updateConsent(final @PathParam("clientId") String clientId,
                                   final ConsentRepresentation consent) {
         event.event(EventType.UPDATE_CONSENT);
@@ -420,7 +467,7 @@ public class AccountRestService {
         }
         return consent;
     }
-    
+
     @Path("/linked-accounts")
     public LinkedAccountsResource linkedAccounts() {
         return new LinkedAccountsResource(session, request, auth, event, user);
@@ -430,6 +477,8 @@ public class AccountRestService {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Group memberships.")
     //TODO GROUPS this isn't paginated
     public Stream<GroupRepresentation> groupMemberships(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.require(AccountRoles.VIEW_GROUPS);
@@ -440,6 +489,8 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT)
+    @Operation(summary = "Applications.")
     public Stream<ClientRepresentation> applications(@QueryParam("name") String name) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
@@ -482,10 +533,10 @@ public class AccountRestService {
     }
 
     // TODO Logs
-    
+
     private static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
-}
+        }
     }
 }

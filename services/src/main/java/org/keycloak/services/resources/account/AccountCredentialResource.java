@@ -1,6 +1,9 @@
 package org.keycloak.services.resources.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -23,6 +26,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
@@ -51,6 +55,7 @@ import java.util.stream.Stream;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
 import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class AccountCredentialResource {
 
     public static final String TYPE = "type";
@@ -107,7 +112,7 @@ public class AccountCredentialResource {
         public String getCategory() {
             return category;
         }
-        
+
         public String getType() {
             return type;
         }
@@ -159,6 +164,11 @@ public class AccountCredentialResource {
     @GET
     @NoCache
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_CREDENTIAL)
+    @Operation(
+            summary = "Retrieve the stream of credentials available to the current logged in user.",
+            description = "Retrieve the stream of credentials available to the current logged in user. It will return only credentials of enabled types, which user can use to authenticate in some authentication flow."
+    )
     public Stream<CredentialContainer> credentialTypes(@QueryParam(TYPE) String type,
                                                      @QueryParam(USER_CREDENTIALS) Boolean userCredentials) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
@@ -284,6 +294,8 @@ public class AccountCredentialResource {
     @Path("{credentialId}")
     @DELETE
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_CREDENTIAL)
+    @Operation(summary = "Remove a credential of current user.")
     public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
@@ -315,6 +327,8 @@ public class AccountCredentialResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{credentialId}/label")
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_CREDENTIAL)
+    @Operation(summary = "Update a user label of specified credential of current user.")
     public void setLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);

@@ -34,6 +34,13 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.store.PermissionTicketStore;
@@ -41,11 +48,13 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.utils.MediaType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class ResourcesService extends AbstractResourceService {
 
     public ResourcesService(KeycloakSession session, UserModel user, Auth auth, HttpRequest request) {
@@ -61,6 +70,17 @@ public class ResourcesService extends AbstractResourceService {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a list of resource where the user is the resource owner.")
+    @APIResponse(
+            description = "List of resources",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.ARRAY,
+                            implementation = Resource.class
+                    )
+            )
+    )
     public Response getResources(@QueryParam("name") String name,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
@@ -87,6 +107,17 @@ public class ResourcesService extends AbstractResourceService {
     @GET
     @Path("shared-with-me")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a list of resources shared with the user.")
+    @APIResponse(
+            description = "List of resources",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.ARRAY,
+                            implementation = ResourcePermission.class
+                    )
+            )
+    )
     public Response getSharedWithMe(@QueryParam("name") String name,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
@@ -95,17 +126,28 @@ public class ResourcesService extends AbstractResourceService {
     }
 
     /**
-     * Returns a list of {@link Resource} where the {@link #user} is the resource owner and the resource is 
+     * Returns a list of {@link Resource} where the {@link #user} is the resource owner and the resource is
      * shared with other users.
      *
      * @param first the first result
      * @param max the max result
-     * @return a list of {@link Resource} where the {@link #user} is the resource owner and the resource is 
+     * @return a list of {@link Resource} where the {@link #user} is the resource owner and the resource is
      *      * shared with other users
      */
     @GET
     @Path("shared-with-others")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Returns a list of resources where the user is the resource owner and the resource is shared with other users.")
+    @APIResponse(
+            description = "List of resources",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.ARRAY,
+                            implementation = ResourcePermission.class
+                    )
+            )
+    )
     public Response getSharedWithOthers(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
         return queryResponse(
                 (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getRealm(), auth.getUser().getId(), f, m), true)
@@ -117,6 +159,17 @@ public class ResourcesService extends AbstractResourceService {
     @GET
     @Path("pending-requests")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_RESOURCES)
+    @Operation(summary = "Get pending requests.")
+    @APIResponse(
+            description = "List of resources",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.ARRAY,
+                            implementation = ResourcePermission.class
+                    )
+            )
+    )
     public Response getPendingRequests() {
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
@@ -137,7 +190,7 @@ public class ResourcesService extends AbstractResourceService {
     }
 
     @Path("{id}")
-    public Object getResource(@PathParam("id") String id) {
+    public ResourceService getResource(@PathParam("id") String id) {
         org.keycloak.authorization.model.Resource resource = resourceStore.findById(auth.getRealm(), null, id);
 
         if (resource == null) {
@@ -147,7 +200,7 @@ public class ResourcesService extends AbstractResourceService {
         if (!resource.getOwner().equals(user.getId())) {
             throw new BadRequestException("invalid_resource");
         }
-        
+
         return new ResourceService(resource, provider.getKeycloakSession(), user, auth, request);
     }
 
@@ -194,7 +247,7 @@ public class ResourcesService extends AbstractResourceService {
 
         return permissions;
     }
-    
+
     private Response queryResponse(BiFunction<Integer, Integer, Stream<?>> query, Integer first, Integer max) {
         if (first != null && max != null) {
             List result = query.apply(first, max + 1).collect(Collectors.toList());

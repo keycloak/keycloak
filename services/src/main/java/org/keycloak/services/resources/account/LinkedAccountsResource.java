@@ -36,6 +36,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -59,6 +66,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.validation.Validation;
 
 import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
@@ -68,9 +76,10 @@ import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
  *
  * @author Stan Silvert
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ACCOUNT, value = "")
 public class LinkedAccountsResource {
     private static final Logger logger = Logger.getLogger(LinkedAccountsResource.class);
-    
+
     private final KeycloakSession session;
     private final HttpRequest request;
     private final EventBuilder event;
@@ -78,10 +87,10 @@ public class LinkedAccountsResource {
     private final RealmModel realm;
     private final Auth auth;
 
-    public LinkedAccountsResource(KeycloakSession session, 
-                                  HttpRequest request, 
+    public LinkedAccountsResource(KeycloakSession session,
+                                  HttpRequest request,
                                   Auth auth,
-                                  EventBuilder event, 
+                                  EventBuilder event,
                                   UserModel user) {
         this.session = session;
         this.request = request;
@@ -90,16 +99,27 @@ public class LinkedAccountsResource {
         this.user = user;
         realm = session.getContext().getRealm();
     }
-    
+
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_LINKED_ACCOUNTS)
+    @Operation(summary = "Linked accounts list.")
+    @APIResponse(
+            description = "The linked accounts list",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.ARRAY,
+                            implementation = LinkedAccountRepresentation.class
+                    )
+            )
+    )
     public Response linkedAccounts() {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         SortedSet<LinkedAccountRepresentation> linkedAccounts = getLinkedAccounts(this.session, this.realm, this.user);
         return Cors.add(request, Response.ok(linkedAccounts)).auth().allowedOrigins(auth.getToken()).build();
     }
-    
+
     private Set<String> findSocialIds() {
        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
                .map(ProviderFactory::getId)
@@ -139,19 +159,30 @@ public class LinkedAccountsResource {
         return identities.filter(model -> Objects.equals(model.getIdentityProvider(), providerAlias))
                 .findFirst().orElse(null);
     }
-    
+
     @GET
     @Path("/{providerAlias}")
     @Produces(MediaType.APPLICATION_JSON)
     @Deprecated
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_LINKED_ACCOUNTS)
+    @Operation(summary = "Build linked account URI.")
+    @APIResponse(
+            description = "Account Link URI",
+            content = @Content(
+                    schema = @Schema(
+                            type = SchemaType.OBJECT,
+                            implementation = AccountLinkUriRepresentation.class
+                    )
+            )
+    )
     public Response buildLinkedAccountURI(@PathParam("providerAlias") String providerAlias,
                                      @QueryParam("redirectUri") String redirectUri) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
+
         if (redirectUri == null) {
             ErrorResponse.error(Messages.INVALID_REDIRECT_URI, Response.Status.BAD_REQUEST);
         }
-        
+
         String errorMessage = checkCommonPreconditions(providerAlias);
         if (errorMessage != null) {
             throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
@@ -159,7 +190,7 @@ public class LinkedAccountsResource {
         if (auth.getSession() == null) {
             throw ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);
         }
-        
+
         try {
             String nonce = UUID.randomUUID().toString();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -175,30 +206,32 @@ public class LinkedAccountsResource {
                     .queryParam("client_id", ACCOUNT_CONSOLE_CLIENT_ID)
                     .queryParam("redirect_uri", redirectUri)
                     .build();
-            
+
             AccountLinkUriRepresentation rep = new AccountLinkUriRepresentation();
             rep.setAccountLinkUri(linkUri);
             rep.setHash(hash);
             rep.setNonce(nonce);
-            
+
             return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
         } catch (Exception spe) {
             spe.printStackTrace();
             throw ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @DELETE
     @Path("/{providerAlias}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ACCOUNT_LINKED_ACCOUNTS)
+    @Operation(summary = "Remove linked account.")
     public Response removeLinkedAccount(@PathParam("providerAlias") String providerAlias) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
+
         String errorMessage = checkCommonPreconditions(providerAlias);
         if (errorMessage != null) {
             throw ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
         }
-        
+
         FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, providerAlias);
         if (link == null) {
             throw ErrorResponse.error(Messages.FEDERATED_IDENTITY_NOT_ACTIVE, Response.Status.BAD_REQUEST);
@@ -221,29 +254,29 @@ public class LinkedAccountsResource {
 
         return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
     }
-    
+
     private String checkCommonPreconditions(String providerAlias) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
+
         if (Validation.isEmpty(providerAlias)) {
             return Messages.MISSING_IDENTITY_PROVIDER;
         }
-        
+
         if (!isValidProvider(providerAlias)) {
             return Messages.IDENTITY_PROVIDER_NOT_FOUND;
         }
-        
+
         if (!user.isEnabled()) {
             return Messages.ACCOUNT_DISABLED;
         }
-        
+
         return null;
     }
-    
+
     private boolean isPasswordSet() {
         return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
-    
+
     private boolean isValidProvider(String providerAlias) {
         return realm.getIdentityProvidersStream().anyMatch(model -> Objects.equals(model.getAlias(), providerAlias));
     }
