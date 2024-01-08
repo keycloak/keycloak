@@ -26,7 +26,7 @@ import {
 } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { convertToFormValues, sortProviders } from "../util";
+import { beerify, convertToFormValues, sortProviders } from "../util";
 
 import "./realm-settings-section.css";
 
@@ -476,7 +476,9 @@ export const RealmSettingsTokensTab = ({
             id="email-verification"
           >
             <Controller
-              name="attributes.actionTokenGeneratedByUserLifespan-verify-email"
+              name={`attributes.${beerify(
+                "actionTokenGeneratedByUserLifespan.verify-email",
+              )}`}
               defaultValue=""
               control={form.control}
               render={({ field }) => (
@@ -496,7 +498,9 @@ export const RealmSettingsTokensTab = ({
             id="idp-acct-label"
           >
             <Controller
-              name="attributes.actionTokenGeneratedByUserLifespan-idp-verify-account-via-email"
+              name={`attributes.${beerify(
+                "actionTokenGeneratedByUserLifespan.idp-verify-account-via-email",
+              )}`}
               defaultValue={""}
               control={form.control}
               render={({ field }) => (
@@ -516,7 +520,9 @@ export const RealmSettingsTokensTab = ({
             id="forgot-password-label"
           >
             <Controller
-              name="attributes.actionTokenGeneratedByUserLifespan-reset-credentials"
+              name={`attributes.${beerify(
+                "actionTokenGeneratedByUserLifespan.reset-credentials",
+              )}`}
               defaultValue={""}
               control={form.control}
               render={({ field }) => (
@@ -536,7 +542,9 @@ export const RealmSettingsTokensTab = ({
             id="execute-actions"
           >
             <Controller
-              name="attributes.actionTokenGeneratedByUserLifespan-execute-actions"
+              name={`attributes.${beerify(
+                "actionTokenGeneratedByUserLifespan.execute-actions",
+              )}`}
               defaultValue={""}
               control={form.control}
               render={({ field }) => (
