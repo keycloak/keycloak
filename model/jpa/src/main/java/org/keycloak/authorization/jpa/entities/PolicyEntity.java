@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.jpa.entities;
 
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import java.util.*;
 
 import jakarta.persistence.Access;
@@ -34,7 +36,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -101,19 +102,25 @@ public class PolicyEntity {
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = {})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "ASSOCIATED_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "ASSOCIATED_POLICY_ID"))
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     private Set<PolicyEntity> associatedPolicies;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {})
+    @ManyToMany(mappedBy = "associatedPolicies")
+    private Set<PolicyEntity> rootPolicies;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "RESOURCE_ID"))
     private Set<ResourceEntity> resources;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     private Set<ScopeEntity> scopes;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "policy")
+    private List<PermissionTicketEntity> permissionTicketEntities;
 
     @Column(name = "OWNER")
     private String owner;
@@ -218,12 +225,53 @@ public class PolicyEntity {
         this.associatedPolicies = associatedPolicies;
     }
 
+    public Set<PolicyEntity> getRootPolicies() {
+        if (rootPolicies == null) {
+            rootPolicies = new HashSet<>();
+        }
+        return rootPolicies;
+    }
+
+    public void addAssociatedPolicy(PolicyEntity policy) {
+        getAssociatedPolicies().add(policy);
+        policy.getRootPolicies().add(this);
+    }
+
+    public void removeAssociatedPolicy(PolicyEntity policy) {
+        getAssociatedPolicies().remove(policy);
+        policy.getRootPolicies().remove(this);
+    }
+
+    public void addScope(ScopeEntity scope) {
+        getScopes().add(scope);
+        scope.getPolicies().add(this);
+    }
+
+    public void removeScope(ScopeEntity scope) {
+        getScopes().remove(scope);
+        scope.getPolicies().remove(this);
+    }
+
+    public void addResource(ResourceEntity resource) {
+        getResources().add(resource);
+        resource.getPolicies().add(this);
+    }
+
+    public void removeResource(ResourceEntity resource) {
+        getResources().remove(resource);
+        resource.getPolicies().remove(this);
+    }
+
     public String getOwner() {
         return owner;
     }
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public List<PermissionTicketEntity> getPermissionTicketEntities() {
+        return permissionTicketEntities;
     }
 
     @Override

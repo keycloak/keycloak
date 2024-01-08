@@ -153,9 +153,9 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public void delete(RealmModel realm, String id) {
-        PermissionTicketEntity policy = entityManager.find(PermissionTicketEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (policy != null) {
-            this.entityManager.remove(policy);
+        PermissionTicketEntity permissionTicketEntity = entityManager.find(PermissionTicketEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (permissionTicketEntity != null) {
+            this.entityManager.remove(permissionTicketEntity);
         }
     }
 

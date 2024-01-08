@@ -25,15 +25,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -68,6 +67,12 @@ public class ScopeEntity {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "scopes")
+    private Set<ResourceEntity> resources;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "scopes")
+    private Set<PolicyEntity> policies;
 
     public String getId() {
         return id;
@@ -111,6 +116,20 @@ public class ScopeEntity {
 
     public void setResourceServer(final ResourceServerEntity resourceServer) {
         this.resourceServer = resourceServer;
+    }
+
+    public Set<PolicyEntity> getPolicies() {
+        if(this.policies == null) {
+            this.policies = new HashSet<>();
+        }
+        return this.policies;
+    }
+
+    public Set<ResourceEntity> getResources() {
+        if(this.resources == null) {
+            this.resources = new HashSet<>();
+        }
+        return this.resources;
     }
 
     @Override

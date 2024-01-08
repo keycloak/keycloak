@@ -66,16 +66,13 @@ public class JPAResourceServerStore implements ResourceServerStore {
         String id = client.getId();
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return;
-        //This didn't work, had to loop through and remove each policy individually
-        //entityManager.createNamedQuery("deletePolicyByResourceServer")
-        //        .setParameter("serverId", id).executeUpdate();
 
         {
             TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
             query.setParameter("serverId", id);
             List<String> result = query.getResultList();
             for (String policyId : result) {
-                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+                provider.getStoreFactory().getPolicyStore().delete(null, policyId);
             }
         }
 
@@ -86,33 +83,26 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
             List<String> result = query.getResultList();
             for (String permissionId : result) {
-                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
+                provider.getStoreFactory().getPermissionTicketStore().delete(null, permissionId);
             }
         }
 
-        //entityManager.createNamedQuery("deleteResourceByResourceServer")
-        //        .setParameter("serverId", id).executeUpdate();
         {
             TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByServerId", String.class);
 
             query.setParameter("serverId", id);
-
             List<String> result = query.getResultList();
             for (String resourceId : result) {
-                entityManager.remove(entityManager.getReference(ResourceEntity.class, resourceId));
+                provider.getStoreFactory().getResourceStore().delete(null, resourceId);
             }
         }
 
-        //entityManager.createNamedQuery("deleteScopeByResourceServer")
-        //        .setParameter("serverId", id).executeUpdate();
         {
             TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
-
             query.setParameter("serverId", id);
-
             List<String> result = query.getResultList();
             for (String scopeId : result) {
-                entityManager.remove(entityManager.getReference(ScopeEntity.class, scopeId));
+                provider.getStoreFactory().getScopeStore().delete(null, scopeId);
             }
         }
 

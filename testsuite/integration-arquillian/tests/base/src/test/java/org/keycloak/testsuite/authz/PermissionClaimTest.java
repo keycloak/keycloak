@@ -284,6 +284,11 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         assertEquals(2, permissions.size());
 
+        // it is important to note that one of the scopes got rejected despite the fact that the claims were added to by the policy
+        // this situation arises because our permissions aren't tied to specific resources and only to specific scopes
+        // the evaluation pattern then removes the update scope from the grant as the "denyPolicy" causes it to be rejected
+        // the claims are only the same on both because the claims are coming from the script evaluation which is triggered by
+        // scopes. As both resources have the same scopes they also end up with the same claims
         for (Permission permission : permissions) {
             Map<String, Set<String>> claims = permission.getClaims();
 
@@ -293,6 +298,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
             assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
             assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
             assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+            assertThat(permission.getScopes().size(), Matchers.is(1));
         }
     }
 
@@ -307,16 +313,15 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         authorization.resources().create(resourceA).close();
 
+        // create a scope permission associated with Resource A that has claims A,B
         ResourcePermissionRepresentation allScopesPermission = new ResourcePermissionRepresentation();
-
         allScopesPermission.setName(KeycloakModelUtils.generateId());
         allScopesPermission.addResource(resourceA.getName());
         allScopesPermission.addPolicy(claimAPolicy.getName(), claimBPolicy.getName());
-
         authorization.permissions().resource().create(allScopesPermission).close();
 
+        // create a resource permission associated with Resource A that has claim C
         ResourcePermissionRepresentation updatePermission = new ResourcePermissionRepresentation();
-
         updatePermission.setName(KeycloakModelUtils.generateId());
         updatePermission.addResource(resourceA.getName());
         updatePermission.addPolicy(claimCPolicy.getName());
@@ -325,6 +330,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
             updatePermission = response.readEntity(ResourcePermissionRepresentation.class);
         }
 
+        // Authorize on everything and verify that all claims from A,B,C are present
         AuthzClient authzClient = getAuthzClient();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize();
         assertNotNull(response.getToken());
@@ -344,9 +350,11 @@ public class PermissionClaimTest extends AbstractAuthzTest {
             assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
         }
 
+        // add the deny policy to the resource permission, which will also add the deny-policy claim
         updatePermission.addPolicy(denyPolicy.getName());
         authorization.permissions().resource().findById(updatePermission.getId()).update(updatePermission);
 
+        // authorization fails because deny-policy rejects
         try {
             authzClient.authorization("marta", "password").authorize();
             fail("can not access resource");
@@ -355,19 +363,17 @@ public class PermissionClaimTest extends AbstractAuthzTest {
             assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
         }
 
+        // create a new resource with the associated scopes
         ResourceRepresentation resourceInstance = new ResourceRepresentation(KeycloakModelUtils.generateId(), "create", "update");
-
         resourceInstance.setType(resourceA.getType());
-        resourceInstance.setOwner("marta");
 
         try (Response response1 = authorization.resources().create(resourceInstance)) {
             resourceInstance = response1.readEntity(ResourceRepresentation.class);
         }
 
+        // try to access the resource based on the scopes, but can't because there are no existing permissions for this resource
         AuthorizationRequest request = new AuthorizationRequest();
-
         request.addPermission(null, "create", "update");
-
         try {
             authzClient.authorization("marta", "password").authorize(request);
             fail("can not access resource");
@@ -376,8 +382,8 @@ public class PermissionClaimTest extends AbstractAuthzTest {
             assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
         }
 
+        // Create a new resource permission to associate with the newly created resource. This resource only has policy C and related claims
         ResourcePermissionRepresentation resourceInstancePermission = new ResourcePermissionRepresentation();
-
         resourceInstancePermission.setName(KeycloakModelUtils.generateId());
         resourceInstancePermission.addResource(resourceInstance.getId());
         resourceInstancePermission.addPolicy(claimCPolicy.getName());
@@ -394,17 +400,20 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         assertEquals(1, permissions.size());
 
+        // this claims list should only have claim c due to the above construction and request
         for (Permission permission : permissions) {
             Map<String, Set<String>> claims = permission.getClaims();
 
             assertNotNull(claims);
 
-            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
-            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-a"), Matchers.is(Matchers.nullValue()));
+            assertThat(claims.get("claim-b"), Matchers.is(Matchers.nullValue()));
             assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
-            assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+            assertThat(claims.get("deny-policy"), Matchers.is(Matchers.nullValue()));
+            assertThat(permission.getScopes(), Matchers.containsInAnyOrder("create", "update"));
         }
 
+        // now we authorize without requesting a specific resource or scopes in our request
         response = authzClient.authorization("marta", "password").authorize();
         assertNotNull(response.getToken());
         rpt = toAccessToken(response.getToken());
@@ -413,18 +422,20 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         assertEquals(1, permissions.size());
 
+        // we're still being denied on the other resource so for now we should still only have claim c and the scopes
         for (Permission permission : permissions) {
             Map<String, Set<String>> claims = permission.getClaims();
 
             assertNotNull(claims);
 
-            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
-            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+            assertThat(claims.get("claim-a"), Matchers.is(Matchers.nullValue()));
+            assertThat(claims.get("claim-b"), Matchers.is(Matchers.nullValue()));
             assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
-            assertThat(claims.get("deny-policy"), Matchers.containsInAnyOrder("deny-policy"));
+            assertThat(claims.get("deny-policy"), Matchers.is(Matchers.nullValue()));
             assertThat(permission.getScopes(), Matchers.containsInAnyOrder("create", "update"));
         }
 
+        // remove the deny policy from this permission
         updatePermission.setPolicies(new HashSet<>());
         updatePermission.addPolicy(claimCPolicy.getName());
         authorization.permissions().resource().findById(updatePermission.getId()).update(updatePermission);
@@ -437,15 +448,22 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         assertEquals(2, permissions.size());
 
-        for (Permission permission : permissions) {
-            Map<String, Set<String>> claims = permission.getClaims();
+        // Now that the other policy isn't denied, we should be getting two distinct permission responses with the correct claims and scopes
+        String resourceInstanceId = resourceInstance.getId();
+        Permission resourceAPermission = permissions.stream().filter(p -> p.getResourceName().equals(resourceA.getName())).findFirst().orElse(null);
+        Permission otherResourcePermission = permissions.stream().filter(p -> p.getResourceId().equals(resourceInstanceId)).findFirst().orElse(null);
 
-            assertNotNull(claims);
+        assertThat(resourceAPermission, Matchers.is(Matchers.notNullValue()));
+        Map<String, Set<String>> claims = resourceAPermission.getClaims();
+        assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
+        assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
+        assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+        assertThat(resourceAPermission.getScopes(), Matchers.is(Matchers.empty()));
 
-            assertThat(claims.get("claim-a"), Matchers.containsInAnyOrder("claim-a", "claim-a1"));
-            assertThat(claims.get("claim-b"), Matchers.containsInAnyOrder("claim-b"));
-            assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
-        }
+        assertThat(otherResourcePermission, Matchers.is(Matchers.notNullValue()));
+        claims = otherResourcePermission.getClaims();
+        assertThat(claims.get("claim-c"), Matchers.containsInAnyOrder("claim-c"));
+        assertThat(otherResourcePermission.getScopes(), Matchers.containsInAnyOrder("create", "update"));
     }
 
     private RealmResource getRealm() throws Exception {

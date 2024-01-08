@@ -16,12 +16,16 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import jakarta.persistence.EntityTransaction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -35,7 +39,10 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -86,6 +93,18 @@ public class JPAPolicyStore implements PolicyStore {
     public void delete(RealmModel realm, String id) {
         PolicyEntity policy = entityManager.find(PolicyEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
+            // hibernate can't deal with FK restraint when you delete the non-owning side
+            // so we need to delete specifically all of this policy's entries in rootPolicies
+            for(PolicyEntity rootPolicy : policy.getRootPolicies()) {
+                rootPolicy.getAssociatedPolicies().remove(policy);
+            }
+            policy.getRootPolicies().clear();
+            // delete permission tickets from the non-owning side
+            for(PermissionTicketEntity permissionTicketEntity : policy.getPermissionTicketEntities()) {
+                permissionTicketEntity.setPolicy(null);
+            }
+            policy.getPermissionTicketEntities().clear();
+            entityManager.merge(policy);
             this.entityManager.remove(policy);
         }
     }

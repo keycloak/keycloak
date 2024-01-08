@@ -102,7 +102,7 @@ public class ResourceEntity {
     @Column(name = "RESOURCE_SERVER_ID")
     private String resourceServer;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = {})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_SCOPE", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
@@ -112,6 +112,9 @@ public class ResourceEntity {
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     private Collection<ResourceAttributeEntity> attributes = new LinkedList<>();
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "resources")
+    private Set<PolicyEntity> policies;
 
     public String getId() {
         return id;
@@ -135,6 +138,16 @@ public class ResourceEntity {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public void addScope(ScopeEntity scope) {
+        getScopes().add(scope);
+        scope.getResources().add(this);
+    }
+
+    public void removeScope(ScopeEntity scope) {
+        getScopes().remove(scope);
+        scope.getResources().remove(this);
     }
 
     public Set<String> getUris() {
@@ -204,6 +217,13 @@ public class ResourceEntity {
 
     public void setAttributes(Collection<ResourceAttributeEntity> attributes) {
         this.attributes = attributes;
+    }
+
+    public Set<PolicyEntity> getPolicies() {
+        if(policies == null) {
+            this.policies = new HashSet<>();
+        }
+        return this.policies;
     }
 
     @Override

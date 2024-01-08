@@ -188,39 +188,37 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
     @Override
     public void addScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.getScopes().add(ScopeAdapter.toEntity(em, scope));
+        entity.addScope(ScopeAdapter.toEntity(em, scope));
     }
 
     @Override
     public void removeScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.getScopes().remove(ScopeAdapter.toEntity(em, scope));
-
+        entity.removeScope(ScopeAdapter.toEntity(em, scope));
     }
 
     @Override
     public void addAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.getAssociatedPolicies().add(toEntity(em, associatedPolicy));
+        entity.addAssociatedPolicy(toEntity(em, associatedPolicy));
     }
 
     @Override
     public void removeAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.getAssociatedPolicies().remove(toEntity(em, associatedPolicy));
-
+        entity.removeAssociatedPolicy(toEntity(em, associatedPolicy));
     }
 
     @Override
     public void addResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.getResources().add(ResourceAdapter.toEntity(em, resource));
+        entity.addResource(ResourceAdapter.toEntity(em, resource));
     }
 
     @Override
     public void removeResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.getResources().remove(ResourceAdapter.toEntity(em, resource));
+        entity.removeResource(ResourceAdapter.toEntity(em, resource));
     }
 
     @Override
