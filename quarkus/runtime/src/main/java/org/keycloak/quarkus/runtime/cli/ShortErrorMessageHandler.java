@@ -28,17 +28,17 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
             UnmatchedArgumentException uae = (UnmatchedArgumentException) ex;
 
             String[] unmatched = getUnmatchedPartsByOptionSeparator(uae,"=");
-            String original = uae.getUnmatched().get(0);
-            if (unmatched[0].equals(original)) {
-                unmatched = getUnmatchedPartsByOptionSeparator(uae," ");
-            }
-            
+
             String cliKey = unmatched[0];
 
             PropertyMapper<?> mapper = PropertyMappers.getMapper(cliKey);
 
             if (mapper == null || !(cmd.getCommand() instanceof AbstractCommand)) {
-                errorMessage = "Unknown option: '" + cliKey + "'";
+                if (cliKey.split("\\s").length > 1) {
+                    errorMessage = "Option: '" + cliKey + "' is not expected to contain whitespace, please remove any unnecessary quoting/escaping";
+                } else {
+                    errorMessage = "Unknown option: '" + cliKey + "'";
+                }
             } else {
                 AbstractCommand command = cmd.getCommand();
                 if (!command.getOptionCategories().contains(mapper.getCategory())) {
