@@ -75,6 +75,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -440,10 +441,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     @Test
     public void testMatchHttpVerbsToScopes() {
         ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        // Create a new resource with no scopes
         ResourceRepresentation resource = createResource(clientResource, "Resource With HTTP Scopes", "/api/resource-with-scope");
 
+        // create a resource permission tied to the resource we created that has the "Always Grant Policy" as a dependant
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
-
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getName());
         permission.addPolicy("Always Grant Policy");
@@ -467,17 +469,18 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         assertFalse("Should fail because resource does not have any scope named GET", context.isGranted());
         assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
-        
-        resource.addScope("GET", "POST");
 
+        // add GET and POST scopes to the resource, matching http methods
+        resource.addScope("GET", "POST");
         clientResource.authorization().resources().resource(resource.getId()).update(resource);
 
+        // now HTTP verbs match with scopes as requested
         deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-match-http-verbs-scopes.json"));
         policyEnforcer = deployment.getPolicyEnforcer();
-
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
+        // Request with POST works as scope matches method
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
@@ -489,73 +492,42 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
 
-        ScopePermissionRepresentation postPermission = new ScopePermissionRepresentation();
+        // bind a scope permission to all GET scope requests with the setting of ALWAYS DENY
+        ScopePermissionRepresentation getPermission = new ScopePermissionRepresentation();
+        getPermission.setName("GET permission");
+        getPermission.addScope("GET");
+        getPermission.addResource(resource.getId());
+        getPermission.addPolicy("Always Deny Policy");
 
-        postPermission.setName("GET permission");
-        postPermission.addScope("GET");
-        postPermission.addPolicy("Always Deny Policy");
+        permissions.scope().create(getPermission).close();
 
-        permissions.scope().create(postPermission).close();
-
+        // this will now deny in unanimous mode as the GET scope policies conflict
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
 
-        postPermission = permissions.scope().findByName(postPermission.getName());
+        // change the getPermission to work based on Always Grant. findByName doesn't pull scope and policy data so we effectively push an update to the server by adding this way
+        getPermission = permissions.scope().findByName(getPermission.getName());
+        getPermission.addScope("GET");
+        getPermission.addPolicy("Always Grant Policy");
+        permissions.scope().findById(getPermission.getId()).update(getPermission);
 
-        postPermission.addScope("GET");
-        postPermission.addPolicy("Always Grant Policy");
-
-        permissions.scope().findById(postPermission.getId()).update(postPermission);
-
+        // re-auth the client
         AuthzClient authzClient = getAuthzClient("default-keycloak.json");
         AuthorizationResponse authorize = authzClient.authorization(token).authorize();
         token = authorize.getToken();
 
+        // we now expect the context to grant for GET
         httpFacade = createHttpFacade("/api/resource-with-scope", token);
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
+        // POST still granted from the resource policy as well
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
-        postPermission = permissions.scope().findByName(postPermission.getName());
-        postPermission.addScope("GET");
-        postPermission.addPolicy("Always Deny Policy");
-        permissions.scope().findById(postPermission.getId()).update(postPermission);
-        authorize = authzClient.authorization(token).authorize();
-        token = authorize.getToken();
-
-        httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
-        assertFalse(context.isGranted());
-
-        httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
-        assertTrue(context.isGranted());
-
-        postPermission = permissions.scope().findByName(postPermission.getName());
-        postPermission.addScope("GET");
-        postPermission.addPolicy("Always Grant Policy");
-        permissions.scope().findById(postPermission.getId()).update(postPermission);
-        authorize = authzClient.authorization(token).authorize();
-        token = authorize.getToken();
-
-        httpFacade = createHttpFacade("/api/resource-with-scope", token);
-        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
-        assertTrue(context.isGranted());
-
-        httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
-        context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
-        assertTrue(context.isGranted());
-
-        postPermission = permissions.scope().findByName(postPermission.getName());
-        postPermission.addScope("POST");
-        postPermission.addPolicy("Always Deny Policy");
-        permissions.scope().findById(postPermission.getId()).update(postPermission);
         AuthorizationRequest request = new AuthorizationRequest();
-
         request.addPermission(null, "GET");
 
         authorize = authzClient.authorization(token).authorize(request);
@@ -565,9 +537,12 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
 
+        // the policy enforcer will do some trickery and re-auth against the server with the missing scopes automatically,
+        // giving us access to the POST scope despite the current token being unable to support it
+        // the resource permission from the beginning is still in place, thus we still have permission for the POST scope upon request
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
-        assertFalse(context.isGranted());
+        assertTrue(context.isGranted());
     }
 
     @Test

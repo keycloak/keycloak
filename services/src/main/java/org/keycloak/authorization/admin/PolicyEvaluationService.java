@@ -49,6 +49,7 @@ import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseB
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -331,23 +332,12 @@ public class PolicyEvaluationService {
         }
 
         @Override
-        protected boolean isGranted(Result.PolicyResult policyResult) {
-            if (super.isGranted(policyResult)) {
-                policyResult.setEffect(Effect.PERMIT);
-                return true;
-            }
-            return false;
+        protected void grantPermission(AuthorizationProvider authorizationProvider, Set<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request) {
+            super.grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request);
         }
 
-        @Override
-        protected void grantPermission(AuthorizationProvider authorizationProvider, Set<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
-            result.setStatus(Effect.PERMIT);
-            result.getPermission().getScopes().retainAll(grantedScopes);
-            super.grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
-        }
-
-        public Collection<Result> getResults() {
-            return results.values();
+        public Map<ResourcePermission, Map<Policy, Result>> getPolicyResults() {
+            return policyResults;
         }
     }
 }

@@ -80,4 +80,17 @@ public interface Evaluation {
     Effect getEffect();
 
     void setEffect(Effect effect);
+    
+    PolicyProvider getPolicyProvider();
+
+    /**
+     * The priority policies of this type should have when being considered among decisions in
+     * {@link org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector}
+     * A value of 1 is the lowest priority and any number > 1 is a higher priority.
+     * (e.g. a policy with priority 2 will override the results of a policy of priority 1)
+     * @return the priority of the policy
+     */
+    default Integer getPriority() {
+        return 1;
+    }
 }

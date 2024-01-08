@@ -42,19 +42,13 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
  */
 public class PermissionTicketAwareDecisionResultCollector extends DecisionPermissionCollector {
 
-    private final AuthorizationRequest request;
     private PermissionTicketToken ticket;
     private final Identity identity;
-    private ResourceServer resourceServer;
-    private final AuthorizationProvider authorization;
 
     public PermissionTicketAwareDecisionResultCollector(AuthorizationRequest request, PermissionTicketToken ticket, Identity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
         super(authorization, resourceServer, request);
-        this.request = request;
         this.ticket = ticket;
         this.identity = identity;
-        this.resourceServer = resourceServer;
-        this.authorization = authorization;
     }
 
     @Override
@@ -88,13 +82,12 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
         super.onComplete();
 
         if (request.isSubmitRequest()) {
-            StoreFactory storeFactory = authorization.getStoreFactory();
+            StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            List<Permission> permissions = ticket.getPermissions();
             RealmModel realm = resourceServer.getRealm();
 
-            if (permissions != null) {
-                for (Permission permission : permissions) {
+            if (ticket.getPermissions() != null) {
+                for (Permission permission : ticket.getPermissions()) {
                     Resource resource = resourceStore.findById(realm, resourceServer, permission.getResourceId());
 
                     if (resource == null) {
@@ -118,13 +111,13 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
+                        List<PermissionTicket> tickets = authorizationProvider.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
 
                         if (tickets.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
+                            authorizationProvider.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
                         }
                     } else {
-                        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
+                        ScopeStore scopeStore = authorizationProvider.getStoreFactory().getScopeStore();
 
                         for (String scopeId : scopes) {
                             Scope scope = scopeStore.findByName(resourceServer, scopeId);
@@ -139,10 +132,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
+                            List<PermissionTicket> tickets = authorizationProvider.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
 
                             if (tickets.isEmpty()) {
-                                authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());
+                                authorizationProvider.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());
                             }
                         }
                     }

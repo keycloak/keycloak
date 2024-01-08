@@ -18,6 +18,11 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
@@ -28,97 +33,80 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * This class provides a wrapper around contextual information regarding the evaluation of a policy
+ * Specifically, it is meant to hold the evaluation status and identifying information of a single policy as well
+ * as that policy's associated policies in a contained map. This allows for management of hierarchy from outside classes
+ * As this class can hold an arbitrary amount of references to other instances of this class
+ * By accessing the evaluation object on this class you can also surmise the "priority" of the result as compared to other results
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class Result {
 
     private final ResourcePermission permission;
-    private final Map<String, PolicyResult> results = new LinkedHashMap<>();
-    private final Evaluation evaluation;
-    private Effect status = Effect.DENY;
+    private final Map<Policy, Result> nestedResults;
+    private Evaluation evaluation;
 
     public Result(ResourcePermission permission, Evaluation evaluation) {
         this.permission = permission;
         this.evaluation = evaluation;
+        this.nestedResults = new LinkedHashMap<>();
     }
 
     public ResourcePermission getPermission() {
         return permission;
     }
 
-    public Collection<PolicyResult> getResults() {
-        return results.values();
+    public Collection<Result> getNestedResults() {
+        return nestedResults.values();
     }
 
     public Evaluation getEvaluation() {
         return evaluation;
     }
 
-    public PolicyResult policy(Policy policy) {
-        PolicyResult result = results.get(policy.getId());
-        
-        if (result == null) {
-            result = new PolicyResult(policy);
-            results.put(policy.getId(), result);
-        }
-
-        return result;
+    public void setEvaluation(Evaluation evaluation) {
+        this.evaluation = evaluation;
     }
 
-    public void setStatus(final Effect status) {
-        this.status = status;
+    public void addNestedResult(Result result) {
+        nestedResults.putIfAbsent(result.getPolicy(), result);
+    }
+
+    public Integer getPriority() {
+        if(evaluation == null) {
+            return 0;
+        }
+        return evaluation.getPriority();
     }
 
     public Effect getEffect() {
-        return status;
+        return evaluation.getEffect();
     }
 
-    public PolicyResult getPolicy(Policy policy) {
-        return results.get(policy.getId());
+    public Policy getPolicy() {
+        if(evaluation == null) {
+            return null;
+        }
+        return evaluation.getPolicy();
     }
 
-    public static class PolicyResult {
-
-        private final Policy policy;
-        private final Map<String, PolicyResult> associatedPolicies = new HashMap<>();
-        private Effect effect = Effect.DENY;
-
-        public PolicyResult(Policy policy, Effect status) {
-            this.policy = policy;
-            this.effect = status;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-
-        public PolicyResult(Policy policy) {
-            this(policy, Effect.DENY);
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-
-        public PolicyResult policy(Policy policy, Effect effect) {
-            PolicyResult policyResult = associatedPolicies.get(policy.getId());
-
-            if (policyResult == null) {
-                policyResult = new PolicyResult(policy, effect);
-                associatedPolicies.put(policy.getId(), policyResult);
-            } else {
-                policyResult.setEffect(effect);
-            }
-
-            return policyResult;
+        Result result = (Result) o;
+        if(evaluation == null || result.evaluation == null) {
+            return false;
         }
+        return Objects.equals(evaluation.getPolicy(), result.evaluation.getPolicy());
+    }
 
-        public Policy getPolicy() {
-            return policy;
-        }
-
-        public Collection<PolicyResult> getAssociatedPolicies() {
-            return associatedPolicies.values();
-        }
-
-        public Effect getEffect() {
-            return effect;
-        }
-
-        public void setEffect(final Effect status) {
-            this.effect = status;
-        }
+    @Override
+    public int hashCode() {
+        return Objects.hash(evaluation);
     }
 }

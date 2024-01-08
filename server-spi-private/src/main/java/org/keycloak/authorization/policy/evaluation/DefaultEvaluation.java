@@ -27,7 +27,11 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -38,6 +42,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -52,16 +57,17 @@ public class DefaultEvaluation implements Evaluation {
     private final Map<Policy, Map<Object, Effect>> decisionCache;
     private final Realm realm;
     private Effect effect;
+    private PolicyProvider policyProvider;
 
-    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Decision decision, AuthorizationProvider authorizationProvider, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
-        this(permission, executionContext, parentPolicy, null, decision, authorizationProvider, decisionCache);
+    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Decision decision, AuthorizationProvider authorizationProvider, Map<Policy, Map<Object, Decision.Effect>> decisionCache, PolicyProvider policyProvider) {
+        this(permission, executionContext, parentPolicy, null, decision, authorizationProvider, decisionCache, policyProvider);
     }
 
-    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, AuthorizationProvider authorizationProvider) {
-        this(permission, executionContext, null, null, decision, authorizationProvider, Collections.emptyMap());
+    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Decision decision, AuthorizationProvider authorizationProvider, PolicyProvider policyProvider) {
+        this(permission, executionContext, null, null, decision, authorizationProvider, Collections.emptyMap(), policyProvider);
     }
 
-    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision, AuthorizationProvider authorizationProvider, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
+    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision, AuthorizationProvider authorizationProvider, Map<Policy, Map<Object, Decision.Effect>> decisionCache, PolicyProvider policyProvider) {
         this.permission = permission;
         this.executionContext = executionContext;
         this.parentPolicy = parentPolicy;
@@ -70,6 +76,7 @@ public class DefaultEvaluation implements Evaluation {
         this.authorizationProvider = authorizationProvider;
         this.decisionCache = decisionCache;
         this.realm = createRealm();
+        this.policyProvider = policyProvider;
     }
 
     @Override
@@ -140,6 +147,11 @@ public class DefaultEvaluation implements Evaluation {
         if (this.effect == null) {
             deny();
         }
+    }
+
+    @Override
+    public PolicyProvider getPolicyProvider() {
+        return this.policyProvider;
     }
 
     private Realm createRealm() {
@@ -278,4 +290,46 @@ public class DefaultEvaluation implements Evaluation {
     }
 
     private Predicate<RoleModel> isNotClientRole = ((Predicate<RoleModel>) RoleModel::isClientRole).negate();
+
+    /**
+     * Calculate the priority of the current evaluation, giving max precedence to UMA policies
+     * All other policies are in order of specificity. Type has the lowest priority, followed by
+     * a resource/scope policy, and finally a resource+scope policy. Type isn't considered for priority
+     * when either of the other two fields are present (unless the policy is a UMA policy)
+     * @return the calculated priority
+     */
+    @Override
+    public Integer getPriority() {
+        // start with 0, a policy with no fields for instance when evaluations are disabled
+        int priority = 0;
+        if(policy == null) {
+            return priority;
+        }
+        // UMA should take max precedence, a type is irrelevant if the policy has either resource or scope and shouldn't add to the priority
+        if(!StringUtil.isNullOrEmpty(policy.getType())) {
+            if(policy.getType().equals("uma")) {
+                priority = Integer.MAX_VALUE;
+                return priority;
+            } else if(CollectionUtil.isEmpty(policy.getScopes()) && CollectionUtil.isEmpty(policy.getResources())) {
+                priority++;
+                return priority;
+            }
+        }
+        // add one to offset for a type policy having a priority of "1". Any policy with scopes/resources should have more priority than type policy
+        priority = updatePriorityForScopeResource(priority) + 1;
+        return priority;
+    }
+
+    private Integer updatePriorityForScopeResource(int priority) {
+        // resource specific policies take priority over scope specific policies. Having both is the highest priority
+        Set<Scope> policyScopes = policy.getScopes();
+        Set<Resource> policyResources = policy.getResources();
+        if(CollectionUtil.isNotEmpty(policyResources)) {
+            priority += 2;
+        }
+        if(CollectionUtil.isNotEmpty(policyScopes)) {
+            priority += 1;
+        }
+        return priority;
+    }
 }

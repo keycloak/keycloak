@@ -21,6 +21,6 @@ package org.keycloak.authorization.policy.evaluation;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class DecisionResultCollector extends AbstractDecisionCollector {
+public class DecisionResultCollector extends AbstractDecisionCollector {
 
 }

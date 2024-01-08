@@ -20,113 +20,67 @@ package org.keycloak.authorization.policy.evaluation;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class AbstractDecisionCollector implements Decision<DefaultEvaluation> {
-
-    protected final Map<ResourcePermission, Result> results = new LinkedHashMap<>();
+    protected final Map<ResourcePermission, Map<Policy, Result>> policyResults = new LinkedHashMap<>();
 
     @Override
     public void onDecision(DefaultEvaluation evaluation) {
         Policy parentPolicy = evaluation.getParentPolicy();
         ResourcePermission permission = evaluation.getPermission();
 
+        Map<Policy, Result> permissionResults = policyResults.computeIfAbsent(permission, p -> new LinkedHashMap<>());
         if (parentPolicy != null) {
+            // this happens at the root level of a policy evaluation
             if (parentPolicy.equals(evaluation.getPolicy())) {
-                results.computeIfAbsent(permission, permission1 -> {
-                    for (Result result : results.values()) {
-                        Result.PolicyResult policyResult = result.getPolicy(parentPolicy);
-
-                        if (policyResult != null) {
-                            Result newResult = new Result(permission1, evaluation);
-                            Result.PolicyResult newPolicyResult = newResult.policy(parentPolicy);
-
-                            for (Result.PolicyResult associatePolicy : policyResult.getAssociatedPolicies()) {
-                                newPolicyResult.policy(associatePolicy.getPolicy(), associatePolicy.getEffect());
-                            }
-
-                            Map<String, Set<String>> claims = result.getPermission().getClaims();
-
-                            if (!claims.isEmpty()) {
-                                permission1.addClaims(claims);
-                            }
-
-                            return newResult;
-                        }
-                    }
-
-                    return new Result(permission1, evaluation);
-                }).policy(parentPolicy);
+                // When evaluating the parent policy we can just make sure that the entry exists and then set the evaluation with no cleanup
+                Result parentPolicyResult = permissionResults.putIfAbsent(parentPolicy, new Result(permission, evaluation));
+                if(parentPolicyResult != null) {
+                    parentPolicyResult.setEvaluation(evaluation);
+                }
             } else {
-                results.computeIfAbsent(permission, p -> new Result(p, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());
+                // When evaluating any of the nested nodes we may already have a result at the top level for the current permission
+                Result currentPolicy = permissionResults.getOrDefault(evaluation.getPolicy(), new Result(permission, evaluation));
+                permissionResults.computeIfAbsent(parentPolicy, p -> new Result(permission, null)).addNestedResult(currentPolicy);
+                // remove the current evaluation from the top level -- this occurs in the middle layers of a policy tree of N depth
+                permissionResults.remove(evaluation.getPolicy());
             }
         } else {
-            results.computeIfAbsent(permission, p -> new Result(p, evaluation)).setStatus(evaluation.getEffect());
+            // in the case of no hierarchy we can just add to the top level for the permission
+            permissionResults.put(evaluation.getPolicy(), new Result(permission, evaluation));
         }
     }
 
     @Override
     public void onComplete() {
-        onComplete(results.values());
+        onComplete(policyResults.values());
     }
 
     @Override
     public void onComplete(ResourcePermission permission) {
-        Result result = results.get(permission);
+        Map<Policy, Result>  results = policyResults.get(permission);
 
-        if (result != null) {
-            onComplete(result);
+        if (results != null) {
+            onComplete(permission, results);
         }
     }
 
-    protected void onComplete(Result result) {
+    protected void onComplete(ResourcePermission permission, Map<Policy, Result> results) {
 
     }
 
-    protected void onComplete(Collection<Result> permissions) {
+    /**
+     * Process the results for every single resource permission that was touched upon during this session
+     * @param permissions
+     */
+    protected void onComplete(Collection<Map<Policy, Result>> permissions) {
 
-    }
-
-    protected boolean isGranted(Result.PolicyResult policyResult) {
-        Policy policy = policyResult.getPolicy();
-        DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
-
-        switch (decisionStrategy) {
-            case AFFIRMATIVE:
-                for (Result.PolicyResult decision : policyResult.getAssociatedPolicies()) {
-                    if (Effect.PERMIT.equals(decision.getEffect())) {
-                        return true;
-                    }
-                }
-                return false;
-            case CONSENSUS:
-                int grantCount = 0;
-                int denyCount = policy.getAssociatedPolicies().size();
-
-                for (Result.PolicyResult decision : policyResult.getAssociatedPolicies()) {
-                    if (decision.getEffect().equals(Effect.PERMIT)) {
-                        grantCount++;
-                        denyCount--;
-                    }
-                }
-
-                return grantCount > denyCount;
-            default:
-                // defaults to UNANIMOUS
-                for (Result.PolicyResult decision : policyResult.getAssociatedPolicies()) {
-                    if (Effect.DENY.equals(decision.getEffect())) {
-                        return false;
-                    }
-                }
-                return true;
-        }
     }
 }

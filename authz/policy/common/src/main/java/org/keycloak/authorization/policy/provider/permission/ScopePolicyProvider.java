@@ -38,7 +38,7 @@ public class ScopePolicyProvider extends AbstractPermissionProvider {
         logger.debugv("Scope policy {} evaluating using parent class", evaluation.getPolicy().getName());
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
-        Policy policy = defaultEvaluation.getParentPolicy();
+        Policy policy = defaultEvaluation.getPolicy();
         Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(policy, p -> new HashMap<>());
         ResourcePermission permission = evaluation.getPermission();
 

@@ -106,29 +106,21 @@ public class UserManagedPermissionUtil {
 
         userPolicyRep.setName(KeycloakModelUtils.generateId());
         userPolicyRep.addUser(ticket.getRequester());
-
+        userPolicyRep.setOwner(ticket.getOwner());
         Policy userPolicy = policyStore.create(ticket.getResourceServer(), userPolicyRep);
 
-        userPolicy.setOwner(ticket.getOwner());
-
         PolicyRepresentation policyRep = new PolicyRepresentation();
-
         policyRep.setName(KeycloakModelUtils.generateId());
         policyRep.setType("uma");
         policyRep.addPolicy(userPolicy.getId());
-
-        Policy policy = policyStore.create(ticket.getResourceServer(), policyRep);
-
-        policy.setOwner(ticket.getOwner());
-        policy.addResource(ticket.getResource());
-
+        policyRep.setOwner(ticket.getOwner());
+        policyRep.addResource(ticket.getResource().getId());
         Scope scope = ticket.getScope();
-
         if (scope != null) {
-            policy.addScope(scope);
+            policyRep.addScope(scope.getId());
         }
 
-        return policy;
+        return policyStore.create(ticket.getResourceServer(), policyRep);
     }
 
 }

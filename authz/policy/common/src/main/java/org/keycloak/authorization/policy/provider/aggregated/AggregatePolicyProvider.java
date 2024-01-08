@@ -21,59 +21,42 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.evaluation.Result;
-import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.permission.AbstractPermissionProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
- */
-public class AggregatePolicyProvider implements PolicyProvider {
+ */   
+public class AggregatePolicyProvider extends AbstractPermissionProvider {
+
     private static final Logger logger = Logger.getLogger(AggregatePolicyProvider.class);
 
     @Override
     public void evaluate(Evaluation evaluation) {
         logger.debugv("Aggregate policy {} evaluating using parent class", evaluation.getPolicy().getName());
-        DecisionResultCollector decision = new DecisionResultCollector() {
-            @Override
-            protected void onComplete(Result result) {
-                if (isGranted(result.getResults().iterator().next())) {
-                    evaluation.grant();
-                } else {
-                    evaluation.deny();
-                }
-            }
-        };
-        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
-        Policy policy = evaluation.getPolicy();
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
+
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
+        Policy policy = defaultEvaluation.getPolicy();
+        Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(policy, p -> new HashMap<>());
+
         ResourcePermission permission = evaluation.getPermission();
+        Decision.Effect effect = decisions.get(permission);
 
-        for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
-            Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
-            Decision.Effect effect = decisions.get(permission);
-            DefaultEvaluation eval = new DefaultEvaluation(evaluation.getPermission(), evaluation.getContext(), policy, associatedPolicy, decision, authorization, decisionCache);
-
-            if (effect == null) {
-                PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
-
-                policyProvider.evaluate(eval);
-
-                eval.denyIfNoEffect();
-                decisions.put(permission, eval.getEffect());
-            } else {
-                eval.setEffect(effect);
-            }
+        if (effect != null) {
+            defaultEvaluation.setEffect(effect);
+            return;
         }
 
-        decision.onComplete(permission);
+        Decision.Effect decision = defaultEvaluation.getEffect();
+        if (decision == null) {
+            super.evaluate(evaluation);
+            decisions.put(permission, defaultEvaluation.getEffect());
+        }
     }
 
     @Override

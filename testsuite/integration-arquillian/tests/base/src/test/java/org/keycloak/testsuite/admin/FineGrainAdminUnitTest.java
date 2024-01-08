@@ -27,6 +27,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.client.admin.cli.util.ConfigUtil;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -52,7 +53,9 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.UserPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -932,13 +935,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
     }
 
-    @Test
-    @UncaughtServerErrorExpected
-
-    public void testTokenExchangeDisabled() throws Exception {
-        checkTokenExchange(false);
-    }
-
     /**
      * KEYCLOAK-7406
      *
@@ -946,7 +942,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
      */
     @Test
     @UncaughtServerErrorExpected
-
     @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void testWithTokenExchange() throws Exception {
         String exchanged = checkTokenExchange(true);
@@ -970,6 +965,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             customerAManager.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_USERS));
             customerAManager.setEnabled(true);
+
             UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
             regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
             regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.VIEW_USERS));
@@ -977,21 +973,26 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             AdminPermissionManagement management = AdminPermissions.management(session, realm);
 
+            UserPermissionManagement userPermission = management.users();
+
+            userPermission.setPermissionsEnabled(true);
+
             GroupPermissionManagement groupPermission = management.groups();
 
             groupPermission.setPermissionsEnabled(customerAGroup, true);
 
+            // Create a group for customer a that gets associated with a permission for only one username
             UserPolicyRepresentation userPolicyRepresentation = new UserPolicyRepresentation();
-
             userPolicyRepresentation.setName("Only " + customerAManager.getUsername());
             userPolicyRepresentation.addUser(customerAManager.getId());
 
-            Policy policy = groupPermission.viewMembersPermission(customerAGroup);
-
+            // create the policy on the resource server
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
-
             Policy userPolicy = provider.getStoreFactory().getPolicyStore().create(management.realmResourceServer(), userPolicyRepresentation);
 
+            // associate the created permission for this user to the view scope permission on the group
+            // these scopes are associated with manipulating groups so has nothing to do with user permissions
+            Policy policy = groupPermission.viewMembersPermission(customerAGroup);
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
 
             for (int i = 0; i < 20; i++) {
@@ -1242,6 +1243,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
             regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
             regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_CLIENTS));
+            regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.MANAGE_CLIENTS));
             regularAdminUser.setEnabled(true);
 
             UserPolicyRepresentation userPolicyRepresentation = new UserPolicyRepresentation();

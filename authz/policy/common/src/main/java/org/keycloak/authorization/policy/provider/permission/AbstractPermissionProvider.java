@@ -43,28 +43,54 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
         AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
-        Policy policy = evaluation.getPolicy();
+        Policy policy = defaultEvaluation.getPolicy();
         ResourcePermission permission = evaluation.getPermission();
 
+        Set<Evaluation> associatedEvaluations = new HashSet<>();
         for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
+            // create an evaluation specifically for the current policy with correct parent and base, copy collector, auth, cache, and context from parent
+            PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+            DefaultEvaluation associatedEvaluation = new DefaultEvaluation(permission, defaultEvaluation.getContext(), policy, associatedPolicy,
+                defaultEvaluation.getDecision(), authorization, decisionCache, policyProvider);
+
+            // check if we have evaluated this policy for specifically the current permission being evaluated
             Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
             Decision.Effect effect = decisions.get(permission);
-
-            defaultEvaluation.setPolicy(associatedPolicy);
-
             if (effect == null) {
-                PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
-                
                 if (policyProvider == null) {
                     throw new RuntimeException("No policy provider found for policy [" + associatedPolicy.getType() + "]");
                 }
-                
-                policyProvider.evaluate(defaultEvaluation);
-                evaluation.denyIfNoEffect();
-                decisions.put(permission, defaultEvaluation.getEffect());
+                policyProvider.evaluate(associatedEvaluation);
+                associatedEvaluation.denyIfNoEffect();
             } else {
-                defaultEvaluation.setEffect(effect);
+                associatedEvaluation.setEffect(effect);
             }
+            associatedEvaluations.add(associatedEvaluation);
+        }
+
+        switch (policy.getDecisionStrategy()) {
+            case AFFIRMATIVE:
+                if(associatedEvaluations.stream().anyMatch(eval -> Effect.PERMIT.equals(eval.getEffect()))) {
+                    evaluation.grant();
+                } else {
+                    evaluation.deny();
+                }
+                break;
+            case CONSENSUS:
+                long count = associatedEvaluations.stream().filter(eval -> Effect.PERMIT.equals(eval.getEffect())).count();
+                if(count >= associatedEvaluations.size() / 2) {
+                    evaluation.grant();
+                } else {
+                    evaluation.deny();
+                }
+                break;
+            default:
+                // UNANIMOUS
+                if(!associatedEvaluations.isEmpty() && associatedEvaluations.stream().allMatch(eval -> Effect.PERMIT.equals(eval.getEffect()))) {
+                    evaluation.grant();
+                } else {
+                    evaluation.deny();
+                }
         }
         logger.debugv("Policy {} was evaluated with status {} in {} mode after processing {} associated policies: {}", policy.getName(), evaluation.getEffect(), policy.getDecisionStrategy(), policy.getAssociatedPolicies().size(), policy.getAssociatedPolicies());
     }

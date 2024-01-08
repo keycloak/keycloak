@@ -474,12 +474,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resource = addResource("Resource A", "marta", true);
 
+        // add a permission bound to the created resource that only allows the owner "marta" access
         permission.setName(resource.getName() + " Permission");
         permission.addResource(resource.getId());
         permission.addPolicy("Only Owner Policy");
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
+        // marta has access and the rpt is valid without any upgrading
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {});
         String rpt = response.getToken();
 
@@ -504,12 +506,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         }
 
+        // attempting to authorize with a ticket caused the creation of a ticket
         PermissionResource permissionResource = getAuthzClient().protection().permission();
         List<PermissionTicketRepresentation> permissionTickets = permissionResource.findByResource(resource.getId());
 
         assertFalse(permissionTickets.isEmpty());
         assertEquals(1, permissionTickets.size());
 
+        // grant the requested ticket for kolo
         for (PermissionTicketRepresentation ticket : permissionTickets) {
             assertFalse(ticket.isGranted());
 
@@ -527,6 +531,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
+        // kolo should now have access because the ticket was granted
         response = authorize("kolo", "password", resource.getId(), new String[] {});
         rpt = response.getToken();
 

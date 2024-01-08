@@ -143,7 +143,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         // evaluation should succeed with the default context as it uses the current time as the date to be compared.
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
         provider.evaluate(evaluation);
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
@@ -151,7 +151,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         long contextTime = System.currentTimeMillis() + 5400000;
         Map<String,Collection<String>> attributes = new HashMap<>();
         attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(contextTime))));
-        evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
+        evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes, provider);
         provider.evaluate(evaluation);
         Assert.assertEquals(Effect.DENY, evaluation.getEffect());
     }
@@ -175,7 +175,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -188,7 +188,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -200,7 +200,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -212,7 +212,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -224,7 +224,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -236,7 +236,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -248,7 +248,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -260,7 +260,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -272,7 +272,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -298,7 +298,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -311,7 +311,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -337,7 +337,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -349,7 +349,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -375,7 +375,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -388,7 +388,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         provider = authorization.getProvider(policy.getType());
 
-        evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -414,7 +414,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -440,7 +440,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -466,7 +466,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -498,7 +498,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -528,7 +528,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         resource.setAttribute("a1", Arrays.asList("1", "2"));
         resource.setAttribute("a2", Arrays.asList("3"));
 
-        DefaultEvaluation evaluation = createEvaluation(session, authorization, resource, resourceServer, policy);
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resource, resourceServer, policy, provider);
 
         provider.evaluate(evaluation);
 
@@ -624,18 +624,19 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         Assert.assertEquals(0, permissions.size());
     }
 
-    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy) {
-        return createEvaluation(session, authorization, null, resourceServer, policy);
+    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy, PolicyProvider policyProvider) {
+        return createEvaluation(session, authorization, null, resourceServer, policy, policyProvider);
     }
 
-    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, Resource resource, ResourceServer resourceServer, Policy policy) {
-        return createEvaluation(session, authorization, resource, resourceServer, policy, null);
+    private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, Resource resource, ResourceServer resourceServer, Policy policy, PolicyProvider policyProvider) {
+        return createEvaluation(session, authorization, resource, resourceServer, policy, null, policyProvider);
     }
 
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization,
                                                       Resource resource, ResourceServer resourceServer, Policy policy,
-                                                      Map<String, Collection<String>> contextAttributes) {
-        return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), createEvaluationContext(session, contextAttributes), policy, evaluation -> {}, authorization, null);
+                                                      Map<String, Collection<String>> contextAttributes,
+                                                      PolicyProvider policyProvider) {
+        return new DefaultEvaluation(new ResourcePermission(resource, null, resourceServer), createEvaluationContext(session, contextAttributes), policy, evaluation -> {}, authorization, null, policyProvider);
     }
 
     private static DefaultEvaluationContext createEvaluationContext(KeycloakSession session, Map<String, Collection<String>> contextAttributes) {

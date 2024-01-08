@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
@@ -99,10 +98,19 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
     private void grantAndComplete(ResourcePermission permission, AuthorizationProvider authorizationProvider,
             EvaluationContext executionContext, Decision decision) {
-        DefaultEvaluation evaluation = new DefaultEvaluation(permission, executionContext, decision, authorizationProvider);
+        PolicyProvider policyProvider = new PolicyProvider() {
+            @Override
+            public void evaluate(Evaluation evaluation) {
+                evaluation.grant();
+            }
 
-        evaluation.grant();
+            @Override
+            public void close() {
 
+            }
+        };
+        DefaultEvaluation evaluation = new DefaultEvaluation(permission, executionContext, decision, authorizationProvider, policyProvider);
+        policyProvider.evaluate(evaluation);
         decision.onComplete(permission);
     }
 
@@ -114,7 +122,8 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                 throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
             }
 
-            policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
+            // create an evaluation object with the current policy as the parent and child, indicating to the decision collector that this is the root level
+            policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, parentPolicy, decision, authorizationProvider, decisionCache, policyProvider));
 
             verified.compareAndSet(false, true);
         };

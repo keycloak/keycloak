@@ -72,7 +72,8 @@ public class PolicyEvaluationResponseBuilder {
 
         response.setRpt(accessToken);
 
-        Collection<Result> results = decision.getResults();
+
+        Collection<Result> results = decision.getPolicyResults().values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toList());
 
         if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
             response.setStatus(DecisionEffect.DENY);
@@ -117,7 +118,7 @@ public class PolicyEvaluationResponseBuilder {
 
             List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new ArrayList<>();
 
-            for (Result.PolicyResult policy : result.getResults()) {
+            for (Result policy : results) {
                 PolicyResultRepresentation policyRep = toRepresentation(policy, authorization);
 
                 if ("resource".equals(policy.getPolicy().getType())) {
@@ -177,7 +178,7 @@ public class PolicyEvaluationResponseBuilder {
         return response;
     }
 
-    private static PolicyEvaluationResponse.PolicyResultRepresentation toRepresentation(Result.PolicyResult result, AuthorizationProvider authorization) {
+    private static PolicyEvaluationResponse.PolicyResultRepresentation toRepresentation(Result result, AuthorizationProvider authorization) {
         PolicyEvaluationResponse.PolicyResultRepresentation policyResultRep = new PolicyEvaluationResponse.PolicyResultRepresentation();
 
         PolicyRepresentation representation = new PolicyRepresentation();
@@ -238,7 +239,7 @@ public class PolicyEvaluationResponseBuilder {
             policyResultRep.setStatus(DecisionEffect.PERMIT);
         }
 
-        policyResultRep.setAssociatedPolicies(result.getAssociatedPolicies().stream().map(policy1 -> toRepresentation(policy1, authorization)).collect(Collectors.toList()));
+        policyResultRep.setAssociatedPolicies(result.getNestedResults().stream().map(policy1 -> toRepresentation(policy1, authorization)).collect(Collectors.toList()));
 
         return policyResultRep;
     }
