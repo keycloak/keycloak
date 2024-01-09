@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActionList,
+  ActionListItem,
   Brand,
   Button,
   Card,
@@ -45,8 +47,9 @@ import { ProviderInfo } from "./ProviderInfo";
 
 import "./dashboard.css";
 import { useFetch } from "../utils/useFetch";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { adminClient } from "../admin-client";
+import helpUrls from "../help-urls";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation();
@@ -168,57 +171,55 @@ const Dashboard = () => {
                     headingLevel="h2"
                     size="3xl"
                   >
-                    {t("welcome")} {realmDisplayInfo}
+                    {t("welcomeTo", { realmDisplayInfo })}
                   </Title>
                 </div>
-                <div className="pf-l-grid__item pf-m-12-col pf-u-mt-md">
-                  <Text component={TextVariants.h3}>
-                    {t("welcomeDescriptionA")}
-                  </Text>
-                  <Text className="pf-u-mt-xs" component={TextVariants.h3}>
-                    {t("welcomeDescriptionB")}
-                  </Text>
+                <div className="pf-l-grid__item keycloak__dashboard_welcome_tab">
+                  <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
                 </div>
                 <div className="pf-l-grid__item pf-m-10-col pf-u-mt-md">
                   <Button
                     className="pf-u-px-lg pf-u-py-sm"
                     component="a"
-                    href="https://www.keycloak.org/documentation"
+                    href={helpUrls.documentation}
                     target="_blank"
                     variant="primary"
                   >
                     {t("viewDocumentation")}
                   </Button>
                 </div>
-                <div className="pf-u-mt-sm">
-                  <Button
-                    className="pf-u-px-sm pf-u-py-sm"
-                    component="a"
-                    href="https://www.keycloak.org/guides"
-                    target="_blank"
-                    variant="tertiary"
-                  >
-                    {t("viewGuides")}
-                  </Button>{" "}
-                  <Button
-                    className="pf-u-px-sm pf-u-py-sm"
-                    component="a"
-                    href="https://www.keycloak.org/community"
-                    target="_blank"
-                    variant="tertiary"
-                  >
-                    {t("joinCommunity")}
-                  </Button>{" "}
-                  <Button
-                    className="pf-u-px-sm pf-u-py-sm"
-                    component="a"
-                    href="https://www.keycloak.org/blog"
-                    target="_blank"
-                    variant="tertiary"
-                  >
-                    {t("readBlog")}
-                  </Button>
-                </div>
+                <ActionList className="pf-u-mt-sm">
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.guides}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("viewGuides")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.community}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("joinCommunity")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.blog}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("readBlog")}
+                    </Button>
+                  </ActionListItem>
+                </ActionList>
               </div>
             </PageSection>
           </Tab>
