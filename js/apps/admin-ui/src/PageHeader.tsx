@@ -73,7 +73,11 @@ const HelpDropdownItem = () => {
   const { t } = useTranslation();
   const { enabled, toggleHelp } = useHelp();
   return (
-    <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
+    <DropdownItem
+      data-testId="helpIcon"
+      icon={<HelpIcon />}
+      onClick={toggleHelp}
+    >
       {enabled ? t("helpEnabled") : t("helpDisabled")}
     </DropdownItem>
   );
