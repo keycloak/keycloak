@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Brand,
+  Button,
   Card,
   CardBody,
   CardTitle,
@@ -22,6 +23,7 @@ import {
   TabTitleText,
   Text,
   TextContent,
+  TextVariants,
   Title,
 } from "@patternfly/react-core";
 
@@ -42,6 +44,9 @@ import { DashboardTab, toDashboard } from "./routes/Dashboard";
 import { ProviderInfo } from "./ProviderInfo";
 
 import "./dashboard.css";
+import { useFetch } from "../utils/useFetch";
+import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import { adminClient } from "../admin-client";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation();
@@ -95,6 +100,8 @@ const Dashboard = () => {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
+  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
+  const logo = environment.logo ? environment.logo : "/logo.svg";
 
   const sortedFeatures = useMemo(
     () => localeSort(serverInfo.features ?? [], mapByKey("name")),
@@ -119,6 +126,11 @@ const Dashboard = () => {
       }),
     );
 
+  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
+
+  const realmDisplayInfo = realmInfo?.displayName ?? realm;
+
+  const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
   const providersTab = useTab("providers");
 
@@ -138,11 +150,85 @@ const Dashboard = () => {
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
             realm,
-            tab: "info",
+            tab: "welcome",
           })}
           isBox
           mountOnEnter
         >
+          <Tab
+            id="welcome"
+            data-testid="welcomeTab"
+            title={<TabTitleText>{t("welcomeTabTitle")}</TabTitleText>}
+            {...welcomeTab}
+          >
+            <PageSection variant="light">
+              <div className="pf-l-grid pf-u-ml-lg">
+                <div className="pf-l-grid__item pf-m-12-col">
+                  <Brand
+                    src={environment.resourceUrl + logo}
+                    id="logo"
+                    alt="Logo"
+                    className="keycloak__pageheader_brand"
+                  />
+                  <Title
+                    className="pf-u-font-weight-bold"
+                    headingLevel="h2"
+                    size="3xl"
+                  >
+                    {t("welcome")} {realmDisplayInfo}
+                  </Title>
+                </div>
+                <div className="pf-l-grid__item pf-m-12-col pf-u-mt-md">
+                  <Text component={TextVariants.h3}>
+                    {t("welcomeDescriptionA")}
+                  </Text>
+                  <Text className="pf-u-mt-xs" component={TextVariants.h3}>
+                    {t("welcomeDescriptionB")}
+                  </Text>
+                </div>
+                <div className="pf-l-grid__item pf-m-10-col pf-u-mt-md">
+                  <Button
+                    className="pf-u-px-lg pf-u-py-sm"
+                    component="a"
+                    href="https://www.keycloak.org/documentation"
+                    target="_blank"
+                    variant="primary"
+                  >
+                    {t("viewDocumentation")}
+                  </Button>
+                </div>
+                <div className="pf-u-mt-sm">
+                  <Button
+                    className="pf-u-px-sm pf-u-py-sm"
+                    component="a"
+                    href="https://www.keycloak.org/guides"
+                    target="_blank"
+                    variant="tertiary"
+                  >
+                    {t("viewGuides")}
+                  </Button>{" "}
+                  <Button
+                    className="pf-u-px-sm pf-u-py-sm"
+                    component="a"
+                    href="https://www.keycloak.org/community"
+                    target="_blank"
+                    variant="tertiary"
+                  >
+                    {t("joinCommunity")}
+                  </Button>{" "}
+                  <Button
+                    className="pf-u-px-sm pf-u-py-sm"
+                    component="a"
+                    href="https://www.keycloak.org/blog"
+                    target="_blank"
+                    variant="tertiary"
+                  >
+                    {t("readBlog")}
+                  </Button>
+                </div>
+              </div>
+            </PageSection>
+          </Tab>
           <Tab
             id="info"
             data-testid="infoTab"
