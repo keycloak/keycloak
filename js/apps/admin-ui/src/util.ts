@@ -63,13 +63,10 @@ export const exportClient = (client: ClientRepresentation): void => {
 export const toUpperCase = <T extends string>(name: T) =>
   (name.charAt(0).toUpperCase() + name.slice(1)) as Capitalize<T>;
 
-const isAttributesObject = (value: any) => {
-  return (
-    Object.values(value).filter(
-      (value) => Array.isArray(value) && value.length >= 1,
-    ).length !== 0
-  );
-};
+const isAttributesObject = (value: any) =>
+  Object.values(value).filter(
+    (value) => Array.isArray(value) && value.length >= 1,
+  ).length !== 0;
 
 const isAttributeArray = (value: any) => {
   if (!Array.isArray(value)) {
@@ -95,7 +92,7 @@ export function convertAttributeNameToForm<T>(
 export const beerify = <T extends string>(name: T) =>
   name.replaceAll(".", "🍺") as ReplaceString<T, ".", "🍺">;
 
-const debeerify = <T extends string>(name: T) =>
+export const debeerify = <T extends string>(name: T) =>
   name.replaceAll("🍺", ".") as ReplaceString<T, "🍺", ".">;
 
 export function convertToFormValues<T extends FieldValues>(

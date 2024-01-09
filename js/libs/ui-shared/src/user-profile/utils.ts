@@ -44,9 +44,10 @@ export const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);
 
 export const fieldName = (name?: string) =>
-  `${
-    isRootAttribute(name) ? "" : "attributes."
-  }${name}` as FieldPath<UserFormFields>;
+  `${isRootAttribute(name) ? "" : "attributes."}${name?.replaceAll(
+    ".",
+    "🍺",
+  )}` as FieldPath<UserFormFields>;
 
 export function setUserProfileServerError<T>(
   error: UserProfileError,
