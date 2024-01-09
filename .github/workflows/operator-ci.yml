@@ -231,6 +231,7 @@ jobs:
     if: always()
     needs:
       - conditional
+      - build
       - test-local
       - test-remote
       - test-olm
