@@ -20,6 +20,7 @@ package org.keycloak.testsuite.adapter.page;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -46,47 +47,43 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
 
     public AccessToken getAccessToken() {
         try {
+            WaitUtils.waitUntilElement(accessToken).is().visible();
             return JsonSerialization.readValue(accessToken.getText(), AccessToken.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (NoSuchElementException nsee) {
-            log.warn("No accessToken element found on the page");
+            throw LogScreenContents.fail(driver, "No accessToken element found on the page", nsee);
         }
-
-        return null;
     }
 
 
     public RefreshToken getRefreshToken() {
         try {
+            WaitUtils.waitUntilElement(refreshToken).is().visible();
             return JsonSerialization.readValue(refreshToken.getText(), RefreshToken.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (NoSuchElementException nsee) {
-            log.warn("No refreshToken element found on the page");
+            throw LogScreenContents.fail(driver, "No refreshToken element found on the page", nsee);
         }
-
-        return null;
     }
 
 
     public String getAccessTokenString() {
         try {
+            WaitUtils.waitUntilElement(accessTokenString).is().visible();
             return accessTokenString.getText();
         } catch (NoSuchElementException nsee) {
-            log.warn("No accessTokenString element found on the page");
+            throw LogScreenContents.fail(driver, "No accessTokenString element found on the page", nsee);
         }
-
-        return null;
     }
 
     public String getRefreshTokenString() {
         try {
+            WaitUtils.waitUntilElement(refreshTokenString).is().visible();
             return refreshTokenString.getText();
         } catch (NoSuchElementException nsee) {
-            log.warn("No refreshTokenString element found on the page");
+            throw LogScreenContents.fail(driver, "No refreshTokenString element found on the page", nsee);
         }
-
-        return null;
     }
 }
