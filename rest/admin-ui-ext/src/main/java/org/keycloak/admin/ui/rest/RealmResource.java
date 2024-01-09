@@ -12,6 +12,9 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.RealmsPermissionEvaluator;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -20,9 +23,11 @@ import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
 
 public class RealmResource {
     private final KeycloakSession session;
+    private final AdminPermissionEvaluator auth;
 
-    public RealmResource(KeycloakSession session) {
+    public RealmResource(KeycloakSession session, AdminPermissionEvaluator auth) {
         this.session = session;
+        this.auth = auth;
     }
 
     @GET
@@ -43,7 +48,12 @@ public class RealmResource {
             )}
     )
     public Stream<String> realmList() {
-        Stream<String> realms = session.realms().getRealmsStream().filter(Objects::nonNull).map(RealmModel::getName);
+        Stream<String> realms = session.realms().getRealmsStream()
+                                .filter(realm -> {
+                                    RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
+                                    return eval.canView(realm) || eval.isAdmin(realm);
+                                  })
+                                .map(RealmModel::getName);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 }
