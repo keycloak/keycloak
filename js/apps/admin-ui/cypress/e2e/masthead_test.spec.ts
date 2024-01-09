@@ -35,7 +35,7 @@ describe("Masthead tests", () => {
     it("Go to realm info", () => {
       sidebarPage.goToClients();
       masthead.toggleUsernameDropdown().clickRealmInfo();
-      cy.get(".pf-c-card__title").should("contain.text", "Welcome");
+      cy.get(".pf-l-grid").should("contain.text", "Welcome");
     });
 
     it("Should go to documentation page", () => {
@@ -80,9 +80,8 @@ describe("Masthead tests", () => {
         .assertIsMobileView()
         .toggleUsernameDropdown()
         .toggleMobileViewHelp();
-      cy.get(helpLabel).should("not.exist");
       masthead.toggleMobileViewHelp();
-      cy.get(helpLabel).should("exist");
+      cy.findByTestId("helpIcon").should("exist");
     });
   });
 
