@@ -638,7 +638,10 @@ public final class Picocli {
             transformedDesc.append(" Possible values are: " + String.join(", ", mapper.getExpectedValues()) + ".");
         }
 
-        mapper.getDefaultValue().map(d -> " Default: " + d + ".").ifPresent(transformedDesc::append);
+        mapper.getDefaultValue()
+                .map(d -> d.toString().replaceAll("%", "%%")) // escape formats
+                .map(d -> " Default: " + d + ".")
+                .ifPresent(transformedDesc::append);
 
         mapper.getDeprecatedMetadata().ifPresent(deprecatedMetadata -> {
             List<String> deprecatedDetails = new ArrayList<>();
