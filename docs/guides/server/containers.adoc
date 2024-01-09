@@ -13,7 +13,7 @@ This {section} describes how to optimize and run the {project_name} container im
 
 <@profile.ifProduct>
 
-NOTE: The procedure in this chapter is intended for building an image that you run in a containerized environment such as OpenShift.  The image is not intended to be run in other Kubernetes distributions.
+WARNING: This chapter applies only for building an image that you run in a OpenShift environment. Only an OpenShift environment is supported for this image. It is not supported if you run it in other Kubernetes distributions. 
 
 </@profile.ifProduct>
 
