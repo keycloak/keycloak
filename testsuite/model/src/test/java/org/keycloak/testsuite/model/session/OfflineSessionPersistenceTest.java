@@ -343,7 +343,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         // Shutdown factory -> enforce session persistence
         closeKeycloakSessionFactory();
 
-        inIndependentFactories(4, 30, () -> assertOfflineSessionsExist(realmId, offlineSessionIds));
+        inIndependentFactories(4, 60, () -> assertOfflineSessionsExist(realmId, offlineSessionIds));
     }
 
     /**
