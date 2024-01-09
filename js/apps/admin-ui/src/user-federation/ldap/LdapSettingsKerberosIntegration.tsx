@@ -200,7 +200,6 @@ export const LdapSettingsKerberosIntegration = ({
               }
             >
               <KeycloakTextInput
-                defaultValue="userPrincipalName"
                 id="kc-krb-principal-attribute"
                 data-testid="krb-principal-attribute"
                 validated={
