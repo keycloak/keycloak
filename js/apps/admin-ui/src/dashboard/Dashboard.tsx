@@ -1,7 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActionList,
+  ActionListItem,
   Brand,
+  Button,
   Card,
   CardBody,
   CardTitle,
@@ -22,6 +25,7 @@ import {
   TabTitleText,
   Text,
   TextContent,
+  TextVariants,
   Title,
 } from "@patternfly/react-core";
 
@@ -42,6 +46,10 @@ import { DashboardTab, toDashboard } from "./routes/Dashboard";
 import { ProviderInfo } from "./ProviderInfo";
 
 import "./dashboard.css";
+import { useFetch } from "../utils/useFetch";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { adminClient } from "../admin-client";
+import helpUrls from "../help-urls";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation();
@@ -95,6 +103,7 @@ const Dashboard = () => {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
+  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
 
   const sortedFeatures = useMemo(
     () => localeSort(serverInfo.features ?? [], mapByKey("name")),
@@ -119,6 +128,11 @@ const Dashboard = () => {
       }),
     );
 
+  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
+
+  const realmDisplayInfo = realmInfo?.displayName ?? realm;
+
+  const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
   const providersTab = useTab("providers");
 
@@ -138,11 +152,77 @@ const Dashboard = () => {
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
             realm,
-            tab: "info",
+            tab: "welcome",
           })}
           isBox
           mountOnEnter
         >
+          <Tab
+            id="welcome"
+            data-testid="welcomeTab"
+            title={<TabTitleText>{t("welcomeTabTitle")}</TabTitleText>}
+            {...welcomeTab}
+          >
+            <PageSection variant="light">
+              <div className="pf-l-grid pf-u-ml-lg">
+                <div className="pf-l-grid__item pf-m-12-col">
+                  <Title
+                    className="pf-u-font-weight-bold"
+                    headingLevel="h2"
+                    size="3xl"
+                  >
+                    {t("welcomeTo", { realmDisplayInfo })}
+                  </Title>
+                </div>
+                <div className="pf-l-grid__item keycloak__dashboard_welcome_tab">
+                  <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
+                </div>
+                <div className="pf-l-grid__item pf-m-10-col pf-u-mt-md">
+                  <Button
+                    className="pf-u-px-lg pf-u-py-sm"
+                    component="a"
+                    href={helpUrls.documentation}
+                    target="_blank"
+                    variant="primary"
+                  >
+                    {t("viewDocumentation")}
+                  </Button>
+                </div>
+                <ActionList className="pf-u-mt-sm">
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.guides}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("viewGuides")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.community}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("joinCommunity")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.blog}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("readBlog")}
+                    </Button>
+                  </ActionListItem>
+                </ActionList>
+              </div>
+            </PageSection>
+          </Tab>
           <Tab
             id="info"
             data-testid="infoTab"
