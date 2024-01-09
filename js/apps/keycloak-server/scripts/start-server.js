@@ -20,6 +20,11 @@ const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin";
 const AUTH_DELAY = 10000;
 const AUTH_RETRY_LIMIT = 3;
+const FEATURES_ENABLED = [
+  "account3",
+  "admin-fine-grained-authz",
+  "transient-users",
+];
 
 const options = {
   local: {
@@ -35,12 +40,14 @@ async function startServer() {
   await downloadServer(scriptArgs.local);
 
   console.info("Starting server…");
+
+  const features = FEATURES_ENABLED.join(",");
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
       "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,transient-users",
+      `--features=${process.platform === "win32" ? `"${features}"` : features}`,
       ...keycloakArgs,
     ],
     {
