@@ -129,7 +129,7 @@ export default function GroupsSection() {
         />
       )}
       <PageSection variant={PageSectionVariants.light} className="pf-u-p-0">
-        <Drawer isInline isExpanded={open} key={key} position="left">
+        <Drawer isInline isExpanded={open} position="left">
           <DrawerContent
             panelContent={
               <DrawerPanelContent isResizable>
@@ -142,7 +142,7 @@ export default function GroupsSection() {
               </DrawerPanelContent>
             }
           >
-            <DrawerContentBody>
+            <DrawerContentBody key={key}>
               <Tooltip content={open ? t("hide") : t("show")}>
                 <Button
                   aria-label={open ? t("hide") : t("show")}
