@@ -218,6 +218,7 @@ export const RealmSettingsGeneralTab = ({
         >
           <FormProvider {...form}>
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormProvider>
