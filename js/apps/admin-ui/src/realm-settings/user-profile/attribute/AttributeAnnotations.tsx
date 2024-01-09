@@ -21,6 +21,7 @@ export const AttributeAnnotations = () => {
           <GridItem>
             <KeyValueInput
               name="annotations"
+              label={t("annotations")}
               defaultKeyValue={[
                 {
                   key: "inputType",
