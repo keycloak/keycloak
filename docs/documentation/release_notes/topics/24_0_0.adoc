@@ -104,6 +104,13 @@ first time using the `idp-review-user-profile.ftl` template.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Sequential loading of offline sessions and remote sessions
+
+Starting with this release, the first member of a Keycloak cluster will load remote sessions sequentially instead of in parallel.
+If offline session preloading is enabled, those will be loaded sequentially as well.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Performing actions on behalf of another user is not longer possible when the user is already authenticated
 
 In this release, you can no longer perform actions such as email verification if the user is already authenticated
