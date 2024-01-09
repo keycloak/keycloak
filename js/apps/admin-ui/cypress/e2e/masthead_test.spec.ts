@@ -35,7 +35,7 @@ describe("Masthead tests", () => {
     it("Go to realm info", () => {
       sidebarPage.goToClients();
       masthead.toggleUsernameDropdown().clickRealmInfo();
-      cy.get(".pf-c-card__title").should("contain.text", "Server info");
+      cy.get(".pf-c-card__title").should("contain.text", "Welcome");
     });
 
     it("Should go to documentation page", () => {
@@ -58,6 +58,7 @@ describe("Masthead tests", () => {
 
     it("Enable/disable help mode in desktop mode", () => {
       masthead.assertIsDesktopView();
+      cy.findByTestId("infoTab").click();
       cy.get(helpLabel).should("exist");
       masthead.toggleGlobalHelp();
       masthead.clickGlobalHelp();
