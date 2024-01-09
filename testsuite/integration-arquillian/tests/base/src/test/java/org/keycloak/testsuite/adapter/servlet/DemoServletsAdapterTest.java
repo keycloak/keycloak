@@ -215,7 +215,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME,  AdapterActionsFilter.class, CallAuthenticatedServlet.class);
     }
     @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
     protected static WebArchive securePortalRewriteRedirectUri() {
