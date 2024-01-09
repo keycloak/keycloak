@@ -66,3 +66,16 @@ Service account sessions provide the following details:
 Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
 When scripts deploy, you should be able to select the deployed scripts from the list of available mappers.
+
+[[_using_lightweight_access_token]]
+== Using lightweight access token
+The access token in {project_name} contains sensitive information, including Personal Identifiable Information (PII).
+Therefore, if the resource server does not want to disclose this type of information to third party entities such as clients, {project_name} supports lightweight access tokens that remove PII from access tokens.
+Further, when the resource server acquires the PII removed from the access token, it can acquire the PII by sending the access token to {project_name}'s token introspection endpoint.
+
+Information that cannot be removed from a lightweight access token::
+  Protocol mappers can controls which information is put onto an access token and the lightweight access token use the protocol mappers. Therefore, the following information cannot be removed from the lightweight access. +
+  `exp`, `iat`, `auth_time`, `jti`, `iss`, `sub`, `typ`, `azp`, `nonce`, `session_state`, `sid`, `scope`, `cnf`
+
+Using a lightweight access token in {project_name}::
+  By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.

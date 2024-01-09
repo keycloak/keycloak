@@ -128,7 +128,7 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 		emailUpdatePage.changeEmail("");
 		emailUpdatePage.assertCurrent();
 
-		Assert.assertEquals("Please specify email.", emailUpdatePage.getEmailError());
+		Assert.assertTrue(emailUpdatePage.getEmailError().contains("Please specify email."));
 
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		Assert.assertEquals("test-user@localhost", user.getEmail());

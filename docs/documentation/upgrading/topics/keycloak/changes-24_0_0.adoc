@@ -1,6 +1,34 @@
+= Changes to the Welcome theme
+
+The 'welcome' theme has has been updated to use a new layout and now uses PatternFly 5, rather than PatternFly 3. If you are extending the theme, or providing your own, you may need to update it as follows:
+
+== Migrate from PatternFly 3 to PatternFly 5
+
+The welcome theme was one of the more outdated themes in Keycloak. It was originally based on PatternFly 3, but has now been updated to use PatternFly 5, skipping a major version in the process. This means that if your custom theme extends the built-in theme you will need to update it to use PatternFly 5 syntax. Consult the https://www.patternfly.org/get-started/develop/[PatternFly 5 documentation] for details.
+
+If you are still using PatternFly 3 in your own custom theme (not extending the built-in one), you can continue to use it, but PatternFly 3 support will be removed in a future release, so you should consider migrating to PatternFly 5 as soon as possible.
+
+== Automatic redirect to the Administration Console
+
+If the Administration Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
+
+== The `documentationUrl` and `displayCommunityLinks` properties have been removed.
+
+These properties were previously used for navigational elements that are now no longer present. If you are extending the built-in theme, you will need to remove these properties from your `theme.properties` file, as they no longer have any effect.
+
+== Assets are now loaded from 'common' resources
+
+Images such as the background, logo and favicon are now loaded from the 'common' resources, rather than the theme resources. This change means that if you are extending the built-in theme, and are overwriting these images, you will need to move them to the 'common' resources of your theme, and update your `theme.properties` file to include the new paths:
+
+[source,properties]
+----
+# This defaults to 'common/keycloak' if not set.
+import=common/your-theme-name
+----
+
 = Keycloak JS imports might need to be updated
 
-If you are loading Keycloak JS directly from the Keycloak server this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, etc. you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+If you are loading Keycloak JS directly from the Keycloak server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
 
 [source,js]
 ----
@@ -12,6 +40,13 @@ import AuthZ from 'keycloak-js/dist/keycloak-authz.js';
 import Keycloak from 'keycloak-js';
 import AuthZ from 'keycloak-js/authz';
 ----
+
+= Features Changes
+
+It is no longer allowed to have the same feature in both the `--features` and `--features-disabled` list.  The feature should appear in only one list.
+
+The usage of unversioned feature names, e.g. `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
+If you need more predictable behavior across releases, reference the particular version you want instead, e.g. `docker:v1`.
 
 = Truststore Changes
 
@@ -66,3 +101,65 @@ mainly targeted for clients when updating or fetching any custom attribute for a
 
 In order to resolve all the attributes including the root attributes, a new `getRawAttributes` method was added so that the resulting map also includes the root attributes. However,
 this method is not available from the representation payload and it is targeted to be used by the server when managing user profiles.
+
+= `https-client-auth` is a build time option
+
+Option `https-client-auth` had been treated as a run time option, however this is not supported by Quarkus. The option needs to be handled at build time instead.
+
+= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+These templates are responsible for rendering the update profile (when the `Update Profile` required action is enabled to a user),
+the registration, and the update email (when the `UPDATE_EMAIL` feature is enabled) pages, respectively.
+
+If you use a custom theme to change these templates, they will function as expect because only the content is updated.
+However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
+changing the built-in templates by using all the capabilities provided by this feature.
+
+Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are longer necessary and removed in this release:
+
+* `update-user-profile.ftl`
+* `register-user-profile.ftl`
+
+If you were using the `declarative-user-profile` feature in previously releases with customizations to the above templates,
+update the `login-update-profile.ftl` and `register.ftl` accordingly.
+
+= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
+to update profile when users are authenticating to a realm.
+
+By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
+and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
+
+If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
+to the new template.
+
+= Infinispan metrics use labels for cache manager and cache names
+
+When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
+
+.Old metric example without labels
+----
+vendor_cache_manager_keycloak_cache_sessions_statistics_approximate_entries_in_memory{cache="sessions",node="..."}
+----
+
+.New metric example with labels
+----
+vendor_statistics_approximate_entries_in_memory{cache="sessions",cache_manager="keycloak",node="..."}
+----
+
+To revert the change for an installation, use a custom Infinispan XML configuration and change the configuration as follows:
+
+----
+<metrics names-as-tags="false" />
+----

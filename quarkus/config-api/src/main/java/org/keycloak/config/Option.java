@@ -22,7 +22,7 @@ public class Option<T> {
         this.category = category;
         this.hidden = hidden;
         this.buildTime = buildTime;
-        this.description = getDescriptionByCategorySupportLevel(description);
+        this.description = getDescriptionByCategorySupportLevel(description, category);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
@@ -74,12 +74,9 @@ public class Option<T> {
         );
     }
 
-    private String getDescriptionByCategorySupportLevel(String description) {
-        if(description == null || description.isBlank()) {
-            return description;
-        }
-
-        switch(this.getCategory().getSupportLevel()) {
+    private static String getDescriptionByCategorySupportLevel(String description, OptionCategory category) {
+        if (description != null && !description.isBlank()) {
+            switch (category.getSupportLevel()) {
             case PREVIEW:
                 description = "Preview: " + description;
                 break;
@@ -87,7 +84,8 @@ public class Option<T> {
                 description = "Experimental: " + description;
                 break;
             default:
-                description = description;
+                break;
+            }
         }
 
         return description;

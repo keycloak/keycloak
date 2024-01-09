@@ -17,11 +17,10 @@
  */
 package org.keycloak.authorization.policy.provider.aggregated;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
@@ -36,9 +35,11 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AggregatePolicyProvider implements PolicyProvider {
+    private static final Logger logger = Logger.getLogger(AggregatePolicyProvider.class);
 
     @Override
     public void evaluate(Evaluation evaluation) {
+        logger.debugv("Aggregate policy {} evaluating using parent class", evaluation.getPolicy().getName());
         DecisionResultCollector decision = new DecisionResultCollector() {
             @Override
             protected void onComplete(Result result) {

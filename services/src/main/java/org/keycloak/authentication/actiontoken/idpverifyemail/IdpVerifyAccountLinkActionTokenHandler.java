@@ -28,13 +28,17 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Collections;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
@@ -73,10 +77,20 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         event.event(EventType.IDENTITY_PROVIDER_LINK_ACCOUNT)
           .detail(Details.EMAIL, user.getEmail())
           .detail(Details.IDENTITY_PROVIDER, token.getIdentityProviderAlias())
-          .detail(Details.IDENTITY_PROVIDER_USERNAME, token.getIdentityProviderUsername())
-          .success();
+          .detail(Details.IDENTITY_PROVIDER_USERNAME, token.getIdentityProviderUsername());
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
+            event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(session.getContext().getAuthenticationSession())
+                    .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
+                    .createInfoPage();
+        }
+
+        event.success();
+
         if (tokenContext.isAuthenticationSessionFresh()) {
             token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
 
@@ -126,4 +140,8 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return tokenContext.brokerFlow(null, null, authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH));
     }
 
+    private boolean isVerifyEmailActionSet(UserModel user, AuthenticationSessionModel authSession) {
+        return Stream.concat(user.getRequiredActionsStream(), authSession.getRequiredActions().stream())
+                .anyMatch(RequiredAction.VERIFY_EMAIL.name()::equals);
+    }
 }

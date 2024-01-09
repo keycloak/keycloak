@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;

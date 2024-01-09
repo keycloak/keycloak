@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -143,7 +143,7 @@ public class RoleContainerResource extends RoleResource {
         auth.roles().requireManage(roleContainer);
 
         if (rep.getName() == null) {
-            throw new BadRequestException();
+            throw new BadRequestException("role has no name");
         }
 
         try {

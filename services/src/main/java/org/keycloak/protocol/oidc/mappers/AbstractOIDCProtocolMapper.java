@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.Config;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -80,10 +81,16 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
         return token;
     }
 
+    boolean getShouldUseLightweightToken(KeycloakSession session) {
+        Object attributeValue = session.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
+        return (attributeValue != null) ? (boolean) attributeValue : false;
+    }
+
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)){
+        boolean shouldUseLightweightToken = getShouldUseLightweightToken(session);
+        boolean includeInAccessToken = shouldUseLightweightToken ?  OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : OIDCAttributeMapperHelper.includeInAccessToken(mappingModel);
+        if (!includeInAccessToken){
             return token;
         }
 

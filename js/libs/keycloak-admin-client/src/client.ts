@@ -49,6 +49,7 @@ export class KeycloakAdminClient {
   // Members
   public baseUrl: string;
   public realmName: string;
+  public scope?: string;
   public accessToken?: string;
   public refreshToken?: string;
 
@@ -84,6 +85,7 @@ export class KeycloakAdminClient {
     const { accessToken, refreshToken } = await getToken({
       baseUrl: this.baseUrl,
       realmName: this.realmName,
+      scope: this.scope,
       credentials,
       requestOptions: this.#requestOptions,
     });

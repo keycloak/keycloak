@@ -47,12 +47,12 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.45",
+    "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^5.0.10",
+    "vite": "^5.0.11",
     "vite-plugin-checker": "^0.6.2",
-    "vite-plugin-dts": "^3.6.4"
+    "vite-plugin-dts": "^3.7.0"
   }
 }

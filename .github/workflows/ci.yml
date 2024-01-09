@@ -644,6 +644,7 @@ jobs:
     if: always()
     needs:
       - conditional
+      - build
       - unit-tests
       - base-integration-tests
       - quarkus-unit-tests

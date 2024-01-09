@@ -127,7 +127,7 @@ public class KeycloakDistConfiguratorTest {
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN_URL");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT");
-        assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT-BACKCHANNEL");
+        assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT_BACKCHANNEL");
     }
 
     /* UTILS */

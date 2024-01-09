@@ -54,22 +54,57 @@ export const ExecutionConfigModal = ({
     formState: { errors },
   } = form;
 
+  // default config all executions should have
+  const defaultConfigProperties = execution.authenticationFlow
+    ? []
+    : [
+        {
+          helpText: t("authenticatorRefConfig.value.help"),
+          label: t("authenticatorRefConfig.value.label"),
+          name: "default.reference.value",
+          readOnly: false,
+          secret: false,
+          type: "String",
+        },
+        {
+          helpText: t("authenticatorRefConfig.maxAge.help"),
+          label: t("authenticatorRefConfig.maxAge.label"),
+          name: "default.reference.maxAge",
+          readOnly: false,
+          secret: false,
+          type: "String",
+        },
+      ];
+
   const setupForm = (config?: AuthenticatorConfigRepresentation) => {
     convertToFormValues(config || {}, setValue);
   };
 
   useFetch(
     async () => {
-      const configDescription =
-        await adminClient.authenticationManagement.getConfigDescription({
-          providerId: execution.providerId!,
-        });
       let config: AuthenticatorConfigRepresentation | undefined;
+
+      const configDescription = execution.configurable
+        ? await adminClient.authenticationManagement.getConfigDescription({
+            providerId: execution.providerId!,
+          })
+        : {
+            name: execution.displayName,
+            properties: [],
+          };
+
       if (execution.authenticationConfig) {
         config = await adminClient.authenticationManagement.getConfig({
           id: execution.authenticationConfig,
         });
       }
+
+      // merge default and fetched config properties
+      configDescription.properties = [
+        ...defaultConfigProperties!,
+        ...configDescription.properties!,
+      ];
+
       return { configDescription, config };
     },
     ({ configDescription, config }) => {

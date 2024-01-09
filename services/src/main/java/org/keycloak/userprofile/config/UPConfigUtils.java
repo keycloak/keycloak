@@ -40,7 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
@@ -55,8 +55,8 @@ import org.keycloak.validate.Validators;
 public class UPConfigUtils {
 
     private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
-    public static final String ROLE_USER = "user";
-    public static final String ROLE_ADMIN = "admin";
+    public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
+    public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
     private static final Set<String> PSEUDOROLES = new HashSet<>();
 
@@ -285,32 +285,6 @@ public class UPConfigUtils {
             	}
         	}
         }
-    }
-
-    /**
-     * Check if context CAN BE part of the AuthenticationFlow.
-     * 
-     * @param context to check
-     * @return true if context CAN BE part of the auth flow
-     */
-    public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
-    }
-
-    /**
-     * Check if roles configuration contains role given current context.
-     * 
-     * @param context to be checked
-     * @param roles to be inspected
-     * @return true if roles list contains role representing checked context
-     */
-    public static boolean isRoleForContext(UserProfileContext context, Set<String> roles) {
-        if (roles == null)
-            return false;
-        if (context == UserProfileContext.USER_API)
-            return roles.contains(ROLE_ADMIN);
-        else
-            return roles.contains(ROLE_USER);
     }
 
     public static String capitalizeFirstLetter(String str) {

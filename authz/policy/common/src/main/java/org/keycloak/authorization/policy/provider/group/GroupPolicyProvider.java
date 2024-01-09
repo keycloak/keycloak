@@ -21,6 +21,7 @@ import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.attribute.Attributes.Entry;
@@ -36,6 +37,7 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
  */
 public class GroupPolicyProvider implements PolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(GroupPolicyProvider.class);
     private final BiFunction<Policy, AuthorizationProvider, GroupPolicyRepresentation> representationFunction;
 
     public GroupPolicyProvider(BiFunction<Policy, AuthorizationProvider, GroupPolicyRepresentation> representationFunction) {
@@ -75,6 +77,7 @@ public class GroupPolicyProvider implements PolicyProvider {
                 }
             }
         }
+        logger.debugv("Groups policy {} evaluated to {} with identity groups {}", policy.getName(), evaluation.getEffect(), groupsClaim);
     }
 
     @Override

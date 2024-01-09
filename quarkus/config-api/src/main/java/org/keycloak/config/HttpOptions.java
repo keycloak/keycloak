@@ -46,6 +46,7 @@ public class HttpOptions {
             .category(OptionCategory.HTTP)
             .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
+            .buildTime(true)
             .build();
 
     public static final Option HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)

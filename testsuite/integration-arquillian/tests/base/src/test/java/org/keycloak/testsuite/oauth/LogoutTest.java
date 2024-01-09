@@ -33,6 +33,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,6 +44,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
@@ -332,11 +335,29 @@ public class LogoutTest extends AbstractKeycloakTest {
                 MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
             }
 
-            assertNotNull(testingClient.testApp().getBackChannelLogoutToken());
+            validateLogoutToken(testingClient.testApp().getBackChannelLogoutToken());
         } finally {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
             clientResource.update(rep);
         }
+    }
+
+    /**
+     * Validate the token matches the spec at <a href="https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken">OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1</a>
+     */
+    private void validateLogoutToken(LogoutToken backChannelLogoutToken) {
+        assertNotNull("token must be present", backChannelLogoutToken);
+        assertNotNull("iss must be present", backChannelLogoutToken.getIssuer());
+        assertNotNull("aud must be present", backChannelLogoutToken.getAudience());
+        assertNotNull("iat must be present", backChannelLogoutToken.getIat());
+        assertNotNull("exp must be present", backChannelLogoutToken.getExp());
+        assertNotNull("jti must be present", backChannelLogoutToken.getId());
+        Map<String, Object> events = backChannelLogoutToken.getEvents();
+        assertNotNull("events must be present", events);
+        Object backchannelLogoutEvent = events.get("http://schemas.openid.net/event/backchannel-logout");
+        assertNotNull("back-channel logout event must be present", backchannelLogoutEvent);
+        assertTrue("back-channel logout event must have a member object", backchannelLogoutEvent instanceof Map);
+        MatcherAssert.assertThat("map of back-channel logout event member object should be an empty object", (Map<?, ?>) backchannelLogoutEvent, org.hamcrest.Matchers.anEmptyMap());
     }
 
     private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {

@@ -68,6 +68,7 @@ import org.keycloak.quarkus.runtime.cli.command.Tools;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -261,98 +262,93 @@ public final class Picocli {
     }
 
     /**
-     * validate the expected values of non-cli properties
+     * Additional validation and handling of deprecated options
      *
      * @param cliArgs
      * @param abstractCommand
      */
-    public static void validateNonCliConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter out) {
+    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter out) {
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
         if (!options.includeBuildTime && !options.includeRuntime) {
             return;
         }
 
-        List<String> ignoredBuildTime = new ArrayList<>();
-        List<String> ignoredRunTime = new ArrayList<>();
-        Set<String> deprecatedInUse = new HashSet<>();
-        for (OptionCategory category : abstractCommand.getOptionCategories()) {
-            List<PropertyMapper> mappers = new ArrayList<>();
-            Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
-            Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
-            for (PropertyMapper mapper : mappers) {
-                // bypass the PropertyMappingInterceptor - the transformations may cause unexpected errors
-                String value = null;
-                ConfigSource configSource = null;
-                for (ConfigSource cs : getConfig().getConfigSources()) {
-                    if (cs.getOrdinal() < 300) {
-                        break; // don't consider anything below standard env properties
-                    }
-                    value = cs.getValue(mapper.getFrom());
-                    if (value != null) {
-                        configSource = cs;
-                        break;
-                    }
-                }
+        try {
+            PropertyMappingInterceptor.disable(); // we don't want the mapped / transformed properties, we want what the user effectively supplied
+            List<String> ignoredBuildTime = new ArrayList<>();
+            List<String> ignoredRunTime = new ArrayList<>();
+            Set<String> deprecatedInUse = new HashSet<>();
+            for (OptionCategory category : abstractCommand.getOptionCategories()) {
+                List<PropertyMapper> mappers = new ArrayList<>();
+                Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
+                Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
+                for (PropertyMapper<?> mapper : mappers) {
+                    ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
 
-                if (value == null) {
-                    continue;
-                }
-
-                if (mapper.isBuildTime() && !options.includeBuildTime) {
-                    ignoredBuildTime.add(mapper.getFrom());
-                    continue;
-                }
-                if (mapper.isRunTime() && !options.includeRuntime) {
-                    ignoredRunTime.add(mapper.getFrom());
-                    continue;
-                }
-
-                if (!PropertyMapperParameterConsumer.isExpectedValue(mapper.getExpectedValues(), value)) {
-                    throw new PropertyException(PropertyMapperParameterConsumer.getErrorMessage(mapper.getFrom(),
-                            value, mapper.getExpectedValues(), mapper.getExpectedValues()) + ". From ConfigSource " + configSource.getName());
-                }
-
-                mapper.getDeprecatedMetadata().ifPresent(d -> {
-                    DeprecatedMetadata metadata = (DeprecatedMetadata) d;
-                    String optionName = mapper.getFrom();
-                    if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
-                        optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
+                    // don't consider missing or anything below standard env properties
+                    if (configValue.getValue() == null || configValue.getConfigSourceOrdinal() < 300) {
+                        continue;
                     }
 
-                    StringBuilder sb = new StringBuilder("\t- ");
-                    sb.append(optionName);
-                    if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
-                        sb.append(":");
+                    if (mapper.isBuildTime() && !options.includeBuildTime) {
+                        ignoredBuildTime.add(mapper.getFrom());
+                        continue;
                     }
-                    if (metadata.getNote() != null) {
-                        sb.append(" ");
-                        sb.append(metadata.getNote());
-                        if (!metadata.getNote().endsWith(".")) {
-                            sb.append(".");
-                        }
+                    if (mapper.isRunTime() && !options.includeRuntime) {
+                        ignoredRunTime.add(mapper.getFrom());
+                        continue;
                     }
-                    if (!metadata.getNewOptionsKeys().isEmpty()) {
-                        sb.append(" Use ");
-                        sb.append(String.join(", ", metadata.getNewOptionsKeys()));
-                        sb.append(".");
-                    }
-                    deprecatedInUse.add(sb.toString());
-                });
+
+                    mapper.validate(configValue);
+
+                    mapper.getDeprecatedMetadata().ifPresent(metadata -> {
+                        handleDeprecated(deprecatedInUse, mapper, metadata);
+                    });
+                }
+            }
+
+            Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
+
+            if (!ignoredBuildTime.isEmpty()) {
+                outputIgnoredProperties(ignoredBuildTime, true, logger);
+            } else if (!ignoredRunTime.isEmpty()) {
+                outputIgnoredProperties(ignoredRunTime, false, logger);
+            }
+
+            if (!deprecatedInUse.isEmpty()) {
+                logger.warn("The following used options are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse));
+            }
+        } finally {
+            PropertyMappingInterceptor.enable();
+        }
+    }
+
+    private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper,
+            DeprecatedMetadata metadata) {
+        String optionName = mapper.getFrom();
+        if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
+            optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
+        }
+
+        StringBuilder sb = new StringBuilder("\t- ");
+        sb.append(optionName);
+        if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
+            sb.append(":");
+        }
+        if (metadata.getNote() != null) {
+            sb.append(" ");
+            sb.append(metadata.getNote());
+            if (!metadata.getNote().endsWith(".")) {
+                sb.append(".");
             }
         }
-
-        Logger logger = Logger.getLogger(Picocli.class); // logger can't be instantiated in a class field
-
-        if (!ignoredBuildTime.isEmpty()) {
-            outputIgnoredProperties(ignoredBuildTime, true, logger);
-        } else if (!ignoredRunTime.isEmpty()) {
-            outputIgnoredProperties(ignoredRunTime, false, logger);
+        if (!metadata.getNewOptionsKeys().isEmpty()) {
+            sb.append(" Use ");
+            sb.append(String.join(", ", metadata.getNewOptionsKeys()));
+            sb.append(".");
         }
-
-        if (!deprecatedInUse.isEmpty()) {
-            logger.warn("The following used options are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse));
-        }
+        deprecatedInUse.add(sb.toString());
     }
 
     private static void outputIgnoredProperties(List<String> properties, boolean build, Logger logger) {

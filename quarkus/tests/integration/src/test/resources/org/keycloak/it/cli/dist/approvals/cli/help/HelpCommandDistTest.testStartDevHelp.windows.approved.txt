@@ -13,6 +13,7 @@ Options:
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
+-v, --verbose        Print out error details when running this command.
 
 Cache:
 
@@ -56,8 +57,10 @@ Database:
 --db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
                        option is set, this option is ignored.
 --db-url-properties <properties>
-                     Sets the properties of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
@@ -69,13 +72,15 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: account-api,
-                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
-                       authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, multi-site, par,
-                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
-                       transient-users, update-email, web-authn.
+--features <feature> Enables a set of one or more features. Possible values are: account-api[:v1],
+                       account2[:v1], account3[:v1], admin-api[:v1], admin-fine-grained-authz[:v1],
+                       admin2[:v1], authorization[:v1], ciba[:v1], client-policies[:v1],
+                       client-secret-rotation[:v1], declarative-user-profile[:v1], device-flow[:
+                       v1], docker[:v1], dpop[:v1], dynamic-scopes[:v1], fips[:v1], impersonation[:
+                       v1], js-adapter[:v1], kerberos[:v1], linkedin-oauth[:v1], multi-site[:v1],
+                       par[:v1], preview, recovery-codes[:v1], scripts[:v1], step-up-authentication
+                       [:v1], token-exchange[:v1], transient-users[:v1], update-email[:v1],
+                       web-authn[:v1].
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
@@ -96,6 +101,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -164,6 +172,15 @@ Health:
                        are available at the '/health', '/health/ready' and '/health/live'
                        endpoints. Default: false.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Metrics:
 
 --metrics-enabled <true|false>
@@ -182,9 +199,12 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file.
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 
@@ -256,5 +276,5 @@ Security:
 
 Do NOT start the server using this command when deploying to production.
 
-Use 'kc.bat start-dev --help-all' to list all available options, including
+Use 'kc.bat start-dev --help-all' to list all available options, including 
 build options.
