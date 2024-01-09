@@ -75,7 +75,7 @@ When {project_name} disables a user, the user cannot log in until an administrat
 |15 minutes.
 
 |Failure Reset Time
-|The time when the failure count resets. The timer runs from the last failed login. Make sure this number is always greater than `Max wait`, otherwise the effective
+|The time when the failure count resets. The timer runs from the last failed login. Make sure this number is always greater than `Max wait`; otherwise the effective
 wait time will never reach the value you have set to `Max wait`.
 |12 hours.
 
