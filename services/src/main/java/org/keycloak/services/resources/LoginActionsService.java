@@ -51,6 +51,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -524,8 +525,10 @@ public class LoginActionsService {
             client = realm.getClientByClientId(clientId);
         }
         AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+        KeycloakContext sessionContext = session.getContext();
+
         if (client != null) {
-            session.getContext().setClient(client);
+            sessionContext.setClient(client);
             authSession = authenticationSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         }
 
@@ -560,7 +563,7 @@ public class LoginActionsService {
                     .withChecks(
                             // Token introspection checks
                             TokenVerifier.IS_ACTIVE,
-                            new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())),
+                            new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(sessionContext.getUri().getBaseUri(), realm.getName())),
                             ACTION_TOKEN_BASIC_CHECKS
                     );
 
@@ -596,22 +599,15 @@ public class LoginActionsService {
         }
 
         // Now proceed with the verification and handle the token
-        tokenContext = new ActionTokenContext(session, realm, session.getContext().getUri(), clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
+        tokenContext = new ActionTokenContext(session, realm, sessionContext.getUri(), clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
             String tokenAuthSessionCompoundId = handler.getAuthenticationSessionIdFromToken(token, tokenContext, authSession);
 
-            if (tokenAuthSessionCompoundId != null) {
-                // This can happen if the token contains ID but user opens the link in a new browser
-                String sessionId = AuthenticationSessionCompoundId.encoded(tokenAuthSessionCompoundId).getRootSessionId();
-                LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, authSession, sessionId);
-            }
-
             if (authSession == null) {
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
-            } else if (tokenAuthSessionCompoundId == null ||
-              ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
+            } else if (!LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
                 // There exists an authentication session but no auth session ID was received in the action token
                 logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
                 authenticationSessionManager.removeAuthenticationSession(realm, authSession, false);
@@ -622,13 +618,14 @@ public class LoginActionsService {
                 processLocaleParam(authSession);
             }
 
+            sessionContext.setAuthenticationSession(authSession);
             initLoginEvent(authSession);
             event.event(handler.eventType());
 
-            LoginActionsServiceChecks.checkIsUserValid(token, tokenContext);
+            LoginActionsServiceChecks.checkIsUserValid(token, tokenContext, event);
             LoginActionsServiceChecks.checkIsClientValid(token, tokenContext);
             
-            session.getContext().setClient(authSession.getClient());
+            sessionContext.setClient(authSession.getClient());
 
             TokenVerifier.createWithoutSignature(token)
               .withChecks(handler.getVerifiers(tokenContext))

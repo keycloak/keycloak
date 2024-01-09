@@ -727,7 +727,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.assertCurrent();
 
             registerPage.register("firstName", "lastName", "registerUserMissingTermsAcceptance@email",
-                    "registerUserMissingTermsAcceptance", "password", "password", null, false);
+                    "registerUserMissingTermsAcceptance", "password", "password", null, false, null);
 
             registerPage.assertCurrent();
             assertEquals("You must agree to our terms and conditions.", registerPage.getInputAccountErrors().getTermsError());
@@ -753,7 +753,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.assertCurrent();
 
             registerPage.register("firstName", "lastName", "registerUserSuccessTermsAcceptance@email",
-                    "registerUserSuccessTermsAcceptance", "password", "password", null, true);
+                    "registerUserSuccessTermsAcceptance", "password", "password", null, true, null);
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

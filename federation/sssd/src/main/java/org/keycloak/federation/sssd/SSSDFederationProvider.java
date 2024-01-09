@@ -35,7 +35,6 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 
@@ -228,7 +227,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
                 attributeContext.getUser() != null && model.getId().equals(attributeContext.getUser().getFederationLink());
 
         // condition to view only by admin
-        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext() == UserProfileContext.USER_API;
+        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext().isAdminContext();
 
         // guiOrder if new attributes are needed
         int guiOrder = (int) metadata.getAttributes().stream()

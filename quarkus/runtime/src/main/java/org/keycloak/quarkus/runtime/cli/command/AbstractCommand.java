@@ -64,8 +64,8 @@ public abstract class AbstractCommand {
         return Arrays.asList(OptionCategory.values());
     }
 
-    protected void validateNonCliConfig() {
-        Picocli.validateNonCliConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
+    protected void validateConfig() {
+        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
     }
 
     public abstract String getName();

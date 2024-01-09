@@ -30,8 +30,8 @@ The first Route uses the Route53 DNS name to service client requests, whereas th
 
 == Prerequisites
 
-* Deployment of {project_name} as described in <@links.ha id="deploy-keycloak-kubernetes" /> on a ROSA cluster in two AWS availability zones in AWS one region
-* An owned domain for client requests to be routed through
+* Deployment of {project_name} as described in <@links.ha id="deploy-keycloak-kubernetes" /> on a ROSA cluster running OpenShift 4.14 or later in two AWS availability zones in AWS one region.
+* An owned domain for client requests to be routed through.
 
 == Procedure
 
@@ -45,54 +45,36 @@ For both the Primary and Backup cluster, perform the following steps:
 +
 .. Log in to the ROSA cluster.
 +
-.. Obtain the cluster VPC ID.
+.. Retrieve the cluster LoadBalancer Hosted Zone ID and DNS hostname
 +
 .Command:
 [source,bash]
 ----
 <#noparse>
-NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/worker \
-  -o jsonpath='{.items[0].metadata.name}'
+HOSTNAME=$(oc -n openshift-ingress get svc router-default \
+-o jsonpath='{.status.loadBalancer.ingress[].hostname}'
 )
-aws ec2 describe-instances \
---filters "Name=private-dns-name,Values=${NODE}" \
---query 'Reservations[*].Instances[*].VpcId' \
+aws elbv2 describe-load-balancers \
+--query "LoadBalancers[?DNSName=='${HOSTNAME}'].{CanonicalHostedZoneId:CanonicalHostedZoneId,DNSName:DNSName}" \
 --region eu-west-1 \#<1>
---output text
+--output json
 </#noparse>
 ----
 <1> The AWS region hosting your ROSA cluster
-+
-.Output:
-[source]
-----
-vpc-08572eedcb77c9f87
-----
-+
-.. [[hosted_zone_id]]Retrieve the cluster LoadBalancer Hosted Zone ID and DNS hostname
-+
-.Command:
-[source,bash]
-----
-aws elb describe-load-balancers \
-  --query "LoadBalancerDescriptions[?VPCId=='vpc-08572eedcb77c9f87'].{CanonicalHostedZoneNameID:CanonicalHostedZoneNameID,DNSName:DNSName}" \#<1>
-  --region eu-west-1 \
-  --output json
-----
-<1> Utilise the VPC ID retrieved in the previous step
 +
 .Output:
 [source,json]
 ----
 [
     {
-        "CanonicalHostedZoneNameID": "Z32O12XQLNTSW2", #<1>
-        "DNSName": "ab50395cd04304a539af5b8854325e22-773464857.eu-west-1.elb.amazonaws.com"
+        "CanonicalHostedZoneId": "Z2IFOLAFXWLO4F",
+        "DNSName": "ad62c8d2fcffa4d54aec7ffff902c925-61f5d3e1cbdc5d42.elb.eu-west-1.amazonaws.com"
     }
 ]
 ----
-<1> Utilise the Hosted Zone ID retrieved in the previous step
 +
+NOTE: ROSA clusters running OpenShift 4.13 and earlier use classic load balancers instead of application load balancers. Use the `aws elb describe-load-balancers` command and an updated query string instead.
+
 . Create Route53 health checks
 +
 .Command:
@@ -147,11 +129,11 @@ This should be the same, or a subdomain, of the root domain used to create the x
 ----
 <#noparse>
 HOSTED_ZONE_ID="Z09084361B6LKQQRCVBEY" #<1>
-PRIMARY_LB_HOSTED_ZONE_ID="Z32O12XQLNTSW2"
-PRIMARY_LB_DNS=ab50395cd04304a539af5b8854325e22-773464857.eu-west-1.elb.amazonaws.com
+PRIMARY_LB_HOSTED_ZONE_ID="Z2IFOLAFXWLO4F"
+PRIMARY_LB_DNS=ad62c8d2fcffa4d54aec7ffff902c925-61f5d3e1cbdc5d42.elb.eu-west-1.amazonaws.com
 PRIMARY_HEALTH_ID=233e180f-f023-45a3-954e-415303f21eab
-BACKUP_LB_HOSTED_ZONE_ID="Z32O12XQLNTSW2"
-BACKUP_LB_DNS=a184a0e02a5d44a9194e517c12c2b0ec-1203036292.eu-west-1.elb.amazonaws.com
+BACKUP_LB_HOSTED_ZONE_ID="Z2IFOLAFXWLO4F"
+BACKUP_LB_DNS=a184a0e02a5d44a9194e517c12c2b0ec-1203036292.elb.eu-west-1.amazonaws.com
 BACKUP_HEALTH_ID=799e2cbb-43ae-4848-9b72-0d9173f04912
 aws route53 change-resource-record-sets \
   --hosted-zone-id Z09084361B6LKQQRCVBEY \

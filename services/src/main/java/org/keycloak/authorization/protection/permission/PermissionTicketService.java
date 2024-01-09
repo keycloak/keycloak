@@ -87,6 +87,8 @@ public class PermissionTicketService {
         
         if (!resource.getOwner().equals(this.identity.getId()))
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner", Response.Status.FORBIDDEN);
+        if (!resource.isOwnerManagedAccess())
+            throw new ErrorResponseException("invalid_permission", "permission can only be created for resources with user-managed access enabled", Response.Status.BAD_REQUEST);
         
         UserModel user = null;
         if(representation.getRequester() != null)

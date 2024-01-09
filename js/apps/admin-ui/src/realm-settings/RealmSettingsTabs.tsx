@@ -15,6 +15,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAccess } from "../context/access/Access";
 
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
+import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -30,10 +32,12 @@ import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
 import helpUrls from "../help-urls";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
+import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
+import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
-import { LocalizationTab } from "./LocalizationTab";
+import { LocalizationTab } from "./localization/LocalizationTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { PartialExportDialog } from "./PartialExport";
 import { PartialImportDialog } from "./PartialImport";
@@ -49,7 +53,6 @@ import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
-import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 
 export interface UIRealmRepresentation extends RealmRepresentation {
   upConfig?: UserProfileConfig;
@@ -225,7 +228,18 @@ export const RealmSettingsTabs = ({
       if (savedRealm.smtpServer?.port === "") {
         savedRealm.smtpServer = { ...savedRealm.smtpServer, port: null };
       }
-      await adminClient.realms.update({ realm: realmName }, savedRealm);
+      const response = await fetchWithError(
+        joinPath(adminClient.baseUrl, `admin/realms/${realmName}/ui-ext`),
+        {
+          method: "PUT",
+          body: JSON.stringify(savedRealm),
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+          },
+        },
+      );
+      if (!response.ok) throw new Error(response.statusText);
       addAlert(t("realmSaveSuccess"), AlertVariant.success);
     } catch (error) {
       addError("realmSaveError", error);
@@ -340,12 +354,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-localization-tab"
             {...localizationTab}
           >
-            <LocalizationTab
-              key={key}
-              refresh={refresh}
-              save={save}
-              realm={realm}
-            />
+            <LocalizationTab key={key} save={save} realm={realm} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("securityDefences")}</TabTitleText>}

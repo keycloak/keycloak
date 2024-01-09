@@ -3,6 +3,14 @@ import type { ServerInfoRepresentation } from "../defs/serverInfoRepesentation.j
 import type KeycloakAdminClient from "../index.js";
 import type EffectiveMessageBundleRepresentation from "../defs/effectiveMessageBundleRepresentation.js";
 
+export interface MessageBundleQuery {
+  realm: string;
+  theme?: string;
+  themeType?: string;
+  locale?: string;
+  source?: boolean;
+}
+
 export class ServerInfo extends Resource {
   constructor(client: KeycloakAdminClient) {
     super(client, {
@@ -17,18 +25,12 @@ export class ServerInfo extends Resource {
   });
 
   public findEffectiveMessageBundles = this.makeRequest<
-    {
-      realm: string;
-      theme?: string;
-      themeType?: string;
-      locale?: string;
-      source?: boolean;
-    },
+    MessageBundleQuery,
     EffectiveMessageBundleRepresentation[]
   >({
     method: "GET",
-    path: "/resources/{realm}/{themeType}/{locale}",
-    urlParamKeys: ["realm", "themeType", "locale"],
-    queryParamKeys: ["theme", "source"],
+    path: "/resources/{realm}/{theme}/{locale}",
+    urlParamKeys: ["realm", "theme", "locale"],
+    queryParamKeys: ["themeType", "source"],
   });
 }

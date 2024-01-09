@@ -45,23 +45,40 @@ The {ispn-operator} uses it to inspect the network configuration from the remote
 +
 For more details, see the {infinispan-operator-docs}#managed-cross-site-connections_cross-site[Managing Cross-Site Connections] documentation.
 +
-
-.. First, create the service account and generate an access token in both {ocp} clusters.
+.. Create a `service-account-token` secret type as follows.
+The same YAML file can be used in both {ocp} clusters.
++
+.xsite-sa-secret-token.yaml
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ispn-xsite-sa-token #<1>
+  annotations:
+    kubernetes.io/service-account.name: "{sa}" #<2>
+type: kubernetes.io/service-account-token
+----
+<1> The secret name.
+<2> The service account name.
+.. Create the service account and generate an access token in both {ocp} clusters.
 +
 .Create the service account in `{site-a}`
 [source,bash,subs="+attributes"]
 ----
 kubectl create sa -n {ns} {sa}
-kubectl policy add-role-to-user view -n {ns} -z {sa}
-kubectl create token -n {ns} {sa} > {site-a}-token.txt
+oc policy add-role-to-user view -n {ns} -z {sa}
+kubectl create -f xsite-sa-secret-token.yaml
+kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-a}-token.txt
 ----
 +
 .Create the service account in `{site-b}`
 [source,bash,subs="+attributes"]
 ----
 kubectl create sa -n {ns} {sa}
-kubectl policy add-role-to-user view -n {ns} -z {sa}
-kubectl create token -n {ns} {sa} > {site-b}-token.txt
+oc policy add-role-to-user view -n {ns} -z {sa}
+kubectl create -f xsite-sa-secret-token.yaml
+kubectl get secrets ispn-xsite-sa-token -o jsonpath="{.data.token}" | base64 -d > {site-b}-token.txt
 ----
 +
 .. The next step is to deploy the token from `{site-a}` into `{site-b}` and the reverse:

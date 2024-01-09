@@ -95,7 +95,6 @@ import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
@@ -1085,7 +1084,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         });
 
-        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext() == UserProfileContext.USER_API;
+        Predicate<AttributeContext> onlyAdminCondition = context -> metadata.getContext().isAdminContext();
 
         int guiOrder = (int) metadata.getAttributes().stream()
                 .map(AttributeMetadata::getName)

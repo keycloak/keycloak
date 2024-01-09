@@ -45,7 +45,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../i18n/i18n";
-import { convertToFormValues } from "../util";
+import { convertToFormValues, localeToDisplayName } from "../util";
 import { useFetch } from "../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
@@ -72,16 +72,6 @@ export type BundleForm = {
   key: string;
   value: string;
   messageBundle: KeyValueType;
-};
-
-const localeToDisplayName = (locale: string, displayLocale: string) => {
-  try {
-    return new Intl.DisplayNames([displayLocale], { type: "language" }).of(
-      locale,
-    );
-  } catch (error) {
-    return locale;
-  }
 };
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {

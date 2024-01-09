@@ -16,6 +16,20 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -35,20 +49,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
-import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -58,6 +58,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -177,23 +178,32 @@ public class WelcomeResource {
                 return rb.build();
             }
 
+            boolean bootstrap = shouldBootstrap();
+            boolean adminConsoleEnabled = isAdminConsoleEnabled();
+            Properties themeProperties = theme.getProperties();
+            boolean redirectToAdmin = Boolean.parseBoolean(themeProperties.getProperty("redirectToAdmin", "false"));
+            URI adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build();
+
+            // Redirect to the Administration Console if the administrative user already exists.
+            if (redirectToAdmin && !bootstrap && adminConsoleEnabled && successMessage == null) {
+                return Response.status(302).location(adminUrl).build();
+            }
+
             Map<String, Object> map = new HashMap<>();
 
-            map.put("adminConsoleEnabled", isAdminConsoleEnabled());
+            map.put("bootstrap", bootstrap);
+            map.put("adminConsoleEnabled", adminConsoleEnabled);
+            map.put("properties", themeProperties);
+            map.put("adminUrl", adminUrl);
+            map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);
-
-            map.put("properties", theme.getProperties());
-            map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
-            boolean bootstrap = shouldBootstrap();
-            map.put("bootstrap", bootstrap);
-            if (bootstrap) {
-                boolean isLocal = isLocal();
-                map.put("localUser", isLocal);
+            boolean isLocal = isLocal();
+            map.put("localUser", isLocal);
 
+            if (bootstrap) {
                 String localAdminUrl = session.getContext().getUri(UrlType.LOCAL_ADMIN).getBaseUri().toString();
                 String adminCreationMessage = getAdminCreationMessage();
                 map.put("localAdminUrl", localAdminUrl);

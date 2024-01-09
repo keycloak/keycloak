@@ -94,8 +94,8 @@ const ClientDetailHeader = ({
 }: ClientDetailHeaderProps) => {
   const { t } = useTranslation();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "disableConfirmTitle",
-    messageKey: "disableConfirm",
+    titleKey: "disableConfirmClientTitle",
+    messageKey: "disableConfirmClient",
     continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);

@@ -3,8 +3,8 @@ package org.keycloak.common.profile;
 import org.keycloak.common.Profile;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CommaSeparatedListProfileConfigResolver implements ProfileConfigResolver {
 
@@ -13,10 +13,10 @@ public class CommaSeparatedListProfileConfigResolver implements ProfileConfigRes
 
     public CommaSeparatedListProfileConfigResolver(String enabledFeatures, String disabledFeatures) {
         if (enabledFeatures != null) {
-            this.enabledFeatures = Arrays.stream(enabledFeatures.split(",")).collect(Collectors.toSet());
+            this.enabledFeatures = new HashSet<>(Arrays.asList(enabledFeatures.split(",")));
         }
         if (disabledFeatures != null) {
-            this.disabledFeatures = Arrays.stream(disabledFeatures.split(",")).collect(Collectors.toSet());
+            this.disabledFeatures = new HashSet<>(Arrays.asList(disabledFeatures.split(",")));
         }
     }
 
@@ -29,11 +29,14 @@ public class CommaSeparatedListProfileConfigResolver implements ProfileConfigRes
     }
 
     @Override
-    public FeatureConfig getFeatureConfig(Profile.Feature feature) {
-        String key = feature.getKey();
-        if (enabledFeatures != null && enabledFeatures.contains(key)) {
+    public FeatureConfig getFeatureConfig(String feature) {
+        if (enabledFeatures != null && enabledFeatures.contains(feature)) {
+            if (disabledFeatures != null && disabledFeatures.contains(feature)) {
+                throw new ProfileException(feature + " is in both the enabled and disabled feature lists.");
+            }
             return FeatureConfig.ENABLED;
-        } else if (disabledFeatures != null && disabledFeatures.contains(key)) {
+        }
+        if (disabledFeatures != null && disabledFeatures.contains(feature)) {
             return FeatureConfig.DISABLED;
         }
         return FeatureConfig.UNCONFIGURED;

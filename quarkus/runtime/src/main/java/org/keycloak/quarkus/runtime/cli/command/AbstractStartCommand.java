@@ -29,7 +29,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
     public void run() {
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
-        validateNonCliConfig();
+        validateConfig();
         KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
     }
 

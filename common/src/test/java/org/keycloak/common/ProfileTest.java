@@ -8,19 +8,16 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.profile.ProfileException;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+
+import static org.junit.Assert.assertThrows;
 
 public class ProfileTest {
 
@@ -126,7 +123,7 @@ public class ProfileTest {
         try {
             Profile.configure(new PropertiesProfileConfigResolver(properties));
         } catch (ProfileException e) {
-            Assert.assertEquals("Invalid config value 'invalid' for feature account-api", e.getMessage());
+            Assert.assertEquals("Invalid config value 'invalid' for feature key keycloak.profile.feature.account_api", e.getMessage());
         }
     }
 
@@ -149,30 +146,6 @@ public class ProfileTest {
     }
 
     @Test
-    public void enablePreviewWithPropertiesFile() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("profile", "preview");
-
-        Path tempDirectory = Files.createTempDirectory("jboss-config");
-        System.setProperty("jboss.server.config.dir", tempDirectory.toString());
-
-        Path profileProperties = tempDirectory.resolve("profile.properties");
-
-        try(OutputStream out = Files.newOutputStream(profileProperties.toFile().toPath())) {
-            properties.store(out, "");
-        }
-
-        Profile.configure(new PropertiesFileProfileConfigResolver());
-
-        Assert.assertEquals(Profile.ProfileName.PREVIEW, Profile.getInstance().getName());
-        Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
-
-        Files.delete(profileProperties);
-        Files.delete(tempDirectory);
-        System.getProperties().remove("jboss.server.config.dir");
-    }
-
-    @Test
     public void configWithCommaSeparatedList() {
         String enabledFeatures = DISABLED_BY_DEFAULT_FEATURE.getKey() + "," + PREVIEW_FEATURE.getKey() + "," + EXPERIMENTAL_FEATURE.getKey();
         if (DEPRECATED_FEATURE != null) {
@@ -192,14 +165,62 @@ public class ProfileTest {
     }
 
     @Test
+    public void testKeys() {
+        Assert.assertEquals("account2", Profile.Feature.ACCOUNT2.getKey());
+        Assert.assertEquals("account2", Profile.Feature.ACCOUNT2.getUnversionedKey());
+        Assert.assertEquals("account2:v1", Profile.Feature.ACCOUNT2.getVersionedKey());
+    }
+
+    @Test
+    public void configWithCommaSeparatedVersionedList() {
+        String enabledFeatures = DISABLED_BY_DEFAULT_FEATURE.getVersionedKey() + "," + PREVIEW_FEATURE.getVersionedKey() + "," + EXPERIMENTAL_FEATURE.getVersionedKey();
+        if (DEPRECATED_FEATURE != null) {
+            enabledFeatures += "," + DEPRECATED_FEATURE.getVersionedKey();
+        }
+
+        String disabledFeatures = DEFAULT_FEATURE.getUnversionedKey();
+        Profile.configure(new CommaSeparatedListProfileConfigResolver(enabledFeatures, disabledFeatures));
+
+        Assert.assertFalse(Profile.isFeatureEnabled(DEFAULT_FEATURE));
+        Assert.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
+        Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
+        Assert.assertTrue(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
+        if (DEPRECATED_FEATURE != null) {
+            Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        }
+    }
+
+    @Test
+    public void configWithCommaSeparatedInvalidDisabled() {
+        String disabledFeatures = DEFAULT_FEATURE.getVersionedKey();
+        CommaSeparatedListProfileConfigResolver resolver = new CommaSeparatedListProfileConfigResolver(null, disabledFeatures);
+        assertThrows(ProfileException.class, () -> Profile.configure(resolver));
+    }
+
+    @Test
+    public void commaSeparatedVersionedConflict() {
+        String enabledFeatures = DEFAULT_FEATURE.getVersionedKey();
+        String disabledFeatures = DEFAULT_FEATURE.getVersionedKey();
+        CommaSeparatedListProfileConfigResolver resolver = new CommaSeparatedListProfileConfigResolver(enabledFeatures, disabledFeatures);
+        assertThrows(ProfileException.class, () -> Profile.configure(resolver));
+    }
+
+    @Test
+    public void commaSeparatedDuplicateEnabled() {
+        String enabledFeatures = DEFAULT_FEATURE.getVersionedKey() + "," + DEFAULT_FEATURE.getUnversionedKey();
+        CommaSeparatedListProfileConfigResolver resolver = new CommaSeparatedListProfileConfigResolver(enabledFeatures, null);
+        assertThrows(ProfileException.class, () -> Profile.configure(resolver));
+    }
+
+    @Test
     public void configWithProperties() {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature." + DEFAULT_FEATURE.name().toLowerCase(), "disabled");
-        properties.setProperty("keycloak.profile.feature." + DISABLED_BY_DEFAULT_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("keycloak.profile.feature." + PREVIEW_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("keycloak.profile.feature." + EXPERIMENTAL_FEATURE.name().toLowerCase(), "enabled");
+        properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(DEFAULT_FEATURE), "disabled");
+        properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(DISABLED_BY_DEFAULT_FEATURE), "enabled");
+        properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(PREVIEW_FEATURE), "enabled");
+        properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(EXPERIMENTAL_FEATURE), "enabled");
         if (DEPRECATED_FEATURE != null) {
-            properties.setProperty("keycloak.profile.feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
+            properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(DEPRECATED_FEATURE), "enabled");
         }
 
         Profile.configure(new PropertiesProfileConfigResolver(properties));
@@ -214,44 +235,9 @@ public class ProfileTest {
     }
 
     @Test
-    public void configWithPropertiesFile() throws IOException {
-        Properties properties = new Properties();
-        properties.setProperty("feature." + DEFAULT_FEATURE.name().toLowerCase(), "disabled");
-        properties.setProperty("feature." + DISABLED_BY_DEFAULT_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("feature." + PREVIEW_FEATURE.name().toLowerCase(), "enabled");
-        properties.setProperty("feature." + EXPERIMENTAL_FEATURE.name().toLowerCase(), "enabled");
-        if (DEPRECATED_FEATURE != null) {
-            properties.setProperty("feature." + DEPRECATED_FEATURE.name().toLowerCase(), "enabled");
-        }
-
-        Path tempDirectory = Files.createTempDirectory("jboss-config");
-        System.setProperty("jboss.server.config.dir", tempDirectory.toString());
-
-        Path profileProperties = tempDirectory.resolve("profile.properties");
-
-        try(OutputStream out = Files.newOutputStream(profileProperties.toFile().toPath())) {
-            properties.store(out, "");
-        }
-
-        Profile.configure(new PropertiesFileProfileConfigResolver());
-
-        Assert.assertFalse(Profile.isFeatureEnabled(DEFAULT_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(PREVIEW_FEATURE));
-        Assert.assertTrue(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
-        if (DEPRECATED_FEATURE != null) {
-            Assert.assertTrue(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
-        }
-
-        Files.delete(profileProperties);
-        Files.delete(tempDirectory);
-        System.getProperties().remove("jboss.server.config.dir");
-    }
-
-    @Test
     public void configWithMultipleResolvers() {
         Properties properties = new Properties();
-        properties.setProperty("keycloak.profile.feature." + PREVIEW_FEATURE.name().toLowerCase(), "enabled");
+        properties.setProperty(PropertiesProfileConfigResolver.getPropertyKey(PREVIEW_FEATURE), "enabled");
 
         Profile.configure(new CommaSeparatedListProfileConfigResolver(DISABLED_BY_DEFAULT_FEATURE.getKey(), ""), new PropertiesProfileConfigResolver(properties));
 

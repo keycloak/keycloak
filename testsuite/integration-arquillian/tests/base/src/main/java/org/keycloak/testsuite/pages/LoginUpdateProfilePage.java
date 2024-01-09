@@ -22,6 +22,7 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -64,6 +65,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     public void update(String firstName, String lastName, String email) {
         prepareUpdate().firstName(firstName).lastName(lastName).email(email).submit();
+    }
+
+    public void update(Map<String, String> attributes) {
+        prepareUpdate().otherProfileAttribute(attributes).submit();
     }
 
     public Update prepareUpdate() {
@@ -176,8 +181,8 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return this;
         }
 
-        public Update otherProfileAttribute(String name, String value) {
-            other.put(name, value);
+        public Update otherProfileAttribute(Map<String, String> attributes) {
+            other.putAll(attributes);
             return this;
         }
 

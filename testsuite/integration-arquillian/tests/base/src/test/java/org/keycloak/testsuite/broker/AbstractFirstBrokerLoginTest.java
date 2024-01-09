@@ -909,13 +909,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
 
         driver.navigate().to(url);
-        waitForPage(driver, "you are already logged in.", false);
+        waitForPage(driver, "your email address has been verified already.", false);
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
 
         driver.navigate().to(url);
-        waitForPage(driver, "confirm linking the account testuser of identity provider " + bc.getIDPAlias() + " with your account.", false);
-        proceedPage.clickProceedLink();
-        waitForPage(driver, "you successfully verified your email. please go back to your original browser and continue there with the login.", false);
+        waitForPage(driver, "your email address has been verified already.", false);
+
+        driver2.navigate().to(url);
+        waitForPage(driver, "your email address has been verified already.", false);
     }
 
 
