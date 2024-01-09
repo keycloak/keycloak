@@ -8,7 +8,7 @@
       {
         "label": "linkedAccounts",
         "path": "account-security/linked-accounts",
-        "isHidden": "isLinkedAccountsEnabled"
+        "isVisible": "isLinkedAccountsEnabled"
       }
     ]
   },
@@ -16,11 +16,11 @@
   {
     "label": "groups",
     "path": "groups",
-    "isHidden": "isViewGroupsEnabled"
+    "isVisible": "isViewGroupsEnabled"
   },
   {
     "label": "resources",
     "path": "resources",
-    "isHidden": "isMyResourcesEnabled"
+    "isVisible": "isMyResourcesEnabled"
   }
 ]
