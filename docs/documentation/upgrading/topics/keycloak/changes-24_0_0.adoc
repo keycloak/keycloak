@@ -8,7 +8,7 @@ The welcome theme was one of the more outdated themes in Keycloak. It was origin
 
 If you are still using PatternFly 3 in your own custom theme (not extending the built-in one), you can continue to use it, but PatternFly 3 support will be removed in a future release, so you should consider migrating to PatternFly 5 as soon as possible.
 
-== Automatic redirect the the Administration Console
+== Automatic redirect to the Administration Console
 
 If the Administration Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
 
