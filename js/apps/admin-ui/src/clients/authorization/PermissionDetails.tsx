@@ -292,11 +292,11 @@ export default function PermissionDetails() {
               </FormGroup>
             ) : (
               <FormGroup
-                label={t("resources")}
+                label={t("resource")}
                 fieldId="resources"
                 labelIcon={
                   <HelpItem
-                    helpText={t("permissionResourcesHelp")}
+                    helpText={t("permissionResources")}
                     fieldLabelId="resources"
                   />
                 }
