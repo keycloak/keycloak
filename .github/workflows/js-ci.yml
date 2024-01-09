@@ -334,6 +334,7 @@ jobs:
     if: always()
     needs:
       - conditional
+      - build-keycloak
       - admin-client
       - keycloak-js
       - keycloak-masthead
