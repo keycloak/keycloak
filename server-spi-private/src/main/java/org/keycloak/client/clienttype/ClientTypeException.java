@@ -36,8 +36,4 @@ public class ClientTypeException extends ModelException {
     public ClientTypeException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public ClientTypeException(Throwable cause) {
-        super(cause);
-    }
 }

@@ -22,9 +22,12 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.OptimisticLockException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -92,11 +95,13 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         throwModelDuplicateEx = throwModelDuplicateEx.or(checkDuplicationMessage);
 
         if (t.getCause() != null && throwModelDuplicateEx.test(t.getCause())) {
-            throw new ModelDuplicateException(t.getCause());
+            throw new ModelDuplicateException("Duplicate resource error", t.getCause());
         } else if (throwModelDuplicateEx.test(t)) {
-            throw new ModelDuplicateException(t);
+            throw new ModelDuplicateException("Duplicate resource error", t);
+        } else if (t instanceof OptimisticLockException) {
+            throw new ModelIllegalStateException("Database operation failed", t);
         } else {
-            throw new ModelException(t);
+            throw new ModelException("Database operation failed", t);
         }
     }
 

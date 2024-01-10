@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -126,7 +127,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
                 || throwable instanceof ModelValidationException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
-
+        if (throwable instanceof ModelIllegalStateException) {
+            status = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+        }
         if (throwable instanceof ModelDuplicateException) {
             status = Response.Status.CONFLICT.getStatusCode();
         }
