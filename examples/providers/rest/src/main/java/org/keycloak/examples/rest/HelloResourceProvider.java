@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 
 /**
@@ -39,7 +40,7 @@ public class HelloResourceProvider implements RealmResourceProvider {
         return this;
     }
 
-    @GET
+    @GET @Path("")
     @Produces("text/plain; charset=utf-8")
     public String get() {
         String name = session.getContext().getRealm().getDisplayName();
