@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -382,8 +383,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 searchLDAP(realm, search, firstResult, maxResults) :
                 searchLDAPByAttributes(realm, params, firstResult, maxResults);
 
-        return StreamsUtil.paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
-            .map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
+        if (model.isImportEnabled()) {
+            result = result.filter(filterLocalUsers(realm));
+        }
+        return StreamsUtil.paginatedStream(
+                result.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, false))
+                        .filter(Objects::nonNull),
+                firstResult, maxResults);
     }
 
     @Override
@@ -619,6 +625,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
+        return importUserFromLDAP(session, realm, ldapUser, true);
+    }
+
+    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, boolean duplicates) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
 
@@ -632,6 +642,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // Need to evict the existing user from cache
                 if (UserStorageUtil.userCache(session) != null) {
                     UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
+                }
+                if (!duplicates) {
+                    // if duplicates are not wanted return null
+                    return null;
                 }
             } else {
                 imported = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, ldapUsername);
