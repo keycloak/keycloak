@@ -58,6 +58,7 @@ import javax.net.ssl.X509TrustManager;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
 
+import org.awaitility.Awaitility;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -65,6 +66,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -269,6 +271,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
+                threaddump();
                 throw new IllegalStateException(
                         "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
@@ -306,6 +309,22 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 }
             }
         }
+    }
+
+    private void threaddump() {
+        if (!Environment.isWindows()) {
+            return;
+        }
+        try {
+            ProcessBuilder builder = new ProcessBuilder("kill", "-3", String.valueOf(keycloak.pid()));
+            Process p = builder.start();
+            p.onExit().get(getStartTimeout(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // wait for thread dump
+        Awaitility.await().atMost(1, TimeUnit.MINUTES)
+                .until(() -> getOutputStream().stream().anyMatch(s -> s.contains("JNI global refs")));
     }
 
     private long getStartTimeout() {
