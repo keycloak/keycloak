@@ -103,4 +103,8 @@ $ kubectl get keycloaks.k8s.keycloak.org
 The new operator doesn't support Client, User and Realm CRDs directly. Instead, it provides one CRD to perform a https://www.keycloak.org/operator/realm-import.html[Realm import].
 Using this new CR you can import Users, Clients and more through the wrapping Realm.
 
+== Priority of X-Forwarded-* Headers
+
+In Quarkus the X-Forwarded-Port header takes precedence over any port included in the X-Forwarded-Host. This differs from the WildFly distribution where a port included in X-Forwarded-Host had priority over X-Forwarded-Port.
+
 </@tmpl.guide>
