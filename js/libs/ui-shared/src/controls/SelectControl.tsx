@@ -67,7 +67,7 @@ export const SelectControl = <
         render={({ field: { onChange, value } }) => (
           <Select
             {...rest}
-            toggleId={name}
+            toggleId={name.slice(name.lastIndexOf(".") + 1)}
             onToggle={(isOpen) => setOpen(isOpen)}
             selections={
               typeof options[0] !== "string"
