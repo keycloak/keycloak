@@ -575,6 +575,28 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         } else {
             getFederatedStorage().addFederatedIdentity(realm, user.getId(), socialLink);
         }
+
+        session.getKeycloakSessionFactory().publish(new FederatedIdentityModel.FederatedIdentityCreatedEvent() {
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public FederatedIdentityModel getFederatedIdentity() {
+                return socialLink;
+            }
+        });
     }
 
     @Override
@@ -588,11 +610,44 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
+        FederatedIdentityModel federatedIdentityModel;
         if (StorageId.isLocalStorage(user)) {
-            return localStorage().removeFederatedIdentity(realm, user, socialProvider);
+            UserProvider localStorage = localStorage();
+            federatedIdentityModel = localStorage.getFederatedIdentity(realm, user, socialProvider);
+            localStorage.removeFederatedIdentity(realm, user, socialProvider);
         } else {
-            return getFederatedStorage().removeFederatedIdentity(realm, user.getId(), socialProvider);
+            UserFederatedStorageProvider federatedStorage = getFederatedStorage();
+            federatedIdentityModel = federatedStorage.getFederatedIdentity(user.getId(), socialProvider, realm);
+            federatedStorage.removeFederatedIdentity(realm, user.getId(), socialProvider);
         }
+
+        if (federatedIdentityModel == null) {
+           return false;
+        }
+
+        session.getKeycloakSessionFactory().publish(new FederatedIdentityModel.FederatedIdentityRemovedEvent() {
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public FederatedIdentityModel getFederatedIdentity() {
+                return federatedIdentityModel;
+            }
+        });
+
+        return true;
     }
 
     @Override
