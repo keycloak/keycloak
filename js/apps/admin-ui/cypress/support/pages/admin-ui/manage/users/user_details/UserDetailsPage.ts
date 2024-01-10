@@ -13,6 +13,7 @@ export default class UserDetailsPage extends PageObject {
   lastNameValue: string;
   requiredUserActions: RequiredActionAlias[];
   identityProviderLinksTab: string;
+  detailsTab: string;
   consentsTab: string;
   sessionsTab: string;
 
@@ -28,6 +29,7 @@ export default class UserDetailsPage extends PageObject {
     this.lastNameValue = "lastname";
     this.requiredUserActions = [RequiredActionAlias.UPDATE_PASSWORD];
     this.identityProviderLinksTab = "identity-provider-links-tab";
+    this.detailsTab = "user-details-tab";
     this.consentsTab = "user-consents-tab";
     this.sessionsTab = "user-sessions-tab";
   }
@@ -62,6 +64,11 @@ export default class UserDetailsPage extends PageObject {
   cancel() {
     cy.findByTestId(this.cancelBtn).click();
 
+    return this;
+  }
+
+  goToDetailsTab() {
+    cy.findByTestId(this.detailsTab).click();
     return this;
   }
 
