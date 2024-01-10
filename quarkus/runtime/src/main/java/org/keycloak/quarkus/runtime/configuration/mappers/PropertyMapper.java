@@ -45,8 +45,8 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper<T> {
 
-    static PropertyMapper IDENTITY = new PropertyMapper(
-            new OptionBuilder<String>(null, String.class).build(),
+    static PropertyMapper<?> IDENTITY = new PropertyMapper<>(
+            new OptionBuilder<>(null, String.class).build(),
             null,
             null,
             null,
@@ -116,7 +116,7 @@ public class PropertyMapper<T> {
 
                 if (parentValue == null) {
                     // parent value not explicitly set, try to resolve the default value set to the parent property
-                    PropertyMapper parentMapper = PropertyMappers.getMapper(parentKey);
+                    PropertyMapper<?> parentMapper = PropertyMappers.getMapper(parentKey);
 
                     if (parentMapper != null && parentMapper.getDefaultValue().isPresent()) {
                         parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue().get().toString()).build();

@@ -44,7 +44,7 @@ public class KcEnvConfigSource extends EnvConfigSource {
             if (key.startsWith(kcPrefix)) {
                 properties.put(key, value);
 
-                PropertyMapper mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
                 if (mapper != null) {
                     String to = mapper.getTo();

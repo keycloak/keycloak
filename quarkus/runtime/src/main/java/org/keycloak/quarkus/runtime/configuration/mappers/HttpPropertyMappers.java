@@ -27,7 +27,7 @@ final class HttpPropertyMappers {
 
     private HttpPropertyMappers(){}
 
-    public static PropertyMapper[] getHttpPropertyMappers() {
+    public static PropertyMapper<?>[] getHttpPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
@@ -142,14 +142,14 @@ final class HttpPropertyMappers {
         return of(enabled ? "enabled" : "disabled");
     }
 
-    private static String getDefaultKeystorePathValue() {
+    private static File getDefaultKeystorePathValue() {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
             File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
 
             if (file.exists()) {
-                return file.getAbsolutePath();
+                return file;
             }
         }
 

@@ -15,12 +15,12 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public final class FeaturePropertyMappers {
 
-    private static Pattern VERSIONED_PATTERN = Pattern.compile("([^:]+):v(\\d+)");
+    private static final Pattern VERSIONED_PATTERN = Pattern.compile("([^:]+):v(\\d+)");
 
     private FeaturePropertyMappers() {
     }
 
-    public static PropertyMapper[] getMappers() {
+    public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[] {
                 fromOption(FeatureOptions.FEATURES)
                         .paramLabel("feature")
@@ -57,7 +57,7 @@ public final class FeaturePropertyMappers {
                         feature, FeatureOptions.getFeatureValues(false)));
             }
             int version = Integer.parseInt(matcher.group(2));
-            if (!featureVersions.stream().anyMatch(f -> f.getVersion() == version)) {
+            if (featureVersions.stream().noneMatch(f -> f.getVersion() == version)) {
                 throw new PropertyException(
                         String.format("%s has an unrecognized feature version, it should be one of %s", feature,
                                 featureVersions.stream().map(Feature::getVersion).map(String::valueOf).collect(Collectors.toList())));

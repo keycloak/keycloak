@@ -17,7 +17,7 @@ final class SecurityPropertyMappers {
     private SecurityPropertyMappers() {
     }
 
-    public static PropertyMapper[] getMappers() {
+    public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[] {
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")
