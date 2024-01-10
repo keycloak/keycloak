@@ -86,6 +86,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -424,7 +425,7 @@ public class RealmAdminResource {
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
-        
+
         ReservedCharValidator.validate(rep.getRealm());
         ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
@@ -458,14 +459,17 @@ public class RealmAdminResource {
             session.getContext().getUri();
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
-            
+
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
             }
-            
+
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {

@@ -401,7 +401,7 @@ public class LDAPIdentityStore implements IdentityStore {
         } catch (ModelException me) {
             throw me;
         } catch (Exception e) {
-            throw new ModelException(e);
+            throw new ModelException("Error updating password", e);
         }
     }
 

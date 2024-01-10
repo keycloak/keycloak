@@ -158,7 +158,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             try {
                 data = JsonSerialization.readValue(model.getData(), PersistentUserSessionData.class);
             } catch (IOException ioe) {
-                throw new ModelException(ioe);
+                throw new ModelException("Error restoring session", ioe);
             }
         }
 
@@ -171,7 +171,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             String updatedData = JsonSerialization.writeValueAsString(getData());
             this.model.setData(updatedData);
         } catch (IOException ioe) {
-            throw new ModelException(ioe);
+            throw new ModelException("Error persisting session", ioe);
         }
 
         return this.model;
