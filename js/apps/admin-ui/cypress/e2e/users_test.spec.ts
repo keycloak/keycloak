@@ -146,9 +146,21 @@ describe("User creation", () => {
   it("User attributes test", () => {
     listingPage.goToItemDetails(itemId);
 
-    attributesTab.goToAttributesTab().addAttribute("key", "value").save();
+    attributesTab
+      .goToAttributesTab()
+      .addAttribute("key_test", "value_test")
+      .save();
 
     masthead.checkNotificationMessage("The user has been saved");
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab
+      .goToAttributesTab()
+      .checkAttribute("key_test", true)
+      .deleteAttribute(0);
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab.goToAttributesTab().checkAttribute("key_test", false);
   });
 
   it("User attributes with multiple values test", () => {
@@ -168,7 +180,6 @@ describe("User creation", () => {
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
       expect(request.body.attributes, "response body").deep.equal({
-        key: ["value"],
         "key-multiple": ["other value"],
       });
     });

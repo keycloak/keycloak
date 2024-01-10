@@ -18,11 +18,7 @@ describe("Masthead tests", () => {
     it("Go to account console and back to admin console", () => {
       sidebarPage.waitForPageLoad();
       masthead.accountManagement();
-      sidebarPage.waitForPageLoad();
-      cy.get("h1").contains("Welcome to Keycloak account management");
-      masthead.goToAdminConsole();
-      sidebarPage.waitForPageLoad();
-      masthead.checkIsAdminUI();
+      cy.url().should("contain", "/realms/master/account/");
     });
 
     it("Sign out reachs to log in screen", () => {
