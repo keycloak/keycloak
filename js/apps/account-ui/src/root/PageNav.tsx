@@ -4,11 +4,14 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  Spinner,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
   MouseEvent as ReactMouseEvent,
+  Suspense,
   useMemo,
+  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,79 +21,55 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
-import { ContentMenu } from "../content/ContentRenderer";
-import { environment } from "../environment";
+import fetchContentJson from "../content/fetchContent";
 import { TFuncKey } from "../i18n";
+import { usePromise } from "../utils/usePromise";
+import { Feature, environment } from "../environment";
 
 type RootMenuItem = {
   label: TFuncKey;
   path: string;
-  isHidden?: boolean;
+  isHidden?: keyof Feature;
+  modulePath?: string;
 };
 
 type MenuItemWithChildren = {
   label: TFuncKey;
   children: MenuItem[];
-  isHidden?: boolean;
+  isHidden?: keyof Feature;
 };
 
-type MenuItem = RootMenuItem | MenuItemWithChildren;
+export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
-const menuItems: MenuItem[] = [
-  {
-    label: "personalInfo",
-    path: "/",
-  },
-  {
-    label: "accountSecurity",
-    children: [
-      {
-        label: "signingIn",
-        path: "account-security/signing-in",
-      },
-      {
-        label: "deviceActivity",
-        path: "account-security/device-activity",
-      },
-      {
-        label: "linkedAccounts",
-        path: "account-security/linked-accounts",
-        isHidden: !environment.features.isLinkedAccountsEnabled,
-      },
-    ],
-  },
-  {
-    label: "applications",
-    path: "applications",
-  },
-  {
-    label: "groups",
-    path: "groups",
-    isHidden: !environment.features.isViewGroupsEnabled,
-  },
-  {
-    label: "resources",
-    path: "resources",
-    isHidden: !environment.features.isMyResourcesEnabled,
-  },
-];
+export const PageNav = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>();
 
-export const PageNav = () => (
-  <PageSidebar
-    nav={
-      <Nav>
-        <NavList>
-          <ContentMenu />
-          {menuItems
-            .filter((menuItem) => !menuItem.isHidden)
-            .map((menuItem) => (
-              <NavMenuItem key={menuItem.label as string} menuItem={menuItem} />
-            ))}
-        </NavList>
-      </Nav>
-    }
-  />
-);
+  usePromise((signal) => fetchContentJson({ signal }), setMenuItems);
+  return (
+    <PageSidebar
+      nav={
+        <Nav>
+          <NavList>
+            <Suspense fallback={<Spinner />}>
+              {menuItems
+                ?.filter((menuItem) =>
+                  menuItem.isHidden
+                    ? environment.features[menuItem.isHidden]
+                    : true,
+                )
+                .map((menuItem) => (
+                  <NavMenuItem
+                    key={menuItem.label as string}
+                    menuItem={menuItem}
+                  />
+                ))}
+            </Suspense>
+          </NavList>
+        </Nav>
+      }
+    />
+  );
+};
 
 type NavMenuItemProps = {
   menuItem: MenuItem;
