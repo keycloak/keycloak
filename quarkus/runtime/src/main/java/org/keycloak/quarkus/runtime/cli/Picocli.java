@@ -166,6 +166,7 @@ public final class Picocli {
         return cliArgs.contains("--help")
                 || cliArgs.contains("-h")
                 || cliArgs.contains("--help-all")
+                || currentCommandName.equals(Build.NAME)
                 || currentCommandName.equals(ShowConfig.NAME)
                 || currentCommandName.equals(Tools.NAME);
     }
@@ -217,13 +218,14 @@ public final class Picocli {
 
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
-        configArgsList.replaceAll(arg -> replaceCommandWithBuild(getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName(), arg));
+        String commandName = getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName();
+        configArgsList.replaceAll(arg -> replaceCommandWithBuild(commandName, arg));
         configArgsList.removeIf(Picocli::isRuntimeOption);
 
         exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName(), OPTIMIZED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), commandName, OPTIMIZED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
 
         return exitCode;
