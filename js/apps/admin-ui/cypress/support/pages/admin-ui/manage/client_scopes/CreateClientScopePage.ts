@@ -100,6 +100,14 @@ export default class CreateClientScopePage extends CommonPage {
     return this;
   }
 
+  save_is_disabled(value: boolean) {
+    cy.get(this.saveBtn)
+      .invoke("attr", "aria-disabled")
+      .should("eq", value ? "true" : "false");
+
+    return this;
+  }
+
   cancel() {
     cy.get(this.cancelBtn).click();
 
