@@ -27,11 +27,12 @@ When running on physical machines, adjust the number of worker threads to avoid 
 Congestion would result in longer response times and an increased memory usage, and eventually an unstable system.
 
 Ideally, you should start with a low limit of threads and adjust it accordingly to the target throughput and response time.
-When the load and the number of threads increases, the bottleneck will usually be the database connections.
-Once a request cannot acquire a database connection, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
+When the load and the number of threads increases, the bottleneck can become be the database connections.
+Once a request cannot acquire a database connection within 5 seconds, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
 The caller will receive a response with a 5xx HTTP status code indicating a server side error.
 
-With the number of threads in the executor pool being an order of magnitude larger than the number of database connections and with requests failing when no database connection is available within the https://quarkus.io/guides/all-config#quarkus-agroal_quarkus.datasource.jdbc.acquisition-timeout[`quarkus.datasource.jdbc.acquisition-timeout`] (5 seconds default), this is somewhat of a https://en.wikipedia.org/wiki/Demand_response#Load_shedding[load-shedding behavior] where it returns an error response instead of queueing requests for an indefinite amount of time.
+If you increase the number of database connections and the number of threads too much, the system will be congested under a high load with requests queueing up and all callers getting a bad performance.
+Low numbers ensure fast response times for all clients, even if there is an occasionally failing request when there is a load spike.
 
 === JGroups connection pool
 

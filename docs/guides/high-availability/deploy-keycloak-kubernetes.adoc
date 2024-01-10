@@ -43,8 +43,6 @@ The number of all {project_name} threads in the StatefulSet should not exceed th
 You might consider limiting the number of {project_name} threads further because multiple concurrent threads will lead to throttling by Kubernetes once the requested CPU limit is reached.
 See the <@links.ha id="concepts-threads" /> {section} for details.
 <5> The JVM options set additional parameters:
-* `jgroups.thread_dumps_threshold` ensures that a log message "`thread pool is full`" appears once the JGroup thread pool is full for the first time.
-See the <@links.ha id="concepts-threads" /> {section} for details.
 * Adjust the memory settings for the heap.
 
 == Verifying the deployment
