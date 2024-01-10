@@ -480,7 +480,7 @@ spec:
               # tag::keycloak-ispn[]
               - name: JAVA_OPTS_APPEND # <5>
                 value: >
-                  -Xms512m -Xmx1524m -Djgroups.thread_dumps_threshold=1
+                  -Xms512m -Xmx1524m
 
                 # end::keycloak[]
                 # end::keycloak-ispn[]
