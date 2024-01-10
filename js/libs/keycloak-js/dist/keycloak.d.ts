@@ -332,7 +332,7 @@ export interface KeycloakProfile {
 	emailVerified?: boolean;
 	totp?: boolean;
 	createdTimestamp?: number;
-	attributes?: Record<string, any>;
+	attributes?: Record<string, unknown>;
 }
 
 export interface KeycloakTokenParsed {
