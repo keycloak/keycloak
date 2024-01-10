@@ -59,12 +59,6 @@ export const AddSubFlowModal = ({
     [],
   );
 
-  useEffect(() => {
-    if (formProviders?.length === 1) {
-      setValue("provider", formProviders[0].id!);
-    }
-  }, [formProviders]);
-
   return (
     <Modal
       variant={ModalVariant.medium}
@@ -165,7 +159,7 @@ export const AddSubFlowModal = ({
             )}
           />
         </FormGroup>
-        {formProviders && formProviders.length > 1 && (
+        {formProviders && (
           <FormGroup
             label={t("flowType")}
             labelIcon={
