@@ -15,7 +15,6 @@ import {
   Split,
   SplitItem,
   Title,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   DesktopIcon,
@@ -115,17 +114,14 @@ const DeviceActivity = () => {
           </Title>
         </SplitItem>
         <SplitItem>
-          <Tooltip content={t("refreshPage")}>
-            <Button
-              aria-describedby="refresh page"
-              id="refresh-page"
-              variant="link"
-              onClick={() => refresh()}
-              icon={<SyncAltIcon />}
-            >
-              {t("refreshPage")}
-            </Button>
-          </Tooltip>
+          <Button
+            id="refresh-page"
+            variant="link"
+            onClick={() => refresh()}
+            icon={<SyncAltIcon />}
+          >
+            {t("refreshPage")}
+          </Button>
 
           {(devices.length > 1 || devices[0].sessions.length > 1) && (
             <ContinueCancelModal
