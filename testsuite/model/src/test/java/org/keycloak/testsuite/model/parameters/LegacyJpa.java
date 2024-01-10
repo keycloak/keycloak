@@ -17,6 +17,9 @@
 package org.keycloak.testsuite.model.parameters;
 
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderSpi;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
@@ -68,6 +71,9 @@ public class LegacyJpa extends KeycloakModelParameters {
 
       .add(DBLockSpi.class)
 
+      //required for FederatedIdentityModel
+      .add(IdentityProviderSpi.class)
+
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -91,6 +97,9 @@ public class LegacyJpa extends KeycloakModelParameters {
       //required for migrateModel
       .add(MigrationProviderFactory.class)
       .add(LoginProtocolFactory.class)
+
+      //required for FederatedIdentityModel
+      .add(IdentityProviderFactory.class)
 
       .build();
 
