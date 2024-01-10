@@ -238,7 +238,20 @@ Or to use directly in HTML templates add the following to a custom HTML template
 
 [source,html]
 ----
-<img src="${url.resourcesPath}/img/image.jpg">
+<img src="${url.resourcesPath}/img/image.jpg" alt="My image description">
+----
+
+==== Adding an image to a email theme
+
+To make images available to the theme add them to the `<THEME TYPE>/email/resources/img` directory of your theme. These can be used from within directly in HTML templates.
+
+For example to add an image to the `mytheme` copy an image to `themes/mytheme/email/resources/img/logo.jpg`.
+
+To use directly in HTML templates add the following to a custom HTML template:
+
+[source,html]
+----
+<img src="${url.resourcesUrl}/img/image.jpg" alt="My image description">
 ----
 
 ==== Messages
