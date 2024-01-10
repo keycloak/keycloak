@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -171,6 +173,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static boolean isInternationalizationEnabled(AttributeContext context) {
         RealmModel realm = context.getSession().getContext().getRealm();
         return realm.isInternationalizationEnabled();
+    }
+
+    private static boolean isTermAndConditionsEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        RequiredActionProviderModel tacModel = realm.getRequiredActionProviderByAlias(
+                UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        return tacModel != null && tacModel.isEnabled();
     }
 
     private static boolean isNewUser(AttributeContext c) {
@@ -438,6 +447,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
+        metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
+                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         return metadata;
