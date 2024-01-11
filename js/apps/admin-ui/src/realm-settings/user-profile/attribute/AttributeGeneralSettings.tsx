@@ -126,7 +126,7 @@ export const AttributeGeneralSettings = () => {
             fieldLabelId="realm-setting:attributeGroup"
           />
         }
-        fieldId="kc-attribute-group"
+        fieldId="kc-attributeGroup"
       >
         <Controller
           name="group"
@@ -135,6 +135,7 @@ export const AttributeGeneralSettings = () => {
           render={({ field }) => (
             <Select
               toggleId="kc-attributeGroup"
+              aria-label={t("attributeGroup")}
               onToggle={() =>
                 setIsAttributeGroupDropdownOpen(!isAttributeGroupDropdownOpen)
               }
