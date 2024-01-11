@@ -42,8 +42,8 @@ export const ValueSelect = ({
     </Select>
   ) : (
     <KeycloakTextInput
-      id="customValue"
-      aria-label="customValue"
+      id={t("customValue")}
+      aria-label={t("customValue")}
       data-testid={rest.name}
       {...field}
     />
