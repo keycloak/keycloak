@@ -46,14 +46,14 @@ import java.io.Serializable;
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.realmId = :realmId AND sess.userId = :userId ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
-                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
+                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientId = :clientId WHERE sess.offline = :offline AND clientSess.offline = :offline " +
                 " AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByExternalClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
-                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
+                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline AND clientSess.offline = :offline " +
                 " AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
         @NamedQuery(name="findClientSessionsClientIds", query="SELECT clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider, count(clientSess)" +
                 " FROM PersistentClientSessionEntity clientSess INNER JOIN PersistentUserSessionEntity sess ON clientSess.userSessionId = sess.userSessionId " +
-                " WHERE sess.offline = :offline AND sess.realmId = :realmId " +
+                " WHERE sess.offline = :offline AND clientSess.offline = :offline AND sess.realmId = :realmId " +
                 " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider")
 
 })
