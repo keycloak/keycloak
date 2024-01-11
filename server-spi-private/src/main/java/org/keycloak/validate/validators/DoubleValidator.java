@@ -49,7 +49,7 @@ public class DoubleValidator extends AbstractNumberValidator implements Configur
         if (value instanceof Number) {
             return (Number) value;
         }
-        return new Double(value.toString());
+        return Double.valueOf(value.toString());
     }
 
     @Override
