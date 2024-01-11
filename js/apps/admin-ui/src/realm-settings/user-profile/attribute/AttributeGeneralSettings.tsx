@@ -126,7 +126,7 @@ export const AttributeGeneralSettings = () => {
             fieldLabelId="realm-setting:attributeGroup"
           />
         }
-        fieldId="kc-attribute-group"
+        fieldId="kc-attributeGroup"
       >
         <Controller
           name="group"
