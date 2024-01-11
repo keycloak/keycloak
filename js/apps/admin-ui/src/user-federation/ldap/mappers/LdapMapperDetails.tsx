@@ -309,7 +309,7 @@ export default function LdapMapperDetails() {
                     variant={SelectVariant.typeahead}
                   >
                     {components.map((c) => (
-                      <SelectOption id={c.id} key={c.id} value={c.id} />
+                      <SelectOption key={c.id} value={c.id} />
                     ))}
                   </Select>
                 )}

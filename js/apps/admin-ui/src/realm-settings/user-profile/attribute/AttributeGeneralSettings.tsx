@@ -135,7 +135,7 @@ export const AttributeGeneralSettings = () => {
           render={({ field }) => (
             <Select
               toggleId="kc-attributeGroup"
-              aria-label={t("selectAttributeGroup")}
+              aria-label={t("attributeGroup")}
               onToggle={() =>
                 setIsAttributeGroupDropdownOpen(!isAttributeGroupDropdownOpen)
               }
