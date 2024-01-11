@@ -84,6 +84,7 @@ export const Client = () => {
           <Select
             toggleId="clients"
             variant={SelectVariant.typeaheadMulti}
+            typeAheadAriaLabel={t("clients")}
             onToggle={(open) => setOpen(open)}
             isOpen={open}
             selections={field.value}
@@ -102,7 +103,6 @@ export const Client = () => {
               }
               setOpen(false);
             }}
-            aria-label={t("clients")}
           >
             {convert(clients)}
           </Select>

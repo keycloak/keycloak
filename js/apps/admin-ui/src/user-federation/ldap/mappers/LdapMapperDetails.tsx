@@ -295,6 +295,7 @@ export default function LdapMapperDetails() {
                 render={({ field }) => (
                   <Select
                     toggleId="kc-providerId"
+                    typeAheadAriaLabel={t("mapperType")}
                     required
                     onToggle={() =>
                       setIsMapperDropdownOpen(!isMapperDropdownOpen)
@@ -308,7 +309,7 @@ export default function LdapMapperDetails() {
                     variant={SelectVariant.typeahead}
                   >
                     {components.map((c) => (
-                      <SelectOption key={c.id} value={c.id} />
+                      <SelectOption id={c.id} key={c.id} value={c.id} />
                     ))}
                   </Select>
                 )}
