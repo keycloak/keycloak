@@ -73,7 +73,9 @@ public class RegexPolicyProvider implements PolicyProvider {
     }
 
     private String getClaimValue(Evaluation evaluation, RegexPolicyRepresentation policy) {
-        Attributes attributes = evaluation.getContext().getIdentity().getAttributes();
+        Attributes attributes = policy.isTargetContextAttributes()
+                ? evaluation.getContext().getAttributes()
+                : evaluation.getContext().getIdentity().getAttributes();
         String targetClaim = policy.getTargetClaim();
 
         try {

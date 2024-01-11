@@ -804,7 +804,7 @@ spec:
               # tag::keycloak-ispn[]
               - name: JAVA_OPTS_APPEND # <5>
                 value: >
-                  -Djgroups.thread_dumps_threshold=1 -Djboss.site.name=keycloak
+                  -Djboss.site.name=keycloak
 
                 # end::keycloak[]
                 # end::keycloak-ispn[]

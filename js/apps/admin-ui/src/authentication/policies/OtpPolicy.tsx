@@ -127,7 +127,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             />
           </FormGroup>
           <SelectControl
-            name="otpHashAlgorithm"
+            name="otpPolicyAlgorithm"
             label={t("otpHashAlgorithm")}
             labelIcon={t("otpHashAlgorithmHelp")}
             options={OTP_HASH_ALGORITHMS.map((type) => ({
