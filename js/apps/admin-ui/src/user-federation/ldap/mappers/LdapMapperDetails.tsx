@@ -295,6 +295,7 @@ export default function LdapMapperDetails() {
                 render={({ field }) => (
                   <Select
                     toggleId="kc-providerId"
+                    typeAheadAriaLabel={t("mapperType")}
                     required
                     onToggle={() =>
                       setIsMapperDropdownOpen(!isMapperDropdownOpen)
