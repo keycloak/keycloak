@@ -144,7 +144,7 @@ public class LoggingDistTest {
     void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
         CLIResult cliResult = dist.run("start-dev");
-        cliResult.assertError("Invalid value for option 'kc.log': foo,console. Expected values are: console, file, gelf.");
+        cliResult.assertError("Invalid value for option 'kc.log': foo. Expected values are: console, file, gelf.");
     }
 
     @Test
@@ -158,7 +158,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev","--log=foo,bar" })
     void failUnknownHandlersInCliCommand(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option '--log': foo,bar");
+        cliResult.assertError("Invalid value for option '--log': foo");
     }
 
     @Test

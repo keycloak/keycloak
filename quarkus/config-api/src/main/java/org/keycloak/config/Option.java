@@ -2,7 +2,7 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Option<T> {
 
@@ -13,10 +13,10 @@ public class Option<T> {
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
-    private final Supplier<List<String>> expectedValues;
+    private final List<String> expectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues, DeprecatedMetadata deprecatedMetadata) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -53,7 +53,7 @@ public class Option<T> {
     }
 
     public List<String> getExpectedValues() {
-        return expectedValues.get();
+        return expectedValues;
     }
 
     public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
@@ -89,5 +89,15 @@ public class Option<T> {
         }
 
         return description;
+    }
+
+    public static String getDefaultValueString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List) {
+            return ((List<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
+        }
+        return String.valueOf(value);
     }
 }

@@ -1,6 +1,9 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.common.crypto.FipsMode;
 
 public class HttpOptions {
@@ -54,10 +57,10 @@ public class HttpOptions {
             .description("The cipher suites to use. If none is given, a reasonable default is selected.")
             .build();
 
-    public static final Option<String> HTTPS_PROTOCOLS = new OptionBuilder<>("https-protocols", String.class)
+    public static final Option<List<String>> HTTPS_PROTOCOLS = OptionBuilder.listOptionBuilder("https-protocols", String.class)
             .category(OptionCategory.HTTP)
             .description("The list of protocols to explicitly enable.")
-            .defaultValue("TLSv1.3,TLSv1.2")
+            .defaultValue(Arrays.asList("TLSv1.3,TLSv1.2"))
             .build();
 
     public static final Option<File> HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)

@@ -2,9 +2,11 @@ package org.keycloak.config;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 
+import java.util.List;
+
 public class TruststoreOptions {
 
-    public static final Option<String> TRUSTSTORE_PATHS = new OptionBuilder<>("truststore-paths", String.class)
+    public static final Option<List<String>> TRUSTSTORE_PATHS = OptionBuilder.listOptionBuilder("truststore-paths", String.class)
             .category(OptionCategory.TRUSTSTORE)
             .description("List of pkcs12 (p12 or pfx file extensions), PEM files, or directories containing those files that will be used as a system truststore.")
             .build();
