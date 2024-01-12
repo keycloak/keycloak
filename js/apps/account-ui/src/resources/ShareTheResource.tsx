@@ -191,7 +191,6 @@ export const ShareTheResource = ({
                 key: name,
                 value: displayName || name,
               }))}
-              menuAppendTo="parent"
             />
           </FormGroup>
         </FormProvider>
