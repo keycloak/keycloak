@@ -107,7 +107,7 @@ public interface PolicyStore {
     default List<Policy> findByResource(ResourceServer resourceServer, Resource resource) {
         List<Policy> result = new LinkedList<>();
 
-        findByResource(resourceServer, resource, result::add);
+        findByResource(resourceServer, true, resource, result::add);
 
         return result;
     }
@@ -119,11 +119,7 @@ public interface PolicyStore {
      * @param resource the resource. Cannot be {@code null}.
      * @param consumer consumer of policies resulted from the search
      */
-    default void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
-        findByResource(resourceServer, true, resource, consumer);
-    }
-
-    void findByResource(ResourceServer resourceServer, Boolean includeScopes, Resource resource, Consumer<Policy> consumer);
+    void findByResource(ResourceServer resourceServer, boolean includeScopes, Resource resource, Consumer<Policy> consumer);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.ResourceServer} with the given <code>type</code>.
@@ -135,7 +131,7 @@ public interface PolicyStore {
     default List<Policy> findByResourceType(ResourceServer resourceServer, String resourceType) {
         List<Policy> result = new LinkedList<>();
 
-        findByResourceType(resourceServer, resourceType, result::add);
+        findByResourceType(resourceServer, true, resourceType, result::add);
 
         return result;
     }
@@ -147,11 +143,7 @@ public interface PolicyStore {
      * @param type the type of a resource
      * @param policyConsumer consumer of policies resulted from the search
      */
-    default void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
-        findByResourceType(resourceServer, true, type, policyConsumer);
-    }
-
-    void findByResourceType(ResourceServer resourceServer, Boolean allPolicies, String type, Consumer<Policy> policyConsumer);
+    void findByResourceType(ResourceServer resourceServer, boolean withResourceType, String type, Consumer<Policy> policyConsumer);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Scope} within the given <code>scope</code>.

@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -25,10 +27,13 @@ import java.util.function.Consumer;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
@@ -42,8 +47,8 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         ResourceServer resourceServer = permission.getResourceServer();
-
         PolicyEnforcementMode enforcementMode = resourceServer.getPolicyEnforcementMode();
+
         // if we aren't enforcing policies then we should just grant and return
         if (PolicyEnforcementMode.DISABLED.equals(enforcementMode)) {
             grantAndComplete(permission, authorizationProvider, executionContext, decision);
@@ -58,8 +63,36 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
         AtomicBoolean verified = new AtomicBoolean();
         Consumer<Policy> policyConsumer = createPolicyEvaluator(permission, authorizationProvider, executionContext, decision, verified, decisionCache);
+        Collection<Scope> scopes = permission.getScopes();
+        Resource resource = permission.getResource();
 
-        PolicyQueryBuilder.init(resourceServer, policyStore, permission).allConsumers(policyConsumer).query();
+        if(scopes != null) {
+            if (resource != null) {
+                policyStore.findByScopes(resourceServer, resource, new LinkedList<>(scopes), policyConsumer);
+            }
+
+            policyStore.findByScopes(resourceServer, null, new LinkedList<>(scopes), policyConsumer);
+        }
+
+        if(resource != null) {
+            // get type policies that are explicitly not linked to any resources
+            if(resource.getType() != null) {
+                // evaluate policies explicitly set with a resource type
+                policyStore.findByResourceType(resourceServer, true, resource.getType(), policyConsumer);
+
+                if (!resource.getOwner().equals(resourceServer.getClientId())) {
+                    // evaluate permissions for typed-resources owned by the resource server itself
+                    ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
+
+                    for (Resource typedResource : resourceStore.findByType(resourceServer, resource.getType())) {
+                        policyStore.findByResource(resourceServer, true, typedResource, policyConsumer);
+                    }
+                }
+            }
+
+            // get resource policies that are explicitly not linked to any scopes but are to the resource
+            policyStore.findByResource(resourceServer, false, resource, policyConsumer);
+        }
 
         if (verified.get()) {
             decision.onComplete(permission);

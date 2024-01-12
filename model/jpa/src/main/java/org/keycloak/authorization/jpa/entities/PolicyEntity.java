@@ -18,7 +18,6 @@
 
 package org.keycloak.authorization.jpa.entities;
 
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import java.util.*;
 

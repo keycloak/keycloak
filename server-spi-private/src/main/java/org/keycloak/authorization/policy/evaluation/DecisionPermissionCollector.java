@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +67,10 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             grantPermission(authorizationProvider, permissions, permission, requestedScopes, resourceServer, request, result);
         } else {
             Set<Scope> grantedScopes = new HashSet<>();
-            Set<Scope> deniedScopes = new HashSet<>();
+            Set<Scope> deniedScopesByResourceOrScopePermission = new HashSet<>();
+            Set<Scope> deniedScopesByTypedPermission = new HashSet<>();
             List<Result.PolicyResult> userManagedPermissions = new ArrayList<>();
-            boolean resourceGranted = false;
+            boolean resourceGrantedByResourcePermission = false;
             boolean anyDeny = false;
 
             for (Result.PolicyResult policyResult : result.getResults()) {
@@ -85,7 +87,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                                 // we need to grant any scope granted by a permission in case it is not explicitly
                                 // associated with the resource. For instance, resources inheriting scopes from parent resources.
                                 if (resource != null && !resource.getScopes().contains(scope)) {
-                                    deniedScopes.remove(scope);
+                                    deniedScopesByResourceOrScopePermission.remove(scope);
                                 }
                             }
                         }
@@ -94,21 +96,25 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                     } else if (resource != null && resource.isOwnerManagedAccess() && "uma".equals(policy.getType())) {
                         userManagedPermissions.add(policyResult);
                     }
-                    if (!resourceGranted) {
-                        resourceGranted = isGrantingAccessToResource(resource, policy) && containsResource;
+                    if (!resourceGrantedByResourcePermission) {
+                        resourceGrantedByResourcePermission = isGrantingAccessToResource(resource, policy) && containsResource;
                     }
                 } else {
                     if (isResourcePermission(policy)) {
                         // deny all requested scopes if the resource-based permission is associated with the resource or if the
                         // resource was not granted by any other permission
-                        if (containsResource || !resourceGranted) {
-                            deniedScopes.addAll(requestedScopes);
+                        if (containsResource || !resourceGrantedByResourcePermission) {
+                            if (isTypedResourcePermission(policy)) {
+                                deniedScopesByTypedPermission.addAll(requestedScopes);
+                            } else {
+                                deniedScopesByResourceOrScopePermission.addAll(requestedScopes);
+                            }
                         }
                     } else {
                         // deny all scopes associated with the scope-based permission if the permission is associated with the 
                         // resource or if the permission applies to any resource associated with the scopes
                         if (containsResource || policyResources.isEmpty()) {
-                            deniedScopes.addAll(policyScopes);
+                            deniedScopesByResourceOrScopePermission.addAll(policyScopes);
                         }
                     }
                     if (!anyDeny) {
@@ -119,13 +125,26 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
 
             if (DecisionStrategy.AFFIRMATIVE.equals(resourceServer.getDecisionStrategy())) {
                 // remove any scope that was granted from the list of denied scopes if the decision strategy is affirmative
-                deniedScopes.removeAll(grantedScopes);
+                deniedScopesByResourceOrScopePermission.removeAll(grantedScopes);
             }
 
-            grantedScopes.removeAll(deniedScopes);
+            if (resourceGrantedByResourcePermission) {
+                // if a resource is granted by a resource permission, we grant any scope denied by typed-permissions
+                // because we are overriding the decisions from the typed-permission
+                deniedScopesByTypedPermission.removeAll(grantedScopes);
+                deniedScopesByResourceOrScopePermission.addAll(deniedScopesByTypedPermission);
+            }
+
+            if (deniedScopesByResourceOrScopePermission.isEmpty()) {
+                // if no scopes were denied by resource or scope permissions then we add any scope
+                // denied by a typed-permission so that we respect the decision about scopes from the typed-permission
+                deniedScopesByResourceOrScopePermission.addAll(deniedScopesByTypedPermission);
+            }
+
+            grantedScopes.removeAll(deniedScopesByResourceOrScopePermission);
 
             if (userManagedPermissions.isEmpty()) {
-                if (!resourceGranted && (grantedScopes.isEmpty() && !requestedScopes.isEmpty())) {
+                if (!resourceGrantedByResourcePermission && (grantedScopes.isEmpty() && !requestedScopes.isEmpty())) {
                     return;
                 }
             } else {
@@ -152,6 +171,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
 
             grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
         }
+    }
+
+    private boolean isTypedResourcePermission(Policy policy) {
+        Iterator<Resource> iterator = policy.getResources().iterator();
+        Resource next = iterator.hasNext() ? iterator.next() : null;
+        return policy.getConfig().containsKey("defaultResourceType")
+                || (next != null && next.getType() != null && next.getOwner().equals(resourceServer.getId()));
     }
 
     /**

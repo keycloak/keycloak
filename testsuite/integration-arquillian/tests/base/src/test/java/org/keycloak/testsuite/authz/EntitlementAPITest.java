@@ -46,7 +46,6 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -1342,7 +1341,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
-    @Ignore
     public void testOverridePermission() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
@@ -1544,7 +1542,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
-    @Ignore
     public void testOverrideParentScopePermission() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
