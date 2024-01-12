@@ -1,15 +1,5 @@
 {
 
-    "hostname": {
-        "provider": "${keycloak.hostname.provider:}",
-
-        "default": {
-            "frontendUrl": "${keycloak.frontendUrl:}",
-            "adminUrl": "${keycloak.adminUrl:}",
-            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:}"
-        }
-    },
-
     "eventsStore": {
         "provider": "${keycloak.eventsStore.provider:jpa}",
         "jpa": {

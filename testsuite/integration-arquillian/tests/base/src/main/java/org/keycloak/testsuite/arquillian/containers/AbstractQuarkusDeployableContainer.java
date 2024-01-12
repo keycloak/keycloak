@@ -271,7 +271,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         additionalBuildArgs = Collections.emptyList();
     }
 
-    protected void waitForReadiness() throws MalformedURLException, LifecycleException {
+    protected void waitForReadiness() throws Exception {
         SuiteContext suiteContext = this.suiteContext.get();
         //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
         // support for MP Health this should change
@@ -284,6 +284,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
                 stop();
                 throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
             }
+
+            checkLiveness();
 
             try {
                 // wait before checking for opening a new connection
@@ -311,6 +313,8 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         log.infof("Keycloak is ready at %s", contextRoot);
     }
+
+    protected abstract void checkLiveness() throws Exception;
 
     private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
         URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();

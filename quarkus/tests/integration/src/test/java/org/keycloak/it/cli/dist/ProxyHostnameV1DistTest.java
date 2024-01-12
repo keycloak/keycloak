@@ -34,10 +34,10 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(keepAlive = true, enableTls = true, defaultOptions = "--features=hostname:v1")
 @WithEnvVars({"KEYCLOAK_ADMIN", "admin123", "KEYCLOAK_ADMIN_PASSWORD", "admin123"})
 @RawDistOnly(reason = "Containers are immutable")
-public class ProxyDistTest {
+public class ProxyHostnameV1DistTest {
 
     @BeforeAll
     public static void onBeforeAll() {

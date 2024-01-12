@@ -108,8 +108,8 @@ public class Profile {
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
 
-        HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
-        //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+        HOSTNAME_V1("Hostname Options V1", Type.DEPRECATED, 1),
+        HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
@@ -210,7 +210,7 @@ public class Profile {
         }
     }
 
-    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V1.getUnversionedKey())));
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey())));
 
     private static final Logger logger = Logger.getLogger(Profile.class);
 
@@ -292,9 +292,9 @@ public class Profile {
         }
     }
 
-    private static ProfileConfigResolver.FeatureConfig getFeatureConfig(String unversionedFeature,
+    private static ProfileConfigResolver.FeatureConfig getFeatureConfig(String feature,
             ProfileConfigResolver... resolvers) {
-        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(unversionedFeature))
+        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(feature))
                 .filter(r -> !r.equals(ProfileConfigResolver.FeatureConfig.UNCONFIGURED))
                 .findFirst()
                 .orElse(ProfileConfigResolver.FeatureConfig.UNCONFIGURED);

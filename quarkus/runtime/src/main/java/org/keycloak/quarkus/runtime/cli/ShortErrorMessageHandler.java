@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.cli;
 
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -72,6 +73,9 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         }
 
         writer.println(cmd.getColorScheme().errorText(errorMessage));
+        if (!(ex instanceof KcUnmatchedArgumentException) && ex instanceof UnmatchedArgumentException) {
+            ex = new KcUnmatchedArgumentException((UnmatchedArgumentException) ex);
+        }
         UnmatchedArgumentException.printSuggestions(ex, writer);
 
         CommandSpec spec = cmd.getCommandSpec();
