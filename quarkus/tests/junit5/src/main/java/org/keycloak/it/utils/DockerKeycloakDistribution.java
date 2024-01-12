@@ -258,4 +258,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
         throw new IllegalArgumentException("Not a " + type + " type");
     }
+
+    @Override
+    public void assertStopped() {
+        // not implemented
+    }
 }
