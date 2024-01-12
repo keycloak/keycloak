@@ -25,6 +25,9 @@ Object getResource();
 ----
 
 Use this method to return an object, which acts as a https://github.com/jax-rs[JAX-RS Resource]. For more details, see the Javadoc and our examples.
+Your JAX-RS resource is only recognized by the server and registered as a valid endpoint if it includes the following configuration:
+- adding an empty file named `beans.xml` under `META-INF`
+- annotating the JAX-RS class with the annotation `jakarta.ws.rs.ext.Provider`.
 There is a very simple example in the example distribution in `providers/rest` and there is a more advanced example in `providers/domain-extension`,
 which shows how to add an authenticated REST endpoint and other functionalities like <<_extensions_spi, Adding your own SPI>>
 or <<_extensions_jpa,Extending the datamodel with custom JPA entities>>.
