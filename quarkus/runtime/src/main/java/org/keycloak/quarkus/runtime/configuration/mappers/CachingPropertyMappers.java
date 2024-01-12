@@ -16,7 +16,7 @@ final class CachingPropertyMappers {
     private CachingPropertyMappers() {
     }
 
-    public static PropertyMapper[] getClusteringPropertyMappers() {
+    public static PropertyMapper<?>[] getClusteringPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(CachingOptions.CACHE)
                         .paramLabel("type")

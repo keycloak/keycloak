@@ -134,8 +134,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (List<PropertyMapper> mappers : PropertyMappers.getBuildTimeMappers().values()) {
-                    for (PropertyMapper mapper : mappers) {
+                for (List<PropertyMapper<?>> mappers : PropertyMappers.getBuildTimeMappers().values()) {
+                    for (PropertyMapper<?> mapper : mappers) {
                         removeProperty(mapper.getFrom().substring(3));
                     }
                 }
@@ -180,9 +180,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             return;
         }
 
-        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
+        CompletableFuture<?> allProcesses = CompletableFuture.completedFuture(null);
 
-        for (ProcessHandle process : parent.descendants().collect(Collectors.toList())) {
+        for (ProcessHandle process : parent.descendants().toList()) {
             if (force) {
                 process.destroyForcibly();
             } else {

@@ -30,7 +30,7 @@ public class LoggingOptions {
                 .toList();
     }
 
-    public static final Option LOG = new OptionBuilder("log", List.class, Handler.class)
+    public static final Option<List> LOG = new OptionBuilder("log", List.class, Handler.class)
             .category(OptionCategory.LOGGING)
             .description("Enable one or more log handlers in a comma-separated list.")
             .expectedValues(() -> getAvailableHandlerNames())

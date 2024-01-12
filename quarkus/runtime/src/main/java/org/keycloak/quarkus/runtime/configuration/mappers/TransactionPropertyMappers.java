@@ -15,7 +15,7 @@ public class TransactionPropertyMappers {
 
     private TransactionPropertyMappers(){}
 
-    public static PropertyMapper[] getTransactionPropertyMappers() {
+    public static PropertyMapper<?>[] getTransactionPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(TransactionOptions.TRANSACTION_XA_ENABLED)
                         .to(QUARKUS_TXPROP_TARGET)
