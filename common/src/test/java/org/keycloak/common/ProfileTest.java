@@ -77,7 +77,7 @@ public class ProfileTest {
             Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
-        Profile.Feature.LOGIN2,
+            Profile.Feature.LOGIN2,
             Profile.Feature.MULTI_SITE,
             Profile.Feature.DECLARATIVE_UI,
             Profile.Feature.RECOVERY_CODES,
