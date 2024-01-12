@@ -123,34 +123,73 @@ Feature:
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
 
-Hostname:
+Hostname v2:
 
---hostname <hostname>
-                     Hostname for the Keycloak server.
---hostname-admin <hostname>
-                     The hostname for accessing the administration console. Use this option if you
-                       are exposing the administration console using a hostname other than the
-                       value set to the 'hostname' option.
---hostname-admin-url <url>
-                     Set the base URL for accessing the administration console, including scheme,
-                       host, port and path
+--hostname <hostname|URL>
+                     Address at which is the server exposed. Can be a full URL, or just a hostname.
+                       When only hostname is provided, scheme, port and context path are resolved
+                       from the request. Available only when hostname:v2 feature is enabled.
+--hostname-admin <URL>
+                     Address for accessing the administration console. Use this option if you are
+                       exposing the administration console using a reverse proxy on a different
+                       address than specified in the 'hostname' option. Available only when
+                       hostname:v2 feature is enabled.
+--hostname-backchannel-dynamic <true|false>
+                     Enables dynamic resolving of backchannel URLs, including hostname, scheme,
+                       port and context path. Set to true if your application accesses Keycloak via
+                       a private network. If set to true, 'hostname' option needs to be specified
+                       as a full URL. Default: false. Available only when hostname:v2 feature is
+                       enabled.
 --hostname-debug <true|false>
-                     Toggle the hostname debug page that is accessible at
-                       /realms/master/hostname-debug Default: false.
---hostname-path <path>
-                     This should be set if proxy uses a different context-path for Keycloak.
---hostname-port <port>
-                     The port used by the proxy when exposing the hostname. Set this option if the
-                       proxy uses a port other than the default HTTP and HTTPS ports. Default: -1.
+                     Toggles the hostname debug page that is accessible at
+                       /realms/master/hostname-debug. Default: false. Available only when hostname:
+                       v2 feature is enabled.
 --hostname-strict <true|false>
                      Disables dynamically resolving the hostname from request headers. Should
-                       always be set to true in production, unless proxy verifies the Host header.
-                       Default: true.
+                       always be set to true in production, unless your reverse proxy overwrites
+                       the Host header. If enabled, the 'hostname' option needs to be specified.
+                       Default: true. Available only when hostname:v2 feature is enabled.
+
+Hostname v1 (Deprecated):
+
+--hostname <hostname>
+                     DEPRECATED. Hostname for the Keycloak server. Available only when hostname:v1
+                       feature is enabled.
+--hostname-admin <hostname>
+                     DEPRECATED. The hostname for accessing the administration console. Use this
+                       option if you are exposing the administration console using a hostname other
+                       than the value set to the 'hostname' option. Available only when hostname:v1
+                       feature is enabled.
+--hostname-admin-url <url>
+                     DEPRECATED. Set the base URL for accessing the administration console,
+                       including scheme, host, port and path Available only when hostname:v1
+                       feature is enabled.
+--hostname-debug <true|false>
+                     DEPRECATED. Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false. Available only when hostname:
+                       v1 feature is enabled.
+--hostname-path <path>
+                     DEPRECATED. This should be set if proxy uses a different context-path for
+                       Keycloak. Available only when hostname:v1 feature is enabled.
+--hostname-port <port>
+                     DEPRECATED. The port used by the proxy when exposing the hostname. Set this
+                       option if the proxy uses a port other than the default HTTP and HTTPS ports.
+                       Default: -1. Available only when hostname:v1 feature is enabled.
+--hostname-strict <true|false>
+                     DEPRECATED. Disables dynamically resolving the hostname from request headers.
+                       Should always be set to true in production, unless proxy verifies the Host
+                       header. Default: true. Available only when hostname:v1 feature is enabled.
 --hostname-strict-backchannel <true|false>
-                     By default backchannel URLs are dynamically resolved from request headers to
-                       allow internal and external applications. If all applications use the public
-                       URL this option should be enabled. Default: false.
---hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
+                     DEPRECATED. By default backchannel URLs are dynamically resolved from request
+                       headers to allow internal and external applications. If all applications use
+                       the public URL this option should be enabled. Default: false. Available only
+                       when hostname:v1 feature is enabled.
+--hostname-strict-https <true|false>
+                     DEPRECATED. Forces frontend URLs to use the 'https' scheme. If set to false,
+                       the HTTP scheme is inferred from requests. Default: true. Available only
+                       when hostname:v1 feature is enabled.
+--hostname-url <url> DEPRECATED. Set the base URL for frontend URLs, including scheme, host, port
+                       and path. Available only when hostname:v1 feature is enabled.
 
 HTTP(S):
 

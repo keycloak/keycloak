@@ -52,7 +52,8 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
         return super.getOptionCategories().stream().filter(optionCategory ->
                 optionCategory != OptionCategory.HTTP &&
                         optionCategory != OptionCategory.PROXY &&
-                        optionCategory != OptionCategory.HOSTNAME &&
+                        optionCategory != OptionCategory.HOSTNAME_V1 &&
+                        optionCategory != OptionCategory.HOSTNAME_V2 &&
                         optionCategory != OptionCategory.METRICS &&
                         optionCategory != OptionCategory.VAULT &&
                         optionCategory != OptionCategory.SECURITY &&

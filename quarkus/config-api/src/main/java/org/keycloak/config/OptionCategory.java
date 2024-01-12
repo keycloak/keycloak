@@ -7,7 +7,8 @@ public enum OptionCategory {
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
     TRANSACTION("Transaction",30, ConfigSupportLevel.SUPPORTED),
     FEATURE("Feature", 40, ConfigSupportLevel.SUPPORTED),
-    HOSTNAME("Hostname", 50, ConfigSupportLevel.SUPPORTED),
+    HOSTNAME_V2("Hostname v2", 50, ConfigSupportLevel.SUPPORTED),
+    HOSTNAME_V1("Hostname v1", 51, ConfigSupportLevel.DEPRECATED),
     HTTP("HTTP(S)", 60, ConfigSupportLevel.SUPPORTED),
     HEALTH("Health", 70, ConfigSupportLevel.SUPPORTED),
     MANAGEMENT("Management", 75, ConfigSupportLevel.SUPPORTED),
@@ -48,7 +49,17 @@ public enum OptionCategory {
         return switch (supportLevel) {
             case EXPERIMENTAL -> heading + " (Experimental)";
             case PREVIEW -> heading + " (Preview)";
+            case DEPRECATED -> heading + " (Deprecated)";
             default -> heading;
         };
+    }
+
+    public static OptionCategory fromHeading(String heading) {
+        for (OptionCategory category : OptionCategory.values()) {
+            if (category.getHeading().equals(heading)) {
+                return category;
+            }
+        }
+        throw new RuntimeException("Could not find category with heading " + heading);
     }
 }

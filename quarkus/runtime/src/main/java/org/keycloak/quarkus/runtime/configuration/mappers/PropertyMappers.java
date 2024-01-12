@@ -18,7 +18,6 @@ import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -29,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -48,7 +46,8 @@ public final class PropertyMappers {
     static {
         MAPPERS.addAll(CachingPropertyMappers.getClusteringPropertyMappers());
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
-        MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
+        MAPPERS.addAll(HostnameV2PropertyMappers.getHostnamePropertyMappers());
+        MAPPERS.addAll(HostnameV1PropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
         MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());
@@ -145,8 +144,11 @@ public final class PropertyMappers {
         return property;
     }
 
-    private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper) {
-        final var mappers = MAPPERS.getOrDefault(property, Collections.emptyList());
+    private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper, OptionCategory category) {
+        final var mappers = new ArrayList<>(MAPPERS.getOrDefault(property, Collections.emptyList()));
+        if (category != null) {
+            mappers.removeIf(m -> !m.getCategory().equals(category));
+        }
 
         return switch (mappers.size()) {
             case 0 -> defaultMapper;
@@ -166,8 +168,16 @@ public final class PropertyMappers {
         };
     }
 
+    private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper) {
+        return getMapperOrDefault(property, defaultMapper, null);
+    }
+
+    public static PropertyMapper<?> getMapper(String property, OptionCategory category) {
+        return getMapperOrDefault(polishProperty(property), null, category);
+    }
+
     public static PropertyMapper<?> getMapper(String property) {
-        return getMapperOrDefault(polishProperty(property), null);
+        return getMapper(property, null);
     }
 
     public static List<PropertyMapper<?>> getMappers(String property) {
@@ -179,7 +189,8 @@ public final class PropertyMappers {
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
-        return mapper.getCategory().getSupportLevel().equals(ConfigSupportLevel.SUPPORTED);
+        ConfigSupportLevel supportLevel = mapper.getCategory().getSupportLevel();
+        return supportLevel.equals(ConfigSupportLevel.SUPPORTED) || supportLevel.equals(ConfigSupportLevel.DEPRECATED);
     }
 
     public static Optional<PropertyMapper<?>> getDisabledMapper(String property) {
@@ -221,15 +232,6 @@ public final class PropertyMappers {
 
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
-
-        public void addAll(PropertyMapper<?>[] mappers, BooleanSupplier isEnabled, String enabledWhen) {
-            Arrays.stream(mappers).forEach(mapper -> {
-                mapper.setEnabled(isEnabled);
-                mapper.setEnabledWhen(enabledWhen);
-            });
-
-            addAll(mappers);
-        }
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {

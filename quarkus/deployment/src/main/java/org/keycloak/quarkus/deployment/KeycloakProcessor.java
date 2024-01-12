@@ -115,9 +115,6 @@ import org.keycloak.theme.FolderThemeProviderFactory;
 import org.keycloak.theme.JarThemeProviderFactory;
 import org.keycloak.theme.ThemeResourceSpi;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
-import org.keycloak.url.DefaultHostnameProviderFactory;
-import org.keycloak.url.FixedHostnameProviderFactory;
-import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
@@ -178,9 +175,6 @@ class KeycloakProcessor {
             DefaultLiquibaseConnectionProvider.class,
             FolderThemeProviderFactory.class,
             LiquibaseJpaUpdaterProviderFactory.class,
-            DefaultHostnameProviderFactory.class,
-            FixedHostnameProviderFactory.class,
-            RequestHostnameProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
