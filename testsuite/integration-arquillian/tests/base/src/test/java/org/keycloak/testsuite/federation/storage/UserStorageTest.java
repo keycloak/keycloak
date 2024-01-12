@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.reflections.Types;
@@ -41,6 +42,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -102,6 +104,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartW
  *
  * @author tkyjovsk
  */
+@EnableFeature(Profile.Feature.LEGACY_COOKIES)
 public class UserStorageTest extends AbstractAuthTest {
 
     private String memProviderId;

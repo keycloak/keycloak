@@ -99,6 +99,9 @@ public class Profile {
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
         MULTI_SITE("Multi-site support", Type.PREVIEW),
+
+        @Deprecated
+        LEGACY_COOKIES("Legacy cookies without 'SameSite' attribute for older browsers.", Type.DEPRECATED),
         ;
 
         private final Type type;
