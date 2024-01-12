@@ -1,3 +1,5 @@
+import Select from "../../../../forms/Select";
+
 type RequirementType = "Required" | "Alternative" | "Disabled" | "Conditional";
 
 export default class FlowDetails {
@@ -100,9 +102,9 @@ export default class FlowDetails {
     description: string,
     type: "Basic flow" | "Client flow",
   ) {
-    cy.findByTestId("name").type(name);
+    cy.findByTestId("alias").type(name);
     cy.findByTestId("description").type(description);
-    cy.get("#flowType").click().parent().contains(type).click();
+    Select.selectItem(cy.get("#providerId"), type);
     cy.findByTestId("create").click();
     return this;
   }

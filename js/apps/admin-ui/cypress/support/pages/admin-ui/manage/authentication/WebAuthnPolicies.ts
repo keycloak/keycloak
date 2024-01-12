@@ -4,15 +4,14 @@ export default class WebAuthnPolicies {
     return this;
   }
   goToTab() {
-    cy.findByTestId("policies").click().get("#pf-tab-3-webauthnPolicy").click();
+    cy.findByTestId("policies").click();
+    cy.get("#pf-tab-3-webauthnPolicy").click();
     return this;
   }
 
   goToPasswordlessTab() {
-    cy.findByTestId("policies")
-      .click()
-      .get("#pf-tab-4-webauthnPasswordlessPolicy")
-      .click();
+    cy.findByTestId("policies").click();
+    cy.get("#pf-tab-4-webauthnPasswordlessPolicy").click();
     return this;
   }
 
@@ -22,11 +21,8 @@ export default class WebAuthnPolicies {
         `#${
           isPasswordLess ? prop.replace("Policy", "PolicyPasswordless") : prop
         }`,
-      )
-        .click()
-        .parent()
-        .contains(data[prop])
-        .click();
+      ).click();
+      cy.get(".pf-c-select__menu").contains(data[prop]).click();
     }
     return this;
   }

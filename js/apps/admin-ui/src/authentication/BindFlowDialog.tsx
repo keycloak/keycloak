@@ -4,19 +4,14 @@ import {
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
-  Select,
-  SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { SelectControl } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
-import useToggle from "../utils/useToggle";
 import { REALM_FLOWS } from "./AuthenticationSection";
 
 type BindingForm = {
@@ -30,10 +25,9 @@ type BindFlowDialogProps = {
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
   const { t } = useTranslation();
-  const { control, handleSubmit } = useForm<BindingForm>();
+  const form = useForm<BindingForm>();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const [open, toggleOpen] = useToggle();
 
   const onSubmit = async ({ bindingType }: BindingForm) => {
     const realmRep = await adminClient.realms.findOne({ realm });
@@ -71,43 +65,21 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
       ]}
       isOpen
     >
-      <Form id="bind-form" isHorizontal onSubmit={handleSubmit(onSubmit)}>
-        <FormGroup label={t("chooseBindingType")} fieldId="chooseBindingType">
-          <Controller
+      <Form id="bind-form" isHorizontal onSubmit={form.handleSubmit(onSubmit)}>
+        <FormProvider {...form}>
+          <SelectControl
+            id="chooseBindingType"
             name="bindingType"
-            defaultValue="browserFlow"
-            control={control}
-            render={({ field }) => (
-              <Select
-                toggleId="chooseBindingType"
-                onToggle={toggleOpen}
-                onSelect={(_, value) => {
-                  field.onChange(value.toString());
-                  toggleOpen();
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                isOpen={open}
-                menuAppendTo="parent"
-              >
-                {[...REALM_FLOWS.keys()]
-                  .filter((f) => f !== "dockerAuthenticationFlow")
-                  .map((key) => {
-                    const value = REALM_FLOWS.get(key);
-                    return (
-                      <SelectOption
-                        selected={key === REALM_FLOWS.get(key)}
-                        key={key}
-                        value={key}
-                      >
-                        {t(`flow.${value}`)}
-                      </SelectOption>
-                    );
-                  })}
-              </Select>
-            )}
+            label={t("chooseBindingType")}
+            options={[...REALM_FLOWS.keys()]
+              .filter((f) => f !== "dockerAuthenticationFlow")
+              .map((key) => ({
+                key,
+                value: t(`flow.${REALM_FLOWS.get(key)}`),
+              }))}
+            controller={{ defaultValue: "" }}
           />
-        </FormGroup>
+        </FormProvider>
       </Form>
     </Modal>
   );
