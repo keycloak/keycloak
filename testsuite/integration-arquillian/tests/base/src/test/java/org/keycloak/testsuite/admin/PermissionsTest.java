@@ -122,27 +122,33 @@ public class PermissionsTest extends AbstractKeycloakTest {
         builder.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
 
         builder.user(UserBuilder.create()
-                .username(AdminRoles.REALM_ADMIN)
+                .username(AdminRoles.REALM_ADMIN).firstName(AdminRoles.REALM_ADMIN)
+                .lastName(AdminRoles.REALM_ADMIN).email(AdminRoles.REALM_ADMIN + "@keycloak.org")
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
                 .addPassword("password"));
 
         builder.user(UserBuilder.create()
-                .username("multi")
+                .username("multi").firstName("multi").lastName("multi").email("multi@keycloak.org")
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS)
                 .addPassword("password"));
 
-        builder.user(UserBuilder.create().username("none").addPassword("password"));
+        builder.user(UserBuilder.create().username("none").firstName("none").lastName("none")
+                .email("none@keycloak.org").addPassword("password"));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            builder.user(UserBuilder.create().username(role).role(Constants.REALM_MANAGEMENT_CLIENT_ID, role).addPassword("password"));
+            builder.user(UserBuilder.create().username(role)
+                    .firstName(role).lastName(role).email(role + "@keycloak.org")
+                    .role(Constants.REALM_MANAGEMENT_CLIENT_ID, role).addPassword("password"));
         }
         testRealms.add(builder.build());
 
         RealmBuilder builder2 = RealmBuilder.create().name("realm2");
         builder2.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
-        builder2.user(UserBuilder.create().username("admin").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN).addPassword("password"));
+        builder2.user(UserBuilder.create().username("admin").firstName("admin")
+                .lastName("admin").email("admin@keycloak.org")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN).addPassword("password"));
         testRealms.add(builder2.build());
     }
 
@@ -161,13 +167,21 @@ public class PermissionsTest extends AbstractKeycloakTest {
     private void createTestUsers() {
         RealmResource master = adminClient.realm("master");
 
-        Response response = master.users().create(UserBuilder.create().username("permissions-test-master-none").build());
+        Response response = master.users().create(UserBuilder.create()
+                .username("permissions-test-master-none")
+                .firstName("permissions-test-master-none")
+                .lastName("permissions-test-master-none")
+                .email("permissions-test-master-none@keycloak.org").build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();
         master.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            response = master.users().create(UserBuilder.create().username("permissions-test-master-" + role).build());
+            response = master.users().create(UserBuilder.create()
+                    .username("permissions-test-master-" + role)
+                    .firstName("permissions-test-master-" + role)
+                    .lastName("permissions-test-master-" + role)
+                    .email("permissions-test-master-" + role + "@keycloak.org").build());
             userId = ApiUtil.getCreatedId(response);
             response.close();
 
@@ -474,6 +488,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
     public void attackDetection() {
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername("attacked");
+        newUser.setFirstName("attacked");
+        newUser.setLastName("attacked");
+        newUser.setEmail("attacked@keycloak.org");
         newUser.setEnabled(true);
         adminClient.realms().realm(REALM_NAME).users().create(newUser);
         UserRepresentation user = adminClient.realms().realm(REALM_NAME).users().search("attacked").get(0);
@@ -1441,7 +1458,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
     public void users() {
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.users().create(UserBuilder.create().username("testuser").build()));
+                response.set(realm.users().create(UserBuilder.create()
+                        .username("testuser")
+                        .firstName("testuser")
+                        .lastName("testuser")
+                        .email("testuser@keycloak.org")
+                        .build()));
             }
         }, Resource.USER, true);
         UserRepresentation user = adminClient.realms().realm(REALM_NAME).users().search("testuser").get(0);

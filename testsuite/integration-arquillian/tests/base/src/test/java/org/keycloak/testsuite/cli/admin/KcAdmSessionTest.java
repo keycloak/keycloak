@@ -43,7 +43,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // create user
-            exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s enabled=true -i");
+            exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s firstName=testuser -s lastName=testuser -s email=testuser@keycloak.org -s enabled=true -i");
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 0);
             String userId = exe.stdoutLines().get(0);
