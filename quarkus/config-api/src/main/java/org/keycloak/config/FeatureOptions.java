@@ -18,7 +18,7 @@ public class FeatureOptions {
             .buildTime(true)
             .build();
 
-    public static final Option FEATURES_DISABLED = new OptionBuilder("features-disabled", List.class, Profile.Feature.class)
+    public static final Option<List> FEATURES_DISABLED = new OptionBuilder("features-disabled", List.class, Profile.Feature.class)
             .category(OptionCategory.FEATURE)
             .description("Disables a set of one or more features.")
             .expectedValues(() -> getFeatureValues(false))

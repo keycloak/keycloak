@@ -18,7 +18,7 @@ final class DatabasePropertyMappers {
 
     private DatabasePropertyMappers(){}
 
-    public static PropertyMapper[] getDatabasePropertyMappers() {
+    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")

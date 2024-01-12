@@ -9,7 +9,7 @@ public class CachingOptions {
         local
     }
 
-    public static final Option CACHE = new OptionBuilder<>("cache", Mechanism.class)
+    public static final Option<Mechanism> CACHE = new OptionBuilder<>("cache", Mechanism.class)
             .category(OptionCategory.CACHE)
             .description("Defines the cache mechanism for high-availability. "
                     + "By default in production mode, a 'ispn' cache is used to create a cluster between multiple server nodes. "
@@ -27,7 +27,7 @@ public class CachingOptions {
         google;
     }
 
-    public static final Option CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
+    public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
             .category(OptionCategory.CACHE)
             .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
                     + "if 'cache' is set to 'ispn'. Default: udp.")

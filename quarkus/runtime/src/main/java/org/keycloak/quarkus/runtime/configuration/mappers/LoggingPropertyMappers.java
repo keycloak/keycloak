@@ -23,8 +23,8 @@ public final class LoggingPropertyMappers {
 
     private LoggingPropertyMappers(){}
 
-    public static PropertyMapper[] getMappers() {
-        PropertyMapper[] defaultMappers = new PropertyMapper[]{
+    public static PropertyMapper<?>[] getMappers() {
+        PropertyMapper<?>[] defaultMappers = new PropertyMapper[]{
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
@@ -74,7 +74,7 @@ public final class LoggingPropertyMappers {
         return GELF_ACTIVATED ? ArrayUtils.addAll(defaultMappers, getGelfMappers()) : defaultMappers;
     }
 
-    public static PropertyMapper[] getGelfMappers() {
+    public static PropertyMapper<?>[] getGelfMappers() {
         return new PropertyMapper[]{
                 fromOption(LoggingOptions.LOG_GELF_ENABLED)
                         .mapFrom("log")
