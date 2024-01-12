@@ -8,7 +8,7 @@ final class HostnamePropertyMappers {
 
     private HostnamePropertyMappers(){}
 
-    public static PropertyMapper[] getHostnamePropertyMappers() {
+    public static PropertyMapper<?>[] getHostnamePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HostnameOptions.HOSTNAME)
                         .to("kc.spi-hostname-default-hostname")

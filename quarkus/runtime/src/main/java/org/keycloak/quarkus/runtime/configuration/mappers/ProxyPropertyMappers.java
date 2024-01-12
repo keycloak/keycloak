@@ -13,7 +13,7 @@ final class ProxyPropertyMappers {
 
     private ProxyPropertyMappers(){}
 
-    public static PropertyMapper[] getProxyPropertyMappers() {
+    public static PropertyMapper<?>[] getProxyPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ProxyOptions.PROXY_HEADERS)
                         .to("quarkus.http.proxy.proxy-address-forwarding")
