@@ -99,6 +99,8 @@ public class Profile {
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
         MULTI_SITE("Multi-site support", Type.PREVIEW),
+
+        OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
         ;
 
         private final Type type;

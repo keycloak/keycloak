@@ -23,6 +23,7 @@ import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
@@ -128,6 +129,9 @@ public class LogoutEndpoint {
         this.event = event;
         this.providerConfig = providerConfig;
         this.offlineSessionsLazyLoadingEnabled = !Config.scope("userSessions").scope("infinispan").getBoolean("preloadOfflineSessionsFromDatabase", false);
+        if (!this.offlineSessionsLazyLoadingEnabled && !Profile.isFeatureEnabled(Profile.Feature.OFFLINE_SESSION_PRELOADING)) {
+            throw new RuntimeException("The deprecated offline session preloading feature is disabled in this configuration. Read the migration guide to learn more.");
+        }
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
