@@ -14,11 +14,11 @@ export default class CIBAPolicyPage {
   }
 
   static getExpiresInput() {
-    return cy.get("#cibaExpiresIn");
+    return cy.findAllByTestId("attributes.cibaExpiresIn");
   }
 
   static getIntervalInput() {
-    return cy.get("#cibaInterval");
+    return cy.findAllByTestId("attributes.cibaInterval");
   }
 
   static assertSaveSuccess() {

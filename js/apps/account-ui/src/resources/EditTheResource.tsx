@@ -89,7 +89,6 @@ export const EditTheResource = ({
                   key: name,
                   value: displayName || name,
                 }))}
-                menuAppendTo="parent"
               />
             </Fragment>
           ))}

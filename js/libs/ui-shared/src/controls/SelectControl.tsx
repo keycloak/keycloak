@@ -31,6 +31,7 @@ export type SelectControlProps<
     name: string;
     label?: string;
     options: string[] | SelectControlOption[];
+    labelIcon?: string;
     controller: Omit<ControllerProps, "name" | "render">;
   };
 
@@ -43,6 +44,7 @@ export const SelectControl = <
   options,
   controller,
   variant,
+  labelIcon,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -56,6 +58,7 @@ export const SelectControl = <
       label={label}
       isRequired={controller.rules?.required === true}
       error={errors[name]}
+      labelIcon={labelIcon}
     >
       <Controller
         {...controller}
@@ -64,13 +67,13 @@ export const SelectControl = <
         render={({ field: { onChange, value } }) => (
           <Select
             {...rest}
-            toggleId={name}
+            toggleId={name.slice(name.lastIndexOf(".") + 1)}
             onToggle={(isOpen) => setOpen(isOpen)}
             selections={
               typeof options[0] !== "string"
-                ? (options as SelectControlOption[]).find(
-                    (o) => o.key === value[0],
-                  )?.value || value
+                ? (options as SelectControlOption[])
+                    .filter((o) => value.includes(o.key))
+                    .map((o) => o.value)
                 : value
             }
             onSelect={(_, v) => {
@@ -82,7 +85,7 @@ export const SelectControl = <
                   onChange([...value, option]);
                 }
               } else {
-                onChange([v]);
+                onChange(v);
                 setOpen(false);
               }
             }}
