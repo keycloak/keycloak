@@ -206,7 +206,8 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "123")
         .should("be.visible");
 
-      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.get('button[aria-label="Actions"]').click();
+      cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage(
         "Successfully removed message(s) from the bundle.",
@@ -253,7 +254,8 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "def")
         .should("be.visible");
 
-      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.get('button[aria-label="Actions"]').click();
+      cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 
       masthead.checkNotificationMessage(

@@ -352,7 +352,7 @@ export const RealmOverrides = ({
         toolbarItem={
           <>
             <Button
-              data-testid="add-bundle-button"
+              data-testid="add-translationBtn"
               onClick={() => setAddMessageBundleModalOpen(true)}
             >
               {t("addTranslation")}
