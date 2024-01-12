@@ -48,8 +48,8 @@ Examples:
 
       $ source <(kc.bat tools completion)
 
-  Please, take a look at the documentation for more details before deploying in
+  See the documentation for more details before deploying in
 production.
 
 Use "kc.bat start --help" for the available options when starting the server.
-Use "kc.bat <command> --help" for more information about other commands.
+Use "kc.bat <command> --help" for more information about other commands.

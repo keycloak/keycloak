@@ -46,7 +46,7 @@ Examples:
 
       $ source <(kc.sh tools completion)
 
-  Please, take a look at the documentation for more details before deploying in
+  See the documentation for more details before deploying in
 production.
 
 Use "kc.sh start --help" for the available options when starting the server.

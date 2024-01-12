@@ -46,7 +46,7 @@ import picocli.CommandLine.ScopeType;
                 + "      $ ${COMMAND-NAME} start <OPTIONS>%n%n"
                 + "  Enable auto-completion to bash/zsh:%n%n"
                 + "      $ source <(${COMMAND-NAME} tools completion)%n%n"
-                + "  Please, take a look at the documentation for more details before deploying in production.",
+                + "  See the documentation for more details before deploying in production.",
                 "",
                 "Use \"${COMMAND-NAME} start --help\" for the available options when starting the server.",
                 "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands."

@@ -14,7 +14,7 @@ the server as described in link:{developerguide_jsproviders_link}[{developerguid
 
 == Creating a JS policy from a deployed JAR file
 
-{project_name} allows you to deploy a JAR file in order to deploy scripts to the server. Please, take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]
+{project_name} allows you to deploy a JAR file in order to deploy scripts to the server. See link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]
 for more details.
 
 Once you have your scripts deployed, you should be able to select the scripts you deployed from the list of available policy providers.
