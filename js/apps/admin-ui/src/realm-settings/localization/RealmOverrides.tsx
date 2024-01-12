@@ -24,6 +24,7 @@ import {
   TimesIcon,
 } from "@patternfly/react-icons";
 import {
+  ActionsColumn,
   IRow,
   IRowCell,
   Table,
@@ -552,20 +553,19 @@ export const RealmOverrides = ({
                     </Form>
                   </Td>
                   <Td isActionCell>
-                    <Dropdown
-                      toggle={
-                        <KebabToggle
-                          className="pf-m-plain"
-                          data-testid="realmOverrides-deleteKebabToggle"
-                        />
-                      }
-                      onClick={() => {
-                        setSelectedRowKeys([
-                          (row.cells?.[0] as IRowCell).props.value,
-                        ]);
-                        toggleDeleteDialog();
-                        setKebabOpen(false);
-                      }}
+                    <ActionsColumn
+                      items={[
+                        {
+                          title: t("delete"),
+                          onClick: () => {
+                            setSelectedRowKeys([
+                              (row.cells?.[0] as IRowCell).props.value,
+                            ]);
+                            toggleDeleteDialog();
+                            setKebabOpen(false);
+                          },
+                        },
+                      ]}
                     />
                   </Td>
                 </Tr>
