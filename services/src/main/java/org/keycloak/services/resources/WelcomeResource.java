@@ -47,6 +47,7 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
+import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
@@ -113,6 +114,9 @@ public class WelcomeResource {
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
             String passwordConfirmation = formData.getFirst("passwordConfirmation");
+            String firstName = formData.getFirst("firstName");
+            String lastName = formData.getFirst("lastName");
+            String email = formData.getFirst("email");
 
             if (username != null) {
                 username = username.trim();
@@ -130,10 +134,22 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
+            if (firstName == null || firstName.length() == 0) {
+                return createWelcomePage(null, "FirstName is missing");
+            }
+
+            if (lastName == null || lastName.length() == 0) {
+                return createWelcomePage(null, "LastName is missing");
+            }
+
+            if (!EmailValidationUtil.isValidEmail(email)) {
+                return createWelcomePage(null, "Email is invalid");
+            }
+
             expireCsrfCookie();
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-            applianceBootstrap.createMasterRealmUser(username, password);
+            applianceBootstrap.createMasterRealmUser(username, password, firstName, lastName, email);
 
             shouldBootstrap.set(false);
             ServicesLogger.LOGGER.createdInitialAdminUser(username);
