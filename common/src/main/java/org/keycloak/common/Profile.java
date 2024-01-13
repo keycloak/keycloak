@@ -48,6 +48,8 @@ public class Profile {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+
+        @Deprecated
         ACCOUNT2("Account Management Console 2", Type.DEPRECATED, Feature.ACCOUNT_API),
         ACCOUNT3("Account Management Console 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
@@ -92,6 +94,7 @@ public class Profile {
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
 
+        @Deprecated
         LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
