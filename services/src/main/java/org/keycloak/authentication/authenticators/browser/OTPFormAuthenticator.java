@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -89,6 +90,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         UserModel userModel = context.getUser();
         if (!enabledUser(context, userModel)) {
             // error in context is set in enabledUser/isDisabledByBruteForce
+            new AuthenticationSessionManager(context.getSession()).removeAuthenticationSession(context.getRealm(), context.getAuthenticationSession(), true);
             return;
         }
 
