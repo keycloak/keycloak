@@ -211,9 +211,8 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-        assertEquals(401, response.getStatusCode());
-        assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
-        assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+        assertEquals(403, response.getStatusCode());
+        assertEquals(ERROR_TO_DISPLAY, response.getError());
     }
 
     @Test
@@ -247,9 +246,8 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             assertEquals(200, response.getStatusCode());
 
             response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
-            assertEquals(401, response.getStatusCode());
-            assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
-            assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+            assertEquals(403, response.getStatusCode());
+            assertEquals(ERROR_TO_DISPLAY, response.getError());
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");

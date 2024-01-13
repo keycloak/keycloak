@@ -152,14 +152,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                         .orElse(SESSION_LIMIT_EXCEEDED);
 
                 context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
-                Response challenge = null;
-                if(context.getFlowPath() == null) {
-                    OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(Errors.GENERIC_AUTHENTICATION_ERROR, errorMessage);
-                    challenge = Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
-                }
-                else {
-                    challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
-                }
+                Response challenge = context.form().setError(errorMessage).createErrorPage(Response.Status.FORBIDDEN);
                 context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
                 break;
 
