@@ -76,6 +76,7 @@ import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -603,6 +604,8 @@ public class OAuthClient {
                                                          String clientId, String clientSecret, String userAgent) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            post.addHeader("Accept", MediaType.APPLICATION_JSON);
 
             if (requestHeaders != null) {
                 for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
