@@ -455,9 +455,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword();
         loginWithTotpFailure();
         continueLoginWithCorrectTotpExpectFailure();
-        continueLoginWithInvalidTotp();
-        clearUserFailures();
-        continueLoginWithTotp();
     }
 
     @Test
@@ -466,13 +463,14 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginWithMissingTotp();
         loginWithMissingTotp();
         continueLoginWithMissingTotp();
-        continueLoginWithCorrectTotpExpectFailure();
-        // wait to unlock
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
+    }
 
-        continueLoginWithTotp();
-
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
+    @Test
+    public void testBrowserTotpSessionClosedAfterLockout() throws Exception {
+        long start = System.currentTimeMillis();
+        loginWithTotpFailure();
+        continueLoginWithInvalidTotp();
+        loginPage.assertCurrent();
     }
 
     @Test
