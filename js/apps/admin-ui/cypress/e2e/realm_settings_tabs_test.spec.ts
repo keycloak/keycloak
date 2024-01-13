@@ -206,7 +206,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "123")
         .should("be.visible");
 
-      cy.get('button[aria-label="Actions"]').click();
+      cy.get('button[aria-label="Actions"]').should("be.visible").click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage(
@@ -254,7 +254,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "def")
         .should("be.visible");
 
-      cy.get('button[aria-label="Actions"]').click();
+      cy.get('button[aria-label="Actions"]').should("be.visible").click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 
@@ -345,7 +345,7 @@ describe("Realm settings tabs tests", () => {
     it("Check a11y violations on localization realm overrides sub tab/ adding message bundle", () => {
       realmSettingsPage.goToLocalizationTab();
       realmSettingsPage.goToLocalizationRealmOverridesSubTab();
-      cy.findByTestId("add-bundle-button").click();
+      cy.findByTestId("add-translationBtn").click();
       cy.checkA11y();
       modalUtils.cancelModal();
     });
