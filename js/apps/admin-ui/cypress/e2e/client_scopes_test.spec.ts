@@ -76,9 +76,9 @@ describe("Client Scopes test", () => {
 
     it("should filter item by name", () => {
       const itemName = clientScopeName + 0;
+
       listingPage
-        .searchItem("", false)
-        .itemsEqualTo(10)
+        .checkEmptySearch()
         .searchItem(itemName, false)
         .itemsEqualTo(1)
         .itemExist(itemName, true);
