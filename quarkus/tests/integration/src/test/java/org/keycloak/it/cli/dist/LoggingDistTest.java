@@ -48,10 +48,11 @@ import java.nio.file.Paths;
 public class LoggingDistTest {
 
     @Test
-    @Launch({ "start-dev", "--log-level=debug" })
+    @Launch({ "start-dev", "--log-level=warn" })
     void testSetRootLevel(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
+        assertFalse(cliResult.getOutput().contains("INFO [io.quarkus]"));
+        assertFalse(cliResult.getOutput().contains("Listening on:"));
         cliResult.assertStartedDevMode();
     }
 
