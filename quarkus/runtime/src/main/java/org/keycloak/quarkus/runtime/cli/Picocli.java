@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 import org.keycloak.config.DeprecatedMetadata;
-import org.keycloak.config.MultiOption;
+import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -399,7 +399,7 @@ public final class Picocli {
             if (runtimeValue == null && isNotBlank(persistedValue)) {
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(propertyName);
 
-                if (mapper != null && persistedValue.equals(mapper.getDefaultValue().map(Object::toString).orElse(null))) {
+                if (mapper != null && persistedValue.equals(Option.getDefaultValueString(mapper.getDefaultValue().orElse(null)))) {
                     // same as default
                     continue;
                 }
@@ -608,14 +608,11 @@ public final class Picocli {
                         .hidden(mapper.isHidden());
 
                 if (mapper.getDefaultValue().isPresent()) {
-                    optBuilder.defaultValue(mapper.getDefaultValue().get().toString());
+                    optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
                 }
 
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
-                    if (mapper.getOption() instanceof MultiOption) {
-                        optBuilder.auxiliaryTypes(((MultiOption<?>) mapper.getOption()).getAuxiliaryType());
-                    }
                 } else {
                     optBuilder.type(String.class);
                 }
@@ -639,7 +636,7 @@ public final class Picocli {
         }
 
         mapper.getDefaultValue()
-                .map(d -> d.toString().replaceAll("%", "%%")) // escape formats
+                .map(d -> Option.getDefaultValueString(d).replaceAll("%", "%%")) // escape formats
                 .map(d -> " Default: " + d + ".")
                 .ifPresent(transformedDesc::append);
 
