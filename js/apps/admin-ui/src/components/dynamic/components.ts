@@ -2,6 +2,7 @@ import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-clie
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
+import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
 import { FileComponent } from "./FileComponent";
 import { GroupComponent } from "./GroupComponent";
 import { ListComponent } from "./ListComponent";
@@ -31,6 +32,7 @@ const ComponentTypes = [
   "Group",
   "MultivaluedList",
   "ClientList",
+  "UserProfileAttributeList",
   "MultivaluedString",
   "File",
   "Password",
@@ -50,6 +52,7 @@ export const COMPONENTS: {
   Map: MapComponent,
   Group: GroupComponent,
   ClientList: ClientSelectComponent,
+  UserProfileAttributeList: UserProfileAttributeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
