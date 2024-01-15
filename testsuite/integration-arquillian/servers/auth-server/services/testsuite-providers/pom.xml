@@ -86,7 +86,6 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-tasks-api</artifactId>
-            <version>${infinispan.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.infinispan</groupId>
