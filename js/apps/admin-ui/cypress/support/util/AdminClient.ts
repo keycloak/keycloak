@@ -245,6 +245,18 @@ class AdminClient {
     });
   }
 
+  async getUserProfile(realm: string) {
+    await this.#login();
+
+    return await this.#client.users.getProfile({ realm });
+  }
+
+  async updateUserProfile(realm: string, userProfile: UserProfileConfig) {
+    await this.#login();
+
+    await this.#client.users.updateProfile(merge(userProfile, { realm }));
+  }
+
   async patchUserProfile(realm: string, payload: UserProfileConfig) {
     await this.#login();
 
