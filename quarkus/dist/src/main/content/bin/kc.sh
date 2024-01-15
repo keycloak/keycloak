@@ -54,7 +54,7 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\+$' >/dev/null; then
+          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
               DEBUG_PORT=$2
               shift
           fi
