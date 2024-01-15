@@ -63,7 +63,10 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.social.microsoft.MicrosoftAzureClaims;
+import org.keycloak.social.microsoft.MicrosoftIdentityProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.social.microsoft.MicrosoftAzureClient;
 import org.keycloak.vault.VaultStringSecret;
 
 import jakarta.ws.rs.GET;
@@ -78,9 +81,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author Pedro Igor
@@ -360,10 +361,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new IdentityBrokerException("Could not decode access token response.", e);
         }
         String accessToken = verifyAccessToken(tokenResponse);
-
         String encodedIdToken = tokenResponse.getIdToken();
 
         JsonWebToken idToken = validateToken(encodedIdToken);
+
+        // We need to manually retrieve groups of the user.
+        // See https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens#groups-overage-claim
+        if (idToken.getOtherClaims().containsKey("_claim_names")) {
+            logger.debug("detected group overages in token received from microsoft azure ad");
+            MicrosoftIdentityProvider.convertGroupOverages(idToken, accessToken);
+        }
 
         if (getConfig().isPassMaxAge()) {
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
@@ -685,6 +692,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         String iss = token.getIssuer();
+
 
         if (!token.isActive(getConfig().getAllowedClockSkew())) {
             throw new IdentityBrokerException("Token is no longer valid");

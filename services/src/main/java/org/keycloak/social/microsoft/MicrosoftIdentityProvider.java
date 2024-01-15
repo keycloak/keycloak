@@ -27,10 +27,18 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.JOSEParser;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
 
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -58,6 +66,35 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
         config.setAuthorizationUrl(String.format(AUTH_URL_TEMPLATE, tenant));
         config.setTokenUrl(String.format(TOKEN_URL_TEMPLATE, tenant));
         config.setUserInfoUrl(PROFILE_URL);
+    }
+
+    public static void convertGroupOverages(JsonWebToken idToken, String accessToken) {
+        JWSInput pac = (JWSInput) JOSEParser.parse(accessToken);
+        String content = new String(pac.getContent());
+
+        MicrosoftAzureClaims claims;
+        try {
+            claims = JsonSerialization.readValue(content, MicrosoftAzureClaims.class);
+        } catch (IOException e) {
+            throw new IdentityBrokerException("unable to deserialize access token claims");
+        }
+
+        final String userId = claims.getUserId();
+        final String issuer = idToken.getIssuer();
+
+        MicrosoftAzureClient azureClient = new MicrosoftAzureClient(issuer, accessToken);
+        List<String> groups = azureClient.getUserGroups(userId);
+
+        if(groups.isEmpty()) {
+            throw new IdentityBrokerException("Retrieved groups are empty");
+        }
+
+        Map<String, List<String>> groupClaim = new HashMap<>();
+        groupClaim.put("groups", groups);
+
+        idToken.getOtherClaims().putAll(groupClaim);
+        idToken.getOtherClaims().remove("_claim_names");
+        idToken.getOtherClaims().remove("_claim_sources");
     }
 
     @Override
