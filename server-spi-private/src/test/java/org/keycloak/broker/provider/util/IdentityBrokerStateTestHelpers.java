@@ -679,6 +679,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public int getMaxTemporaryLockouts() {
+            return 0;
+        }
+
+        @Override
+        public void setMaxTemporaryLockouts(int val) {
+
+        }
+
+        @Override
         public int getMaxFailureWaitSeconds() {
             return 0;
         }

@@ -95,6 +95,7 @@ public class AttackDetectionResource {
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
         data.put("numFailures", 0);
+        data.put("numTemporaryLockouts", 0);
         data.put("lastFailure", 0);
         data.put("lastIPFailure", "n/a");
         if (!realm.isBruteForceProtected()) return data;
@@ -114,6 +115,7 @@ public class AttackDetectionResource {
         }
 
         data.put("numFailures", model.getNumFailures());
+        data.put("numTemporaryLockouts", model.getNumTemporaryLockouts());
         data.put("lastFailure", model.getLastFailure());
         data.put("lastIPFailure", model.getLastIPFailure());
         return data;
