@@ -74,6 +74,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
+    protected int maxTemporaryLockouts;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -193,6 +194,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
+        maxTemporaryLockouts = model.getMaxTemporaryLockouts();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -370,6 +372,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isPermanentLockout() {
         return permanentLockout;
+    }
+
+    public int getMaxTemporaryLockouts() {
+        return maxTemporaryLockouts;
     }
 
     public int getMaxFailureWaitSeconds() {

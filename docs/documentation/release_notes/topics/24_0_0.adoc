@@ -264,6 +264,14 @@ As of this release, {project_name} supports storing and searching by user attrib
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Brute Force Protection changes
+
+There have been a couple of enhancements to the Brute Protection:
+
+1. When an attempt to authenticate with an OTP or Recovery Code fails due to Brute Force Protection the active Authentication Session is invalidated. Any further attempts to authenticate with that session will fail.
+
+2. In previous versions of Keycloak the Administrator had to choose between whether to disable users temporarily or permanently due to a Brute Force attack on their account. The administrator now has the option to permanently disable a user after a given number of temporary lockouts.
+
 = Authorization Policy
 
 In previous versions of Keycloak when the last member of a User, Group or Client policy was deleted then that policy would also be deleted. Unfortunately this could lead to an escalation of privileges if the policy was used in an aggregate policy. To avoid privilege escalation the effect policies are no longer deleted and an administrator will need to update those policies.

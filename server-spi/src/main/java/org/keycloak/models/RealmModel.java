@@ -136,6 +136,8 @@ public interface RealmModel extends RoleContainerModel {
     void setBruteForceProtected(boolean value);
     boolean isPermanentLockout();
     void setPermanentLockout(boolean val);
+    int getMaxTemporaryLockouts();
+    void setMaxTemporaryLockouts(int val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();

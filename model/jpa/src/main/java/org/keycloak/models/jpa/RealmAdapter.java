@@ -263,6 +263,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public int getMaxTemporaryLockouts() {
+        return getAttribute("maxTemporaryLockouts", 0);
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        setAttribute("maxTemporaryLockouts", val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         return getAttribute("maxFailureWaitSeconds", 0);
     }
