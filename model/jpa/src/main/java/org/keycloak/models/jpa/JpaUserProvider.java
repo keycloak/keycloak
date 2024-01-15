@@ -61,6 +61,7 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -71,6 +72,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -757,10 +760,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class);
-        query.setParameter("name", attrName);
-        query.setParameter("value", attrValue);
-        query.setParameter("realmId", realm.getId());
+        TypedQuery<UserEntity> query = attrValue != null && attrValue.length() > 255 ? 
+                em.createNamedQuery("getRealmUsersByAttributeNameAndLongValue", UserEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("longValueHash", HashUtils.hash(JavaAlgorithm.SHA512, attrValue.getBytes(StandardCharsets.UTF_8))) : 
+                em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("value", attrValue);
 
         return closing(query.getResultStream().map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
     }
@@ -991,10 +999,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 default:
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
 
-                    attributePredicates.add(builder.and(
-                            builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
-                            builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
-
+                    if (value.length() > 255) {
+                        attributePredicates.add(builder.and(
+                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("longValueHash"), HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8)))));
+                    } else {
+                        attributePredicates.add(builder.and(
+                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
+                    }
                     break;
                 case UserModel.INCLUDE_SERVICE_ACCOUNT: {
                     if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)

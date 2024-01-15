@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -79,11 +80,13 @@ import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
@@ -512,6 +515,38 @@ public class UserStorageTest extends AbstractAuthTest {
                     .peek(System.out::println).collect(Collectors.toList());
             Assert.assertEquals(1, userModels.size());
             Assert.assertEquals("thor", userModels.get(0).getUsername());
+        });
+    }
+
+    @Test
+    public void storeAndReadUserWithLongAttributeValue() {
+        testingClient.server().run(session -> {
+            String longValue = RandomStringUtils.random(30000, true, true);
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            List<UserModel> userModels = session.users().searchForUserStream(realm, Map.of(UserModel.USERNAME, "thor"))
+                    .collect(Collectors.toList());
+            assertThat(userModels, hasSize(1));
+            assertThat(userModels.get(0).getAttributes().get("weapon").get(0), equalTo(longValue));
+        });
+    }
+
+    @Test
+    public void searchByLongAttributeValue() {
+        testingClient.server().run(session -> {
+            String longValue = RandomStringUtils.random(30000, true, true);
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            ssertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
+                    both(hasSize(1)).and(contains("thor")));
+
+            //case insesitive search
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue.toUpperCase()).map(UserModel::getUsername).collect(Collectors.toList()), 
+                    both(hasSize(1)).and(contains("thor")));
         });
     }
 

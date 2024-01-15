@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
-import jakarta.ws.rs.WebApplicationException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -102,6 +102,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -122,6 +123,9 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -894,6 +898,41 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(1, users.size());
             assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
         }
+    }
+
+    @Test
+    public void storeAndReadUserWithLongAttributeValue() {
+        String longValue = RandomStringUtils.random(30000, true, true);
+
+        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", 
+                user -> user.setAttributes(Map.of("attr", List.of(longValue)))));
+
+        List<UserRepresentation> users = realm.users().search("user1", true);
+
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getAttributes().get("attr").get(0), equalTo(longValue));
+    }
+
+    @Test
+    public void searchByLongAttributes() {
+        String longValue = RandomStringUtils.random(3000, true, true);
+        String longValue2 = RandomStringUtils.random(3000, true, true);
+
+        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", 
+                user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of("v2")))));
+        getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", 
+                user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of(longValue2)))));
+        getCleanup().addUserId(createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", 
+                user -> user.setAttributes(Map.of("test2", List.of(longValue, "v3"), "test4", List.of("v4")))));
+
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+                both(hasSize(2)).and(containsInAnyOrder("user1", "user2")));
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+                both(hasSize(1)).and(contains("user2")));
+
+        //case insesitive search
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2.toUpperCase()))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+                both(hasSize(1)).and(contains("user2")));
     }
 
     @Test

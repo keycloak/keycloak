@@ -30,6 +30,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import java.nio.charset.StandardCharsets;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -60,6 +63,12 @@ public class UserAttributeEntity {
     @Column(name = "VALUE")
     protected String value;
 
+    @Column(name = "LONG_VALUE_HASH")
+    private byte[] longValueHash;
+    @Nationalized
+    @Column(name = "LONG_VALUE")
+    private String longValue;
+
     public String getId() {
         return id;
     }
@@ -77,11 +86,26 @@ public class UserAttributeEntity {
     }
 
     public String getValue() {
-        return value;
+        if (value != null && longValue != null) {
+            throw new IllegalStateException(String.format("User with id %s should not have set both `value` and `longValue` for attribute %s.", user.getId(), name));
+        }
+        return value != null ? value : longValue;
     }
 
     public void setValue(String value) {
-        this.value = value;
+        if (value == null) {
+            this.value = null;
+            this.longValue = null;
+            this.longValueHash = null;
+        } else if (value.length() > 255) {
+            this.value = null;
+            this.longValue = value;
+            this.longValueHash = HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8));
+        } else {
+            this.value = value;
+            this.longValue = null;
+            this.longValueHash = null;
+        }
     }
 
     public UserEntity getUser() {

@@ -221,6 +221,10 @@ To revert the change for an installation, use a custom Infinispan XML configurat
 <metrics names-as-tags="false" />
 ----
 
+= User attribute value length extension
+
+As of this release, Keycloak supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
+
 = The Admin send-verify-email API now uses the same email verification template
 
 ----
