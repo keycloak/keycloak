@@ -17,20 +17,19 @@
 
 package org.keycloak.services.util;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpCookie;
-import org.keycloak.http.HttpResponse;
-import org.jboss.resteasy.util.CookieParser;
-import org.keycloak.models.KeycloakSession;
-
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.NewCookie.SameSite;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.util.CookieParser;
+import org.keycloak.http.HttpCookie;
+import org.keycloak.http.HttpResponse;
+import org.keycloak.models.KeycloakSession;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 
 
 /**
@@ -55,15 +54,15 @@ public class CookieHelper {
      * @param httpOnly
      * @param sameSite
      */
-    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSiteAttributeValue sameSite, KeycloakSession session) {
-        SameSiteAttributeValue sameSiteParam = sameSite;
+    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSite sameSite, KeycloakSession session) {
+        SameSite sameSiteParam = sameSite;
         // when expiring a cookie we shouldn't set the sameSite attribute; if we set e.g. SameSite=None when expiring a cookie, the new cookie (with maxAge == 0)
         // might be rejected by the browser in some cases resulting in leaving the original cookie untouched; that can even prevent user from accessing their application
         if (maxAge == 0) {
             sameSite = null;
         }
 
-        boolean secure_sameSite = sameSite == SameSiteAttributeValue.NONE || secure; // when SameSite=None, Secure attribute must be set
+        boolean secure_sameSite = sameSite == SameSite.NONE || secure; // when SameSite=None, Secure attribute must be set
 
         HttpResponse response = session.getContext().getHttpResponse();
         HttpCookie cookie = new HttpCookie(1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
@@ -71,7 +70,7 @@ public class CookieHelper {
         response.setCookieIfAbsent(cookie);
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
-        if (sameSiteParam == SameSiteAttributeValue.NONE) {
+        if (sameSiteParam == SameSite.NONE) {
             addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
         }
     }

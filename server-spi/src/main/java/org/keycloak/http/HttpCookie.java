@@ -17,8 +17,8 @@
 
 package org.keycloak.http;
 
+import jakarta.ws.rs.core.NewCookie.SameSite;
 import org.keycloak.common.util.ServerCookie;
-import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 
 /**
  * An extension of {@link javax.ws.rs.core.Cookie} in order to support additional
@@ -30,9 +30,9 @@ public final class HttpCookie extends jakarta.ws.rs.core.Cookie {
     private final int maxAge;
     private final boolean secure;
     private final boolean httpOnly;
-    private final SameSiteAttributeValue sameSite;
+    private final SameSite sameSite;
 
-    public HttpCookie(int version, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSiteAttributeValue sameSite) {
+    public HttpCookie(int version, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSite sameSite) {
         super(name, value, path, domain, version);
         this.comment = comment;
         this.maxAge = maxAge;
