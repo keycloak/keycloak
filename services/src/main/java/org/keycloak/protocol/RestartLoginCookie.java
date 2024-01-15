@@ -22,6 +22,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -125,7 +127,13 @@ public class RestartLoginCookie implements Token {
         String encoded = session.tokens().encode(restart);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, session);
+        ServerCookie.SameSiteAttributeValue sameSite;
+        if (Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES)) {
+            sameSite = null;
+        } else {
+            sameSite = ServerCookie.SameSiteAttributeValue.NONE;
+        }
+        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, sameSite, session);
     }
 
     public static void expireRestartCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
@@ -133,7 +141,13 @@ public class RestartLoginCookie implements Token {
         ClientConnection connection = context.getConnection();
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true, session);
+        ServerCookie.SameSiteAttributeValue sameSite;
+        if (Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES)) {
+            sameSite = null;
+        } else {
+            sameSite = ServerCookie.SameSiteAttributeValue.NONE;
+        }
+        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true, sameSite, session);
     }
 
     public static Cookie getRestartCookie(KeycloakSession session){
