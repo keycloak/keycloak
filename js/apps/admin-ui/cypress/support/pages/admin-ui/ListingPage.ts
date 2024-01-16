@@ -263,6 +263,20 @@ export default class ListingPage extends CommonElements {
     return this;
   }
 
+  checkEmptySearch() {
+    cy.get(this.tableRowItem).its("length").as("initialCount");
+    this.searchItem("", false);
+    cy.get(this.tableRowItem).its("length").as("finalCount");
+
+    cy.get("@initialCount").then((initial) => {
+      cy.get("@finalCount").then((final) => {
+        expect(initial).to.eq(final);
+      });
+    });
+
+    return this;
+  }
+
   itemsEqualTo(amount: number) {
     cy.get(this.tableRowItem).its("length").should("be.eq", amount);
 
