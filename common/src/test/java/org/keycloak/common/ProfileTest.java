@@ -1,5 +1,7 @@
 package org.keycloak.common;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -81,7 +83,8 @@ public class ProfileTest {
             Profile.Feature.TOKEN_EXCHANGE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
             Profile.Feature.UPDATE_EMAIL,
-            Profile.Feature.LINKEDIN_OAUTH
+            Profile.Feature.LINKEDIN_OAUTH,
+            Profile.Feature.OFFLINE_SESSION_PRELOADING
         ));
 
         // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
@@ -245,14 +248,11 @@ public class ProfileTest {
     }
 
     public static void assertEquals(Set<Profile.Feature> actual, Collection<Profile.Feature> expected) {
-        assertEquals(actual, expected.toArray(new Profile.Feature[0]));
+        MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
     }
 
     public static void assertEquals(Set<Profile.Feature> actual, Profile.Feature... expected) {
-        Profile.Feature[] a = actual.toArray(new Profile.Feature[0]);
-        Arrays.sort(a, new FeatureComparator());
-        Arrays.sort(expected, new FeatureComparator());
-        Assert.assertArrayEquals(expected, a);
+        assertEquals(actual, new HashSet<>(Arrays.asList(expected)));
     }
 
     private static class FeatureComparator implements Comparator<Profile.Feature> {
