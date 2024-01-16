@@ -74,20 +74,13 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
+    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,warn" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
-        assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
-        cliResult.assertStartedDevMode();
-    }
-
-    @Test
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
-    void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.netty.util.internal"));
-        assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
+        assertFalse(cliResult.getOutput().contains("INFO"));
+        assertFalse(cliResult.getOutput().contains("DEBUG"));
+        assertFalse(cliResult.getOutput().contains("Listening on:"));
+        assertTrue(cliResult.getOutput().contains("WARN  [org.keycloak"));
         cliResult.assertStartedDevMode();
     }
 
