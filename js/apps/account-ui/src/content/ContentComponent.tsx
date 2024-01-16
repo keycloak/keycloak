@@ -13,7 +13,11 @@ function findComponent(
   componentId: string,
 ): string | undefined {
   for (const item of content) {
-    if ("path" in item && item.path === componentId && "modulePath" in item) {
+    if (
+      "path" in item &&
+      item.path.endsWith(componentId) &&
+      "modulePath" in item
+    ) {
       return item.modulePath;
     }
     if ("children" in item) {
