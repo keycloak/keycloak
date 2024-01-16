@@ -49,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -295,6 +294,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 threadDump();
                 LOG.warn("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
                 LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
+                return;
             }
 
             if (!keycloak.isAlive()) {
