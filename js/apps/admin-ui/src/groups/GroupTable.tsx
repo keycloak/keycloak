@@ -188,7 +188,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             name: "name",
             displayKey: "groupName",
             cellRenderer: (group) =>
-              group.access.view ? (
+              group.access?.view ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>
