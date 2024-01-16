@@ -81,7 +81,8 @@ public class ProfileTest {
             Profile.Feature.TOKEN_EXCHANGE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
             Profile.Feature.UPDATE_EMAIL,
-            Profile.Feature.LINKEDIN_OAUTH
+            Profile.Feature.LINKEDIN_OAUTH,
+            Profile.Feature.LEGACY_COOKIES
         ));
 
         // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)

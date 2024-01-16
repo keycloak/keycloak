@@ -1,3 +1,27 @@
+= Deprecation of 'legacy' cookie behavior
+
+As part of the https://privacysandbox.com/[Privacy Sandbox] effort, Keycloak is making changes to the way cookies are handled. Specifically we are preparing for the https://developers.google.com/privacy-sandbox/blog/cookie-countdown-2023oct[end of third-party cookies], and are looking to improve the consistency, privacy and security of how cookies are handled by default within Keycloak. This has several implications for how Keycloak is configured and used:
+
+== Removal of cookies suffixed in `_LEGACY`
+
+Since the introduction of the https://web.dev/articles/samesite-cookies-explained[`SameSite`] attribute on cookies provided by Keycloak, another set of 'legacy' cookies (name suffixed in `_LEGACY`) were also introduced in order to support older browsers that were https://www.chromium.org/updates/same-site/incompatible-clients/[not compatible] with this attribute. Since the `SameSite` attribute is now https://caniuse.com/same-site-cookie-attribute[widely supported], this behavior is now deprecated, so that only the cookies using the `SameSite` attribute remain.
+
+== `SameSite` attribute set to `Strict` by default
+
+All cookies provided by Keycloak will now have the `SameSite` attribute set to https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#strict[`Strict`] by default. This means that cookies will only be sent in a first-party context, that is, requests originating from the same site that set the cookie. Some specific cookies that are required in a third party contexts, such as the session cookie are exempt from this behavior for now, but this will likely change in the future as using cookies in a third-party context will no longer supported by browsers.
+
+== Support for insecure contexts dropped
+
+Due to the aforementioned changes, we are officially dropping support for running Keycloak outside of a https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context]. You should therefore ensure that your Keycloak instance if always running on what is https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts#when_is_a_context_considered_secure[considered a secure context]. As part of this, all cookies set by Keycloak will have the https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#secure[`Secure`] attribute by default.
+
+You can restore this behavior by enabling the `legacy-cookies` feature. For example:
+
+```
+kc.[sh|bat] start --features legacy-cookies
+```
+
+This is however considered a temporary workaround, and will be removed in a future release. You should make sure to migrate your Keycloak instance to a secure context as soon as possible.
+
 = New Welcome Page
 
 The 'welcome' page that is shown when a user starts Keycloak for the first time, has been redesigned to provide a better setup experience and has been upgraded to the latest version of https://www.patternfly.org/[PatternFly]. The page layout has been simplified and now includes only a form to register the administrative user. After completing the registration, the user is redirected directly to the Administration Console.

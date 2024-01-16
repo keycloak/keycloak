@@ -22,6 +22,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -125,6 +127,12 @@ public class RestartLoginCookie implements Token {
         String encoded = session.tokens().encode(restart);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
+        if (!Profile.isFeatureEnabled(Profile.Feature.LEGACY_COOKIES)) {
+            // Make the KC_RESTART cookie depend on the 'secure context' like the other authentication cookies to have a correct cookie detection later.
+            // The other authentication cookies will use the samesite attribute with 'None' which will trigger the secure context in `addCookie`.
+            // As we don't want to have samesite set to 'None' for KC_RESTART, set this one to true for secureOnly directly.
+            secureOnly = true;
+        }
         CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, session);
     }
 
