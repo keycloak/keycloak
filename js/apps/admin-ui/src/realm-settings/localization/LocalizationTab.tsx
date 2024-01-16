@@ -231,17 +231,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       <Tab
         id="realm-overrides"
         eventKey={1}
-        title={
-          <TabTitleText>
-            {t("realmOverrides")}{" "}
-            <HelpItem
-              fieldLabelId="realm-overrides"
-              helpText={t("realmOverridesHelp")}
-              noVerticalAlign={false}
-              unWrap
-            />
-          </TabTitleText>
-        }
+        title={<TabTitleText>{t("realmOverrides")} </TabTitleText>}
         data-testid="rs-localization-realm-overrides-tab"
       >
         <RealmOverrides
@@ -253,17 +243,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       <Tab
         id="effective-message-bundles"
         eventKey={2}
-        title={
-          <TabTitleText>
-            {t("effectiveMessageBundles")}
-            <HelpItem
-              fieldLabelId="effective-message-bundles"
-              helpText={t("effectiveMessageBundlesHelp")}
-              noVerticalAlign={false}
-              unWrap
-            />
-          </TabTitleText>
-        }
+        title={<TabTitleText>{t("effectiveMessageBundles")}</TabTitleText>}
         data-testid="rs-localization-effective-message-bundles-tab"
       >
         <EffectiveMessageBundles

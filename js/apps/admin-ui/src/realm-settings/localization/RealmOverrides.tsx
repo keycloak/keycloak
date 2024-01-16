@@ -12,7 +12,10 @@ import {
   SelectGroup,
   SelectOption,
   SelectVariant,
+  TextContent,
+  Text,
   ToolbarItem,
+  TextVariants,
 } from "@patternfly/react-core";
 import {
   CheckIcon,
@@ -21,6 +24,7 @@ import {
   TimesIcon,
 } from "@patternfly/react-icons";
 import {
+  ActionsColumn,
   IRow,
   IRowCell,
   Table,
@@ -323,6 +327,11 @@ export const RealmOverrides = ({
           form={bundleForm}
         />
       )}
+      <TextContent>
+        <Text className="pf-u-mt-lg pf-u-ml-md" component={TextVariants.p}>
+          {t("realmOverridesDescription")}
+        </Text>
+      </TextContent>
       <PaginatingTableToolbar
         count={messageBundles.length}
         first={first}
@@ -339,14 +348,14 @@ export const RealmOverrides = ({
           setFirst(0);
           setMax(10);
         }}
-        inputGroupPlaceholder={t("searchForMessageBundle")}
+        inputGroupPlaceholder={t("searchForTranslation")}
         toolbarItem={
           <>
             <Button
-              data-testid="add-bundle-button"
+              data-testid="add-translationBtn"
               onClick={() => setAddMessageBundleModalOpen(true)}
             >
-              {t("addMessageBundle")}
+              {t("addTranslation")}
             </Button>
             <ToolbarItem>
               <Dropdown
@@ -408,8 +417,8 @@ export const RealmOverrides = ({
         {messageBundles.length === 0 && !filter && (
           <ListEmptyState
             hasIcon
-            message={t("noMessageBundles")}
-            instructions={t("noMessageBundlesInstructions")}
+            message={t("noTranslations")}
+            instructions={t("noTranslationsInstructions")}
             onPrimaryAction={handleModalToggle}
           />
         )}
@@ -544,20 +553,19 @@ export const RealmOverrides = ({
                     </Form>
                   </Td>
                   <Td isActionCell>
-                    <Dropdown
-                      toggle={
-                        <KebabToggle
-                          className="pf-m-plain"
-                          data-testid="realmOverrides-deleteKebabToggle"
-                        />
-                      }
-                      onClick={() => {
-                        setSelectedRowKeys([
-                          (row.cells?.[0] as IRowCell).props.value,
-                        ]);
-                        toggleDeleteDialog();
-                        setKebabOpen(false);
-                      }}
+                    <ActionsColumn
+                      items={[
+                        {
+                          title: t("delete"),
+                          onClick: () => {
+                            setSelectedRowKeys([
+                              (row.cells?.[0] as IRowCell).props.value,
+                            ]);
+                            toggleDeleteDialog();
+                            setKebabOpen(false);
+                          },
+                        },
+                      ]}
                     />
                   </Td>
                 </Tr>
