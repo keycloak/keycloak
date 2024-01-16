@@ -12,7 +12,10 @@ import {
   SelectGroup,
   SelectOption,
   SelectVariant,
+  TextContent,
+  Text,
   ToolbarItem,
+  TextVariants,
 } from "@patternfly/react-core";
 import {
   CheckIcon,
@@ -323,6 +326,11 @@ export const RealmOverrides = ({
           form={bundleForm}
         />
       )}
+      <TextContent>
+        <Text className="pf-u-mt-lg pf-u-ml-md" component={TextVariants.p}>
+          {t("realmOverridesDescription")}
+        </Text>
+      </TextContent>
       <PaginatingTableToolbar
         count={messageBundles.length}
         first={first}
@@ -339,14 +347,14 @@ export const RealmOverrides = ({
           setFirst(0);
           setMax(10);
         }}
-        inputGroupPlaceholder={t("searchForMessageBundle")}
+        inputGroupPlaceholder={t("searchForTranslation")}
         toolbarItem={
           <>
             <Button
               data-testid="add-bundle-button"
               onClick={() => setAddMessageBundleModalOpen(true)}
             >
-              {t("addMessageBundle")}
+              {t("addTranslation")}
             </Button>
             <ToolbarItem>
               <Dropdown
@@ -408,8 +416,8 @@ export const RealmOverrides = ({
         {messageBundles.length === 0 && !filter && (
           <ListEmptyState
             hasIcon
-            message={t("noMessageBundles")}
-            instructions={t("noMessageBundlesInstructions")}
+            message={t("noTranslations")}
+            instructions={t("noTranslationsInstructions")}
             onPrimaryAction={handleModalToggle}
           />
         )}
