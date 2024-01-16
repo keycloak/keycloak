@@ -105,8 +105,11 @@ public class Profile {
         MULTI_SITE("Multi-site support", Type.PREVIEW),
 
         OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
+
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+
+        DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
         ;
 
         private final Type type;
