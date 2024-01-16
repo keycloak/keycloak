@@ -155,6 +155,21 @@ Therefore, it was changed to sequential session loading.
 For offline sessions, the default in this and previous versions of Keycloak is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
 Setups that have offline session preloading enabled should migrate to a setup where offline-session preloading is disabled.
 
+= Deprecated offline session preloading
+
+The default behavior of Keycloak is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as preloading them at startup does not scale well with a growing number of sessions, and increases Keycloak memory usage.
+The old behavior will be removed in a future release.
+
+To re-enable old behavior while it is deprecated and not removed yet, use the feature flag and the SPI option as shown below:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features-enabled offline-session-preloading --spi-user-sessions-infinispan-preload-offline-sessions-from-database=true
+----
+
+The API of `UserSessionProvider` deprecated the method `getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId)`.
+Instead of this method, use `getOfflineUserSessionByBrokerUserIdStream(RealmModel, String brokerUserId)` to first get the sessions of a user, and then filter by the broker session ID as needed.
 
 = Infinispan metrics use labels for cache manager and cache names
 

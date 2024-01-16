@@ -175,6 +175,14 @@ public interface UserSessionProvider extends Provider {
      */
     Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user);
 
+    /**
+     * Search user sessions by the broker session ID.
+     * @deprecated
+     * Instead of this method, use {@link #getOfflineUserSessionByBrokerUserIdStream(RealmModel, String)} to first get
+     * the sessions of a user, and then filter by the broker session ID as needed.
+     *
+     */
+    @Deprecated
     UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
     /**
