@@ -206,7 +206,8 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "123")
         .should("be.visible");
 
-      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage(
         "Successfully removed message(s) from the bundle.",
@@ -253,7 +254,8 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "def")
         .should("be.visible");
 
-      cy.findByTestId("realmOverrides-deleteKebabToggle").click();
+      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 
       masthead.checkNotificationMessage(
@@ -343,7 +345,7 @@ describe("Realm settings tabs tests", () => {
     it("Check a11y violations on localization realm overrides sub tab/ adding message bundle", () => {
       realmSettingsPage.goToLocalizationTab();
       realmSettingsPage.goToLocalizationRealmOverridesSubTab();
-      cy.findByTestId("add-bundle-button").click();
+      cy.findByTestId("add-translationBtn").click();
       cy.checkA11y();
       modalUtils.cancelModal();
     });
