@@ -59,13 +59,13 @@ kubectl wait --for=condition=RollingUpdate=False keycloaks.k8s.keycloak.org/keyc
 
 To enable load shedding, limit the number of queued requests.
 
-.Load shedding with Quarkus thread pool size
+.Load shedding with max queued http requests
 [source,yaml,indent=0]
 ----
-            env:
+spec:
+ additionalOptions:
 include::examples/generated/keycloak.yaml[tag=keycloak-queue-size]
 ----
-<1> This change limits the number of queued {project_name} requests.
 All exceeding requests are served with an HTTP 503.
 See the <@links.ha id="concepts-threads" /> {section} about load shedding for details.
 
