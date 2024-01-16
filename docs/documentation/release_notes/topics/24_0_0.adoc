@@ -125,6 +125,14 @@ will be shown.
 In addition to that, a new error (`EMAIL_ALREADY_VERIFIED`) event will be fired to indicate an attempt to verify an already verified email. You can
 use this event to track possible attempts to hijack user accounts in case the link has leaked or to alert users if they do not recognize the action.
 
+= Deprecated offline session preloading
+
+The default behavior of Keycloak is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as pre-loading them at startup doesn't scale well with a growing number of sessions, and increases Keycloak memory usage. The old behavior will be removed in a future release.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Infinispan metrics use labels for cache manager and cache names
 
 When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
