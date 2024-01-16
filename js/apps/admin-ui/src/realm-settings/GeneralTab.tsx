@@ -121,10 +121,6 @@ export const RealmSettingsGeneralTab = ({
             control={control}
             rules={{
               required: { value: true, message: t("required") },
-              pattern: {
-                value: /^[a-zA-Z0-9-_]+$/,
-                message: t("invalidRealmName"),
-              },
             }}
             defaultValue=""
             render={({ field }) => (
