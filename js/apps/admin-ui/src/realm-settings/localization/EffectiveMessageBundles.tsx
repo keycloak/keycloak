@@ -13,6 +13,9 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  Text,
+  TextContent,
+  TextVariants,
 } from "@patternfly/react-core";
 import { pickBy } from "lodash-es";
 import { useState } from "react";
@@ -63,9 +66,12 @@ export const EffectiveMessageBundles = ({
   >({});
   const themes = serverInfo.themes;
   const themeKeys = themes
-    ? Object.keys(themes).sort((a, b) => a.localeCompare(b))
+    ? Object.keys(themes)
+        .filter((key) => key !== "common")
+        .sort((a, b) => a.localeCompare(b))
     : [];
-  const themeTypes = Object.values(themes!)
+
+  const themesList = Object.values(themes!)
     .flatMap((theme) => theme.map((item) => item.name))
     .filter((value, index, self) => self.indexOf(value) === index)
     .sort((a, b) => a.localeCompare(b));
@@ -101,11 +107,18 @@ export const EffectiveMessageBundles = ({
         },
       );
 
-      return filter.hasWords.length > 0
-        ? messages.filter((m) =>
-            filter.hasWords.some((f) => m.value.includes(f)),
-          )
-        : messages;
+      const filteredMessages =
+        filter.hasWords.length > 0
+          ? messages.filter((m) =>
+              filter.hasWords.some((f) => m.value.includes(f)),
+            )
+          : messages;
+
+      const sortedMessages = [...filteredMessages].sort((a, b) =>
+        a.key.localeCompare(b.key, undefined, { sensitivity: "base" }),
+      );
+
+      return sortedMessages;
     } catch (error) {
       return [];
     }
@@ -160,6 +173,13 @@ export const EffectiveMessageBundles = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
+          <TextContent>
+            <Text className="pf-u-mb-md" component={TextVariants.p}>
+              {t("effectiveMessageBundlesDescription")}
+            </Text>
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
           <Dropdown
             id="effective-message-bundles-search-select"
             data-testid="EffectiveMessageBundlesSearchSelector"
@@ -178,14 +198,14 @@ export const EffectiveMessageBundles = ({
               className="pf-c-form pf-u-mx-lg pf-u-mb-lg"
               data-testid="effectiveMessageBundlesSearchForm"
             >
-              <FormGroup label={t("theme")} fieldId="kc-theme">
+              <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
-                  name="theme"
+                  name="themeType"
                   control={control}
                   render={({ field }) => (
                     <Select
                       name="theme"
-                      data-testid="effective_message_bundles-theme-searchField"
+                      data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
                         numChips: 1,
                         expandedText: t("hide"),
@@ -193,16 +213,16 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
+                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
                       }}
-                      onClear={(theme) => {
-                        theme.stopPropagation();
+                      onClear={(themeType) => {
+                        themeType.stopPropagation();
                         field.onChange("");
                       }}
-                      isOpen={selectThemesOpen}
+                      isOpen={selectThemeTypeOpen}
                       aria-labelledby={t("theme")}
                       chipGroupComponent={
                         <ChipGroup>
@@ -223,11 +243,11 @@ export const EffectiveMessageBundles = ({
                           key="theme_placeholder"
                           value="Select theme"
                           label={t("selectTheme")}
-                          className="kc__effective_message_bundles_search_theme__placeholder"
+                          className="pf-m-plain"
                           isDisabled
                         />,
                       ].concat(
-                        themeKeys.map((option) => (
+                        themesList.map((option) => (
                           <SelectOption key={option} value={option} />
                         )),
                       )}
@@ -235,14 +255,18 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup label={t("themeType")} fieldId="kc-themeType">
+              <FormGroup
+                label={t("themeType")}
+                fieldId="kc-themeType"
+                isRequired
+              >
                 <Controller
-                  name="themeType"
+                  name="theme"
                   control={control}
                   render={({ field }) => (
                     <Select
                       name="themeType"
-                      data-testid="effective-message-bundles-feature-searchField"
+                      data-testid="effective_message_bundles-themeType-searchField"
                       chipGroupProps={{
                         numChips: 1,
                         expandedText: t("hide"),
@@ -250,16 +274,16 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
+                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
                       }}
-                      onClear={(themeType) => {
-                        themeType.stopPropagation();
+                      onClear={(theme) => {
+                        theme.stopPropagation();
                         field.onChange("");
                       }}
-                      isOpen={selectThemeTypeOpen}
+                      isOpen={selectThemesOpen}
                       aria-labelledby={t("themeType")}
                       chipGroupComponent={
                         <ChipGroup>
@@ -280,11 +304,11 @@ export const EffectiveMessageBundles = ({
                           key="themeType_placeholder"
                           value="Select theme type"
                           label={t("selectThemeType")}
-                          className="pf-m-plain"
+                          className="kc__effective_message_bundles_search_themeType__placeholder"
                           isDisabled
                         />,
                       ].concat(
-                        themeTypes.map((option) => (
+                        themeKeys.map((option) => (
                           <SelectOption key={option} value={option} />
                         )),
                       )}
@@ -292,7 +316,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup label={t("language")} fieldId="kc-language">
+              <FormGroup label={t("language")} fieldId="kc-language" isRequired>
                 <Controller
                   name="locale"
                   control={control}
