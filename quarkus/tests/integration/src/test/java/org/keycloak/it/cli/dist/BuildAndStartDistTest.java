@@ -88,7 +88,7 @@ public class BuildAndStartDistTest {
 
         dist.setEnvVar("KEYCLOAK_ADMIN", nextUsername);
         dist.setEnvVar("KEYCLOAK_ADMIN_PASSWORD", password);
-        CLIResult cliResult = dist.run("start-dev", "--log-level=debug");
+        CLIResult cliResult = dist.run("start-dev", "--log-level=org.keycloak.services:debug");
 
         cliResult.assertMessage("Skipping create admin user. Admin already exists in realm 'master'.");
         cliResult.assertStartedDevMode();
