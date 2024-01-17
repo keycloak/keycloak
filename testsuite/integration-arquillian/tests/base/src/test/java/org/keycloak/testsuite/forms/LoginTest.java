@@ -234,6 +234,24 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // GITHUB-8959
+    @Test
+    public void loginWithRedirectUriWithSharpInside() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
+                .updateWith(r -> r.setEventsEnabled(true)).update()) {
+            String randomLongString = RandomStringUtils.random(2500, true, true);
+            String RedirectUriWithSharp = oauth.getRedirectUri() + "#/" ;
+            UriBuilder longLoginUri = UriBuilder.fromUri(oauth.getLoginFormUrl()).replaceQueryParam(OAuth2Constants.REDIRECT_URI, RedirectUriWithSharp);
+
+            DroneUtils.getCurrentDriver().navigate().to(longLoginUri.build().toString());
+
+            loginPage.assertCurrent();
+            loginPage.login("login-test", "password");
+
+            events.expectLogin().user(userId).detail(OAuth2Constants.REDIRECT_URI, RedirectUriWithSharp).assertEvent();
+        }
+    }
+
     @Test
     public void loginChangeUserAfterInvalidPassword() {
         loginPage.open();
