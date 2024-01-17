@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class JwtSigningServiceProviderFactory extends VCSigningServiceProviderFactory {
+public class JwtSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
 
     public static final Format SUPPORTED_FORMAT = Format.JWT_VC;
     private static final String HELP_TEXT = "Issues JWT-VCs following the specification of https://identity.foundation/jwt-vc-presentation-profile/.";
@@ -44,7 +44,7 @@ public class JwtSigningServiceProviderFactory extends VCSigningServiceProviderFa
     }
 
     @Override
-    void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+    public void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
                 .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty());
     }

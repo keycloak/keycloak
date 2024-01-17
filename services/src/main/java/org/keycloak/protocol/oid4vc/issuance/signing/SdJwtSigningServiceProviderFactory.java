@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class SdJwtSigningServiceProviderFactory extends VCSigningServiceProviderFactory {
+public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
 
     public static final Format SUPPORTED_FORMAT = Format.SD_JWT_VC;
     private static final String HELP_TEXT = "Issues SD-JWT-VCs following the specification of https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html.";
@@ -44,7 +44,7 @@ public class SdJwtSigningServiceProviderFactory extends VCSigningServiceProvider
     }
 
     @Override
-    void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+    public void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
                 .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
                 .checkInt(SigningProperties.DECOYS.asConfigProperty(), true);

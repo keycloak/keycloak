@@ -17,10 +17,8 @@ import java.time.Clock;
 /**
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public abstract class VCSigningServiceProviderFactory implements ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService> {
-
-    protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    protected static final Clock CLOCK = Clock.systemUTC();
+public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService> {
+    Clock CLOCK = Clock.systemUTC();
 
     public static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
@@ -28,7 +26,7 @@ public abstract class VCSigningServiceProviderFactory implements ComponentFactor
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+    default void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
                 .checkRequired(SigningProperties.KEY_ID.asConfigProperty());
         validateSpecificConfiguration(session, realm, model);
@@ -36,21 +34,21 @@ public abstract class VCSigningServiceProviderFactory implements ComponentFactor
 
 
     @Override
-    public void close() {
+    default void close() {
         // no-op
     }
 
     @Override
-    public void init(Config.Scope config) {
+    default void init(Config.Scope config) {
         // no-op
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
+    default void postInit(KeycloakSessionFactory factory) {
         // no-op
     }
 
-    abstract void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException;
+    void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException;
 
 
     /**
@@ -58,6 +56,6 @@ public abstract class VCSigningServiceProviderFactory implements ComponentFactor
      *
      * @return the format
      */
-    public abstract Format supportedFormat();
+    Format supportedFormat();
 }
 
