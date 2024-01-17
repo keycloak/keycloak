@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -51,5 +52,6 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     public Format supportedFormat() {
         return SUPPORTED_FORMAT;
     }
+
 }
 

@@ -104,6 +104,8 @@ public class Profile {
         MULTI_SITE("Multi-site support", Type.PREVIEW),
 
         OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
+
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.PREVIEW)
         ;
 
         private final Type type;
