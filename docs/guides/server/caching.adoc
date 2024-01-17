@@ -242,12 +242,11 @@ JGroups handles all the communication between {project_name} server, and it supp
 {project_name} uses CLI options to configure the TLS communication without having to create a customized JGroups stack or modifying the cache XML file.
 
 To enable TLS, `cache-embedded-mtls-enabled` must be set to `true`.
-It requires a KeyStore with the certificate to use: `cache-embedded-mtls-key-store-file` sets the path to the KeyStore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
+It requires a keystore with the certificate to use: `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
+The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
+To restrict unauthorized access, use a self-signed certificate for each {project_name} deployment.
 
-The TrustStore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the TrustStore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
-Optionally, the TrustStore format can be set using `cache-embedded-mtls-trust-store-type`.
-
-For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to setup the protocol stack.
+For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
 
 For more information about securing cache communication, see the https://infinispan.org/docs/stable/titles/security/security.html#[Infinispan security guide].
 

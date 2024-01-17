@@ -37,12 +37,11 @@ import org.jgroups.util.TLS;
 import org.jgroups.util.TLSClientAuth;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import static org.keycloak.config.CachingOptions.CACHE_TLS_ENABLED_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_TLS_KEYSTORE_FILE_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_FILE_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY;
 
 public class CacheManagerFactory {
 
@@ -143,19 +142,20 @@ public class CacheManagerFactory {
             transportConfig.defaultTransport().stack(transportStack);
         }
 
-        if (booleanProperty(CACHE_TLS_ENABLED_PROPERTY)) {
+        if (booleanProperty(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY)) {
             validateTlsAvailable(transportConfig.build());
             var tls = new TLS()
                     .enabled(true)
-                    .setKeystorePath(stringProperty(CACHE_TLS_KEYSTORE_FILE_PROPERTY))
-                    .setKeystorePassword(stringProperty(CACHE_TLS_KEYSTORE_PASSWORD_PROPERTY))
+                    .setKeystorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY))
+                    .setKeystorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY))
                     .setKeystoreType("pkcs12")
-                    .setTruststorePath(stringProperty(CACHE_TLS_TRUSTSTORE_FILE_PROPERTY))
-                    .setTruststorePassword(stringProperty(CACHE_TLS_TRUSTSTORE_PASSWORD_PROPERTY))
-                    .setTruststoreType(stringProperty(CACHE_TLS_TRUSTSTORE_TYPE_PROPERTY))
+                    .setTruststorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY))
+                    .setTruststorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY))
+                    .setTruststoreType("pkcs12")
                     .setClientAuth(TLSClientAuth.NEED)
                     .setProtocols(new String[]{"TLSv1.3"});
             transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
+            Logger.getLogger(CacheManagerFactory.class).info("MTLS enabled for communications for embedded caches");
         }
     }
 
@@ -181,7 +181,7 @@ public class CacheManagerFactory {
         return Configuration.getOptionalKcValue(propertyName).map(Boolean::parseBoolean).orElse(Boolean.FALSE);
     }
 
-    private static String stringProperty(String propertyName) {
-        return Configuration.getOptionalKcValue(propertyName).orElse(null);
+    private static String requiredStringProperty(String propertyName) {
+        return Configuration.getOptionalKcValue(propertyName).orElseThrow(() -> new RuntimeException("Property " + propertyName + " required but not specified"));
     }
 }

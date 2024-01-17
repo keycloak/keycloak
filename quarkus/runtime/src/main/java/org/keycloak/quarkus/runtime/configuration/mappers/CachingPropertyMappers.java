@@ -32,27 +32,21 @@ final class CachingPropertyMappers {
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .paramLabel("file")
                         .build(),
-                fromOption(CachingOptions.CACHE_TLS)
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
                         .build(),
-                fromOption(CachingOptions.CACHE_TLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                         .paramLabel("file")
                         .build(),
-                fromOption(CachingOptions.CACHE_TLS_KEYSTORE_PASSWORD)
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
-                fromOption(CachingOptions.CACHE_TLS_KEYSTORE_ALIAS)
-                        .paramLabel("alias")
-                        .build(),
-                fromOption(CachingOptions.CACHE_TLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
                         .paramLabel("file")
                         .build(),
-                fromOption(CachingOptions.CACHE_TLS_TRUSTSTORE_PASSWORD)
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
                         .paramLabel("password")
                         .isMasked(true)
-                        .build(),
-                fromOption(CachingOptions.CACHE_TLS_TRUSTSTORE_TYPE)
-                        .paramLabel("type")
                         .build(),
         };
     }
@@ -80,7 +74,7 @@ final class CachingPropertyMappers {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "jgroups-keystore.p12").toFile();
+            File file = Paths.get(homeDir, "conf", "cache-mtls-keystore.p12").toFile();
 
             if (file.exists()) {
                 return file.getAbsolutePath();
@@ -94,7 +88,7 @@ final class CachingPropertyMappers {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "jgroups-truststore.p12").toFile();
+            File file = Paths.get(homeDir, "conf", "cache-mtls-truststore.p12").toFile();
 
             if (file.exists()) {
                 return file.getAbsolutePath();
