@@ -176,7 +176,7 @@ export const EffectiveMessageBundles = ({
       >
         <FlexItem>
           <TextContent>
-            <Text className="pf-u-mb-md" component={TextVariants.p}>
+            <Text className="pf-u-mb-md pf-u-mt-sm" component={TextVariants.p}>
               {t("effectiveMessageBundlesDescription")}
             </Text>
           </TextContent>
@@ -202,12 +202,13 @@ export const EffectiveMessageBundles = ({
             >
               <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
-                  name="themeType"
+                  name="theme"
                   control={control}
                   render={({ field }) => (
                     <Select
                       name="theme"
-                      data-testid="effective-message-bundles-feature-searchField"
+                      data-testid="effective_message_bundles-theme-searchField"
+                      required
                       chipGroupProps={{
                         numChips: 1,
                         expandedText: t("hide"),
@@ -215,16 +216,16 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
+                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
                       }}
-                      onClear={(themeType) => {
-                        themeType.stopPropagation();
+                      onClear={(theme) => {
+                        theme.stopPropagation();
                         field.onChange("");
                       }}
-                      isOpen={selectThemeTypeOpen}
+                      isOpen={selectThemesOpen}
                       aria-labelledby={t("theme")}
                       chipGroupComponent={
                         <ChipGroup>
@@ -245,7 +246,7 @@ export const EffectiveMessageBundles = ({
                           key="theme_placeholder"
                           value="Select theme"
                           label={t("selectTheme")}
-                          className="pf-m-plain"
+                          className="kc__effective_message_bundles_search_theme__placeholder"
                           isDisabled
                         />,
                       ].concat(
@@ -263,12 +264,12 @@ export const EffectiveMessageBundles = ({
                 isRequired
               >
                 <Controller
-                  name="theme"
+                  name="themeType"
                   control={control}
                   render={({ field }) => (
                     <Select
                       name="themeType"
-                      data-testid="effective_message_bundles-themeType-searchField"
+                      data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
                         numChips: 1,
                         expandedText: t("hide"),
@@ -276,16 +277,16 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
+                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
                       }}
-                      onClear={(theme) => {
-                        theme.stopPropagation();
+                      onClear={(themeType) => {
+                        themeType.stopPropagation();
                         field.onChange("");
                       }}
-                      isOpen={selectThemesOpen}
+                      isOpen={selectThemeTypeOpen}
                       aria-labelledby={t("themeType")}
                       chipGroupComponent={
                         <ChipGroup>
@@ -306,7 +307,7 @@ export const EffectiveMessageBundles = ({
                           key="themeType_placeholder"
                           value="Select theme type"
                           label={t("selectThemeType")}
-                          className="kc__effective_message_bundles_search_themeType__placeholder"
+                          className="pf-m-plain"
                           isDisabled
                         />,
                       ].concat(
