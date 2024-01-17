@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -104,10 +105,14 @@ public class Profile {
         MULTI_SITE("Multi-site support", Type.PREVIEW),
 
         OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
+        HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
+        //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
         ;
 
         private final Type type;
         private final String label;
+        private final String unversionedKey;
+        private final String key;
 
         private Set<Feature> dependencies;
         private int version;
@@ -123,8 +128,14 @@ public class Profile {
             this.label = label;
             this.type = type;
             this.version = version;
-            if (this.version > 1 && !this.name().endsWith("_V" + version)) {
-                throw new IllegalStateException("It is expected that the enum name ends with the version");
+            this.key = name().toLowerCase().replaceAll("_", "-");
+            if (this.name().endsWith("_V" + version)) {
+                unversionedKey = key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            } else {
+                this.unversionedKey = key;
+                if (this.version > 1) {
+                    throw new IllegalStateException("It is expected that the enum name ends with the version");
+                }
             }
             this.dependencies = Arrays.stream(dependencies).collect(Collectors.toSet());
         }
@@ -136,7 +147,7 @@ public class Profile {
          * {@link #getVersionedKey()} should instead be shown to users where possible.
          */
         public String getKey() {
-            return name().toLowerCase().replaceAll("_", "-");
+            return key;
         }
 
         /**
@@ -144,11 +155,7 @@ public class Profile {
          * will share this key.
          */
         public String getUnversionedKey() {
-            String key = getKey();
-            if (version == 1) {
-                return key;
-            }
-            return key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            return unversionedKey;
         }
 
         /**
@@ -195,6 +202,8 @@ public class Profile {
         }
     }
 
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V1.getUnversionedKey())));
+
     private static final Logger logger = Logger.getLogger(Profile.class);
 
     private static Profile CURRENT;
@@ -220,6 +229,8 @@ public class Profile {
             Feature enabledFeature = null;
             if (unversionedConfig == FeatureConfig.ENABLED) {
                 enabledFeature = entry.getValue().iterator().next();
+            } else if (unversionedConfig == FeatureConfig.DISABLED && ESSENTIAL_FEATURES.contains(unversionedFeature)) {
+                throw new ProfileException(String.format("Feature %s cannot be disabled.", unversionedFeature));
             }
 
             // now check each feature version to ensure consistency and select any features enabled by default
@@ -315,6 +326,10 @@ public class Profile {
 
     public static Set<String> getAllUnversionedFeatureNames() {
         return Collections.unmodifiableSet(getOrderedFeatures().keySet());
+    }
+
+    public static Set<String> getDisableableUnversionedFeatureNames() {
+        return getOrderedFeatures().keySet().stream().filter(f -> !ESSENTIAL_FEATURES.contains(f)).collect(Collectors.toSet());
     }
 
     /**
