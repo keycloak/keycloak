@@ -25,16 +25,16 @@ public class FeatureOptions {
             .buildTime(true)
             .build();
 
-    public static List<String> getFeatureValues(boolean includeVersions) {
+    public static List<String> getFeatureValues(boolean toEnable) {
         List<String> features = new ArrayList<>();
 
-        if (includeVersions) {
+        if (toEnable) {
             Profile.getAllUnversionedFeatureNames().forEach(f -> {
                 features.add(f + "[:" + Profile.getFeatureVersions(f).stream().sorted().map(v -> "v" + v.getVersion())
                         .collect(Collectors.joining(",")) + "]");
             });
         } else {
-            features.addAll(Profile.getAllUnversionedFeatureNames());
+            features.addAll(Profile.getDisableableUnversionedFeatureNames());
         }
 
         features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
