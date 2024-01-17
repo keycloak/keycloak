@@ -53,10 +53,9 @@ By default, {project_name} will queue all incoming requests infinitely, even if 
 This will use additional memory in the Pod, can exhaust resources in the load balancers, and the requests will eventually time out on the client side without the client knowing if the request has been processed.
 To limit the number of queued requests in {project_name}, set an additional Quarkus configuration option.
 
-Configure `quarkus.thread-pool.queue-size` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded.
+Configure `http-max-queued-requests` to specify a maximum queue length to allow for effective load shedding once this queue size is exceeded.
 Assuming a {project_name} Pod processes around 200 requests per second, a queue of 1000 would lead to maximum waiting times of around 5 seconds.
 
-// KC22.0.6 - this is still 500
 When this setting is active, requests that exceed the number of queued requests will return with an HTTP 503 error.
 {project_name} logs the error message in its log.
 
