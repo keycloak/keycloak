@@ -52,7 +52,7 @@ To write tests, refer to the [writing tests](docs/tests-development.md) guide.
 
 ## Contributing
 
-Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md).
+Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md). Participation in the Keycloak project is governed by the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md).
 
 
 ## Other Keycloak Projects
