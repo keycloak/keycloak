@@ -110,7 +110,9 @@ export const EffectiveMessageBundles = ({
       const filteredMessages =
         filter.hasWords.length > 0
           ? messages.filter((m) =>
-              filter.hasWords.some((f) => m.value.includes(f)),
+              filter.hasWords.some(
+                (f) => m.value.includes(f) || m.key.includes(f),
+              ),
             )
           : messages;
 
@@ -200,7 +202,7 @@ export const EffectiveMessageBundles = ({
             >
               <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
-                  name="theme"
+                  name="themeType"
                   control={control}
                   render={({ field }) => (
                     <Select
@@ -261,7 +263,7 @@ export const EffectiveMessageBundles = ({
                 isRequired
               >
                 <Controller
-                  name="themeType"
+                  name="theme"
                   control={control}
                   render={({ field }) => (
                     <Select
