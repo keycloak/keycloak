@@ -30,6 +30,8 @@ import java.util.stream.Stream;
  */
 public interface GroupProvider extends Provider, GroupLookupProvider {
 
+    static boolean DEFAULT_ESCAPE_SLASHES = false;
+
     /**
      * Returns groups for the given realm.
      *

@@ -483,7 +483,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
         if (!groupEntity.getRealm().equals(realm.getId())) return null;
-        GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
+        GroupAdapter adapter =  new GroupAdapter(session, realm, em, groupEntity);
         return adapter;
     }
 
@@ -650,7 +650,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
 
         return closing(results
-        		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
+                .map(g -> (GroupModel) new GroupAdapter(session, realm, em, g))
                 .sorted(GroupModel.COMPARE_BY_NAME));
     }
 
@@ -733,7 +733,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         em.persist(groupEntity);
         em.flush();
 
-        return new GroupAdapter(realm, em, groupEntity);
+        return new GroupAdapter(session, realm, em, groupEntity);
     }
 
     @Override
@@ -1169,7 +1169,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(g -> new GroupAdapter(realm, em, g));
+                .map(g -> new GroupAdapter(session, realm, em, g));
     }
 
     @Override
