@@ -200,7 +200,7 @@ export const EffectiveMessageBundles = ({
             >
               <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
-                  name="themeType"
+                  name="theme"
                   control={control}
                   render={({ field }) => (
                     <Select
@@ -261,7 +261,7 @@ export const EffectiveMessageBundles = ({
                 isRequired
               >
                 <Controller
-                  name="theme"
+                  name="themeType"
                   control={control}
                   render={({ field }) => (
                     <Select
