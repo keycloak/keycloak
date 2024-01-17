@@ -89,6 +89,11 @@
             <artifactId>infinispan-cachestore-remote</artifactId>
         </dependency>
         <dependency>
+            <!-- adding it explictly, as Keycloak's parent excludes it to have full control over Jakarta EE vs. Java EE -->
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-client-hotrod</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>

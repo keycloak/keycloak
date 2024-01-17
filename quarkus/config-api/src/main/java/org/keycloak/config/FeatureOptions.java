@@ -10,18 +10,18 @@ import java.util.stream.Collectors;
 
 public class FeatureOptions {
 
-    public static final Option<List> FEATURES = new OptionBuilder("features", List.class, Profile.Feature.class)
+    public static final Option<List<String>> FEATURES = OptionBuilder.listOptionBuilder("features", String.class)
             .category(OptionCategory.FEATURE)
             .description("Enables a set of one or more features.")
             .defaultValue(Optional.empty())
-            .expectedValues(() -> getFeatureValues(true))
+            .expectedValues(getFeatureValues(true))
             .buildTime(true)
             .build();
 
-    public static final Option<List> FEATURES_DISABLED = new OptionBuilder("features-disabled", List.class, Profile.Feature.class)
+    public static final Option<List<String>> FEATURES_DISABLED = OptionBuilder.listOptionBuilder("features-disabled", String.class)
             .category(OptionCategory.FEATURE)
             .description("Disables a set of one or more features.")
-            .expectedValues(() -> getFeatureValues(false))
+            .expectedValues(getFeatureValues(false))
             .buildTime(true)
             .build();
 

@@ -385,6 +385,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             }
 
             if (predicate.getBrokerSessionId() != null) {
+                if (!Profile.isFeatureEnabled(Profile.Feature.OFFLINE_SESSION_PRELOADING)) {
+                    throw new RuntimeException("The deprecated offline session preloading feature is disabled in this configuration. Read the migration guide to learn more.");
+                }
                 // TODO add support for offline user-session lookup by brokerSessionId
                 // currently it is not possible to access the brokerSessionId in offline user-session in a database agnostic way
                 throw new ModelException("Dynamic database lookup for offline user-sessions by broker session ID is currently only supported for preloaded sessions. " +
@@ -813,6 +816,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.OFFLINE_SESSION_PRELOADING)) {
+            throw new RuntimeException("The deprecated offline session preloading feature is disabled in this configuration. Read the migration guide to learn more.");
+        }
         return this.getUserSessionsStream(realm, UserSessionPredicate.create(realm.getId()).brokerSessionId(brokerSessionId), true)
                 .findFirst().orElse(null);
     }
