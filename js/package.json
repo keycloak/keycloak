@@ -5,7 +5,7 @@
     "prepare": "cd .. && husky install js/.husky"
   },
   "devDependencies": {
-    "@types/node": "^20.11.3",
+    "@types/node": "^20.11.4",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.56.0",
