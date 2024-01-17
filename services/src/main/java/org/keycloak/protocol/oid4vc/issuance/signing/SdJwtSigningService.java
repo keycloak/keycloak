@@ -16,7 +16,6 @@ import java.time.Clock;
  */
 public class SdJwtSigningService extends SigningService<String> {
 
-
     public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, Clock clock, String algorithmType) {
         super(keycloakSession, keyId, clock, algorithmType);
     }
