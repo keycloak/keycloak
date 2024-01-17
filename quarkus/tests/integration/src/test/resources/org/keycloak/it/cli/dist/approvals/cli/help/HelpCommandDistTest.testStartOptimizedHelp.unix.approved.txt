@@ -18,8 +18,6 @@ Options:
 
 Database:
 
---db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
-                       driver is set accordingly to the chosen database.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
