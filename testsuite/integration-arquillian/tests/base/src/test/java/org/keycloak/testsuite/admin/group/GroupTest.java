@@ -31,6 +31,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -1358,14 +1359,13 @@ public class GroupTest extends AbstractGroupTest {
         assertTrue(searchResultGroups.isEmpty());
     }
 
-    @Test
-    public void testGroupsWithSpaces() {
+    public void testParentAndChildGroup(String parentName, String childName) {
         RealmResource realm = adminClient.realms().realm("test");
         GroupRepresentation parentGroup = new GroupRepresentation();
-        parentGroup.setName("parent space");
+        parentGroup.setName(parentName);
         parentGroup = createGroup(realm, parentGroup);
         GroupRepresentation childGroup = new GroupRepresentation();
-        childGroup.setName("child space");
+        childGroup.setName(childName);
         try (Response response = realm.groups().group(parentGroup.getId()).subGroup(childGroup)) {
             assertEquals(201, response.getStatus()); // created status
             childGroup.setId(ApiUtil.getCreatedId(response));
@@ -1373,20 +1373,27 @@ public class GroupTest extends AbstractGroupTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE,
                 AdminEventPaths.groupSubgroupsPath(parentGroup.getId()), childGroup, ResourceType.GROUP);
 
-        List<GroupRepresentation> groupsFound = realm.groups().groups("parent space", true, 0, 1, true);
+        List<GroupRepresentation> groupsFound = realm.groups().groups(parentGroup.getName(), true, 0, 1, true);
         Assert.assertEquals(1, groupsFound.size());
         Assert.assertEquals(parentGroup.getId(), groupsFound.iterator().next().getId());
         Assert.assertEquals(0, groupsFound.iterator().next().getSubGroups().size());
-        groupsFound = realm.groups().groups("child space", true, 0, 1, true);
+        parentGroup = groupsFound.iterator().next();
+        Assert.assertEquals(KeycloakModelUtils.normalizeGroupPath(KeycloakModelUtils.escapeGroupNameForPath(parentName)), parentGroup.getPath());
+
+        groupsFound = realm.groups().groups(childGroup.getName(), true, 0, 1, true);
         Assert.assertEquals(1, groupsFound.size());
         Assert.assertEquals(parentGroup.getId(), groupsFound.iterator().next().getId());
         Assert.assertEquals(1, groupsFound.iterator().next().getSubGroups().size());
         Assert.assertEquals(childGroup.getId(), groupsFound.iterator().next().getSubGroups().iterator().next().getId());
+        childGroup = groupsFound.iterator().next().getSubGroups().iterator().next();
+        Assert.assertEquals(KeycloakModelUtils.normalizeGroupPath(KeycloakModelUtils.escapeGroupNameForPath(parentName)
+                + KeycloakModelUtils.GROUP_PATH_SEPARATOR
+                + KeycloakModelUtils.escapeGroupNameForPath(childName)), childGroup.getPath());
 
-        GroupRepresentation groupFound = realm.getGroupByPath(parentGroup.getName());
+        GroupRepresentation groupFound = realm.getGroupByPath(parentGroup.getPath());
         Assert.assertNotNull(groupFound);
         Assert.assertEquals(parentGroup.getId(), groupFound.getId());
-        groupFound = realm.getGroupByPath("/" + parentGroup.getName() + "/" + childGroup.getName());
+        groupFound = realm.getGroupByPath(childGroup.getPath());
         Assert.assertNotNull(groupFound);
         Assert.assertEquals(childGroup.getId(), groupFound.getId());
 
@@ -1394,6 +1401,16 @@ public class GroupTest extends AbstractGroupTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.groupPath(childGroup.getId()), ResourceType.GROUP);
         realm.groups().group(parentGroup.getId()).remove();
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.groupPath(parentGroup.getId()), ResourceType.GROUP);
+    }
+
+    @Test
+    public void testGroupsWithSpaces() {
+         testParentAndChildGroup("parent space", "child space");
+    }
+
+    @Test
+    public void testGroupsWithSlashes() {
+         testParentAndChildGroup("parent/slash", "child/slash");
     }
 
     /**
