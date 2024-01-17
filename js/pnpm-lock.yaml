@@ -350,9 +350,6 @@ importers:
 
   libs/keycloak-js:
     dependencies:
-      base64-js:
-        specifier: ^1.5.1
-        version: 1.5.1
       js-sha256:
         specifier: ^0.10.1
         version: 0.10.1
@@ -2733,6 +2730,7 @@ packages:
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+    dev: true
 
   /bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
