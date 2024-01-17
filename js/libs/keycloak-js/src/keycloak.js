@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import base64 from 'base64-js';
 import sha256 from 'js-sha256';
 import { jwtDecode } from 'jwt-decode';
 
@@ -380,7 +379,7 @@ function Keycloak (config) {
             case "S256":
                 // hash codeVerifier, then encode as url-safe base64 without padding
                 var hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
-                var encodedHash = base64.fromByteArray(hashBytes)
+                var encodedHash = bytesToBase64(hashBytes)
                     .replace(/\+/g, '-')
                     .replace(/\//g, '_')
                     .replace(/\=/g, '');
@@ -1756,3 +1755,9 @@ function Keycloak (config) {
 }
 
 export default Keycloak;
+
+// See: https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+function bytesToBase64(bytes) {
+    const binString = String.fromCodePoint(...bytes);
+    return btoa(binString);
+}
