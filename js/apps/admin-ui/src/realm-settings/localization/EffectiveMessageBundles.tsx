@@ -443,6 +443,14 @@ export const EffectiveMessageBundles = ({
               </ActionGroup>
             </Form>
           </Dropdown>
+          <Button
+            variant="primary"
+            className="pf-u-ml-md"
+            onClick={() => submitSearch()}
+            data-testid="refresh-effective-message-bundles-btn"
+          >
+            {t("refresh")}
+          </Button>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
