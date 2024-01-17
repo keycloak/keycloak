@@ -49,6 +49,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 
@@ -56,6 +57,7 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.servicelocator.ServiceLocator;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 @Recorder
 public class KeycloakRecorder {
@@ -121,6 +123,10 @@ public class KeycloakRecorder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void setDefaultUserProfileConfiguration(UPConfig configuration) {
+        DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
 
     public void registerShutdownHook(ShutdownContext shutdownContext) {
