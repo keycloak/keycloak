@@ -16,7 +16,7 @@
  */
 package org.keycloak.storage.adapter;
 
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
@@ -33,6 +33,6 @@ public class InMemoryUserAdapter extends AbstractInMemoryUserAdapter {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new LegacyUserCredentialManager(session, realm, this);
+        return new UserCredentialManager(session, realm, this);
     }
 }

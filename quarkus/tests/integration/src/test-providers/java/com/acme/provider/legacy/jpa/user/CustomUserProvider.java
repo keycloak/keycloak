@@ -15,28 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.storage;
+package com.acme.provider.legacy.jpa.user;
 
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.GroupProvider;
-import org.keycloak.models.RoleProvider;
-import org.keycloak.models.UserProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import java.util.Collections;
+import java.util.Map;
+import org.keycloak.it.TestProvider;
 
-public interface LegacyStoreManagers {
-    
-    ClientProvider clientStorageManager();
+public class CustomUserProvider implements TestProvider {
 
-    ClientScopeProvider clientScopeStorageManager();
+    @Override
+    public Class[] getClasses() {
+        return new Class[] { MyUserProvider.class, MyUserProviderFactory.class };
+    }
 
-    RoleProvider roleStorageManager();
-
-    GroupProvider groupStorageManager();
-
-    UserProvider userStorageManager();
-
-    UserProvider userLocalStorage();
-
-    UserFederatedStorageProvider userFederatedStorage();
+    @Override
+    public Map<String, String> getManifestResources() {
+        return Collections.singletonMap("org.keycloak.models.UserProviderFactory", "services/org.keycloak.models.UserProviderFactory");
+    }
 }

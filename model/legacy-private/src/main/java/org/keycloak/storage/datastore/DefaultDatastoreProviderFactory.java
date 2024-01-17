@@ -32,12 +32,12 @@ import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
-import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
-import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.StoreMigrateRepresentationEvent;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.timer.TimerProvider;
 
-public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
+public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 
     private static final String PROVIDER_ID = "legacy";
     private long clientStorageProviderTimeout;
@@ -46,7 +46,7 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
 
     @Override
     public DatastoreProvider create(KeycloakSession session) {
-        return new LegacyDatastoreProvider(this, session);
+        return new DefaultDatastoreProvider(this, session);
     }
 
     @Override
@@ -85,11 +85,11 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent) {
             setupScheduledTasks(((PostMigrationEvent) event).getFactory());
-        } else if (event instanceof LegacyStoreSyncEvent) {
-            LegacyStoreSyncEvent ev = (LegacyStoreSyncEvent) event;
+        } else if (event instanceof StoreSyncEvent) {
+            StoreSyncEvent ev = (StoreSyncEvent) event;
             UserStorageSyncManager.notifyToRefreshPeriodicSyncAll(ev.getSession(), ev.getRealm(), ev.getRemoved());
-        } else if (event instanceof LegacyStoreMigrateRepresentationEvent) {
-            LegacyStoreMigrateRepresentationEvent ev = (LegacyStoreMigrateRepresentationEvent) event;
+        } else if (event instanceof StoreMigrateRepresentationEvent) {
+            StoreMigrateRepresentationEvent ev = (StoreMigrateRepresentationEvent) event;
             MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
         }
     }    

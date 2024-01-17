@@ -35,14 +35,14 @@ import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.GroupStorageManager;
-import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.MigrationManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
-public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreManagers {
-    private final LegacyDatastoreProviderFactory factory;
+public class DefaultDatastoreProvider implements DatastoreProvider, StoreManagers {
+    private final DefaultDatastoreProviderFactory factory;
     private final KeycloakSession session;
 
     private AuthenticationSessionProvider authenticationSessionProvider;
@@ -63,7 +63,7 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
     private UserProvider userStorageManager;
     private UserFederatedStorageProvider userFederatedStorageProvider;
 
-    public LegacyDatastoreProvider(LegacyDatastoreProviderFactory factory, KeycloakSession session) {
+    public DefaultDatastoreProvider(DefaultDatastoreProviderFactory factory, KeycloakSession session) {
         this.factory = factory;
         this.session = session;
     }
@@ -260,11 +260,11 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
 
     @Override
     public ExportImportManager getExportImportManager() {
-        return new LegacyExportImportManager(session);
+        return new DefaultExportImportManager(session);
     }
 
     public MigrationManager getMigrationManager() {
-        return new LegacyMigrationManager(session);
+        return new DefaultMigrationManager(session);
     }
 
 }

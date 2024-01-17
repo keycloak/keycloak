@@ -23,7 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.PostgreSQLTest;
 
@@ -32,7 +31,6 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "postgres")
-@LegacyStore
 public class PostgreSQLDistTest extends PostgreSQLTest {
 
     @Test

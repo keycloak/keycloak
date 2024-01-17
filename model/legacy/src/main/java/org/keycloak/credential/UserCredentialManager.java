@@ -24,7 +24,7 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.AbstractStorageManager;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -36,17 +36,17 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * Handling credentials for a given user for the legacy store.
+ * Handling credentials for a given user for the store.
  *
  * @author Alexander Schwartz
  */
-public class LegacyUserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SubjectCredentialManager {
+public class UserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SubjectCredentialManager {
 
     private final UserModel user;
     private final KeycloakSession session;
     private final RealmModel realm;
 
-    public LegacyUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
+    public UserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
         this.user = user;
         this.session = session;
@@ -269,7 +269,7 @@ public class LegacyUserCredentialManager extends AbstractStorageManager<UserStor
     }
 
     private UserCredentialStore getStoreForUser(UserModel user) {
-        LegacyStoreManagers p = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
+        StoreManagers p = (StoreManagers) session.getProvider(DatastoreProvider.class);
         if (StorageId.isLocalStorage(user.getId())) {
             return (UserCredentialStore) p.userLocalStorage();
         } else {

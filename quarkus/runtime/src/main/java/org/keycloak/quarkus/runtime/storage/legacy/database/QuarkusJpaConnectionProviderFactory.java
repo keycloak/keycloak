@@ -60,10 +60,10 @@ import org.keycloak.quarkus.runtime.storage.database.jpa.AbstractJpaConnectionPr
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
+public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
-    private static final Logger logger = Logger.getLogger(LegacyJpaConnectionProviderFactory.class);
+    private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT ID, VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
     enum MigrationStrategy {
@@ -80,7 +80,7 @@ public class LegacyJpaConnectionProviderFactory extends AbstractJpaConnectionPro
 
     @Override
     public String getId() {
-        return "legacy";
+        return "quarkus";
     }
 
     private void addSpecificNamedQueries(KeycloakSession session) {

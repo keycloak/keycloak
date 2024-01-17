@@ -31,7 +31,7 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-legacy-migration-strategy=manual
+kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-strategy=manual
 ----
 
 When you start the server with this configuration it checks if the database needs to be migrated.
@@ -42,7 +42,7 @@ default `connections-jpa` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-jpa-legacy-migration-export=<path>/<file.sql>
+kc.[sh|bat] start --spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>
 ----
 
 For further details on how to apply this file to the database, see the documentation for the relational database you're using.
