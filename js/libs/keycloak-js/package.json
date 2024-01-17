@@ -75,7 +75,6 @@
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "base64-js": "^1.5.1",
     "js-sha256": "^0.10.1",
     "jwt-decode": "^4.0.0"
   }
