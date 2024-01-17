@@ -144,3 +144,16 @@ The management interface uses a different HTTP server than the default {project_
 Beware, if no values are supplied for the management interface properties, they are inherited from the default {project_name} HTTP server.
 
 For more details, see https://www.keycloak.org/server/management-interface[Configuring the Management Interface].
+
+= Escaping slashes in group paths
+
+{project_name} has never escaped slashes in the group paths. Because of that, a group named `group/slash` child of `top` uses the full path `/top/group/slash`, which is clearly misleading. Starting with this version, the server can be started to perform escaping of those slashes in the name:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-group-jpa-escape-slashes-in-group-path=true
+----
+
+The escape char is the tilde character `~`. The previous example results in the path `/top/group~/slash`. The escape marks the last slash is part of the name and not a hierarchy separator.
+
+The escaping is currently disabled by default because it represents a change in behavior. Nevertheless enabling escaping is recommended and it can be the default in future versions.

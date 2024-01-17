@@ -64,6 +64,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -73,8 +74,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.regex.Pattern;
 
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -97,6 +100,7 @@ public final class KeycloakModelUtils {
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
     public static final String GROUP_PATH_SEPARATOR = "/";
+    public static final String GROUP_PATH_ESCAPE = "~";
     private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     private KeycloakModelUtils() {
@@ -693,9 +697,21 @@ public final class KeycloakModelUtils {
     }
 
     /**
+     * Helper to get from the session if group path slashes should be escaped or not.
+     * @param session The session
+     * @return true or false
+     */
+    public static boolean escapeSlashesInGroupPath(KeycloakSession session) {
+        GroupProviderFactory fact = (GroupProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
+        return fact.escapeSlashesInGroupPath();
+    }
+
+    /**
      * Finds group by path. Path is separated by '/' character. For example: /group/subgroup/subsubgroup
      * <p />
      * The method takes into consideration also groups with '/' in their name. For example: /group/sub/group/subgroup
+     * This method allows escaping of slashes for example: /parent\/group/child which
+     * is a two level path for ["parent/group", "child"].
      *
      * @param session Keycloak session
      * @param realm The realm
@@ -707,13 +723,7 @@ public final class KeycloakModelUtils {
         if (path == null) {
             return null;
         }
-        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(1);
-        }
-        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(0, path.length() - 1);
-        }
-        String[] split = path.split(GROUP_PATH_SEPARATOR);
+        String[] split = splitPath(path, escapeSlashesInGroupPath(session));
         if (split.length == 0) return null;
         return getGroupModel(session.groups(), realm, null, split, 0);
     }
@@ -752,22 +762,76 @@ public final class KeycloakModelUtils {
         return null;
     }
 
-    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent) {
-        if (parent != null) {
-            buildGroupPath(sb, parent.getName(), parent.getParent());
+    /**
+     * Splits a group path than can be escaped for slashes.
+     * @param path The group path
+     * @param escapedSlashes true if slashes are escaped in the path
+     * @return
+     */
+    public static String[] splitPath(String path, boolean escapedSlashes) {
+        if (path == null) {
+            return null;
         }
-        sb.append(GROUP_PATH_SEPARATOR).append(groupName);
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(1);
+        }
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        // just split by slashed that are not escaped
+        return escapedSlashes
+                ? Arrays.stream(path.split("(?<!" + Pattern.quote(GROUP_PATH_ESCAPE) + ")" + Pattern.quote(GROUP_PATH_SEPARATOR)))
+                        .map(KeycloakModelUtils::unescapeGroupNameForPath)
+                        .toArray(String[]::new)
+                : path.split(GROUP_PATH_SEPARATOR);
+    }
+
+    /**
+     * Escapes the slash in the name if found. "group/slash" returns "group\/slash".
+     * @param groupName
+     * @return
+     */
+    private static String escapeGroupNameForPath(String groupName) {
+        return groupName.replace(GROUP_PATH_SEPARATOR, GROUP_PATH_ESCAPE + GROUP_PATH_SEPARATOR);
+    }
+
+    /**
+     * Unescape the escaped slashes in name. "group\/slash" returns "group/slash".
+     * @param groupName
+     * @return
+     */
+    private static String unescapeGroupNameForPath(String groupName) {
+        return groupName.replace(GROUP_PATH_ESCAPE + GROUP_PATH_SEPARATOR, GROUP_PATH_SEPARATOR);
+    }
+
+    public static String buildGroupPath(boolean escapeSlashes, String... names) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(GROUP_PATH_SEPARATOR);
+        for (int i = 0; i < names.length; i++) {
+            sb.append(escapeSlashes? escapeGroupNameForPath(names[i]) : names[i]);
+            if (i < names.length - 1) {
+                sb.append(GROUP_PATH_SEPARATOR);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes) {
+        if (parent != null) {
+            buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes);
+        }
+        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes? escapeGroupNameForPath(groupName) : groupName);
     }
 
     public static String buildGroupPath(GroupModel group) {
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), group.getParent());
+        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath());
         return sb.toString();
     }
 
     public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), otherParentGroup);
+        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath());
         return sb.toString();
     }
 

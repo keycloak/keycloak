@@ -48,11 +48,13 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
+    protected final KeycloakSession session;
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
 
-    public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
+    public GroupAdapter(KeycloakSession session, RealmModel realm, EntityManager em, GroupEntity group) {
+        this.session = session;
         this.em = em;
         this.group = group;
         this.realm = realm;
@@ -313,6 +315,8 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return getId().hashCode();
     }
 
-
-
+    @Override
+    public boolean escapeSlashesInGroupPath() {
+        return KeycloakModelUtils.escapeSlashesInGroupPath(session);
+    }
 }

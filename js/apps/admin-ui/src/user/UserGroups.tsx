@@ -74,7 +74,10 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     const indirect: GroupRepresentation[] = [];
     if (!isDirectMembership)
       joinedUserGroups.forEach((g) => {
-        const paths = g.path?.substring(1).split("/").slice(0, -1) || [];
+        const paths = (
+          g.path?.substring(1).match(/((~\/)|[^/])+/g) || []
+        ).slice(0, -1);
+
         indirect.push(
           ...paths.map((p) => ({
             name: p,

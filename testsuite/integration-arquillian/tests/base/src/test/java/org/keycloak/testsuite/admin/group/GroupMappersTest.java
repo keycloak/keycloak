@@ -17,11 +17,16 @@
 
 package org.keycloak.testsuite.admin.group;
 
+import jakarta.ws.rs.core.Response;
+import java.util.*;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
@@ -30,11 +35,12 @@ import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.*;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -128,6 +134,43 @@ public class GroupMappersTest extends AbstractGroupTest {
             MatcherAssert.assertThat(groups.get("groups"), Matchers.contains("level2group"));
             Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
             Assert.assertEquals("true", token.getOtherClaims().get("level2Attribute"));
+        }
+    }
+
+    @Test
+    public void testGroupMappersWithSlash() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+        GroupRepresentation topGroup = realm.getGroupByPath("/topGroup");
+        Assert.assertNotNull(topGroup);
+        GroupRepresentation childSlash = new GroupRepresentation();
+        childSlash.setName("child/slash");
+        try (Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash)) {
+            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            childSlash.setId(ApiUtil.getCreatedId(response));
+        }
+        List<UserRepresentation> users = realm.users().search("level2GroupUser", true);
+        Assert.assertEquals(1, users.size());
+        UserRepresentation user = users.iterator().next();
+        realm.users().get(user.getId()).joinGroup(childSlash.getId());
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(realm, "test-app").getProtocolMappers();
+        ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
+                protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");
+        groupsMapper.getConfig().put("full.path", Boolean.TRUE.toString());
+        protocolMappers.update(groupsMapper.getId(), groupsMapper);
+
+        try {
+            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
+            Assert.assertNotNull(token.getOtherClaims().get("groups"));
+            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
+            MatcherAssert.assertThat(groups.get("groups"), Matchers.containsInAnyOrder(
+                    KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, "topGroup", "level2group"),
+                    KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, "topGroup", "child/slash")));
+        } finally {
+            realm.users().get(user.getId()).leaveGroup(childSlash.getId());
+            realm.groups().group(childSlash.getId()).remove();
+            groupsMapper.getConfig().remove("full.path");
+            protocolMappers.update(groupsMapper.getId(), groupsMapper);
         }
     }
 }
