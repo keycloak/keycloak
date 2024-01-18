@@ -482,6 +482,8 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(client.getId()).update(newClient);
 
+        newClient.setSecret("**********"); // secrets are masked in events
+
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
         storedClient = realm.clients().get(client.getId()).toRepresentation();
@@ -540,6 +542,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
 
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
 
         client.setId(id);

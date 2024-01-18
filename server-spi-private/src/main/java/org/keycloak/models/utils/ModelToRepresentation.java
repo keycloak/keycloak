@@ -498,7 +498,7 @@ public class ModelToRepresentation {
         }
 
         List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(session, realm, provider)).collect(Collectors.toList());
+                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
         rep.setIdentityProviders(identityProviders);
 
         List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
@@ -784,7 +784,7 @@ public class ModelToRepresentation {
         return providerRep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
@@ -818,7 +818,7 @@ public class ModelToRepresentation {
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
         }
 
-        return stripSecrets(session, providerRep);
+        return providerRep;
     }
 
     public static ProtocolMapperRepresentation toRepresentation(ProtocolMapperModel model) {

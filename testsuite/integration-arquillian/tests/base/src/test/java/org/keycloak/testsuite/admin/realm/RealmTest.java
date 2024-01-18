@@ -1055,6 +1055,8 @@ public class RealmTest extends AbstractAdminTest {
         String clientDbId = ApiUtil.getCreatedId(resp);
         getCleanup().addClientUuid(clientDbId);
         resp.close();
+
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
         oauth.realm(REALM_NAME);
@@ -1086,6 +1088,8 @@ public class RealmTest extends AbstractAdminTest {
         String clientDbId = ApiUtil.getCreatedId(resp);
         getCleanup().addClientUuid(clientDbId);
         resp.close();
+
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
     }
 

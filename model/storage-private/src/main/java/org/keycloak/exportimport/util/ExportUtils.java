@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -256,7 +255,7 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
-        return stripSecrets(session, rep);
+        return rep;
     }
 
     public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {
