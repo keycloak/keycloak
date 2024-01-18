@@ -21,7 +21,6 @@ KcOidcBrokerJWETest
 KcOidcBrokerJWEUserInfoJustEncryptedTest
 KcSamlBrokerTest
 KcSamlFirstBrokerLoginTest
-KcSamlEncryptedIdTest
 KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
 KerberosLdapTest
