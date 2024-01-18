@@ -1,6 +1,7 @@
 {
   "name": "account-ui",
   "type": "module",
+  "main": "dist/account-ui.js",
   "scripts": {
     "dev": "wireit",
     "build": "wireit",

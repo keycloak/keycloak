@@ -22,9 +22,10 @@ import {
   useLocation,
 } from "react-router-dom";
 import fetchContentJson from "../content/fetchContent";
+import { Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-import { Feature, environment } from "../environment";
+import { useEnvironment } from "./KeycloakContext";
 
 type RootMenuItem = {
   label: TFuncKey;
@@ -43,8 +44,9 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
+  const context = useEnvironment();
 
-  usePromise((signal) => fetchContentJson({ signal }), setMenuItems);
+  usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
     <PageSidebar
       nav={
@@ -54,7 +56,7 @@ export const PageNav = () => {
               {menuItems
                 ?.filter((menuItem) =>
                   menuItem.isHidden
-                    ? environment.features[menuItem.isHidden]
+                    ? context.environment.features[menuItem.isHidden]
                     : true,
                 )
                 .map((menuItem) => (

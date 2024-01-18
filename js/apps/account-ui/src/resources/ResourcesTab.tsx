@@ -31,17 +31,18 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { fetchPermission, fetchResources, updatePermissions } from "../api";
 import { getPermissionRequests } from "../api/methods";
 import { Links } from "../api/parse-links";
 import { Permission, Resource } from "../api/representations";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 import { EditTheResource } from "./EditTheResource";
 import { PermissionRequest } from "./PermissionRequest";
 import { ResourceToolbar } from "./ResourceToolbar";
-import { SharedWith } from "./SharedWith";
 import { ShareTheResource } from "./ShareTheResource";
+import { SharedWith } from "./SharedWith";
 
 type PermissionDetail = {
   contextOpen?: boolean;
@@ -57,6 +58,7 @@ type ResourcesTabProps = {
 
 export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [params, setParams] = useState<Record<string, string>>({
@@ -73,13 +75,18 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
 
   usePromise(
     async (signal) => {
-      const result = await fetchResources({ signal }, params, isShared);
+      const result = await fetchResources(
+        { signal, context },
+        params,
+        isShared,
+      );
       if (!isShared)
         await Promise.all(
           result.data.map(
             async (r) =>
               (r.shareRequests = await getPermissionRequests(r._id, {
                 signal,
+                context,
               })),
           ),
         );
@@ -99,7 +106,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
   const fetchPermissions = async (id: string) => {
     let permissions = details[id]?.permissions || [];
     if (!details[id]) {
-      permissions = await fetchPermission({}, id);
+      permissions = await fetchPermission({ context }, id);
     }
     return permissions;
   };
@@ -113,7 +120,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             scopes: [],
           }) as Permission,
       )!;
-      await updatePermissions(resource._id, permissions);
+      await updatePermissions(context, resource._id, permissions);
       setDetails({});
       addAlert(t("unShareSuccess"));
     } catch (error) {
