@@ -220,3 +220,7 @@ PUT /admin/realms/{realm}/users/{id}/execute-actions-email
 
 ["VERIFY_EMAIL"]
 ----
+
+= Removal of the deprecated mode for SAML encryption
+
+The compatibility mode for SAML encryption introduced in version 21 is now removed. The system property `keycloak.saml.deprecated.encryption` is not managed anymore by the server. The clients which still used the old signing key for encryption should update it from the new IDP configuration metadata.
