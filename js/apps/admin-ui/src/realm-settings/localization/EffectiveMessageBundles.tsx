@@ -30,6 +30,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -56,6 +57,7 @@ export const EffectiveMessageBundles = ({
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [selectThemesOpen, setSelectThemesOpen] = useState(false);
@@ -65,18 +67,21 @@ export const EffectiveMessageBundles = ({
     Partial<EffectiveMessageBundlesSearchForm>
   >({});
   const themes = serverInfo.themes;
-  const themeKeys = themes
-    ? Object.keys(themes)
-        .filter((key) => key !== "common")
-        .sort((a, b) => a.localeCompare(b))
+  const themeTypes = themes
+    ? localeSort(
+        Object.keys(themes).filter((key) => key !== "common"),
+        (key) => key,
+      )
     : [];
-
-  const themesList = Object.values(themes!)
-    .flatMap((theme) => theme.map((item) => item.name))
-    .filter((value, index, self) => self.indexOf(value) === index)
-    .sort((a, b) => a.localeCompare(b));
+  const themeNames = themes
+    ? localeSort(
+        Object.values(themes)
+          .flatMap((theme) => theme.map((item) => item.name))
+          .filter((value, index, self) => self.indexOf(value) === index),
+        (name) => name,
+      )
+    : [];
   const [key, setKey] = useState(0);
-
   const filterLabels: Record<keyof EffectiveMessageBundlesSearchForm, string> =
     {
       theme: t("theme"),
@@ -116,9 +121,7 @@ export const EffectiveMessageBundles = ({
             )
           : messages;
 
-      const sortedMessages = [...filteredMessages].sort((a, b) =>
-        a.key.localeCompare(b.key, undefined, { sensitivity: "base" }),
-      );
+      const sortedMessages = localeSort([...filteredMessages], mapByKey("key"));
 
       return sortedMessages;
     } catch (error) {
@@ -252,7 +255,7 @@ export const EffectiveMessageBundles = ({
                           isDisabled
                         />,
                       ].concat(
-                        themesList.map((option) => (
+                        themeNames.map((option) => (
                           <SelectOption key={option} value={option} />
                         )),
                       )}
@@ -316,7 +319,7 @@ export const EffectiveMessageBundles = ({
                           isDisabled
                         />,
                       ].concat(
-                        themeKeys.map((option) => (
+                        themeTypes.map((option) => (
                           <SelectOption key={option} value={option} />
                         )),
                       )}
