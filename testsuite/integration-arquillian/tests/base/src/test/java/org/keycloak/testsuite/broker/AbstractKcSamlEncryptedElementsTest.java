@@ -20,9 +20,11 @@ package org.keycloak.testsuite.broker;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.utils.EncryptionConstants;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -90,9 +92,14 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
         public void testEncryptedElementIsReadableInDeprecatedMode() throws ConfigurationException, ParsingException, ProcessingException {
             try {
                 // Set flag that enabled deprecated mode for encryption
-                testingClient.server().run(session -> {
+                boolean javaInFipsMode = testingClient.server().fetch(session -> {
+                    if (Environment.isJavaInFipsMode()) {
+                        return true;
+                    }
                     System.setProperty(ENCRYPTION_DEPRECATED_MODE_PROPERTY, "true");
-                });
+                    return false;
+                }, Boolean.class);
+                Assume.assumeFalse("FIPS mode does not allow usage of the same key for signing and encrypting", javaInFipsMode);
                 KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
                 assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
                 sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, true);
