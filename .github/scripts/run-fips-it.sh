@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dnf install -y java-17-openjdk-devel
+dnf install -y java-17-openjdk-headless-1:17.0.9.0.9-2.el8.x86_64
 fips-mode-setup --enable --no-bootcfg
 fips-mode-setup --is-enabled
 if [ $? -ne 0 ]; then
