@@ -294,7 +294,7 @@ export default function EditUser() {
               </Tab>
               <Tab
                 data-testid="role-mapping-tab"
-                isHidden={!user.access?.mapRoles}
+                isHidden={!user.access?.view}
                 title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
                 {...roleMappingTab}
               >
