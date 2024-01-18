@@ -18,7 +18,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { pickBy } from "lodash-es";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { adminClient } from "../../admin-client";
@@ -66,22 +66,33 @@ export const EffectiveMessageBundles = ({
   const [activeFilters, setActiveFilters] = useState<
     Partial<EffectiveMessageBundlesSearchForm>
   >({});
-  const themes = serverInfo.themes;
-  const themeTypes = themes
-    ? localeSort(
-        Object.keys(themes).filter((key) => key !== "common"),
-        (key) => key,
-      )
-    : [];
-  const themeNames = themes
-    ? localeSort(
-        Object.values(themes)
-          .flatMap((theme) => theme.map((item) => item.name))
-          .filter((value, index, self) => self.indexOf(value) === index),
-        (name) => name,
-      )
-    : [];
   const [key, setKey] = useState(0);
+  const themes = serverInfo.themes;
+
+  const themeTypes = useMemo(() => {
+    if (!themes) {
+      return [];
+    }
+
+    return localeSort(
+      Object.keys(themes).filter((key) => key !== "common"),
+      (key) => key,
+    );
+  }, [themes]);
+
+  const themeNames = useMemo(() => {
+    if (!themes) {
+      return [];
+    }
+
+    return localeSort(
+      Object.values(themes)
+        .flatMap((theme) => theme.map((item) => item.name))
+        .filter((value, index, self) => self.indexOf(value) === index),
+      (name) => name,
+    );
+  }, [themes]);
+
   const filterLabels: Record<keyof EffectiveMessageBundlesSearchForm, string> =
     {
       theme: t("theme"),
