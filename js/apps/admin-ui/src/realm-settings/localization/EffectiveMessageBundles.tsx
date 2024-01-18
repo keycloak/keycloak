@@ -88,7 +88,7 @@ export const EffectiveMessageBundles = ({
   const {
     getValues,
     reset,
-    formState: { isDirty },
+    formState: { isDirty, isValid },
     control,
   } = useForm<EffectiveMessageBundlesSearchForm>({
     mode: "onChange",
@@ -197,13 +197,16 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-c-form pf-u-mx-lg pf-u-mb-lg"
+              className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
             >
               <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
                   name="theme"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="theme"
@@ -266,6 +269,9 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="themeType"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="themeType"
@@ -323,6 +329,9 @@ export const EffectiveMessageBundles = ({
                 <Controller
                   name="locale"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="language"
@@ -429,7 +438,7 @@ export const EffectiveMessageBundles = ({
                     submitSearch();
                   }}
                   data-testid="search-effective-message-bundles-btn"
-                  isDisabled={!isDirty}
+                  isDisabled={!isValid}
                 >
                   {t("search")}
                 </Button>
