@@ -201,8 +201,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         Optional<ComponentModel> component = getComponentModel();
 
         if (component.isPresent()) {
-            UPConfig cfg = getConfigFromComponentModel(component.get()).clone();
-            return cfg == null ? parsedDefaultRawConfig.clone() : cfg;
+            UPConfig cfg = getConfigFromComponentModel(component.get());
+
+            if (cfg == null) {
+                cfg = parsedDefaultRawConfig;
+            }
+
+            return cfg.clone();
         }
 
         return parsedDefaultRawConfig.clone();
