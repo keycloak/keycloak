@@ -123,6 +123,7 @@ import static org.keycloak.models.utils.RepresentationToModel.createGroups;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 
 /**
  * This wraps the functionality about export/import for the storage.
@@ -142,6 +143,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         callback.setType(MediaType.APPLICATION_JSON);
         callback.writeToOutputStream(outputStream -> {
             RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
+            stripSecrets(session, rep);
             JsonSerialization.writeValueToStream(outputStream, rep);
             outputStream.close();
         });

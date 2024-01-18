@@ -113,7 +113,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        return ModelToRepresentation.toRepresentation(session, realm, this.identityProviderModel);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, this.identityProviderModel));
     }
 
     /**

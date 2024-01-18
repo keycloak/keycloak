@@ -293,7 +293,7 @@ public class ExportImportUtil {
         Assert.assertEquals("google", google.getProviderId());
         Assert.assertTrue(google.isEnabled());
         Assert.assertEquals("googleId", google.getConfig().get("clientId"));
-        Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
+        Assert.assertEquals("**********", google.getConfig().get("clientSecret")); // secret is masked in GET call
 
         //////////////////
         // Test federation providers

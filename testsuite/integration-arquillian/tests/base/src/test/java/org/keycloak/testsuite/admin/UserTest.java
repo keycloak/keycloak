@@ -256,7 +256,7 @@ public class UserTest extends AbstractAdminTest {
     private void updateUser(UserResource user, UserRepresentation userRep) {
         user.update(userRep);
         List<CredentialRepresentation> credentials = userRep.getCredentials();
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), StripSecretsUtils.strip(userRep), ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), StripSecretsUtils.stripSecrets(null, userRep), ResourceType.USER);
         userRep.setCredentials(credentials);
     }
 
