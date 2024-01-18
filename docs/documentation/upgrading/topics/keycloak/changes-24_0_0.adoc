@@ -26,6 +26,38 @@ Images such as the background, logo and favicon are now loaded from the 'common'
 import=common/your-theme-name
 ----
 
+= Changes to the Account Console theme customization
+
+If you were previously extending the now deprecated version 2 of the Account Console theme, you will need to update your theme to use the new version 3 of the Account Console theme. The new version of the Account Console theme comes with some changes in regards to how it is customized. To start with a clean slate, you can follow the new https://github.com/keycloak/keycloak-quickstarts/tree/release/24.0/extension/extend-account-console[customization quickstart].
+
+To move your custom theme start by changing the `parent` to the new theme:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If you have any custom React components, you will import React directly, rather than using a relative path:
+
+[source,js]
+----
+// Before
+import * as React from "../../../../common/keycloak/web_modules/react.js";
+
+// After
+import React from "react";
+----
+
+
+If you are using `content.json` to customize the theme there are some changes to the structure of the file, specifically:
+
+* The `content` property has been renamed to `children`.
+* The `id`, `icon` and `componentName` properties have been removed, as `modulePath` provides the same functionality.
+
 = Keycloak JS imports might need to be updated
 
 If you are loading Keycloak JS directly from the Keycloak server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
