@@ -16,6 +16,8 @@ This {section} describes the general areas of configuration required for a produ
 
 To configure secure communication channels for {project_name}, see <@links.server id="enabletls"/> and <@links.server id="outgoinghttp"/>.
 
+To secure the cache communication for {project_name}, see <@links.server id="caching"/>.
+
 == The hostname for {project_name}
 In a production environment, {project_name} instances usually run in a private network, but {project_name} needs to expose certain public facing endpoints to communicate with the applications to be secured.
 
