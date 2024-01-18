@@ -179,7 +179,7 @@ export const EffectiveMessageBundles = ({
       >
         <FlexItem>
           <TextContent>
-            <Text className="pf-u-mb-md pf-u-mt-sm" component={TextVariants.p}>
+            <Text className="pf-u-mb-md pf-u-mt-0" component={TextVariants.p}>
               {t("effectiveMessageBundlesDescription")}
             </Text>
           </TextContent>
