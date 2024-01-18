@@ -211,7 +211,6 @@ export const EffectiveMessageBundles = ({
                     <Select
                       name="theme"
                       data-testid="effective_message_bundles-theme-searchField"
-                      required
                       chipGroupProps={{
                         numChips: 1,
                         expandedText: t("hide"),
