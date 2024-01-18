@@ -51,10 +51,25 @@ public enum SslRequired {
     private boolean isLocal(String remoteAddress) {
         try {
             InetAddress inetAddress = InetAddress.getByName(remoteAddress);
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress();
+
+            // Check if the IP address is any local address, loopback address, or site-local address
+            boolean isLocal = inetAddress.isAnyLocalAddress() ||
+                              inetAddress.isLoopbackAddress() ||
+                              inetAddress.isSiteLocalAddress();
+
+            // Additionally, check if the IP address is in the 100.64.0.0/10 range
+            boolean isSpecialRange = isInSpecialRange(inetAddress);
+
+            return isLocal || isSpecialRange;
         } catch (UnknownHostException e) {
             return false;
         }
+    }
+
+    private boolean isInSpecialRange(InetAddress inetAddress) {
+        // Check if the IP address falls within the 100.64.0.0/10 range
+        byte[] addressBytes = inetAddress.getAddress();
+        return (addressBytes[0] & 0xFF) == 100 && (addressBytes[1] & 0xC0) == 0x40;
     }
 
 }
