@@ -37,11 +37,7 @@ const ContentComponent = () => {
     [content, componentId],
   );
 
-  return (
-    <Suspense fallback={<Spinner />}>
-      {modulePath && <Component modulePath={modulePath} />}
-    </Suspense>
-  );
+  return modulePath && <Component modulePath={modulePath} />;
 };
 
 type ComponentProps = {
@@ -52,7 +48,11 @@ const Component = ({ modulePath }: ComponentProps) => {
   const Element = lazy(
     () => import(joinPath(environment.resourceUrl, modulePath)),
   );
-  return <Element />;
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Element />
+    </Suspense>
+  );
 };
 
 export default ContentComponent;
