@@ -17,6 +17,7 @@
 
 package org.keycloak.authorization;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -430,6 +431,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public void findResourcePermissionPolicies(ResourceServer resourceServer, Resource resource, Collection<Scope> scopes, String resourceType, boolean resourceServerPolicies, Consumer<Policy> consumer) {
+                policyStore.findResourcePermissionPolicies(resourceServer, resource, scopes, resourceType, resourceServerPolicies, consumer);
+            }
+
+            @Override
             public List<Policy> findByType(ResourceServer resourceServer, String type) {
                 return policyStore.findByType(resourceServer, type);
             }
@@ -440,8 +446,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void findByResourceType(ResourceServer resourceServer, boolean withResourceType, String type, Consumer<Policy> policyConsumer) {
-                policyStore.findByResourceType(resourceServer, withResourceType, type, policyConsumer);
+            public void findByResourceType(ResourceServer resourceServer, boolean nullResourceOnly, String type, Consumer<Policy> policyConsumer) {
+                policyStore.findByResourceType(resourceServer, nullResourceOnly, type, policyConsumer);
             }
         };
     }

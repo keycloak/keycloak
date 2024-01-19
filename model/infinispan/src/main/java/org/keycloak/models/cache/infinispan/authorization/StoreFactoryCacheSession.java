@@ -16,15 +16,7 @@
  */
 package org.keycloak.models.cache.infinispan.authorization;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,29 +35,14 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
-import org.keycloak.models.cache.infinispan.authorization.entities.CachedPermissionTicket;
-import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
-import org.keycloak.models.cache.infinispan.authorization.entities.CachedResource;
-import org.keycloak.models.cache.infinispan.authorization.entities.CachedResourceServer;
-import org.keycloak.models.cache.infinispan.authorization.entities.CachedScope;
-import org.keycloak.models.cache.infinispan.authorization.entities.PermissionTicketListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PermissionTicketQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PermissionTicketResourceListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PermissionTicketScopeListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PolicyListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PolicyQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PolicyResourceListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.PolicyScopeListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.ResourceListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.ResourceQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.ResourceScopeListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.ScopeListQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.*;
 import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketRemovedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PermissionTicketUpdatedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
@@ -983,12 +960,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public void findByResourceType(ResourceServer resourceServer, boolean withResourceType, String resourceType, Consumer<Policy> consumer) {
+        public void findByResourceType(ResourceServer resourceServer, boolean nullResourceOnly, String resourceType, Consumer<Policy> consumer) {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
-            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId, withResourceType);
+            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId, nullResourceOnly);
             cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> {
                         List<Policy> policies = new ArrayList<>();
-                        getPolicyStoreDelegate().findByResourceType(resourceServer, withResourceType, resourceType, new Consumer<Policy>() {
+                        getPolicyStoreDelegate().findByResourceType(resourceServer, nullResourceOnly, resourceType, new Consumer<Policy>() {
                             @Override
                             public void accept(Policy policy) {
                                 consumer.andThen(policies::add)
@@ -1049,6 +1026,153 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
+        public void findResourcePermissionPolicies(ResourceServer resourceServer, Resource resource, Collection<Scope> scopes, String resourceType, boolean resourceServerPolicies, Consumer<Policy> consumer) {
+            String resourceServerId = resourceServer == null ? null : resourceServer.getId();
+            String resourceId = resource == null ? null : resource.getId();
+            scopes = scopes == null ? new HashSet<>() : scopes;
+
+            Set<Policy> cachedTypePolicies = new HashSet<>();
+            Set<Policy> cachedResourcePolicies = new HashSet<>();
+            Map<Scope, Set<Policy>> cachedScopePolicies = new HashMap<>();
+
+            Map<Scope, String> scopeToCacheKey = new HashMap<>();
+            Map<Scope, String> scopeToNullResourceKey = new HashMap<>();
+
+            String resourceTypeCacheKey;
+            String resourceCacheKey;
+
+            // load all relevant cache keys and search the cache for existing entries
+            if (resource != null) {
+                if (resource.getType() != null) {
+                    if(resourceServerPolicies) {
+                        resourceTypeCacheKey = getPolicyByResourceType(resourceType, resourceServerId, false);
+                    } else {
+                        resourceTypeCacheKey = getPolicyByResourceType(resourceType, resourceServerId, true);
+                    }
+                    PolicyResourceListQuery typeQuery = cache.get(resourceTypeCacheKey, PolicyResourceListQuery.class);
+                    if(typeQuery != null) {
+                        cachedTypePolicies = typeQuery.getPolicies().stream().map(id -> findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, id))
+                                .filter(Objects::nonNull).collect(Collectors.toSet());
+                    }
+                } else {
+                    resourceTypeCacheKey = null;
+                }
+                resourceCacheKey = getPolicyByResource(resource.getId(), resourceServerId, true);
+                PolicyResourceListQuery resourceQuery = cache.get(resourceCacheKey, PolicyResourceListQuery.class);
+                if(resourceQuery != null) {
+                    cachedResourcePolicies = resourceQuery.getPolicies().stream().map(id -> findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, id))
+                            .filter(Objects::nonNull).collect(Collectors.toSet());
+                }
+            } else {
+                resourceTypeCacheKey = null;
+                resourceCacheKey = null;
+            }
+
+            // go through our scopes and get the ones for a null resource, we only db query for scopes with no associated resource
+            for (Scope scope : scopes) {
+                String cacheKey = getPolicyByResourceScope(scope.getId(), null, resourceServerId);
+                scopeToCacheKey.put(scope, cacheKey);
+                PolicyScopeListQuery scopeQuery = cache.get(cacheKey, PolicyScopeListQuery.class);
+                if(scopeQuery != null ) {
+                    cachedScopePolicies.put(scope, scopeQuery.getPolicies().stream().map(id -> findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, id))
+                            .filter(Objects::nonNull).collect(Collectors.toSet()));
+                }
+            }
+
+            // we've now checked the cache for our results we should only query for what we don't have
+            Collection<Scope> delegateScopes = new HashSet<>(scopes);
+            delegateScopes.removeAll(cachedScopePolicies.keySet());
+
+            Resource delegateResource;
+            if(cachedResourcePolicies.isEmpty()) {
+                delegateResource = resource;
+            } else {
+                delegateResource = null;
+            }
+
+            String delegateResourceType;
+            if(cachedTypePolicies.isEmpty()) {
+                delegateResourceType = resourceType;
+            } else {
+                delegateResourceType = null;
+            }
+
+            // combine cache results to remove duplicates and process them
+            Set<Policy> policies = cachedScopePolicies.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            policies.addAll(cachedTypePolicies);
+            policies.addAll(cachedResourcePolicies);
+            policies.forEach(consumer);
+
+            // delegate anything that wasn't in the cache to the database, cache the resulting policies
+            List<Policy> delegateResults = new ArrayList<>();
+            if(delegateResourceType != null || delegateResource != null || !delegateScopes.isEmpty()) {
+                getPolicyStoreDelegate().findResourcePermissionPolicies(resourceServer, delegateResource, delegateScopes,
+                        delegateResourceType, resourceServerPolicies,
+                        consumer.andThen(delegateResults::add).andThen(StoreFactoryCacheSession.this::cachePolicy));
+            }
+
+            // build new revisions for the cache
+            Map<String, PolicyListQuery> cacheKeyToRevisions = new HashMap<>();
+            for (Policy delegateResult : delegateResults) {
+                // cache any policy that relates to the resource queried for, will overlap with our type policies and scope policies to cover gaps
+                if(delegateResource != null && delegateResult.getResources().stream().map(Resource::getId).anyMatch(id -> id.equals(delegateResource.getId()))) {
+                    updateResourcePermissionCache(cacheKeyToRevisions, resourceCacheKey, delegateResource.getId(), delegateResult.getId(), resourceServerId);
+                }
+
+                // only cache on scope results when policy has no resources to make sure the cache stays consistent with the results
+                if(delegateResult.getResources().isEmpty()) {
+                    // scopes also should be missing this field to match the db query, this is unexpected but needed to pass existing tests
+                    if(delegateResult.getConfig() == null && delegateResult.getConfig().get("defaultResourceType") == null) {
+                        delegateResult.getScopes().stream().filter(delegateScopes::contains).forEach(scope ->
+                                updateScopePermissionCache(cacheKeyToRevisions, scopeToCacheKey.get(scope), scope.getId(), delegateResult.getId(), resourceServerId)
+                        );
+                    }
+                }
+
+                // cache only the type policies that match the query, but there are two branches
+                if(delegateResourceType != null) {
+                    // this is normal type policy matching on the 'defaultResourceType' field in the config
+                    if(delegateResult.getConfig() != null && delegateResourceType.equals(delegateResult.getConfig().get("defaultResourceType"))) {
+                        updateResourcePermissionCache(cacheKeyToRevisions, resourceTypeCacheKey, delegateResourceType, delegateResult.getId(), resourceServerId);
+                    }
+                    // when resource server policies are enabled then we need to cache any result that has a resource that matches the type
+                    else if(resourceServerPolicies && delegateResult.getResources().stream().anyMatch(policy -> resource.getType().equals(delegateResourceType))) {
+                        updateResourcePermissionCache(cacheKeyToRevisions, resourceTypeCacheKey, delegateResourceType, delegateResult.getId(), resourceServerId);
+                    }
+                }
+            }
+
+            // finally update the cache with our built out revisions
+            cacheKeyToRevisions.forEach((key, value) -> {
+                if (!invalidations.contains(key) && !value.isInvalid(invalidations)) {
+                    cache.addRevisioned(value, startupRevision);
+                }
+            });
+        }
+
+        private void updateResourcePermissionCache(Map<String, PolicyListQuery> cacheUpdate, String cacheKey, String queryId, String policyId, String resourceServerId) {
+            cacheUpdate.compute(cacheKey, (key, value) -> {
+                if(value == null) {
+                    Long loaded = cache.getCurrentRevision(cacheKey);
+                    return new PolicyResourceListQuery(loaded, cacheKey, queryId, policyId, resourceServerId);
+                }
+                value.getPolicies().add(policyId);
+                return value;
+            });
+        }
+
+        private void updateScopePermissionCache(Map<String, PolicyListQuery> cacheUpdate, String cacheKey, String queryId, String policyId, String resourceServerId) {
+            cacheUpdate.compute(cacheKey, (key, value) -> {
+                if(value == null) {
+                    Long loaded = cache.getCurrentRevision(cacheKey);
+                    return new PolicyScopeListQuery(loaded, cacheKey, queryId, policyId, resourceServerId);
+                }
+                value.getPolicies().add(policyId);
+                return value;
+            });
+        }
+
+        @Override
         public List<Policy> findByType(ResourceServer resourceServer, String type) {
             return getPolicyStoreDelegate().findByType(resourceServer, type);
         }
@@ -1076,11 +1200,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 Long loaded = cache.getCurrentRevision(cacheKey);
                 model = resultSupplier.get();
                 if (model == null) return null;
-                if (!invalidations.contains(cacheKey)) {
-                    query = querySupplier.apply(loaded, model);
+
+                query = querySupplier.apply(loaded, model);
+                if (!invalidations.contains(cacheKey) && !query.isInvalid(invalidations)) {
                     cache.addRevisioned(query, startupRevision);
                 }
             } else if (query.isInvalid(invalidations)) {
+                invalidations.add(cacheKey);
                 model = resultSupplier.get();
             } else {
                 cacheResults = false;

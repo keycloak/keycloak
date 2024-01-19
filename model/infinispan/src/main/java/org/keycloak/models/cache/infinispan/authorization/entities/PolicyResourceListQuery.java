@@ -30,6 +30,11 @@ public class PolicyResourceListQuery extends PolicyListQuery implements InResour
         this.resourceId = resourceId;
     }
 
+    public PolicyResourceListQuery(Long revision, String id, String resourceId, String policy, String serverId) {
+        super(revision, id, policy, serverId);
+        this.resourceId = resourceId;
+    }
+
     @Override
     public boolean isInvalid(Set<String> invalidations) {
         return super.isInvalid(invalidations) || invalidations.contains(getResourceId());

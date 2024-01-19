@@ -22,7 +22,7 @@ public class PolicyListQuery extends AbstractRevisioned implements PolicyQuery {
     public PolicyListQuery(Long revision, String id, Set<String> policies, String serverId) {
         super(revision, id);
         this.serverId = serverId;
-        this.policies = policies;
+        this.policies = policies == null ? new HashSet<>() : policies;
     }
 
     @Override

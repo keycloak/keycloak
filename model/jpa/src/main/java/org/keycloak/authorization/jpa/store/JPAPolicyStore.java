@@ -16,23 +16,12 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.FlushModeType;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.*;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
@@ -42,10 +31,11 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
-import jakarta.persistence.LockModeType;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -229,14 +219,13 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResourceType(ResourceServer resourceServer, boolean withResourceTypeSet, String resourceType, Consumer<Policy> consumer) {
+    public void findByResourceType(ResourceServer resourceServer, boolean nullResourceOnly, String resourceType, Consumer<Policy> consumer) {
         TypedQuery<PolicyEntity> query;
-        if(withResourceTypeSet) {
-            query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
-        } else {
+        if(nullResourceOnly) {
             query = entityManager.createNamedQuery("findPolicyIdByNullResourceType", PolicyEntity.class);
+        } else {
+            query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
         }
-
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", resourceType);
@@ -294,6 +283,80 @@ public class JPAPolicyStore implements PolicyStore {
                 .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
+
+    @Override
+    public void findResourcePermissionPolicies(ResourceServer resourceServer, Resource resource, Collection<Scope> scopes, String resourceType, boolean resourceServerPolicies, Consumer<Policy> consumer) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<PolicyEntity> policyQuery = cb.createQuery(PolicyEntity.class);
+        Root<PolicyEntity> root = policyQuery.from(PolicyEntity.class);
+
+        // eager load resources and scopes because we'll be needing them
+        // avoids N+1 loading on each and every entity
+        root.fetch("resources", JoinType.LEFT);
+        root.fetch("scopes", JoinType.LEFT);
+        MapJoin<PolicyEntity, String, String> policyConfigJoin = root.joinMap("config", JoinType.LEFT);
+
+        List<Predicate> predicates = new LinkedList<>();
+
+        // selection on resource id provided. Will also naturally overlap with scopes and types needed
+        if(resource != null) {
+            predicates.add(cb.equal(root.get("resources").get("id"), resource.getId()));
+        }
+
+        if (StringUtil.isNotBlank(resourceType)) {
+            List<Predicate> typePredicates = new LinkedList<>();
+
+            // when this feature is enabled we should also get the policies from other resources on the server that match the resource type
+            if(resourceServerPolicies) {
+                // only applies to resources on the same resource server that are owned by the resource server and match the type
+                Predicate basePredicate = cb.and(
+                        cb.like(root.get("resources").get("type"), resourceType),
+                        cb.equal(root.get("resources").get("resourceServer"), resourceServer.getId()),
+                        cb.equal(root.get("resources").get("owner"), resourceServer.getClientId())
+                );
+
+                // if we have a resource then don't duplicate those results, only get policies from other resources
+                if(resource != null) {
+                    basePredicate = cb.and(basePredicate, cb.notEqual(root.get("resources").get("id"), resource.getId()));
+                }
+                typePredicates.add(basePredicate);
+            }
+
+            // always get policies that match the resource type with no resource entries
+            typePredicates.add(cb.and(
+                    cb.isEmpty(root.get("resources")),
+                    cb.equal(policyConfigJoin.key(), "defaultResourceType"),
+                    cb.like(policyConfigJoin.value(), resourceType)
+            ));
+
+            predicates.add(cb.or(typePredicates.toArray(new Predicate[0])));
+        }
+
+        // selection on scope ids with no resource
+        if (CollectionUtil.isNotEmpty(scopes)) {
+            Predicate baseScopePredicate = root.get("scopes").get("id").in(scopes.stream().map(Scope::getId).collect(Collectors.toList()));
+            baseScopePredicate = cb.and(
+                    baseScopePredicate,
+                    cb.isEmpty(root.get("resources")),
+                    cb.or(
+                            cb.isEmpty(root.get("config")),
+                            cb.notEqual(policyConfigJoin.key(), "defaultResourceType")
+                    )
+            );
+            predicates.add(baseScopePredicate);
+        }
+
+
+
+        // by or'ing our predicates together we select all relevant policies for the resource permission
+        CriteriaQuery<PolicyEntity> finalQuery = policyQuery.where(cb.and(cb.equal(root.get("resourceServer").get("id"), resourceServer.getId()), cb.or(predicates.toArray(new Predicate[0]))));
+        TypedQuery<PolicyEntity> query = entityManager.createQuery(finalQuery);
+
+        query.getResultStream()
+                .map(policy -> new PolicyAdapter(policy, entityManager, provider.getStoreFactory()))
+                .forEach(consumer);
+    }
+
 
     @Override
     public List<Policy> findByType(ResourceServer resourceServer, String type) {

@@ -93,7 +93,7 @@ public class PolicyEntity {
     @Column(name = "LOGIC")
     private Logic logic = Logic.POSITIVE;
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "NAME")
     @Column(name = "VALUE", columnDefinition = "TEXT")
     @CollectionTable(name = "POLICY_CONFIG", joinColumns = {@JoinColumn(name = "POLICY_ID")})

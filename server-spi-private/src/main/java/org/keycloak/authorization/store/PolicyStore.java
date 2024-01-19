@@ -17,6 +17,7 @@
 package org.keycloak.authorization.store;
 
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +144,7 @@ public interface PolicyStore {
      * @param type the type of a resource
      * @param policyConsumer consumer of policies resulted from the search
      */
-    void findByResourceType(ResourceServer resourceServer, boolean withResourceType, String type, Consumer<Policy> policyConsumer);
+    void findByResourceType(ResourceServer resourceServer, boolean nullResourceOnly, String type, Consumer<Policy> policyConsumer);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Scope} within the given <code>scope</code>.
@@ -176,6 +177,16 @@ public interface PolicyStore {
      *
      */
     void findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes, Consumer<Policy> consumer);
+
+    /**
+     * Takes a resource and scopes for constructing a matching OR query for all information provided
+     * in a single transaction.
+     * @param resourceServer the resource server where the policies are stored
+     * @param resource the resource to be queried
+     * @param scopes the scopes to be queried
+     * @param consumer the consumer to handle the results
+     */
+    void findResourcePermissionPolicies(ResourceServer resourceServer, Resource resource, Collection<Scope> scopes, String resourceType, boolean resourceServerPolicies, Consumer<Policy> consumer);
 
     /**
      * Returns a list of {@link Policy} with the given <code>type</code>.
