@@ -13,9 +13,12 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  Text,
+  TextContent,
+  TextVariants,
 } from "@patternfly/react-core";
 import { pickBy } from "lodash-es";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { adminClient } from "../../admin-client";
@@ -27,6 +30,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -53,6 +57,7 @@ export const EffectiveMessageBundles = ({
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [selectThemesOpen, setSelectThemesOpen] = useState(false);
@@ -61,15 +66,29 @@ export const EffectiveMessageBundles = ({
   const [activeFilters, setActiveFilters] = useState<
     Partial<EffectiveMessageBundlesSearchForm>
   >({});
-  const themes = serverInfo.themes;
-  const themeKeys = themes
-    ? Object.keys(themes).sort((a, b) => a.localeCompare(b))
-    : [];
-  const themeTypes = Object.values(themes!)
-    .flatMap((theme) => theme.map((item) => item.name))
-    .filter((value, index, self) => self.indexOf(value) === index)
-    .sort((a, b) => a.localeCompare(b));
   const [key, setKey] = useState(0);
+  const themes = serverInfo.themes;
+
+  const themeTypes = useMemo(() => {
+    if (!themes) {
+      return [];
+    }
+
+    return localeSort(Object.keys(themes), (key) => key);
+  }, [themes]);
+
+  const themeNames = useMemo(() => {
+    if (!themes) {
+      return [];
+    }
+
+    return localeSort(
+      Object.values(themes)
+        .flatMap((theme) => theme.map((item) => item.name))
+        .filter((value, index, self) => self.indexOf(value) === index),
+      (name) => name,
+    );
+  }, [themes]);
 
   const filterLabels: Record<keyof EffectiveMessageBundlesSearchForm, string> =
     {
@@ -82,7 +101,7 @@ export const EffectiveMessageBundles = ({
   const {
     getValues,
     reset,
-    formState: { isDirty },
+    formState: { isDirty, isValid },
     control,
   } = useForm<EffectiveMessageBundlesSearchForm>({
     mode: "onChange",
@@ -101,11 +120,18 @@ export const EffectiveMessageBundles = ({
         },
       );
 
-      return filter.hasWords.length > 0
-        ? messages.filter((m) =>
-            filter.hasWords.some((f) => m.value.includes(f)),
-          )
-        : messages;
+      const filteredMessages =
+        filter.hasWords.length > 0
+          ? messages.filter((m) =>
+              filter.hasWords.some(
+                (f) => m.value.includes(f) || m.key.includes(f),
+              ),
+            )
+          : messages;
+
+      const sortedMessages = localeSort([...filteredMessages], mapByKey("key"));
+
+      return sortedMessages;
     } catch (error) {
       return [];
     }
@@ -160,6 +186,13 @@ export const EffectiveMessageBundles = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
+          <TextContent>
+            <Text className="pf-u-mb-md pf-u-mt-0" component={TextVariants.p}>
+              {t("effectiveMessageBundlesDescription")}
+            </Text>
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
           <Dropdown
             id="effective-message-bundles-search-select"
             data-testid="EffectiveMessageBundlesSearchSelector"
@@ -175,13 +208,16 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-c-form pf-u-mx-lg pf-u-mb-lg"
+              className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
             >
-              <FormGroup label={t("theme")} fieldId="kc-theme">
+              <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
                   name="theme"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="theme"
@@ -227,7 +263,7 @@ export const EffectiveMessageBundles = ({
                           isDisabled
                         />,
                       ].concat(
-                        themeKeys.map((option) => (
+                        themeNames.map((option) => (
                           <SelectOption key={option} value={option} />
                         )),
                       )}
@@ -235,10 +271,17 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup label={t("themeType")} fieldId="kc-themeType">
+              <FormGroup
+                label={t("themeType")}
+                fieldId="kc-themeType"
+                isRequired
+              >
                 <Controller
                   name="themeType"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="themeType"
@@ -292,10 +335,13 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <FormGroup label={t("language")} fieldId="kc-language">
+              <FormGroup label={t("language")} fieldId="kc-language" isRequired>
                 <Controller
                   name="locale"
                   control={control}
+                  rules={{
+                    validate: (value) => (value || "").length > 0,
+                  }}
                   render={({ field }) => (
                     <Select
                       name="language"
@@ -402,7 +448,7 @@ export const EffectiveMessageBundles = ({
                     submitSearch();
                   }}
                   data-testid="search-effective-message-bundles-btn"
-                  isDisabled={!isDirty}
+                  isDisabled={!isValid}
                 >
                   {t("search")}
                 </Button>
@@ -417,6 +463,14 @@ export const EffectiveMessageBundles = ({
               </ActionGroup>
             </Form>
           </Dropdown>
+          <Button
+            variant="primary"
+            className="pf-u-ml-md"
+            onClick={() => submitSearch()}
+            data-testid="refresh-effective-message-bundles-btn"
+          >
+            {t("refresh")}
+          </Button>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
