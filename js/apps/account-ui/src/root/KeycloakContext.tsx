@@ -1,3 +1,4 @@
+import { Spinner } from "@patternfly/react-core";
 import Keycloak from "keycloak-js";
 import {
   PropsWithChildren,
@@ -5,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
+  useState,
 } from "react";
-import { Environment } from "../environment";
 import { AlertProvider, Help } from "ui-shared";
+import { Environment } from "../environment";
 
 export type KeycloakContext = KeycloakContextProps & {
   keycloak: Keycloak;
@@ -34,6 +37,8 @@ export const KeycloakProvider = ({
   environment,
   children,
 }: PropsWithChildren<KeycloakContextProps>) => {
+  const calledOnce = useRef(false);
+  const [init, setInit] = useState(false);
   const keycloak = useMemo(
     () =>
       new Keycloak({
@@ -45,12 +50,22 @@ export const KeycloakProvider = ({
   );
 
   useEffect(() => {
-    (() =>
-      keycloak.init({
+    // only needed in dev mode
+    if (calledOnce.current) {
+      return;
+    }
+    const init = () => {
+      return keycloak.init({
         onLoad: "check-sso",
         pkceMethod: "S256",
-      }))();
-  }, [keycloak]);
+        responseMode: "query",
+      });
+    };
+    init().then(() => setInit(true));
+    calledOnce.current = true;
+  }, []);
+
+  if (!init) return <Spinner />;
 
   return (
     <KeycloakEnvContext.Provider value={{ environment, keycloak }}>
