@@ -76,6 +76,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={loginThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-login-theme"
+                aria-label={t("selectLoginTheme")}
               >
                 {themeTypes.login.map((theme, idx) => (
                   <SelectOption
@@ -114,7 +115,7 @@ export const RealmSettingsThemesTab = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
-                aria-label={t("accountTheme")}
+                aria-label={t("selectAccountTheme")}
                 isOpen={accountThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-account-theme"
@@ -161,6 +162,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={adminUIThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-admin-theme"
+                aria-label="selectAdminTheme"
               >
                 {themeTypes.admin
                   .filter((theme) => theme.name !== "base")
@@ -204,6 +206,7 @@ export const RealmSettingsThemesTab = ({
                 isOpen={emailThemeOpen}
                 placeholderText={t("selectATheme")}
                 data-testid="select-email-theme"
+                aria-label={t("selectEmailTheme")}
               >
                 {themeTypes.email.map((theme, idx) => (
                   <SelectOption
