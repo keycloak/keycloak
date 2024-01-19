@@ -11,6 +11,7 @@ import {
   Select,
   SelectOption,
   SelectProps,
+  SelectVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { FormLabel } from "./FormLabel";
@@ -89,10 +90,14 @@ export const SelectControl = <
                 setOpen(false);
               }
             }}
-            onClear={(event) => {
-              event.stopPropagation();
-              onChange([]);
-            }}
+            onClear={
+              variant !== SelectVariant.single
+                ? (event) => {
+                    event.stopPropagation();
+                    onChange([]);
+                  }
+                : undefined
+            }
             isOpen={open}
             variant={variant}
             validated={
