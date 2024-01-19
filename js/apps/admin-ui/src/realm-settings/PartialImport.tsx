@@ -339,7 +339,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
                     typeAheadAriaLabel={t("realmSelector")}
-                    aria-labelledby={"realmSelector"}
+                    aria-label={"realmSelector"}
                     onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
                     onSelect={(_, value) => handleRealmSelect(value)}
                     placeholderText={targetRealm.realm || targetRealm.id}
