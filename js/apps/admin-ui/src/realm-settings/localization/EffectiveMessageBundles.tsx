@@ -74,10 +74,7 @@ export const EffectiveMessageBundles = ({
       return [];
     }
 
-    return localeSort(
-      Object.keys(themes).filter((key) => key !== "common"),
-      (key) => key,
-    );
+    return localeSort(Object.keys(themes), (key) => key);
   }, [themes]);
 
   const themeNames = useMemo(() => {
