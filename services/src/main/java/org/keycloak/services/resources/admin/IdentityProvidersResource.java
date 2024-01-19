@@ -41,7 +41,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.BadRequestException;
@@ -55,6 +54,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Comparator;
@@ -150,8 +151,8 @@ public class IdentityProvidersResource {
             throw new BadRequestException();
         }
         
-        ReservedCharValidator.validate((String)data.get("alias"));
-        
+        HttpUrlPathSegmentSafeCharValidator.validate((String)data.get("alias"));
+
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -239,8 +240,8 @@ public class IdentityProvidersResource {
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
-        ReservedCharValidator.validate(representation.getAlias());
-        
+        HttpUrlPathSegmentSafeCharValidator.validate(representation.getAlias());
+
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);

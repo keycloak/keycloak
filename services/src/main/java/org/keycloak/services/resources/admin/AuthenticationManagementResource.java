@@ -40,7 +40,6 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -88,7 +87,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
-import org.keycloak.utils.ReservedCharValidator;
+
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
 
 /**
  * @resource Authentication Management
@@ -238,8 +238,9 @@ public class AuthenticationManagementResource {
         if(Objects.isNull(flow.getDescription())) {
             flow.setDescription("");
         }
-        
-        ReservedCharValidator.validate(flow.getAlias());
+
+        // flow alias is used in some url paths. E.g. POST /admin/realms/{realm}/authentication/flows/{flowAlias}/executions/execution
+        HttpUrlPathSegmentSafeCharValidator.validate(flow.getAlias());
 
         AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
 
@@ -292,7 +293,8 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Failed to update flow with empty alias name");
         }
 
-        ReservedCharValidator.validate(flow.getAlias());
+        // flow alias is used in some url paths. E.g. POST /admin/realms/{realm}/authentication/flows/{flowAlias}/executions/execution
+        HttpUrlPathSegmentSafeCharValidator.validate(flow.getAlias());
 
         //check if updating a correct flow
         AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(id);
@@ -968,7 +970,7 @@ public class AuthenticationManagementResource {
     public Response newExecutionConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "JSON with new configuration") AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
         
-        ReservedCharValidator.validate(json.getAlias());
+        HttpUrlPathSegmentSafeCharValidator.validate(json.getAlias());
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
@@ -1057,6 +1059,9 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String providerId = data.get("providerId");
+        // providerId is used as alias, which is used as a url parameter
+        HttpUrlPathSegmentSafeCharValidator.validate(providerId);
+
         String name = data.get("name");
         RequiredActionProviderModel requiredAction = new RequiredActionProviderModel();
         requiredAction.setAlias(providerId);
@@ -1329,7 +1334,7 @@ public class AuthenticationManagementResource {
     public Response createAuthenticatorConfig(@Parameter(description = "JSON describing new authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 
-        ReservedCharValidator.validate(rep.getAlias());
+        HttpUrlPathSegmentSafeCharValidator.validate(rep.getAlias());
         
         AuthenticatorConfigModel config = realm.addAuthenticatorConfig(RepresentationToModel.toModel(rep));
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri(), config.getId()).representation(rep).success();
@@ -1400,7 +1405,7 @@ public class AuthenticationManagementResource {
     public void updateAuthenticatorConfig(@Parameter(description = "Configuration id") @PathParam("id") String id, @Parameter(description = "JSON describing new state of authenticator configuration") AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 
-        ReservedCharValidator.validate(rep.getAlias());
+        HttpUrlPathSegmentSafeCharValidator.validate(rep.getAlias());
         if (new DeployedConfigurationsManager(session).getDeployedAuthenticatorConfig(id) != null) {
             throw new BadRequestException("Authenticator config is read-only");
         }

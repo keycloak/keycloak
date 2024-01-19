@@ -75,7 +75,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
-import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
 import jakarta.ws.rs.Consumes;
@@ -631,7 +631,7 @@ public class ClientResource {
             throw new BadRequestException("Node not found in params");
         }
 
-        ReservedCharValidator.validate(node);
+        HttpUrlPathSegmentSafeCharValidator.validate(node);
 
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());

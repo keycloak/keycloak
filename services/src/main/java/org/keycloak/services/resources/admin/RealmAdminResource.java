@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -118,9 +117,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.LegacyStoreSyncEvent;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.utils.ProfileHelper;
-import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -420,8 +418,8 @@ public class RealmAdminResource {
             throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
         
-        ReservedCharValidator.validate(rep.getRealm());
-        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+        HttpUrlPathSegmentSafeCharValidator.validate(rep.getRealm());
+        HttpUrlPathSegmentSafeCharValidator.validate(rep.getSupportedLocales());
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {

@@ -218,6 +218,8 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-re;alm");
         assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
+        rep.setRealm("new realm");
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
         rep.setRealm("");
         assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
     }
@@ -470,7 +472,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setRealm("");
         assertThrows(BadRequestException.class, () -> realm.update(rep));
     }
-    
+
     @Test
     public void updateRealm() {
         // first change

@@ -61,8 +61,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import org.keycloak.utils.ReservedCharValidator;
+
 import org.keycloak.utils.StringUtil;
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
 
 /**
  * Per request object
@@ -109,9 +110,9 @@ public class RealmManager {
             id = KeycloakModelUtils.generateId();
         }
         else {
-            ReservedCharValidator.validate(id);
+            HttpUrlPathSegmentSafeCharValidator.validate(id);
         }
-        ReservedCharValidator.validate(name);
+        HttpUrlPathSegmentSafeCharValidator.validate(name);
         RealmModel realm = model.createRealm(id, name);
         realm.setName(name);
 
@@ -515,7 +516,7 @@ public class RealmManager {
         if (id == null || id.trim().isEmpty()) {
             id = KeycloakModelUtils.generateId();
         } else {
-            ReservedCharValidator.validate(id);
+            HttpUrlPathSegmentSafeCharValidator.validate(id);
         }
         if (StringUtil.isBlank(rep.getRealm())) {
             throw new ModelException("Realm name cannot be empty");
@@ -526,7 +527,7 @@ public class RealmManager {
 
         try {
             session.getContext().setRealm(realm);
-            ReservedCharValidator.validate(rep.getRealm());
+            HttpUrlPathSegmentSafeCharValidator.validate(rep.getRealm());
             realm.setName(rep.getRealm());
 
             // setup defaults

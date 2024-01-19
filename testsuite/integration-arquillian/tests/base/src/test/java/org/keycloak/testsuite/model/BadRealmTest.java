@@ -6,7 +6,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.HttpUrlPathSegmentSafeCharValidator;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class BadRealmTest extends AbstractKeycloakTest {
         try {
             manager.createRealm(id, name + script);
             fail();
-        } catch (ReservedCharValidator.ReservedCharException ex) {}
+        } catch (HttpUrlPathSegmentSafeCharValidator.UrlSafeCharException ex) {}
     }
 
     @Test
@@ -37,6 +37,6 @@ public class BadRealmTest extends AbstractKeycloakTest {
         try {
             manager.createRealm(id + script, name);
             fail();
-        } catch (ReservedCharValidator.ReservedCharException ex) {}
+        } catch (HttpUrlPathSegmentSafeCharValidator.UrlSafeCharException ex) {}
     }
 }
