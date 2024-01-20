@@ -190,6 +190,7 @@ public class WelcomeResource {
             }
 
             Map<String, Object> map = new HashMap<>();
+            String commonPath = themeProperties.getProperty("common", "common/keycloak");
 
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
@@ -198,7 +199,7 @@ public class WelcomeResource {
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
-            map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
+            map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/" + commonPath);
 
             boolean isLocal = isLocal();
             map.put("localUser", isLocal);
