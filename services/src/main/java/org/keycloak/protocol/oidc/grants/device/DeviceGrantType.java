@@ -21,6 +21,7 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocolService.tokenServiceBa
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -37,11 +38,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.device.clientpolicy.context.DeviceTokenResponseContext;
@@ -63,7 +66,6 @@ import jakarta.ws.rs.core.UriInfo;
 
 import java.net.URI;
 import java.util.Map;
-import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 
 /**
  * OAuth 2.0 Device Authorization Grant
@@ -72,7 +74,7 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  * @author <a href="mailto:michito.okai.zn@hitachi.com">Michito Okai</a>
  */
-public class DeviceGrantType extends OAuth2GrantTypeBase {
+public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_ID = "device_code";
 
@@ -354,6 +356,11 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
     @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new DeviceGrantType();
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW);
     }
 
     @Override
