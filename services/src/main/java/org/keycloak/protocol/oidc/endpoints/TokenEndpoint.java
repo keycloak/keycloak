@@ -23,7 +23,6 @@ import org.keycloak.http.HttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -219,12 +218,6 @@ public class TokenEndpoint {
         grant = OAuth2GrantManager.resolve(session, grantType).orElseThrow(() -> newUnsupportedGrantTypeException());
 
         event.event(grant.getEventType());
-
-        if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)
-                && !Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
-            throw newUnsupportedGrantTypeException();
-        }
-
         event.detail(Details.GRANT_TYPE, grantType);
     }
 
