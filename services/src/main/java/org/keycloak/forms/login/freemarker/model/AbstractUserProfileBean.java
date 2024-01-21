@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,6 +77,13 @@ public abstract class AbstractUserProfileBean {
      */
     public List<Attribute> getAttributes() {
         return attributes;
+    }
+
+    public Map<String, Object> getHtml5DataAnnotations() {
+        return getAttributes().stream().map(Attribute::getHtml5DataAnnotations)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (l, r) -> l));
     }
     
     /**
@@ -166,6 +174,11 @@ public abstract class AbstractUserProfileBean {
             }
 
             return annotations;
+        }
+
+        public Map<String, Object> getHtml5DataAnnotations() {
+            return getAnnotations().entrySet().stream()
+                    .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
       
         /**
