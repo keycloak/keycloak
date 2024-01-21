@@ -77,6 +77,14 @@ export const AttributeAnnotations = () => {
                   key: "inputTypeStep",
                   label: t("inputTypeStep"),
                 },
+                {
+                  key: "kcNumberFormat",
+                  label: t("kcNumberFormat"),
+                },
+                {
+                  key: "kcNumberUnFormat",
+                  label: t("kcNumberUnFormat"),
+                },
               ]}
             />
           </GridItem>

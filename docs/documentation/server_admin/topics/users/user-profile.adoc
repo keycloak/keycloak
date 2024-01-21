@@ -536,6 +536,16 @@ Useful for numeric fields.
 |inputTypeStep
 |HTML input `step` attribute applied to the field - Specifies the interval between legal numbers in an input field. Useful for numeric fields.
 
+|Number Format
+|If set, the `data-kcNumberFormat` attribute is added to the field to format the value based on a given format. This annotation is targeted for numbers where the format is based on the
+number of digits expected in a determined position. For instance, a format `(\{2}) \{5}-\{4}` will format the field value to `(00) 00000-0000`.
+
+|Number UnFormat
+|If set, the `data-kcNumberUnFormat` attribute is added to the field to format the value based on a given format before submitting the form. This annotation
+is useful if you do not want to store any format for a specific attribute but only format the value on the client side. For instance, if the current value
+is `(00) 00000-0000`, the value will change to `00000000000` if you set the value `\{11}` to this annotation or any other format you want by specifying a set of one or ore group of digits.
+Make sure to add validators to perform server-side validations before storing values.
+
 |===
 
 [NOTE]
@@ -710,6 +720,15 @@ provided by built-in `options` validation.
 .Options provided by custom validator
 image:images/user-profile-select-options-custom-validator.png[]
 
+[[_adding-custom-html5-data-attributes]]
+==== Adding Custom HTML5 Data Attributes
+
+You can enable additional client-side behavior by using `kc*` annotations. These annotations are going to be added
+automatically to a field as a HTML5 attribute prefixed with `data-` and a script with the same will be loaded to the dynamic pages.
+
+For instance, if you add a `kcMyCustomValidation` annotation to a field, the dynamic pages will add a `data-kcMyCustomValidation` HTML5 attribute
+to the field and load a JS script file from `<THEME TYPE>/resources/js/kcMyCustomValidation.js`. See the {developerguide_link}[{developerguide_name}] for more information about
+how to deploy a custom JS script file to your theme.
 
 == Forcing User Profile compliance
 
