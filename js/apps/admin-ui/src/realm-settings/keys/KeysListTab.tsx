@@ -67,6 +67,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
         toggleFilter();
       }}
       selections={filterType}
+      aria-label={t("selectFilterType")}
     >
       {FILTER_OPTIONS.map((option) => (
         <SelectOption

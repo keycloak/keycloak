@@ -84,6 +84,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
             controller={{ defaultValue: flowKeys[0] }}
             variant={SelectVariant.single}
             menuAppendTo="parent"
+            aria-label={t("chooseBindingType")}
           />
         </FormProvider>
       </Form>

@@ -491,10 +491,10 @@ export const RealmOverrides = ({
                         {editStates[rowIndex] ? (
                           <>
                             <KeycloakTextInput
-                              aria-label={t("editUserLabel")}
+                              aria-label={t("editTranslationValue")}
                               type="text"
                               className="pf-u-w-initial"
-                              data-testid={`editUserLabelInput-${rowIndex}`}
+                              data-testid={`editTranslationValueInput-${rowIndex}`}
                               value={formValue}
                               onChange={(
                                 event: ChangeEvent<HTMLInputElement>,
@@ -506,15 +506,17 @@ export const RealmOverrides = ({
                             <Button
                               variant="link"
                               className="pf-m-plain"
-                              data-testid={`editUserLabelAcceptBtn-${rowIndex}`}
+                              data-testid={`editTranslationAcceptBtn-${rowIndex}`}
                               type="submit"
+                              aria-label={t("acceptBtn")}
                               icon={<CheckIcon />}
                             />
                             <Button
                               variant="link"
                               className="pf-m-plain"
-                              data-testid={`editUserLabelCancelBtn-${rowIndex}`}
+                              data-testid={`editTranslationCancelBtn-${rowIndex}`}
                               icon={<TimesIcon />}
+                              aria-label={t("cancelBtn")}
                               onClick={() => {
                                 setEditStates((prevEditStates) => ({
                                   ...prevEditStates,
@@ -540,10 +542,10 @@ export const RealmOverrides = ({
                                 }));
                               }}
                               key={`edit-button-${rowIndex}`}
-                              aria-label={t("editUserLabel")}
+                              aria-label={t("editBtn")}
                               variant="link"
                               className="pf-m-plain"
-                              data-testid={`editUserLabelBtn-${rowIndex}`}
+                              data-testid={`editTranslationBtn-${rowIndex}`}
                             >
                               <PencilAltIcon />
                             </Button>
