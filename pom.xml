@@ -303,6 +303,7 @@
         <module>misc</module>
         <module>js</module>
         <module>quarkus</module>
+        <module>operator</module>
     </modules>
 
     <dependencyManagement>

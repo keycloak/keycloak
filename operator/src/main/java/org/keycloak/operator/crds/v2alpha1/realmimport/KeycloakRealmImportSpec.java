@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Required;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.List;
+
 public class KeycloakRealmImportSpec {
 
     @Required
@@ -28,6 +30,9 @@ public class KeycloakRealmImportSpec {
     @Required
     @JsonPropertyDescription("The RealmRepresentation to import into Keycloak.")
     private RealmRepresentation realm;
+
+    @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
+    private List<PlaceholderSecret> placeholders;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -45,4 +50,11 @@ public class KeycloakRealmImportSpec {
         this.realm = realm;
     }
 
+    public List<PlaceholderSecret> getPlaceholders() {
+        return placeholders;
+    }
+
+    public void setPlaceholders(List<PlaceholderSecret> placeholders) {
+        this.placeholders = placeholders;
+    }
 }

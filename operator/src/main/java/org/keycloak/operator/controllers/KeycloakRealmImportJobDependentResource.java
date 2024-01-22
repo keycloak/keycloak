@@ -36,6 +36,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.PlaceholderSecret;
 
 import java.util.List;
 import java.util.Set;
@@ -53,6 +54,8 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
     @Override
     protected Job desired(KeycloakRealmImport primary, Context<KeycloakRealmImport> context) {
         StatefulSet existingDeployment = context.managedDependentResourceContext().get(StatefulSet.class, StatefulSet.class).orElseThrow();
+        List<PlaceholderSecret> placeholders = primary.getSpec().getPlaceholders();
+        boolean replacePlaceholders = (placeholders != null && !placeholders.isEmpty());
 
         var keycloakPodTemplate = existingDeployment
                 .getSpec()
@@ -61,7 +64,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         String secretName = KeycloakRealmImportSecretDependentResource.getSecretName(primary);
         String volumeName = KubernetesResourceUtil.sanitizeName(secretName + "-volume");
 
-        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), volumeName, primary.getRealmName());
+        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), volumeName, primary.getRealmName(), replacePlaceholders);
         keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume(volumeName, secretName));
 
         var labels = keycloakPodTemplate.getMetadata().getLabels();
@@ -85,6 +88,22 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
         // The Job doesn't need health to be enabled
         envvars.add(new EnvVarBuilder().withName(healthEnvVarName).withValue("false").build());
+
+        if (replacePlaceholders) {
+            for (PlaceholderSecret secret : primary.getSpec().getPlaceholders()) {
+                envvars.add(
+                    new EnvVarBuilder()
+                        .withName(secret.getName())
+                        .withNewValueFrom()
+                        .withNewSecretKeyRef()
+                        .withName(secret.getSecret().getName())
+                        .withKey(secret.getSecret().getKey())
+                        .withOptional(false)
+                        .endSecretKeyRef()
+                        .endValueFrom()
+                        .build());
+            }
+        }
 
         return buildJob(keycloakPodTemplate, primary);
     }
@@ -114,7 +133,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .build();
     }
 
-    private void buildKeycloakJobContainer(Container keycloakContainer, String volumeName, String realmName) {
+    private void buildKeycloakJobContainer(Container keycloakContainer, String volumeName, String realmName, boolean replacePlaceholders) {
         var importMntPath = "/mnt/realm-import/";
 
         var command = List.of("/bin/bash");
@@ -123,8 +142,10 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
+        var replaceOption = (replacePlaceholders) ? " -Dkeycloak.migration.replace-placeholders=true": "";
+
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh" + replaceOption + " --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
 
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);
