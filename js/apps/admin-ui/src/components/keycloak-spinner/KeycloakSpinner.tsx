@@ -6,7 +6,7 @@ export const KeycloakSpinner = () => {
 
   return (
     <Bullseye>
-      <Spinner aria-label={t("keycloakSpinner")} />
+      <Spinner aria-label={t("spinnerLoading")} />
     </Bullseye>
   );
 };
