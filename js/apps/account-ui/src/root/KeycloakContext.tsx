@@ -63,7 +63,7 @@ export const KeycloakProvider = ({
     };
     init().then(() => setInit(true));
     calledOnce.current = true;
-  }, []);
+  }, [keycloak]);
 
   if (!init) return <Spinner />;
 
