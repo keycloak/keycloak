@@ -251,7 +251,10 @@ export default function ResourceDetails() {
               label={t("type")}
               fieldId="type"
               labelIcon={
-                <HelpItem helpText={t("typeHelp")} fieldLabelId="type" />
+                <HelpItem
+                  helpText={t("resourceDetailsTypeHelp")}
+                  fieldLabelId="type"
+                />
               }
             >
               <KeycloakTextInput id="type" {...register("type")} />
