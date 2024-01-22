@@ -129,6 +129,7 @@ export default function PermissionDetails() {
           { id, type: permissionType },
           permission,
         );
+        setPermission(result);
         navigate(
           toPermissionDetails({
             realm,
