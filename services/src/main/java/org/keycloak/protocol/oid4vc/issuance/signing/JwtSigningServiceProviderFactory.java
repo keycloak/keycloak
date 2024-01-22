@@ -11,6 +11,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 
 /**
+ * Provider Factory to create {@link  JwtSigningService}s
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class JwtSigningServiceProviderFactory implements VCSigningServiceProviderFactory {

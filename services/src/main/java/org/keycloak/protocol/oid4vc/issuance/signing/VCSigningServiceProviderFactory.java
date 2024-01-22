@@ -16,6 +16,8 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import java.time.Clock;
 
 /**
+ * Provider Factory to create {@link  VerifiableCredentialsSigningService}s
+ *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService>, EnvironmentDependentProviderFactory {

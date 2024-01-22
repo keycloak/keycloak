@@ -12,6 +12,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 
 /**
+ * Provider Factory to create {@link  LDSigningService}s
+ *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class LDSigningServiceProviderFactory implements VCSigningServiceProviderFactory {
