@@ -307,6 +307,7 @@ export default function LdapMapperDetails() {
                     }}
                     selections={field.value}
                     variant={SelectVariant.typeahead}
+                    aria-label={t("selectMapperType")}
                   >
                     {components.map((c) => (
                       <SelectOption key={c.id} value={c.id} />

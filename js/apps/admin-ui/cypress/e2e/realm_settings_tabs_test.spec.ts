@@ -243,12 +243,15 @@ describe("Realm settings tabs tests", () => {
 
       addBundle();
 
-      cy.findByTestId("editUserLabelBtn-0").click();
-      cy.findByTestId("editUserLabelCancelBtn-0").click();
+      cy.findByTestId("editTranslationBtn-0").click();
+      cy.findByTestId("editTranslationCancelBtn-0").click();
 
-      cy.findByTestId("editUserLabelBtn-0").click();
-      cy.findByTestId("editUserLabelInput-0").click().clear().type("def");
-      cy.findByTestId("editUserLabelAcceptBtn-0").click();
+      cy.findByTestId("editTranslationBtn-0").click();
+      cy.findByTestId("editTranslationValueInput-0")
+        .click()
+        .clear()
+        .type("def");
+      cy.findByTestId("editTranslationAcceptBtn-0").click();
 
       cy.findByTestId("editable-rows-table")
         .contains("td", "def")

@@ -269,6 +269,7 @@ export const RealmSettingsGeneralTab = ({
             selections={userProfileConfig?.unmanagedAttributePolicy}
             variant={SelectVariant.single}
             isOpen={isUnmanagedAttributeOpen}
+            aria-label={t("selectUnmanagedAttributePolicy")}
           >
             {unmanagedAttributePolicies.map((policy) => (
               <SelectOption key={policy} value={policy}>

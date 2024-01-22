@@ -102,6 +102,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
               selections={field.value}
               variant={SelectVariant.single}
               data-testid="kerberos-cache-policy"
+              aria-label={t("selectCachePolicy")}
             >
               <SelectOption key={0} value={["DEFAULT"]} isPlaceholder />
               <SelectOption key={1} value={["EVICT_DAILY"]} />
@@ -141,6 +142,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
+                aria-label={t("selectEvictionDay")}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
                   {t("Sunday")}
@@ -197,6 +199,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionHour")}
                 >
                   {hourOptions}
                 </Select>
@@ -229,6 +232,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                   }}
                   selections={field.value}
                   variant={SelectVariant.single}
+                  aria-label={t("selectEvictionMinute")}
                 >
                   {minuteOptions}
                 </Select>

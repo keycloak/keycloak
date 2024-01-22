@@ -187,6 +187,7 @@ export const FineGrainOpenIdConnect = ({
                 setAccessTokenOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAccessTokenSignatureAlgorithm")}
             >
               {keyOptions}
             </Select>
@@ -220,6 +221,7 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectIdTokenSignatureAlgorithm")}
             >
               {keyOptions}
             </Select>
@@ -253,6 +255,7 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenKeyManagementOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectIdTokenEncryptionKeyManagementAlgorithm")}
             >
               {cekManagementOptions}
             </Select>
@@ -286,6 +289,9 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenContentOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectIdTokenEncryptionContentEncryptionAlgorithm",
+              )}
             >
               {contentOptions}
             </Select>
@@ -319,6 +325,7 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoSignedResponseOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectUserInfoSignedResponseAlgorithm")}
             >
               {signatureOptions}
             </Select>
@@ -352,6 +359,9 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoResponseEncryptionKeyManagementOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectUserInfoResponseEncryptionKeyManagementAlgorithm",
+              )}
             >
               {cekManagementOptions}
             </Select>
@@ -387,6 +397,9 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoResponseEncryptionContentEncryptionOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectUserInfoResponseEncryptionContentEncryptionAlgorithm",
+              )}
             >
               {contentOptions}
             </Select>
@@ -420,6 +433,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectSignatureOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectSignatureAlgorithm")}
             >
               {requestObjectOptions}
             </Select>
@@ -453,6 +467,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectEncryptionOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectEncryption")}
             >
               {requestObjectEncryptionOptions}
             </Select>
@@ -486,6 +501,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectEncodingOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectEncoding")}
             >
               {requestObjectEncodingOptions}
             </Select>
@@ -519,6 +535,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectRequiredOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectRequired")}
             >
               {requestObjectRequiredOptions}
             </Select>
@@ -569,6 +586,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationSignedOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationSignedResponseAlg")}
             >
               {authorizationSignedResponseOptions}
             </Select>
@@ -602,6 +620,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationEncryptedOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationEncryptedResponseAlg")}
             >
               {cekManagementOptions}
             </Select>
@@ -635,6 +654,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationEncryptedResponseOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationEncryptedResponseEnc")}
             >
               {contentOptions}
             </Select>
