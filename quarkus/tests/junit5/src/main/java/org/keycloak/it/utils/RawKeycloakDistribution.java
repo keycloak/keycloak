@@ -162,7 +162,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                // TODO: reconsider the hardcoded timeout once https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak
+                keycloak.waitFor(180, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
