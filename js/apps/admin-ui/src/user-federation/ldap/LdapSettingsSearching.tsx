@@ -100,7 +100,7 @@ export const LdapSettingsSearching = ({
                   value="READ_ONLY"
                 />
                 <SelectOption
-                  aria-label={t("writtableSelection")}
+                  aria-label={t("writableSelection")}
                   value="WRITABLE"
                 />
                 <SelectOption
