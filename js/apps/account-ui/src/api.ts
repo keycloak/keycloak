@@ -50,7 +50,7 @@ export const updateRequest = (
 ) =>
   request(`/resources/${resourceId}/permissions`, context, {
     method: "PUT",
-    body: JSON.stringify([{ username, scopes }]),
+    body: [{ username, scopes }],
   });
 
 export const updatePermissions = (
@@ -60,7 +60,7 @@ export const updatePermissions = (
 ) =>
   request(`/resources/${resourceId}/permissions`, context, {
     method: "PUT",
-    body: JSON.stringify(permissions),
+    body: permissions,
   });
 
 function checkResponse<T>(response: T) {

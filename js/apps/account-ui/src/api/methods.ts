@@ -42,8 +42,8 @@ export async function getSupportedLocales({
 }
 
 export async function savePersonalInfo(
-  info: UserRepresentation,
   context: KeycloakContext,
+  info: UserRepresentation,
 ): Promise<void> {
   const response = await request("/", context, { body: info, method: "POST" });
   if (!response.ok) {
