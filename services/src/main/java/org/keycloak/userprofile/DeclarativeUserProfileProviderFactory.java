@@ -87,9 +87,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
-    private UPConfig parsedDefaultRawConfig;
+    private static volatile UPConfig PARSED_DEFAULT_RAW_CONFIG;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
+    public static void setDefaultConfig(UPConfig defaultConfig) {
+        PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
+    }
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
@@ -203,9 +206,15 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return null;
     }
 
+    public static UPConfig parseDefaultConfig() {
+        return UPConfigUtils.parseDefaultConfig();
+    }
+
     @Override
     public void init(Config.Scope config) {
-        parsedDefaultRawConfig = UPConfigUtils.parseDefaultConfig();
+        if (PARSED_DEFAULT_RAW_CONFIG == null) {
+            setDefaultConfig(parseDefaultConfig());
+        }
 
         // make sure registry is clear in case of re-deploy
         contextualMetadataRegistry.clear();
@@ -320,7 +329,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
         // default metadata for each context is based on the default realm configuration
-        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, PARSED_DEFAULT_RAW_CONFIG);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -469,7 +478,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     // GETTER METHODS FOR INTERNAL FIELDS
 
     protected UPConfig getParsedDefaultRawConfig() {
-        return parsedDefaultRawConfig;
+        return PARSED_DEFAULT_RAW_CONFIG;
     }
 
     protected Map<UserProfileContext, UserProfileMetadata> getContextualMetadataRegistry() {

@@ -87,8 +87,15 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
         UserModel userModel = context.getUser();
+        if("true".equals(context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
+            context.getEvent().user(context.getUser()).error(Errors.INVALID_AUTHENTICATION_SESSION);
+            Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
+            context.forceChallenge(challengeResponse);
+            return;
+        }
         if (!enabledUser(context, userModel)) {
             // error in context is set in enabledUser/isDisabledByBruteForce
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
             return;
         }
 
