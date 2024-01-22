@@ -36,7 +36,7 @@ import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
-const DeviceActivity = () => {
+export const DeviceActivity = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAlerts();

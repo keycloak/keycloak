@@ -35,7 +35,7 @@ type Application = ClientRepresentation & {
   open: boolean;
 };
 
-const Applications = () => {
+export const Applications = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAlerts();

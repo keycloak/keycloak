@@ -63,7 +63,7 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
   );
 };
 
-const SigningIn = () => {
+export const SigningIn = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const { addAlert, addError } = useAlerts();

@@ -27,7 +27,7 @@ function findComponent(
   return undefined;
 }
 
-const ContentComponent = () => {
+export const ContentComponent = () => {
   const context = useEnvironment();
 
   const [content, setContent] = useState<MenuItem[]>();

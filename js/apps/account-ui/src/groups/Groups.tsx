@@ -14,7 +14,7 @@ import { Page } from "../components/page/Page";
 import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
-const Groups = () => {
+export const Groups = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
 

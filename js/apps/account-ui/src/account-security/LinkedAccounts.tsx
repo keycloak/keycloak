@@ -9,7 +9,7 @@ import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
 import { useEnvironment } from "../root/KeycloakContext";
 
-const LinkedAccounts = () => {
+export const LinkedAccounts = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
   const [accounts, setAccounts] = useState<LinkedAccountRepresentation[]>([]);
