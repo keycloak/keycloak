@@ -84,7 +84,7 @@ export const SearchDropdown = ({
           onToggle={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForPermission")}
+          {t("searchForClientPolicy")}
         </DropdownToggle>
       }
       isOpen={open}
