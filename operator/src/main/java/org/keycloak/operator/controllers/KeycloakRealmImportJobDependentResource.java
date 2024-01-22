@@ -61,7 +61,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         String secretName = KeycloakRealmImportSecretDependentResource.getSecretName(primary);
         String volumeName = KubernetesResourceUtil.sanitizeName(secretName + "-volume");
 
-        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), volumeName, primary.getRealmName());
+        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), volumeName, primary.getRealmName(), primary.getSpec().getReplacePlaceholders());
         keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume(volumeName, secretName));
 
         var labels = keycloakPodTemplate.getMetadata().getLabels();
@@ -114,7 +114,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .build();
     }
 
-    private void buildKeycloakJobContainer(Container keycloakContainer, String volumeName, String realmName) {
+    private void buildKeycloakJobContainer(Container keycloakContainer, String volumeName, String realmName, Boolean replacePlaceholders) {
         var importMntPath = "/mnt/realm-import/";
 
         var command = List.of("/bin/bash");
@@ -123,8 +123,10 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
+        var replaceOption = (replacePlaceholders != null && replacePlaceholders) ? " -Dkeycloak.migration.replace-placeholders=true": "";
+
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh" + replaceOption + " --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
 
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);

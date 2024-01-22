@@ -90,6 +90,25 @@ public class RealmImportTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
+        assertWorkingRealmImport(kc);
+    }
+
+    @Test
+    public void testWorkingRealmImportNoReplacement() {
+        // Arrange
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setImage(null); // checks the job args for the base, not custom image
+        kc.getSpec().setImagePullSecrets(Arrays.asList(new LocalObjectReferenceBuilder().withName("my-empty-secret").build()));
+        deployKeycloak(k8sclient, kc, false);
+
+        // Act
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm-no-replace.yaml"));
+
+        // Assert
+        assertWorkingRealmImport(kc);
+    }
+
+    private void assertWorkingRealmImport(Keycloak kc) {
         var crSelector = k8sclient
                 .resources(KeycloakRealmImport.class)
                 .inNamespace(namespace)

@@ -29,6 +29,9 @@ public class KeycloakRealmImportSpec {
     @JsonPropertyDescription("The RealmRepresentation to import into Keycloak.")
     private RealmRepresentation realm;
 
+    @JsonPropertyDescription("Optionally set to true to replace ENV variable placeholders in the realm import.")
+    private Boolean replacePlaceholders;
+
     public String getKeycloakCRName() {
         return keycloakCRName;
     }
@@ -45,4 +48,11 @@ public class KeycloakRealmImportSpec {
         this.realm = realm;
     }
 
+    public Boolean getReplacePlaceholders() {
+        return replacePlaceholders;
+    }
+
+    public void setReplacePlaceholders(Boolean replacePlaceholders) {
+        this.replacePlaceholders = replacePlaceholders;
+    }
 }
