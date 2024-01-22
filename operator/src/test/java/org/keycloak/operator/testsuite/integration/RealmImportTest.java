@@ -100,8 +100,6 @@ public class RealmImportTest extends BaseOperatorTest {
         // Arrange
         var kc = getTestKeycloakDeployment(false);
 
-        deploySmtpSecret();
-
         kc.getSpec().setImage(null); // checks the job args for the base, not custom image
         kc.getSpec().setImagePullSecrets(Arrays.asList(new LocalObjectReferenceBuilder().withName("my-empty-secret").build()));
         deployKeycloak(k8sclient, kc, false);
@@ -110,29 +108,25 @@ public class RealmImportTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
-        assertWorkingRealmImport(kc, true);
+        assertWorkingRealmImport(kc, false);
     }
 
     @Test
-    public void testWorkingRealmImportNoReplacement() {
+    public void testWorkingRealmImportWithReplacement() {
         // Arrange
         var kc = getTestKeycloakDeployment(false);
+
+        deploySmtpSecret();
+
         kc.getSpec().setImage(null); // checks the job args for the base, not custom image
         kc.getSpec().setImagePullSecrets(Arrays.asList(new LocalObjectReferenceBuilder().withName("my-empty-secret").build()));
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
-            if (obj instanceof KeycloakRealmImport) {
-                KeycloakRealmImportBuilder builder = new KeycloakRealmImportBuilder((KeycloakRealmImport)obj);
-                builder.getSpec().setPlaceholders(new HashMap<>());
-                obj = builder.build();
-            }
-            return obj;
-        });
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm-with-placeholders.yaml"));
 
         // Assert
-        assertWorkingRealmImport(kc, false);
+        assertWorkingRealmImport(kc, true);
     }
 
     private void assertWorkingRealmImport(Keycloak kc, boolean checkPlaceholders) {
