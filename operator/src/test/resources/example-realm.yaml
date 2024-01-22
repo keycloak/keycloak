@@ -4,6 +4,19 @@ metadata:
   name: example-count0-kc
 spec:
   keycloakCRName: example-kc
+  placeholders:
+    KC_SMTP_PORT:
+      secret:
+        name: keycloak-smtp-secret
+        key: KC_SMTP_PORT
+    KC_SMTP_SERVER:
+      secret:
+        name: keycloak-smtp-secret
+        key: KC_SMTP_SERVER
+    KC_SMTP_FROM:
+      secret:
+        name: keycloak-smtp-secret
+        key: KC_SMTP_FROM
   realm:
     id: count0
     realm: count0
@@ -1195,7 +1208,17 @@ spec:
       contentSecurityPolicy: frame-src 'self'; frame-ancestors 'self'; object-src 'none';
       xXSSProtection: 1; mode=block
       strictTransportSecurity: max-age=31536000; includeSubDomains
-    smtpServer: {}
+    smtpServer:
+      replyToDisplayName: ""
+      starttls: "true"
+      auth: "false"
+      envelopeFrom: ""
+      ssl: "false"
+      port: "${KC_SMTP_PORT}"
+      host: "${KC_SMTP_SERVER}"
+      replyTo: ""
+      from: "${KC_SMTP_FROM}"
+      fromDisplayName: ""
     eventsEnabled: false
     eventsListeners:
     - jboss-logging
