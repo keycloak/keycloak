@@ -6,9 +6,15 @@ image::images/new-welcome-screen.png["A screenshot of the new welcome page, show
 
 If you are using a custom theme, you may need to update it to support the new welcome page. For more details consult the link:{upgradingguide_link}[{upgradingguide_name}].
 
-= Keycloak JS using `exports` field
+= Keycloak JS
 
-The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+== Using `exports` field in `package.json`
+
+The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in its `package.json`. This change improves support for more modern bundlers like Webpack 5 and Vite, but comes with some unavoidable breaking changes. Consult the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+== PKCE enabled by default
+
+The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. This enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you are using the adapter on a system that doesn't support PKCE, you can set the `pkceMethod` option to `false` to disable it.
 
 = Truststore Improvements
 

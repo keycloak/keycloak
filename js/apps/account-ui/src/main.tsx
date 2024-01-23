@@ -13,7 +13,6 @@ import { routes } from "./routes";
 await Promise.all([
   keycloak.init({
     onLoad: "check-sso",
-    pkceMethod: "S256",
   }),
   i18n.init(),
 ]);
