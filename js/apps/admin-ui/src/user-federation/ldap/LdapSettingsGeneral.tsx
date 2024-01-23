@@ -179,6 +179,7 @@ export const LdapSettingsGeneral = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
+                aria-label={t("selectVendor")}
               >
                 <SelectOption key={0} value="ad" isPlaceholder>
                   Active Directory
