@@ -17,32 +17,30 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpCoreContext;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.Calendar;
 import java.util.LinkedList;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Set;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
-
-import org.junit.After;
-import org.junit.Before;
 
 
 /**
@@ -51,12 +49,6 @@ import org.junit.Before;
 public class CookiesPathTest extends AbstractKeycloakTest {
     @Page
     protected LoginPage loginPage;
-
-    public static final String AUTH_SESSION_VALUE = "1869c345-2f90-4724-936d-a1a1ef41dea7";
-
-    public static final String AUTH_SESSION_VALUE_NODE = "1869c345-2f90-4724-936d-a1a1ef41dea7.host";
-
-    public static final String OLD_COOKIE_PATH = "/auth/realms/foo";
 
     public static final String KC_RESTART = "KC_RESTART";
 
@@ -127,110 +119,6 @@ public class CookiesPathTest extends AbstractKeycloakTest {
         cookies.stream()
                 .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
                 .forEach(cookie -> assertThat(cookie.getPath(), Matchers.endsWith("/auth/realms/foo/")));
-    }
-
-    @Test
-    public void testMultipleCookies() throws IOException {
-        setOAuthUri("foo");
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
-
-        // create old cookie with wrong path
-        BasicClientCookie wrongCookie = new BasicClientCookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE);
-        wrongCookie.setDomain(AUTH_SERVER_HOST);
-        wrongCookie.setPath(OLD_COOKIE_PATH);
-        wrongCookie.setExpiryDate(calendar.getTime());
-
-        // obtain new cookies
-        CookieStore cookieStore = getCorrectCookies(oauth.getLoginFormUrl());
-        cookieStore.addCookie(wrongCookie);
-
-        assertThat(cookieStore.getCookies(), Matchers.hasSize(3));
-
-        login(oauth.getLoginFormUrl(), cookieStore);
-
-        // old cookie has been removed
-        // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION
-        assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()),
-                Matchers.hasItems("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
-
-        // does each cookie's path end with "/"
-        cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName())).map(org.apache.http.cookie.Cookie::getPath).forEach(path -> assertThat(path, Matchers.endsWith("/")));
-
-        // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
-        String authSessionId = cookieStore.getCookies().stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionId = cookieStore.getCookies().stream().filter(c -> "KEYCLOAK_SESSION".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionSuffix = KCSessionId.split("/")[2];
-        assertThat(authSessionId, Matchers.containsString(KCSessionSuffix));
-    }
-
-    @Test
-    public void testOldCookieWithWrongPath() {
-        ContainerAssume.assumeAuthServerSSL();
-
-        Cookie wrongCookie = new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE,
-                null, OLD_COOKIE_PATH, null, false, true);
-
-        navigateToLoginPage("foo");
-        driver.manage().deleteAllCookies();
-
-        // add old cookie with wrong path
-        driver.manage().addCookie(wrongCookie);
-        Set<Cookie> cookies = driver.manage().getCookies();
-        assertThat(cookies, Matchers.hasSize(1));
-
-        driver.navigate().refresh();
-        loginPage.login("foo", "password");
-
-        // old cookie has been removed and new cookies have been added
-        cookies = driver.manage().getCookies().stream()
-                .filter(cookie -> KEYCLOAK_COOKIE_NAMES.contains(cookie.getName()))
-                .collect(Collectors.toSet());
-        assertThat(cookies, Matchers.hasSize(3));
-
-        // does each cookie's path end with "/"
-        cookies.stream().map(Cookie::getPath).forEach(path -> assertThat(path, Matchers.endsWith("/")));
-
-        // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
-        String authSessionId = cookies.stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionId = cookies.stream().filter(c -> "KEYCLOAK_SESSION".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionSuffix = KCSessionId.split("/")[2];
-        assertThat(authSessionId, Matchers.containsString(KCSessionSuffix));
-    }
-
-    @Test
-    public void testOldCookieWithNodeInValue() throws IOException {
-        setOAuthUri("foo");
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, 1);
-
-        // create old cookie with wrong path
-        BasicClientCookie wrongCookie = new BasicClientCookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE_NODE);
-        wrongCookie.setDomain(AUTH_SERVER_HOST);
-        wrongCookie.setPath(OLD_COOKIE_PATH);
-        wrongCookie.setExpiryDate(calendar.getTime());
-
-        // obtain new cookies
-        CookieStore cookieStore = getCorrectCookies(oauth.getLoginFormUrl());
-        cookieStore.addCookie(wrongCookie);
-
-        assertThat(cookieStore.getCookies(), Matchers.hasSize(3));
-
-        login(oauth.getLoginFormUrl(), cookieStore);
-
-        // old cookie has been removed
-        // now we have AUTH_SESSION_ID, KEYCLOAK_IDENTITY, KEYCLOAK_SESSION, OAuth_Token_Request_State
-        assertThat(cookieStore.getCookies().stream().map(org.apache.http.cookie.Cookie::getName).collect(Collectors.toList()),
-                Matchers.hasItems("AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION"));
-
-        // does each cookie's path end with "/"
-        cookieStore.getCookies().stream().filter(c -> !"OAuth_Token_Request_State".equals(c.getName())).map(org.apache.http.cookie.Cookie::getPath).forEach(path -> assertThat(path, Matchers.endsWith("/")));
-
-        // KEYCLOAK_SESSION should end by AUTH_SESSION_ID value
-        String authSessionId = cookieStore.getCookies().stream().filter(c -> "AUTH_SESSION_ID".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionId = cookieStore.getCookies().stream().filter(c -> "KEYCLOAK_SESSION".equals(c.getName())).findFirst().get().getValue();
-        String KCSessionSuffix = KCSessionId.split("/")[2];
-        assertThat(authSessionId, Matchers.containsString(KCSessionSuffix));
     }
 
     /**

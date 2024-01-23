@@ -91,8 +91,17 @@ public class CookieHelper {
         addCookie(name, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
     }
 
+    public static String getCookieValue(KeycloakSession session, String name) {
+        Map<String, Cookie> cookies = session.getContext().getRequestHeaders().getCookies();
+        Cookie cookie = cookies.get(name);
+        if (cookie == null) {
+            String legacy = name + LEGACY_COOKIE;
+            cookie = cookies.get(legacy);
+        }
+        return cookie != null ? cookie.getValue() : null;
+    }
 
-    public static Set<String> getCookieValue(KeycloakSession session, String name) {
+    public static Set<String> getCookieValues(KeycloakSession session, String name) {
         Set<String> ret = getInternalCookieValue(session, name);
         if (ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
@@ -120,8 +129,7 @@ public class CookieHelper {
         return cookiesVal;
     }
 
-
-    public static Set<String> parseCookie(String header, String name) {
+    private static Set<String> parseCookie(String header, String name) {
         if (header == null || name == null) {
             return Collections.emptySet();
         }
@@ -138,15 +146,4 @@ public class CookieHelper {
         return values;
     }
 
-    public static Cookie getCookie(Map<String, Cookie> cookies, String name) {
-        Cookie cookie = cookies.get(name);
-        if (cookie != null) {
-            return cookie;
-        }
-        else {
-            String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find cookie {0}, trying {1}", name, legacy);
-            return cookies.get(legacy);
-        }
-    }
 }
