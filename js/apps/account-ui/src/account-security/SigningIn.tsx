@@ -114,7 +114,7 @@ const SigningIn = () => {
     <Page title={t("signingIn")} description={t("signingInDescription")}>
       {credentials.map((container) => (
         <PageSection
-          key={container.category}
+          key={container.category + container.type}
           variant="light"
           className="pf-u-px-0"
         >
