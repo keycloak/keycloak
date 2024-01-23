@@ -17,7 +17,6 @@
 
 package org.keycloak.models;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -32,7 +31,7 @@ import java.util.stream.Stream;
 /**
  * @author Alexander Schwartz
  */
-public interface LegacyRealmModel extends RealmModel {
+public interface StorageProviderRealmModel extends RealmModel {
     /**
      * @deprecated Use {@link #getClientStorageProvidersStream() getClientStorageProvidersStream} instead.
      */

@@ -22,7 +22,6 @@ import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -46,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -101,7 +99,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
 
             if (dist == null) {
-                dist = createDistribution(distConfig, getLegacyStoreConfig(context), getDatabaseConfig(context));
+                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
 
             copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
@@ -125,8 +123,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         return context.getStore(Namespace.create(context.getRequiredTestClass(), context.getRequiredTestMethod()));
     }
 
-    private static LegacyStore getLegacyStoreConfig(ExtensionContext context) {
-        return context.getTestClass().get().getDeclaredAnnotation(LegacyStore.class);
+    private static Storage getStoreConfig(ExtensionContext context) {
+        return context.getTestClass().get().getDeclaredAnnotation(Storage.class);
     }
 
     private void copyTestProvider(TestProvider provider) {
@@ -227,7 +225,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
         if (distConfig != null) {
             if (BEFORE_ALL.equals(distConfig.reInstall())) {
-                dist = createDistribution(distConfig, getLegacyStoreConfig(context), getDatabaseConfig(context));
+                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
         } else {
             forceTestLaunchMode();
@@ -245,8 +243,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         super.afterAll(context);
     }
 
-    private KeycloakDistribution createDistribution(DistributionTest config, LegacyStore legacyStoreConfig, WithDatabase databaseConfig) {
-        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
+    private KeycloakDistribution createDistribution(DistributionTest config, Storage storeConfig, WithDatabase databaseConfig) {
+        return new KeycloakDistributionDecorator(storeConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
     @Override

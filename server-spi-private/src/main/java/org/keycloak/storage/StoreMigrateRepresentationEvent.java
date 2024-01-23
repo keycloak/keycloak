@@ -22,19 +22,18 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
- * Event for notifying legacy store, so it can do migrations on the representation as needed.
+ * Event for notifying the store, so it can do migrations on the representation as needed.
  *
  * CAUTION: This event is exceptional as it performs any necessary modificaton of the representation.
- * This will be removed once the legacy store has been removed.
  */
-public class LegacyStoreMigrateRepresentationEvent implements ProviderEvent {
+public class StoreMigrateRepresentationEvent implements ProviderEvent {
 
     private final KeycloakSession session;
     private final RealmModel realm;
     private final RealmRepresentation rep;
     private final boolean skipUserDependent;
 
-    public LegacyStoreMigrateRepresentationEvent(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+    public StoreMigrateRepresentationEvent(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         this.session = session;
         this.realm = realm;
         this.rep = rep;
@@ -42,7 +41,7 @@ public class LegacyStoreMigrateRepresentationEvent implements ProviderEvent {
     }
 
     public static void fire(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        session.getKeycloakSessionFactory().publish(new LegacyStoreMigrateRepresentationEvent(session, realm, rep, skipUserDependent));
+        session.getKeycloakSessionFactory().publish(new StoreMigrateRepresentationEvent(session, realm, rep, skipUserDependent));
     }
 
     public KeycloakSession getSession() {

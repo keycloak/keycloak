@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.storage.datastore.LegacyDatastoreProviderFactory
+org.keycloak.storage.datastore.DefaultDatastoreProviderFactory

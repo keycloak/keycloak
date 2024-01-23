@@ -23,7 +23,7 @@ import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFa
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class LegacyInfinispanConnectionFactory extends DefaultInfinispanConnectionProviderFactory {
+public class QuarkusInfinispanConnectionFactory extends DefaultInfinispanConnectionProviderFactory {
 
     @Override
     protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {

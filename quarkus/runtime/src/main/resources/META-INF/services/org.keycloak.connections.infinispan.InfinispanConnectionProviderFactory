@@ -17,4 +17,4 @@
 #  */
 #
 
-org.keycloak.quarkus.runtime.storage.legacy.infinispan.LegacyInfinispanConnectionFactory
+org.keycloak.quarkus.runtime.storage.legacy.infinispan.QuarkusInfinispanConnectionFactory
