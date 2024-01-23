@@ -32,18 +32,14 @@ type SearchDropdownProps = {
   types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  isResource?: boolean;
-  isPolicies?: boolean;
-  isPermissions?: boolean;
+  type: "resource" | "policy" | "permission";
 };
 
 export const SearchDropdown = ({
   types,
   search,
   onSearch,
-  isResource = false,
-  isPolicies = false,
-  isPermissions = false,
+  type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
   const {
@@ -88,13 +84,9 @@ export const SearchDropdown = ({
           onToggle={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {isResource
-            ? t("searchClientAuthorizationResource")
-            : isPolicies
-              ? t("searchClientAuthorizationPolicy")
-              : isPermissions
-                ? t("searchClientAuthorizationPermission")
-                : ""}
+          {type === "resource" && t("searchClientAuthorizationResource")}
+          {type === "policy" && t("searchClientAuthorizationPolicy")}
+          {type === "permission" && t("searchClientAuthorizationPermission")}
         </DropdownToggle>
       }
       isOpen={open}
@@ -111,7 +103,7 @@ export const SearchDropdown = ({
             {...register("name")}
           />
         </FormGroup>
-        {isResource && (
+        {type === "resource" && (
           <>
             <FormGroup label={t("type")} fieldId="type">
               <KeycloakTextInput
@@ -136,7 +128,7 @@ export const SearchDropdown = ({
             </FormGroup>
           </>
         )}
-        {!isResource && !isPolicies && (
+        {type !== "resource" && type !== "policy" && (
           <FormGroup label={t("resource")} fieldId="resource">
             <KeycloakTextInput
               id="resource"
@@ -145,7 +137,7 @@ export const SearchDropdown = ({
             />
           </FormGroup>
         )}
-        {!isPolicies && (
+        {type !== "policy" && (
           <FormGroup label={t("scope")} fieldId="scope">
             <KeycloakTextInput
               id="scope"
@@ -154,7 +146,7 @@ export const SearchDropdown = ({
             />
           </FormGroup>
         )}
-        {!isResource && (
+        {type !== "resource" && (
           <FormGroup label={t("type")} fieldId="type">
             <Controller
               name="type"

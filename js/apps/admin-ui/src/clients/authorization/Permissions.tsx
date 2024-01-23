@@ -201,7 +201,7 @@ export const AuthorizationPermissions = ({
                   types={policyProviders}
                   search={search}
                   onSearch={setSearch}
-                  isPermissions
+                  type="permission"
                 />
               </ToolbarItem>
               <ToolbarItem>
