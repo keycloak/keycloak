@@ -24,12 +24,12 @@ import java.lang.annotation.Target;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Use this annotation to enable the legacy store when running a test.
+ * Use this annotation to change the default storage configuration when running a test.
  */
 @Target(ElementType.TYPE)
 @ExtendWith({ CLITestExtension.class })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LegacyStore {
+public @interface Storage {
 
     /**
      * If {@code true}, the cache is set to local by default.

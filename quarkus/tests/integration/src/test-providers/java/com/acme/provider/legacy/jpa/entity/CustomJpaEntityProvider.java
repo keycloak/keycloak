@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package com.acme.provider.legacy.jpa.user;
+package com.acme.provider.legacy.jpa.entity;
 
 import java.util.Collections;
 import java.util.Map;
 import org.keycloak.it.TestProvider;
-import com.acme.provider.legacy.jpa.entity.Realm;
 
-public class CustomLegacyUserProvider implements TestProvider {
+public class CustomJpaEntityProvider implements TestProvider {
 
     @Override
     public Class[] getClasses() {
-        return new Class[] { MyUserProvider.class, MyUserProviderFactory.class };
+        return new Class[] { Realm.class };
     }
 
     @Override
     public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("org.keycloak.models.UserProviderFactory", "services/org.keycloak.models.UserProviderFactory");
+        return Collections.singletonMap("persistence.xml", "persistence.xml");
     }
 }

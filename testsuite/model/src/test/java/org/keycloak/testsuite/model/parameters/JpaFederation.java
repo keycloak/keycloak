@@ -37,12 +37,12 @@ import org.keycloak.testsuite.model.Config;
  *
  * @author hmlnarik
  */
-public class LegacyJpaFederation extends KeycloakModelParameters {
+public class JpaFederation extends KeycloakModelParameters {
 
     private final AtomicInteger counter = new AtomicInteger();
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
-      .addAll(LegacyJpa.ALLOWED_SPIS)
+      .addAll(Jpa.ALLOWED_SPIS)
       .add(UserStorageProviderSpi.class)
       .add(UserFederatedStorageProviderSpi.class)
       .add(ClientScopeStorageProviderSpi.class)
@@ -50,12 +50,12 @@ public class LegacyJpaFederation extends KeycloakModelParameters {
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
-      .addAll(LegacyJpa.ALLOWED_FACTORIES)
+      .addAll(Jpa.ALLOWED_FACTORIES)
       .add(JpaUserFederatedStorageProviderFactory.class)
       .add(ClientScopeStorageProviderFactory.class)
       .build();
 
-    public LegacyJpaFederation() {
+    public JpaFederation() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
     }
 
@@ -74,6 +74,6 @@ public class LegacyJpaFederation extends KeycloakModelParameters {
 
     @Override
     public void updateConfig(Config cf) {
-        LegacyJpa.updateConfigForJpa(cf);
+        Jpa.updateConfigForJpa(cf);
     }
 }

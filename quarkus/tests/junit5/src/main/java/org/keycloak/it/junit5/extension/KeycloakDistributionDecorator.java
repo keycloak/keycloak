@@ -24,14 +24,14 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
-    private LegacyStore legacyStoreConfig;
+    private Storage storageConfig;
     private WithDatabase databaseConfig;
     private DistributionTest config;
     private KeycloakDistribution delegate;
 
-    public KeycloakDistributionDecorator(LegacyStore legacyStoreConfig, WithDatabase databaseConfig, DistributionTest config,
-            KeycloakDistribution delegate) {
-        this.legacyStoreConfig = legacyStoreConfig;
+    public KeycloakDistributionDecorator(Storage storageConfig, WithDatabase databaseConfig, DistributionTest config,
+                                         KeycloakDistribution delegate) {
+        this.storageConfig = storageConfig;
         this.databaseConfig = databaseConfig;
         this.config = config;
         this.delegate = delegate;
@@ -43,7 +43,7 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
         args.addAll(List.of(config.defaultOptions()));
 
-        return delegate.run(new ServerOptions(legacyStoreConfig, databaseConfig, args));
+        return delegate.run(new ServerOptions(storageConfig, databaseConfig, args));
     }
 
     @Override

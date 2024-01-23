@@ -15,21 +15,28 @@
  * limitations under the License.
  */
 
-package com.acme.provider.legacy.jpa.entity;
+package org.keycloak.storage;
 
-import java.util.Collections;
-import java.util.Map;
-import org.keycloak.it.TestProvider;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeProvider;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
-public class CustomLegacyJpaEntityProvider implements TestProvider {
+public interface StoreManagers {
+    
+    ClientProvider clientStorageManager();
 
-    @Override
-    public Class[] getClasses() {
-        return new Class[] { Realm.class };
-    }
+    ClientScopeProvider clientScopeStorageManager();
 
-    @Override
-    public Map<String, String> getManifestResources() {
-        return Collections.singletonMap("persistence.xml", "persistence.xml");
-    }
+    RoleProvider roleStorageManager();
+
+    GroupProvider groupStorageManager();
+
+    UserProvider userStorageManager();
+
+    UserProvider userLocalStorage();
+
+    UserFederatedStorageProvider userFederatedStorage();
 }

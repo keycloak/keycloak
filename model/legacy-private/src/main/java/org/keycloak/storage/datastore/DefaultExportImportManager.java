@@ -98,7 +98,6 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 
@@ -126,16 +125,15 @@ import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 
 /**
- * This wraps the functionality about export/import for legacy storage. This will be handled differently for the new map storage,
- * therefore, it has been extracted.
+ * This wraps the functionality about export/import for the storage.
  *
  * @author Alexander Schwartz
  */
-public class LegacyExportImportManager implements ExportImportManager {
+public class DefaultExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
-    private static final Logger logger = Logger.getLogger(LegacyExportImportManager.class);
+    private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
 
-    public LegacyExportImportManager(KeycloakSession session) {
+    public DefaultExportImportManager(KeycloakSession session) {
         this.session = session;
     }
 

@@ -70,13 +70,12 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * This wraps the functionality for migrations of the legacy storage. This will be handled differently for the new map storage,
- * therefore, it has been extracted.
+ * This wraps the functionality for migrations of the storage.
  *
  * @author Alexander Schwartz
  */
-public class LegacyMigrationManager implements MigrationManager {
-    private static final Logger logger = Logger.getLogger(LegacyMigrationManager.class);
+public class DefaultMigrationManager implements MigrationManager {
+    private static final Logger logger = Logger.getLogger(DefaultMigrationManager.class);
 
     private static final Migration[] migrations = {
             new MigrateTo1_2_0(),
@@ -119,7 +118,7 @@ public class LegacyMigrationManager implements MigrationManager {
 
     private final KeycloakSession session;
 
-    public LegacyMigrationManager(KeycloakSession session) {
+    public DefaultMigrationManager(KeycloakSession session) {
         this.session = session;
     }
 
