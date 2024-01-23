@@ -11,9 +11,6 @@
                 <#list auth.authenticationSelections as authenticationSelection>
                     <button class="${properties.kcSelectAuthListItemClass!}" type="submit" name="authenticationExecution" value="${authenticationSelection.authExecId}">
 
-                        <div class="${properties.kcSelectAuthListItemIconClass!}">
-                            <i class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass} ${properties.kcSelectAuthListItemIconPropertyClass!}"></i>
-                        </div>
                         <div class="${properties.kcSelectAuthListItemBodyClass!}">
                             <div class="${properties.kcSelectAuthListItemHeadingClass!}">
                                 ${msg('${authenticationSelection.displayName}')}

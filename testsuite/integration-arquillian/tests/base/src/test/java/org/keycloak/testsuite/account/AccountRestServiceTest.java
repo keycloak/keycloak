@@ -701,7 +701,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
-                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                "password-display-name", "password-help-text",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
         CredentialRepresentation password1 = password.getUserCredentialMetadatas().get(0).getCredential();
@@ -710,18 +710,18 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         AccountCredentialResource.CredentialContainer otp = credentials.get(1);
         assertCredentialContainerExpected(otp, OTPCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
-                "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass",
+                "otp-display-name", "otp-help-text",
                 UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
 
         // WebAuthn credentials will be returned, but createAction will be still null because requiredAction "webauthn register" not yet registered
         AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
         assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE_TWOFACTOR, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
-                "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
+                "webauthn-display-name", "webauthn-help-text",
                 WebAuthnRegisterFactory.PROVIDER_ID, null, true, 0);
 
         AccountCredentialResource.CredentialContainer webauthnPasswordless = credentials.get(3);
         assertCredentialContainerExpected(webauthnPasswordless, WebAuthnCredentialModel.TYPE_PASSWORDLESS, CredentialTypeMetadata.Category.PASSWORDLESS.toString(),
-                "webauthn-passwordless-display-name", "webauthn-passwordless-help-text", "kcAuthenticatorWebAuthnPasswordlessClass",
+                "webauthn-passwordless-display-name", "webauthn-passwordless-help-text",
                 WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, null, true, 0);
 
         // disable WebAuthn passwordless required action. User doesn't have WebAuthnPasswordless credential, so WebAuthnPasswordless credentialType won't be returned
@@ -906,7 +906,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // delete password should fail as it is not removable
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
-                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                "password-display-name", "password-help-text",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
         try (SimpleHttp.Response response = SimpleHttp
                 .doDelete(getAccountUrl("credentials/" + password.getUserCredentialMetadatas().get(0).getCredential().getId()), httpClient)
@@ -929,7 +929,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         credentials = getCredentials();
         password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
-                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                "password-display-name", "password-help-text",
                 UserModel.RequiredAction.UPDATE_PASSWORD.toString(), null, false, 0);
 
         // Re-add the password to the user
@@ -980,13 +980,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         testRealm().flows().deleteFlow(flowRepresentation.getId());
     }
 
-    private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText, String iconCssClass,
+    private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText,
                                                    String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
         Assert.assertEquals(type, credential.getType());
         Assert.assertEquals(category, credential.getCategory());
         Assert.assertEquals(displayName, credential.getDisplayName());
         Assert.assertEquals(helpText, credential.getHelptext());
-        Assert.assertEquals(iconCssClass, credential.getIconCssClass());
         Assert.assertEquals(createAction, credential.getCreateAction());
         Assert.assertEquals(updateAction, credential.getUpdateAction());
         Assert.assertEquals(removeable, credential.isRemoveable());

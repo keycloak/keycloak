@@ -219,8 +219,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 .type(getType())
                 .category(CredentialTypeMetadata.Category.BASIC_AUTHENTICATION)
                 .displayName("password-display-name")
-                .helpText("password-help-text")
-                .iconCssClass("kcAuthenticatorPasswordClass");
+                .helpText("password-help-text");
 
         // Check if we are creating or updating password
         UserModel user = metadataContext.getUser();

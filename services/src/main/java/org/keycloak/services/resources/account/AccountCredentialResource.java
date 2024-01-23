@@ -81,7 +81,6 @@ public class AccountCredentialResource {
         private String category; // **
         private String displayName;
         private String helptext;  // **
-        private String iconCssClass;
         private String createAction;
         private String updateAction;
         private boolean removeable;
@@ -97,7 +96,6 @@ public class AccountCredentialResource {
             this.category = metadata.getCategory().toString();
             this.displayName = metadata.getDisplayName();
             this.helptext = metadata.getHelpText();
-            this.iconCssClass = metadata.getIconCssClass();
             this.createAction = metadata.getCreateAction();
             this.updateAction = metadata.getUpdateAction();
             this.removeable = metadata.isRemoveable();
@@ -118,10 +116,6 @@ public class AccountCredentialResource {
 
         public String getHelptext() {
             return helptext;
-        }
-
-        public String getIconCssClass() {
-            return iconCssClass;
         }
 
         public String getCreateAction() {
