@@ -89,11 +89,11 @@ export const SearchDropdown = ({
           className="keycloak__client_authentication__searchdropdown"
         >
           {isResource
-            ? t("searchClientAuthorizationResources")
+            ? t("searchClientAuthorizationResource")
             : isPolicies
-              ? t("searchClientAuthorizationPolicies")
+              ? t("searchClientAuthorizationPolicy")
               : isPermissions
-                ? t("searchClientAuthorizationPermissions")
+                ? t("searchClientAuthorizationPermission")
                 : ""}
         </DropdownToggle>
       }
