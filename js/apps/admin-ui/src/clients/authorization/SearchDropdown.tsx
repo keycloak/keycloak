@@ -33,6 +33,8 @@ type SearchDropdownProps = {
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
   isResource?: boolean;
+  isPolicies?: boolean;
+  isPermissions?: boolean;
 };
 
 export const SearchDropdown = ({
@@ -40,6 +42,8 @@ export const SearchDropdown = ({
   search,
   onSearch,
   isResource = false,
+  isPolicies = false,
+  isPermissions = false,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
   const {
@@ -84,7 +88,13 @@ export const SearchDropdown = ({
           onToggle={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForClientPolicy")}
+          {isResource
+            ? t("searchClientAuthorizationResources")
+            : isPolicies
+              ? t("searchClientAuthorizationPolicies")
+              : isPermissions
+                ? t("searchClientAuthorizationPermissions")
+                : ""}
         </DropdownToggle>
       }
       isOpen={open}
@@ -126,7 +136,7 @@ export const SearchDropdown = ({
             </FormGroup>
           </>
         )}
-        {!isResource && (
+        {!isResource && !isPolicies && (
           <FormGroup label={t("resource")} fieldId="resource">
             <KeycloakTextInput
               id="resource"
@@ -135,13 +145,15 @@ export const SearchDropdown = ({
             />
           </FormGroup>
         )}
-        <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
-            id="scope"
-            data-testid="searchdropdown_scope"
-            {...register("scope")}
-          />
-        </FormGroup>
+        {!isPolicies && (
+          <FormGroup label={t("scope")} fieldId="scope">
+            <KeycloakTextInput
+              id="scope"
+              data-testid="searchdropdown_scope"
+              {...register("scope")}
+            />
+          </FormGroup>
+        )}
         {!isResource && (
           <FormGroup label={t("type")} fieldId="type">
             <Controller
