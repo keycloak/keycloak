@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - quarkus-next
   pull_request:
      branches: [main]
   workflow_dispatch:
