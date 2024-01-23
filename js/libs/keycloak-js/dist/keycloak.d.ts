@@ -22,7 +22,7 @@ export type KeycloakOnLoad = 'login-required'|'check-sso';
 export type KeycloakResponseMode = 'query'|'fragment';
 export type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 export type KeycloakFlow = 'standard'|'implicit'|'hybrid';
-export type KeycloakPkceMethod = 'S256';
+export type KeycloakPkceMethod = 'S256' | false;
 
 export interface KeycloakConfig {
 	/**
@@ -169,9 +169,8 @@ export interface KeycloakInitOptions {
 	flow?: KeycloakFlow;
 
 	/**
-	 * Configures the Proof Key for Code Exchange (PKCE) method to use.
-	 * The currently allowed method is 'S256'.
-	 * If not configured, PKCE will not be used.
+	 * Configures the Proof Key for Code Exchange (PKCE) method to use. This will default to 'S256'.
+	 * Can be disabled by passing `false`.
 	 */
 	pkceMethod?: KeycloakPkceMethod;
 
