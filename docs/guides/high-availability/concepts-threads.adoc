@@ -31,7 +31,7 @@ When the load and the number of threads increases, the database connections can 
 Once a request cannot acquire a database connection within 5 seconds, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
 The caller will receive a response with a 5xx HTTP status code indicating a server side error.
 
-If you increase the number of database connections and the number of threads too much, the system will be congested under a high load with requests queueing up and all callers, which leads to bad performance.
+If you increase the number of database connections and the number of threads too much, the system will be congested under a high load with requests queueing up, which leads to a bad performance.
 The number of database connections is configured via the https://www.keycloak.org/server/all-config#category-database[`Database`] settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size` respectively.
 Low numbers ensure fast response times for all clients, even if there is an occasionally failing request when there is a load spike.
 
