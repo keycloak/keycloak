@@ -953,6 +953,44 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "your email address has been verified already.", false);
     }
 
+    @Test
+    public void testLinkAccountByEmailVerificationToEmailVerifiedUser() {
+        // set up a user with verified email
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        UserResource userResource = realm.users().get(createUser("consumer"));
+        UserRepresentation consumerUser = userResource.toRepresentation();
+
+        consumerUser.setEmail(bc.getUserEmail());
+        consumerUser.setEmailVerified(true);
+        userResource.update(consumerUser);
+        configureSMTPServer();
+
+        // begin login with idp
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        logInWithBroker(bc);
+
+        // update account profile
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+
+        // idp confirm link
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ", false);
+        driver.navigate().to(url);
+
+        assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
+        assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
+        assertNumFederatedIdentities(consumerUser.getId(), 1);
+    }
+
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationResendEmail
