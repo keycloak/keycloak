@@ -1,0 +1,123 @@
+{
+  "client-types": [
+    {
+      "name": "sla",
+      "provider": "default",
+      "config": {
+        "standardFlowEnabled": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": true
+        }
+      }
+    },
+    {
+      "name": "service-account",
+      "provider": "default",
+      "config": {
+        "alwaysDisplayInConsole": {
+          "applicable": false
+        },
+        "consentRequired": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "login_theme": {
+          "applicable": false
+        },
+        "protocol": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": "openid-connect"
+        },
+        "publicClient": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "bearerOnly": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "standardFlowEnabled": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "implicitFlowEnabled": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "directAccessGrantsEnabled": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": false
+        },
+        "serviceAccountsEnabled": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": true
+        },
+        "protocolMappers": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": [
+            {
+              "name" : "Client IP Address",
+              "protocol" : "openid-connect",
+              "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+              "consentRequired" : false,
+              "config" : {
+                "user.session.note" : "clientAddress",
+                "id.token.claim" : "true",
+                "access.token.claim" : "true",
+                "claim.name" : "clientAddress",
+                "jsonType.label" : "String"
+              }
+            },
+            {
+              "name" : "Client Host",
+              "protocol" : "openid-connect",
+              "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+              "consentRequired" : false,
+              "config" : {
+                "user.session.note" : "clientHost",
+                "id.token.claim" : "true",
+                "access.token.claim" : "true",
+                "claim.name" : "clientHost",
+                "jsonType.label" : "String"
+              }
+            }
+          ]
+        },
+        "webOrigins": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": [ "https://foo", "https://bar"]
+        },
+        "defaultClientScopes": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": [ "address", "offline_access"]
+        },
+        "optionalClientScopes": {
+          "applicable": true,
+          "read-only": true,
+          "default-value": [ "profile" ]
+        },
+        "logoUri": {
+          "applicable": false
+        },
+        "policyUri": {
+          "applicable": false
+        },
+        "tosUri": {
+          "applicable": false
+        }
+      }
+    }
+  ]
+}
