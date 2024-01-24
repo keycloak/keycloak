@@ -38,6 +38,7 @@ public interface Errors {
     String USER_DISABLED = "user_disabled";
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
+    String INVALID_AUTHENTICATION_SESSION = "invalid_authentication_session";
     String DIFFERENT_USER_AUTHENTICATING = "different_user_authenticating";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
     String USER_DELETE_ERROR = "user_delete_error";
@@ -45,6 +46,7 @@ public interface Errors {
     String USERNAME_MISSING = "username_missing";
     String USERNAME_IN_USE = "username_in_use";
     String EMAIL_IN_USE = "email_in_use";
+    String EMAIL_ALREADY_VERIFIED = "email_already_verified";
 
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
     String INVALID_CODE = "invalid_code";
@@ -65,6 +67,8 @@ public interface Errors {
     String EXPIRED_CODE = "expired_code";
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
+
+    String TOKEN_INTROSPECTION_FAILED = "token_introspection_failed";
 
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";

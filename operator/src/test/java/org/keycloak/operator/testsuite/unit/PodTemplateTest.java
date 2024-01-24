@@ -363,7 +363,7 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testDefaultArgs() {
+    public void testDefaults() {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
 
@@ -371,6 +371,52 @@ public class PodTemplateTest {
         var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain("--optimized");
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream().anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)));
     }
+
+    @Test
+    public void testImageNotOptimized() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withImage("some-image").withStartOptimized(false))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
+    }
+
+    @Test
+    public void testAdditionalOptionTruststorePath() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addToAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS, "/something")))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+                .anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)
+                        && envVar.getValue().equals("/something")));
+    }
+
+    @Test
+    public void testImageForceOptimized() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withStartOptimized(true))
+                .getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getCommand().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG));
+    }
+
 }

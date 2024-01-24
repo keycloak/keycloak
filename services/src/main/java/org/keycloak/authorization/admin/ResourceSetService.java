@@ -41,10 +41,17 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -67,12 +74,14 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
@@ -91,8 +100,15 @@ public class ResourceSetService {
 
     @POST
     @NoCache
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "201", description = "Created",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public Response createPost(ResourceRepresentation resource) {
         if (resource == null) {
             return Response.status(Status.BAD_REQUEST).build();
@@ -131,11 +147,15 @@ public class ResourceSetService {
         return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
-    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -153,9 +173,13 @@ public class ResourceSetService {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response delete(@PathParam("resource-id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
@@ -174,11 +198,18 @@ public class ResourceSetService {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response findById(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response findById(@PathParam("resource-id") String id) {
         return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
@@ -194,11 +225,18 @@ public class ResourceSetService {
         return Response.ok(toRepresentation.apply(model)).build();
     }
 
-    @Path("{id}/scopes")
+    @Path("{resource-id}/scopes")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getScopes(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ScopeRepresentation.class, type = SchemaType.ARRAY))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response getScopes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
@@ -237,11 +275,18 @@ public class ResourceSetService {
         return Response.ok(scopes).build();
     }
 
-    @Path("{id}/permissions")
+    @Path("{resource-id}/permissions")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getPermissions(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = PolicyRepresentation.class, type = SchemaType.ARRAY))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response getPermissions(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
@@ -295,11 +340,11 @@ public class ResourceSetService {
         return Response.ok(representation).build();
     }
 
-    @Path("{id}/attributes")
+    @Path("{resource-id}/attributes")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getAttributes(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAttributes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
@@ -314,7 +359,15 @@ public class ResourceSetService {
     @Path("/search")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "204", description = "No Content")
+    })
     public Response find(@QueryParam("name") String name) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -334,7 +387,11 @@ public class ResourceSetService {
 
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponse(
+        responseCode = "200",
+        content = @Content(schema = @Schema(implementation = ResourceRepresentation.class, type = SchemaType.ARRAY))
+    )
     public Response find(@QueryParam("_id") String id,
                          @QueryParam("name") String name,
                          @QueryParam("uri") String uri,

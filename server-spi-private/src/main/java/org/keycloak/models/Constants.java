@@ -140,6 +140,13 @@ public final class Constants {
     // Authentication session note, which contains loa of current authentication in progress
     public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";
 
+    // Key in authentication execution config (AuthenticationExecutionModel), storing the configured authentication reference value
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_VALUE = "default.reference.value";
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE = "default.reference.maxAge";
+
+    // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
+    public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
+
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
     // so it is possible to check when particular level expires and needs to be re-authenticated
     public static final String LOA_MAP = "loa-map";
@@ -156,4 +163,5 @@ public final class Constants {
 
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
+    public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
 }

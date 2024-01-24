@@ -40,7 +40,7 @@ Most of the time, it should be enough to set the `hostname` option in order to c
 When using the `hostname` option the server is going to resolve the HTTP scheme, port, and path, automatically so that:
 
 * `https` scheme is used unless you set `hostname-strict-https=false`
-* if the `proxy` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-port` configuration option
+* if the `proxy-headers` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-url` configuration option
 
 However, if you want to set not only the host but also a scheme, port, and path, you can set the `hostname-url` option:
 
@@ -51,7 +51,7 @@ the `hostname` and `hostname-url` are mutually exclusive.
 
 [NOTE]
 ====
-By `hostname` and `proxy` configuration options you affect only the static resources URLs, redirect URIs, OIDC well-known endpoints, etc. In order to change, where/on which port the server actually listens on, you need to use the `http/tls` configuration options (e.g. `http-host`, `https-port`, etc.). For more details, see <@links.server id="enabletls"/> and <@links.server id="all-config"/>.
+By `hostname` and `proxy-headers` configuration options you affect only the static resources URLs, redirect URIs, OIDC well-known endpoints, etc. In order to change, where/on which port the server actually listens on, you need to use the `http/tls` configuration options (e.g. `http-host`, `https-port`, etc.). For more details, see <@links.server id="enabletls"/> and <@links.server id="all-config"/>.
 ====
 
 === Backend
@@ -101,7 +101,7 @@ Note that the `start` command requires setting up TLS. The corresponding options
 In this example, the server is running behind a TLS termination proxy and publicly available from `https://mykeycloak`.
 
 .Configuration:
-<@kc.start parameters="--hostname=mykeycloak --proxy=edge"/>
+<@kc.start parameters="--hostname=mykeycloak --http-enabled=true --proxy-headers=forwarded|xforwarded"/>
 
 === Exposing the server without a proxy
 
@@ -130,14 +130,12 @@ In this example, the server is accessible using a port other than the default po
 
 === Exposing {project_name} behind a TLS reencrypt proxy using different ports
 
-In this example, the server is running behind a proxy and both the server and the proxy are using their own certificates, so the communication between {project_name} and the proxy is encrypted. Because we want the proxy to use its own certificate, the proxy mode `reencrypt` will be used. We need to keep in mind that the proxy configuration options (as well as hostname configuration options) are not changing the ports on which the server actually is listening on (it changes only the ports of static resources like JavaScript and CSS links, OIDC well-known endpoints, redirect URIs, etc.). Therefore, we need to use HTTP configuration options to change the {project_name} server to internally listen on a different port, e.g. 8543. The proxy will be listening on the port 8443 (the port visible while accessing the console via a browser). The example hostname `my-keycloak.org` will be used for the server and similarly the admin console will be accessible via the `admin.my-keycloak.org` subdomain.
+In this example, the server is running behind a proxy and both the server and the proxy are using their own certificates, so the communication between {project_name} and the proxy is encrypted. The reverse proxy uses the `Forwarded` header and does not set the `X-Forwarded-*` headers. We need to keep in mind that the proxy configuration options (as well as hostname configuration options) are not changing the ports on which the server actually is listening on (it changes only the ports of static resources like JavaScript and CSS links, OIDC well-known endpoints, redirect URIs, etc.). Therefore, we need to use HTTP configuration options to change the {project_name} server to internally listen on a different port, e.g. 8543. The proxy will be listening on the port 8443 (the port visible while accessing the console via a browser). The example hostname `my-keycloak.org` will be used for the server and similarly the admin console will be accessible via the `admin.my-keycloak.org` subdomain.
 
 .{project_name} configuration:
-<@kc.start parameters="--proxy=reencrypt --https-port=8543 --hostname-url=https://my-keycloak.org:8443 --hostname-admin-url=https://admin.my-keycloak.org:8443"/>
+<@kc.start parameters="--proxy-headers=forwarded --https-port=8543 --hostname-url=https://my-keycloak.org:8443 --hostname-admin-url=https://admin.my-keycloak.org:8443"/>
 
-Note: there is currently no difference between the `passthrough` and `reencrypt` modes. For now, this is meant for future-proof configuration compatibility. The only difference is that when the `edge` proxy mode is used, HTTP is implicitly enabled (again as mentioned above, this does not affect the server behaviour).
-
-WARNING: Usage any of the proxy modes makes {project_name} rely on Forwarded and X-Forwarded-* headers.
+WARNING: Usage of the `proxy-headers` option rely on `Forwarded` and `X-Forwarded-*` headers, respectively, that have to be set and overwritten by the reverse proxy.
 Misconfiguration may leave {project_name} exposed to security issues. For more details, see <@links.server id="reverseproxy"/>.
 
 == Troubleshooting

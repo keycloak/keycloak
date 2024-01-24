@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -85,12 +87,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
-    private boolean isDeclarativeConfigurationEnabled;
-
-    private String defaultRawConfig;
-    private UPConfig parsedDefaultRawConfig;
+    private static volatile UPConfig PARSED_DEFAULT_RAW_CONFIG;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
+    public static void setDefaultConfig(UPConfig defaultConfig) {
+        PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
+    }
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
@@ -176,6 +178,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return realm.isInternationalizationEnabled();
     }
 
+    private static boolean isTermAndConditionsEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        RequiredActionProviderModel tacModel = realm.getRequiredActionProviderByAlias(
+                UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        return tacModel != null && tacModel.isEnabled();
+    }
+
     private static boolean isNewUser(AttributeContext c) {
         return c.getUser() == null;
     }
@@ -197,14 +206,14 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return null;
     }
 
+    public static UPConfig parseDefaultConfig() {
+        return UPConfigUtils.parseDefaultConfig();
+    }
+
     @Override
     public void init(Config.Scope config) {
-        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
-        defaultRawConfig = UPConfigUtils.readDefaultConfig();
-        try {
-            parsedDefaultRawConfig = UPConfigUtils.parseConfig(defaultRawConfig);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to parse default user profile configuration", cause);
+        if (PARSED_DEFAULT_RAW_CONFIG == null) {
+            setDefaultConfig(parseDefaultConfig());
         }
 
         // make sure registry is clear in case of re-deploy
@@ -220,7 +229,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
         if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
-            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
+            addContextualProfileMetadata(configureUserProfile(createUpdateEmailProfile(UPDATE_EMAIL, readOnlyValidator)));
         }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile(readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
@@ -319,12 +328,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      * @return the metadata
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
-        if (isDeclarativeConfigurationEnabled) {
-            // default metadata for each context is based on the default realm configuration
-            return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedDefaultRawConfig);
-        }
-
-        return metadata;
+        // default metadata for each context is based on the default realm configuration
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, PARSED_DEFAULT_RAW_CONFIG);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -406,6 +411,31 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return metadata;
     }
 
+    private UserProfileMetadata createUpdateEmailProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata metadata = new UserProfileMetadata(context);
+
+        metadata.addAttribute(UserModel.EMAIL, -1,
+                        DeclarativeUserProfileProviderFactory::editEmailCondition,
+                        DeclarativeUserProfileProviderFactory::readEmailCondition,
+                        new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, false)),
+                        new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
+                        new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID),
+                        new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
+                .setAttributeDisplayName("${email}");
+
+        List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
+
+        readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(readOnlyAttributesPattern));
+
+        if (readOnlyValidator != null) {
+            readonlyValidators.add(readOnlyValidator);
+        }
+
+        metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
+
+        return metadata;
+    }
+
     private UserProfileMetadata createUserResourceValidation(Config.Scope config) {
         Pattern p = getRegexPatternString(config.getArray(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES));
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
@@ -428,6 +458,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
+        metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
+                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
         return metadata;
     }
 
@@ -442,16 +477,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     // GETTER METHODS FOR INTERNAL FIELDS
 
-    protected boolean isDeclarativeConfigurationEnabled() {
-        return isDeclarativeConfigurationEnabled;
-    }
-
-    protected String getDefaultRawConfig() {
-        return defaultRawConfig;
-    }
-
     protected UPConfig getParsedDefaultRawConfig() {
-        return parsedDefaultRawConfig;
+        return PARSED_DEFAULT_RAW_CONFIG;
     }
 
     protected Map<UserProfileContext, UserProfileMetadata> getContextualMetadataRegistry() {

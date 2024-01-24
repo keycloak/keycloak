@@ -109,7 +109,10 @@ export const ClientRegistrationList = ({
         loader={policies}
         toolbarItem={
           <ToolbarItem>
-            <Button data-testid="createPolicy" onClick={toggleAddDialog}>
+            <Button
+              data-testid={`createPolicy-${subType}`}
+              onClick={toggleAddDialog}
+            >
               {t("createPolicy")}
             </Button>
           </ToolbarItem>

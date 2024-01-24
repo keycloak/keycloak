@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import base64 from 'base64-js';
 import sha256 from 'js-sha256';
 import { jwtDecode } from 'jwt-decode';
 
@@ -135,15 +134,23 @@ function Keycloak (config) {
 
             if (initOptions.pkceMethod) {
                 if (initOptions.pkceMethod !== "S256") {
-                    throw 'Invalid value for pkceMethod';
+                    throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${initOptions.pkceMethod}'.`);
                 }
                 kc.pkceMethod = initOptions.pkceMethod;
+            } else {
+                kc.pkceMethod = "S256";
             }
 
             if (typeof initOptions.enableLogging === 'boolean') {
                 kc.enableLogging = initOptions.enableLogging;
             } else {
                 kc.enableLogging = false;
+            }
+
+            if (initOptions.logoutMethod === 'POST') {
+                kc.logoutMethod = 'POST';
+            } else {
+                kc.logoutMethod = 'GET';
             }
 
             if (typeof initOptions.scope === 'string') {
@@ -369,19 +376,18 @@ function Keycloak (config) {
     }
 
     function generatePkceChallenge(pkceMethod, codeVerifier) {
-        switch (pkceMethod) {
-            // The use of the "plain" method is considered insecure and therefore not supported.
-            case "S256":
-                // hash codeVerifier, then encode as url-safe base64 without padding
-                var hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
-                var encodedHash = base64.fromByteArray(hashBytes)
-                    .replace(/\+/g, '-')
-                    .replace(/\//g, '_')
-                    .replace(/\=/g, '');
-                return encodedHash;
-            default:
-                throw 'Invalid value for pkceMethod';
+        if (pkceMethod !== "S256") {
+            throw new TypeError(`Invalid value for 'pkceMethod', expected 'S256' but got '${pkceMethod}'.`);
         }
+
+        // hash codeVerifier, then encode as url-safe base64 without padding
+        const hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
+        const encodedHash = bytesToBase64(hashBytes)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/\=/g, '');
+
+        return encodedHash;
     }
 
     function buildClaimsParameter(requestedAcr){
@@ -487,6 +493,12 @@ function Keycloak (config) {
     }
 
     kc.createLogoutUrl = function(options) {
+
+        const logoutMethod = options?.logoutMethod ?? kc.logoutMethod;
+        if (logoutMethod === 'POST') {
+            return kc.endpoints.logout();
+        }
+
         var url = kc.endpoints.logout()
             + '?client_id=' + encodeURIComponent(kc.clientId)
             + '&post_logout_redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
@@ -1317,9 +1329,38 @@ function Keycloak (config) {
                     return createPromise().promise;
                 },
 
-                logout: function(options) {
-                    window.location.replace(kc.createLogoutUrl(options));
-                    return createPromise().promise;
+                logout: async function(options) {
+
+                    const logoutMethod = options?.logoutMethod ?? kc.logoutMethod;
+                    if (logoutMethod === "GET") {
+                        window.location.replace(kc.createLogoutUrl(options));
+                        return;
+                    }
+
+                    const logoutUrl = kc.createLogoutUrl(options);
+                    const response = await fetch(logoutUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: new URLSearchParams({
+                            id_token_hint: kc.idToken,
+                            client_id: kc.clientId,
+                            post_logout_redirect_uri: adapter.redirectUri(options, false)
+                        })
+                    });
+
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (response.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    throw new Error("Logout failed, request returned an error code.");
                 },
 
                 register: function(options) {
@@ -1715,3 +1756,9 @@ function Keycloak (config) {
 }
 
 export default Keycloak;
+
+// See: https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+function bytesToBase64(bytes) {
+    const binString = String.fromCodePoint(...bytes);
+    return btoa(binString);
+}

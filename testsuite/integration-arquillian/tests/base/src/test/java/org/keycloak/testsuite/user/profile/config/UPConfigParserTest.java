@@ -198,7 +198,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         UPConfig config = loadValidConfig();
         //we run this test without KeycloakSession so validator configs are not validated here
 
-        UPAttribute attConfig = config.getAttributes().get(1);
+        UPAttribute attConfig = config.getAttributes().get(2);
 
         attConfig.setName(null);
         List<String> errors = validate(session, config);
@@ -209,7 +209,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, errors.size());
 
         // duplicate attribute name
-        attConfig.setName("firstName");
+        attConfig.setName("lastName");
         errors = validate(session, config);
         Assert.assertEquals(1, errors.size());
 

@@ -68,6 +68,7 @@ export const InlineLabelEdit = ({
                   data-testid="editUserLabelAcceptBtn"
                   variant="link"
                   className="kc-editUserLabelAcceptBtn"
+                  aria-label={t("acceptBtn")}
                   type="submit"
                   icon={<CheckIcon />}
                 />
@@ -75,6 +76,7 @@ export const InlineLabelEdit = ({
                   data-testid="editUserLabelCancelBtn"
                   variant="link"
                   className="kc-editUserLabel-cancelBtn"
+                  aria-label={t("cancelBtn")}
                   onClick={toggle}
                   icon={<TimesIcon />}
                 />

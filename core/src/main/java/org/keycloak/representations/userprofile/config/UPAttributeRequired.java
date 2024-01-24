@@ -18,6 +18,8 @@
  */
 package org.keycloak.representations.userprofile.config;
 
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -28,10 +30,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPAttributeRequired {
+public class UPAttributeRequired implements Cloneable {
 
     private Set<String> roles;
     private Set<String> scopes;
+
+    public UPAttributeRequired() {
+        // for reflection
+    }
+
+    public UPAttributeRequired(Set<String> roles, Set<String> scopes) {
+        this.roles = roles;
+        this.scopes = scopes;
+    }
 
     /**
      * Check if this config means that the attribute is ALWAYS required.
@@ -65,4 +76,28 @@ public class UPAttributeRequired {
         return "UPAttributeRequired [isAlways=" + isAlways() + ", roles=" + roles + ", scopes=" + scopes + "]";
     }
 
+    @Override
+    protected UPAttributeRequired clone() {
+        Set<String> scopes = this.scopes == null ? null : new HashSet<>(this.scopes);
+        Set<String> roles = this.roles == null ? null : new HashSet<>(this.roles);
+        return new UPAttributeRequired(roles, scopes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(roles, scopes);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPAttributeRequired other = (UPAttributeRequired) obj;
+        return Objects.equals(this.roles, other.roles)
+                && Objects.equals(this.scopes, other.scopes);
+    }
 }

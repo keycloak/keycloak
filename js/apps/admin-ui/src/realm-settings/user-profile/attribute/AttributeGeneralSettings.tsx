@@ -126,7 +126,7 @@ export const AttributeGeneralSettings = () => {
             fieldLabelId="realm-setting:attributeGroup"
           />
         }
-        fieldId="kc-attribute-group"
+        fieldId="kc-attributeGroup"
       >
         <Controller
           name="group"
@@ -135,6 +135,7 @@ export const AttributeGeneralSettings = () => {
           render={({ field }) => (
             <Select
               toggleId="kc-attributeGroup"
+              aria-label={t("attributeGroup")}
               onToggle={() =>
                 setIsAttributeGroupDropdownOpen(!isAttributeGroupDropdownOpen)
               }
@@ -165,6 +166,12 @@ export const AttributeGeneralSettings = () => {
           <Divider />
           <FormGroup
             label={t("enabledWhen")}
+            labelIcon={
+              <HelpItem
+                helpText={t("enabledWhenTooltip")}
+                fieldLabelId="enabled-when"
+              />
+            }
             fieldId="enabledWhen"
             hasNoPaddingTop
           >
@@ -296,6 +303,12 @@ export const AttributeGeneralSettings = () => {
               </FormGroup>
               <FormGroup
                 label={t("requiredWhen")}
+                labelIcon={
+                  <HelpItem
+                    helpText={t("requiredWhenTooltip")}
+                    fieldLabelId="required-when"
+                  />
+                }
                 fieldId="requiredWhen"
                 hasNoPaddingTop
               >

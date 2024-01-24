@@ -42,7 +42,7 @@ export const NewPolicyDialog = ({
 
   return (
     <Modal
-      aria-labelledby={t("addPredefinedMappers")}
+      aria-label={t("createPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>

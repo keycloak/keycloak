@@ -118,8 +118,7 @@ public class GroupSearchTest extends AbstractGroupTest {
             search(buildSearchQuery(ATTR_QUOTES_NAME_ESCAPED, ATTR_QUOTES_VAL_ESCAPED), GROUP3);
 
             // "filtered" attribute won't take effect when JPA is used
-            String[] expectedRes = isLegacyJpaStore() ? new String[]{GROUP1, GROUP2} : new String[]{GROUP2};
-            search(buildSearchQuery(ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL), expectedRes);
+            search(buildSearchQuery(ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL), new String[]{GROUP1, GROUP2});
         } finally {
             resetSearchableAttributes();
         }
@@ -285,10 +284,6 @@ public class GroupSearchTest extends AbstractGroupTest {
         }
 
         return sb.toString();
-    }
-
-    private boolean isLegacyJpaStore() {
-        return keycloakUsingProviderWithId(GroupProvider.class, "jpa");
     }
 
     @Override

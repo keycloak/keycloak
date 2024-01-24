@@ -19,6 +19,8 @@
 package org.keycloak.representations.userprofile.config;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -28,10 +30,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-public class UPAttributePermissions {
+public class UPAttributePermissions implements Cloneable {
 
     private Set<String> view = Collections.emptySet();
     private Set<String> edit = Collections.emptySet();
+
+    public UPAttributePermissions() {
+        // for reflection
+    }
+
+    public UPAttributePermissions(Set<String> view, Set<String> edit) {
+        this.view = view;
+        this.edit = edit;
+    }
 
     public Set<String> getView() {
         return view;
@@ -57,5 +68,30 @@ public class UPAttributePermissions {
     @JsonIgnore
     public boolean isEmpty() {
         return getEdit().isEmpty() && getView().isEmpty();
+    }
+
+    @Override
+    protected UPAttributePermissions clone() {
+        Set<String> view = this.view == null ? null : new HashSet<>(this.view);
+        Set<String> edit = this.edit == null ? null : new HashSet<>(this.edit);
+        return new UPAttributePermissions(view, edit);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(view, edit);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final UPAttributePermissions other = (UPAttributePermissions) obj;
+        return Objects.equals(this.view, other.view)
+                && Objects.equals(this.edit, other.edit);
     }
 }

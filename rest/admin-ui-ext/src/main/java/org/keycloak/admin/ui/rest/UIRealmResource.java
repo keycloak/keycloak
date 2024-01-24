@@ -19,8 +19,6 @@
 
 package org.keycloak.admin.ui.rest;
 
-import java.io.IOException;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.PUT;
@@ -35,7 +33,6 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.UserProfileResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * This JAX-RS resource is decorating the Admin Realm API in order to support specific behaviors from the
@@ -48,10 +45,12 @@ public class UIRealmResource {
     private final RealmAdminResource delegate;
     private final KeycloakSession session;
     private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
     public UIRealmResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
+        this.adminEvent = adminEvent;
         this.delegate = new RealmAdminResource(session, auth, adminEvent);
     }
 
@@ -75,21 +74,16 @@ public class UIRealmResource {
             return;
         }
 
-        String rawUpConfig;
+        UserProfileResource userProfileResource = new UserProfileResource(session, auth, adminEvent);
+        if (!upConfig.equals(userProfileResource.getConfiguration())) {
+            Response response = userProfileResource.update(upConfig);
 
-        try {
-            rawUpConfig = JsonSerialization.writeValueAsString(upConfig);
-        } catch (IOException e) {
-            throw new InternalServerErrorException("Failed to parse user profile config", e);
+            if (isSuccessful(response)) {
+                return;
+            }
+
+            throw new InternalServerErrorException("Failed to update user profile configuration");
         }
-
-        Response response = new UserProfileResource(session, auth).update(rawUpConfig);
-
-        if (isSuccessful(response)) {
-            return;
-        }
-
-        throw new InternalServerErrorException("Failed to update user profile configuration");
     }
 
     private boolean isSuccessful(Response response) {

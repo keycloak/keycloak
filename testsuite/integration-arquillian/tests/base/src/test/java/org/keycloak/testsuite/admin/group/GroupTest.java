@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
@@ -39,7 +40,9 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -1096,6 +1099,30 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void getSubGroups() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("parent");
+        parent = createGroup(realm, parent);
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("child");
+        Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+        attributes.put("attribute1", Arrays.asList("value1", "value2"));
+        child.setAttributes(attributes);
+
+        addSubGroup(realm, parent, child);
+
+        // Check brief and full retrieval of subgroups of parent
+        boolean briefRepresentation = true;
+        assertNull(realm.groups().group(parent.getId()).getSubGroups(null, null, briefRepresentation).get(0).getAttributes());
+
+        briefRepresentation = false;
+        assertThat(realm.groups().group(parent.getId()).getSubGroups(null, null, briefRepresentation).get(0).getAttributes().get("attribute1"), containsInAnyOrder("value1", "value2"));
+    }
+
+    @Test
     public void searchAndCountGroups() throws Exception {
         String firstGroupId = "";
 
@@ -1227,10 +1254,39 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void removeAllGroupAttributes() {
+        final var realm = adminClient.realms().realm("test");
+        final var groupName = "remove-all-attributes-group";
+
+        final Map<String, List<String>> initialAttributes = Map.of("test-key", List.of("test-val"));
+        final var groupToCreate =
+                GroupBuilder.create().name(groupName).attributes(initialAttributes).build();
+        final var groupsResource = realm.groups();
+        try (final Response response = groupsResource.add(groupToCreate)) {
+            final var groupId = ApiUtil.getCreatedId(response);
+
+            final var groupResource = groupsResource.group(groupId);
+            final var createdGroup = groupResource.toRepresentation();
+            assertThat(createdGroup.getAttributes(), equalTo(initialAttributes));
+
+            final var groupToUpdate =
+                    GroupBuilder.create().name(groupName).attributes(Collections.emptyMap()).build();
+            groupResource.update(groupToUpdate);
+
+            final var updatedGroup = groupResource.toRepresentation();
+            assertThat(updatedGroup.getAttributes(), anEmptyMap());
+        }
+    }
+
+    @Test
     public void testBriefRepresentationOnGroupMembers() {
         RealmResource realm = adminClient.realms().realm("test");
         String groupName = "brief-grouptest-group";
         String userName = "brief-grouptest-user";
+
+        // enable user profile unmanaged attributes
+        UserProfileResource upResource = realm.users().userProfile();
+        UPConfig cfg = VerifyProfileTest.enableUnmanagedAttributes(upResource);
 
         GroupsResource groups = realm.groups();
         try (Response response = groups.add(GroupBuilder.create().name(groupName).build())) {
@@ -1259,6 +1315,9 @@ public class GroupTest extends AbstractGroupTest {
 
             group.remove();
             user.remove();
+        } finally {
+            cfg.setUnmanagedAttributePolicy(null);
+            upResource.update(cfg);
         }
     }
 

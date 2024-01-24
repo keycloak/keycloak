@@ -31,12 +31,7 @@ describe("User profile tabs", () => {
   const realmName = "Realm_" + uuid();
   const attributeName = "Test";
 
-  before(() =>
-    adminClient.createRealm(realmName, {
-      attributes: { userProfileEnabled: "true" },
-    }),
-  );
-
+  before(() => adminClient.createRealm(realmName));
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
@@ -130,6 +125,8 @@ describe("User profile tabs", () => {
       {ctrl+a}{backspace}
   {
     "attributes": [
+      {
+  "name": "email"{downArrow},
       {
   "name": "username",
   "validations": {

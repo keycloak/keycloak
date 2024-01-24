@@ -28,6 +28,7 @@ org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper
 org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper
 org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper
 org.keycloak.protocol.oidc.mappers.AcrProtocolMapper
+org.keycloak.protocol.oidc.mappers.AmrProtocolMapper
 org.keycloak.protocol.saml.mappers.RoleListMapper
 org.keycloak.protocol.saml.mappers.RoleNameMapper
 org.keycloak.protocol.saml.mappers.HardcodedRole

@@ -58,12 +58,4 @@ public interface HttpResponse {
      */
     void setCookieIfAbsent(HttpCookie cookie);
 
-    /**
-     * Adding cookies at the end of the transaction helps when retrying a transaction might add the
-     * cookie multiple times. In some scenarios it must not be added at the end of the transaction,
-     * as at that time the response has already been sent to the caller ("committed"), so the code
-     * needs to make a choice. As retrying transactions is the exception, adding cookies at the end
-     * of the transaction is also the exception and needs to be switched on where necessary.
-     */
-    void setWriteCookiesOnTransactionComplete();
 }

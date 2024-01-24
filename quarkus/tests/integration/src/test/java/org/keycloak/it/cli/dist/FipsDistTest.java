@@ -39,7 +39,7 @@ public class FipsDistTest {
             CLIResult cliResult = dist.run("start");
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
-            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips", 0);
+            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(BCFIPS version 1.000203, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
         });
@@ -78,6 +78,7 @@ public class FipsDistTest {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            dist.assertStopped();
         });
     }
 
@@ -125,6 +126,7 @@ public class FipsDistTest {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
             cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            dist.assertStopped();
         });
     }
 

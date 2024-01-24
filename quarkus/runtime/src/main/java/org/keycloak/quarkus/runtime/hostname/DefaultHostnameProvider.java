@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.hostname;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.config.ProxyOptions.PROXY;
+import static org.keycloak.config.ProxyOptions.PROXY_HEADERS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 import static org.keycloak.urls.UrlType.ADMIN;
@@ -36,6 +37,8 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.HostnameOptions;
@@ -43,11 +46,12 @@ import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.ProxyOptions.Mode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
 
-public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory {
+public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(DefaultHostnameProvider.class);
     private static final String REALM_URI_SESSION_ATTRIBUTE = DefaultHostnameProvider.class.getName() + ".realmUrl";
@@ -289,7 +293,13 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
-        noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+
+        if (getKcConfigValue(PROXY_HEADERS.getKey()).getValue() != null) { // proxy-headers option was explicitly configured
+            noProxy = false;
+        } else { // falling back to proxy option
+            noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+        }
+
         defaultTlsPort = Integer.parseInt(httpsPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
@@ -346,5 +356,10 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         return defaultValue;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Feature.HOSTNAME_V1);
     }
 }

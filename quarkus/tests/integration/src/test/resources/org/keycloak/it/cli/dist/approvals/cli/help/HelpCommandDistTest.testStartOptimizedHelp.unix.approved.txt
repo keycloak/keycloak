@@ -14,11 +14,10 @@ Options:
                        'data/import' directory.
 --optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
 
 Database:
 
---db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
-                       driver is set accordingly to the chosen database.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -91,9 +90,6 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-cipher-suites <ciphers>
                      The cipher suites to use. If none is given, a reasonable default is selected.
---https-client-auth <auth>
-                     Configures the server to require/request client authentication. Possible
-                       values are: none, request, required. Default: none.
 --https-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files.
@@ -107,14 +103,17 @@ HTTP(S):
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     DEPRECATED: The trust store which holds the certificate information of the
-                       certificates to trust.
+                     DEPRECATED. The trust store which holds the certificate information of the
+                       certificates to trust. Use the System Truststore instead, see the docs for
+                       details.
 --https-trust-store-password <password>
-                     DEPRECATED: The password of the trust store file.
+                     DEPRECATED. The password of the trust store file. Use the System Truststore
+                       instead, see the docs for details.
 --https-trust-store-type <type>
-                     DEPRECATED: The type of the trust store file. If not given, the type is
+                     DEPRECATED. The type of the trust store file. If not given, the type is
                        automatically detected based on the file name. If 'fips-mode' is set to
-                       'strict' and no value is set, it defaults to 'BCFKS'.
+                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
+                       Truststore instead, see the docs for details.
 
 Config:
 
@@ -127,8 +126,13 @@ Config:
 
 Proxy:
 
---proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none, edge, reencrypt, passthrough. Default: none.
+--proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
+                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
+                       Default: none. Use the following option instead: proxy-headers.
+--proxy-headers <headers>
+                     The proxy headers that should be accepted by the server. Misconfiguration
+                       might leave the server exposed to security vulnerabilities. Takes precedence
+                       over the deprecated proxy option. Possible values are: forwarded, xforwarded.
 
 Vault:
 

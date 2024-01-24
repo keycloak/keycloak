@@ -19,9 +19,18 @@
 
 package org.keycloak.userprofile;
 
+import java.util.Set;
+import java.util.function.Predicate;
+
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
+
+import org.keycloak.models.UserModel;
+import org.keycloak.utils.StringUtil;
+
 /**
  * <p>This interface represents the different contexts from where user profiles are managed. The core contexts are already
- * available here representing the different parts in Keycloak where user profiles are managed.
+ * available here representing the different areas in Keycloak where user profiles are managed.
  *
  * <p>The context is crucial to drive the conditions that should be respected when managing user profiles. It might be possible
  * to include in the future metadata about contexts. As well as support custom contexts.
@@ -30,24 +39,91 @@ package org.keycloak.userprofile;
  */
 public enum UserProfileContext {
 
-    UPDATE_PROFILE(true),
-    USER_API(false),
-    ACCOUNT(true),
-    IDP_REVIEW(false),
-    REGISTRATION(false),
-    UPDATE_EMAIL(false);
+    /**
+     * In this context, a user profile is managed by themselves during an authentication flow such as when updating the user profile.
+     */
+    UPDATE_PROFILE(false, true, true),
+
+    /**
+     * In this context, a user profile is managed through the management interface such as the Admin API.
+     */
+    USER_API(true, false, false),
+
+    /**
+     * In this context, a user profile is managed by themselves through the account console.
+     */
+    ACCOUNT(false, false, true),
+
+    /**
+     * In this context, a user profile is managed by themselves when authenticating through a broker.
+     */
+    IDP_REVIEW(false, true, false),
+
+    /**
+     * In this context, a user profile is managed by themselves when registering to a realm.
+     */
+    REGISTRATION(false, true, false),
+
+    /**
+     * In this context, a user profile is managed by themselves when updating their email through an application initiated action.
+     * In this context, only the {@link UserModel#EMAIL} attribute is supported.
+     */
+    UPDATE_EMAIL(false, true, false, Set.of(UserModel.EMAIL)::contains);
+
+    private final boolean resetEmailVerified;
+    private final Predicate<String> attributeSelector;
+    private final boolean adminContext;
+    private final boolean authFlowContext;
     
-    protected boolean resetEmailVerified;
-    
-    private UserProfileContext(boolean resetEmailVerified){
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified, Predicate<String> attributeSelector){
+        this.adminContext = adminContext;
+        this.authFlowContext = authFlowContext;
         this.resetEmailVerified = resetEmailVerified;
+        this.attributeSelector = attributeSelector;
     }
-    
+
+    UserProfileContext(boolean adminContext, boolean authFlowContext, boolean resetEmailVerified){
+        this(adminContext, authFlowContext, resetEmailVerified, StringUtil::isNotBlank);
+    }
+
+    /**
+     * @return true means that this context is applicable to administrators. False means that this context is applicable to regular users
+     */
+    public boolean isAdminContext() {
+        return adminContext;
+    }
+
+    /**
+     * @return true if context CAN BE part of the authentication flow
+     */
+    public boolean canBeAuthFlowContext() {
+        return authFlowContext;
+    }
+
     /**
      * @return true means that UserModel.emailVerified flag must be reset to false in this context when email address is updated
      */
     public boolean isResetEmailVerified() {
         return resetEmailVerified;
     }
-    
+
+    /**
+     * Check if roles configuration contains role for this context.
+     *
+     * @param roles to be inspected
+     * @return true if roles list contains role representing checked context
+     */
+    public boolean isRoleForContext(Set<String> roles) {
+        if (roles == null)
+            return false;
+        return roles.contains(getContextRole());
+    }
+
+    private String getContextRole() {
+        return isAdminContext() ? ROLE_ADMIN : ROLE_USER;
+    }
+
+    public boolean isAttributeSupported(String name) {
+        return attributeSelector.test(name);
+    }
 }

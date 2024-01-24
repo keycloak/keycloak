@@ -53,6 +53,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -446,7 +447,7 @@ public class OAuthClient {
             e.printStackTrace();
         }
 
-        // load the trustore
+        // load the truststore
         KeyStore truststore = null;
         try {
             truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
@@ -970,6 +971,10 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
+        }
+
         UrlEncodedFormEntity formEntity;
         try {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
@@ -1002,6 +1007,9 @@ public class OAuthClient {
         }
         if (refreshToken != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
+        }
+        if (scope != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
         }
         if (clientId != null && password != null) {
             String authorization = BasicAuthHelper.createHeader(clientId, password);
@@ -1369,10 +1377,15 @@ public class OAuthClient {
     }
 
     public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
+        return createSigner(privateKey, kid, algorithm, null);
+    }
+
+    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm, String curve) {
         KeyWrapper keyWrapper = new KeyWrapper();
         keyWrapper.setAlgorithm(algorithm);
         keyWrapper.setKid(kid);
         keyWrapper.setPrivateKey(privateKey);
+        keyWrapper.setCurve(curve);
         SignatureSignerContext signer;
         switch (algorithm) {
             case Algorithm.ES256:
@@ -1394,6 +1407,9 @@ public class OAuthClient {
         int index = driver.getCurrentUrl().indexOf('?');
         if (index == -1) {
             index = driver.getCurrentUrl().indexOf('#');
+            if (index == -1) {
+                index = driver.getCurrentUrl().length();
+            }
         }
         return driver.getCurrentUrl().substring(0, index);
     }
@@ -2189,6 +2205,9 @@ public class OAuthClient {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
+                if (k.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
+                    key.setCurve((String) k.getOtherClaims().get(OKPPublicJWK.CRV));
+                }
                 key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 

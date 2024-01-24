@@ -16,6 +16,10 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -30,9 +34,6 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 
@@ -102,6 +103,12 @@ public class ThemeResource {
         }
     }
 
+    @Path("/{realm}/{themeType}/{locale}")
+    @OPTIONS
+    public Response localizationTextPreflight() {
+        return Cors.add(session.getContext().getHttpRequest(), Response.ok()).auth().preflight().build();
+    }
+
     @GET
     @Path("/{realm}/{themeType}/{locale}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -109,6 +116,9 @@ public class ThemeResource {
                                          @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
                                          @QueryParam("source") boolean showSource) throws IOException {
         final RealmModel realm = session.realms().getRealmByName(realmName);
+        if (realm == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         session.getContext().setRealm(realm);
         List<KeySource> result;
 

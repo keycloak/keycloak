@@ -30,11 +30,11 @@ public class LoggingOptions {
                 .toList();
     }
 
-    public static final Option LOG = new OptionBuilder("log", List.class, Handler.class)
+    public static final Option<List<Handler>> LOG = OptionBuilder.listOptionBuilder("log", Handler.class)
             .category(OptionCategory.LOGGING)
             .description("Enable one or more log handlers in a comma-separated list.")
-            .expectedValues(() -> getAvailableHandlerNames())
-            .defaultValue(DEFAULT_LOG_HANDLER)
+            .expectedValues(getAvailableHandlerNames())
+            .defaultValue(Arrays.asList(DEFAULT_LOG_HANDLER))
             .build();
 
     public enum Level {
@@ -53,9 +53,9 @@ public class LoggingOptions {
         }
     }
 
-    public static final Option<String> LOG_LEVEL = new OptionBuilder<>("log-level", String.class)
+    public static final Option<List<String>> LOG_LEVEL = OptionBuilder.listOptionBuilder("log-level", String.class)
             .category(OptionCategory.LOGGING)
-            .defaultValue(DEFAULT_LOG_LEVEL.toString())
+            .defaultValue(Arrays.asList(DEFAULT_LOG_LEVEL.toString()))
             .description("The log level of the root category or a comma-separated list of individual categories and their levels. For the root category, you don't need to specify a category.")
             .build();
 

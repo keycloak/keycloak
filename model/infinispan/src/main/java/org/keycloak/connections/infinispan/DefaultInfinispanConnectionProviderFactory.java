@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
@@ -29,7 +28,6 @@ import org.infinispan.eviction.EvictionType;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -53,6 +51,10 @@ import org.keycloak.provider.ProviderEvent;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
@@ -66,6 +68,7 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
  */
 public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
 
+    private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
     private Config.Scope config;
@@ -85,24 +88,52 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, topologyInfo);
     }
 
+    /*
+        Workaround for Infinispan 12.1.7.Final and tested until 14.0.19.Final to prevent a deadlock while
+        DefaultInfinispanConnectionProviderFactory is shutting down. Kept as a permanent solution and considered
+        good enough after a lot of analysis went into this difficult to reproduce problem.
+        See https://github.com/keycloak/keycloak/issues/9871 for the discussion.
+    */
+    public static void runWithReadLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static <T> T runWithReadLockOnCacheManager(Supplier<T> task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            return task.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static void runWithWriteLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.writeLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public void close() {
-        /*
-            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-            that acquires a writeLock and this removal that acquires a readLock.
-            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-            Tracked in https://github.com/keycloak/keycloak/issues/9871
-        */
-        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+        runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null && !containerManaged) {
                 cacheManager.stop();
             }
             if (remoteCacheProvider != null) {
                 remoteCacheProvider.stop();
             }
-        }
+        });
     }
 
     @Override

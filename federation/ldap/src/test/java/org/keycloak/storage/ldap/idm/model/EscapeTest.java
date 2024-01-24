@@ -27,15 +27,6 @@ import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 public class EscapeTest {
 
     @Test
-    public void testEscapingExceptAsterisk() {
-        String text = "Véronique* Martin(john)second\\fff//eee\u0000";
-        Assert.assertEquals(EscapeStrategy.DEFAULT_EXCEPT_ASTERISK.escape(text), "V\\c3\\a9ronique* Martin\\28john\\29second\\5cfff//eee\\00");
-
-        text = "Hi This is a test #çà";
-        Assert.assertEquals(EscapeStrategy.DEFAULT_EXCEPT_ASTERISK.escape(text), "Hi This is a test #\\c3\\a7\\c3\\a0");
-    }
-
-    @Test
     public void testEscaping() {
         String text = "Véronique* Martin(john)second\\fff//eee\u0000";
         Assert.assertEquals(EscapeStrategy.DEFAULT.escape(text), "V\\c3\\a9ronique\\2a Martin\\28john\\29second\\5cfff//eee\\00");

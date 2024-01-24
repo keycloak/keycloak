@@ -2,7 +2,7 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Option<T> {
 
@@ -13,17 +13,19 @@ public class Option<T> {
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
-    private final Supplier<List<String>> expectedValues;
+    private final List<String> expectedValues;
+    private final DeprecatedMetadata deprecatedMetadata;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, DeprecatedMetadata deprecatedMetadata) {
         this.type = type;
         this.key = key;
         this.category = category;
         this.hidden = hidden;
         this.buildTime = buildTime;
-        this.description = getDescriptionByCategorySupportLevel(description);
+        this.description = getDescriptionByCategorySupportLevel(description, category);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
+        this.deprecatedMetadata = deprecatedMetadata;
     }
 
     public Class<T> getType() {
@@ -51,7 +53,11 @@ public class Option<T> {
     }
 
     public List<String> getExpectedValues() {
-        return expectedValues.get();
+        return expectedValues;
+    }
+
+    public Optional<DeprecatedMetadata> getDeprecatedMetadata() {
+        return Optional.ofNullable(deprecatedMetadata);
     }
 
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {
@@ -63,16 +69,14 @@ public class Option<T> {
             this.buildTime,
             this.description,
             Optional.ofNullable(defaultValue),
-            this.expectedValues
+            this.expectedValues,
+            this.deprecatedMetadata
         );
     }
 
-    private String getDescriptionByCategorySupportLevel(String description) {
-        if(description == null || description.isBlank()) {
-            return description;
-        }
-
-        switch(this.getCategory().getSupportLevel()) {
+    private static String getDescriptionByCategorySupportLevel(String description, OptionCategory category) {
+        if (description != null && !description.isBlank()) {
+            switch (category.getSupportLevel()) {
             case PREVIEW:
                 description = "Preview: " + description;
                 break;
@@ -80,9 +84,20 @@ public class Option<T> {
                 description = "Experimental: " + description;
                 break;
             default:
-                description = description;
+                break;
+            }
         }
 
         return description;
+    }
+
+    public static String getDefaultValueString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List) {
+            return ((List<?>) value).stream().map(String::valueOf).collect(Collectors.joining(","));
+        }
+        return String.valueOf(value);
     }
 }

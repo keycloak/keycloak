@@ -40,7 +40,7 @@ async function startServer() {
     [
       "start-dev",
       "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,declarative-user-profile,transient-users",
+      "--features=account3,admin-fine-grained-authz,transient-users",
       ...keycloakArgs,
     ],
     {

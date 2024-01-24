@@ -89,4 +89,8 @@ No action required.
 
 To force Route53 to mark the primary site as not available, edit the health check in AWS to point to a non-existent route (`health/down`).  After some minutes, the clients will notice the change and traffic will gradually move over to the secondary site.
 
+== Further reading
+
+See <@links.ha id="concepts-infinispan-cli-batch" /> on how to automate Infinispan CLI commands.
+
 </@tmpl.guide>

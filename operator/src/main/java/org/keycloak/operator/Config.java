@@ -31,6 +31,7 @@ public interface Config {
     interface Keycloak {
         String image();
         String imagePullPolicy();
+        boolean startOptimized();
 
         Map<String, String> podLabels();
     }

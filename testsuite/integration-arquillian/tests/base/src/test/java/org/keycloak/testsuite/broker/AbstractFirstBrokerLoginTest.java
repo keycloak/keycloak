@@ -64,17 +64,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     
     @Rule
     public AssertEvents events = new AssertEvents(this);
-    
-    protected void enableDynamicUserProfile() {
-        
-        RealmResource rr = adminClient.realm(bc.consumerRealmName());
-        
-        RealmRepresentation testRealm = rr.toRepresentation();
-        
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
-
-        rr.update(testRealm);
-    }
 
 
     /**
@@ -212,6 +201,51 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Assert.assertTrue(appPage.isCurrent());
 
         assertNumFederatedIdentities(existingUser, 1);
+    }
+
+    @Test
+    public void testLinkAccountByReauthenticationWithWrongPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+
+        Runnable revertRegistrationAllowedModification = toggleRegistrationAllowed(bc.consumerRealmName(), true);
+        try {
+            String existingUser = createUser("consumer");
+
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+            try {
+                this.loginPage.findSocialButton(bc.getIDPAlias());
+                Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+            } catch (NoSuchElementException expected) {
+            }
+
+            try {
+                this.loginPage.clickRegister();
+                Assert.fail("Not expected to see register link");
+            } catch (NoSuchElementException expected) {
+            }
+
+            loginPage.login("consumer", "wrongpassword");
+            Assert.assertTrue(loginPage.isCurrent(bc.consumerRealmName()));
+
+            assertNumFederatedIdentities(existingUser, 0);
+
+            assertEquals("Invalid username or password.", loginPage.getInputError());
+
+            try {
+                this.loginPage.clickRegister();
+                Assert.fail("Not expected to see register link");
+            } catch (NoSuchElementException expected) {
+            }
+        } finally {
+            revertRegistrationAllowedModification.run();
+        }
     }
 
     /**
@@ -909,13 +943,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
 
         driver.navigate().to(url);
-        waitForPage(driver, "you are already logged in.", false);
+        waitForPage(driver, "your email address has been verified already.", false);
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
 
         driver.navigate().to(url);
-        waitForPage(driver, "confirm linking the account testuser of identity provider " + bc.getIDPAlias() + " with your account.", false);
-        proceedPage.clickProceedLink();
-        waitForPage(driver, "you successfully verified your email. please go back to your original browser and continue there with the login.", false);
+        waitForPage(driver, "your email address has been verified already.", false);
+
+        driver2.navigate().to(url);
+        waitForPage(driver, "your email address has been verified already.", false);
     }
 
 
@@ -1277,4 +1312,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
     }
 
+    private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {
+        RealmResource consumerRealm = adminClient.realm(realmName);
+        RealmRepresentation realmRepresentation = consumerRealm.toRepresentation();
+        boolean genuineValue = realmRepresentation.isRegistrationAllowed();
+        realmRepresentation.setRegistrationAllowed(registrationAllowed);
+        consumerRealm.update(realmRepresentation);
+
+        return () -> toggleRegistrationAllowed(realmName, genuineValue);
+    }
 }

@@ -21,7 +21,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -59,7 +58,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -97,6 +95,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -214,11 +213,13 @@ public class RealmTest extends AbstractAdminTest {
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void createRealmRejectReservedChar() {
+    @Test
+    public void createRealmRejectReservedCharOrEmptyName() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-re;alm");
-        adminClient.realms().create(rep);
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
     }
 
     /**
@@ -251,10 +252,8 @@ public class RealmTest extends AbstractAdminTest {
         );
 
         // This attribute is represented in Legacy store as attribute and for Map store as a field
-        if (!StoreProvider.getCurrentProvider().isMapStore()) {
-            expectedAttributes.add(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE);
-            expectedAttributesCount++;
-        }
+        expectedAttributes.add(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE);
+        expectedAttributesCount++;
 
         assertThat(attributesKeys.size(), CoreMatchers.is(expectedAttributesCount));
         assertThat(attributesKeys, CoreMatchers.is(expectedAttributes));
@@ -463,11 +462,13 @@ public class RealmTest extends AbstractAdminTest {
         checkRealmEventsConfigRepresentation(repOrig, actual);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void updateRealmWithReservedCharInName() {
+    @Test
+    public void updateRealmWithReservedCharInNameOrEmptyName() {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setRealm("fo#o");
-        realm.update(rep);
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
     }
     
     @Test
@@ -738,7 +739,6 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearRealmCache() {
-        Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
         RealmRepresentation realmRep = realm.toRepresentation();
         assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
@@ -750,7 +750,6 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearUserCache() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         UserRepresentation user = new UserRepresentation();
         user.setUsername("clearcacheuser");
         Response response = realm.users().create(user);

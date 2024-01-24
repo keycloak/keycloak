@@ -21,10 +21,15 @@ import org.keycloak.config.database.Database;
 
 import java.util.Collection;
 import java.util.HashSet;
+
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptySet;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
 /**
@@ -35,7 +40,9 @@ public class IgnoredArtifacts {
     public static Set<String> getDefaultIgnoredArtifacts() {
         return Stream.of(
                         fips(),
-                        jdbcDrivers()
+                        jdbcDrivers(),
+                        health(),
+                        metrics()
                 )
                 .flatMap(Collection::stream)
                 .collect(Collectors.toUnmodifiableSet());
@@ -129,5 +136,33 @@ public class IgnoredArtifacts {
         final Set<String> allJdbcDrivers = new HashSet<>(JDBC_DRIVERS);
         allJdbcDrivers.removeAll(jdbcArtifacts);
         return allJdbcDrivers;
+    }
+
+    // Health
+    public static final Set<String> HEALTH = Set.of(
+            "io.quarkus:quarkus-smallrye-health",
+            "io.quarkus:quarkus-smallrye-health-deployment"
+    );
+
+    private static Set<String> health() {
+        boolean isHealthEnabled = Configuration.getOptionalBooleanValue(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey()).orElse(false);
+
+        return !isHealthEnabled ? HEALTH : emptySet();
+    }
+
+    // Metrics
+    public static Set<String> METRICS = Set.of(
+            "io.quarkus:quarkus-micrometer",
+            "io.quarkus:quarkus-micrometer-deployment",
+            "io.quarkus:quarkus-micrometer-registry-prometheus",
+            "io.quarkus:quarkus-micrometer-registry-prometheus-deployment"
+    );
+
+    private static Set<String> metrics() {
+        boolean isMetricsEnabled = Configuration.getOptionalBooleanValue(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + MetricsOptions.METRICS_ENABLED.getKey()).orElse(false);
+
+        return !isMetricsEnabled ? METRICS : emptySet();
     }
 }

@@ -186,5 +186,10 @@ public enum ResourceType {
     /**
      *
      */
-    , CUSTOM;
+    , CUSTOM
+
+    /**
+     * The user profile configuration
+     */
+    , USER_PROFILE;
 }

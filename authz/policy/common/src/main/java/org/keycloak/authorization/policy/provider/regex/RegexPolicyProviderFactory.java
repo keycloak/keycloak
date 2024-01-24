@@ -81,6 +81,7 @@ public class RegexPolicyProviderFactory implements PolicyProviderFactory<RegexPo
 
         representation.setTargetClaim(config.get("targetClaim"));
         representation.setPattern(config.get("pattern"));
+        representation.setTargetContextAttributes(Boolean.parseBoolean(config.get("targetContextAttributes")));
 
         return representation;
     }
@@ -110,6 +111,7 @@ public class RegexPolicyProviderFactory implements PolicyProviderFactory<RegexPo
 
         config.put("targetClaim", representation.getTargetClaim());
         config.put("pattern", representation.getPattern());
+        config.put("targetContextAttributes", String.valueOf(representation.isTargetContextAttributes()));
 
         policy.setConfig(config);
     }

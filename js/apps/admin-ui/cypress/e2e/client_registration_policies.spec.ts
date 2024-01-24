@@ -29,10 +29,10 @@ describe("Client registration policies tab", () => {
 
     it("add anonymous client registration policy", () => {
       clientRegistrationPage
-        .createPolicy()
+        .createAnonymousPolicy()
         .selectRow("max-clients")
         .fillPolicyForm({
-          name: "new policy",
+          name: "newAnonymPolicy1",
         })
         .formUtils()
         .save();
@@ -41,32 +41,33 @@ describe("Client registration policies tab", () => {
         "New client policy created successfully",
       );
       clientRegistrationPage.formUtils().cancel();
-      listingPage.itemExist("new policy");
+      listingPage.itemExist("newAnonymPolicy1");
     });
 
     it("edit anonymous client registration policy", () => {
-      listingPage.goToItemDetails("new policy");
+      const policy = "newAnonymPolicy1";
+      clientRegistrationPage.findAndSelectInAnonymousPoliciesTable(policy);
       cy.findByTestId("name").clear();
       clientRegistrationPage
         .fillPolicyForm({
-          name: "policy 2",
+          name: "policy2",
         })
         .formUtils()
         .save();
 
       masthead.checkNotificationMessage("Client policy updated successfully");
       clientRegistrationPage.formUtils().cancel();
-      listingPage.itemExist("policy 2");
+      listingPage.itemExist("policy2");
     });
 
     it("delete anonymous client registration policy", () => {
-      listingPage.clickRowDetails("policy 2").clickDetailMenu("Delete");
-      clientRegistrationPage.modalUtils().confirmModal();
+      const policy = "policy2";
+      listingPage.deleteItem(policy);
+      cy.findByTestId("confirm").click();
 
       masthead.checkNotificationMessage(
         "Client registration policy deleted successfully",
       );
-      listingPage.itemExist("policy 2", false);
     });
   });
 
@@ -84,10 +85,10 @@ describe("Client registration policies tab", () => {
 
     it("add authenticated client registration policy", () => {
       clientRegistrationPage
-        .createPolicy()
+        .createAuthenticatedPolicy()
         .selectRow("scope")
         .fillPolicyForm({
-          name: "new authenticated policy",
+          name: "newAuthPolicy1",
         })
         .formUtils()
         .save();
@@ -96,32 +97,33 @@ describe("Client registration policies tab", () => {
         "New client policy created successfully",
       );
       clientRegistrationPage.formUtils().cancel();
-      listingPage.itemExist("new authenticated policy");
+      listingPage.itemExist("newAuthPolicy1");
     });
 
     it("edit authenticated client registration policy", () => {
-      listingPage.goToItemDetails("new authenticated policy");
+      const policy = "newAuthPolicy1";
+      clientRegistrationPage.findAndSelectInAuthenticatedPoliciesTable(policy);
       cy.findByTestId("name").clear();
       clientRegistrationPage
         .fillPolicyForm({
-          name: "policy 3",
+          name: "policy3",
         })
         .formUtils()
         .save();
 
       masthead.checkNotificationMessage("Client policy updated successfully");
       clientRegistrationPage.formUtils().cancel();
-      listingPage.itemExist("policy 3");
+      listingPage.itemExist("policy3");
     });
 
     it("delete authenticated client registration policy", () => {
-      listingPage.clickRowDetails("policy 3").clickDetailMenu("Delete");
-      clientRegistrationPage.modalUtils().confirmModal();
+      const policy = "policy3";
+      listingPage.deleteItem(policy);
+      cy.findByTestId("confirm").click();
 
       masthead.checkNotificationMessage(
         "Client registration policy deleted successfully",
       );
-      listingPage.itemExist("policy 3", false);
     });
   });
 });

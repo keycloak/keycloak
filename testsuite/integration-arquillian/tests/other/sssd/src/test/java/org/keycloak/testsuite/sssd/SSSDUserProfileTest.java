@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.sssd;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -42,8 +42,6 @@ import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -55,13 +53,11 @@ import org.keycloak.userprofile.config.UPConfigUtils;
  * @author rmartinc
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         // enable user profile and add sssd provider in the realm
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
         ComponentExportRepresentation sssdComp = new ComponentExportRepresentation();
         sssdComp.setName(PROVIDER_NAME);
         sssdComp.setProviderId(PROVIDER_NAME);
@@ -205,7 +201,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertFalse(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
             Assert.assertFalse(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
-            updateProfilePage.prepareUpdate().otherProfileAttribute("postal_code", "123456").submit();
+            updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
 
@@ -239,7 +235,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for admin firstName and lastName remains removed, the rest editable
             UserResource testResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
             UserRepresentation test = testResource.toRepresentation(true);
-            assertUser(test, "test-user@localhost", "test-user@localhost", "Tom", "Brady", null);
+            assertUser(test, "test-user@localhost", "test-user@localhost", null, null, null);
             assertProfileAttributes(test, null, false, "username", "email", "postal_code");
             Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.FIRST_NAME));
             Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.LAST_NAME));
@@ -257,7 +253,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             Assert.assertTrue(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
             Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
-            updateProfilePage.prepareUpdate().otherProfileAttribute("postal_code", "123456").submit();
+            updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
 

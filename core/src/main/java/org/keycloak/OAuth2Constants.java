@@ -148,6 +148,8 @@ public interface OAuth2Constants {
 
     // https://www.rfc-editor.org/rfc/rfc9207.html
     String ISSUER = "iss";
+
+    String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 }
 
 

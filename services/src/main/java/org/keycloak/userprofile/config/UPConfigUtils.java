@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,9 +37,10 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
@@ -53,8 +55,8 @@ import org.keycloak.validate.Validators;
 public class UPConfigUtils {
 
     private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
-    public static final String ROLE_USER = "user";
-    public static final String ROLE_ADMIN = "admin";
+    public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
+    public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
     private static final Set<String> PSEUDOROLES = new HashSet<>();
 
@@ -128,8 +130,28 @@ public class UPConfigUtils {
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
+            errors.addAll(validateRootAttributes(config));
         } else {
             errors.add("UserProfile configuration without 'attributes' section is not allowed");
+        }
+
+        return errors;
+    }
+
+    private static List<String> validateRootAttributes(UPConfig config) {
+        List<UPAttribute> attributes = config.getAttributes();
+
+        if (attributes == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).collect(Collectors.toList());
+
+        for (String name : Arrays.asList(UserModel.USERNAME, UserModel.EMAIL)) {
+            if (!attributeNames.contains(name)) {
+                errors.add("The attribute '" + name + "' can not be removed");
+            }
         }
 
         return errors;
@@ -179,7 +201,7 @@ public class UPConfigUtils {
         
         if (attributeConfig.getGroup() != null) {
             if (!groups.contains(attributeConfig.getGroup())) {
-                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");                
+                errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");
             }
         }
         
@@ -265,32 +287,6 @@ public class UPConfigUtils {
         }
     }
 
-    /**
-     * Check if context CAN BE part of the AuthenticationFlow.
-     * 
-     * @param context to check
-     * @return true if context CAN BE part of the auth flow
-     */
-    public static boolean canBeAuthFlowContext(UserProfileContext context) {
-        return context != UserProfileContext.USER_API && context != UserProfileContext.ACCOUNT;
-    }
-
-    /**
-     * Check if roles configuration contains role given current context.
-     * 
-     * @param context to be checked
-     * @param roles to be inspected
-     * @return true if roles list contains role representing checked context
-     */
-    public static boolean isRoleForContext(UserProfileContext context, Set<String> roles) {
-        if (roles == null)
-            return false;
-        if (context == UserProfileContext.USER_API)
-            return roles.contains(ROLE_ADMIN);
-        else
-            return roles.contains(ROLE_USER);
-    }
-
     public static String capitalizeFirstLetter(String str) {
         if (str == null || str.isEmpty())
             return str;
@@ -302,6 +298,14 @@ public class UPConfigUtils {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
+        }
+    }
+
+    public static UPConfig parseDefaultConfig() {
+        try {
+            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration", e);
         }
     }
 }

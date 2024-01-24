@@ -16,13 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
+
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -36,29 +32,22 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
-import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.userprofile.AttributeMetadata;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
-import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.representations.userprofile.config.UPGroup;
-import org.keycloak.validate.Validators;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -67,14 +56,15 @@ import org.keycloak.validate.Validators;
 public class UserProfileResource {
 
     protected final KeycloakSession session;
-
+    protected final AdminEventBuilder adminEvent;
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
-    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.USER_PROFILE);
     }
 
     @GET
@@ -103,70 +93,22 @@ public class UserProfileResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Set the configuration for the user profile")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
-    public Response update(
-            @RequestBody(content = @Content(schema = @Schema(implementation = UPConfig.class))) String text) {
+    public Response update(UPConfig config) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
 
         try {
-            t.setConfiguration(text);
+            t.setConfiguration(config);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(config)
+                .success();
+
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
-    }
-
-    public static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
-        Attributes profileAttributes = profile.getAttributes();
-        Map<String, List<String>> am = profileAttributes.getReadable();
-
-        if(am == null)
-            return null;
-        Map<String, List<String>> unmanagedAttributes = profileAttributes.getUnmanagedAttributes();
-
-        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
-                .map(profileAttributes::getMetadata)
-                .filter(Objects::nonNull)
-                .filter(attributeMetadata -> !unmanagedAttributes.containsKey(attributeMetadata.getName()))
-                .sorted(Comparator.comparingInt(AttributeMetadata::getGuiOrder))
-                .map(sam -> toRestMetadata(sam, session, profile))
-                .collect(Collectors.toList());
-
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UPConfig config = provider.getConfiguration();
-
-        List<UserProfileAttributeGroupMetadata> groups = config.getGroups().stream().map(new Function<UPGroup, UserProfileAttributeGroupMetadata>() {
-            @Override
-            public UserProfileAttributeGroupMetadata apply(UPGroup upGroup) {
-                return new UserProfileAttributeGroupMetadata(upGroup.getName(), upGroup.getDisplayHeader(), upGroup.getDisplayDescription(), upGroup.getAnnotations());
-            }
-        }).collect(Collectors.toList());
-
-        return new UserProfileMetadata(attributes, groups);
-    }
-
-    private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {
-        String group = null;
-
-        if (am.getAttributeGroupMetadata() != null) {
-            group = am.getAttributeGroupMetadata().getName();
-        }
-
-        return new UserProfileAttributeMetadata(am.getName(),
-                am.getAttributeDisplayName(),
-                profile.getAttributes().isRequired(am.getName()),
-                profile.getAttributes().isReadOnly(am.getName()),
-                group,
-                am.getAnnotations(),
-                toValidatorMetadata(am, session));
-    }
-
-    private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){
-        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
-        return am.getValidators() == null ? null : am.getValidators().stream()
-                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
-                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
     }
 }

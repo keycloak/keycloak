@@ -133,7 +133,12 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor logout(JavascriptStateValidator validator, LogoutConfirmPage logoutConfirmPage) {
-        jsExecutor.executeScript("keycloak.logout()");
+        return logout(validator, logoutConfirmPage, null);
+    }
+
+    public JavascriptTestExecutor logout(JavascriptStateValidator validator, LogoutConfirmPage logoutConfirmPage, JSObjectBuilder logoutOptions) {
+        String logoutOptionsString = logoutOptions == null ? "" : logoutOptions.toString();
+        jsExecutor.executeScript("keycloak.logout(" + logoutOptionsString + ")");
 
         try {
             // simple check if we are at the logout confirm page, if so just click 'Yes'

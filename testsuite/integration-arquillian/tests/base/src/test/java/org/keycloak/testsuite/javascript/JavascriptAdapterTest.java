@@ -55,6 +55,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
@@ -157,6 +158,39 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(pkceS256, this::assertInitAuth)
                 .logout(this::assertOnTestAppUrl)
                 .init(pkceS256, this::assertInitNotAuth);
+    }
+
+    @Test
+    public void testLogoutWithDefaults() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl)
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
+    }
+
+    @Test
+    public void testLogoutWithInitOptionsPostMethod() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments().add("logoutMethod", "POST"), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl, null)
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
+    }
+
+    @Test
+    public void testLogoutWithOptionsPostMethod() {
+        boolean stillLoggedIn = testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertInitAuth)
+                .logout(this::assertOnTestAppUrl, null, JSObjectBuilder.create().add("logoutMethod", "POST"))
+                .isLoggedIn();
+        assertFalse("still logged in", stillLoggedIn);
     }
 
     @Test

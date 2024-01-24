@@ -41,7 +41,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -52,8 +51,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
-import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
 
@@ -67,8 +66,8 @@ import org.keycloak.validate.ValidatorConfig;
 public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     public static final String UP_COMPONENT_CONFIG_KEY = "kc.user.profile.config";
-    public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
-    protected static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata"; // TODO:mposolda should it be here or rather on factory?
+    protected static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
+    protected static final String PARSED_UP_CONFIG_COMPONENT_KEY = "kc.parsed.up.config";
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
@@ -92,32 +91,24 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private final KeycloakSession session;
-    private final boolean isDeclarativeConfigurationEnabled;
     private final String providerId;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
-    private final String defaultRawConfig;
     protected final UPConfig parsedDefaultRawConfig;
 
     public DeclarativeUserProfileProvider(KeycloakSession session, DeclarativeUserProfileProviderFactory factory) {
         this.session = session;
         this.providerId = factory.getId();
-        this.isDeclarativeConfigurationEnabled = factory.isDeclarativeConfigurationEnabled();
         this.contextualMetadataRegistry = factory.getContextualMetadataRegistry();
-        this.defaultRawConfig = factory.getDefaultRawConfig();
         this.parsedDefaultRawConfig = factory.getParsedDefaultRawConfig();
     }
 
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
-        RealmModel realm = session.getContext().getRealm();
 
-        if (isEnabled(realm)) {
-            if (user != null && user.getServiceAccountClientLink() != null) {
-                return new LegacyAttributes(context, attributes, user, metadata, session);
-            }
-            return new DefaultAttributes(context, attributes, user, metadata, session);
+        if (user != null && user.getServiceAccountClientLink() != null) {
+            return new LegacyAttributes(context, attributes, user, metadata, session);
         }
-        return new LegacyAttributes(context, attributes, user, metadata, session);
+        return new DefaultAttributes(context, attributes, user, metadata, session);
     }
 
     @Override
@@ -136,7 +127,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
-        UserProfileMetadata metadata = configureUserProfile(contextualMetadataRegistry.get(context), session);
+        UserProfileMetadata defaultMetadata = contextualMetadataRegistry.get(context);
+
+        if (defaultMetadata == null) {
+            // some contexts (and their metadata) are available enabled when the corresponding feature is enabled
+            throw new RuntimeException("No metadata is bound to the " + context + " context");
+        }
+
+        UserProfileMetadata metadata = configureUserProfile(defaultMetadata, session);
         Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
         return new DefaultUserProfile(metadata, profileAttributes, createUserFactory(), user, session);
     }
@@ -153,11 +151,11 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             @Override
             public UserModel apply(Attributes attributes) {
                 if (user == null) {
-                    String userName = attributes.getFirstValue(UserModel.USERNAME);
+                    String userName = attributes.getFirst(UserModel.USERNAME);
 
                     // fallback to email in case email is allowed
                     if (userName == null) {
-                        userName = attributes.getFirstValue(UserModel.EMAIL);
+                        userName = attributes.getFirst(UserModel.EMAIL);
                     }
 
                     user = session.users().addUser(session.getContext().getRealm(), userName);
@@ -178,16 +176,6 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         UserProfileContext context = metadata.getContext();
         UserProfileMetadata decoratedMetadata = metadata.clone();
         RealmModel realm = session.getContext().getRealm();
-
-        if (!isEnabled(realm)) {
-            if(!context.equals(UserProfileContext.USER_API)
-                    && !context.equals(UserProfileContext.UPDATE_EMAIL)) {
-                decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
-                        Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
-                decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
-            }
-            return decoratedMetadata;
-        }
 
         ComponentModel component = getComponentModel().orElse(null);
 
@@ -210,45 +198,43 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     @Override
     public UPConfig getConfiguration() {
-        RealmModel realm = session.getContext().getRealm();
-
-        if (!isEnabled(realm)) {
-            return getParsedConfig(defaultRawConfig);
-        }
-
         Optional<ComponentModel> component = getComponentModel();
 
         if (component.isPresent()) {
-            String cfg = getConfigJsonFromComponentModel(component.get());
+            UPConfig cfg = getConfigFromComponentModel(component.get());
 
-            if (isBlank(cfg)) {
-                return getParsedConfig(defaultRawConfig);
+            if (cfg == null) {
+                cfg = parsedDefaultRawConfig;
             }
 
-            return getParsedConfig(cfg);
+            return cfg.clone();
         }
 
-        return getParsedConfig(defaultRawConfig);
+        return parsedDefaultRawConfig.clone();
     }
 
     @Override
-    public void setConfiguration(String configuration) {
+    public void setConfiguration(UPConfig configuration) {
         RealmModel realm = session.getContext().getRealm();
         Optional<ComponentModel> optionalComponent = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
 
         // Avoid creating componentModel and then removing it right away
-        if (!optionalComponent.isPresent() && isBlank(configuration)) return;
+        if (!optionalComponent.isPresent() && configuration == null) return;
 
         ComponentModel component = optionalComponent.isPresent() ? optionalComponent.get() : createComponentModel();
 
         removeConfigJsonFromComponentModel(component);
 
-        if (isBlank(configuration)) {
+        if (configuration == null) {
             realm.removeComponent(component);
             return;
         }
 
-        component.getConfig().putSingle(UP_COMPONENT_CONFIG_KEY, configuration);
+        try {
+            component.getConfig().putSingle(UP_COMPONENT_CONFIG_KEY, JsonSerialization.writeValueAsString(configuration));
+        } catch (IOException ioe) {
+            throw new RuntimeException("Cannot write component config", ioe);
+        }
 
         realm.updateComponent(component);
     }
@@ -266,10 +252,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, UPConfig parsedConfig) {
         UserProfileContext context = decoratedMetadata.getContext();
 
-        // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
-        if (parsedConfig == null
-                || context == UserProfileContext.UPDATE_EMAIL
-        ) {
+        if (parsedConfig == null) {
             return decoratedMetadata;
         }
 
@@ -278,6 +261,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
+
+            if (!context.isAttributeSupported(attributeName)) {
+                // attributes not supported by the context are ignored
+                // for instance, only support email attribute when at the UPDATE_EMAIL context
+                continue;
+            }
+
             List<AttributeValidatorMetadata> validators = new ArrayList<>();
             Map<String, Map<String, Object>> validationsConfig = attrConfig.getValidations();
 
@@ -294,9 +284,20 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
             if (rc != null) {
-                if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
+                if (rc.isAlways() || context.isRoleForContext(rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
-                } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
+
+                    // If scopes are configured, we will use scope-based selector and require the attribute just if scope is
+                    // in current authenticationSession (either default scope or by 'scope' parameter)
+                    if (rc.getScopes() != null && !rc.getScopes().isEmpty()) {
+                        if (context.canBeAuthFlowContext()) {
+                            required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                        } else {
+                            // Scopes not available for admin and account contexts
+                            required = AttributeMetadata.ALWAYS_FALSE;
+                        }
+                    }
+                } else if (context.canBeAuthFlowContext() && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
                     required = (c) -> requestedScopePredicate(c, rc.getScopes());
@@ -311,7 +312,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 Set<String> editRoles = permissions.getEdit();
 
                 if (!editRoles.isEmpty()) {
-                    writeAllowed = ac -> UPConfigUtils.isRoleForContext(ac.getContext(), editRoles);
+                    writeAllowed = ac -> ac.getContext().isRoleForContext(editRoles);
                 }
 
                 Set<String> viewRoles = permissions.getView();
@@ -325,7 +326,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isBuiltInAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(attributeName) && context.canBeAuthFlowContext() && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
@@ -357,7 +358,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
 
                 if (UserModel.EMAIL.equals(attributeName)) {
-                    if (UserProfileContext.USER_API.equals(context)) {
+                    if (context.isAdminContext()) {
                         required = new Predicate<AttributeContext>() {
                             @Override
                             public boolean test(AttributeContext context) {
@@ -436,7 +437,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
             Set<String> viewRoles) {
-        return ac -> UPConfigUtils.isRoleForContext(ac.getContext(), viewRoles) || canEdit.test(ac);
+        return ac -> ac.getContext().isRoleForContext(viewRoles) || canEdit.test(ac);
     }
 
     /**
@@ -474,11 +475,23 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return new AttributeValidatorMetadata(validator, ValidatorConfig.builder().config(validatorConfig).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build());
     }
 
-    private String getConfigJsonFromComponentModel(ComponentModel model) {
+    private UPConfig getConfigFromComponentModel(ComponentModel model) {
         if (model == null)
             return null;
 
-        return model.get(UP_COMPONENT_CONFIG_KEY);
+        UPConfig cfg = model.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
+        if (cfg != null) {
+            return cfg;
+        }
+
+        String rawConfig = model.get(UP_COMPONENT_CONFIG_KEY);
+        if (rawConfig == null) {
+            return null;
+        } else {
+            cfg = getParsedConfig(rawConfig);
+            model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
+            return cfg;
+        }
     }
 
     private void removeConfigJsonFromComponentModel(ComponentModel model) {
@@ -489,17 +502,12 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     @Override
-    public boolean isEnabled(RealmModel realm) {
-        return isDeclarativeConfigurationEnabled && realm.getAttribute(REALM_USER_PROFILE_ENABLED, false);
-    }
-
-    @Override
     public void close() {
     }
 
     private Function<UserProfileContext, UserProfileMetadata> createUserDefinedProfileDecorator(KeycloakSession session, UserProfileMetadata decoratedMetadata, ComponentModel component) {
         return (c) -> {
-            UPConfig parsedConfig = getParsedConfig(getConfigJsonFromComponentModel(component));
+            UPConfig parsedConfig = getConfigFromComponentModel(component);
 
             //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
             List<String> errors = UPConfigUtils.validate(session, parsedConfig);

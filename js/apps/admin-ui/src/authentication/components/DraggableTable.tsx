@@ -67,7 +67,7 @@ export function DraggableTable<T>({
     const draggedItemId = evt.currentTarget.id;
 
     evt.currentTarget.classList.add(styles.modifiers.ghostRow);
-    evt.currentTarget.setAttribute("aria-pressed", "true");
+    evt.currentTarget.setAttribute("aria-grabbed", "true");
     setState({ ...state, draggedItemId, dragging: true });
   };
 
@@ -101,7 +101,7 @@ export function DraggableTable<T>({
   const onDragCancel = () => {
     Array.from(bodyRef.current?.children || []).forEach((el) => {
       el.classList.remove(styles.modifiers.ghostRow);
-      el.setAttribute("aria-pressed", "false");
+      el.setAttribute("aria-grabbed", "false");
     });
     setState({
       ...state,
@@ -172,7 +172,7 @@ export function DraggableTable<T>({
   const onDragEnd = (evt: ReactDragEvent) => {
     const tr = evt.target as HTMLTableRowElement;
     tr.classList.remove(styles.modifiers.ghostRow);
-    tr.setAttribute("aria-pressed", "false");
+    tr.setAttribute("aria-grabbed", "false");
     setState({
       ...state,
       draggedItemId: "",

@@ -474,6 +474,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             case Algorithm.ES512:
                 keyAlg = KeyType.EC;
                 break;
+            case Algorithm.Ed25519:
+            case Algorithm.Ed448:
+                keyAlg = KeyType.OKP;
+                break;
             default :
                 throw new RuntimeException("Unsupported signature algorithm");
         }

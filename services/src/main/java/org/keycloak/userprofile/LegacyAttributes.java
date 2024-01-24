@@ -83,7 +83,7 @@ public class LegacyAttributes extends DefaultAttributes {
     @Override
     public Map<String, List<String>> getReadable() {
         if(user == null || user.getAttributes() == null) {
-            return Collections.emptyMap();
+            return super.getReadable();
         }
 
         return new HashMap<>(user.getAttributes());

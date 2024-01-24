@@ -72,12 +72,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
             users.remove(userModel.getId());
 
-            if (users.isEmpty()) {
-                policyFactory.onRemove(policy, authorizationProvider);
-                policyStore.delete(realm, policy.getId());
-            } else {
-                policyFactory.onUpdate(policy, representation, authorizationProvider);
-            }
+            policyFactory.onUpdate(policy, representation, authorizationProvider);
         }
     }
 

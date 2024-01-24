@@ -23,7 +23,7 @@ import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LegacyRealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -73,7 +73,7 @@ public class RoleStorageManager implements RoleProvider {
     }
 
     public static <T> Stream<RoleStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
-        return ((LegacyRealmModel) realm).getRoleStorageProvidersStream()
+        return ((StorageProviderRealmModel) realm).getRoleStorageProvidersStream()
                 .filter(model -> {
                     RoleStorageProviderFactory factory = getRoleStorageProviderFactory(model, session);
                     if (factory == null) {

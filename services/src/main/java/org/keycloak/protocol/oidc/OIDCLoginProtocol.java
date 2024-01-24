@@ -50,6 +50,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
@@ -129,8 +130,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     // https://tools.ietf.org/html/rfc7636#section-4.1
     public static final int PKCE_CODE_VERIFIER_MIN_LENGTH = 43;
-    public static final int PKCE_CODE_VERIFIER_MAX_LENGTH = 128;    
-    
+    public static final int PKCE_CODE_VERIFIER_MAX_LENGTH = 128;
+
     // https://tools.ietf.org/html/rfc7636#section-6.2.2
     public static final String PKCE_METHOD_PLAIN = "plain";
     public static final String PKCE_METHOD_S256 = "S256";
@@ -198,7 +199,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
         return this;
     }
-
 
     @Override
     public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
@@ -268,7 +268,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 if (responseType.hasResponseType(OIDCResponseType.CODE)) {
                     responseBuilder.generateCodeHash(code);
                 }
-                
+
                 // Financial API - Part 2: Read and Write API Security Profile
                 // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
                 if (state != null && !state.isEmpty())
@@ -331,6 +331,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
+        }
+
+        // RFC 9207 support + compatibility flag
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(session.getContext().getClient());
+        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         }
 
         // Remove authenticationSession from current tab
@@ -397,7 +403,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return LogoutUtil.sendResponseAfterLogoutFinished(session, logoutSession);
     }
 
-
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
         return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession) || isReAuthRequiredForKcAction(userSession, authSession);
@@ -409,6 +414,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     protected boolean isAuthTimeExpired(UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        if (userSession == null) {
+            return false;
+        }
         String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
         String maxAge = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
         if (maxAge == null) {
@@ -428,7 +436,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     protected boolean isReAuthRequiredForKcAction(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        if (authSession.getClientNote(Constants.KC_ACTION) != null) {
+        if (userSession != null && authSession.getClientNote(Constants.KC_ACTION) != null) {
             String providerId = authSession.getClientNote(Constants.KC_ACTION);
             RequiredActionProvider requiredActionProvider = this.session.getProvider(RequiredActionProvider.class, providerId);
             String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);

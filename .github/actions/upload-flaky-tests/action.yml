@@ -32,7 +32,7 @@ runs:
             JOB_NAME="$JOB_NAME ($MATRIX)"
           fi
         
-          JOB_URL=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs --jq ".jobs | map(select(.name == \"$JOB_NAME\")) | .[].html_url")
+          JOB_URL=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs --paginate --jq ".jobs | map(select(.name == \"$JOB_NAME\")) | .[].html_url")
         
           echo "job_name=$JOB_NAME" >> job-summary.properties
           echo "job_url=$JOB_URL" >> job-summary.properties

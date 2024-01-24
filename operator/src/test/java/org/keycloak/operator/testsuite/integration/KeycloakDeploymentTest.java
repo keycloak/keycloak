@@ -661,7 +661,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
                             .stream().map(ServicePort::getName).anyMatch(protocol::equals));
 
-                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

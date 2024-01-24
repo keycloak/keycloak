@@ -48,6 +48,7 @@ body:
         - import-export
         - infinispan
         - ldap
+        - login/ui
         - oidc
         - operator
         - saml

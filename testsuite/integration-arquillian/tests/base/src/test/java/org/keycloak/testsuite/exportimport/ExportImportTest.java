@@ -47,6 +47,7 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
 import java.io.IOException;
@@ -264,17 +265,11 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testExportUserProfileConfig() throws IOException {
-        //Enable user profile on realm
         RealmResource realmRes = adminClient.realm(TEST_REALM);
-        RealmRepresentation realmRep = realmRes.toRepresentation();
-        Map<String, String> realmAttr = realmRep.getAttributesOrEmpty();
-        realmAttr.put(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-        realmRep.setAttributes(realmAttr);
-        realmRes.update(realmRep);
 
         //add some non-default config
-        VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
-        
+        UPConfig persistedConfig = VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
+
         //export
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
         exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
@@ -297,7 +292,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());
         assertThat(config.size(), equalTo(1));
-        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT, UPConfig.class);
+        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), JsonSerialization.writeValueAsString(persistedConfig), UPConfig.class);
     }
 
     @Test

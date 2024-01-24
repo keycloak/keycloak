@@ -22,7 +22,7 @@ export type KeycloakOnLoad = 'login-required'|'check-sso';
 export type KeycloakResponseMode = 'query'|'fragment';
 export type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 export type KeycloakFlow = 'standard'|'implicit'|'hybrid';
-export type KeycloakPkceMethod = 'S256';
+export type KeycloakPkceMethod = 'S256' | false;
 
 export interface KeycloakConfig {
 	/**
@@ -169,9 +169,8 @@ export interface KeycloakInitOptions {
 	flow?: KeycloakFlow;
 
 	/**
-	 * Configures the Proof Key for Code Exchange (PKCE) method to use.
-	 * The currently allowed method is 'S256'.
-	 * If not configured, PKCE will not be used.
+	 * Configures the Proof Key for Code Exchange (PKCE) method to use. This will default to 'S256'.
+	 * Can be disabled by passing `false`.
 	 */
 	pkceMethod?: KeycloakPkceMethod;
 
@@ -208,6 +207,11 @@ export interface KeycloakInitOptions {
 	 * of the OIDC 1.0 specification.
 	 */
 	locale?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakLoginOptions {
@@ -289,6 +293,11 @@ export interface KeycloakLogoutOptions {
 	 * Specifies the uri to redirect to after logout.
 	 */
 	redirectUri?: string;
+
+	/**
+	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
+	 */
+	logoutMethod?: 'GET' | 'POST';
 }
 
 export interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }
@@ -322,6 +331,7 @@ export interface KeycloakProfile {
 	emailVerified?: boolean;
 	totp?: boolean;
 	createdTimestamp?: number;
+	attributes?: Record<string, unknown>;
 }
 
 export interface KeycloakTokenParsed {

@@ -16,7 +16,7 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
@@ -107,7 +107,7 @@ public class TokenIntrospectionEndpoint {
 
         try {
 
-            Response response = provider.introspect(token);
+            Response response = provider.introspect(token, event);
 
             this.event.success();
 

@@ -42,6 +42,8 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.nio.charset.StandardCharsets;
@@ -65,6 +67,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
+    public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
+
     static final String JGROUPS_DNS_QUERY_PARAM = "-Djgroups.dns.query=";
 
     public static final String OPTIMIZED_ARG = "--optimized";
@@ -85,10 +89,16 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     @Override
     public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
         StatefulSet baseDeployment = createBaseDeployment(primary, context);
+        TreeSet<String> allSecrets = new TreeSet<>();
         if (isTlsConfigured(primary)) {
-            configureTLS(primary, baseDeployment);
+            configureTLS(primary, baseDeployment, allSecrets);
         }
-        addEnvVarsAndWatchSecrets(baseDeployment, primary);
+        addTruststores(primary, baseDeployment, allSecrets);
+        addEnvVars(baseDeployment, primary, allSecrets);
+
+        if (!allSecrets.isEmpty()) {
+            watchedSecrets.annotateDeployment(new ArrayList<>(allSecrets), primary, baseDeployment);
+        }
 
         StatefulSet existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
         if (existingDeployment == null) {
@@ -109,7 +119,32 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return baseDeployment;
     }
 
-    void configureTLS(Keycloak keycloakCR, StatefulSet deployment) {
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
+        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
+            // for now we'll assume only secrets, later we can support configmaps
+            TruststoreSource source = truststore.getSecret();
+            String secretName = source.getName();
+            var volume = new VolumeBuilder()
+                    .withName("truststore-secret-" + secretName)
+                    .withNewSecret()
+                    .withSecretName(secretName)
+                    .withOptional(source.getOptional())
+                    .endSecret()
+                    .build();
+
+            var volumeMount = new VolumeMountBuilder()
+                    .withName(volume.getName())
+                    .withMountPath(Constants.TRUSTSTORES_FOLDER + "/secret-" + secretName)
+                    .build();
+
+            deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+            kcContainer.getVolumeMounts().add(0, volumeMount);
+            allSecrets.add(secretName);
+        }
+    }
+
+    void configureTLS(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
         var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         var volume = new VolumeBuilder()
@@ -127,6 +162,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
         kcContainer.getVolumeMounts().add(0, volumeMount);
+        allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
     }
 
     @Override
@@ -208,7 +244,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (Optional.ofNullable(containerBuilder.getArgs()).orElse(List.of()).isEmpty()) {
             containerBuilder.withArgs("--verbose", "start");
         }
-        if (customImage.isPresent()) {
+        if (Boolean.TRUE.equals(keycloakCR.getSpec().getStartOptimized())
+                || keycloakCR.getSpec().getStartOptimized() == null
+                        && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
         containerBuilder.addToArgs(0, getJGroupsParameter(keycloakCR));
@@ -278,7 +316,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return JGROUPS_DNS_QUERY_PARAM + KeycloakDiscoveryServiceDependentResource.getName(keycloakCR) +"." + keycloakCR.getMetadata().getNamespace();
     }
 
-    private void addEnvVarsAndWatchSecrets(StatefulSet baseDeployment, Keycloak keycloakCR) {
+    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets) {
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
         String adminSecretName = KeycloakAdminSecretDependentResource.getName(keycloakCR);
@@ -287,9 +325,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
         // accumulate the env vars in priority order - unsupported, first class, additional
-        var envVars = new ArrayList<>(Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
-                .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new))
-                .values());
+        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
+
+        // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
+        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").build());
+
+        var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         // watch the secrets used by secret key - we don't currently expect configmaps, optional refs, or watch the initial-admin
@@ -299,14 +341,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
 
-        // add secrets from volume mounts (currently just the tls secret)
-        if (isTlsConfigured(keycloakCR)) {
-            serverConfigSecretsNames.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
-        }
-
-        if (!serverConfigSecretsNames.isEmpty()) {
-            watchedSecrets.annotateDeployment(new ArrayList<>(serverConfigSecretsNames), keycloakCR, baseDeployment);
-        }
+        allSecrets.addAll(serverConfigSecretsNames);
     }
 
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR, String adminSecretName) {

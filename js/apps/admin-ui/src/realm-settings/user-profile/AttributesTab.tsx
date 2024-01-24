@@ -54,7 +54,7 @@ export const AttributesTab = () => {
       );
 
       save(
-        { attributes: updatedAttributes!, groups: config.groups },
+        { ...config, attributes: updatedAttributes!, groups: config.groups },
         {
           successMessageKey: "deleteAttributeSuccess",
           errorMessageKey: "deleteAttributeError",
@@ -191,6 +191,7 @@ export const AttributesTab = () => {
           {
             title: t("delete"),
             isActionable: ({ name }) => !RESTRICTED_ATTRIBUTES.includes(name!),
+            isDisabled: RESTRICTED_ATTRIBUTES.includes(name!),
             onClick: (_key, _idx, component) => {
               setAttributeToDelete(component.name);
               toggleDeleteDialog();

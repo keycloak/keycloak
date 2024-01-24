@@ -381,8 +381,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                           }}
                           selections={field.value}
                           variant={SelectVariant.typeaheadMulti}
-                          typeAheadAriaLabel={t("authScopes")}
+                          typeAheadAriaLabel={t("selectAuthScopes")}
                           isOpen={scopesDropdownOpen}
+                          aria-label={t("selectAuthScopes")}
                         >
                           {scopes.map((scope) => (
                             <SelectOption
