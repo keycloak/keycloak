@@ -7,8 +7,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-model-legacy-private</artifactId>
-    <name>Keycloak Legacy Database Support - Private classes</name>
+    <artifactId>keycloak-model-storage</artifactId>
+    <name>Keycloak Database Support</name>
     <description/>
 
     <dependencies>
@@ -23,17 +23,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
-        </dependency>
-        <dependency>
-            <!-- needed for LegacyExportImportManager that is calling ValidationUtil.validateClient (which is in server-spi-private) might throw a BadRequestException -->
-            <!-- see: https://github.com/hmlnarik/keycloak/pull/23#discussion_r862293798 -->
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

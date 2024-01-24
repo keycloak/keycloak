@@ -31,9 +31,9 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>legacy</module>
-        <module>legacy-private</module>
-        <module>legacy-services</module>
+        <module>storage</module>
+        <module>storage-private</module>
+        <module>storage-services</module>
         <module>jpa</module>
         <module>infinispan</module>
     </modules>
