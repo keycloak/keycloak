@@ -18,6 +18,12 @@ runs:
       name: Setup Java
       uses: ./.github/actions/java-setup
 
+    - id: setup-node
+      name: Setup Node.js
+      uses: ./.github/actions/node-setup
+      with:
+        skip-install: true
+
     - id: maven-cache
       name: Maven cache
       uses: ./.github/actions/maven-cache
@@ -27,10 +33,6 @@ runs:
     - id: phantomjs-cache
       name: PhantomJS cache
       uses: ./.github/actions/phantomjs-cache
-
-    - id: frontend-plugin-cache
-      name: Frontend Plugin Cache
-      uses: ./.github/actions/frontend-plugin-cache
 
     # Remove once https://github.com/keycloak/keycloak/issues/19299 is solved
     ########################################################################################################

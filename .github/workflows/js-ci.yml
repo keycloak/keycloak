@@ -51,6 +51,12 @@ jobs:
           check-latest: true
           cache: maven
 
+      - id: setup-node
+        name: Setup Node.js
+        uses: ./.github/actions/node-setup
+        with:
+          skip-install: true
+
       - name: Build Keycloak
         run: |
           ./mvnw clean install --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
@@ -72,7 +78,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -92,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -109,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -129,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -149,7 +155,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -169,7 +175,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -197,7 +203,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 
@@ -276,7 +282,7 @@ jobs:
         with:
           firefox-version: latest
 
-      - uses: ./.github/actions/pnpm-setup
+      - uses: ./.github/actions/node-setup
         with:
           working-directory: js
 

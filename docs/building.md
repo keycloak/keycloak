@@ -1,15 +1,36 @@
 ## Building from source
 
-Ensure you have JDK 17 (or newer) and Git installed
+### Prerequisites
 
-    java -version
-    git --version
+#### Git
+
+Ensure that you have Git installed on your system, you can verify this by running:
+
+```bash
+git --version
+```
+
+If you do not have Git installed, follow the [installation instructions](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) from the Git documentation.
+
+#### Java Development Kit (JDK) 
+
+Ensure you have JDK 17 (or higher) installed, using a version manager such as [SDKMAN!](https://sdkman.io/) is recommended to make switching versions easier. To verify which versions are installed run:
+
+```bash
+java --version
+```
 
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
 
+#### Node.js
+
+Node.js is required to build the various front-ends (e.g. Account and Admin consoles), and related libraries. Ensure that you have Node.js version 20 (or higher) installed on your system. Using a version manager such as [Node Version Manager](https://github.com/nvm-sh/nvm) is recommended. You will also have to [enable Corepack](https://nodejs.org/api/corepack.html#enabling-the-feature) after installing Node.js so that the PNPM package manager, which is preffered by Keycloak, is enabled automatically. 
+
+### Building Keycloak
+
 ---    
-First clone the Keycloak repository:
+First clone the Keycloak repository to obtain the source code:
     
     git clone https://github.com/keycloak/keycloak.git
     cd keycloak

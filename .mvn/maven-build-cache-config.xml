@@ -27,15 +27,6 @@
             <!-- matching all files, as there is no good file pattern to match files in META-INF/services by their file name -->
             <glob>{*}</glob>
         </global>
-        <plugins>
-            <plugin groupId="com.github.eirslett" artifactId="frontend-maven-plugin">
-                <dirScan>
-                    <excludes>
-                        <exclude tagName="installDirectory" />
-                    </excludes>
-                </dirScan>
-            </plugin>
-        </plugins>
     </input>
     <executionControl>
         <runAlways>

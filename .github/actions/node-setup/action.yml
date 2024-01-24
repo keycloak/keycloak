@@ -5,12 +5,17 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "18"
+    default: "20"
 
   working-directory:
     description: The working directory where the `pnpm-lock.yaml` file is located.
     required: false
     default: ""
+
+  skip-install:
+    description: Skip installing dependencies
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -33,6 +38,7 @@ runs:
 
     - uses: actions/cache@v3
       name: Setup PNPM cache
+      if: inputs.skip-install == 'false'
       with:
         # Also cache Cypress binary.
         path: |
@@ -43,6 +49,7 @@ runs:
           ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
+      if: inputs.skip-install == 'false'
       working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: pnpm install --prefer-offline --frozen-lockfile

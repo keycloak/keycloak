@@ -43,41 +43,34 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>pnpm-build</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>install-node-and-pnpm</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>pnpm-install</id>
-                        <goals>
-                            <goal>pnpm</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <arguments>${pnpm.args.install}</arguments>
+                            <executable>pnpm</executable>
+                            <arguments>
+                                <argument>build</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>run-build</id>
+                        <id>pnpm-pack</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>pnpm</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>pack</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>pack --pack-destination=target</arguments>
-                            <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
+                            <executable>pnpm</executable>
+                            <arguments>
+                                <argument>pack</argument>
+                                <argument>--pack-destination=target</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
