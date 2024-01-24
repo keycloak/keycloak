@@ -55,7 +55,6 @@ Currently the following embedded containers are supported and do not require any
 
 * Tomcat
 * Undertow
-* Jetty
 
 [[_spring_boot_adapter_configuration]]
 ===== Configuring the Spring Boot Adapter 
