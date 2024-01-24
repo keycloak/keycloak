@@ -89,6 +89,7 @@ import jakarta.ws.rs.core.Response.Status;
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -117,9 +118,10 @@ public class TokenEndpoint {
     private final RealmModel realm;
     private final EventBuilder event;
 
-    private OAuth2GrantType grant;
-
     private String grantType;
+    private List<OAuth2GrantType> grants;
+    private OAuth2GrantType grant;
+    private OAuth2GrantType.Context context;
 
     private Cors cors;
 
@@ -158,16 +160,18 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grant.getGrantType().equals(OAuth2Constants.UMA_GRANT_TYPE)) {
+        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }
 
-        OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, realm,
+        context = new OAuth2GrantType.Context(session, realm,
                 client, clientConfig, clientConnection, clientAuthAttributes,
                 request, httpResponse, headers, formParams, event, cors, tokenManager, dPoP);
 
-        return grant.process(context);
+        resolveGrantType();
+        grant.setContext(context);
+        return grant.process();
     }
 
     @Path("introspect")
@@ -215,10 +219,17 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
 
-        grant = OAuth2GrantManager.resolve(session, grantType).orElseThrow(() -> newUnsupportedGrantTypeException());
+        grants = OAuth2GrantManager.resolve(grantType);
+        if (grants.isEmpty()) {
+            throw newUnsupportedGrantTypeException();
+        }
 
-        event.event(grant.getEventType());
+        event.event(OAuth2GrantManager.grantToEvent(grantType));
         event.detail(Details.GRANT_TYPE, grantType);
+    }
+
+    private void resolveGrantType() {
+        grant = OAuth2GrantManager.resolve(grants, context).orElseThrow(() -> newUnsupportedGrantTypeException());
     }
 
     private CorsErrorResponseException newUnsupportedGrantTypeException() {

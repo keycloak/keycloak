@@ -29,7 +29,6 @@ import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -51,9 +50,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
     private static final String PROVIDER_ID = "uma_ticket";
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
+    public Response process() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         String accessTokenString = null;
@@ -117,9 +114,10 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
             } else {
                 // Clients need to authenticate in order to obtain a RPT from the server.
                 // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
-                OAuth2GrantType clientCredentialsGrant = OAuth2GrantManager.resolve(session, OAuth2Constants.CLIENT_CREDENTIALS).get();
-                Context clientCredentialsContext = new Context(session, realm, client, clientConfig, clientConnection, clientAuthAttributes, request, response, headers, formParams, event, cors, tokenManager, dPoP);
-                accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process(clientCredentialsContext).getEntity()).getToken();
+                Context clientCredentialsContext = new Context(context);
+                OAuth2GrantType clientCredentialsGrant = OAuth2GrantManager.resolve(OAuth2Constants.CLIENT_CREDENTIALS, clientCredentialsContext).get();
+                clientCredentialsGrant.setContext(context);
+                accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process().getEntity()).getToken();
             }
         }
 
@@ -192,11 +190,6 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
     @Override
     public String getGrantType() {
         return OAuth2Constants.UMA_GRANT_TYPE;
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.PERMISSION_TOKEN;
     }
 
     @Override

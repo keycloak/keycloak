@@ -29,7 +29,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -60,9 +59,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     private static final String PROVIDER_ID = "authorization_code";
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
+    public Response process() {
         checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String code = formParams.getFirst(OAuth2Constants.CODE);
@@ -208,11 +205,6 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public String getGrantType() {
         return OAuth2Constants.AUTHORIZATION_CODE;
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.CODE_TO_TOKEN;
     }
 
 }

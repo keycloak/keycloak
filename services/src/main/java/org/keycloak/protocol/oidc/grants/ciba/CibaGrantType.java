@@ -18,6 +18,8 @@
 
 package org.keycloak.protocol.oidc.grants.ciba;
 
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
@@ -29,7 +31,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -42,12 +43,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenResponseContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -58,10 +61,6 @@ import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.utils.ProfileHelper;
-
-import java.util.Map;
-import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 
 /**
  * OpenID Connect Client-Initiated Backchannel Authentication Flow
@@ -69,7 +68,7 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CibaGrantType extends OAuth2GrantTypeBase {
+public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_ID = "ciba";
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
@@ -111,11 +110,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
-        ProfileHelper.requireFeature(Profile.Feature.CIBA);
-
+    public Response process() {
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
@@ -301,13 +296,13 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public EventType getEventType() {
-        return EventType.AUTHREQID_TO_TOKEN;
+    public OAuth2GrantType create(KeycloakSession session) {
+        return new CibaGrantType();
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new CibaGrantType();
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
     }
 
     @Override

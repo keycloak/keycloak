@@ -27,7 +27,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionContext;
@@ -61,9 +60,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     private static final Logger logger = Logger.getLogger(ResourceOwnerPasswordCredentialsGrantType.class);
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
+    public Response process() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         if (!client.isDirectAccessGrantsEnabled()) {
@@ -159,11 +156,6 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     @Override
     public String getGrantType() {
         return OAuth2Constants.PASSWORD;
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.LOGIN;
     }
 
     @Override
