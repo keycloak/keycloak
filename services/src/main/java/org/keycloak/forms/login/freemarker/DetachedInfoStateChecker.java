@@ -82,7 +82,7 @@ public class DetachedInfoStateChecker {
     }
 
     public DetachedInfoStateCookie verifyStateCheckerParameter(String stateCheckerParam) throws VerificationException {
-        Set<String> cookieVal = CookieHelper.getCookieValue(session, STATE_CHECKER_COOKIE_NAME);
+        String cookieVal = CookieHelper.getCookieValue(session, STATE_CHECKER_COOKIE_NAME);
         if (cookieVal == null || cookieVal.isEmpty()) {
             throw new VerificationException("State checker cookie is empty");
         }
@@ -90,8 +90,7 @@ public class DetachedInfoStateChecker {
             throw new VerificationException("State checker parameter is empty");
         }
 
-        String cookieEncoded = cookieVal.iterator().next();
-        DetachedInfoStateCookie cookie = session.tokens().decode(cookieEncoded, DetachedInfoStateCookie.class);
+        DetachedInfoStateCookie cookie = session.tokens().decode(cookieVal, DetachedInfoStateCookie.class);
         if (cookie == null) {
             throw new VerificationException("Failed to verify DetachedInfoStateCookie");
         }

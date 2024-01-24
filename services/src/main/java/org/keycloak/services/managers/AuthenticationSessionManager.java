@@ -187,12 +187,7 @@ public class AuthenticationSessionManager {
      * @return list of the values of AUTH_SESSION_ID cookies. It is assumed that values could be encoded with route added (EG. "5e161e00-d426-4ea6-98e9-52eb9844e2d7.node1" )
      */
     List<String> getAuthSessionCookies(RealmModel realm) {
-        Set<String> cookiesVal = CookieHelper.getCookieValue(session, AUTH_SESSION_ID);
-
-        if (cookiesVal.size() > 1) {
-            AuthenticationManager.expireOldAuthSessionCookie(realm, session.getContext().getUri(), session);
-        }
-
+        Set<String> cookiesVal = CookieHelper.getCookieValues(session, AUTH_SESSION_ID);
         List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_COOKIE_LIMIT).collect(Collectors.toList());
 
         if (authSessionIds.isEmpty()) {

@@ -584,10 +584,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/get-sso-cookie")
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
-        Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        if (cookie == null) return null;
-        return cookie.getValue();
+        return CookieHelper.getCookieValue(session, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
     }
 
 
