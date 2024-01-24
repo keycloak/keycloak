@@ -41,7 +41,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
         var keyId = model.get(SigningProperties.KEY_ID.getKey());
         var algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
 
-        return new JwtSigningService(session, keyId, CLOCK, algorithmType);
+        return new JwtSigningService(session, keyId, algorithmType);
     }
 
     @Override

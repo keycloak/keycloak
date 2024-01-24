@@ -40,7 +40,7 @@ public class LDSigningServiceProviderFactory implements VCSigningServiceProvider
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
         var keyId = model.get(SigningProperties.KEY_ID.getKey());
         var proofType = model.get(SigningProperties.PROOF_TYPE.getKey());
-        return new LDSigningService(session, keyId, CLOCK, proofType);
+        return new LDSigningService(session, keyId, proofType);
     }
 
     @Override

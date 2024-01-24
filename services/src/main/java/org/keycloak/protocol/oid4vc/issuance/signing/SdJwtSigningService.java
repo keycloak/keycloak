@@ -20,8 +20,6 @@ package org.keycloak.protocol.oid4vc.issuance.signing;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
-import java.time.Clock;
-
 /**
  * {@link VerifiableCredentialsSigningService} implementing the SD_JWT_VC format. It returns a String, containing
  * the signed SD-JWT
@@ -33,8 +31,8 @@ import java.time.Clock;
  */
 public class SdJwtSigningService extends SigningService<String> {
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, Clock clock, String algorithmType) {
-        super(keycloakSession, keyId, clock, algorithmType);
+    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType) {
+        super(keycloakSession, keyId, algorithmType);
     }
 
     @Override

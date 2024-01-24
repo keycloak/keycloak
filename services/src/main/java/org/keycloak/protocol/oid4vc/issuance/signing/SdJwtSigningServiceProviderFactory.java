@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
@@ -41,7 +42,8 @@ public class SdJwtSigningServiceProviderFactory implements VCSigningServiceProvi
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
         var keyId = model.get(SigningProperties.KEY_ID.getKey());
         var algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
-        return new SdJwtSigningService(session, keyId, CLOCK, algorithmType);
+
+        return new SdJwtSigningService(session, keyId, algorithmType);
     }
 
     @Override

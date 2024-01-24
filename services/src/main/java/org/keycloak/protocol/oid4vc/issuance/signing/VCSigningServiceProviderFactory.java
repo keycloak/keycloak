@@ -38,8 +38,6 @@ import java.time.Clock;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService>, EnvironmentDependentProviderFactory {
-    Clock CLOCK = Clock.systemUTC();
-
     public static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 .property(SigningProperties.KEY_ID.asConfigProperty());

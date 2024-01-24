@@ -21,8 +21,6 @@ package org.keycloak.protocol.oid4vc.issuance.signing;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
-import java.time.Clock;
-
 /**
  * {@link VerifiableCredentialsSigningService} implementing the LDP_VC format. It returns a Verifiable Credential,
  * containing the created LDProof.
@@ -34,8 +32,8 @@ import java.time.Clock;
 public class LDSigningService extends SigningService<VerifiableCredential> {
 
 
-    public LDSigningService(KeycloakSession keycloakSession, String keyId, Clock clock, String ldpType) {
-        super(keycloakSession, keyId, clock, ldpType);
+    public LDSigningService(KeycloakSession keycloakSession, String keyId, String ldpType) {
+        super(keycloakSession, keyId, ldpType);
 
     }
 
