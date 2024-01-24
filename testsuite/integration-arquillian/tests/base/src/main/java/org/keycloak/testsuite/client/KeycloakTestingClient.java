@@ -45,16 +45,21 @@ public class KeycloakTestingClient implements AutoCloseable {
         if (resteasyClient != null) {
             client = resteasyClient;
         } else {
-            ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-            resteasyClientBuilder.connectionPoolSize(10);
-            if (serverUrl.startsWith("https")) {
-                // Disable PKIX path validation errors when running tests using SSL
-                resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
-            }
-            resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+            ResteasyClientBuilder resteasyClientBuilder = getRestEasyClientBuilder(serverUrl);
             client = resteasyClientBuilder.build();
         }
         target = client.target(serverUrl);
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
+        resteasyClientBuilder.connectionPoolSize(10);
+        if (serverUrl.startsWith("https")) {
+            // Disable PKIX path validation errors when running tests using SSL
+            resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
+        }
+        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+        return resteasyClientBuilder;
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
