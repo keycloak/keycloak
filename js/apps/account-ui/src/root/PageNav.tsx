@@ -93,6 +93,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
 
   return (
     <NavExpandable
+      data-testid={menuItem.label}
       title={t(menuItem.label)}
       isActive={isActive}
       isExpanded={isActive}
