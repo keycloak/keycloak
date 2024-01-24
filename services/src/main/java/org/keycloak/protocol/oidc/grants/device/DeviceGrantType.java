@@ -25,7 +25,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -209,9 +208,7 @@ public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentD
     }
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
+    public Response process() {
         if (!realm.getOAuth2DeviceConfig().isOAuth2DeviceAuthorizationGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
@@ -346,11 +343,6 @@ public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentD
     @Override
     public String getGrantType() {
         return OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.OAUTH2_DEVICE_CODE_TO_TOKEN;
     }
 
     @Override

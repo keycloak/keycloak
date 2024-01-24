@@ -23,10 +23,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.utils.ProfileHelper;
 
 /**
@@ -35,15 +35,12 @@ import org.keycloak.utils.ProfileHelper;
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a> (et al.)
  */
-public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
+public class TokenExchangeGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_ID = "token_exchange";
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-        ProfileHelper.requireFeature(Profile.Feature.TOKEN_EXCHANGE);
-
+    public Response process() {
         event.detail(Details.AUTH_METHOD, "token_exchange");
         event.client(client);
 
@@ -75,13 +72,13 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public EventType getEventType() {
-        return EventType.TOKEN_EXCHANGE;
+    public OAuth2GrantType create(KeycloakSession session) {
+        return new TokenExchangeGrantType();
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new TokenExchangeGrantType();
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
     }
 
     @Override

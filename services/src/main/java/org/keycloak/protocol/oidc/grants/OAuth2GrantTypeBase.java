@@ -73,6 +73,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     private static final Logger logger = Logger.getLogger(OAuth2GrantTypeBase.class);
 
+    protected OAuth2GrantType.Context context;
+
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ClientModel client;
@@ -88,7 +90,9 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected HttpResponse response;
     protected HttpHeaders headers;
 
-    protected void initialize(Context context) {
+    @Override
+    public void setContext(Context context) {
+        this.context = context;
         this.session = context.session;
         this.realm = context.realm;
         this.client = context.client;
@@ -104,6 +108,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.tokenManager = (TokenManager) context.tokenManager;
         this.dPoP = context.dPoP;
     }
+
     protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
         String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);

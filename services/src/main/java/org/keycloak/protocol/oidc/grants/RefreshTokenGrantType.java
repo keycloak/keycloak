@@ -26,7 +26,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -50,9 +49,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(RefreshTokenGrantType.class);
 
     @Override
-    public Response process(Context context) {
-        initialize(context);
-
+    public Response process() {
         checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
@@ -111,11 +108,6 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     @Override
     public String getGrantType() {
         return OAuth2Constants.REFRESH_TOKEN;
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.REFRESH_TOKEN;
     }
 
     @Override
