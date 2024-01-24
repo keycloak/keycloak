@@ -167,6 +167,8 @@ jobs:
             server: container
           - os: windows-latest
             server: storage
+          - os: ubuntu-latest
+            server: sanity-check-zip
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
