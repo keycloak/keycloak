@@ -197,7 +197,9 @@ public class ClientAttributeCertificateResource {
         CertificateRepresentation info = new CertificateRepresentation();
         MultivaluedMap<String, FormPartValue> uploadForm = session.getContext().getHttpRequest().getMultiPartFormParameters();
         FormPartValue keystoreFormatPart = uploadForm.getFirst("keystoreFormat");
-        if (keystoreFormatPart == null) throw new BadRequestException();
+        if (keystoreFormatPart == null) {
+            throw new BadRequestException("keystoreFormat cannot be null");
+        }
         String keystoreFormat = keystoreFormatPart.asString();
         FormPartValue inputParts = uploadForm.getFirst("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {

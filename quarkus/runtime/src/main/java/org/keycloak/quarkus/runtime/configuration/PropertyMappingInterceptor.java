@@ -46,6 +46,16 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
  */
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
+    private static ThreadLocal<Boolean> disable = new ThreadLocal<>();
+
+    public static void disable() {
+        disable.set(true);
+    }
+
+    public static void enable() {
+        disable.remove();
+    }
+    
     <T> Iterator<T> filterRuntime(Iterator<T> iter, Function<T, String> nameFunc) {
         if (!isRebuild() && !Environment.isRebuildCheck()) {
             return iter;
@@ -70,6 +80,9 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+        if (Boolean.TRUE.equals(disable.get())) {
+            return context.proceed(name);
+        }
         ConfigValue value = PropertyMappers.getValue(context, name);
 
         if (value == null || value.getValue() == null) {

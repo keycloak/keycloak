@@ -296,6 +296,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case IDP_REVIEW_USER_PROFILE:
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
+                attributes.put("user", new ProfileBean(idpCtx, formData));
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
@@ -316,7 +317,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      */
     private UriBuilder getTotpUriBuilder() {
         return uriInfo.getBaseUriBuilder()
-                .replacePath(uriInfo.getRequestUri().getPath())
+                .path(uriInfo.getPath())
                 .replaceQuery(uriInfo.getRequestUri().getQuery());
     }
 

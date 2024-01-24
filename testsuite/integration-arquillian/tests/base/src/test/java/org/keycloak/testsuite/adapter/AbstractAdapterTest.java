@@ -24,12 +24,14 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.ServerURLs;
 
 import java.io.IOException;
@@ -117,6 +119,14 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             if (AUTH_SERVER_SSL_REQUIRED) {
                 tr.setSslRequired("all");
             }
+        }
+    }
+
+    @Before
+    public void enableUnmanagedAttributes() {
+        for (RealmRepresentation realm : adminClient.realms().findAll()) {
+            UserProfileResource upResource = adminClient.realm(realm.getRealm()).users().userProfile();
+            VerifyProfileTest.enableUnmanagedAttributes(upResource);
         }
     }
 

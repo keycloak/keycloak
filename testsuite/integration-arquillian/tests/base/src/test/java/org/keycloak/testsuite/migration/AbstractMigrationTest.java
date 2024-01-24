@@ -106,13 +106,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 /**
@@ -1105,7 +1105,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
             String response = SimpleHttp.doGet(url.toString(), client).asString();
-            Matcher m = Pattern.compile("resources/([^/]*)/welcome").matcher(response);
+            Matcher m = Pattern.compile("resources/([^/]*)/common").matcher(response);
             assertTrue(m.find());
             assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{5}"));
         } catch (IOException e) {
@@ -1204,7 +1204,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         RealmRepresentation rep = realm.toRepresentation();
         Map<String, String> attributes = rep.getAttributes();
         String userProfileEnabled = attributes.get(REALM_USER_PROFILE_ENABLED);
-        assertTrue(Boolean.parseBoolean(userProfileEnabled));
+        assertNull(userProfileEnabled);
     }
 
     private void testUnmanagedAttributePolicySet(RealmResource realm, UnmanagedAttributePolicy policy) {

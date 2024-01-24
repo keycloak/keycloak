@@ -19,7 +19,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -519,7 +519,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new LegacyUserCredentialManager(session, realm, this);
+        return new UserCredentialManager(session, realm, this);
     }
 
 

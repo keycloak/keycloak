@@ -92,6 +92,7 @@ import java.util.function.Consumer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
@@ -283,9 +284,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
-        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/testing/blank");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -740,4 +739,13 @@ public abstract class AbstractKeycloakTest {
         }
         return in;
     }
+
+    protected void assertResponseSuccessful(Response response) {
+        try {
+            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
+        } catch (AssertionError ex) {
+            throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
+        }
+    }
+
 }

@@ -56,7 +56,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         assertNotNull(info.getThemes());
         assertNotNull(info.getThemes().get("account"));
-        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v2", "custom-account-provider");
+        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v3", "custom-account-provider");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
         Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");
@@ -71,8 +71,9 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
         Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
-                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512);
+                Algorithm.EdDSA, Algorithm.PS256, Algorithm.PS384,
+                Algorithm.PS512, Algorithm.RS256, Algorithm.RS384,
+                Algorithm.RS512);
 
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()

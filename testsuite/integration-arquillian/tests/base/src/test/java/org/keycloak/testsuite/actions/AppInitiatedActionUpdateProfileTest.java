@@ -37,6 +37,8 @@ import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
+ * Only covers basic use cases for App Initialized actions. Complete dynamic user profile behavior is tested in {@link RequiredActionUpdateProfileWithUserProfileTest} as it shares same code as the App initialized action.
+ *
  * @author Stan Silvert
  */
 public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedActionTest {
@@ -51,10 +53,6 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
     @Page
     protected ErrorPage errorPage;
-
-    protected boolean isDynamicForm() {
-        return false;
-    }
     
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -212,10 +210,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
-        else
-            Assert.assertEquals("Please specify first name.", updateProfilePage.getInputErrors().getFirstNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
         events.assertEmpty();
     }
@@ -237,10 +232,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         Assert.assertEquals("", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
-        else
-            Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
         events.assertEmpty();
     }

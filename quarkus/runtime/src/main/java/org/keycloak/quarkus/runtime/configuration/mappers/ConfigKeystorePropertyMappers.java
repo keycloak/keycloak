@@ -18,7 +18,7 @@ final class ConfigKeystorePropertyMappers {
     private ConfigKeystorePropertyMappers() {
     }
 
-    public static PropertyMapper[] getConfigKeystorePropertyMappers() {
+    public static PropertyMapper<?>[] getConfigKeystorePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
                         .to(SMALLRYE_KEYSTORE_PATH)

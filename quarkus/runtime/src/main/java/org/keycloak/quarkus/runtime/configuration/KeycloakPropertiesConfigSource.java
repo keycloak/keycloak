@@ -144,7 +144,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         Map<String, String> result = new HashMap<>(properties.size());
         properties.keySet().forEach(k -> {
             String key = transformKey(k);
-            PropertyMapper mapper = PropertyMappers.getMapper(key);
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
             //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
             if (mapper != null

@@ -91,7 +91,7 @@ public class KeycloakMain implements QuarkusApplication {
             }
 
             try {
-                Picocli.validateNonCliConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
+                Picocli.validateConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
             } catch (PropertyException e) {
                 errorHandler.error(errStream, e.getMessage(), null);
                 System.exit(ExitCode.USAGE);

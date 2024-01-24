@@ -9,7 +9,7 @@ export default class CreateUserPage {
   cancelBtn: string;
 
   constructor() {
-    this.usernameInput = "#kc-username";
+    this.usernameInput = "#username";
 
     this.usersEmptyState = "empty-state";
     this.emptyStateCreateUserBtn = "no-users-found-empty-action";

@@ -67,7 +67,6 @@ export default class RealmSettingsPage extends CommonPage {
   supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "user-managed-access-switch";
-  profileEnabledSwitch = "user-profile-enabled-switch";
   userRegSwitch = "user-reg-switch";
   forgotPwdSwitch = "forgot-pw-switch";
   rememberMeSwitch = "remember-me-switch";
@@ -96,7 +95,7 @@ export default class RealmSettingsPage extends CommonPage {
   testConnectionButton = "test-connection-button";
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
-  addBundleButton = "add-bundle-button";
+  addBundleButton = "add-translationBtn";
   confirmAddBundle = "add-bundle-confirm-button";
   keyInput = "key-input";
   valueInput = "value-input";
@@ -233,11 +232,16 @@ export default class RealmSettingsPage extends CommonPage {
   #realmDisplayName = "#kc-display-name";
   #frontEndURL = "#kc-frontend-url";
   #requireSSL = "#kc-require-ssl";
+  #unmanagedAttributes = "#kc-user-profile-unmanaged-attribute-policy";
   #fromDisplayName = "from-display-name";
   #replyToEmail = "#kc-reply-to";
   #port = "#kc-port";
 
   #publicKeyBtn = ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
+  #localizationLocalesSubTab = "rs-localization-locales-tab";
+  #localizationRealmOverridesSubTab = "rs-localization-realm-overrides-tab";
+  #localizationEffectiveMessageBundlesSubTab =
+    "rs-localization-effective-message-bundles-tab";
   #realmSettingsEventsTab = new RealmSettingsEventsTab();
   #realmId = 'input[aria-label="Copyable input"]';
   #securityDefensesHeadersSaveBtn = "headers-form-tab-save";
@@ -315,6 +319,12 @@ export default class RealmSettingsPage extends CommonPage {
     return this;
   }
 
+  getUnmanagedAttributes(option: string) {
+    cy.get(this.#unmanagedAttributes).contains(option);
+
+    return this;
+  }
+
   fillDisplayName(displayName: string) {
     cy.get(this.#realmDisplayName).clear().type(displayName);
   }
@@ -345,6 +355,14 @@ export default class RealmSettingsPage extends CommonPage {
 
   fillRequireSSL(option: string) {
     cy.get(this.#requireSSL)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(option)
+      .click();
+  }
+
+  fillUnmanagedAttributes(option: string) {
+    cy.get(this.#unmanagedAttributes)
       .click()
       .get(".pf-c-select__menu-item")
       .contains(option)
@@ -456,7 +474,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.keyInput).type(key);
     cy.findByTestId(this.valueInput).type(value);
 
-    cy.findByTestId(this.confirmAddBundle).click();
+    cy.findByTestId(this.confirmAddBundle).click({ force: true });
 
     return this;
   }
@@ -1257,6 +1275,21 @@ export default class RealmSettingsPage extends CommonPage {
 
   goToLocalizationTab() {
     cy.findByTestId(this.localizationTab).click();
+    return this;
+  }
+
+  goToLocalizationLocalesSubTab() {
+    cy.findByTestId(this.#localizationLocalesSubTab).click();
+    return this;
+  }
+
+  goToLocalizationRealmOverridesSubTab() {
+    cy.findByTestId(this.#localizationRealmOverridesSubTab).click();
+    return this;
+  }
+
+  goToLocalizationEffectiveMessageBundlesSubTab() {
+    cy.findByTestId(this.#localizationEffectiveMessageBundlesSubTab).click();
     return this;
   }
 

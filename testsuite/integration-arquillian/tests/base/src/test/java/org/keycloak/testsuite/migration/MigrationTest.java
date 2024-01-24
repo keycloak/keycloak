@@ -19,9 +19,7 @@ package org.keycloak.testsuite.migration;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import jakarta.ws.rs.NotFoundException;
@@ -34,7 +32,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
 public class MigrationTest extends AbstractMigrationTest {
 
     @Override

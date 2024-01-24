@@ -220,6 +220,8 @@ public class OIDCLoginProtocolService {
                         return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
                         return b.ec(k.getPublicKey(), k.getUse());
+                    } else if (k.getType().equals(KeyType.OKP)) {
+                        return b.okp(k.getPublicKey(), k.getUse());
                     }
                     return null;
                 })

@@ -62,12 +62,7 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
 
             groups.removeIf(groupDefinition -> groupDefinition.getId().equals(group.getId()));
 
-            if (groups.isEmpty()) {
-                policyFactory.onRemove(policy, authorizationProvider);
-                policyStore.delete(realm, policy.getId());
-            } else {
-                policyFactory.onUpdate(policy, representation, authorizationProvider);
-            }
+            policyFactory.onUpdate(policy, representation, authorizationProvider);
         }
     }
 }

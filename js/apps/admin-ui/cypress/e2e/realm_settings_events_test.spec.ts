@@ -89,12 +89,6 @@ describe("Realm settings events tab tests", () => {
     return this;
   };
 
-  const addBundle = () => {
-    realmSettingsPage.addKeyValuePair("key_" + uuid(), "value_" + uuid());
-
-    return this;
-  };
-
   it("Enable user events", () => {
     cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as("load");
     sidebarPage.goToRealmSettings();
@@ -240,33 +234,31 @@ describe("Realm settings events tab tests", () => {
     realmSettingsPage.checkKeyPublic();
   });
 
-  it("add locale", () => {
+  it("Realm header settings", () => {
     sidebarPage.goToRealmSettings();
+    cy.findByTestId("rs-security-defenses-tab").click();
+    cy.findByTestId("headers-form-tab-save").should("be.disabled");
+    cy.get("#xFrameOptions").clear().type("DENY");
+    cy.findByTestId("headers-form-tab-save").should("be.enabled").click();
 
-    cy.findByTestId("rs-localization-tab").click();
-    cy.findByTestId("internationalization-disabled").click({ force: true });
+    masthead.checkNotificationMessage("Realm successfully updated");
+  });
 
-    cy.get(realmSettingsPage.supportedLocalesTypeahead)
-      .click()
-      .get(".pf-c-select__menu-item")
-      .contains("Danish")
-      .click();
-    cy.get("#kc-l-supported-locales").click();
+  it("Brute force detection", () => {
+    sidebarPage.goToRealmSettings();
+    cy.findAllByTestId("rs-security-defenses-tab").click();
+    cy.get("#pf-tab-20-bruteForce").click();
 
-    cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
-      "load",
-    );
+    cy.findByTestId("brute-force-tab-save").should("be.disabled");
 
-    cy.findByTestId("localization-tab-save").click();
-    cy.wait("@load");
+    cy.get("#bruteForceProtected").click({ force: true });
+    cy.findByTestId("waitIncrementSeconds").type("1");
+    cy.findByTestId("maxFailureWaitSeconds").type("1");
+    cy.findByTestId("maxDeltaTimeSeconds").type("1");
+    cy.findByTestId("minimumQuickLoginWaitSeconds").type("1");
 
-    addBundle();
-
-    masthead.checkNotificationMessage(
-      "Success! The message bundle has been added.",
-    );
-    realmSettingsPage.setDefaultLocale("Danish");
-    cy.findByTestId("localization-tab-save").click();
+    cy.findByTestId("brute-force-tab-save").should("be.enabled").click();
+    masthead.checkNotificationMessage("Realm successfully updated");
   });
 
   it("add session data", () => {

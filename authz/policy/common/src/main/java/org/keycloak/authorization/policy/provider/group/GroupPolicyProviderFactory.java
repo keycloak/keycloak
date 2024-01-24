@@ -154,7 +154,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     }
 
     private void updatePolicy(Policy policy, String groupsClaim, Set<GroupPolicyRepresentation.GroupDefinition> groups, AuthorizationProvider authorization) {
-        if (groups == null || groups.isEmpty()) {
+        if (groups == null) {
             throw new RuntimeException("You must provide at least one group");
         }
 

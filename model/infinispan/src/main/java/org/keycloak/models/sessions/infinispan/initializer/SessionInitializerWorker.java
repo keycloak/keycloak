@@ -17,12 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import org.infinispan.Cache;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.Serializable;
@@ -31,48 +26,21 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SessionInitializerWorker implements Function<EmbeddedCacheManager, SessionLoader.WorkerResult>, Serializable {
-
-    private static final Logger log = Logger.getLogger(SessionInitializerWorker.class);
+public class SessionInitializerWorker implements Function<KeycloakSessionFactory, SessionLoader.WorkerResult>, Serializable {
 
     private SessionLoader.LoaderContext loaderCtx;
     private SessionLoader.WorkerContext workerCtx;
-    private SessionLoader sessionLoader;
+    private SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader;
 
-    private String cacheName;
-
-
-    public void setWorkerEnvironment(SessionLoader.LoaderContext loaderCtx, SessionLoader.WorkerContext workerCtx, SessionLoader sessionLoader, String cacheName) {
+    public void setWorkerEnvironment(SessionLoader.LoaderContext loaderCtx, SessionLoader.WorkerContext workerCtx, SessionLoader<SessionLoader.LoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> sessionLoader) {
         this.loaderCtx = loaderCtx;
         this.workerCtx = workerCtx;
         this.sessionLoader = sessionLoader;
-        this.cacheName = cacheName;
     }
 
 
     @Override
-    public SessionLoader.WorkerResult apply(EmbeddedCacheManager embeddedCacheManager) {
-        Cache<Object, Object> workCache = embeddedCacheManager.getCache(cacheName);
-        if (log.isTraceEnabled()) {
-            log.tracef("Running computation for segment %s with worker %s", workerCtx.getSegment(), workerCtx.getWorkerId());
-        }
-
-        KeycloakSessionFactory sessionFactory = workCache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
-        if (sessionFactory == null) {
-            log.debugf("KeycloakSessionFactory not yet set in cache. Worker skipped");
-            return sessionLoader.createFailedWorkerResult(loaderCtx, workerCtx);
-        }
-
-        SessionLoader.WorkerResult[] ref = new SessionLoader.WorkerResult[1];
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                ref[0] = sessionLoader.loadSessions(session, loaderCtx, workerCtx);
-            }
-
-        });
-
-        return ref[0];
+    public SessionLoader.WorkerResult apply(KeycloakSessionFactory sessionFactory) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, (session) -> sessionLoader.loadSessions(session, loaderCtx, workerCtx));
     }
 }

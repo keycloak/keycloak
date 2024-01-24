@@ -93,9 +93,6 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     protected static final String ATT_ADDRESS = "address";
 
-    @ClassRule
-    public static LDAPRule ldapRule = new LDAPRule();
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);

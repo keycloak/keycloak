@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Disabled;
@@ -36,7 +37,6 @@ import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeepServerAlive;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -46,7 +46,6 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
-@LegacyStore
 public class QuarkusPropertiesDistTest {
 
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
@@ -131,7 +130,12 @@ public class QuarkusPropertiesDistTest {
     @Order(9)
     void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("config-keystore-password must be specified");
+        assertTrue(
+                Optional.of(cliResult.getErrorOutput())
+                        .filter(s -> s.contains("config-keystore-password must be specified")
+                                || s.contains("is required but it could not be found in any config source"))
+                        .isPresent(),
+                () -> "The Error Output:\n " + cliResult.getErrorOutput() + " doesn't warn about the missing password");
     }
 
     @Disabled("Ensuring config-keystore is used only at runtime removes proactive validation of the path when only the keystore is used")

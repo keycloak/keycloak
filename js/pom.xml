@@ -51,6 +51,29 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <followSymLinks>false</followSymLinks>
+                    <filesets>
+                        <fileset>
+                            <directory>${basedir}</directory>
+                            <includes>
+                                <include>**/.wireit/**</include>
+                                <include>**/node_modules/**</include>
+                            </includes>
+                        </fileset>
+                        <!-- include all non-maven projects here as well -->
+                        <fileset>
+                            <directory>apps/keycloak-server</directory>
+                            <includes>
+                                <include>server/**</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

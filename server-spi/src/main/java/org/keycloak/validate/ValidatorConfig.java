@@ -108,7 +108,7 @@ public class ValidatorConfig {
             return ((Number) value).intValue();
         } else if (value instanceof String) {
             try {
-                return new Integer((String) value);
+                return Integer.valueOf((String) value);
             } catch (NumberFormatException e) {
                 return null;
             }
@@ -128,7 +128,7 @@ public class ValidatorConfig {
             return ((Number) value).longValue();
         } else if (value instanceof String) {
             try {
-                return new Long((String) value);
+                return Long.valueOf((String) value);
             } catch (NumberFormatException e) {
                 return null;
             }

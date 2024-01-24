@@ -34,6 +34,3 @@ updates:
     labels:
       - area/dependencies
       - team/ui
-    ignore:
-      - dependency-name: react-error-boundary
-        update-types: ["version-update:semver-major"]

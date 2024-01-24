@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -148,7 +149,7 @@ public class UserResource {
     protected final KeycloakSession session;
 
     protected final HttpHeaders headers;
-    
+
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
@@ -858,49 +859,14 @@ public class UserResource {
                                         @Parameter(description = "Required actions the user needs to complete") List<String> actions) {
         auth.users().requireManage(user);
 
-        if (user.getEmail() == null) {
-            throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
-        }
-
-        if (!user.isEnabled()) {
-            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
-        }
-
-        if (redirectUri != null && clientId == null) {
-            throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
-        }
-
-        if (clientId == null) {
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
+        SendEmailParams result = verifySendEmailParams(redirectUri, clientId, lifespan);
 
         if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
             throw ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST);
         }
 
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null) {
-            logger.debugf("Client %s doesn't exist", clientId);
-            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
-        }
-        if (!client.isEnabled()) {
-            logger.debugf("Client %s is not enabled", clientId);
-            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
-        }
-
-        String redirect;
-        if (redirectUri != null) {
-            redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
-            if (redirect == null) {
-                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
-            }
-        }
-
-        if (lifespan == null) {
-            lifespan = realm.getActionTokenGeneratedByAdminLifespan();
-        }
-        int expiration = Time.currentTime() + lifespan;
-        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, redirectUri, clientId);
+        int expiration = Time.currentTime() + result.lifespan;
+        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, result.redirectUri, result.clientId);
 
         try {
             UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
@@ -912,7 +878,7 @@ public class UserResource {
               .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
               .setRealm(realm)
               .setUser(user)
-              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
+              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
@@ -934,6 +900,7 @@ public class UserResource {
      *
      * @param redirectUri Redirect uri
      * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
      * @return
      */
     @Path("send-verify-email")
@@ -941,15 +908,39 @@ public class UserResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
-    summary = "Send an email-verification email to the user An email contains a link the user can click to verify their email address.",
-            description = "The redirectUri and clientId parameters are optional. The default for the redirect is the account client."
+            summary = "Send an email-verification email to the user An email contains a link the user can click to verify their email address.",
+            description = "The redirectUri, clientId and lifespan parameters are optional. The default for the redirect is the account client. The default for the lifespan is 12 hours"
     )
     public Response sendVerifyEmail(
             @Parameter(description = "Redirect uri") @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
-            @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
-        List<String> actions = new LinkedList<>();
-        actions.add(UserModel.RequiredAction.VERIFY_EMAIL.name());
-        return executeActionsEmail(redirectUri, clientId, null, actions);
+            @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+            @Parameter(description = "Number of seconds after which the generated token expires") @QueryParam("lifespan") Integer lifespan) {
+        auth.users().requireManage(user);
+
+        SendEmailParams result = verifySendEmailParams(redirectUri, clientId, lifespan);
+
+        int expiration = Time.currentTime() + result.lifespan;
+        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), expiration, null, user.getEmail(), result.clientId);
+        token.setRedirectUri(result.redirectUri);
+
+        String link = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
+                .queryParam("key", token.serialize(session, realm, session.getContext().getUri()))
+                .build(realm.getName()).toString();
+
+        try {
+            session
+                    .getProvider(EmailTemplateProvider.class)
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendVerifyEmail(link, TimeUnit.SECONDS.toMinutes(result.lifespan));
+        } catch (EmailException e) {
+            ServicesLogger.LOGGER.failedToSendEmail(e);
+            throw ErrorResponse.error("Failed to send verify email", Status.INTERNAL_SERVER_ERROR);
+        }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+
+        return Response.noContent().build();
     }
 
     @GET
@@ -1047,5 +1038,58 @@ public class UserResource {
         }
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
+    }
+
+    private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+        if (user.getEmail() == null) {
+            throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+        }
+
+        if (!user.isEnabled()) {
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
+        }
+
+        if (redirectUri != null && clientId == null) {
+            throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
+        }
+
+        if (clientId == null) {
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            logger.debugf("Client %s doesn't exist", clientId);
+            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
+        }
+        if (!client.isEnabled()) {
+            logger.debugf("Client %s is not enabled", clientId);
+            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
+        }
+
+        if (redirectUri != null) {
+            redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
+            if (redirectUri == null) {
+                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
+            }
+        }
+
+        if (lifespan == null) {
+            lifespan = realm.getActionTokenGeneratedByAdminLifespan();
+        }
+
+        return new SendEmailParams(redirectUri, clientId, lifespan);
+    }
+
+    private static class SendEmailParams {
+        final String redirectUri;
+        final String clientId;
+        final int lifespan;
+
+        public SendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+            this.redirectUri = redirectUri;
+            this.clientId = clientId;
+            this.lifespan = lifespan;
+        }
     }
 }

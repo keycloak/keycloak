@@ -9,7 +9,7 @@ final class MetricsPropertyMappers {
 
     private MetricsPropertyMappers(){}
 
-    public static PropertyMapper[] getMetricsPropertyMappers() {
+    public static PropertyMapper<?>[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(MetricsOptions.METRICS_ENABLED)
                         .to("quarkus.micrometer.enabled")

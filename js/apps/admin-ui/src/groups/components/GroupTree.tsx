@@ -34,6 +34,10 @@ import { MoveDialog } from "./MoveDialog";
 
 import "./group-tree.css";
 
+type ExtendedTreeViewDataItem = TreeViewDataItem & {
+  access?: Record<string, boolean>;
+};
+
 type GroupTreeContextMenuProps = {
   group: GroupRepresentation;
   refresh: () => void;
@@ -137,9 +141,8 @@ export const GroupTree = ({
   const { addAlert } = useAlerts();
   const { hasAccess } = useAccess();
 
-  const [data, setData] = useState<TreeViewDataItem[]>();
-  const [groups, setGroups] = useState<GroupRepresentation[]>([]);
-  const { subGroups, setSubGroups } = useSubGroups();
+  const [data, setData] = useState<ExtendedTreeViewDataItem[]>();
+  const { subGroups, clear } = useSubGroups();
 
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
@@ -148,7 +151,7 @@ export const GroupTree = ({
   const prefMax = useRef(20);
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
-  const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
+  const [activeItem, setActiveItem] = useState<ExtendedTreeViewDataItem>();
 
   const [firstSub, setFirstSub] = useState(0);
 
@@ -161,7 +164,7 @@ export const GroupTree = ({
   const mapGroup = (
     group: GroupRepresentation,
     refresh: () => void,
-  ): TreeViewDataItem => {
+  ): ExtendedTreeViewDataItem => {
     return {
       id: group.id,
       name: (
@@ -169,6 +172,7 @@ export const GroupTree = ({
           <span>{group.name}</span>
         </Tooltip>
       ),
+      access: group.access || {},
       children:
         group.subGroups && group.subGroups.length > 0
           ? group.subGroups.map((g) => mapGroup(g, refresh))
@@ -207,32 +211,31 @@ export const GroupTree = ({
       return { groups, subGroups };
     },
     ({ groups, subGroups }) => {
-      const found: TreeViewDataItem[] = [];
-      if (activeItem) findGroup(data || [], activeItem.id!, [], found);
-
-      if (found.length && subGroups.length) {
-        const foundTreeItem = found.pop()!;
-        foundTreeItem.children = [
-          ...(unionBy(foundTreeItem.children || []).splice(0, SUBGROUP_COUNT),
-          subGroups.map((g) => mapGroup(g, refresh), "id")),
-          ...(subGroups.length === SUBGROUP_COUNT
-            ? [
-                {
-                  id: "next",
-                  name: (
-                    <Button
-                      variant="plain"
-                      onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
-                    >
-                      <AngleRightIcon />
-                    </Button>
-                  ),
-                },
-              ]
-            : []),
-        ];
+      if (activeItem) {
+        const found = findGroup(data || [], activeItem.id!, []);
+        if (found.length && subGroups.length) {
+          const foundTreeItem = found.pop()!;
+          foundTreeItem.children = [
+            ...(unionBy(foundTreeItem.children || []).splice(0, SUBGROUP_COUNT),
+            subGroups.map((g) => mapGroup(g, refresh), "id")),
+            ...(subGroups.length === SUBGROUP_COUNT
+              ? [
+                  {
+                    id: "next",
+                    name: (
+                      <Button
+                        variant="plain"
+                        onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
+                      >
+                        <AngleRightIcon />
+                      </Button>
+                    ),
+                  },
+                ]
+              : []),
+          ];
+        }
       }
-      setGroups(groups);
       if (search || prefFirst.current !== first || prefMax.current !== max) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
@@ -252,26 +255,26 @@ export const GroupTree = ({
   );
 
   const findGroup = (
-    groups: GroupRepresentation[] | TreeViewDataItem[],
+    groups: ExtendedTreeViewDataItem[],
     id: string,
-    path: (GroupRepresentation | TreeViewDataItem)[],
-    found: (GroupRepresentation | TreeViewDataItem)[],
+    path: ExtendedTreeViewDataItem[],
   ) => {
-    return groups.map((group) => {
-      if (found.length > 0) return;
-
-      if ("subGroups" in group && group.subGroups?.length) {
-        findGroup(group.subGroups, id, [...path, group], found);
-      }
-
-      if ("children" in group && group.children) {
-        findGroup(group.children, id, [...path, group], found);
-      }
-
+    for (let index = 0; index < groups.length; index++) {
+      const group = groups[index];
       if (group.id === id) {
-        found.push(...path, group);
+        path.push(group);
+        return path;
       }
-    });
+
+      if (group.children) {
+        path.push(group);
+        findGroup(group.children, id, path);
+        if (path[path.length - 1].id !== id) {
+          path.pop();
+        }
+      }
+    }
+    return path;
   };
 
   return data ? (
@@ -314,14 +317,21 @@ export const GroupTree = ({
           onSelect={(_, item) => {
             if (item.id === "next") return;
             setActiveItem(item);
-            const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
-            const subGroups: GroupRepresentation[] = [];
-            findGroup(groups, id!, [], subGroups);
-            setSubGroups(subGroups);
 
-            if (canViewDetails || subGroups.at(-1)?.access?.view) {
-              navigate(toGroups({ realm, id: item.id }));
-              refresh();
+            const path = findGroup(data, item.id!, []);
+            if (!subGroups.every(({ id }) => path.find((t) => t.id === id)))
+              clear();
+            if (
+              canViewDetails ||
+              path.at(-1)?.access?.view ||
+              subGroups.at(-1)?.access?.view
+            ) {
+              navigate(
+                toGroups({
+                  realm,
+                  id: path.map((g) => g.id).join("/"),
+                }),
+              );
             } else {
               addAlert(t("noViewRights"), AlertVariant.warning);
               navigate(toGroups({ realm }));
