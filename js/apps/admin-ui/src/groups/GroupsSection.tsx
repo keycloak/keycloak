@@ -197,10 +197,7 @@ export default function GroupsSection() {
                     eventKey={0}
                     title={<TabTitleText>{t("childGroups")}</TabTitleText>}
                   >
-                    <GroupTable
-                      refresh={refresh}
-                      canViewDetails={canViewDetails}
-                    />
+                    <GroupTable refresh={refresh} />
                   </Tab>
                   {canViewMembers && (
                     <Tab
@@ -238,9 +235,7 @@ export default function GroupsSection() {
                   )}
                 </Tabs>
               )}
-              {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} canViewDetails={canViewDetails} />
-              )}
+              {subGroups.length === 0 && <GroupTable refresh={refresh} />}
             </DrawerContentBody>
           </DrawerContent>
         </Drawer>
