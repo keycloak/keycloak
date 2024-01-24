@@ -1,3 +1,24 @@
+= Java adapter deprecation and removal
+
+Back in 2022 we announced the https://www.keycloak.org/2022/02/adapter-deprecation.html[deprecation of Keycloak adapters in Keycloak 19].
+To give the community more time to adopt this https://www.keycloak.org/2023/03/adapter-deprecation-update.html[was delayed].
+
+With that in mind this will be the last major release of Keycloak to include OpenID Connect and SAML adapters.
+As Jetty 9.x has not been supported since 2022 the Jetty adapter has been removed already in this release.
+
+The generic Authorization Client library will continue to be supported, and aims to be used in combination with any
+other OAuth 2.0 or OpenID Connect libraries.
+
+The only adapter we will continue to deliver is the SAML adapter for latest releases of WildFly and EAP 8.x. Reasoning
+for continuing to support this is down to the fact that the majority of the SAML codebase in Keycloak was a contribution
+from WildFly. As part of this contribution we agreed to maintain SAML adapters for WildFly and EAP in the long run.
+
+== Jetty adapter removed
+
+Jetty 9.4 has not been supported in the community for a long time, and reached end-of-life in 2022. At the same time the
+adapter has not been updated or tested with more recent versions of Jetty. For these reasons the Jetty adapter has been
+removed from this release.
+
 = New Welcome Page
 
 The 'welcome' page that is shown when a user starts Keycloak for the first time, has been redesigned to provide a better setup experience and has been upgraded to the latest version of https://www.patternfly.org/[PatternFly]. The page layout has been simplified and now includes only a form to register the administrative user. After completing the registration, the user is redirected directly to the Administration Console.
