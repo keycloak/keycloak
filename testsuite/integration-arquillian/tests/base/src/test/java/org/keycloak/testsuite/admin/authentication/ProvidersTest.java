@@ -80,20 +80,20 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addProviderInfo(expected, "client-jwt", "Signed Jwt",
-                "Validates client based on signed JWT issued by client and signed with the Client private key");
-        addProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
-                "'client_secret' sent either in request parameters or in 'Authorization: Basic' header");
-        addProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
-                "which automatically authenticates hardcoded client (like 'test-app' )");
-        addProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
-                "Dummy client authenticator, which authenticates the client with clientId only");
-        addProviderInfo(expected, "client-x509", "X509 Certificate",
-                "Validates client based on a X509 Certificate");
-        addProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
-                "Validates client based on signed JWT issued by client and signed with the Client Secret");
-        addProviderInfo(expected, "testsuite-client-id-required", "Signed Jwt",
-                "Validates client based on signed JWT issued by client and signed with the Client private key");
+        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed Jwt",
+                "Validates client based on signed JWT issued by client and signed with the Client private key", false);
+        addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
+                "'client_secret' sent either in request parameters or in 'Authorization: Basic' header", true);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-id-required", "Signed Jwt", "Validates client based on signed JWT issued by client " +
+                "and signed with the Client private key", false);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
+                "which automatically authenticates hardcoded client (like 'test-app' )", false);
+        addClientAuthenticatorProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
+                "Dummy client authenticator, which authenticates the client with clientId only", false);
+        addClientAuthenticatorProviderInfo(expected, "client-x509", "X509 Certificate",
+                "Validates client based on a X509 Certificate", false);
+        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
+                "Validates client based on signed JWT issued by client and signed with the Client Secret", true);
 
         compareProviders(expected, result);
     }
@@ -259,12 +259,20 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         list.add(item);
     }
 
+    private void addClientAuthenticatorProviderInfo(List<Map<String, Object>> list, String id, String displayName, String description, boolean supportsSecret) {
+        HashMap<String, Object> item = new HashMap<>();
+        item.put("id", id);
+        item.put("displayName", displayName);
+        item.put("description", description);
+        item.put("supportsSecret", supportsSecret);
+        list.add(item);
+    }
+
     private static class ProviderComparator implements Comparator<Map<String, Object>> {
         @Override
         public int compare(Map<String, Object> o1, Map<String, Object> o2) {
             return String.valueOf(o1.get("id")).compareTo(String.valueOf(o2.get("id")));
         }
+
     }
-
-
 }

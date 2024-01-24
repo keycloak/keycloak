@@ -158,17 +158,27 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get client authenticator providers Returns a stream of client authenticator providers.")
     public Stream<Map<String, Object>> getClientAuthenticatorProviders() {
         auth.realm().requireViewClientAuthenticatorProviders();
+        Stream<ProviderFactory> factories =  session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class);
 
-        return buildProviderMetadata(session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class));
+        return factories.map(factory -> {
+            Map<String, Object> data = new HashMap<>();
+            buildProviderMetadataHelper(data, factory);
+            data.put("supportsSecret", ((ClientAuthenticatorFactory) factory).supportsSecret());
+            return data;
+        });
+    }
+
+    private void buildProviderMetadataHelper(Map<String, Object> data, ProviderFactory factory) {
+        data.put("id", factory.getId());
+        ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory) factory;
+        data.put("description", configured.getHelpText());
+        data.put("displayName", configured.getDisplayType());
     }
 
     public Stream<Map<String, Object>> buildProviderMetadata(Stream<ProviderFactory> factories) {
         return factories.map(factory -> {
             Map<String, Object> data = new HashMap<>();
-            data.put("id", factory.getId());
-            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
-            data.put("description", configured.getHelpText());
-            data.put("displayName", configured.getDisplayType());
+            buildProviderMetadataHelper(data, factory);
             return data;
         });
     }
