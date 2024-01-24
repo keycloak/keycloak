@@ -38,8 +38,8 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
 
     @Override
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
-        var keyId = model.get(SigningProperties.KEY_ID.getKey());
-        var algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
+        String keyId = model.get(SigningProperties.KEY_ID.getKey());
+        String algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
 
         return new JwtSigningService(session, keyId, algorithmType);
     }
