@@ -5,10 +5,12 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  SelectVariant,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { SelectControl } from "ui-shared";
+
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -45,6 +47,8 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
     onClose();
   };
 
+  const flowKeys = Array.from(REALM_FLOWS.keys());
+
   return (
     <Modal
       title={t("bindFlow")}
@@ -71,13 +75,16 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
             id="chooseBindingType"
             name="bindingType"
             label={t("chooseBindingType")}
-            options={[...REALM_FLOWS.keys()]
+            options={flowKeys
               .filter((f) => f !== "dockerAuthenticationFlow")
               .map((key) => ({
                 key,
                 value: t(`flow.${REALM_FLOWS.get(key)}`),
               }))}
-            controller={{ defaultValue: "" }}
+            controller={{ defaultValue: flowKeys[0] }}
+            variant={SelectVariant.single}
+            menuAppendTo="parent"
+            aria-label={t("chooseBindingType")}
           />
         </FormProvider>
       </Form>

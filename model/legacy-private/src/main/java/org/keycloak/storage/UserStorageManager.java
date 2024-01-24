@@ -60,7 +60,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.client.ClientStorageProvider;
-import org.keycloak.storage.datastore.LegacyDatastoreProvider;
+import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -89,7 +89,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     protected UserProvider localStorage() {
-        return ((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+        return ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
     }
 
     private UserFederatedStorageProvider getFederatedStorage() {

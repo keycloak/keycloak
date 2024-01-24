@@ -282,6 +282,7 @@ export const LdapSettingsConnection = ({
                 selections={field.value}
                 variant={SelectVariant.single}
                 data-testid="ldap-bind-type"
+                aria-label={t("selectBindType")}
               >
                 <SelectOption value="simple" />
                 <SelectOption value="none" />

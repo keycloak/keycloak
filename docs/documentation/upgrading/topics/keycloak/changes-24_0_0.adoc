@@ -190,3 +190,45 @@ To revert the change for an installation, use a custom Infinispan XML configurat
 ----
 <metrics names-as-tags="false" />
 ----
+
+= The Admin send-verify-email API now uses the same email verification template
+
+----
+PUT /admin/realms/{realm}/users/{id}/send-verify-email
+----
+
+In this release, the API will use the `email-verification.ftl` template instead of `executeActions.ftl`.
+
+.Before upgrading
+----
+Perform the following action(s): Verify Email
+----
+
+.After upgrading
+----
+Confirm validity of e-mail address email@example.org.
+----
+
+If you have customized the `executeActions.ftl` template to modify how users verify their email using this API, ensure that you transfer your modifications to the new template.
+
+A new parameter called `lifespan` will be introduced to allow overriding of the default lifespan value (12 hours).
+
+If you prefer the previous behavior, use the `execute-actions-email` API as follows.
+
+----
+PUT /admin/realms/{realm}/users/{id}/execute-actions-email
+
+["VERIFY_EMAIL"]
+----
+
+= Removal of the deprecated mode for SAML encryption
+
+The compatibility mode for SAML encryption introduced in version 21 is now removed. The system property `keycloak.saml.deprecated.encryption` is not managed anymore by the server. The clients which still used the old signing key for encryption should update it from the new IDP configuration metadata.
+
+= Renaming JPA provider configuration options for migration
+
+After removal of the Map Store the following configuration options were renamed:
+
+* `spi-connections-jpa-legacy-initialize-empty` to `spi-connections-jpa-quarkus-initialize-empty`
+* `spi-connections-jpa-legacy-migration-export` to `spi-connections-jpa-quarkus-migration-export`
+* `spi-connections-jpa-legacy-migration-strategy` to `spi-connections-jpa-quarkus-migration-strategy`

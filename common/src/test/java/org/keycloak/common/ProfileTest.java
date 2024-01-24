@@ -78,6 +78,7 @@ public class ProfileTest {
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
             Profile.Feature.MULTI_SITE,
+            Profile.Feature.DECLARATIVE_UI,
             Profile.Feature.RECOVERY_CODES,
             Profile.Feature.SCRIPTS,
             Profile.Feature.TOKEN_EXCHANGE,

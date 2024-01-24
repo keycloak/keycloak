@@ -101,6 +101,7 @@ import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProvi
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -112,6 +113,7 @@ import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
@@ -134,7 +136,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
@@ -153,7 +154,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getProper
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
-import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.legacy.database.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -257,6 +258,27 @@ class KeycloakProcessor {
                 throw new ConfigurationException(String.format("Unable to find the JDBC driver (%s). You need to install it.", dbDriver.get()));
             }
         }
+    }
+
+    /**
+     * Parse the default configuration for the User Profile provider
+     */
+    @BuildStep
+    @Produce(UserProfileBuildItem.class)
+    UserProfileBuildItem parseDefaultUserProfileConfig() {
+        final UPConfig defaultConfig = DeclarativeUserProfileProviderFactory.parseDefaultConfig();
+        logger.debug("Parsing default configuration for the User Profile provider");
+        return new UserProfileBuildItem(defaultConfig);
+    }
+
+    /**
+     * Set the default configuration to the User Profile provider
+     */
+    @BuildStep
+    @Consume(ProfileBuildItem.class)
+    @Record(ExecutionTime.STATIC_INIT)
+    void setDefaultUserProfileConfig(KeycloakRecorder recorder, UserProfileBuildItem configuration) {
+        recorder.setDefaultUserProfileConfiguration(configuration.getDefaultConfig());
     }
 
     /**

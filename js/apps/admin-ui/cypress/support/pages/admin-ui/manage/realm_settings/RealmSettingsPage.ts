@@ -95,7 +95,7 @@ export default class RealmSettingsPage extends CommonPage {
   testConnectionButton = "test-connection-button";
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
-  addBundleButton = "add-bundle-button";
+  addBundleButton = "add-translationBtn";
   confirmAddBundle = "add-bundle-confirm-button";
   keyInput = "key-input";
   valueInput = "value-input";

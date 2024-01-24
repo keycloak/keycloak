@@ -165,7 +165,7 @@ export const AuthorizationResources = ({
                 <SearchDropdown
                   search={search}
                   onSearch={setSearch}
-                  isResource
+                  type="resource"
                 />
               </ToolbarItem>
 

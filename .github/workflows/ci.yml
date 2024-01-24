@@ -251,8 +251,8 @@ jobs:
         with:
           job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
 
-  legacy-store-integration-tests:
-    name: Legacy Store IT
+  store-integration-tests:
+    name: Store IT
     needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
@@ -283,13 +283,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Legacy Store IT
+          job-name: Store IT
 
       - name: Surefire reports
         if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
-          job-id: legacy-store-integration-tests-${{ matrix.db }}
+          job-id: store-integration-tests-${{ matrix.db }}
 
   store-model-tests:
     name: Store Model Tests
@@ -325,7 +325,7 @@ jobs:
           job-id: store-model-tests
 
   clustering-integration-tests:
-    name: Legacy Clustering IT
+    name: Clustering IT
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -351,7 +351,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Legacy Clustering IT
+          job-name: Clustering IT
 
       - name: Surefire reports
         if: always()
@@ -650,7 +650,7 @@ jobs:
       - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
-      - legacy-store-integration-tests
+      - store-integration-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests

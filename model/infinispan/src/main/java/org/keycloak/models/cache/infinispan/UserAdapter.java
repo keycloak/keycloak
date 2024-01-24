@@ -18,7 +18,6 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;

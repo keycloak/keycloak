@@ -69,13 +69,13 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             isDisabled={attribute.readOnly}
             required={isRequired}
           >
-            {options.map((option) => (
+            {["", ...options].map((option) => (
               <SelectOption
                 selected={field.value === option}
                 key={option}
                 value={option}
               >
-                {label(option)}
+                {option ? label(option) : t("choose")}
               </SelectOption>
             ))}
           </Select>

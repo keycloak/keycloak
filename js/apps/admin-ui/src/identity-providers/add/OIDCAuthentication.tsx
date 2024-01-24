@@ -107,6 +107,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
               }}
               selections={field.value || t("algorithmNotSpecified")}
               variant={SelectVariant.single}
+              aria-label={t("selectClientAssertionSigningAlg")}
               isOpen={openClientAuthSigAlg}
             >
               {[

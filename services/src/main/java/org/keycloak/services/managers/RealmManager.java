@@ -53,8 +53,8 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
-import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.StoreMigrateRepresentationEvent;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
@@ -280,7 +280,7 @@ public class RealmManager {
             }
 
           // Refresh periodic sync tasks for configured storageProviders
-          LegacyStoreSyncEvent.fire(session, realm, true);
+          StoreSyncEvent.fire(session, realm, true);
         }
         return removed;
     }
@@ -607,13 +607,13 @@ public class RealmManager {
             }
 
             // Refresh periodic sync tasks for configured storageProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            StoreSyncEvent.fire(session, realm, false);
 
             setupAuthorizationServices(realm);
             setupClientRegistrations(realm);
 
             if (rep.getKeycloakVersion() != null) {
-                LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
+                StoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
             }
 
             session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
