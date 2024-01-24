@@ -277,3 +277,11 @@ After removal of the Map Store the following configuration options were renamed:
 * `spi-connections-jpa-legacy-initialize-empty` to `spi-connections-jpa-quarkus-initialize-empty`
 * `spi-connections-jpa-legacy-migration-export` to `spi-connections-jpa-quarkus-migration-export`
 * `spi-connections-jpa-legacy-migration-strategy` to `spi-connections-jpa-quarkus-migration-strategy`
+
+= Renaming model modules
+
+After removal of the Map Store the following modules were renamed:
+
+* `org.keycloak:keycloak-model-legacy` to `org.keycloak:keycloak-model-storage`
+* `org.keycloak:keycloak-model-legacy-private` to `org.keycloak:keycloak-model-storage-private`
+* `org.keycloak:keycloak-model-legacy-services` to `org.keycloak:keycloak-model-storage-services`

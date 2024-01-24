@@ -239,7 +239,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -249,7 +249,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -259,7 +259,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
