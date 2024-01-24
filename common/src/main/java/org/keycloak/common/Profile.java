@@ -111,7 +111,7 @@ public class Profile {
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
-        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.PREVIEW),
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
         ;

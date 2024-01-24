@@ -93,7 +93,7 @@ Feature:
                        client-secret-rotation[:v1], client-types[:v1], declarative-ui[:v1], device-flow[:v1],
                        docker[:v1], dpop[:v1], dynamic-scopes[:v1], fips[:v1], hostname[:v1], impersonation
                        [:v1], js-adapter[:v1], kerberos[:v1], linkedin-oauth[:v1], multi-site[:v1],
-                       offline-session-preloading[:v1], par[:v1], preview, recovery-codes[:v1],
+                       offline-session-preloading[:v1], oid4vc-vci[:v1], par[:v1], preview, recovery-codes[:v1],
                        scripts[:v1], step-up-authentication[:v1], token-exchange[:v1],
                        transient-users[:v1], update-email[:v1], web-authn[:v1].
 --features-disabled <feature>
@@ -102,7 +102,7 @@ Feature:
                        authorization, ciba, client-policies, client-secret-rotation, client-types,
                        declarative-ui, device-flow, docker, dpop, dynamic-scopes, fips,
                        impersonation, js-adapter, kerberos, linkedin-oauth, multi-site,
-                       offline-session-preloading, par, preview, recovery-codes, scripts,
+                       offline-session-preloading, oid4vc-vci, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, transient-users, update-email,
                        web-authn.
 

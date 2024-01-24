@@ -76,7 +76,7 @@ Feature:
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-ui, device-flow, docker, dpop, dynamic-scopes, fips,
                        impersonation, js-adapter, kerberos, linkedin-oauth, multi-site,
-                       offline-session-preloading, par, preview, recovery-codes, scripts,
+                       offline-session-preloading, oid4vc-vci, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, transient-users, update-email,
                        web-authn.
 
