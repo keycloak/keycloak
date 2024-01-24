@@ -104,6 +104,8 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.PREVIEW),
 
+        CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
+
         OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
 
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),

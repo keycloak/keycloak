@@ -8,6 +8,7 @@ export enum Feature {
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",
+  ClientTypes = "CLIENT_TYPES",
 }
 
 export default function useIsFeatureEnabled() {
