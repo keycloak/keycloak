@@ -17,7 +17,7 @@
 
 package org.keycloak.operator.controllers;
 
-import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 
 import org.keycloak.operator.Constants;
@@ -27,15 +27,15 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@ControllerConfiguration(labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedResources.WATCHED_LABEL_VALUE_PREFIX + "secret")
-public class WatchedSecretsController extends WatchedResourceController<Secret> {
+@ControllerConfiguration(labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedResources.WATCHED_LABEL_VALUE_PREFIX + "configmap")
+public class WatchedConfigMapController extends WatchedResourceController<ConfigMap> {
 
-    public WatchedSecretsController() {
-        super(Secret.class);
+    public WatchedConfigMapController() {
+        super(ConfigMap.class);
     }
 
     @Override
-    Map<String, String> getData(Secret resource) {
+    Map<String, String> getData(ConfigMap resource) {
         return resource.getData();
     }
 

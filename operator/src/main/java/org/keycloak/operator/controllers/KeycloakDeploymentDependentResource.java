@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -77,7 +78,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     Config operatorConfig;
 
     @Inject
-    WatchedSecrets watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
@@ -97,7 +98,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         addEnvVars(baseDeployment, primary, allSecrets);
 
         if (!allSecrets.isEmpty()) {
-            watchedSecrets.annotateDeployment(new ArrayList<>(allSecrets), primary, baseDeployment);
+            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, primary, baseDeployment);
         }
 
         StatefulSet existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
@@ -167,13 +168,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     @Override
     protected void onCreated(Keycloak primary, StatefulSet created, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(created);
+        watchedResources.addLabelsToWatched(created);
         super.onCreated(primary, created, context);
     }
 
     @Override
     protected void onUpdated(Keycloak primary, StatefulSet updated, StatefulSet actual, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(updated);
+        watchedResources.addLabelsToWatched(updated);
         super.onUpdated(primary, updated, actual, context);
     }
 

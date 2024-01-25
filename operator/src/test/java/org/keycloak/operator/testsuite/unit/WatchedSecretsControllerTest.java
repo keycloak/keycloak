@@ -43,15 +43,15 @@ public class WatchedSecretsControllerTest {
 
     @Test
     public void testSecretHashing() {
-        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", watchedSecretsController.getSecretHash(List.of()));
-        assertEquals("b5655bfe4d4e130f5023a76a5de0906cf84eb5895bda5d44642673f9eb4024bf", watchedSecretsController.getSecretHash(List.of(newSecret(Map.of("a", "b")), newSecret(Map.of("c", "d")))));
+        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", watchedSecretsController.getHash(List.of()));
+        assertEquals("b5655bfe4d4e130f5023a76a5de0906cf84eb5895bda5d44642673f9eb4024bf", watchedSecretsController.getHash(List.of(newSecret(Map.of("a", "b")), newSecret(Map.of("c", "d")))));
     }
 
     @Test
     public void testGetSecretNames() {
-        assertEquals(List.of(), watchedSecretsController.getSecretNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build()));
-        assertEquals(Arrays.asList("something"), watchedSecretsController.getSecretNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build()));
-        assertEquals(Arrays.asList("x", "y"), watchedSecretsController.getSecretNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build()));
+        assertEquals(List.of(), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build()));
+        assertEquals(Arrays.asList("something"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build()));
+        assertEquals(Arrays.asList("x", "y"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build()));
     }
 
     private Secret newSecret(Map<String, String> data) {

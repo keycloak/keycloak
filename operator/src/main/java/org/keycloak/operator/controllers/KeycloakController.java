@@ -74,7 +74,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     Config config;
 
     @Inject
-    WatchedSecrets watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
@@ -94,7 +94,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Map<String, EventSource> sources = new HashMap<>();
         sources.put("serviceSource", servicesEvent);
-        sources.putAll(EventSourceInitializer.nameEventSources(watchedSecrets.getWatchedSecretsEventSource()));
+        sources.putAll(EventSourceInitializer.nameEventSources(watchedResources.getEventSources()));
         return sources;
     }
 
