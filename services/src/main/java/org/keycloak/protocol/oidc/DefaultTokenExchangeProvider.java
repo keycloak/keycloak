@@ -38,6 +38,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -85,6 +86,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -311,10 +313,16 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             }
         }
 
-        if (targetClient.isConsentRequired()) {
-            event.detail(Details.REASON, "audience requires consent");
-            event.error(Errors.CONSENT_DENIED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
+        // verification of existing users consents for requested scopes of target client
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, targetClient, TokenManager.getRequestedClientScopes(OAuth2Constants.SCOPE, client))) {
+            event.error(Errors.NOT_ALLOWED);
+            event.detail(Details.REASON, String.format(
+                    "Missing some consents of [%s] for audience [%s]",
+                    TokenManager.getRequestedClientScopes(OAuth2Constants.SCOPE, client)
+                            .map(ClientScopeModel::getName)
+                            .collect(Collectors.joining(",")),
+                    targetClient.getClientId()));
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
 
         boolean isClientTheAudience = client.equals(targetClient);

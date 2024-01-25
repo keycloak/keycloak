@@ -30,6 +30,7 @@ import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -52,6 +53,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -63,6 +65,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -241,6 +246,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
+        management.clients().exchangeToPermission(realm.getClientByClientId("target-with-consent")).addAssociatedPolicy(clientPolicy);
 
         // permission for user impersonation for a client
 
@@ -277,6 +283,19 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientsAllowedToImpersonateRep.addClient("direct-public");
         Policy clientsAllowedToImpersonate = management.authz().getStoreFactory().getPolicyStore().create(server, clientsAllowedToImpersonateRep);
         userImpersonationPermission.addAssociatedPolicy(clientsAllowedToImpersonate);
+    }
+
+    public static void setUpTokenExchangeConsent(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        ClientModel targetClientRequiredConsent = session.clients().getClientByClientId(realm, "target-with-consent");
+        UserConsentModel userConsentModel = new UserConsentModel(targetClientRequiredConsent);
+        userConsentModel.setCreatedDate(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+
+        session.clients().getClientScopes(realm, targetClientRequiredConsent, true).values().forEach(userConsentModel::addGrantedClientScope);
+        session.clients().getClientScopes(realm, targetClientRequiredConsent, false).values().forEach(userConsentModel::addGrantedClientScope);
+        userConsentModel.setLastUpdatedDate(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+
+        session.users().addConsent(realm, session.users().getUserByUsername(realm, "user").getId(), userConsentModel);
     }
 
     @Override
@@ -968,6 +987,43 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testClientExchangeBadRequestWhenNoConsent() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-legal");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        response = oauth.doTokenExchange(TEST, accessToken, "target-with-consent", "direct-legal", "secret");
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+    }
+
+    @Test
+    public void testClientExchangeOKWhenNoConsentExists() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+        testingClient.server().run(ClientTokenExchangeTest::setUpTokenExchangeConsent);
+
+        oauth.realm(TEST);
+        oauth.clientId("direct-legal");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        response = oauth.doTokenExchange(TEST, accessToken, "target-with-consent", "direct-legal", "secret");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+    }
+
+    @Test
     public void testPublicClientNotAllowed() throws Exception {
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
@@ -1025,6 +1081,17 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         target.setFullScopeAllowed(false);
         target.addScopeMapping(exampleRole);
 
+        ClientModel targetWithConsentRequired = realm.addClient("target-with-consent");
+        targetWithConsentRequired.setName("target-with-consent");
+        targetWithConsentRequired.setClientId("target-with-consent");
+        targetWithConsentRequired.setDirectAccessGrantsEnabled(true);
+        targetWithConsentRequired.setEnabled(true);
+        targetWithConsentRequired.setSecret("secret");
+        targetWithConsentRequired.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        targetWithConsentRequired.setFullScopeAllowed(false);
+        targetWithConsentRequired.addScopeMapping(exampleRole);
+        targetWithConsentRequired.setConsentRequired(true);
+
         ClientModel directExchanger = realm.addClient("direct-exchanger");
         directExchanger.setName("direct-exchanger");
         directExchanger.setClientId("direct-exchanger");
@@ -1037,6 +1104,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
         // permission for client to client exchange to "target" client
         management.clients().setPermissionsEnabled(target, true);
+        management.clients().setPermissionsEnabled(targetWithConsentRequired, true);
 
         ClientPolicyRepresentation clientImpersonateRep = new ClientPolicyRepresentation();
         clientImpersonateRep.setName("clientImpersonatorsDirect");
