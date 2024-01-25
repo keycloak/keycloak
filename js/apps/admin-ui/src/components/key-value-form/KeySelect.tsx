@@ -6,37 +6,18 @@ import { KeycloakTextInput } from "ui-shared";
 import useToggle from "../../utils/useToggle";
 import { DefaultValue } from "./KeyValueInput";
 
-/**
- * Used when the values passed to KeySelect in "selectItems" need to be fetched from the server dynamically. In this case, we might want to call "setCustom"
- * from parent component. The "fieldValue" sent to KeySelect is not supposed to be set by the calling component, as it will be set by KeySelect itself with the value of the field, so
- * it can be consumed from the callback function once the values are fetched from the server
- */
-export type FetchCallback = {
-  custom: boolean;
-  setCustom: any;
-};
-
 type KeySelectProp = UseControllerProps & {
   selectItems: DefaultValue[];
-  fetchCallback?: FetchCallback;
 };
 
-export const KeySelect = ({
-  selectItems,
-  fetchCallback,
-  ...rest
-}: KeySelectProp) => {
+export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
   const { t } = useTranslation();
   const [open, toggle] = useToggle();
   const { field } = useController(rest);
 
-  let [custom, setCustom] = useState(
+  const [custom, setCustom] = useState(
     !selectItems.map(({ key }) => key).includes(field.value),
   );
-
-  if (fetchCallback) {
-    [custom, setCustom] = [fetchCallback.custom, fetchCallback.setCustom];
-  }
 
   return (
     <Grid>
