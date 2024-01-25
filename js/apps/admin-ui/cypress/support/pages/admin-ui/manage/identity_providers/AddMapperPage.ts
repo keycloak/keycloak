@@ -8,13 +8,13 @@ export default class AddMapperPage {
   #addMapperButton = "#add-mapper-button";
 
   #mapperNameInput = "#kc-name";
-  #attribute = "user.attribute";
+  #attribute = "config.user🍺attribute";
   #attributeName = "attribute.name";
   #attributeFriendlyName = "attribute.friendly.name";
   #claimInput = "claim";
   #socialProfileJSONfieldPath = "jsonField";
-  #userAttribute = "attribute";
-  #userAttributeName = "userAttribute";
+  #userAttribute = "config.attribute";
+  #userAttributeName = "config.userAttribute";
   #userAttributeValue = "attribute.value";
   #userSessionAttribute = "attribute";
   #userSessionAttributeValue = "attribute.value";
