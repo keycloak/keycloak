@@ -81,8 +81,8 @@ importers:
         specifier: ^4.113.6
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^23.7.18
-        version: 23.7.18
+        specifier: ^23.7.19
+        version: 23.7.19
       i18next-http-backend:
         specifier: ^2.4.2
         version: 2.4.2
@@ -106,7 +106,7 @@ importers:
         version: 7.49.3(react@18.2.0)
       react-i18next:
         specifier: ^14.0.1
-        version: 14.0.1(i18next@23.7.18)(react-dom@18.2.0)(react@18.2.0)
+        version: 14.0.1(i18next@23.7.19)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.21.3
         version: 6.21.3(react-dom@18.2.0)(react@18.2.0)
@@ -181,8 +181,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       i18next:
-        specifier: ^23.7.18
-        version: 23.7.18
+        specifier: ^23.7.19
+        version: 23.7.19
       i18next-http-backend:
         specifier: ^2.4.2
         version: 2.4.2
@@ -209,7 +209,7 @@ importers:
         version: 7.49.3(react@18.2.0)
       react-i18next:
         specifier: ^14.0.1
-        version: 14.0.1(i18next@23.7.18)(react-dom@18.2.0)(react@18.2.0)
+        version: 14.0.1(i18next@23.7.19)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.21.3
         version: 6.21.3(react-dom@18.2.0)(react@18.2.0)
@@ -434,8 +434,8 @@ importers:
         specifier: ^4.93.7
         version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^23.7.18
-        version: 23.7.18
+        specifier: ^23.7.19
+        version: 23.7.19
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -450,7 +450,7 @@ importers:
         version: 7.49.3(react@18.2.0)
       react-i18next:
         specifier: ^14.0.1
-        version: 14.0.1(i18next@23.7.18)(react-dom@18.2.0)(react@18.2.0)
+        version: 14.0.1(i18next@23.7.19)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -4600,8 +4600,8 @@ packages:
       - encoding
     dev: false
 
-  /i18next@23.7.18:
-    resolution: {integrity: sha512-b9N2KjRCYQNlUvE1Kc83g8knyUkL5NiZQOp9BsTR/v/LXk6Fzz+doOzTg2/826XK28mCgBkYLNAtixjE58qpCw==}
+  /i18next@23.7.19:
+    resolution: {integrity: sha512-1aP+YSJl+nLxr42ZJtNhpWpNWYsc6nCbVCf2x4uizIX1BYfcigiRMlb3vOkE1p3+qrI+aD6h5G2Fg+2d2oMIOQ==}
     dependencies:
       '@babel/runtime': 7.23.2
     dev: false
@@ -6090,7 +6090,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@14.0.1(i18next@23.7.18)(react-dom@18.2.0)(react@18.2.0):
+  /react-i18next@14.0.1(i18next@23.7.19)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-TMV8hFismBmpMdIehoFHin/okfvgjFhp723RYgIqB4XyhDobVMyukyM3Z8wtTRmajyFMZrBl/OaaXF2P6WjUAw==}
     peerDependencies:
       i18next: '>= 23.2.3'
@@ -6105,7 +6105,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.23.2
       html-parse-stringify: 3.0.1
-      i18next: 23.7.18
+      i18next: 23.7.19
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -7866,7 +7866,7 @@ packages:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 6.0.1
-      i18next: 23.7.18
+      i18next: 23.7.19
       i18next-http-backend: 2.4.2
       keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
@@ -7875,7 +7875,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
       react-hook-form: 7.49.3(react@18.2.0)
-      react-i18next: 14.0.1(i18next@23.7.18)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.0.1(i18next@23.7.19)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.21.3(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.10.2(@types/react@18.2.48)(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared
