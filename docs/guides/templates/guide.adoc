@@ -1,6 +1,6 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 includedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
+<#macro guide title summary priority=999 deniedCategories="" includedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
 :guide-id: ${id}
 :guide-title: ${title}
 :guide-summary: ${summary}
@@ -28,6 +28,6 @@ endif::[]
 <#if includedOptions?has_content>
 == Relevant options
 
-<@opts.list options=ctx.options.getOptions(includedOptions) anchor=false></@opts.list>
+<@opts.list options=ctx.options.getOptions(includedOptions, deniedCategories) anchor=false></@opts.list>
 </#if>
 </#macro>
