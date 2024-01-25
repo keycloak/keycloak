@@ -84,6 +84,8 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
 
     @Override
     public void start() {
+        logger().info("Starting ISPN container");
+
         super.start();
 
         establishHotRodConnection();
@@ -93,6 +95,17 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
                     LOG.infof("Creating cache '%s'", cacheName);
                     createCache(remoteCacheManager, cacheName);
                 });
+    }
+
+    @Override
+    public void stop() {
+        logger().info("Stopping ISPN container");
+
+        if (remoteCacheManager != null) {
+            remoteCacheManager.stop();
+        }
+
+        super.stop();
     }
 
     public void createCache(RemoteCacheManager remoteCacheManager, String cacheName) {
