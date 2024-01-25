@@ -26,6 +26,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -67,30 +69,23 @@ public class AuthenticationStateCookie {
         this.remainingTabs = remainingTabs;
     }
 
-    public static void generateAndSetCookie(KeycloakSession session, RealmModel realm, RootAuthenticationSessionModel rootAuthSession, int cookieMaxAge) {
-        UriInfo uriInfo = session.getContext().getHttpRequest().getUri();
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(session.getContext().getConnection());
-
+    public static void generateAndSetCookie(KeycloakSession session, RootAuthenticationSessionModel rootAuthSession, int cookieMaxAge) {
         AuthenticationStateCookie cookie = new AuthenticationStateCookie();
         cookie.setAuthSessionId(rootAuthSession.getId());
         cookie.setRemainingTabs(rootAuthSession.getAuthenticationSessions().keySet());
 
         try {
             String encoded = JsonSerialization.writeValueAsString(cookie);
-            logger.tracef("Generating new %s cookie. Cookie: %s, Cookie lifespan: %d", KC_AUTH_STATE, encoded, cookieMaxAge);
+            logger.tracef("Generating new %s cookie. Cookie: %s, Cookie lifespan: %d", CookieType.KC_AUTH_STATE, encoded, cookieMaxAge);
 
-            CookieHelper.addCookie(KC_AUTH_STATE, encoded, path, null, null, cookieMaxAge, secureOnly, false, session);
+            session.getProvider(CookieProvider.class).set(CookieType.KC_AUTH_STATE, encoded, cookieMaxAge);
         } catch (IOException ioe) {
             throw new IllegalStateException("Exception thrown when encoding cookie", ioe);
         }
     }
 
-    public static void expireCookie(RealmModel realm, KeycloakSession session) {
-        UriInfo uriInfo = session.getContext().getHttpRequest().getUri();
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(session.getContext().getConnection());
-        CookieHelper.addCookie(KC_AUTH_STATE, "", path, null, null, 0, secureOnly, false, session);
+    public static void expireCookie(KeycloakSession session) {
+        session.getProvider(CookieProvider.class).expire(CookieType.KC_AUTH_STATE);
     }
 
     @Override
