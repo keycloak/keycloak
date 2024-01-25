@@ -20,11 +20,11 @@ package org.keycloak.protocol.oid4vc.issuance.signing;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.signing.mock.KeyManagerMock;
+import org.keycloak.protocol.oid4vc.issuance.signing.mock.KeycloakSessionMock;
+import org.keycloak.protocol.oid4vc.issuance.signing.mock.RealmModelMock;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
@@ -38,10 +38,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Super class for all signing service tests. Provides convenience methods to ease the testing.
@@ -124,6 +120,7 @@ public abstract class SigningServiceTest {
             kw.setUse(KeyUse.SIG);
             kw.setType("RSA");
             kw.setKid(keyId);
+            kw.setAlgorithm("RS256");
             return kw;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
@@ -131,16 +128,10 @@ public abstract class SigningServiceTest {
     }
 
     public static KeycloakSession getMockSession(KeyWrapper keyWrapper) {
-
-        KeycloakSession session = mock(KeycloakSession.class);
-        KeycloakContext context = mock(KeycloakContext.class);
-        KeyManager keyManager = mock(KeyManager.class);
-        RealmModel realmModel = mock(RealmModel.class);
-        when(session.keys()).thenReturn(keyManager);
-        when(session.getContext()).thenReturn(context);
-        when(context.getRealm()).thenReturn(realmModel);
-        when(keyManager.getKey(any(), eq(keyWrapper.getKid()), any(), anyString())).thenReturn(keyWrapper);
-        return session;
+        RealmModelMock realmModelMock = new RealmModelMock("testRealm");
+        KeyManagerMock keyManagerMock = new KeyManagerMock();
+        keyManagerMock.addKey(realmModelMock, keyWrapper.getKid(), KeyUse.SIG, keyWrapper.getAlgorithm(), keyWrapper);
+        return new KeycloakSessionMock(realmModelMock, keyManagerMock);
     }
 
     class StaticTimeProvider implements TimeProvider {

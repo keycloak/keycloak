@@ -36,9 +36,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
 import java.security.PublicKey;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
