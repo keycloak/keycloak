@@ -53,6 +53,6 @@
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^5.0.12",
     "vite-plugin-checker": "^0.6.2",
-    "vite-plugin-dts": "^3.7.1"
+    "vite-plugin-dts": "^3.7.2"
   }
 }
