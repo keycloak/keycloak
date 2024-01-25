@@ -80,46 +80,6 @@
                         </span>
                       </div>
                     </div>
-
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="email">
-                          <span class="pf-v5-c-form__label-text">Email</span>&nbsp;<span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control pf-m-required">
-                          <input id="email" type="email" name="email" autocomplete="email" required>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="firstName">
-                          <span class="pf-v5-c-form__label-text">First name</span>&nbsp;<span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control pf-m-required">
-                          <input id="firstName" type="text" name="firstName" autocomplete="firstName" required>
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="pf-v5-c-form__group">
-                      <div class="pf-v5-c-form__group-label">
-                        <label class="pf-v5-c-form__label" for="lastName">
-                          <span class="pf-v5-c-form__label-text">Last name</span>&nbsp;<span class="pf-v5-c-form__label-required" aria-hidden="true">&#42;</span>
-                        </label>
-                      </div>
-                      <div class="pf-v5-c-form__group-control">
-                        <span class="pf-v5-c-form-control pf-m-required">
-                          <input id="lastName" type="text" name="lastName" autocomplete="lastName" required>
-                        </span>
-                      </div>
-                    </div>
-
                     <div class="pf-v5-c-form__group">
                       <div class="pf-v5-c-form__group-label">
                         <label class="pf-v5-c-form__label" for="password">
@@ -150,7 +110,7 @@
                     </div>
                   </form>
                 <#else>
-                  <p>To create the administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KEYCLOAK_ADMIN</code> and <code>KEYCLOAK_ADMIN_PASSWORD</code> when starting the server. <code>KEYCLOAK_ADMIN_FIRSTNAME</code>, <code>KEYCLOAK_ADMIN_LASTNAME</code> and <code>KEYCLOAK_ADMIN_EMAIL</code> variables can also be set but they are automatically filled (if possible) when missed.</p>
+                  <p>To create the administrative user open <a href="${localAdminUrl}">${localAdminUrl}</a>, or set the environment variables <code>KEYCLOAK_ADMIN</code> and <code>KEYCLOAK_ADMIN_PASSWORD</code> when starting the server.</p>
                 </#if>
               </#if>
             </div>

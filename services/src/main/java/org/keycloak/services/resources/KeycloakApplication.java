@@ -318,7 +318,10 @@ public class KeycloakApplication extends Application {
                                 if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
                                     ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                                 } else {
-                                    UserModel user = RepresentationToModel.createUser(session, realm, userRep);
+                                    UserModel user = users.addUser(realm, userRep.getUsername());
+                                    user.setEnabled(userRep.isEnabled());
+                                    RepresentationToModel.createCredentials(userRep, session, realm, user, false);
+                                    RepresentationToModel.createRoleMappings(userRep, user, realm);
                                     ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                                 }
                             });

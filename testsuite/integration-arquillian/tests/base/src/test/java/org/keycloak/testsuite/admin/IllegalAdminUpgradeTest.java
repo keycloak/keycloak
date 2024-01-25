@@ -83,25 +83,16 @@ public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
         realmUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel masterUser = session.users().addUser(master, "userAdmin");
-        masterUser.setFirstName("userAdmin");
-        masterUser.setLastName("userAdmin");
-        masterUser.setEmail("userAdmin@keycloak.org");
         masterUser.grantRole(masterManageUsers);
         masterUser.setEnabled(true);
         masterUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel masterAdmin = session.users().addUser(master, "masterAdmin");
-        masterAdmin.setFirstName("masterAdmin");
-        masterAdmin.setLastName("masterAdmin");
-        masterAdmin.setEmail("masterAdmin@keycloak.org");
         masterAdmin.grantRole(masterMasterManageUSers);
         masterAdmin.setEnabled(true);
         masterAdmin.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel user = session.users().addUser(master, "user");
-        user.setFirstName("user");
-        user.setLastName("user");
-        user.setEmail("user@keycloak.org");
         user.grantRole(masterManageUsers);
         user.setEnabled(true);
         user.credentialManager().updateCredential(UserCredentialModel.password("password"));
