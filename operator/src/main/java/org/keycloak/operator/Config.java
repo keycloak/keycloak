@@ -32,6 +32,7 @@ public interface Config {
         String image();
         String imagePullPolicy();
         boolean startOptimized();
+        int pollIntervalSeconds();
 
         Map<String, String> podLabels();
     }

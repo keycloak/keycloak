@@ -20,23 +20,24 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedSecretsControllerTest;
 
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,9 +57,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         Secret dbSecret = getDbSecret();
         Secret tlsSecret = getTlsSecret();
 
-        assertThat(dbSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedResources.WATCHED_LABEL_VALUE_PREFIX+"secret");
-        assertThat(tlsSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedResources.WATCHED_LABEL_VALUE_PREFIX+"secret");
-
         Log.info("Updating DB Secret, expecting restart");
         testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
             dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
@@ -76,6 +74,47 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
             k8sclient.resource(dbSecret).update();
         });
+    }
+
+    @Test
+    public void testClonedSecretUnmodified() {
+        Log.info("Creating new Keycloak CR example");
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        AtomicInteger createCount = new AtomicInteger();
+        AtomicInteger updateCount = new AtomicInteger();
+
+        k8sclient.secrets().withName("example-tls-secret").inform(new ResourceEventHandler<Secret>() {
+
+            @Override
+            public void onAdd(Secret obj) {
+                // this should happen immediately. the operator log will then
+                // contain a message about removing the watching label
+                createCount.incrementAndGet();
+                k8sclient.resource(modifySecret(obj)).create();
+            }
+
+            private Secret modifySecret(Secret obj) {
+                return new SecretBuilder(obj).editMetadata().withResourceVersion(null).withUid(null).withName("other").endMetadata().build();
+            }
+
+            @Override
+            public void onDelete(Secret obj, boolean deletedFinalStateUnknown) {
+                k8sclient.resource(modifySecret(obj)).delete();
+            }
+
+            @Override
+            public void onUpdate(Secret oldObj, Secret newObj) {
+                updateCount.incrementAndGet();
+                k8sclient.resource(modifySecret(newObj)).update();
+            }
+
+        });
+
+        Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> createCount.get() > 0);
+        // the operator shouldn't actually touch this secret - we'll unfortunately still watch it though
+        Awaitility.await().during(15, TimeUnit.SECONDS).until(() -> createCount.get() == 1 && updateCount.get() == 0);
     }
 
     @Test
@@ -111,16 +150,13 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, kc, false, false);
         });
 
-        Log.info("Updating DB Secret to trigger clean-up process");
-        testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
-            var dbSecret = getDbSecret();
-            dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-            k8sclient.resource(dbSecret).update();
-        });
+        Secret dbSecret = getDbSecret();
 
         Awaitility.await().untilAsserted(() -> {
             Log.info("Checking labels on DB Secret");
-            assertThat(getDbSecret().getMetadata().getLabels()).doesNotContainKey(Constants.KEYCLOAK_COMPONENT_LABEL);
+            k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get().getMetadata()
+                    .getAnnotations().get(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION)
+                    .contains(dbSecret.getMetadata().getName());
         });
     }
 

@@ -98,15 +98,15 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         addEnvVars(baseDeployment, primary, allSecrets);
 
         if (!allSecrets.isEmpty()) {
-            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, primary, baseDeployment);
+            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, this.client);
         }
 
         StatefulSet existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
         if (existingDeployment == null) {
-            Log.info("No existing Deployment found, using the default");
+            Log.debug("No existing Deployment found, using the default");
         }
         else {
-            Log.info("Existing Deployment found, handling migration");
+            Log.debug("Existing Deployment found, handling migration");
 
             // version 22 changed the match labels, account for older versions
             if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
@@ -164,18 +164,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
         kcContainer.getVolumeMounts().add(0, volumeMount);
         allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
-    }
-
-    @Override
-    protected void onCreated(Keycloak primary, StatefulSet created, Context<Keycloak> context) {
-        watchedResources.addLabelsToWatched(created);
-        super.onCreated(primary, created, context);
-    }
-
-    @Override
-    protected void onUpdated(Keycloak primary, StatefulSet updated, StatefulSet actual, Context<Keycloak> context) {
-        watchedResources.addLabelsToWatched(updated);
-        super.onUpdated(primary, updated, actual, context);
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet, Keycloak keycloak) {
@@ -340,7 +328,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName)
                 .filter(n -> !n.equals(adminSecretName)).collect(Collectors.toCollection(TreeSet::new));
 
-        Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
+        Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
 
         allSecrets.addAll(serverConfigSecretsNames);
     }

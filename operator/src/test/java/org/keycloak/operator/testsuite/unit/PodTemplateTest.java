@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.WatchedSecretsController;
+import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PodTemplateTest {
 
     @InjectMock
-    WatchedSecretsController watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDeploymentDependentResource deployment;

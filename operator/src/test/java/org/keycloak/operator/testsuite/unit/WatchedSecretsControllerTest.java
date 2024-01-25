@@ -23,8 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.WatchedSecretsController;
+import org.keycloak.operator.controllers.WatchedResources;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class WatchedSecretsControllerTest {
 
     @Inject
-    WatchedSecretsController watchedSecretsController;
+    WatchedResources watchedSecretsController;
+    public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
+    public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
 
     @Test
     public void testSecretHashing() {
@@ -49,9 +50,9 @@ public class WatchedSecretsControllerTest {
 
     @Test
     public void testGetSecretNames() {
-        assertEquals(List.of(), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build()));
-        assertEquals(Arrays.asList("something"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build()));
-        assertEquals(Arrays.asList("x", "y"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(Constants.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build()));
+        assertEquals(List.of(), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build(), Secret.class));
+        assertEquals(Arrays.asList("something"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build(), Secret.class));
+        assertEquals(Arrays.asList("x", "y"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build(), Secret.class));
     }
 
     private Secret newSecret(Map<String, String> data) {

@@ -18,51 +18,96 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class WatchedResources {
-    public static final String WATCHED_LABEL_VALUE_PREFIX = "watched-";
     public static final String KEYCLOAK_WATCHED_HASH_ANNOTATION_PREFIX = "operator.keycloak.org/watched-";
     public static final String KEYCLOAK_WATCHING_ANNOTATION_PREFIX = "operator.keycloak.org/watching-";
     public static final String KEYCLOAK_MISSING_ANNOTATION_PREFIX = "operator.keycloak.org/missing-";
 
-    @Inject
-    WatchedSecretsController watchedSecretsController;
-    @Inject
-    WatchedConfigMapController watchedConfigMapController;
-
     /**
      * @param deployment mutable resource being reconciled, it will be updated with
      *                   annotations
+     * @return true if the annotations changed
      */
-    public void annotateDeployment(List<String> names, Class<?> type, Keycloak keycloakCR, StatefulSet deployment) {
-        if (type == Secret.class) {
-            watchedSecretsController.annotateDeployment(names, keycloakCR, deployment);
-        } else if (type == ConfigMap.class) {
-            watchedConfigMapController.annotateDeployment(names, keycloakCR, deployment);
-        } else {
-            throw new AssertionError(type + " is not a watched type");
+    public <T extends HasMetadata> void annotateDeployment(List<String> names, Class<T> type, StatefulSet deployment,
+            KubernetesClient client) {
+        List<T> current = fetch(names, type, deployment.getMetadata().getNamespace(), client);
+        String plural = HasMetadata.getPlural(type);
+        deployment.getMetadata().getAnnotations().put(WatchedResources.KEYCLOAK_MISSING_ANNOTATION_PREFIX + plural,
+                Boolean.valueOf(current.size() < names.size()).toString());
+        deployment.getMetadata().getAnnotations().put(WatchedResources.KEYCLOAK_WATCHING_ANNOTATION_PREFIX + plural,
+                names.stream().collect(Collectors.joining(";")));
+        deployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                .put(WatchedResources.KEYCLOAK_WATCHED_HASH_ANNOTATION_PREFIX + HasMetadata.getKind(type).toLowerCase() + "-hash", getHash(current));
+    }
+
+    static Object getData(Object object) {
+        if (object instanceof Secret) {
+            return ((Secret) object).getData();
+        }
+        if (object instanceof ConfigMap) {
+            return ((ConfigMap) object).getData();
+        }
+        return object;
+    }
+
+    public boolean hasMissing(StatefulSet deployment) {
+        return deployment.getMetadata().getAnnotations().entrySet().stream()
+                .anyMatch(e -> e.getKey().startsWith(WatchedResources.KEYCLOAK_MISSING_ANNOTATION_PREFIX)
+                        && Boolean.valueOf(e.getValue()));
+    }
+
+    public boolean isWatching(StatefulSet deployment) {
+        return deployment.getMetadata().getAnnotations().entrySet().stream()
+                .anyMatch(e -> e.getKey().startsWith(WatchedResources.KEYCLOAK_WATCHING_ANNOTATION_PREFIX)
+                        && e.getValue() != null && !e.getValue().isEmpty());
+    }
+
+    public <T extends HasMetadata> String getHash(List<T> current) {
+        try {
+            // using hashes as it's more robust than resource versions that can change e.g.
+            // just when adding a label
+            // Uses a fips compliant hash
+            var messageDigest = MessageDigest.getInstance("SHA-256");
+
+            current.stream().map(s -> Serialization.asYaml(getData(s)).getBytes(StandardCharsets.UTF_8))
+                    .forEachOrdered(s -> messageDigest.update(s));
+
+            return new BigInteger(1, messageDigest.digest()).toString(16);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public EventSource[] getEventSources() {
-        return new EventSource[] { watchedSecretsController.getEventSource(),
-                watchedConfigMapController.getEventSource() };
+    private <T extends HasMetadata> List<T> fetch(List<String> names, Class<T> type, String namespace,
+            KubernetesClient client) {
+        return names.stream().map(n -> client.resources(type).inNamespace(namespace).withName(n).get())
+                .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    public void addLabelsToWatched(StatefulSet deployment) {
-        watchedSecretsController.addLabelsToWatched(deployment);
-        watchedConfigMapController.addLabelsToWatched(deployment);
+    public List<String> getNames(StatefulSet deployment, Class<? extends HasMetadata> type) {
+        return Optional
+                .ofNullable(deployment.getMetadata().getAnnotations().get(WatchedResources.KEYCLOAK_WATCHING_ANNOTATION_PREFIX + HasMetadata.getPlural(type)))
+                .filter(watching -> !watching.isEmpty())
+                .map(watching -> watching.split(";")).map(Arrays::asList).orElse(List.of());
     }
 
 }
