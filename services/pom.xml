@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>${keycloak.crypto.artifactId}</artifactId>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
