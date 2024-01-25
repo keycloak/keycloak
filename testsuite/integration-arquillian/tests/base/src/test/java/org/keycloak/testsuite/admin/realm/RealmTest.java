@@ -951,11 +951,7 @@ public class RealmTest extends AbstractAdminTest {
         oauth.realm(REALM_NAME);
         oauth.redirectUri(redirectUri);
 
-        UserRepresentation userRep = UserBuilder.create().username("testuser")
-                .firstName("testuser")
-                .lastName("testuser")
-                .email("testuser@keycloak.org")
-                .build();
+        UserRepresentation userRep = UserBuilder.create().username("testuser").build();
         Response response = realm.users().create(userRep);
         String userId = ApiUtil.getCreatedId(response);
         response.close();

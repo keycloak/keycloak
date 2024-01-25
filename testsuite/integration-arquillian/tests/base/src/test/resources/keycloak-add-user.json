@@ -2,9 +2,6 @@
   "realm" : "master",
   "users" : [ {
     "username" : "admin",
-    "firstName" : "admin",
-    "lastName" : "admin",
-    "email" : "admin@keycloak.org",
     "enabled" : true,
     "credentials" : [ {
       "type" : "password",

@@ -149,9 +149,6 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
 
         if (!StoreProvider.JPA.equals(StoreProvider.getCurrentProvider())) {
             builder.environment().put("KEYCLOAK_ADMIN", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_FIRSTNAME", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_LASTNAME", "admin");
-            builder.environment().put("KEYCLOAK_ADMIN_EMAIL", "admin@keycloak.org");
             builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
         }
 
