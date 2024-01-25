@@ -48,8 +48,6 @@ import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.utils.EmailValidationUtil;
-import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -61,13 +59,8 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
-    private static final Logger log = Logger.getLogger(KeycloakMain.class);
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
-    private static final String KEYCLOAK_ADMIN_FIRSTNAME_ENV_VAR = "KEYCLOAK_ADMIN_FIRSTNAME";
-    private static final String KEYCLOAK_ADMIN_LASTNAME_ENV_VAR = "KEYCLOAK_ADMIN_LASTNAME";
-    private static final String KEYCLOAK_ADMIN_EMAIL_ENV_VAR = "KEYCLOAK_ADMIN_EMAIL";
-    private static final String KEYCLOAK_ADMIN_DEFAULT_EMAIL_DOMAIN = "keycloak.test";
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION);
@@ -171,43 +164,17 @@ public class KeycloakMain implements QuarkusApplication {
     private void createAdminUser() {
         String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
         String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
-        String tmpFirstName = System.getenv(KEYCLOAK_ADMIN_FIRSTNAME_ENV_VAR);
-        String tmpLastName = System.getenv(KEYCLOAK_ADMIN_LASTNAME_ENV_VAR);
-        String tmpEmail = System.getenv(KEYCLOAK_ADMIN_EMAIL_ENV_VAR);
 
-        if (StringUtil.isBlank(adminUserName) || StringUtil.isBlank(adminPassword)) {
+        if ((adminUserName == null || adminUserName.trim().length() == 0)
+                || (adminPassword == null || adminPassword.trim().length() == 0)) {
             return;
         }
-
-        // try to create admin user only with username and password
-        if (StringUtil.isBlank(tmpFirstName)) {
-            tmpFirstName = adminUserName;
-        }
-
-        if (StringUtil.isBlank(tmpLastName)) {
-            tmpLastName = adminUserName;
-        }
-
-        if (StringUtil.isBlank(tmpEmail)) {
-            tmpEmail = adminUserName + "@" + KEYCLOAK_ADMIN_DEFAULT_EMAIL_DOMAIN;
-        }
-
-        if (!EmailValidationUtil.isValidEmail(tmpEmail)) {
-            log.errorf("The admin user %s is not created because the associated email is invalid: %s. "
-                    + "Please set a valid email in the KEYCLOAK_ADMIN_EMAIL environment variable.", adminUserName, tmpEmail);
-            return;
-        }
-
-        final String adminFirstName = tmpFirstName;
-        final String adminLastName = tmpLastName;
-        final String adminEmail = tmpEmail;
 
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
 
         try {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName,
-                        adminPassword, adminFirstName, adminLastName, adminEmail);
+                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
             });
         } catch (Throwable t) {
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());

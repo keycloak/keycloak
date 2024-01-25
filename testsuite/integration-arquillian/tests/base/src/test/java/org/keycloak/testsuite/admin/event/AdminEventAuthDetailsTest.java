@@ -103,9 +103,7 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
         masterRealmId = masterRealm.toRepresentation().getId();
         masterAdminCliUuid = ApiUtil.findClientByClientId(masterRealm, Constants.ADMIN_CLI_CLIENT_ID).toRepresentation().getId();
         masterAdminUserId = ApiUtil.findUserByUsername(masterRealm, "admin").getId();
-        masterAdminUser2Id = ApiUtil.createUserAndResetPasswordWithAdminClient(masterRealm,
-                UserBuilder.create().username("admin2").firstName("admin2").lastName("admin2").email("admin2@keycloak.org").build(),
-                "password");
+        masterAdminUser2Id = ApiUtil.createUserAndResetPasswordWithAdminClient(masterRealm, UserBuilder.create().username("admin2").build(), "password");
         masterRealm.users().get(masterAdminUser2Id).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get("admin").toRepresentation()));
 
         RealmResource testRealm = adminClient.realm("test");

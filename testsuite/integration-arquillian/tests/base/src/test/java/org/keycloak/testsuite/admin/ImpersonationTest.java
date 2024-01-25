@@ -142,12 +142,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     @Test
     public void testImpersonateByMasterImpersonator() {
         String userId;
-        try (Response response = adminClient.realm("master").users().create(
-                UserBuilder.create().username("master-impersonator")
-                        .firstName("master-impersonator")
-                        .lastName("master-impersonator")
-                        .email("master-impersonator@keycloak.org")
-                        .build())) {
+        try (Response response = adminClient.realm("master").users().create(UserBuilder.create().username("master-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
@@ -200,12 +195,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     @Test
     public void testImpersonateByMastertBadImpersonator() {
         String userId;
-        try (Response response = adminClient.realm("master").users().create(
-                UserBuilder.create().username("master-bad-impersonator")
-                        .firstName("master-bad-impersonator")
-                        .lastName("master-bad-impersonator")
-                        .email("master-bad-impersonator@keycloak.org")
-                        .build())) {
+        try (Response response = adminClient.realm("master").users().create(UserBuilder.create().username("master-bad-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
         adminClient.realm("master").users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());

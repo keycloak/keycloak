@@ -837,7 +837,7 @@ public class GroupTest extends AbstractGroupTest {
     public void noAdminEndpointAccessWhenNoRoleAssigned() {
         String userName = "user-" + UUID.randomUUID();
         final String realmName = AuthRealm.MASTER;
-        createUser(realmName, userName, "pwd", userName, userName, userName + "@keycloak.org");
+        createUser(realmName, userName, "pwd");
 
         try (Keycloak userClient = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
           realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
@@ -862,7 +862,7 @@ public class GroupTest extends AbstractGroupTest {
         assertThat(adminRole, notNullValue());
         assertThat(adminRole.getId(), notNullValue());
 
-        String userId = createUser(realmName, userName, "pwd", userName, userName, userName + "@keycloak.org");
+        String userId = createUser(realmName, userName, "pwd");
         assertThat(userId, notNullValue());
 
         RoleMappingResource mappings = realm.users().get(userId).roles();
@@ -891,7 +891,7 @@ public class GroupTest extends AbstractGroupTest {
         assertThat(adminRole, notNullValue());
         assertThat(adminRole.getId(), notNullValue());
 
-        String userId = createUser(realmName, userName, "pwd", userName, userName, userName + "@keycloak.org");
+        String userId = createUser(realmName, userName, "pwd");
         GroupRepresentation group = GroupBuilder.create().name(groupName).build();
         try (Response response = realm.groups().add(group)) {
             String groupId = ApiUtil.getCreatedId(response);
@@ -984,7 +984,7 @@ public class GroupTest extends AbstractGroupTest {
         assertThat(adminRole, notNullValue());
         assertThat(adminRole.getId(), notNullValue());
 
-        String userId = createUser(realmName, userName, "pwd", userName, userName, userName + "@keycloak.org");
+        String userId = createUser(realmName, userName, "pwd");
         GroupRepresentation group = GroupBuilder.create().name(groupName).build();
         try (Response response = realm.groups().add(group)) {
             String groupId = ApiUtil.getCreatedId(response);

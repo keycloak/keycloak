@@ -366,17 +366,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .build());
 
             realmResource.users()
-                    .create(UserBuilder.create().username("alice")
-                            .firstName("alice")
-                            .lastName("alice")
-                            .email("alice@keycloak.org")
-                            .password("alice").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build());
             realmResource.users()
-                    .create(UserBuilder.create().username("bob")
-                            .firstName("bob")
-                            .lastName("bob")
-                            .email("bob@keycloak.org")
-                            .password("bob").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
             oauth.clientId("public-client");

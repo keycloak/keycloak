@@ -92,7 +92,7 @@ public class ApplianceBootstrap {
         return true;
     }
 
-    public void createMasterRealmUser(String username, String password, String firstName, String lastName, String email) {
+    public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -103,9 +103,6 @@ public class ApplianceBootstrap {
 
         UserModel adminUser = session.users().addUser(realm, username);
         adminUser.setEnabled(true);
-        adminUser.setFirstName(firstName);
-        adminUser.setLastName(lastName);
-        adminUser.setEmail(email);
 
         UserCredentialModel usrCredModel = UserCredentialModel.password(password);
         adminUser.credentialManager().updateCredential(usrCredModel);
