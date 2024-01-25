@@ -59,13 +59,13 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 
     @Override
     public void updateLocaleCookie(String locale) {
-        session.getProvider(CookieProvider.class).set(CookieType.KEYCLOAK_LOCALE, locale);
+        session.getProvider(CookieProvider.class).set(CookieType.LOCALE, locale);
         logger.debugv("Updating locale cookie to {0}", locale);
     }
 
     @Override
     public void expireLocaleCookie() {
-        session.getProvider(CookieProvider.class).expire(CookieType.KEYCLOAK_LOCALE);
+        session.getProvider(CookieProvider.class).expire(CookieType.LOCALE);
     }
 
     @Override

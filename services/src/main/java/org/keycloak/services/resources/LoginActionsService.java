@@ -754,7 +754,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+        AuthenticationManager.expireIdentityCookie(session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }

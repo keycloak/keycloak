@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -169,6 +170,11 @@ public class KeycloakTestingClient implements AutoCloseable {
                     throw new RunOnServerException(t);
                 }
             }
+        }
+
+        public Response runWithResponse(RunOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+            return testing(realm != null ? realm : "master").runOnServerWithResponse(encoded);
         }
 
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {
