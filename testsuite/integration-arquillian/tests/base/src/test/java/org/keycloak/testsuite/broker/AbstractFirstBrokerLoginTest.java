@@ -15,18 +15,22 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -44,8 +48,11 @@ import org.openqa.selenium.support.PageFactory;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -1348,6 +1355,42 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
+    }
+
+    /*
+     * test linking the user with an existing read-token role from the federation provider
+     * when AddReadTokenRoleOnCreate was enabled for the IdP.
+     */
+    @Test
+    public void testDuplicatedGrantReadTokenRoleWithUserFederationProvider() {
+        try {
+            // setup federation provider
+            ComponentRepresentation component = new ComponentRepresentation();
+            component.setName("memory");
+            component.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+            component.setProviderType(UserStorageProvider.class.getName());
+            component.setConfig(new MultivaluedHashMap<>());
+            component.getConfig().putSingle("priority", Integer.toString(0));
+            component.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
+            adminClient.realm(bc.consumerRealmName()).components().add(component);
+
+            // grant read-token role first
+            String username = bc.getUserLogin();
+            String createdId = createUser(username);
+            testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
+
+            // enable read token role on create
+            IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+            idpRep.setAddReadTokenRoleOnCreate(true);
+            identityProviderResource.update(idpRep);
+
+            // auto link when first broker login flow
+            testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
+            logInAsUserInIDP();
+            assertNumFederatedIdentities(createdId, 1);
+        } finally {
+            removeUserByUsername(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        }
     }
 
     private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {

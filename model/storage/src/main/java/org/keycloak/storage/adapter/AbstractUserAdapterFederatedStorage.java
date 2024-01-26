@@ -177,6 +177,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public void grantRole(RoleModel role) {
+        if (hasDirectRole(role)) return;
         getFederatedStorage().grantRole(realm, this.getId(), role);
     }
 
