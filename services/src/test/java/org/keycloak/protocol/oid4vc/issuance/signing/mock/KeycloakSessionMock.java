@@ -18,6 +18,12 @@
 package org.keycloak.protocol.oid4vc.issuance.signing.mock;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureProvider;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
@@ -76,7 +82,16 @@ public class KeycloakSessionMock implements KeycloakSession {
 
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
-        throw new UnsupportedOperationException("Not supported by the mock.");
+        if (clazz.equals(SignatureProvider.class)) {
+            T p = switch (id) {
+                case Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512 ->
+                        (T) new AsymmetricSignatureProvider(this, id);
+                case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 -> (T) new ECDSASignatureProvider(this, id);
+                default -> throw new RuntimeException("No such provider");
+            };
+            return p;
+        }
+        throw new RuntimeException("No such provider");
     }
 
     @Override

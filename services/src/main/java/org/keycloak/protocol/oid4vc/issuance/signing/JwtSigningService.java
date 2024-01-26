@@ -22,6 +22,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -62,13 +63,9 @@ public class JwtSigningService extends SigningService<String> {
         if (signingKey == null) {
             throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
         }
-        signatureSignerContext = switch (algorithmType) {
-            case Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512 ->
-                    new AsymmetricSignatureSignerContext(signingKey);
-            case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 -> new ECDSASignatureSignerContext(signingKey);
-            default ->
-                    throw new SigningServiceException(String.format("Algorithm %s is not supported by the JWTSigningService.", algorithmType));
-        };
+        SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
+        signatureSignerContext = signatureProvider.signer(signingKey);
+
         LOGGER.debugf("Successfully initiated the JWT Signing Service with algorithm %s.", algorithmType);
     }
 
