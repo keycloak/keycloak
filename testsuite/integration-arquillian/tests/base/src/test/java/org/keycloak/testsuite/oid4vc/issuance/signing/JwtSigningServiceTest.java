@@ -67,6 +67,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                                 session,
                                 "my-rsa-key",
                                 "did:web:test.org",
+                                "JWT",
                                 "unsupported-algorithm",
                                 new StaticTimeProvider(1000)));
     }
@@ -81,6 +82,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                                 session,
                                 "no-such-key",
                                 Algorithm.RS256,
+                                "JWT",
                                 "did:web:test.org",
                                 new StaticTimeProvider(1000)));
     }
@@ -134,6 +136,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 session,
                 keyWrapper.getKid(),
                 algorithm,
+                "JWT",
                 "did:web:test.org",
                 new StaticTimeProvider(1000));
 

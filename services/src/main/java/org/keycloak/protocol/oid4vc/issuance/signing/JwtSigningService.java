@@ -50,12 +50,14 @@ public class JwtSigningService extends SigningService<String> {
 
     private final SignatureSignerContext signatureSignerContext;
     private final TimeProvider timeProvider;
+    private final String tokenType;
     protected final String issuerDid;
 
-    public JwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String issuerDid, TimeProvider timeProvider) {
+    public JwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType, String tokenType, String issuerDid, TimeProvider timeProvider) {
         super(keycloakSession, keyId, algorithmType);
         this.issuerDid = issuerDid;
         this.timeProvider = timeProvider;
+        this.tokenType = tokenType;
         KeyWrapper signingKey = getKey(keyId, algorithmType);
         if (signingKey == null) {
             throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
@@ -97,7 +99,7 @@ public class JwtSigningService extends SigningService<String> {
                 .ifPresent(jsonWebToken::subject);
 
         return new JWSBuilder()
-                .type(TOKEN_TYPE)
+                .type(tokenType)
                 .jsonContent(jsonWebToken)
                 .sign(signatureSignerContext);
     }

@@ -43,9 +43,10 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
 
     @Override
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
-        
+
         String keyId = model.get(SigningProperties.KEY_ID.getKey());
         String algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
+        String tokenType = model.get(SigningProperties.TOKEN_TYPE.getKey());
         String issuerDid = Optional.ofNullable(
                         session
                                 .getContext()
@@ -53,7 +54,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
                                 .getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
                 .orElseThrow(() -> new VCIssuerException("No issuerDid configured."));
 
-        return new JwtSigningService(session, keyId, algorithmType, issuerDid, new OffsetTimeProvider());
+        return new JwtSigningService(session, keyId, algorithmType, tokenType, issuerDid, new OffsetTimeProvider());
     }
 
     @Override
@@ -65,6 +66,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
     public List<ProviderConfigProperty> getConfigProperties() {
         return VCSigningServiceProviderFactory.configurationBuilder()
                 .property(SigningProperties.ALGORITHM_TYPE.asConfigProperty())
+                .property(SigningProperties.TOKEN_TYPE.asConfigProperty())
                 .build();
     }
 
@@ -76,6 +78,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
     @Override
     public void validateSpecificConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         ConfigurationValidationHelper.check(model)
+                .checkRequired(SigningProperties.TOKEN_TYPE.asConfigProperty())
                 .checkRequired(SigningProperties.ALGORITHM_TYPE.asConfigProperty());
     }
 

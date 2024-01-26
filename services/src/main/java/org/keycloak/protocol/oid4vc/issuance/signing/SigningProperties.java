@@ -31,6 +31,8 @@ public enum SigningProperties {
     KEY_ID("keyId", "Id of the signing key.", "The id of the key to be used for signing credentials. The key needs to be provided as a realm key.", ProviderConfigProperty.STRING_TYPE, null),
     PROOF_TYPE("proofType", "Type of the LD-Proof.", "The type of LD-Proofs to be created. Needs to fit the provided signing key.", ProviderConfigProperty.STRING_TYPE, null),
     ALGORITHM_TYPE("algorithmType", "Type of the signing algorithm.", "The type of the algorithm to be used for signing. Needs to fit the provided signing key.", ProviderConfigProperty.STRING_TYPE, Algorithm.RS256),
+
+    TOKEN_TYPE("tokenType", "Type of the token.", "The type of the token to be created.  Will be used as `typ` claim in the JWT-Header.", ProviderConfigProperty.STRING_TYPE, "JWT"),
     DECOYS("decoys", "Number of decoys to be added.", "The number of decoys to be added to the SD-JWT.", ProviderConfigProperty.STRING_TYPE, 0);
 
     private final String key;
