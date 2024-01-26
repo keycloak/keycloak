@@ -30,10 +30,6 @@
     <name>Keycloak Authz: Policy Enforcer</name>
     <packaging>jar</packaging>
 
-    <properties>
-        <wildfly-elytron.version>2.0.0.Final</wildfly-elytron.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -49,7 +45,6 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-http-oidc</artifactId>
-            <version>${wildfly-elytron.version}</version>
             <optional>true</optional>
         </dependency>
     </dependencies>
