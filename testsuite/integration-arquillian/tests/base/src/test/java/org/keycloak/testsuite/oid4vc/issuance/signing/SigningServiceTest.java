@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc.issuance.signing;
+package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
-import org.keycloak.protocol.oid4vc.issuance.signing.mock.KeyManagerMock;
-import org.keycloak.protocol.oid4vc.issuance.signing.mock.KeycloakSessionMock;
-import org.keycloak.protocol.oid4vc.issuance.signing.mock.RealmModelMock;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 
 import java.net.URI;
 import java.security.KeyPairGenerator;
@@ -42,7 +42,7 @@ import java.util.UUID;
 /**
  * Super class for all signing service tests. Provides convenience methods to ease the testing.
  */
-public abstract class SigningServiceTest {
+public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
 
     protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     protected static final URI TEST_DID = URI.create("did:web:test.org");
@@ -130,11 +130,23 @@ public abstract class SigningServiceTest {
         }
     }
 
-    public static KeycloakSession getMockSession(KeyWrapper keyWrapper) {
-        RealmModelMock realmModelMock = new RealmModelMock("testRealm");
-        KeyManagerMock keyManagerMock = new KeyManagerMock();
-        keyManagerMock.addKey(realmModelMock, keyWrapper.getKid(), KeyUse.SIG, keyWrapper.getAlgorithm(), keyWrapper);
-        return new KeycloakSessionMock(realmModelMock, keyManagerMock);
+    protected ComponentExportRepresentation getRsaKeyProvider(KeyWrapper keyWrapper) {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("rsa-key-provider");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("rsa");
+
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(
+                        "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
+                        "certificate", List.of(PemUtils.encodeCertificate(keyWrapper.getCertificate())),
+                        "active", List.of("true"),
+                        "priority", List.of("0"),
+                        "enabled", List.of("true"),
+                        "algorithm", List.of("RS256")
+                )
+        ));
+        return componentExportRepresentation;
     }
 
     class StaticTimeProvider implements TimeProvider {
