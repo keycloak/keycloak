@@ -17,6 +17,7 @@
 
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import org.keycloak.common.util.Time;
@@ -32,13 +33,6 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
-
-import jakarta.ws.rs.core.UriInfo;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 
 /**
@@ -191,9 +185,8 @@ public class AuthenticationSessionManager {
 
         // expire restart cookie
         if (expireRestartCookie) {
-            UriInfo uriInfo = session.getContext().getUri();
-            RestartLoginCookie.expireRestartCookie(realm, uriInfo, session);
-            AuthenticationStateCookie.expireCookie(realm, session);
+            RestartLoginCookie.expireRestartCookie(session);
+            AuthenticationStateCookie.expireCookie(session);
 
             // With browser session, this makes sure that info/error pages will be rendered correctly when locale is changed on them
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
@@ -242,7 +235,7 @@ public class AuthenticationSessionManager {
 
             log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
 
-            AuthenticationStateCookie.generateAndSetCookie(session, realm, rootAuthSession, authSessionExpiresIn);
+            AuthenticationStateCookie.generateAndSetCookie(session, rootAuthSession, authSessionExpiresIn);
         }
     }
 
