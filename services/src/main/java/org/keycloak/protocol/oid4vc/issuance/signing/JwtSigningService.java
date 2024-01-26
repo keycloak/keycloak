@@ -75,11 +75,17 @@ public class JwtSigningService extends SigningService<String> {
     @Override
     public String signCredential(VerifiableCredential verifiableCredential) {
         LOGGER.debugf("Sign credentials to jwt-vc format.");
+
+        // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
+        // provided
+        long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
+                .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
+                .orElse((long) timeProvider.currentTime());
+
         // set mandatory fields
         JsonWebToken jsonWebToken = new JsonWebToken()
                 .issuer(verifiableCredential.getIssuer().toString())
-                .nbf((long) timeProvider.currentTime())
-                .iat((long) timeProvider.currentTime())
+                .nbf(iat)
                 .id(createCredentialId(verifiableCredential));
         jsonWebToken.setOtherClaims(VC_CLAIM_KEY, verifiableCredential);
 
