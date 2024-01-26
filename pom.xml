@@ -112,7 +112,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.4.Final</resteasy.version>
+        <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -125,7 +125,7 @@
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.2.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.2.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -158,15 +158,15 @@
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
-        <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.1</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.3.2</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>12.2.0.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>12.4.2.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
+        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
