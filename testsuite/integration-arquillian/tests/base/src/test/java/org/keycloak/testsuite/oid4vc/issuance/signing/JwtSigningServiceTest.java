@@ -18,11 +18,14 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
@@ -35,6 +38,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
 
 import java.security.PublicKey;
 import java.time.Instant;
@@ -43,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -52,6 +55,10 @@ import static org.junit.Assert.fail;
 
 public class JwtSigningServiceTest extends SigningServiceTest {
 
+    private static final Logger LOGGER = Logger.getLogger(JwtSigningServiceTest.class);
+
+    private static KeyWrapper rsaKey = getRsaKey();
+
     @Before
     public void setup() {
         CryptoIntegration.init(this.getClass().getClassLoader());
@@ -59,32 +66,40 @@ public class JwtSigningServiceTest extends SigningServiceTest {
 
     // If an unsupported algorithm is provided, the JWT Sigining Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
-    public void testUnsupportedAlgorithm() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        new JwtSigningService(
-                                session,
-                                "my-rsa-key",
-                                "did:web:test.org",
-                                "JWT",
-                                "unsupported-algorithm",
-                                new StaticTimeProvider(1000)));
+    public void testUnsupportedAlgorithm() throws Throwable {
+        try {
+            getTestingClient()
+                    .server(TEST_REALM_NAME)
+                    .run(session ->
+                            new JwtSigningService(
+                                    session,
+                                    KeyUtils.createKeyId(rsaKey.getPublicKey()),
+                                    "did:web:test.org",
+                                    "JWT",
+                                    "unsupported-algorithm",
+                                    new StaticTimeProvider(1000)));
+        } catch (RunOnServerException ros) {
+            throw ros.getCause();
+        }
     }
 
     // If no key is provided, the JWT Sigining Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
-    public void testFailIfNoKey() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        new JwtSigningService(
-                                session,
-                                "no-such-key",
-                                Algorithm.RS256,
-                                "JWT",
-                                "did:web:test.org",
-                                new StaticTimeProvider(1000)));
+    public void testFailIfNoKey() throws Throwable {
+        try {
+            getTestingClient()
+                    .server(TEST_REALM_NAME)
+                    .run(session ->
+                            new JwtSigningService(
+                                    session,
+                                    "no-such-key",
+                                    Algorithm.RS256,
+                                    "JWT",
+                                    "did:web:test.org",
+                                    new StaticTimeProvider(1000)));
+        } catch (RunOnServerException ros) {
+            throw ros.getCause();
+        }
     }
 
     // The provided credentials should be successfully signed as a JWT-VC.
@@ -95,7 +110,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                getRsaKey("my-rsa-key"),
+                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
@@ -109,7 +124,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                getRsaKey("my-rsa-key"),
+                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
@@ -124,17 +139,16 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                getRsaKey("my-rsa-key"),
+                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of()));
     }
 
 
-    public void testSignJwtCredential(KeycloakSession session, KeyWrapper keyWrapper, String algorithm, Map<String, Object> claims) {
-
+    public static void testSignJwtCredential(KeycloakSession session, KeyWrapper keyWrapper, String algorithm, Map<String, Object> claims) {
         JwtSigningService jwtSigningService = new JwtSigningService(
                 session,
-                keyWrapper.getKid(),
+                KeyUtils.createKeyId(keyWrapper.getPublicKey()),
                 algorithm,
                 "JWT",
                 "did:web:test.org",
@@ -203,6 +217,11 @@ public class JwtSigningServiceTest extends SigningServiceTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(getRsaKey("my-rsa-key")));
+        if (testRealm.getComponents() != null) {
+            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(rsaKey));
+        } else {
+            testRealm.setComponents(new MultivaluedHashMap<>(
+                    Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
+        }
     }
 } 

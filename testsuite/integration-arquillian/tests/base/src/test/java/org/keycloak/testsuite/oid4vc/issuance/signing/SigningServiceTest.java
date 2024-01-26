@@ -18,21 +18,28 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 
 import java.net.URI;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -44,19 +51,20 @@ import java.util.UUID;
  */
 public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
 
+    private static final Logger LOGGER = Logger.getLogger(SigningServiceTest.class);
     protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     protected static final URI TEST_DID = URI.create("did:web:test.org");
     protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
     protected static final Date TEST_EXPIRATION_DATE = Date.from(Instant.ofEpochSecond(2000));
     protected static final Date TEST_ISSUANCE_DATE = Date.from(Instant.ofEpochSecond(1000));
 
-    protected CredentialSubject getCredentialSubject(Map<String, Object> claims) {
+    protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
         CredentialSubject credentialSubject = new CredentialSubject();
         claims.forEach(credentialSubject::setClaims);
         return credentialSubject;
     }
 
-    protected VerifiableCredential getTestCredential(Map<String, Object> claims) {
+    protected static VerifiableCredential getTestCredential(Map<String, Object> claims) {
 
         VerifiableCredential testCredential = new VerifiableCredential();
         testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
@@ -112,7 +120,7 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    public static KeyWrapper getRsaKey(String keyId) {
+    public static KeyWrapper getRsaKey() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048);
@@ -122,7 +130,6 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
             kw.setPublicKey(keyPair.getPublic());
             kw.setUse(KeyUse.SIG);
             kw.setType("RSA");
-            kw.setKid(keyId);
             kw.setAlgorithm("RS256");
             return kw;
         } catch (NoSuchAlgorithmException e) {
@@ -136,10 +143,14 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
         componentExportRepresentation.setId(UUID.randomUUID().toString());
         componentExportRepresentation.setProviderId("rsa");
 
+
+        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(
+                new KeyPair((PublicKey) keyWrapper.getPublicKey(), (PrivateKey) keyWrapper.getPrivateKey()), "TestKey");
+
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
-                        "certificate", List.of(PemUtils.encodeCertificate(keyWrapper.getCertificate())),
+                        "certificate", List.of(PemUtils.encodeCertificate(certificate)),
                         "active", List.of("true"),
                         "priority", List.of("0"),
                         "enabled", List.of("true"),
@@ -149,7 +160,7 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
         return componentExportRepresentation;
     }
 
-    class StaticTimeProvider implements TimeProvider {
+    static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
         StaticTimeProvider(int currentTimeInS) {
