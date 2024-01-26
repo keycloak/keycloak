@@ -1104,6 +1104,22 @@ public class UserStorageTest extends AbstractAuthTest {
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
 
+    @Test
+    public void testGrantRoleTwice() {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("role");
+        testRealmResource().roles().create(role);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+
+            RoleModel roleModel = session.roles().getRealmRole(realm, "role");
+            user.grantRole(roleModel);
+            user.grantRole(roleModel);
+        });
+    }
+
 
     private void assertOrder(List<CredentialModel> creds, String... expectedIds) {
         org.keycloak.testsuite.Assert.assertEquals(expectedIds.length, creds.size());
