@@ -253,7 +253,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=52, value="Failed processing type")
     void failedProcessingType(@Cause Exception e);
 
-    @LogMessage(level = WARN)
+    @LogMessage(level = DEBUG)
     @Message(id=53, value="login failure for user %s from ip %s")
     void loginFailure(String user, String ip);
 

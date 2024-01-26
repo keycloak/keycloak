@@ -177,11 +177,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 user.setEnabled(false);
                 user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
                 // Send event
-                new EventBuilder(realm, session, event.clientConnection)
-                        .event(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)
-                        .detail(Details.REASON, "brute_force_attack detected")
-                        .user(user)
-                        .success();
+                sendEvent(session, realm, userId, event, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
                 return;
             }
 
@@ -191,6 +187,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 int notBefore = (int) (currentTime / 1000) + waitSeconds;
                 logger.debugv("set notBefore: {0}", notBefore);
                 userLoginFailure.setFailedLoginNotBefore(notBefore);
+                sendEvent(session, realm, userId, event, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
             }
             return;
         }
@@ -219,6 +216,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             int notBefore = (int) (currentTime / 1000) + waitSeconds;
             logger.debugv("set notBefore: {0}", notBefore);
             userLoginFailure.setFailedLoginNotBefore(notBefore);
+            sendEvent(session, realm, userId, event, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
         }
     }
 
@@ -235,6 +233,14 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         RealmModel realm = session.realms().getRealm(event.realmId);
         if (realm == null) return null;
         return realm;
+    }
+
+    protected void sendEvent(KeycloakSession session, RealmModel realm, String userId, LoginEvent event, EventType type) {
+        new EventBuilder(realm, session, event.clientConnection)
+                .event(type)
+                .detail(Details.REASON, "brute_force_attack detected")
+                .user(userId)
+                .success();
     }
 
     public void start() {
