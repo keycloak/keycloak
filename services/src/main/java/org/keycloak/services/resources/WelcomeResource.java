@@ -24,7 +24,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -37,13 +36,14 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
@@ -283,28 +283,17 @@ public class WelcomeResource {
 
     private String setCsrfCookie() {
         String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
-        String cookiePath = session.getContext().getUri().getPath();
-        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).set(CookieType.WELCOME_STATE_CHECKER, stateChecker);
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
-        String cookiePath = session.getContext().getUri().getPath();
-        boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).expire(CookieType.WELCOME_STATE_CHECKER);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        HttpRequest request = session.getContext().getHttpRequest();
-        HttpHeaders headers = request.getHttpHeaders();
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-        if (cookie == null) {
-            throw new ForbiddenException();
-        }
-
-        String cookieStateChecker = cookie.getValue();
+        String cookieStateChecker = session.getProvider(CookieProvider.class).get(CookieType.WELCOME_STATE_CHECKER);
 
         if (cookieStateChecker == null || !cookieStateChecker.equals(formStateChecker)) {
             throw new ForbiddenException();

@@ -24,6 +24,7 @@ import java.util.Locale;
 
 public interface LocaleSelectorProvider extends Provider {
 
+    @Deprecated(since = "24.0.0", forRemoval = true)
     String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
     String KC_LOCALE_PARAM = "kc_locale";
 
