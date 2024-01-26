@@ -200,3 +200,20 @@ link:{upgradingguide_link}[{upgradingguide_name}].
 
 Cookie handling code has been refactored and improved, including a new Cookie Provider. This provides better consistency
 for cookies handled by Keycloak, and the ability to introduce configuration options around cookies if needed.
+
+= SAML User Attribute Mapper For NameID now suggests only valid NameID formats
+
+User Attribute Mapper For NameID allowed setting `Name ID Format` option to the following values:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:entity`
+
+However, Keycloak does not support receiving `AuthnRequest` document with one of these `NameIDPolicy`, therefore these
+mappers would never be used. The supported options were updated to only include the following Name ID Formats:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
