@@ -64,7 +64,10 @@ public abstract class SigningServiceTest {
         testCredential.setType(TEST_TYPES);
         testCredential.setIssuer(TEST_DID);
         testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
-        testCredential.setIssuanceDate(TEST_ISSUANCE_DATE);
+        if (claims.containsKey("issuanceDate")) {
+            testCredential.setIssuanceDate((Date) claims.get("issuanceDate"));
+        }
+
         testCredential.setCredentialSubject(getCredentialSubject(claims));
         return testCredential;
     }
@@ -142,7 +145,7 @@ public abstract class SigningServiceTest {
         }
 
         @Override
-        public int currentTime() {
+        public int currentTimeSeconds() {
             return currentTimeInS;
         }
 

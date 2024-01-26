@@ -18,9 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 import org.jboss.logging.Logger;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -77,7 +74,7 @@ public class JwtSigningService extends SigningService<String> {
         // provided
         long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
                 .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
-                .orElse((long) timeProvider.currentTime());
+                .orElse((long) timeProvider.currentTimeSeconds());
 
         // set mandatory fields
         JsonWebToken jsonWebToken = new JsonWebToken()

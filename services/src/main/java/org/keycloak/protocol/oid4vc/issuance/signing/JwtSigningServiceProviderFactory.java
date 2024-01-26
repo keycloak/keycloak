@@ -30,6 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 import java.util.Optional;
 
+
 /**
  * Provider Factory to create {@link  JwtSigningService}s
  *
@@ -42,6 +43,7 @@ public class JwtSigningServiceProviderFactory implements VCSigningServiceProvide
 
     @Override
     public VerifiableCredentialsSigningService create(KeycloakSession session, ComponentModel model) {
+        
         String keyId = model.get(SigningProperties.KEY_ID.getKey());
         String algorithmType = model.get(SigningProperties.ALGORITHM_TYPE.getKey());
         String issuerDid = Optional.ofNullable(

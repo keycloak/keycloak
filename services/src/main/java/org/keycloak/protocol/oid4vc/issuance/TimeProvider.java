@@ -27,7 +27,7 @@ public interface TimeProvider {
      *
      * @return see description
      */
-    int currentTime();
+    int currentTimeSeconds();
 
     /**
      * Returns current time in milliseconds

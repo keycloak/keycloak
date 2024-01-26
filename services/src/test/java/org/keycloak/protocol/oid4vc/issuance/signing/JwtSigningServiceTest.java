@@ -36,6 +36,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 
 import java.security.PublicKey;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,20 +117,29 @@ class JwtSigningServiceTest extends SigningServiceTest {
         var theToken = verifier.getToken();
 
         assertEquals(TEST_EXPIRATION_DATE.toInstant().getEpochSecond(), theToken.getExp(), "JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC");
-        assertEquals(TEST_ISSUANCE_DATE.toInstant().getEpochSecond(), theToken.getNbf(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
+        if (claims.containsKey("issuanceDate")) {
+            assertEquals(((Date) claims.get("issuanceDate")).toInstant().getEpochSecond(), theToken.getNbf(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
+        } else {
+            // if not specific date is set, check against "currentTime"
+            assertEquals(TEST_ISSUANCE_DATE.toInstant().getEpochSecond(), theToken.getNbf(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
+        }
         assertEquals(TEST_DID.toString(), theToken.getIssuer(), "The issuer should be set in the token.");
         assertEquals(testCredential.getId().toString(), theToken.getId(), "The credential ID should be set as the token ID.");
         Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals(id.toString(), theToken.getSubject(), "If the credentials subject id is set, it should be set as the token subject."));
 
         assertNotNull(theToken.getOtherClaims().get("vc"), "The credentials should be included at the vc-claim.");
         var credential = new ObjectMapper().convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-        assertEquals(credential.getType(), TEST_TYPES, "The types should be included");
-        assertEquals(credential.getIssuer(), TEST_DID, "The issuer should be included");
-        assertEquals(credential.getExpirationDate(), TEST_EXPIRATION_DATE, "The expiration date should be included");
-        assertEquals(credential.getIssuanceDate(), TEST_ISSUANCE_DATE, "The issuance date should be included");
+        assertEquals(TEST_TYPES, credential.getType(), "The types should be included");
+        assertEquals(TEST_DID, credential.getIssuer(), "The issuer should be included");
+        assertEquals(TEST_EXPIRATION_DATE, credential.getExpirationDate(), "The expiration date should be included");
+        if (claims.containsKey("issuanceDate")) {
+            assertEquals(claims.get("issuanceDate"), credential.getIssuanceDate(), "The issuance date should be included");
+        }
 
         var subject = credential.getCredentialSubject();
-        claims.forEach((k, v) -> assertEquals(v, subject.getClaims().get(k), String.format("All additional claims should be set - %s is incorrect", k)));
+        claims.entrySet().stream()
+                .filter(e -> !e.getKey().equals("issuanceDate"))
+                .forEach(e -> assertEquals(e.getValue(), subject.getClaims().get(e.getKey()), String.format("All additional claims should be set - %s is incorrect", e.getKey())));
 
     }
 
@@ -146,6 +157,20 @@ class JwtSigningServiceTest extends SigningServiceTest {
                         Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                 "test", "test",
                                 "arrayClaim", List.of("a", "b", "c"))),
+                Arguments.of(
+                        getECKey("my-ec-key"),
+                        Algorithm.ES256,
+                        Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                "test", "test",
+                                "arrayClaim", List.of("a", "b", "c"),
+                                "issuanceDate", Date.from(Instant.ofEpochSecond(10)))),
+                Arguments.of(
+                        getRsaKey("my-rsa-key"),
+                        Algorithm.RS256,
+                        Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                "test", "test",
+                                "arrayClaim", List.of("a", "b", "c"),
+                                "issuanceDate", Date.from(Instant.ofEpochSecond(10)))),
                 Arguments.of(
                         getECKey("my-ec-key"),
                         Algorithm.ES256,
