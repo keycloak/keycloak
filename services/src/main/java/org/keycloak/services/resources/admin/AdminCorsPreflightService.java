@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.http.HttpRequest;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;

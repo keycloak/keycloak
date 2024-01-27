@@ -32,7 +32,7 @@ import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.Consumes;

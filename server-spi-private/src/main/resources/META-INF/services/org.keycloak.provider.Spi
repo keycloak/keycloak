@@ -90,6 +90,7 @@ org.keycloak.headers.SecurityHeadersSpi
 org.keycloak.services.clientpolicy.condition.ClientPolicyConditionSpi
 org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi
 org.keycloak.services.clientpolicy.ClientPolicyManagerSpi
+org.keycloak.services.cors.CorsSpi
 org.keycloak.userprofile.UserProfileSpi
 org.keycloak.device.DeviceRepresentationSpi
 org.keycloak.health.LoadBalancerCheckSpi

@@ -9,7 +9,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

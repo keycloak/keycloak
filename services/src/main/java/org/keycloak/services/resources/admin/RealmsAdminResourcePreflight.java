@@ -23,7 +23,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 public class RealmsAdminResourcePreflight extends RealmsAdminResource {
 
