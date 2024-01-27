@@ -453,6 +453,68 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(existingUser, 1);
     }
 
+    /**
+     * Reset password during first broker login should work without `AbstractIdpAuthenticator.EXISTING_USER_INFO` set.
+     *
+     * This session note is only set by {@link org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticator}
+     * or {@link org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticator}. However,
+     * the reset password feature should work without them.
+     *
+     * For more info see https://github.com/keycloak/keycloak/issues/26323 .
+     */
+    @Test
+    public void testResetPasswordDuringFirstBrokerFlowWithoutExistingUserAuthenticator() throws InterruptedException {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setResetPasswordAllowed(true);
+
+        realm.update(realmRep);
+
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        configureSMTPServer();
+
+        this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword("consumer");
+        assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
+        assertEquals(1, MailServer.getReceivedMessages().length);
+        MimeMessage message = MailServer.getLastReceivedMessage();
+        String linkFromMail = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "credentials", false);
+
+        driver.navigate().to(linkFromMail.trim());
+
+        // Need to update password now
+        this.passwordUpdatePage.assertCurrent();
+        this.passwordUpdatePage.changePassword("password", "password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        assertNumFederatedIdentities(existingUser, 1);
+    }
+
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword_differentBrowser
