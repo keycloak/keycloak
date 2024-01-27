@@ -33,7 +33,9 @@ public class ServerCookie implements Serializable {
     private static final String tspecials2 = "()<>@,;:\\\"/[]?={} \t";
 
     public enum SameSiteAttributeValue {
-        NONE("None"); // we currently support only SameSite=None; this might change in the future
+        NONE("None"),
+        LAX("Lax"),
+        STRICT("Strict");
 
         private final String specValue;
         SameSiteAttributeValue(String specValue) {

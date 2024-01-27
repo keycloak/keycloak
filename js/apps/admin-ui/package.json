@@ -73,7 +73,7 @@
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
-    "i18next": "^23.7.18",
+    "i18next": "^23.7.19",
     "i18next-http-backend": "^2.4.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
@@ -91,7 +91,7 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.5",
     "@testing-library/cypress": "^10.0.1",
-    "@testing-library/jest-dom": "^6.2.1",
+    "@testing-library/jest-dom": "^6.3.0",
     "@testing-library/react": "^14.1.2",
     "@types/dagre": "^0.7.52",
     "@types/file-saver": "^2.0.7",

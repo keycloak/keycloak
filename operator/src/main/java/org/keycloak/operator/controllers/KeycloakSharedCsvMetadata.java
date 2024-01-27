@@ -91,7 +91,8 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
             "    \"spec\": {\n" +
             "      \"instances\": 1,\n" +
             "      \"hostname\": \"example.org\",\n" +
-            "      \"tlsSecret\": \"my-tls-secret\"\n" +
+            "      \"http\":\n {" +
+            "        \"tlsSecret\": \"my-tls-secret\" } \n" +
             "    }\n" +
             "  },\n" +
             "  {\n" +

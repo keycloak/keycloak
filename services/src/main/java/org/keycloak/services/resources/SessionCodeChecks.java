@@ -385,7 +385,7 @@ public class SessionCodeChecks {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
-        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        String cook = RestartLoginCookie.getRestartCookie(session);
         if (cook == null) {
             event.error(Errors.COOKIE_NOT_FOUND);
             return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);

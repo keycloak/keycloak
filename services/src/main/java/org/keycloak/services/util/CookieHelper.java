@@ -17,18 +17,12 @@
 
 package org.keycloak.services.util;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.Cookie;
 import org.keycloak.http.HttpCookie;
 import org.keycloak.http.HttpResponse;
-import org.jboss.resteasy.util.CookieParser;
 import org.keycloak.models.KeycloakSession;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 
@@ -40,8 +34,6 @@ import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 public class CookieHelper {
 
     public static final String LEGACY_COOKIE = "_LEGACY";
-
-    private static final Logger logger = Logger.getLogger(CookieHelper.class);
 
     /**
      * Set a response cookie.  This solely exists because JAX-RS 1.1 does not support setting HttpOnly cookies
@@ -91,62 +83,14 @@ public class CookieHelper {
         addCookie(name, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
     }
 
-
-    public static Set<String> getCookieValue(KeycloakSession session, String name) {
-        Set<String> ret = getInternalCookieValue(session, name);
-        if (ret.size() == 0) {
-            String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find any cookies with name {0}, trying {1}", name, legacy);
-            ret = getInternalCookieValue(session, legacy);
-        }
-        return ret;
-    }
-
-    private static Set<String> getInternalCookieValue(KeycloakSession session, String name) {
-        HttpHeaders headers = session.getContext().getHttpRequest().getHttpHeaders();
-        Set<String> cookiesVal = new HashSet<>();
-
-        // check for cookies in the request headers
-        cookiesVal.addAll(parseCookie(headers.getRequestHeaders().getFirst(HttpHeaders.COOKIE), name));
-
-        // get cookies from the cookie field
-        Cookie cookie = headers.getCookies().get(name);
-        if (cookie != null) {
-            logger.debugv("{0} cookie found in the cookie field", name);
-            cookiesVal.add(cookie.getValue());
-        }
-
-
-        return cookiesVal;
-    }
-
-
-    public static Set<String> parseCookie(String header, String name) {
-        if (header == null || name == null) {
-            return Collections.emptySet();
-        }
-
-        Set<String> values = new HashSet<>();
-
-        for (Cookie cookie : CookieParser.parseCookies(header)) {
-            if (name.equals(cookie.getName())) {
-                logger.debugv("{0} cookie found in the request header", name);
-                values.add(cookie.getValue());
-            }
-        }
-
-        return values;
-    }
-
-    public static Cookie getCookie(Map<String, Cookie> cookies, String name) {
+    public static String getCookieValue(KeycloakSession session, String name) {
+        Map<String, Cookie> cookies = session.getContext().getRequestHeaders().getCookies();
         Cookie cookie = cookies.get(name);
-        if (cookie != null) {
-            return cookie;
-        }
-        else {
+        if (cookie == null) {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Could not find cookie {0}, trying {1}", name, legacy);
-            return cookies.get(legacy);
+            cookie = cookies.get(legacy);
         }
+        return cookie != null ? cookie.getValue() : null;
     }
+
 }

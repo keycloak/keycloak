@@ -60,6 +60,8 @@ public class Profile {
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
 
+        LOGIN2("New Login Theme", Type.EXPERIMENTAL),
+
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
@@ -104,10 +106,14 @@ public class Profile {
 
         MULTI_SITE("Multi-site support", Type.PREVIEW),
 
+        CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
+
         OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
 
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
         ;

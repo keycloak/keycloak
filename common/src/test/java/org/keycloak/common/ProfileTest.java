@@ -77,6 +77,7 @@ public class ProfileTest {
             Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
             Profile.Feature.DYNAMIC_SCOPES,
             Profile.Feature.DOCKER,
+            Profile.Feature.LOGIN2,
             Profile.Feature.MULTI_SITE,
             Profile.Feature.DECLARATIVE_UI,
             Profile.Feature.RECOVERY_CODES,
@@ -85,7 +86,9 @@ public class ProfileTest {
             Profile.Feature.CLIENT_SECRET_ROTATION,
             Profile.Feature.UPDATE_EMAIL,
             Profile.Feature.LINKEDIN_OAUTH,
-            Profile.Feature.OFFLINE_SESSION_PRELOADING
+            Profile.Feature.OFFLINE_SESSION_PRELOADING,
+            Profile.Feature.CLIENT_TYPES,
+            Profile.Feature.OID4VC_VCI
         ));
 
         // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
