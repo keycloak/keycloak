@@ -181,6 +181,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
                     .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
+            // add Open ID scope only if it is not added aready.        
             if(!scopeNames.contains(OAuth2Constants.SCOPE_OPENID)) {
             scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
             }
