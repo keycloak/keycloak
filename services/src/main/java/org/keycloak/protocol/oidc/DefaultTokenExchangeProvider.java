@@ -61,11 +61,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -122,7 +122,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     public Response exchange(TokenExchangeContext context) {
         this.formParams = context.getFormParams();
         this.session = context.getSession();
-        this.cors = (Cors)context.getCors();
+        this.cors = context.getCors();
         this.realm = context.getRealm();
         this.client = context.getClient();
         this.event = context.getEvent();

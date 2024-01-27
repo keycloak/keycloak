@@ -38,7 +38,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import static jakarta.ws.rs.core.HttpHeaders.WWW_AUTHENTICATE;
 
