@@ -243,6 +243,10 @@ export const AttributeGeneralSettings = () => {
               />
             </FormGroup>
           )}
+        </>
+      )}
+      {attributeName !== "username" && (
+        <>
           <Divider />
           <FormGroup
             label={t("required")}

@@ -1258,6 +1258,116 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    @ModelTest(realmName=TEST_REALM_NAME)
+    public void testEmailRequired(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, "james");
+        attributes.put(UserModel.FIRST_NAME, "James");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        UserProfile profile;
+
+        // Email required for users by default, but not for admins
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseDefaultConfig();
+        provider.setConfiguration(config);
+        UPAttribute emailOrigConfig = config.getAttribute(UserModel.EMAIL);
+        Assert.assertEquals(emailOrigConfig.getRequired().getRoles(), Set.of(ROLE_USER)); // Should be required only for users by default
+
+        try {
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            profile.validate();
+            Assert.fail("Should not be here as email is required for users");
+        } catch (ValidationException ve) {
+            // expected
+        }
+        try {
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+        } catch (ValidationException ve) {
+            Assert.fail("Should not be here as email is NOT required for administrators");
+        }
+
+        // Test email required in config, registrationEmailAsUsername = false : Email should be required
+        config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_ADMIN, ROLE_USER), Set.of())));
+        provider.setConfiguration(config);
+
+        try {
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            profile.validate();
+            Assert.fail("Should not be here as email is required for users");
+        } catch (ValidationException ve) {
+            // expected
+        }
+        try {
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+            Assert.fail("Should not be here as email is required for administrators");
+        } catch (ValidationException ve) {
+            // expected
+        }
+
+        // Test email required in config, registrationEmailAsUsername = true : Email should be required
+        try {
+            realm.setRegistrationEmailAsUsername(true);
+            try {
+                profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+                profile.validate();
+                Assert.fail("Should not be here as email is required for users");
+            } catch (ValidationException ve) {
+                // expected
+            }
+            try {
+                profile = provider.create(UserProfileContext.USER_API, attributes);
+                profile.validate();
+                Assert.fail("Should not be here as email is required for administrators");
+            } catch (ValidationException ve) {
+                // expected
+            }
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        // Test email NOT required in config, registrationEmailAsUsername = true : Email should be required
+        config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER)), null));
+        provider.setConfiguration(config);
+        try {
+            realm.setRegistrationEmailAsUsername(true);
+            try {
+                profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+                profile.validate();
+                Assert.fail("Should not be here as email is required for users");
+            } catch (ValidationException ve) {
+                // expected
+            }
+            try {
+                profile = provider.create(UserProfileContext.USER_API, attributes);
+                profile.validate();
+                Assert.fail("Should not be here as email is required for administrators");
+            } catch (ValidationException ve) {
+                // expected
+            }
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        // Test email NOT required in config, registrationEmailAsUsername = false : Email should NOT be required
+        try {
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            profile.validate();
+        } catch (ValidationException ve) {
+            Assert.fail("Should not be here as email is required for users");
+        }
+        try {
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+        } catch (ValidationException ve) {
+            Assert.fail("Should not be here as email is required for administrators");
+        }
+    }
+
+    @Test
     public void testNoValidationsIfUserReadOnly() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoValidationsIfUserReadOnly);
     }
