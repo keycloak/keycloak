@@ -95,13 +95,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     private static final char ESCAPE_BACKSLASH = '\\';
 
     private final KeycloakSession session;
-    protected EntityManager em;
-    private final JpaUserCredentialStore credentialStore;
 
+    protected final EntityManager em;
+
+    protected final UserCredentialStore credentialStore;
+
+    /**
+     * @param session
+     * @param em
+     * @deprecated use {@link JpaUserProvider#JpaUserProvider(KeycloakSession, EntityManager, UserCredentialStore)} instead
+     */
+    @Deprecated
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
+        this(session, em, new JpaUserCredentialStore(session, em));
+    }
+
+    public JpaUserProvider(KeycloakSession session, EntityManager em, UserCredentialStore credentialStore) {
         this.session = session;
         this.em = em;
-        credentialStore = new JpaUserCredentialStore(session, em);
+        this.credentialStore = credentialStore;
     }
 
     @Override
@@ -835,32 +847,17 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        CredentialEntity entity = credentialStore.createCredentialEntity(realm, user, cred);
-
-        UserEntity userEntity = userInEntityManagerContext(user.getId());
-        if (userEntity != null) {
-            userEntity.getCredentials().add(entity);
-        }
-        return toModel(entity);
+        return credentialStore.createCredential(realm, user, cred);
     }
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        CredentialEntity entity = credentialStore.removeCredentialEntity(realm, user, id);
-        UserEntity userEntity = userInEntityManagerContext(user.getId());
-        if (entity != null && userEntity != null) {
-            userEntity.getCredentials().remove(entity);
-        }
-        return entity != null;
+        return credentialStore.removeStoredCredential(realm, user, id);
     }
 
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
         return credentialStore.getStoredCredentialById(realm, user, id);
-    }
-
-    protected CredentialModel toModel(CredentialEntity entity) {
-        return credentialStore.toModel(entity);
     }
 
     @Override
@@ -870,15 +867,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
-        UserEntity userEntity = userInEntityManagerContext(user.getId());
-        if (userEntity != null) {
-            // user already in persistence context, no need to execute a query
-            return userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
-                    .sorted(Comparator.comparingInt(CredentialEntity::getPriority))
-                    .map(this::toModel);
-        } else {
-           return credentialStore.getStoredCredentialsByTypeStream(realm, user, type);
-        }
+        return credentialStore.getStoredCredentialsByTypeStream(realm, user, type);
     }
 
     @Override
