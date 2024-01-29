@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import picocli.CommandLine.ExitCode;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
@@ -68,10 +70,7 @@ public class KeycloakMain implements QuarkusApplication {
         try {
             cliArgs = Picocli.parseArgs(args);
         } catch (PropertyException e) {
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
-            errorHandler.error(errStream, e.getMessage(), null);
-            System.exit(ExitCode.USAGE);
+            handleUsageError(e.getMessage());
             return;
         }
 
@@ -79,24 +78,23 @@ public class KeycloakMain implements QuarkusApplication {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
-        } else if (isFastStart(cliArgs)) {
-            // fast path for starting the server without bootstrapping CLI
-            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-            PrintWriter errStream = new PrintWriter(System.err, true);
+        } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
 
             if (isDevProfileNotAllowed()) {
-                errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
-                System.exit(ExitCode.USAGE);
+                handleUsageError(Messages.devProfileNotAllowedError(Start.NAME));
                 return;
             }
 
             try {
+                PropertyMappers.sanitizeDisabledMappers();
                 Picocli.validateConfig(cliArgs, new Start());
-            } catch (PropertyException e) {
-                errorHandler.error(errStream, e.getMessage(), null);
-                System.exit(ExitCode.USAGE);
+            } catch (PropertyException | ProfileException e) {
+                handleUsageError(e.getMessage(), e.getCause());
                 return;
             }
+
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
 
             start(errorHandler, errStream, args);
 
@@ -105,6 +103,17 @@ public class KeycloakMain implements QuarkusApplication {
 
         // parse arguments and execute any of the configured commands
         parseAndRun(cliArgs);
+    }
+
+    private static void handleUsageError(String message) {
+        handleUsageError(message, null);
+    }
+
+    private static void handleUsageError(String message, Throwable cause) {
+        ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+        PrintWriter errStream = new PrintWriter(System.err, true);
+        errorHandler.error(errStream, message, cause);
+        System.exit(ExitCode.USAGE);
     }
 
     private static boolean isFastStart(List<String> cliArgs) {

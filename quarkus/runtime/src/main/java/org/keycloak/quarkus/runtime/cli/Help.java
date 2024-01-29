@@ -161,8 +161,14 @@ public final class Help extends CommandLine.Help {
         PropertyMapper<?> mapper = getMapper(option.longestName());
 
         if (mapper == null) {
+            final var disabledMapper = PropertyMappers.isDisabledMapper(option.longestName());
+
+            if (allOptions && disabledMapper) {
+                return true;
+            }
+
             // only filter mapped options, defaults to the hidden marker
-            return !option.hidden();
+            return !option.hidden() && !disabledMapper;
         }
 
         boolean isUnsupportedOption = !PropertyMappers.isSupported(mapper);

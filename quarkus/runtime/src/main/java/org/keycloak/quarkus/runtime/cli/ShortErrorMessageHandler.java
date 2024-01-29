@@ -14,6 +14,10 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.UnmatchedArgumentException;
 
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+
+import static java.lang.String.format;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 public class ShortErrorMessageHandler implements IParameterExceptionHandler {
@@ -23,17 +27,30 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         CommandLine cmd = ex.getCommandLine();
         PrintWriter writer = cmd.getErr();
         String errorMessage = ex.getMessage();
+        String additionalSuggestion = null;
 
         if (ex instanceof UnmatchedArgumentException) {
             UnmatchedArgumentException uae = (UnmatchedArgumentException) ex;
 
-            String[] unmatched = getUnmatchedPartsByOptionSeparator(uae,"=");
+            String[] unmatched = getUnmatchedPartsByOptionSeparator(uae, "=");
 
             String cliKey = unmatched[0];
 
             PropertyMapper<?> mapper = PropertyMappers.getMapper(cliKey);
 
-            if (mapper == null || !(cmd.getCommand() instanceof AbstractCommand)) {
+            final boolean isDisabledOption = mapper == null && PropertyMappers.isDisabledMapper(cliKey);
+            final BooleanSupplier isUnknownOption = () -> mapper == null || !(cmd.getCommand() instanceof AbstractCommand);
+
+            if (isDisabledOption) {
+                var enabledWhen = PropertyMappers.getDisabledMapper(cliKey)
+                        .map(PropertyMapper::getEnabledWhen)
+                        .filter(Optional::isPresent)
+                        .map(desc -> format(". %s", desc.get()))
+                        .orElse("");
+
+                errorMessage = format("Disabled option: '%s'%s", cliKey, enabledWhen);
+                additionalSuggestion = "Specify '--help-all' to obtain information on all options and their availability.";
+            } else if (isUnknownOption.getAsBoolean()) {
                 if (cliKey.split("\\s").length > 1) {
                     errorMessage = "Option: '" + cliKey + "' is not expected to contain whitespace, please remove any unnecessary quoting/escaping";
                 } else {
@@ -42,12 +59,13 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
             } else {
                 AbstractCommand command = cmd.getCommand();
                 if (!command.getOptionCategories().contains(mapper.getCategory())) {
-                    errorMessage = "Option: '" + cliKey + "' not valid for command " + cmd.getCommandName();
+                    errorMessage = format("Option: '%s' not valid for command %s", cliKey, cmd.getCommandName());
                 } else {
                     if (Stream.of(args).anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals) && mapper.isBuildTime() && Start.NAME.equals(cmd.getCommandName())) {
-                        errorMessage = "Build time option: '" + cliKey + "' not usable with pre-built image and --optimized";
+                        errorMessage = format("Build time option: '%s' not usable with pre-built image and --optimized", cliKey);
                     } else {
-                        errorMessage = (mapper.isRunTime()?"Run time":"Build time") + " option: '" + cliKey + "' not usable with " + cmd.getCommandName();
+                        final var optionType = mapper.isRunTime() ? "Run time" : "Build time";
+                        errorMessage = format("%s option: '%s' not usable with %s", optionType, cliKey, cmd.getCommandName());
                     }
                 }
             }
@@ -58,6 +76,10 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
         CommandSpec spec = cmd.getCommandSpec();
         writer.printf("Try '%s --help' for more information on the available options.%n", spec.qualifiedName());
+
+        if (additionalSuggestion != null) {
+            writer.println(additionalSuggestion);
+        }
 
         return getInvalidInputExitCode(ex, cmd);
     }

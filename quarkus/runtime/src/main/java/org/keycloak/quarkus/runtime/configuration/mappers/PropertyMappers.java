@@ -7,14 +7,22 @@ import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 
 public final class PropertyMappers {
 
@@ -83,6 +91,27 @@ public final class PropertyMappers {
         return MAPPERS.getBuildTimeMappers();
     }
 
+    public static Map<String, PropertyMapper<?>> getDisabledMappers() {
+        final var disabledMappers = new HashMap<>(getDisabledBuildTimeMappers());
+        disabledMappers.putAll(getDisabledRuntimeMappers());
+        return disabledMappers;
+    }
+
+    public static Map<String, PropertyMapper<?>> getDisabledRuntimeMappers() {
+        return MAPPERS.getDisabledRuntimeMappers();
+    }
+
+    public static Map<String, PropertyMapper<?>> getDisabledBuildTimeMappers() {
+        return MAPPERS.getDisabledBuildTimeMappers();
+    }
+
+    /**
+     * Removes all disabled mappers from the runtime/buildtime mappers
+     */
+    public static void sanitizeDisabledMappers() {
+        MAPPERS.sanitizeDisabledMappers();
+    }
+
     public static String formatValue(String property, String value) {
         property = removeProfilePrefixIfNeeded(property);
         PropertyMapper<?> mapper = getMapper(property);
@@ -117,17 +146,45 @@ public final class PropertyMappers {
         return mapper.getCategory().getSupportLevel().equals(ConfigSupportLevel.SUPPORTED);
     }
 
+    public static Optional<PropertyMapper<?>> getDisabledMapper(String property) {
+        if (property == null) return Optional.empty();
+
+        PropertyMapper<?> mapper = getDisabledBuildTimeMappers().get(property);
+        if (mapper == null) {
+            mapper = getDisabledRuntimeMappers().get(property);
+        }
+        return Optional.ofNullable(mapper);
+    }
+
+    public static boolean isDisabledMapper(String property) {
+        final Predicate<String> isDisabledMapper = (p) -> getDisabledMapper(p).isPresent();
+
+        if (property.startsWith("%")) {
+            return isDisabledMapper.test(property.substring(property.indexOf('.') + 1));
+        }
+        return isDisabledMapper.test(property);
+    }
+
     private static class MappersConfig extends HashMap<String, PropertyMapper<?>> {
 
-        private Map<OptionCategory, List<PropertyMapper<?>>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
-        private Map<OptionCategory, List<PropertyMapper<?>>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
+        private final Map<OptionCategory, List<PropertyMapper<?>>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
+        private final Map<OptionCategory, List<PropertyMapper<?>>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
+
+        private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
+        private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
+
+        public void addAll(PropertyMapper<?>[] mappers, BooleanSupplier isEnabled, String enabledWhen) {
+            Arrays.stream(mappers).forEach(mapper -> {
+                mapper.setEnabled(isEnabled);
+                mapper.setEnabledWhen(enabledWhen);
+            });
+
+            addAll(mappers);
+        }
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
-                super.put(mapper.getTo(), mapper);
-                super.put(mapper.getFrom(), mapper);
-                super.put(mapper.getCliFormat(), mapper);
-                super.put(mapper.getEnvVarFormat(), mapper);
+                addMapper(mapper);
 
                 if (mapper.isBuildTime()) {
                     addMapperByStage(mapper, buildTimeMappers);
@@ -137,14 +194,8 @@ public final class PropertyMappers {
             }
         }
 
-        private void addMapperByStage(PropertyMapper<?> mapper, Map<OptionCategory, List<PropertyMapper<?>>> mappers) {
-            mappers.computeIfAbsent(mapper.getCategory(),
-                    new Function<OptionCategory, List<PropertyMapper<?>>>() {
-                        @Override
-                        public List<PropertyMapper<?>> apply(OptionCategory c) {
-                            return new ArrayList<>();
-                        }
-                    }).add(mapper);
+        private static void addMapperByStage(PropertyMapper<?> mapper, Map<OptionCategory, List<PropertyMapper<?>>> mappers) {
+            mappers.computeIfAbsent(mapper.getCategory(), c -> new ArrayList<>()).add(mapper);
         }
 
         @Override
@@ -155,6 +206,32 @@ public final class PropertyMappers {
             return super.put(key, value);
         }
 
+        public void addMapper(PropertyMapper<?> mapper) {
+            addMapper(mapper, super::put);
+        }
+
+        public void removeMapper(PropertyMapper<?> mapper) {
+            remove(mapper.getTo());
+            remove(mapper.getFrom());
+            remove(mapper.getCliFormat());
+            remove(mapper.getEnvVarFormat());
+        }
+
+        public void sanitizeDisabledMappers() {
+            DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
+
+                // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
+                if (isRebuildCheck()) {
+                    PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
+                } else {
+                    Environment.getCurrentOrCreateFeatureProfile();
+                }
+
+                sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers);
+                sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers);
+            });
+        }
+
         public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
             return runtimeTimeMappers;
         }
@@ -162,6 +239,33 @@ public final class PropertyMappers {
         public Map<OptionCategory, List<PropertyMapper<?>>> getBuildTimeMappers() {
             return buildTimeMappers;
         }
-    }
 
+        public Map<String, PropertyMapper<?>> getDisabledBuildTimeMappers() {
+            return disabledBuildTimeMappers;
+        }
+
+        public Map<String, PropertyMapper<?>> getDisabledRuntimeMappers() {
+            return disabledRuntimeMappers;
+        }
+
+        private static void sanitizeMappers(Map<OptionCategory, List<PropertyMapper<?>>> mappers,
+                                            Map<String, PropertyMapper<?>> disabledMappers) {
+            mappers.forEach((category, propertyMappers) ->
+                    propertyMappers.removeIf(pm -> {
+                        final boolean shouldRemove = !pm.isEnabled();
+                        if (shouldRemove) {
+                            MAPPERS.removeMapper(pm);
+                            addMapper(pm, disabledMappers::put);
+                        }
+                        return shouldRemove;
+                    }));
+        }
+
+        private static void addMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> adder) {
+            adder.accept(mapper.getTo(), mapper);
+            adder.accept(mapper.getFrom(), mapper);
+            adder.accept(mapper.getCliFormat(), mapper);
+            adder.accept(mapper.getEnvVarFormat(), mapper);
+        }
+    }
 }

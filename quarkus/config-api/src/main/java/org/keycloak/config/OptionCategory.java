@@ -44,14 +44,10 @@ public enum OptionCategory {
     }
 
     private String getHeadingBySupportLevel(String heading) {
-        if (this.supportLevel.equals(ConfigSupportLevel.EXPERIMENTAL)){
-            heading = heading + " (Experimental)";
-        }
-
-        if (this.supportLevel.equals(ConfigSupportLevel.PREVIEW)){
-            heading = heading + " (Preview)";
-        }
-
-        return heading;
+        return switch (supportLevel) {
+            case EXPERIMENTAL -> heading + " (Experimental)";
+            case PREVIEW -> heading + " (Preview)";
+            default -> heading;
+        };
     }
 }

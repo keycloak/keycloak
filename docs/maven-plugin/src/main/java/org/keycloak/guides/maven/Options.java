@@ -15,6 +15,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Providers;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +39,15 @@ public class Options {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
-                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), null, m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues(), (DeprecatedMetadata) m.getDeprecatedMetadata().orElse(null)))
+                .map(m -> new Option(m.getFrom(),
+                        m.getCategory(),
+                        m.isBuildTime(),
+                        null,
+                        m.getDescription(),
+                        m.getDefaultValue().map(Object::toString).orElse(null),
+                        m.getExpectedValues(),
+                        m.getEnabledWhen().orElse(""),
+                        m.getDeprecatedMetadata().orElse(null)))
                 .sorted(Comparator.comparing(Option::getKey))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());
@@ -62,6 +71,7 @@ public class Options {
                                 m.getHelpText(),
                                 m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
                                 m.getOptions() == null ? Collections.emptyList() : m.getOptions(),
+                                "",
                                 null))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
 
@@ -109,18 +119,27 @@ public class Options {
         return providerOptions;
     }
 
-    public class Option {
+    public static class Option {
 
-        private String key;
-        private OptionCategory category;
-        private boolean build;
-        private String type;
+        private final String key;
+        private final OptionCategory category;
+        private final boolean build;
+        private final String type;
         private String description;
-        private String defaultValue;
+        private final String defaultValue;
         private List<String> expectedValues;
-        private DeprecatedMetadata deprecated;
+        private final String enabledWhen;
+        private final DeprecatedMetadata deprecated;
 
-        public Option(String key, OptionCategory category, boolean build, String type, String description, String defaultValue, Iterable<String> expectedValues, DeprecatedMetadata deprecatedMetadata) {
+        public Option(String key,
+                      OptionCategory category,
+                      boolean build,
+                      String type,
+                      String description,
+                      String defaultValue,
+                      Iterable<String> expectedValues,
+                      String enabledWhen,
+                      DeprecatedMetadata deprecatedMetadata) {
             this.key = key;
             this.category = category;
             this.build = build;
@@ -128,6 +147,7 @@ public class Options {
             this.description = description;
             this.defaultValue = defaultValue;
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
+            this.enabledWhen = enabledWhen;
             this.deprecated = deprecatedMetadata;
         }
 
@@ -176,6 +196,11 @@ public class Options {
 
         public List<String> getExpectedValues() {
             return expectedValues;
+        }
+
+        public String getEnabledWhen() {
+            if (StringUtil.isBlank(enabledWhen)) return null;
+            return enabledWhen;
         }
 
         public DeprecatedMetadata getDeprecated() {
