@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
@@ -65,7 +64,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -943,7 +941,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile.validate();
             fail("Should fail validation");
         } catch (ValidationException ve) {
-            assertTrue(ve.hasError(Messages.INVALID_USERNAME));
+            assertTrue(ve.hasError(UsernameIDNHomographValidator.MESSAGE_NO_MATCH));
         }
 
         UPConfig config = provider.getConfiguration();
@@ -960,6 +958,40 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
 
         profile.validate();
+    }
+
+    @Test
+    public void testHomographValidator() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testHomographValidator);
+    }
+
+    private static void testHomographValidator(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseDefaultConfig();
+
+        UPAttribute attribute = config.getAttribute(UserModel.LAST_NAME);
+        attribute.addValidation(UsernameIDNHomographValidator.ID, Map.of(UsernameIDNHomographValidator.CFG_ERROR_MESSAGE, "error-something"));
+        provider.setConfiguration(config);
+        try {
+            Map<String, Object> attributes = new HashMap<>();
+
+            attributes.put(UserModel.USERNAME, "abc");
+            attributes.put(UserModel.EMAIL, "test@keycloak.org");
+            attributes.put(UserModel.FIRST_NAME, "Foo");
+            attributes.put(UserModel.LAST_NAME, "你好世界");
+
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError("error-something"));
+            }
+        } finally {
+            attribute.getValidations().remove(UsernameIDNHomographValidator.ID);
+            provider.setConfiguration(config);
+        }
     }
 
     @Test
