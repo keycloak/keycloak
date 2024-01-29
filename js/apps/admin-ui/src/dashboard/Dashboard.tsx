@@ -54,7 +54,10 @@ import helpUrls from "../help-urls";
 const EmptyDashboard = () => {
   const { t } = useTranslation();
   const { realm } = useRealm();
+  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
+  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
+  const realmDisplayInfo = realmInfo?.displayName || realm;
 
   return (
     <PageSection variant="light">
@@ -68,7 +71,7 @@ const EmptyDashboard = () => {
           {t("welcome")}
         </Title>
         <Title headingLevel="h1" size="4xl">
-          {realm}
+          {realmDisplayInfo}
         </Title>
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
@@ -130,7 +133,7 @@ const Dashboard = () => {
 
   useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
 
-  const realmDisplayInfo = realmInfo?.displayName ?? realm;
+  const realmDisplayInfo = realmInfo?.displayName || realm;
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
