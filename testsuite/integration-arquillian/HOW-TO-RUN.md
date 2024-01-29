@@ -634,7 +634,7 @@ and argument: `-p 8181`
 
 Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers,
 and 1 frontend loadbalancer server node that sits in front of all servers.
-The browser usually communicates directly with the frontent node and the test controls where the HTTP requests
+The browser usually communicates directly with the frontend node and the test controls where the HTTP requests
 land by adjusting load balancer configuration (e.g. to direct the traffic to only a single DC).
 
 For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
