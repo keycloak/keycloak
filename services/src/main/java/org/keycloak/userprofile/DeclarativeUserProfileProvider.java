@@ -358,21 +358,22 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
 
                 if (UserModel.EMAIL.equals(attributeName)) {
-                    if (context.isAdminContext()) {
-                        required = new Predicate<AttributeContext>() {
-                            @Override
-                            public boolean test(AttributeContext context) {
-                                UserModel user = context.getUser();
+                    Predicate<AttributeContext> requiredFromConfig = required;
+                    required = new Predicate<AttributeContext>() {
+                        @Override
+                        public boolean test(AttributeContext context) {
+                            UserModel user = context.getUser();
 
-                                if (user != null && user.getServiceAccountClientLink() != null) {
-                                    return false;
-                                }
-
-                                RealmModel realm = context.getSession().getContext().getRealm();
-                                return realm.isRegistrationEmailAsUsername();
+                            if (user != null && user.getServiceAccountClientLink() != null) {
+                                return false;
                             }
-                        };
-                    }
+
+                            if (requiredFromConfig.test(context)) return true;
+
+                            RealmModel realm = context.getSession().getContext().getRealm();
+                            return realm.isRegistrationEmailAsUsername();
+                        }
+                    };
                 }
 
                 List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
