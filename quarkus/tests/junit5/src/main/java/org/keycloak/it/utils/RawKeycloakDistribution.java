@@ -79,6 +79,10 @@ import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
 
+    // TODO: reconsider the hardcoded timeout once https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak
+    // ensures that the total wait time (two minutes for readiness + 200 seconds) is longer than the transaction timeout of 5 minutes
+    private static final int LONG_SHUTDOWN_WAIT = 200;
+
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private static final Logger LOG = Logger.getLogger(RawKeycloakDistribution.class);
@@ -162,8 +166,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                // TODO: reconsider the hardcoded timeout once https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak
-                keycloak.waitFor(180, TimeUnit.SECONDS);
+                keycloak.waitFor(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
@@ -263,7 +266,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public void assertStopped() {
         try {
             if (keycloak != null) {
-                keycloak.onExit().get(1, TimeUnit.MINUTES);
+                keycloak.onExit().get(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -271,7 +274,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            LOG.warn("Process did not exit within a minute as expected, will attempt a thread dump");
+            LOG.warn("Process did not exit as expected, will attempt a thread dump");
             threadDump();
             LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
         }
