@@ -182,7 +182,6 @@
         <awaitility.version>4.1.1</awaitility.version>
         <assertj-core.version>3.22.0</assertj-core.version>
         <testcontainers.version>1.17.5</testcontainers.version>
-        <junit.jupiter.version>5.9.2</junit.jupiter.version>
 
         <!-- Maven Plugins -->
         <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
