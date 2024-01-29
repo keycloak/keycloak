@@ -1,0 +1,158 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring the hostname (v1)"
+summary="Learn how to configure the frontend and backchannel endpoints exposed by {project_name}."
+includedOptions="hostname hostname-* proxy"
+deniedCategories="hostname_v2">
+
+WARNING: The hostname configuration options used in this guide are deprecated and will be removed in a future release. Therefore, it is recommended to use the new hostname configuration options. For more details, see <@links.server id="hostname"/> guide.
+
+== Server Endpoints
+
+{project_name} exposes different endpoints to talk with applications and allow access to the administration console. These endpoints
+can be categorized into three main groups:
+
+* Frontend
+* Backend
+* Administration Console
+
+The base URL for each group has an important impact on how tokens are issued and validated, on how links are created for actions that require the user
+to be redirected to {project_name} (for example, when resetting password through email links), and, most importantly, how applications will
+discover these endpoints when fetching the OpenID Connect Discovery Document from `realms/++{realm-name}++/.well-known/openid-configuration`.
+
+=== Frontend
+
+The frontend endpoints are those accessible through a public domain and usually related to authentication/authorization flows that happen
+through the front-channel. For instance, when an SPA wants to authenticate their users it redirects them to the `authorization_endpoint` so that users
+can authenticate using their browsers through the front-channel.
+
+By default, when the hostname settings are not set, the base URL for these endpoints is based on the incoming request so that the HTTP scheme,
+host, port, and path, are the same from the request. The default behavior also has a direct impact on how the server is going to issue tokens given that the issuer is also based on
+the URL set to the frontend endpoints. If the hostname settings are not set, the token issuer will also be based on the incoming request and also lack consistency if the client is requesting tokens using different URLs.
+
+When deploying to production you usually want a consistent URL for the frontend endpoints and the token issuer regardless of how the request is constructed.
+In order to achieve this consistency, you can set either the `hostname` or the `hostname-url` options.
+
+Most of the time, it should be enough to set the `hostname` option in order to change only the *host* of the frontend URLs:
+
+<@kc.start parameters="--hostname=<host>"/>
+
+When using the `hostname` option the server is going to resolve the HTTP scheme, port, and path, automatically so that:
+
+* `https` scheme is used unless you set `hostname-strict-https=false`
+* if the `proxy-headers` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-url` configuration option
+
+However, if you want to set not only the host but also a scheme, port, and path, you can set the `hostname-url` option:
+
+<@kc.start parameters="--hostname-url=<scheme>://<host>:<port>/<path>"/>
+
+This option gives you more flexibility as you can set the different parts of the URL from a single option. Note that
+the `hostname` and `hostname-url` are mutually exclusive.
+
+[NOTE]
+====
+By `hostname` and `proxy-headers` configuration options you affect only the static resources URLs, redirect URIs, OIDC well-known endpoints, etc. In order to change, where/on which port the server actually listens on, you need to use the `http/tls` configuration options (e.g. `http-host`, `https-port`, etc.). For more details, see <@links.server id="enabletls"/> and <@links.server id="all-config"/>.
+====
+
+=== Backend
+
+The backend endpoints are those accessible through a public domain or through a private network. They are used for a direct communication
+between the server and clients without any intermediary but plain HTTP requests. For instance, after the user is authenticated an SPA
+wants to exchange the `code` sent by the server with a set of tokens by sending a token request to `token_endpoint`.
+
+By default, the URLs for backend endpoints are also based on the incoming request. To override this behavior, set the `hostname-strict-backchannel` configuration option by entering this command:
+
+<@kc.start parameters="--hostname=<value> --hostname-strict-backchannel=true"/>
+
+By setting the `hostname-strict-backchannel` option, the URLs for the backend endpoints are going to be exactly the same as the frontend endpoints.
+
+When all applications connected to {project_name} communicate through the public URL, set `hostname-strict-backchannel` to `true`.
+Otherwise, leave this parameter as `false` to allow client-server communication through a private network.
+
+=== Administration Console
+
+The server exposes the administration console and static resources using a specific URL.
+
+By default, the URLs for the administration console are also based on the incoming request. However, you can set a specific host or base URL if you want
+to restrict access to the administration console using a specific URL. Similarly to how you set the frontend URLs, you can use the `hostname-admin` and `hostname-admin-url` options to achieve that.
+Note that if HTTPS is enabled (`http-enabled` configuration option is set to false, which is the default setting for the production mode), the {project_name} server automatically assumes you want to use HTTPS URLs. The admin console then tries to contact {project_name} over HTTPS and HTTPS URLs are also used for its configured redirect/web origin URLs. It is not recommended for production, but you can use HTTP URL as `hostname-admin-url` to override this behaviour.
+
+Most of the time, it should be enough to set the `hostname-admin` option in order to change only the *host* of the administration console URLs:
+
+<@kc.start parameters="--hostname-admin=<host>"/>
+
+However, if you want to set not only the host but also a scheme, port, and path, you can set the `hostname-admin-url` option:
+
+<@kc.start parameters="--hostname-admin-url=<scheme>://<host>:<port>/<path>"/>
+
+Note that the `hostname-admin` and `hostname-admin-url` are mutually exclusive.
+
+To reduce attack surface, the administration endpoints for {project_name} and the Admin Console should not be publicly accessible.
+Therefore, you can secure them by using a reverse proxy.
+For more information about which paths to expose using a reverse proxy, see <@links.server id="reverseproxy"/>.
+
+== Example Scenarios
+The following are more example scenarios and the corresponding commands for setting up a hostname.
+
+Note that the `start` command requires setting up TLS. The corresponding options are not shown for example purposes. For more details, see <@links.server id="enabletls"/>.
+
+=== Exposing the server behind a TLS termination proxy
+
+In this example, the server is running behind a TLS termination proxy and publicly available from `https://mykeycloak`.
+
+.Configuration:
+<@kc.start parameters="--hostname=mykeycloak --http-enabled=true --proxy-headers=forwarded|xforwarded"/>
+
+=== Exposing the server without a proxy
+
+In this example, the server is running without a proxy and exposed using a URL using HTTPS.
+
+.{project_name} configuration:
+<@kc.start parameters="--hostname-url=https://mykeycloak"/>
+
+It is highly recommended using a TLS termination proxy in front of the server for security and availability reasons. For more details,
+see <@links.server id="reverseproxy"/>.
+
+=== Forcing backend endpoints to use the same URL the server is exposed
+
+In this example, backend endpoints are exposed using the same URL used by the server so that clients always fetch the same URL
+regardless of the origin of the request.
+
+.{project_name} configuration:
+<@kc.start parameters="--hostname=mykeycloak --hostname-strict-backchannel=true"/>
+
+=== Exposing the server using a port other than the default ports
+
+In this example, the server is accessible using a port other than the default ports.
+
+.{project_name} configuration:
+<@kc.start parameters="--hostname-url=https://mykeycloak:8989"/>
+
+=== Exposing {project_name} behind a TLS reencrypt proxy using different ports
+
+In this example, the server is running behind a proxy and both the server and the proxy are using their own certificates, so the communication between {project_name} and the proxy is encrypted. The reverse proxy uses the `Forwarded` header and does not set the `X-Forwarded-*` headers. We need to keep in mind that the proxy configuration options (as well as hostname configuration options) are not changing the ports on which the server actually is listening on (it changes only the ports of static resources like JavaScript and CSS links, OIDC well-known endpoints, redirect URIs, etc.). Therefore, we need to use HTTP configuration options to change the {project_name} server to internally listen on a different port, e.g. 8543. The proxy will be listening on the port 8443 (the port visible while accessing the console via a browser). The example hostname `my-keycloak.org` will be used for the server and similarly the admin console will be accessible via the `admin.my-keycloak.org` subdomain.
+
+.{project_name} configuration:
+<@kc.start parameters="--proxy-headers=forwarded --https-port=8543 --hostname-url=https://my-keycloak.org:8443 --hostname-admin-url=https://admin.my-keycloak.org:8443"/>
+
+WARNING: Usage of the `proxy-headers` option rely on `Forwarded` and `X-Forwarded-*` headers, respectively, that have to be set and overwritten by the reverse proxy.
+Misconfiguration may leave {project_name} exposed to security issues. For more details, see <@links.server id="reverseproxy"/>.
+
+== Troubleshooting
+
+To troubleshoot the hostname configuration, you can use a dedicated debug tool which can be enabled as:
+
+.{project_name} configuration:
+<@kc.start parameters="--hostname=mykeycloak --hostname-debug=true"/>
+
+Then after {project_name} started properly, open your browser and go to:
+
+`http://mykeycloak:8080/realms/<your-realm>/hostname-debug`
+
+.By default, this endpoint is disabled (`--hostname-debug=false`)
+
+
+</@tmpl.guide>
