@@ -16,6 +16,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.reflections.Types;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -86,8 +87,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
-import static org.keycloak.services.managers.AuthenticationManager.KEYCLOAK_SESSION_COOKIE;
-import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
@@ -260,8 +259,8 @@ public class UserStorageTest extends AbstractAuthTest {
         appPage.assertCurrent();
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + testRealmResource().toRepresentation().getRealm() + "/login-actions/authenticate/" );
 
-        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
-        Cookie legacySessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE + LEGACY_COOKIE);
+        Cookie sameSiteSessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getName());
+        Cookie legacySessionCookie = driver.manage().getCookieNamed(CookieType.SESSION.getSameSiteLegacyName());
 
         String cookieValue = sameSiteSessionCookie.getValue();
         assertThat(cookieValue.contains("spécial"), is(false));

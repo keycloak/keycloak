@@ -313,7 +313,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
 
         // Refresh the cookie
-        new AuthenticationSessionManager(session).setAuthSessionCookie(userSession.getId(), realmModel);
+        new AuthenticationSessionManager(session).setAuthSessionCookie(userSession.getId());
 
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
         clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());

@@ -30,7 +30,6 @@ import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.cookie.CookieType;
-import org.keycloak.cookie.DefaultCookieProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
@@ -232,7 +231,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        Cookie localeCookie = driver.manage().getCookieNamed(CookieType.KEYCLOAK_LOCALE.name());
+        Cookie localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         assertEquals("de", localeCookie.getValue());
 
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
@@ -277,7 +276,7 @@ public class LoginPageTest extends AbstractI18NTest {
         loginPage.open();
 
         // Cookie should be removed as last user to login didn't have a locale
-        localeCookie = driver.manage().getCookieNamed(CookieType.KEYCLOAK_LOCALE.name());
+        localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         Assert.assertNull(localeCookie);
     }
 
