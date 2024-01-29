@@ -3,9 +3,16 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -13,21 +20,28 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import static org.keycloak.quarkus.runtime.Environment.isParsedCommand;
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 
 public final class PropertyMappers {
 
     public static String VALUE_MASK = "*******";
     private static final MappersConfig MAPPERS = new MappersConfig();
+    private static final Logger log = Logger.getLogger(PropertyMappers.class);
 
     private PropertyMappers(){}
 
@@ -52,8 +66,7 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        PropertyMapper<?> mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
-        return mapper.getConfigValue(name, context);
+        return getMapperOrDefault(name, PropertyMapper.IDENTITY).getConfigValue(name, context);
     }
 
     public static boolean isBuildTimeProperty(String name) {
@@ -61,7 +74,7 @@ public final class PropertyMappers {
             return true;
         }
 
-        PropertyMapper<?> mapper = MAPPERS.get(name);
+        final PropertyMapper<?> mapper = getMapperOrDefault(name, null);
         boolean isBuildTimeProperty = mapper == null ? false : mapper.isBuildTime();
 
         return isBuildTimeProperty
@@ -131,15 +144,37 @@ public final class PropertyMappers {
         return property;
     }
 
-    public static PropertyMapper<?> getMapper(String property) {
-        if (property.startsWith("%")) {
-            return MAPPERS.get(property.substring(property.indexOf('.') + 1));
-        }
-        return MAPPERS.get(property);
+    private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper) {
+        final var mappers = MAPPERS.getOrDefault(property, Collections.emptyList());
+
+        return switch (mappers.size()) {
+            case 0 -> defaultMapper;
+            case 1 -> mappers.get(0);
+            default -> {
+                var allowedMappers = filterDeniedCategories(mappers);
+
+                yield switch (allowedMappers.size()) {
+                    case 0 -> defaultMapper;
+                    case 1 -> allowedMappers.iterator().next();
+                    default -> {
+                        log.debugf("Duplicated mappers for key '%s'. Used the first found.", property);
+                        yield allowedMappers.iterator().next();
+                    }
+                };
+            }
+        };
     }
 
-    public static Collection<PropertyMapper<?>> getMappers() {
-        return MAPPERS.values();
+    public static PropertyMapper<?> getMapper(String property) {
+        return getMapperOrDefault(polishProperty(property), null);
+    }
+
+    public static List<PropertyMapper<?>> getMappers(String property) {
+        return MAPPERS.get(polishProperty(property));
+    }
+
+    public static Set<PropertyMapper<?>> getMappers() {
+        return MAPPERS.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
@@ -157,7 +192,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isDisabledMapper(String property) {
-        final Predicate<String> isDisabledMapper = (p) -> getDisabledMapper(p).isPresent();
+        final Predicate<String> isDisabledMapper = (p) -> getDisabledMapper(p).isPresent() && getMapper(p) == null;
 
         if (property.startsWith("%")) {
             return isDisabledMapper.test(property.substring(property.indexOf('.') + 1));
@@ -165,7 +200,20 @@ public final class PropertyMappers {
         return isDisabledMapper.test(property);
     }
 
-    private static class MappersConfig extends HashMap<String, PropertyMapper<?>> {
+    private static String polishProperty(String property) {
+        return property.startsWith("%") ? property.substring(property.indexOf('.') + 1) : property;
+    }
+
+    private static Set<PropertyMapper<?>> filterDeniedCategories(List<PropertyMapper<?>> mappers) {
+        final var allowedCategories = Environment.getParsedCommand()
+                .map(AbstractCommand::getOptionCategories)
+                .map(EnumSet::copyOf)
+                .orElseGet(() -> EnumSet.allOf(OptionCategory.class));
+
+        return mappers.stream().filter(f -> allowedCategories.contains(f.getCategory())).collect(Collectors.toSet());
+    }
+
+    private static class MappersConfig extends MultivaluedHashMap<String, PropertyMapper<?>> {
 
         private final Map<OptionCategory, List<PropertyMapper<?>>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
         private final Map<OptionCategory, List<PropertyMapper<?>>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
@@ -198,26 +246,24 @@ public final class PropertyMappers {
             mappers.computeIfAbsent(mapper.getCategory(), c -> new ArrayList<>()).add(mapper);
         }
 
-        @Override
-        public PropertyMapper<?> put(String key, PropertyMapper<?> value) {
-            if (containsKey(key)) {
-                throw new IllegalArgumentException("Duplicated mapper for key [" + key + "]");
-            }
-            return super.put(key, value);
-        }
-
         public void addMapper(PropertyMapper<?> mapper) {
-            addMapper(mapper, super::put);
+            handleMapper(mapper, this::add);
         }
 
         public void removeMapper(PropertyMapper<?> mapper) {
-            remove(mapper.getTo());
-            remove(mapper.getFrom());
-            remove(mapper.getCliFormat());
-            remove(mapper.getEnvVarFormat());
+            handleMapper(mapper, this::remove);
+        }
+
+        private void remove(String key, PropertyMapper<?> mapper) {
+            List<PropertyMapper<?>> list = get(key);
+            if (CollectionUtil.isNotEmpty(list)) {
+                list.remove(mapper);
+            }
         }
 
         public void sanitizeDisabledMappers() {
+            if (Environment.getParsedCommand().isEmpty()) return; // do not sanitize when no command is present
+
             DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
 
                 // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
@@ -229,7 +275,35 @@ public final class PropertyMappers {
 
                 sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers);
                 sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers);
+
+                assertDuplicatedMappers();
             });
+        }
+
+        private void assertDuplicatedMappers() {
+            final var duplicatedMappers = entrySet().stream()
+                    .filter(e -> CollectionUtil.isNotEmpty(e.getValue()))
+                    .filter(e -> e.getValue().size() > 1)
+                    .toList();
+
+            final var isBuildPhase = isRebuild() || isRebuildCheck() || isParsedCommand(Build.NAME);
+            final var allowedForCommand = isParsedCommand(ShowConfig.NAME);
+
+            if (!duplicatedMappers.isEmpty()) {
+                duplicatedMappers.forEach(f -> {
+                    final var filteredMappers = filterDeniedCategories(f.getValue());
+
+                    if (filteredMappers.size() > 1) {
+                        final var areBuildTimeMappers = filteredMappers.stream().anyMatch(PropertyMapper::isBuildTime);
+
+                        // thrown in runtime, or in build time, when some mapper is marked as buildTime + not allowed to have duplicates for specific command
+                        final var shouldBeThrown = !allowedForCommand && (!isBuildPhase || areBuildTimeMappers);
+                        if (shouldBeThrown) {
+                            throw new PropertyException(String.format("Duplicated mapper for key '%s'.", f.getKey()));
+                        }
+                    }
+                });
+            }
         }
 
         public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
@@ -255,17 +329,19 @@ public final class PropertyMappers {
                         final boolean shouldRemove = !pm.isEnabled();
                         if (shouldRemove) {
                             MAPPERS.removeMapper(pm);
-                            addMapper(pm, disabledMappers::put);
+                            handleMapper(pm, disabledMappers::put);
                         }
                         return shouldRemove;
                     }));
         }
 
-        private static void addMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> adder) {
-            adder.accept(mapper.getTo(), mapper);
-            adder.accept(mapper.getFrom(), mapper);
-            adder.accept(mapper.getCliFormat(), mapper);
-            adder.accept(mapper.getEnvVarFormat(), mapper);
+        private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
+            operation.accept(mapper.getFrom(), mapper);
+            if (!mapper.getFrom().equals(mapper.getTo())) {
+                operation.accept(mapper.getTo(), mapper);
+            }
+            operation.accept(mapper.getCliFormat(), mapper);
+            operation.accept(mapper.getEnvVarFormat(), mapper);
         }
     }
 }

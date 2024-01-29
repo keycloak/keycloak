@@ -318,6 +318,11 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        public Builder<T> isEnabled(BooleanSupplier isEnabled) {
+            this.isEnabled = isEnabled;
+            return this;
+        }
+
         public Builder<T> validator(BiConsumer<PropertyMapper<T>, ConfigValue> validator) {
             this.validator = validator;
             return this;

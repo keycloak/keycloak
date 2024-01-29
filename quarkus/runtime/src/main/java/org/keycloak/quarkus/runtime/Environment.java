@@ -38,6 +38,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -50,6 +51,9 @@ public final class Environment {
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+
+    private static volatile AbstractCommand parsedCommand;
+
     private Environment() {}
 
     public static Boolean isRebuild() {
@@ -254,5 +258,20 @@ public final class Environment {
         }
 
         return profile;
+    }
+
+    /**
+     * Get parsed AbstractCommand we obtained from the CLI
+     */
+    public static Optional<AbstractCommand> getParsedCommand() {
+        return Optional.ofNullable(parsedCommand);
+    }
+
+    public static boolean isParsedCommand(String commandName) {
+        return getParsedCommand().filter(f -> f.getName().equals(commandName)).isPresent();
+    }
+
+    public static void setParsedCommand(AbstractCommand command) {
+        Environment.parsedCommand = command;
     }
 }

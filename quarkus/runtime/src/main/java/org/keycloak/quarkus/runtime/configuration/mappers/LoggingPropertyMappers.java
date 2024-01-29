@@ -19,6 +19,7 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Messages;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class LoggingPropertyMappers {
 
