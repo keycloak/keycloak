@@ -446,7 +446,7 @@ public class AuthenticationManager {
         boolean allClientsLoggedOut = notLoggedOutSessions.isEmpty();
 
         if (! allClientsLoggedOut) {
-            logger.warnf("Some clients have been not been logged out for user %s in %s realm: %s",
+            logger.warnf("Some clients have not been logged out for user %s in %s realm: %s",
               userSession.getUser().getUsername(), realm.getName(),
               notLoggedOutSessions.stream()
                 .map(AuthenticatedClientSessionModel::getClient)
