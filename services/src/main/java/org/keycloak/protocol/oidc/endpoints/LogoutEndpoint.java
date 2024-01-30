@@ -371,10 +371,7 @@ public class LogoutEndpoint {
             logger.debugf("Failed verification during logout. logoutSessionId=%s, clientId=%s, tabId=%s",
                     logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
 
-            if (logoutSession == null || logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()))) {
-                // Cleanup system client URL to avoid links to account management
-                session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
             event.error(Errors.SESSION_EXPIRED);
 
@@ -405,11 +402,7 @@ public class LogoutEndpoint {
         if (logoutSession == null) {
             logger.debugf("Failed verification when changing locale logout. clientId=%s, tabId=%s", clientId, tabId);
 
-            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class);
-            if (clientId == null || clientId.equals(SystemClientUtil.getSystemClient(realm).getClientId())) {
-                // Cleanup system client URL to avoid links to account management
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
@@ -417,7 +410,7 @@ public class LogoutEndpoint {
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
-                return loginForm.setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
+                return session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
             }
         }
 
