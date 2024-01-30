@@ -44,7 +44,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.testsuite.unit.WatchedSecretsControllerTest;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -252,7 +252,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         // managed changes
         deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-        String originalAnnotationValue = deployment.getMetadata().getAnnotations().put(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "not-right");
+        String originalAnnotationValue = deployment.getMetadata().getAnnotations().put(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "not-right");
 
         deployment.getMetadata().setResourceVersion(null);
         k8sclient.resource(deployment).update();
@@ -267,7 +267,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue();
                     // managed changes should get reverted
                     assertThat(d.getSpec()).isEqualTo(expectedSpec); // specs should be reconciled expected merged state
-                    assertThat(d.getMetadata().getAnnotations().get(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION)).isEqualTo(originalAnnotationValue);
+                    assertThat(d.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)).isEqualTo(originalAnnotationValue);
                 });
     }
 

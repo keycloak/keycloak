@@ -16,6 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
@@ -43,6 +45,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -67,6 +70,8 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+
+    public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
     public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
 
@@ -94,8 +99,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
-        addTruststores(primary, baseDeployment, allSecrets);
+        Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        addTruststores(primary, baseDeployment, kcContainer, allSecrets);
         addEnvVars(baseDeployment, primary, allSecrets);
+        Optional.ofNullable(primary.getSpec().getCacheSpec())
+                .ifPresent(c -> configureCache(primary, baseDeployment, kcContainer, c));
 
         if (!allSecrets.isEmpty()) {
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, this.client);
@@ -120,8 +128,34 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return baseDeployment;
     }
 
-    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+    private void configureCache(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, CacheSpec spec) {
+        Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
+            if (configFile.getName() == null || configFile.getKey() == null) {
+                throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
+            }
+
+            var volume = new VolumeBuilder()
+                    .withName(CACHE_CONFIG_FILE_MOUNT_NAME)
+                    .withNewConfigMap()
+                    .withName(configFile.getName())
+                    .withOptional(configFile.getOptional())
+                    .endConfigMap()
+                    .build();
+
+            var volumeMount = new VolumeMountBuilder()
+                    .withName(volume.getName())
+                    .withMountPath(Constants.CACHE_CONFIG_FOLDER)
+                    .build();
+
+            deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+            kcContainer.getVolumeMounts().add(0, volumeMount);
+
+            // currently the only configmap we're watching
+            watchedResources.annotateDeployment(List.of(configFile.getName()), ConfigMap.class, deployment, this.client);
+        });
+    }
+
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets) {
         for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
             // for now we'll assume only secrets, later we can support configmaps
             TruststoreSource source = truststore.getSecret();

@@ -45,7 +45,6 @@ public class WatchedResources {
     /**
      * @param deployment mutable resource being reconciled, it will be updated with
      *                   annotations
-     * @return true if the annotations changed
      */
     public <T extends HasMetadata> void annotateDeployment(List<String> names, Class<T> type, StatefulSet deployment,
             KubernetesClient client) {

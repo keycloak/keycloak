@@ -20,7 +20,6 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -30,18 +29,18 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.testsuite.unit.WatchedSecretsControllerTest;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 /**
@@ -77,47 +76,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testClonedSecretUnmodified() {
-        Log.info("Creating new Keycloak CR example");
-        var kc = getTestKeycloakDeployment(true);
-        deployKeycloak(k8sclient, kc, true);
-
-        AtomicInteger createCount = new AtomicInteger();
-        AtomicInteger updateCount = new AtomicInteger();
-
-        k8sclient.secrets().withName("example-tls-secret").inform(new ResourceEventHandler<Secret>() {
-
-            @Override
-            public void onAdd(Secret obj) {
-                // this should happen immediately. the operator log will then
-                // contain a message about removing the watching label
-                createCount.incrementAndGet();
-                k8sclient.resource(modifySecret(obj)).create();
-            }
-
-            private Secret modifySecret(Secret obj) {
-                return new SecretBuilder(obj).editMetadata().withResourceVersion(null).withUid(null).withName("other").endMetadata().build();
-            }
-
-            @Override
-            public void onDelete(Secret obj, boolean deletedFinalStateUnknown) {
-                k8sclient.resource(modifySecret(obj)).delete();
-            }
-
-            @Override
-            public void onUpdate(Secret oldObj, Secret newObj) {
-                updateCount.incrementAndGet();
-                k8sclient.resource(modifySecret(newObj)).update();
-            }
-
-        });
-
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> createCount.get() > 0);
-        // the operator shouldn't actually touch this secret - we'll unfortunately still watch it though
-        Awaitility.await().during(15, TimeUnit.SECONDS).until(() -> createCount.get() == 1 && updateCount.get() == 0);
-    }
-
-    @Test
     public void testSecretChangesArePropagated() {
         final String username = "HomerSimpson";
 
@@ -144,19 +102,19 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(false);
         deployKeycloak(k8sclient, kc, true);
 
+        Secret dbSecret = getDbSecret();
+
         Log.info("Updating KC to not to rely on DB Secret");
         hardcodeDBCredsInCR(kc);
         testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
             deployKeycloak(k8sclient, kc, false, false);
         });
 
-        Secret dbSecret = getDbSecret();
-
         Awaitility.await().untilAsserted(() -> {
-            Log.info("Checking labels on DB Secret");
-            k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get().getMetadata()
-                    .getAnnotations().get(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION)
-                    .contains(dbSecret.getMetadata().getName());
+            Log.info("Checking StatefulSet annotations");
+            assertFalse(k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get().getMetadata()
+                    .getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)
+                    .contains(dbSecret.getMetadata().getName()));
         });
     }
 

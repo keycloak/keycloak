@@ -19,6 +19,7 @@ package org.keycloak.operator.crds.v2alpha1.deployment;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
@@ -89,6 +90,10 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("In this section you can configure Keycloak truststores.")
     private Map<String, Truststore> truststores = new LinkedHashMap<>();
+
+    @JsonProperty("cache")
+    @JsonPropertyDescription("In this section you can configure Keycloak's cache")
+    private CacheSpec cacheSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -198,6 +203,14 @@ public class KeycloakSpec {
             truststores = new LinkedHashMap<>();
         }
         this.truststores = truststores;
+    }
+
+    public CacheSpec getCacheSpec() {
+        return cacheSpec;
+    }
+
+    public void setCacheSpec(CacheSpec cache) {
+        this.cacheSpec = cache;
     }
 
 }

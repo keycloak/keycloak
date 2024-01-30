@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -35,24 +36,29 @@ import jakarta.inject.Inject;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class WatchedSecretsControllerTest {
+public class WatchedResourcesTest {
 
-    @Inject
-    WatchedResources watchedSecretsController;
     public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
     public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
 
+    @Inject
+    WatchedResources watchedResources;
+
     @Test
-    public void testSecretHashing() {
-        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", watchedSecretsController.getHash(List.of()));
-        assertEquals("b5655bfe4d4e130f5023a76a5de0906cf84eb5895bda5d44642673f9eb4024bf", watchedSecretsController.getHash(List.of(newSecret(Map.of("a", "b")), newSecret(Map.of("c", "d")))));
+    public void testHashing() {
+        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", watchedResources.getHash(List.of()));
+        assertEquals("b5655bfe4d4e130f5023a76a5de0906cf84eb5895bda5d44642673f9eb4024bf", watchedResources.getHash(List.of(newSecret(Map.of("a", "b")), newSecret(Map.of("c", "d")))));
+        assertEquals("d526224334e65c71095be909b2d14c52f1589abb84a3c76fbe79dd75d7132fbb",
+                watchedResources.getHash(List.of(new ConfigMapBuilder().withNewMetadata().withName("x")
+                        .withAnnotations(Map.of(UUID.randomUUID().toString(), UUID.randomUUID().toString()))
+                        .endMetadata().withData(Map.of("a", "b")).build())));
     }
 
     @Test
     public void testGetSecretNames() {
-        assertEquals(List.of(), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build(), Secret.class));
-        assertEquals(Arrays.asList("something"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build(), Secret.class));
-        assertEquals(Arrays.asList("x", "y"), watchedSecretsController.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedSecretsControllerTest.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build(), Secret.class));
+        assertEquals(List.of(), watchedResources.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "").endMetadata().build(), Secret.class));
+        assertEquals(Arrays.asList("something"), watchedResources.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "something").endMetadata().build(), Secret.class));
+        assertEquals(Arrays.asList("x", "y"), watchedResources.getNames(new StatefulSetBuilder().withNewMetadata().addToAnnotations(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "x;y").endMetadata().build(), Secret.class));
     }
 
     private Secret newSecret(Map<String, String> data) {
