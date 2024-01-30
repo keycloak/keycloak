@@ -25,7 +25,6 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
-import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
