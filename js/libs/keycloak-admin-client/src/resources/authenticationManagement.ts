@@ -8,7 +8,7 @@ import type { AuthenticationProviderRepresentation } from "../defs/authenticator
 import type AuthenticatorConfigInfoRepresentation from "../defs/authenticatorConfigInfoRepresentation.js";
 import type RequiredActionProviderSimpleRepresentation from "../defs/requiredActionProviderSimpleRepresentation.js";
 
-export class AuthenticationManagement extends Resource {
+export class AuthenticationManagement extends Resource<{ realm?: string }> {
   /**
    * Authentication Management
    * https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_authentication_management_resource
