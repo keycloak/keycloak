@@ -149,6 +149,7 @@ export default function EditUser() {
       if (isUserProfileError(error)) {
         setUserProfileServerError(error, form.setError, ((key, param) =>
           t(key as string, param as any)) as TFunction);
+        addError("userNotSaved", error);
       } else {
         addError("userCreateError", error);
       }
