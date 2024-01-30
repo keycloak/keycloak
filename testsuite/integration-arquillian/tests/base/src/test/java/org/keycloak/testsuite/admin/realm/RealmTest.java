@@ -366,7 +366,7 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation realmRep = testContext.getTestRealmReps().stream().filter((RealmRepresentation realm) -> {
             return realm.getRealm().equals(REALM_NAME);
         }).findFirst().get();
-        adminClient.realms().create(realmRep);
+        importRealm(realmRep);
     }
 
     @Test

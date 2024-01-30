@@ -191,7 +191,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         RealmRepresentation permissionRealm = testContext.getTestRealmReps().stream().filter(realm -> {
             return realm.getRealm().equals(REALM_NAME);
         }).findFirst().get();
-        adminClient.realms().create(permissionRealm);
+        importRealm(permissionRealm);
 
         removeTestUsers();
         createTestUsers();
