@@ -868,7 +868,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
         // Re-create realm
         RealmRepresentation repOrig = testContext.getTestRealmReps().get(0);
-        adminClient.realms().create(repOrig);
+        importRealm(repOrig);
     }
 
     @Test
