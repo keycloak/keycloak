@@ -59,9 +59,8 @@ A theme consists of:
 * Scripts
 * Theme properties
 
-Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend the {project_name} theme, but you could also
-consider extending the base theme if you are significantly changing the look and feel of the pages. The base theme primarily consists of HTML templates and
-message bundles, while the {project_name} theme primarily contains images and stylesheets.
+Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend some existing theme. Alternatively, if you intend to provide your own implementation of the admin or account console,
+consider extending the `base` theme. The `base` theme consists of a message bundle and therefore such implementation needs to start from scratch, including implementation of the main `index.ftl` Freemarker template, but it can leverage existing translations from the message bundle.
 
 When extending a theme you can override individual resources (templates, stylesheets, etc.). If you decide to override HTML templates bear in mind that you may
 need to update your custom template when upgrading to a new release.
@@ -89,7 +88,7 @@ For example, to add the login type to the `mytheme` theme, create the directory 
 
 . For each type create a file `theme.properties` which allows setting some configuration for the theme.
 +
-For example, to configure the theme `themes/mytheme/login` to extend the base theme and import some common resources, create the file `themes/mytheme/login/theme.properties` with following contents:
+For example, to configure the theme `themes/mytheme/login` to extend the `base` theme and import some common resources, create the file `themes/mytheme/login/theme.properties` with following contents:
 +
 [source]
 ----
@@ -342,12 +341,12 @@ kcLogoIdP-myProvider = fa fa-lock
 ----
 
 All icons are available on the official website of PatternFly4.
-Icons for social providers are already defined in base login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
+Icons for social providers are already defined in `base` login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
 
 ==== Creating a custom HTML template
 
 {project_name} uses https://freemarker.apache.org/[Apache Freemarker] templates to generate HTML. You can override individual templates in your own theme by
-creating `<THEME TYPE>/<TEMPLATE>.ftl`. For a list of templates used see `themes/base/<THEME TYPE>`.
+creating `<THEME TYPE>/<TEMPLATE>.ftl`. Admin and account console use a single template `index.ftl` for rendering the application. For a list of templates in other theme types used see `themes/base/<THEME TYPE>`.
 
 .Procedure
 
