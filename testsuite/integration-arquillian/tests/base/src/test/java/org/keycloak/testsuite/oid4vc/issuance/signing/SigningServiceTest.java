@@ -20,6 +20,7 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
@@ -128,6 +129,7 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
             kw.setPrivateKey(keyPair.getPrivate());
             kw.setPublicKey(keyPair.getPublic());
             kw.setUse(KeyUse.SIG);
+            kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
             kw.setType("RSA");
             kw.setAlgorithm("RS256");
             return kw;

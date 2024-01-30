@@ -73,7 +73,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                     .run(session ->
                             new JwtSigningService(
                                     session,
-                                    KeyUtils.createKeyId(rsaKey.getPublicKey()),
+                                    getKeyFromSession(session).getKid(),
                                     "did:web:test.org",
                                     "JWT",
                                     "unsupported-algorithm",
@@ -110,7 +110,6 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
@@ -124,7 +123,6 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
                                         "test", "test",
@@ -139,16 +137,17 @@ public class JwtSigningServiceTest extends SigningServiceTest {
                 .run(session ->
                         testSignJwtCredential(
                                 session,
-                                rsaKey,
                                 Algorithm.RS256,
                                 Map.of()));
     }
 
 
-    public static void testSignJwtCredential(KeycloakSession session, KeyWrapper keyWrapper, String algorithm, Map<String, Object> claims) {
+    public static void testSignJwtCredential(KeycloakSession session, String algorithm, Map<String, Object> claims) {
+        KeyWrapper keyWrapper = getKeyFromSession(session);
+
         JwtSigningService jwtSigningService = new JwtSigningService(
                 session,
-                KeyUtils.createKeyId(keyWrapper.getPublicKey()),
+                keyWrapper.getKid(),
                 algorithm,
                 "JWT",
                 "did:web:test.org",
@@ -173,7 +172,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
             }
         }
 
-        TokenVerifier verifier = TokenVerifier
+        TokenVerifier<JsonWebToken> verifier = TokenVerifier
                 .create(jwtCredential, JsonWebToken.class)
                 .verifierContext(verifierContext);
         verifier.publicKey((PublicKey) keyWrapper.getPublicKey());
@@ -213,6 +212,17 @@ public class JwtSigningServiceTest extends SigningServiceTest {
         } catch (VerificationException e) {
             fail("Was not able to get the token from the verifier.");
         }
+    }
+
+    private static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
+        // we only set one key to the realm, thus can just take the first one
+        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
+        // the key from the `configureTestRealm` method.
+        return keycloakSession
+                .keys()
+                .getKeysStream(keycloakSession.getContext().getRealm())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No key was configured"));
     }
 
     @Override
