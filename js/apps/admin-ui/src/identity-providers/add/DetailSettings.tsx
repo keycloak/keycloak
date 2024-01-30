@@ -430,7 +430,7 @@ export default function DetailSettings() {
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
+          {!isOIDC && !isSAML && <GeneralSettings create={false} />}
           {isOIDC && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
           {providerInfo && (

@@ -1,18 +1,14 @@
-import { RedirectUrl } from "../component/RedirectUrl";
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { DisplayOrder } from "../component/DisplayOrder";
+import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 
 type GeneralSettingsProps = {
-  id: string;
   create?: boolean;
 };
 
-export const GeneralSettings = ({
-  create = true,
-  id,
-}: GeneralSettingsProps) => (
+export const GeneralSettings = ({ create = true }: GeneralSettingsProps) => (
   <>
-    <RedirectUrl id={id} />
+    <OIDCGeneralSettings />
     <ClientIdSecret create={create} />
     <DisplayOrder />
   </>

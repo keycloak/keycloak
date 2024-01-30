@@ -90,7 +90,7 @@ export default function AddIdentityProvider() {
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormProvider {...form}>
-            <GeneralSettings id={providerId} />
+            <GeneralSettings />
             {providerInfo && (
               <DynamicComponents
                 stringify
