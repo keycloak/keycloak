@@ -2,7 +2,7 @@
   "name": "root",
   "type": "module",
   "scripts": {
-    "prepare": "cd .. && husky install js/.husky"
+    "prepare": "cd .. && husky js/.husky"
   },
   "devDependencies": {
     "@types/node": "^20.11.10",
