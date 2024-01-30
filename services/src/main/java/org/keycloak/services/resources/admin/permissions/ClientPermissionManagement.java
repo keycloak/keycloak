@@ -20,6 +20,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
+import org.keycloak.representations.AccessToken;
 
 import java.util.Map;
 
@@ -42,6 +43,8 @@ public interface ClientPermissionManagement {
     Map<String, String> getPermissions(ClientModel client);
 
     boolean canExchangeTo(ClientModel authorizedClient, ClientModel to);
+
+    boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token);
 
     Policy exchangeToPermission(ClientModel client);
 
