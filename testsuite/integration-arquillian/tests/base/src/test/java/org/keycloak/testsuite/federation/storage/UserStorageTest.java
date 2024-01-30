@@ -541,7 +541,7 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel userModel = session.users().getUserByUsername(realm, "thor");
             userModel.setSingleAttribute("weapon", longValue);
 
-            ssertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
                     both(hasSize(1)).and(contains("thor")));
 
             //case insesitive search
