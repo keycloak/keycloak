@@ -96,6 +96,10 @@ import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.SamlAuthnRequestContext;
+import org.keycloak.services.clientpolicy.context.SamlLogoutRequestContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
@@ -260,6 +264,16 @@ public class SamlService extends AuthorizationEndpointBase {
             return response;
         }
 
+        protected Response triggerSamlEvent(ClientPolicyContext ctx) {
+            try {
+                session.clientPolicy().triggerOnEvent(ctx);
+            } catch (ClientPolicyException cpe) {
+                logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
+            return null;
+        }
+
         protected Response handleSamlRequest(String samlRequest, String relayState) {
             SAMLDocumentHolder documentHolder = extractRequestDocument(samlRequest);
             if (documentHolder == null) {
@@ -318,9 +332,17 @@ public class SamlService extends AuthorizationEndpointBase {
             if (samlObject instanceof AuthnRequestType) {
                 // Get the SAML Request Message
                 AuthnRequestType authn = (AuthnRequestType) samlObject;
+                Response response = triggerSamlEvent(new SamlAuthnRequestContext(authn, client, getBindingType()));
+                if (response != null) {
+                    return response;
+                }
                 return loginRequest(relayState, authn, client);
             } else if (samlObject instanceof LogoutRequestType) {
                 LogoutRequestType logout = (LogoutRequestType) samlObject;
+                Response response = triggerSamlEvent(new SamlLogoutRequestContext(logout, client, getBindingType()));
+                if (response != null) {
+                    return response;
+                }
                 return logoutRequest(logout, client, relayState);
             } else {
                 throw new IllegalStateException("Invalid SAML object");

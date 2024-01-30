@@ -73,6 +73,8 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
+        case REGISTERED:
+        case UPDATED:
             if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:

@@ -35,10 +35,14 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 
 
 /**
@@ -79,17 +83,20 @@ public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyCondi
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
         case REGISTER:
-            if (context instanceof AdminClientRegisterContext) {
+        case REGISTERED:
+            if (context instanceof AdminClientRegisterContext || context instanceof AdminClientRegisteredContext) {
                 return getVoteForRolesMatched(((ClientCRUDContext)context).getAuthenticatedUser());
-            } else if (context instanceof DynamicClientRegisterContext) {
+            } else if (context instanceof DynamicClientRegisterContext || context instanceof DynamicClientRegisteredContext) {
                 return getVoteForRolesMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
+
         case UPDATE:
-            if (context instanceof AdminClientUpdateContext) {
+        case UPDATED:
+            if (context instanceof AdminClientUpdateContext || context instanceof AdminClientUpdatedContext) {
                 return getVoteForRolesMatched(((ClientCRUDContext)context).getAuthenticatedUser());
-            } else if (context instanceof DynamicClientUpdateContext) {
+            } else if (context instanceof DynamicClientUpdateContext || context instanceof DynamicClientUpdatedContext) {
                 return getVoteForRolesMatched(((ClientCRUDContext)context).getToken());
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");

@@ -376,6 +376,24 @@
           }
         }
       ]
+    },
+    {
+      "name": "saml-security-profile",
+      "description": "Client profile that enforces SAML clients to be secure.",
+      "executors": [
+        {
+          "executor": "saml-secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "saml-signature-enforcer",
+          "configuration": {}
+        },
+        {
+          "executor": "saml-avoid-redirect",
+          "configuration": {}
+        }
+      ]
     }
   ]
 }
