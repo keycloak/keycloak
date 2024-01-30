@@ -67,6 +67,13 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
         return INFINISPAN_IMAGE;
     }
 
+    public static void removeCache(String cache) {
+        // first stop the cache to avoid leaking MBeans for the HotRodClient
+        // see: https://issues.redhat.com/browse/ISPN-15606
+        remoteCacheManager.getCache(cache).stop();
+        remoteCacheManager.administration().removeCache(cache);
+    }
+
     private void establishHotRodConnection() {
         ConfigurationBuilder configBuilder = new ConfigurationBuilder()
                 .addServers(getContainerIpAddress() + ":11222")

@@ -20,7 +20,6 @@ package org.keycloak.it.storage.database;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.common.util.Retry;
@@ -38,16 +37,11 @@ public class ExternalInfinispanTest {
 
     @Test
     @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "--spi-connections-infinispan-quarkus-site-name=ISPN" })
-    // Needs to be executed as last; removing caches in this messes up with cache manager clean up after the test causing the following exception upon next start (possible ISPN bug?):
-    // org.infinispan.client.hotrod.exceptions.HotRodClientException:: ISPN004091: MBean registration failed
-    // ...
-    // Caused by: javax.management.InstanceAlreadyExistsException: org.infinispan:type=HotRodClient,name=Default,cache=sessions
-    @Order(Integer.MAX_VALUE)
     void testLoadBalancerCheckFailure() {
         when().get("/lb-check").then()
                 .statusCode(200);
 
-        InfinispanContainer.remoteCacheManager.administration().removeCache("sessions");
+        InfinispanContainer.removeCache("sessions");
 
         // The `lb-check` relies on the Infinispan's persistence check status. By default, Infinispan checks in the background every second that the remote store is available.
         // So we'll wait on average about one second here for the check to switch its state.
@@ -57,7 +51,6 @@ public class ExternalInfinispanTest {
         }, 10, 200);
     }
 
-    @Test
     @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "-Djboss.site.name=ISPN" })
     void testSiteNameAsSystemProperty(LaunchResult result) {
         ((CLIResult) result).assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
