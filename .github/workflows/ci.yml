@@ -31,6 +31,7 @@ jobs:
       ci: ${{ steps.conditional.outputs.ci }}
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
+      ci-store-matrix: ${{ steps.conditional-stores.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +39,14 @@ jobs:
         uses: ./.github/actions/conditional
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: conditional-stores
+        run: |
+          STORES="postgres, mysql, oracle, mssql, mariadb"
+          if [ $GITHUB_EVENT_NAME != "pull_request" ]; then
+            STORES+=", aurora-postgres"
+          fi
+          echo "matrix=$(echo $STORES  | jq -Rc 'split(", ")')" >> $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -258,19 +267,75 @@ jobs:
     needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 150
     strategy:
       matrix:
-        db: [postgres, mysql, oracle, mssql, mariadb]
+        db: ${{ fromJson(needs.conditional.outputs.ci-store-matrix) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
+      - id: aurora-init
+        name: Initialize Aurora environment
+        if: ${{ matrix.db == 'aurora-postgres' }}
+        run: |
+          AWS_REGION=us-east-1
+          echo "Region: ${AWS_REGION}"
+
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${AWS_REGION}
+          PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13; echo)
+          echo "::add-mask::${PASS}"
+
+          echo "name=gh-action-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "password=${PASS}" >> $GITHUB_OUTPUT
+          echo "region=${AWS_REGION}" >> $GITHUB_OUTPUT
+
+      - id: aurora-create
+        name: Create Aurora DB
+        if: ${{ matrix.db == 'aurora-postgres' }}
+        uses: ./.github/actions/aurora-create-database
+        with:
+          name: ${{ steps.aurora-init.outputs.name }}
+          password: ${{ steps.aurora-init.outputs.password }}
+          region: ${{ steps.aurora-init.outputs.region }}
+
       - id: integration-test-setup
         name: Integration test setup
+        if: ${{ matrix.db != 'aurora-postgres' }}
         uses: ./.github/actions/integration-test-setup
 
+      - name: Run Aurora tests on EC2
+        id: aurora-tests
+        if: ${{ matrix.db == 'aurora-postgres' }}
+        run: |
+          PROPS="-Dauth.server.db.host=${{ steps.aurora-create.outputs.endpoint }}"
+          PROPS+=" -Dkeycloak.connectionsJpa.password=${{ steps.aurora-init.outputs.password }}"
+
+          REGION=${{ steps.aurora-init.outputs.region }}
+
+          curl --fail-with-body https://truststore.pki.rds.amazonaws.com/${REGION}/${REGION}-bundle.pem -o aws.pem
+          PROPS+=" -Dkeycloak.connectionsJpa.jdbcParameters=\"?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem\""
+
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+          echo "Tests: $TESTS"
+
+          git archive --format=zip --output /tmp/keycloak.zip $GITHUB_REF
+          zip -u /tmp/keycloak.zip aws.pem
+
+          cd .github/scripts/ansible
+          export CLUSTER_NAME=keycloak_$(git rev-parse --short HEAD)
+          echo "ec2_cluster=${CLUSTER_NAME}" >> $GITHUB_OUTPUT
+          ./aws_ec2.sh requirements
+          ./aws_ec2.sh create ${REGION}
+          ./keycloak_ec2_installer.sh ${REGION} /tmp/keycloak.zip
+          ./mvn_ec2_runner.sh ${REGION} "clean install -DskipTests -Pdistribution"
+          ./mvn_ec2_runner.sh ${REGION} "clean install -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Dmaven.build.cache.enabled=true"
+          ./mvn_ec2_runner.sh ${REGION} "test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} $PROPS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base"
+
       - name: Run base tests
+        if: ${{ matrix.db != 'aurora-postgres' }}
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
@@ -292,6 +357,27 @@ jobs:
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: store-integration-tests-${{ matrix.db }}
+
+      - name: EC2 Maven Logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: store-it-mvn-logs
+          path: .github/scripts/ansible/files
+
+      - name: Delete Aurora EC2 Instance
+        if: ${{ always() && matrix.db == 'aurora-postgres' }}
+        working-directory: .github/scripts/ansible
+        run: |
+          export CLUSTER_NAME=${{ steps.aurora-tests.outputs.ec2_cluster }}
+          ./aws_ec2.sh delete ${{ steps.aurora-init.outputs.region }}
+
+      - name: Delete Aurora DB
+        if: ${{ always() && matrix.db == 'aurora-postgres' }}
+        uses: ./.github/actions/aurora-delete-database
+        with:
+          name: ${{ steps.aurora-init.outputs.name }}
+          region: ${{ steps.aurora-init.outputs.region }}
 
   store-model-tests:
     name: Store Model Tests
@@ -634,7 +720,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Migration Tests
-          
+
       - name: Surefire reports
         if: always()
         uses: ./.github/actions/archive-surefire-reports

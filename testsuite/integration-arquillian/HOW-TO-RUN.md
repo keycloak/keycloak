@@ -1006,3 +1006,25 @@ The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode"
 ```
 KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```
+
+## Aurora DB Tests
+To run the Aurora DB tests on a local machine, do the following:
+
+1. Provision an Aurora DB:
+```bash
+AURORA_CLUSTER="example-cluster"
+AURORA_REGION=eu-west-1
+AURORA_PASSWORD=TODO
+source ./.github/scripts/aws/rds/aurora_create.sh
+```
+
+2. Execute the store integration tests:
+```bash
+TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+mvn test -Pauth-server-quarkus -Pdb-aurora-postgres -Dtest=$TESTS  -Dauth.server.db.host=$AURORA_ENDPOINT -Dkeycloak.connectionsJpa.password=$AURORA_PASSWORD -pl testsuite/integration-arquillian/tests/base
+```
+
+3. Teardown Aurora DB instance:
+```bash
+./.github/scripts/aws/rds/aurora_delete.sh
+```
