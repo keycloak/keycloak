@@ -48,7 +48,7 @@ public class DefaultCookieProvider implements CookieProvider {
         HttpCookie newCookie = new HttpCookie(1, name, value, path, null, null, maxAge, secure, httpOnly, sameSite);
         context.getHttpResponse().setCookieIfAbsent(newCookie);
 
-        logger.tracef("Setting cookie: name: %s, path: %s, same-site: %s, http-only: %s, max-age: %d", name, path, sameSite, httpOnly, maxAge);
+        logger.tracef("Setting cookie: name: %s, path: %s, same-site: %s, secure: %s, http-only: %s, max-age: %d", name, path, sameSite, secure, httpOnly, maxAge);
 
         if (legacyCookiesEnabled && cookieType.supportsSameSiteLegacy()) {
             if (ServerCookie.SameSiteAttributeValue.NONE.equals(sameSite)) {
@@ -57,7 +57,7 @@ public class DefaultCookieProvider implements CookieProvider {
                 HttpCookie legacyCookie = new HttpCookie(1, legacyName, value, path, null, null, maxAge, secure, httpOnly, null);
                 context.getHttpResponse().setCookieIfAbsent(legacyCookie);
 
-                logger.tracef("Setting legacy cookie: name: %s, path: %s, same-site: %s, http-only: %s, max-age: %d", legacyName, path, sameSite, httpOnly, maxAge);
+                logger.tracef("Setting legacy cookie: name: %s, path: %s, same-site: %s, secure: %s, http-only: %s, max-age: %d", legacyName, path, sameSite, secure, httpOnly, maxAge);
             }
         } else {
             expireLegacy(cookieType);
@@ -124,16 +124,6 @@ public class DefaultCookieProvider implements CookieProvider {
 
         RealmModel realm = context.getRealm();
         if (realm != null && realm.getSslRequired().isRequired(requestUri.getHost())) {
-            return true;
-        }
-
-        if ("https".equals(requestUri.getScheme())) {
-            return true;
-        }
-
-        // Browsers consider 127.0.0.1, localhost and *.localhost as secure contexts
-        String frontendHostname = context.getUri(UrlType.FRONTEND).getRequestUri().getHost();
-        if (frontendHostname.equals("127.0.0.1") || frontendHostname.equals("localhost") || frontendHostname.endsWith(".localhost")) {
             return true;
         }
 
