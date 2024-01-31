@@ -115,3 +115,10 @@ You could set the also set `Sync Mode` to `force` if you want to update the user
 NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as GitHub, Facebook ...) but you want to manage which users that can log in.
 
 With this configuration, {project_name} is unable to determine which internal account corresponds to the external identity. The *Verify Existing Account By Re-authentication* authenticator asks the provider for the username and password.
+
+[[override_existing_broker_link]]
+==== Override existing broker link
+When an another account needs to be linked to the same Keycloak account within the same identity provider, you can configure the following authenticator.
+
+Confirm Override Existing Link::
+This authenticator will detect the existing broker link for the user and display a confirmation page to confirm overriding the existing broker link. Set the authenticator requirement to REQUIRED.

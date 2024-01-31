@@ -80,6 +80,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createIdpLinkConfirmLinkPage();
 
+    Response createIdpLinkConfirmOverrideLinkPage();
+
     Response createIdpLinkEmailPage();
 
     Response createLoginExpiredPage();
