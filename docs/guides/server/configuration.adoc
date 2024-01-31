@@ -45,7 +45,7 @@ Based on the priority of application, the value that is used at startup is `cliV
 If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. However, if this value had been set in a user defined configuration file, that value would take precedence over the `conf/keycloak.conf` file. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
 
 == Formats for configuration
-The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another.
+The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another. Note that these formats apply to spi options as well.
 
 Command-line parameter format:: Values for the command-line use the `--_<key-with-dashes>_=_<value>_` format. For some values, an `-_<abbreviation>_=_<value>_` shorthand also exists.
 
