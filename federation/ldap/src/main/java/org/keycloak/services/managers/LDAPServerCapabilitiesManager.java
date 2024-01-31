@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import java.util.Collections;
 import java.util.Set;
+import javax.naming.ldap.LdapContext;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -55,6 +56,7 @@ public class LDAPServerCapabilitiesManager {
         configMap.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
         configMap.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
         configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, config.getConnectionTimeout());
+        configMap.putSingle(LDAPConstants.READ_TIMEOUT, config.getConnectionTimeout());
         configMap.add(LDAPConstants.START_TLS, config.getStartTls());
         return new LDAPConfig(configMap);
     }
@@ -136,7 +138,11 @@ public class LDAPServerCapabilitiesManager {
         // Create ldapContextManager in try-with-resource so that ldapContext/tlsResponse/VaultSecret is closed/removed when it
         // is not needed anymore
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
-            ldapContextManager.getLdapContext();
+            LdapContext ldapContext = ldapContextManager.getLdapContext();
+            if (TEST_AUTHENTICATION.equals(config.getAction()) && LDAPConstants.AUTH_TYPE_NONE.equals(config.getAuthType())) {
+                // reconnect to force an anonymous bind operation
+                ldapContext.reconnect(null);
+            }
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(config.getAction())) ? "Error when authenticating to LDAP: "
                 : "Error when connecting to LDAP: ";

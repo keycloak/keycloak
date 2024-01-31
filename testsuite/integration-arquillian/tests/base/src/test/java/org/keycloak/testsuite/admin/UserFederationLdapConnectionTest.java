@@ -71,9 +71,9 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
 
-        // Authentication success anonymous bind
+        // Authentication error for anonymous bind (default ldap rule does not allow anonymous binings)
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
-        assertStatus(response, 204);
+        assertStatus(response, 400);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
         assertStatus(response, 204);
@@ -103,7 +103,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", null, null, "false", null, "false", LDAPConstants.AUTH_TYPE_NONE));
-        assertStatus(response, 204);
+        assertStatus(response, 400);
 
         // Authentication success with bindCredential from Vault
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "true", null));
