@@ -18,6 +18,7 @@
 
 package org.keycloak.crypto.def;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
@@ -338,8 +339,8 @@ public class BCOCSPProvider extends OCSPProvider {
                     // https://www.ietf.org/rfc/rfc2560.txt, if nextUpdate is not set,
                     // the responder is indicating that newer update is avilable all the time
                     long current = date == null ? System.currentTimeMillis() : date.getTime();
-                    Date stop = new Date(current + (long) TIME_SKEW);
-                    Date start = new Date(current - (long) TIME_SKEW);
+                    Date stop = new Date(current + TIME_SKEW);
+                    Date start = new Date(current - TIME_SKEW);
 
                     Iterator<SingleResp> iter = Arrays.asList(basicOcspResponse.getResponses()).iterator();
                     SingleResp singleRes = null;
@@ -436,7 +437,7 @@ public class BCOCSPProvider extends OCSPProvider {
                     if (ad.getAccessMethod().equals(AccessDescription.id_ad_ocsp)) {
                         // See https://www.ietf.org/rfc/rfc2560.txt, 3.1 Certificate Content
                         if (ad.getAccessLocation().getTagNo() == GeneralName.uniformResourceIdentifier) {
-                            DERIA5String value = DERIA5String.getInstance(ad.getAccessLocation().getName());
+                            ASN1IA5String value = DERIA5String.getInstance(ad.getAccessLocation().getName());
                             responderURIs.add(value.getString());
                         }
                     }

@@ -57,7 +57,6 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
         this.jobDependentResource = new KeycloakRealmImportJobDependentResource();
-        this.jobDependentResource.setKubernetesClient(context.getClient());
         return EventSourceInitializer.nameEventSourcesFromDependentResource(context, jobDependentResource);
     }
 
