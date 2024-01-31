@@ -199,7 +199,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             databaseContainer.stop();
             databaseContainer = null;
         }
-        if (infinispanContainer != null && infinispanContainer.isRunning()) {
+        if (infinispanContainer != null) {
             infinispanContainer.stop();
         }
         result = null;
