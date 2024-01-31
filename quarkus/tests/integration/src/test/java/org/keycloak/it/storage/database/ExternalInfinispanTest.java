@@ -19,9 +19,7 @@ package org.keycloak.it.storage.database;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.common.util.Retry;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -32,7 +30,6 @@ import static io.restassured.RestAssured.when;
 
 @DistributionTest(keepAlive = true)
 @WithExternalInfinispan
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ExternalInfinispanTest {
 
     @Test
@@ -51,6 +48,7 @@ public class ExternalInfinispanTest {
         }, 10, 200);
     }
 
+    @Test
     @Launch({ "start-dev", "--features=multi-site", "--cache=ispn", "--cache-config-file=../../../test-classes/ExternalInfinispan/kcb-infinispan-cache-remote-store-config.xml", "-Djboss.site.name=ISPN" })
     void testSiteNameAsSystemProperty(LaunchResult result) {
         ((CLIResult) result).assertMessage("System property jboss.site.name is in use. Use --spi-connections-infinispan-quarkus-site-name config option instead");
