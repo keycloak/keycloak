@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator;
+package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
-import io.smallrye.config.ConfigMapping;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.sundr.builder.annotations.Buildable;
 
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-/**
- * @author Vaclav Muzikar <vmuzikar@redhat.com>
- */
-@ConfigMapping(prefix = "operator")
-public interface Config {
-    Keycloak keycloak();
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
+public class CacheSpec {
 
-    interface Keycloak {
-        String image();
-        String imagePullPolicy();
-        boolean startOptimized();
-        int pollIntervalSeconds();
+    private ConfigMapKeySelector configMapFile;
 
-        Map<String, String> podLabels();
+    public ConfigMapKeySelector getConfigMapFile() {
+        return configMapFile;
     }
+
+    public void setConfigMapFile(ConfigMapKeySelector configMapFile) {
+        this.configMapFile = configMapFile;
+    }
+
 }

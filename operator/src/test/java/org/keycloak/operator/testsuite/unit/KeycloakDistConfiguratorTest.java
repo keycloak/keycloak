@@ -65,6 +65,11 @@ public class KeycloakDistConfiguratorTest {
     }
 
     @Test
+    public void cache() {
+        testFirstClassCitizen(Map.of("cache-config-file", "/opt/keycloak/conf/cache/file.xml"));
+    }
+
+    @Test
     public void http() {
         final Map<String, String> expectedValues = Map.of(
                 "http-enabled", "true",
