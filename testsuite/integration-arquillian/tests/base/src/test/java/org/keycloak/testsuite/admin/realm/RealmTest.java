@@ -263,6 +263,57 @@ public class RealmTest extends AbstractAdminTest {
         assertThat(attributesKeys, CoreMatchers.is(expectedAttributes));
     }
 
+    /**
+     * Checks attributes exposed as fields are not deleted on update realm
+     */
+    @Test
+    public void testFieldNotErased() {
+        Long dummyLong = Long.valueOf(999);
+        Integer dummyInt = Integer.valueOf(999);
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("attributes");
+        rep.setDisplayName("DISPLAY_NAME");
+        rep.setDisplayNameHtml("DISPLAY_NAME_HTML");
+        rep.setDefaultSignatureAlgorithm("HS256");
+        rep.setBruteForceProtected(true);
+        rep.setPermanentLockout(true);
+        rep.setMaxFailureWaitSeconds(dummyInt);
+        rep.setWaitIncrementSeconds(dummyInt);
+        rep.setQuickLoginCheckMilliSeconds(dummyLong);
+        rep.setMinimumQuickLoginWaitSeconds(dummyInt);
+        rep.setMaxDeltaTimeSeconds(dummyInt);
+        rep.setFailureFactor(dummyInt);
+        rep.setActionTokenGeneratedByAdminLifespan(dummyInt);
+        rep.setActionTokenGeneratedByUserLifespan(dummyInt);
+        rep.setOfflineSessionMaxLifespanEnabled(true);
+        rep.setOfflineSessionMaxLifespan(dummyInt);
+
+        adminClient.realms().create(rep);
+        getCleanup().addCleanup(() -> adminClient.realms().realm("attributes").remove());
+
+        RealmRepresentation rep2 = new RealmRepresentation();
+        rep2.setAttributes(Collections.singletonMap("frontendUrl", "http://localhost/frontEnd"));
+        adminClient.realm("attributes").update(rep2);
+
+        rep = adminClient.realm("attributes").toRepresentation();
+        assertEquals("DISPLAY_NAME", rep.getDisplayName());
+        assertEquals("DISPLAY_NAME_HTML", rep.getDisplayNameHtml());
+        assertEquals("HS256", rep.getDefaultSignatureAlgorithm());
+        assertTrue(rep.isBruteForceProtected());
+        assertTrue(rep.isPermanentLockout());
+        assertEquals(dummyInt, rep.getMaxFailureWaitSeconds());
+        assertEquals(dummyInt, rep.getWaitIncrementSeconds());
+        assertEquals(dummyLong, rep.getQuickLoginCheckMilliSeconds());
+        assertEquals(dummyInt, rep.getMinimumQuickLoginWaitSeconds());
+        assertEquals(dummyInt, rep.getMaxDeltaTimeSeconds());
+        assertEquals(dummyInt, rep.getFailureFactor());
+        assertEquals(dummyInt, rep.getActionTokenGeneratedByAdminLifespan());
+        assertEquals(dummyInt, rep.getActionTokenGeneratedByUserLifespan());
+        assertTrue(rep.getOfflineSessionMaxLifespanEnabled());
+        assertEquals(dummyInt, rep.getOfflineSessionMaxLifespan());
+    }
+
     @Test
     public void smtpPasswordSecret() {
         RealmRepresentation rep = RealmBuilder.create().testEventListener().testMail().build();
