@@ -282,9 +282,10 @@ After removal of the Map Store the following configuration options were renamed:
 
 After removal of the Map Store the following modules were renamed:
 
-* `org.keycloak:keycloak-model-legacy` to `org.keycloak:keycloak-model-storage`
 * `org.keycloak:keycloak-model-legacy-private` to `org.keycloak:keycloak-model-storage-private`
 * `org.keycloak:keycloak-model-legacy-services` to `org.keycloak:keycloak-model-storage-services`
+
+and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module. 
 
 = Updates to cookies
 
