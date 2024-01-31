@@ -221,8 +221,8 @@ export const RealmOverrides = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmMessageBundle",
-    messageKey: t("messageBundleDeleteConfirmDialog", {
+    titleKey: "deleteConfirmTranslationTitle",
+    messageKey: t("translationDeleteConfirmDialog", {
       count: selectedRowKeys.length,
     }),
     continueButtonLabel: "delete",
