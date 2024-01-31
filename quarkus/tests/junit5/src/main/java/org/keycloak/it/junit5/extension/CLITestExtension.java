@@ -59,11 +59,12 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NA
 public class CLITestExtension extends QuarkusMainTestExtension {
 
     private static final String SYS_PROPS = "sys-props";
-    private static final String KEY_VALUE_SEPARATOR = "[= ]";
+    private static final String KEY_VALUE_SEPARATOR = "[=]";
     private KeycloakDistribution dist;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
+    static String[] CLI_ARGS = new String[0];
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -71,13 +72,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
         getStore(context).put(SYS_PROPS, new HashMap<>(System.getProperties()));
 
-        if (launch != null) {
+        if (launch != null && distConfig == null) {
             for (String arg : launch.value()) {
                 if (arg.contains(CONFIG_FILE_SHORT_NAME) || arg.contains(CONFIG_FILE_LONG_NAME)) {
                     Pattern kvSeparator = Pattern.compile(KEY_VALUE_SEPARATOR);
                     String[] cfKeyValue = kvSeparator.split(arg);
                     setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, cfKeyValue[1]);
-                } else if (distConfig == null && arg.startsWith("-D")) {
+                } else if (arg.startsWith("-D")) {
                     // allow setting system properties from JVM tests
                     int keyValueSeparator = arg.indexOf('=');
 
@@ -114,6 +115,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
             }
         } else {
+            CLI_ARGS = launch == null ? new String[] {} : launch.value();
             configureProfile(context);
             super.beforeEach(context);
         }

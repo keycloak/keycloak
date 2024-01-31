@@ -58,7 +58,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         super(parseArguments(), NAME, 600);
     }
 
-    public static void setCliArgs(String[] args) {
+    public static void setCliArgs(String... args) {
         System.setProperty(CLI_ARGS, String.join(ARG_SEPARATOR, args));
     }
 
