@@ -21,7 +21,6 @@ import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.smallrye.health.runtime.QuarkusAsyncHealthCheckFactory;
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -50,23 +49,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @ApplicationScoped
 public class KeycloakReadyAsyncHealthCheck implements AsyncHealthCheck {
 
-    /** As the DataSourceHealthCheck doesn't exist as an application scoped bean,
-    * create our own instance here which exposes the <code>init()</code> call for the delegate. */
-    MyDataSourceHealthCheck delegate;
-
-    private static class MyDataSourceHealthCheck extends DataSourceHealthCheck {
-        @Override
-        public void init() {
-            super.init();
-        }
-    }
-
-    @PostConstruct
-    protected void init() {
-        delegate = new MyDataSourceHealthCheck();
-        delegate.init();
-    }
-
     /**
      * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
      * by the probe with the logs.
@@ -79,6 +61,9 @@ public class KeycloakReadyAsyncHealthCheck implements AsyncHealthCheck {
     @Inject
     QuarkusAsyncHealthCheckFactory healthCheckFactory;
 
+    @Inject
+    DataSourceHealthCheck dataSourceHealthCheck;
+
     AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
@@ -88,7 +73,7 @@ public class KeycloakReadyAsyncHealthCheck implements AsyncHealthCheck {
         long invalidCount = agroalDataSource.getMetrics().invalidCount();
         if (activeCount < 1 || invalidCount > 0) {
             return healthCheckFactory.callSync(() -> {
-                HealthCheckResponse activeCheckResult = delegate.call();
+                HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
                 if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
                     builder.down();
                     Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);

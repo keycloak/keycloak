@@ -17,9 +17,12 @@
 
 package org.keycloak.quarkus.deployment;
 
+import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.agroal.spi.JdbcDriverBuildItem;
+import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
+import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
@@ -45,6 +48,7 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.quarkus.resteasy.reactive.spi.IgnoreStackMixingBuildItem;
 import io.smallrye.config.ConfigValue;
+import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
@@ -82,8 +86,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.integration.health.ReactiveLivenessHandler;
-import org.keycloak.quarkus.runtime.integration.health.ReactiveReadinessHandler;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -616,12 +618,6 @@ class KeycloakProcessor {
 
         if (healthDisabled) {
             routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
-        } else {
-            // local solution until https://github.com/quarkusio/quarkus/issues/35099 is available in Quarkus
-            if (!isHealthClassicProbesEnabled()) {
-                routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(new ReactiveLivenessHandler()).build());
-                routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/ready")).handler(new ReactiveReadinessHandler()).build());
-            }
         }
 
         boolean metricsDisabled = !isMetricsEnabled();
@@ -647,6 +643,17 @@ class KeycloakProcessor {
                 removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean1.asClass(), false));
             }
         }
+    }
+
+    // We can't use quarkus.datasource.health.enabled=false as that would remove the DataSourceHealthCheck from CDI and
+    // it can't be instantiated via constructor as it now includes some field injection points. So we just make it a regular
+    // bean without the @Readiness annotation so it won't be used as a health check on it's own.
+    @BuildStep
+    AnnotationsTransformerBuildItem disableDefaultDataSourceHealthCheck() {
+        return new AnnotationsTransformerBuildItem(AnnotationsTransformer.appliedToClass()
+                .whenClass(c -> c.name().equals(DotName.createSimple(DataSourceHealthCheck.class)))
+                .thenTransform(t -> t.remove(
+                        a -> a.name().equals(DotName.createSimple(Readiness.class)))));
     }
 
     @BuildStep
