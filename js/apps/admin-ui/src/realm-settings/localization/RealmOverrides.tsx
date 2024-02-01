@@ -50,7 +50,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
-import { AddMessageBundleModal } from "../AddMessageBundleModal";
+import { AddTranslationModal } from "../AddTranslationModal";
 
 type RealmOverridesProps = {
   internationalizationEnabled: boolean;
@@ -60,10 +60,10 @@ type RealmOverridesProps = {
 
 type EditStatesType = { [key: number]: boolean };
 
-export type BundleForm = {
+export type TranslationForm = {
   key: string;
   value: string;
-  messageBundle: KeyValueType;
+  translation: KeyValueType;
 };
 
 export enum RowEditAction {
@@ -79,10 +79,9 @@ export const RealmOverrides = ({
   realm,
 }: RealmOverridesProps) => {
   const { t } = useTranslation();
-  const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
-    useState(false);
+  const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
+  const [translations, setTranslations] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
   const [kebabOpen, setKebabOpen] = useState(false);
   const { getValues, handleSubmit } = useForm();
@@ -92,7 +91,7 @@ export const RealmOverrides = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const bundleForm = useForm<BundleForm>({ mode: "onChange" });
+  const translationForm = useForm<TranslationForm>({ mode: "onChange" });
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
@@ -118,14 +117,14 @@ export const RealmOverrides = ({
         });
 
         if (filter) {
-          const searchInBundles = (idx: number) => {
+          const searchInTranslations = (idx: number) => {
             return Object.entries(result).filter((i) =>
               i[idx].includes(filter),
             );
           };
 
           const filtered = uniqWith(
-            searchInBundles(0).concat(searchInBundles(1)),
+            searchInTranslations(0).concat(searchInTranslations(1)),
             isEqual,
           );
 
@@ -138,34 +137,34 @@ export const RealmOverrides = ({
       }
     };
 
-    fetchLocalizationTexts().then((bundles) => {
-      setMessageBundles(bundles);
+    fetchLocalizationTexts().then((translations) => {
+      setTranslations(translations);
 
-      const updatedRows: IRow[] = bundles.map(
-        (messageBundle): IRow => ({
+      const updatedRows: IRow[] = translations.map(
+        (translation): IRow => ({
           rowEditBtnAriaLabel: () =>
             t("rowEditBtnAriaLabel", {
-              messageBundle: messageBundle[1],
+              translation: translation[1],
             }),
           rowSaveBtnAriaLabel: () =>
             t("rowSaveBtnAriaLabel", {
-              messageBundle: messageBundle[1],
+              translation: translation[1],
             }),
           rowCancelBtnAriaLabel: () =>
             t("rowCancelBtnAriaLabel", {
-              messageBundle: messageBundle[1],
+              translation: translation[1],
             }),
           cells: [
             {
-              title: messageBundle[0],
+              title: translation[0],
               props: {
-                value: messageBundle[0],
+                value: translation[0],
               },
             },
             {
-              title: messageBundle[1],
+              title: translation[1],
               props: {
-                value: messageBundle[1],
+                value: translation[1],
               },
             },
           ],
@@ -177,7 +176,7 @@ export const RealmOverrides = ({
   }, [tableKey, first, max, filter]);
 
   const handleModalToggle = () => {
-    setAddMessageBundleModalOpen(!addMessageBundleModalOpen);
+    setAddTranslationModalOpen(!addTranslationModalOpen);
   };
 
   const options = [
@@ -212,11 +211,11 @@ export const RealmOverrides = ({
         realmName: currentRealm!,
       });
       refreshTable();
-      bundleForm.setValue("key", "");
-      bundleForm.setValue("value", "");
-      addAlert(t("addMessageBundleSuccess"), AlertVariant.success);
+      translationForm.setValue("key", "");
+      translationForm.setValue("value", "");
+      addAlert(t("addTranslationSuccess"), AlertVariant.success);
     } catch (error) {
-      addError(t("addMessageBundleError"), error);
+      addError(t("addTranslationError"), error);
     }
   };
 
@@ -243,9 +242,9 @@ export const RealmOverrides = ({
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
         refreshTable();
-        addAlert(t("deleteAllMessagesBundleSuccess"), AlertVariant.success);
+        addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("deleteAllMessagesBundleError", error);
+        addError("deleteAllTranslationsError", error);
       }
     },
   });
@@ -306,10 +305,10 @@ export const RealmOverrides = ({
         value,
       );
 
-      addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
+      addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);
     } catch (error) {
-      addAlert(t("updateMessageBundleError"), AlertVariant.danger);
+      addAlert(t("updateTranslationError"), AlertVariant.danger);
     }
 
     setEditStates((prevEditStates) => ({
@@ -321,14 +320,14 @@ export const RealmOverrides = ({
   return (
     <>
       <DeleteConfirm />
-      {addMessageBundleModalOpen && (
-        <AddMessageBundleModal
+      {addTranslationModalOpen && (
+        <AddTranslationModal
           handleModalToggle={handleModalToggle}
           save={(pair: any) => {
             addKeyValue(pair);
             handleModalToggle();
           }}
-          form={bundleForm}
+          form={translationForm}
         />
       )}
       <TextContent>
@@ -337,7 +336,7 @@ export const RealmOverrides = ({
         </Text>
       </TextContent>
       <PaginatingTableToolbar
-        count={messageBundles.length}
+        count={translations.length}
         first={first}
         max={max}
         onNextClick={setFirst}
@@ -357,7 +356,11 @@ export const RealmOverrides = ({
           <>
             <Button
               data-testid="add-translationBtn"
-              onClick={() => setAddMessageBundleModalOpen(true)}
+              onClick={() => {
+                setAddTranslationModalOpen(true);
+                setAreAllRowsSelected(false);
+                setSelectedRowKeys([]);
+              }}
             >
               {t("addTranslation")}
             </Button>
@@ -373,10 +376,9 @@ export const RealmOverrides = ({
                   <DropdownItem
                     key="action"
                     component="button"
-                    data-testid="delete-selected-bundleBtn"
+                    data-testid="delete-selected-TranslationBtn"
                     isDisabled={
-                      messageBundles.length === 0 ||
-                      selectedRowKeys.length === 0
+                      translations.length === 0 || selectedRowKeys.length === 0
                     }
                     onClick={() => {
                       toggleDeleteDialog();
@@ -418,7 +420,7 @@ export const RealmOverrides = ({
           </ToolbarItem>
         }
       >
-        {messageBundles.length === 0 && !filter && (
+        {translations.length === 0 && !filter && (
           <ListEmptyState
             hasIcon
             message={t("noTranslations")}
@@ -426,7 +428,7 @@ export const RealmOverrides = ({
             onPrimaryAction={handleModalToggle}
           />
         )}
-        {messageBundles.length === 0 && filter && (
+        {translations.length === 0 && filter && (
           <ListEmptyState
             hasIcon
             icon={SearchIcon}
@@ -435,7 +437,7 @@ export const RealmOverrides = ({
             instructions={t("noRealmOverridesSearchResultsInstructions")}
           />
         )}
-        {messageBundles.length !== 0 && (
+        {translations.length !== 0 && (
           <Table
             aria-label={t("editableRowsTable")}
             data-testid="editable-rows-table"
@@ -483,13 +485,13 @@ export const RealmOverrides = ({
                   >
                     <Form
                       isHorizontal
-                      className="kc-form-bundleValue"
+                      className="kc-form-translationValue"
                       onSubmit={handleSubmit(() => {
                         onSubmit(formValue, rowIndex);
                       })}
                     >
                       <FormGroup
-                        fieldId="kc-bundleValue"
+                        fieldId="kc-translationValue"
                         className="pf-u-display-inline-block"
                       >
                         {editStates[rowIndex] ? (
@@ -567,7 +569,7 @@ export const RealmOverrides = ({
                             setSelectedRowKeys([
                               (row.cells?.[0] as IRowCell).props.value,
                             ]);
-                            messageBundles.length === 1 &&
+                            translations.length === 1 &&
                               setAreAllRowsSelected(true);
                             toggleDeleteDialog();
                             setKebabOpen(false);

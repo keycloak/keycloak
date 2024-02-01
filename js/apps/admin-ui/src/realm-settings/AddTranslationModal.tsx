@@ -13,20 +13,20 @@ import { useTranslation } from "react-i18next";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
-type AddMessageBundleModalProps = {
+type AddTranslationModalProps = {
   id?: string;
-  form: UseFormReturn<BundleForm>;
-  save: SubmitHandler<BundleForm>;
+  form: UseFormReturn<TranslationForm>;
+  save: SubmitHandler<TranslationForm>;
   handleModalToggle: () => void;
 };
 
-export type BundleForm = {
+export type TranslationForm = {
   key: string;
   value: string;
-  messageBundle: KeyValueType;
+  translation: KeyValueType;
 };
 
-export const AddMessageBundleModal = ({
+export const AddTranslationModal = ({
   handleModalToggle,
   save,
   form: {
@@ -34,22 +34,22 @@ export const AddMessageBundleModal = ({
     handleSubmit,
     formState: { errors },
   },
-}: AddMessageBundleModalProps) => {
+}: AddTranslationModalProps) => {
   const { t } = useTranslation();
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("addMessageBundle")}
+      title={t("AddTranslation")}
       isOpen
       onClose={handleModalToggle}
       actions={[
         <Button
-          data-testid="add-bundle-confirm-button"
+          data-testid="add-translation-confirm-button"
           key="confirm"
           variant="primary"
           type="submit"
-          form="bundle-form"
+          form="translation-form"
         >
           {t("create")}
         </Button>,
@@ -66,7 +66,7 @@ export const AddMessageBundleModal = ({
         </Button>,
       ]}
     >
-      <Form id="bundle-form" isHorizontal onSubmit={handleSubmit(save)}>
+      <Form id="translation-form" isHorizontal onSubmit={handleSubmit(save)}>
         <FormGroup
           label={t("key")}
           name="key"

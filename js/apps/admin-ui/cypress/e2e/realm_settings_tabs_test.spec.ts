@@ -199,7 +199,7 @@ describe("Realm settings tabs tests", () => {
       addBundle();
 
       masthead.checkNotificationMessage(
-        "Success! The message bundle has been added.",
+        "Success! The translation has been added.",
       );
 
       cy.findByTestId("editable-rows-table")
@@ -209,9 +209,7 @@ describe("Realm settings tabs tests", () => {
       cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Realm Overrides - Search for and delete bundle", () => {
@@ -229,11 +227,9 @@ describe("Realm settings tabs tests", () => {
 
       cy.findByTestId("selectAll").click();
       cy.get('[data-testid="toolbar-deleteBtn"] button').click();
-      cy.findByTestId("delete-selected-bundleBtn").click();
+      cy.findByTestId("delete-selected-TranslationBtn").click();
       cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Realm Overrides - Edit and cancel edit message bundle", () => {
@@ -261,9 +257,7 @@ describe("Realm settings tabs tests", () => {
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Effective Message Bundles - Check before search message", () => {
