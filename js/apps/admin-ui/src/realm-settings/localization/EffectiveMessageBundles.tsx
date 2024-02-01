@@ -139,7 +139,9 @@ export const EffectiveMessageBundles = ({
     }
   };
 
-  const combinedLocales = [...defaultLocales, ...defaultSupportedLocales];
+  const combinedLocales = Array.from(
+    new Set([...defaultLocales, ...defaultSupportedLocales]),
+  );
 
   function submitSearch() {
     setSearchDropdownOpen(false);
