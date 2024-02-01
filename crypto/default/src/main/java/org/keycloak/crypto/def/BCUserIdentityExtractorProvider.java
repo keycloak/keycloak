@@ -23,8 +23,6 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.ASN1UTF8String;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
@@ -164,7 +162,7 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
                                     tempOid = oid.getId();
 
                                     ASN1Encodable principalNameEncoded = asn1Sequence.getObjectAt(1);
-                                    ASN1UTF8String principalName = DERUTF8String.getInstance(unwrap(principalNameEncoded));
+                                    DERUTF8String principalName = DERUTF8String.getInstance(unwrap(principalNameEncoded));
 
                                     tempOtherName = principalName.getString();
 
@@ -197,8 +195,8 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
 
         private ASN1Encodable unwrap(ASN1Encodable encodable) {
             while (encodable instanceof ASN1TaggedObject) {
-                ASN1TaggedObject taggedObj = ASN1TaggedObject.getInstance(encodable, BERTags.CONTEXT_SPECIFIC);
-                encodable = taggedObj.getBaseObject().toASN1Primitive();
+                ASN1TaggedObject taggedObj = (ASN1TaggedObject) encodable;
+                encodable = taggedObj.getObject();
             }
 
             return encodable;
