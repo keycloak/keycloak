@@ -11,16 +11,18 @@ import { useTranslation } from "react-i18next";
 import { getGroups } from "../api/methods";
 import { Group } from "../api/representations";
 import { Page } from "../components/page/Page";
+import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
-const Groups = () => {
+export const Groups = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [directMembership, setDirectMembership] = useState(false);
 
   usePromise(
-    (signal) => getGroups({ signal }),
+    (signal) => getGroups({ signal, context }),
     (groups) => {
       if (directMembership) {
         groups.forEach((el) =>

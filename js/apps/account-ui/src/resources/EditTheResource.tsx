@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
+import { useEnvironment } from "../root/KeycloakContext";
 
 type EditTheResourceProps = {
   resource: Resource;
@@ -23,6 +24,7 @@ export const EditTheResource = ({
   onClose,
 }: EditTheResourceProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const form = useForm<FormValues>();
@@ -39,7 +41,7 @@ export const EditTheResource = ({
     try {
       await Promise.all(
         permissions.map((permission) =>
-          updatePermissions(resource._id, [permission]),
+          updatePermissions(context, resource._id, [permission]),
         ),
       );
       addAlert(t("updateSuccess"));

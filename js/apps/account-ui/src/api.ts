@@ -1,19 +1,19 @@
+import { CallOptions } from "./api/methods";
 import { Links, parseLinks } from "./api/parse-links";
+import { parseResponse } from "./api/parse-response";
 import { Permission, Resource, Scope } from "./api/representations";
-import { environment } from "./environment";
-import { keycloak } from "./keycloak";
-import { joinPath } from "./utils/joinPath";
+import { request } from "./api/request";
+import { KeycloakContext } from "./root/KeycloakContext";
 
 export const fetchResources = async (
-  params: RequestInit,
+  { signal, context }: CallOptions,
   requestParams: Record<string, string>,
   shared: boolean | undefined = false,
 ): Promise<{ data: Resource[]; links: Links }> => {
-  const response = await get(
-    `/resources${shared ? "/shared-with-me?" : "?"}${
-      shared ? "" : new URLSearchParams(requestParams)
-    }`,
-    params,
+  const response = await request(
+    `/resources${shared ? "/shared-with-me?" : "?"}`,
+    context,
+    { searchParams: shared ? requestParams : undefined, signal },
   );
 
   let links: Links;
@@ -31,77 +31,39 @@ export const fetchResources = async (
 };
 
 export const fetchPermission = async (
-  params: RequestInit,
+  { signal, context }: CallOptions,
   resourceId: string,
 ): Promise<Permission[]> => {
-  const response = await request<Permission[]>(
+  const response = await request(
     `/resources/${resourceId}/permissions`,
-    params,
+    context,
+    { signal },
   );
-  return checkResponse(response);
+  return parseResponse<Permission[]>(response);
 };
 
 export const updateRequest = (
+  context: KeycloakContext,
   resourceId: string,
   username: string,
   scopes: Scope[] | string[],
 ) =>
-  request(`/resources/${resourceId}/permissions`, {
-    method: "put",
-    body: JSON.stringify([{ username, scopes }]),
+  request(`/resources/${resourceId}/permissions`, context, {
+    method: "PUT",
+    body: [{ username, scopes }],
   });
 
 export const updatePermissions = (
+  context: KeycloakContext,
   resourceId: string,
   permissions: Permission[],
 ) =>
-  request(`/resources/${resourceId}/permissions`, {
-    method: "put",
-    body: JSON.stringify(permissions),
+  request(`/resources/${resourceId}/permissions`, context, {
+    method: "PUT",
+    body: permissions,
   });
 
 function checkResponse<T>(response: T) {
   if (!response) throw new Error("Could not fetch");
   return response;
-}
-
-async function get(path: string, params: RequestInit): Promise<Response> {
-  const url = joinPath(
-    environment.authUrl,
-    "realms",
-    environment.realm,
-    "account",
-    path,
-  );
-
-  const response = await fetch(url, {
-    ...params,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${await getAccessToken()}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(response.statusText);
-  }
-  return response;
-}
-
-async function request<T>(
-  path: string,
-  params: RequestInit,
-): Promise<T | undefined> {
-  const response = await get(path, params);
-  if (response.status !== 204) return response.json();
-}
-
-async function getAccessToken() {
-  try {
-    await keycloak.updateToken(5);
-  } catch (error) {
-    keycloak.login();
-  }
-
-  return keycloak.token;
 }

@@ -1,12 +1,12 @@
 import { Spinner } from "@patternfly/react-core";
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { environment } from "../environment";
+import { useEnvironment } from "../root/KeycloakContext";
+import { MenuItem } from "../root/PageNav";
 import { ContentComponentParams } from "../routes";
 import { joinPath } from "../utils/joinPath";
 import { usePromise } from "../utils/usePromise";
 import fetchContentJson from "./fetchContent";
-import { MenuItem } from "../root/PageNav";
 
 function findComponent(
   content: MenuItem[],
@@ -27,11 +27,13 @@ function findComponent(
   return undefined;
 }
 
-const ContentComponent = () => {
+export const ContentComponent = () => {
+  const context = useEnvironment();
+
   const [content, setContent] = useState<MenuItem[]>();
   const { componentId } = useParams<ContentComponentParams>();
 
-  usePromise((signal) => fetchContentJson({ signal }), setContent);
+  usePromise((signal) => fetchContentJson({ signal, context }), setContent);
   const modulePath = useMemo(
     () => findComponent(content || [], componentId!),
     [content, componentId],
@@ -45,6 +47,8 @@ type ComponentProps = {
 };
 
 const Component = ({ modulePath }: ComponentProps) => {
+  const { environment } = useEnvironment();
+
   const Element = lazy(
     () => import(joinPath(environment.resourceUrl, modulePath)),
   );
