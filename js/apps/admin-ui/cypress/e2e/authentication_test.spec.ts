@@ -188,6 +188,23 @@ describe("Authentication test", () => {
     modalUtil.confirmModal();
     masthead.checkNotificationMessage("Flow successfully deleted");
   });
+
+  it("add webauthn authentication to browserflow", () => {
+    const flowName = "WebAuthn Browser";
+    listingPage.clickRowDetails("Browser").clickDetailMenu("Duplicate");
+    duplicateFlowModal.fill(flowName);
+
+    detailPage.clickRowDelete("WebAuthn Browser Browser - Conditional OTP");
+    modalUtil.confirmModal();
+
+    commonPage
+      .actionToolbarUtils()
+      .clickActionToggleButton()
+      .clickDropdownItem("Bind flow");
+
+    new BindFlowModal().fill("Direct grant flow").save();
+    masthead.checkNotificationMessage("Flow successfully updated");
+  });
 });
 
 describe("Required actions", () => {
