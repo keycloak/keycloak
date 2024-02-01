@@ -40,7 +40,7 @@ Recommendations:
 This assumes that each user connects to only one client.
 Memory requirements increase with the number of client sessions per user session (not tested yet).
 
-* For each 40 user logins per second, 1 vCPU per Pod in a three-node cluster (tested with up to 300 per second).
+* For each 30 user logins per second, 1 vCPU per Pod in a three-node cluster (tested with up to 300 per second).
 +
 {project_name} spends most of the CPU time hashing the password provided by the user.
 
@@ -59,7 +59,7 @@ Performance of {project_name} dropped significantly when its Pods were throttled
 Target size:
 
 * 50,000 active user sessions
-* 40 logins per seconds
+* 30 logins per seconds
 * 450 client credential grants per second
 * 350 refresh token requests per second
 
@@ -67,7 +67,7 @@ Limits calculated:
 
 * CPU requested: 3 vCPU
 +
-(40 logins per second = 1 vCPU, 450 client credential grants per second = 1 vCPU, 350 refresh token = 1 vCPU)
+(30 logins per second = 1 vCPU, 450 client credential grants per second = 1 vCPU, 350 refresh token = 1 vCPU)
 
 * CPU limit: 9 vCPU
 +
@@ -88,7 +88,7 @@ The following setup was used to retrieve the settings above to run tests of abou
 * OpenShift 4.13.x deployed on AWS via ROSA.
 * Machinepool with `m5.4xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods.
-* Default user password hashing with PBKDF2 27,500 hash iterations (which is the default).
+* Default user password hashing with PBKDF2(SHA512) 210,000 hash iterations (which is the default).
 * Client credential grants don't use refresh tokens (which is the default).
 * Database seeded with 100,000 users and 100,000 clients.
 * Infinispan caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.
