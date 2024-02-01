@@ -19,6 +19,7 @@ team/core-clients:
   - area/oidc
   - area/oid4vc
   - area/saml
+  - area/token-exchange
 
 team/core-iam:
   - area/admin/fine-grained-permissions
@@ -35,7 +36,6 @@ team/core-shared:
   - area/infinispan
   - area/ldap
   - area/storage
-  - area/token-exchange
 
 team/ui:
   - area/account/ui
