@@ -96,7 +96,7 @@ export default class RealmSettingsPage extends CommonPage {
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
   addBundleButton = "add-translationBtn";
-  confirmAddBundle = "add-bundle-confirm-button";
+  confirmAddTranslation = "add-translation-confirm-button";
   keyInput = "key-input";
   valueInput = "value-input";
   deleteAction = "delete-action";
@@ -474,7 +474,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.keyInput).type(key);
     cy.findByTestId(this.valueInput).type(value);
 
-    cy.findByTestId(this.confirmAddBundle).click({ force: true });
+    cy.findByTestId(this.confirmAddTranslation).click({ force: true });
 
     return this;
   }
