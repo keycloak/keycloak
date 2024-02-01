@@ -243,8 +243,6 @@ Also, the number of default hash iterations for `pbkdf2` based password hashing 
 If a realm does not explicitly configure a password policy with `hashAlgorithm` and `hashIterations`, then
 the new configuration will take effect on the next password based login, or when a user password is created or updated.
 
-Note that the increased iteration counts can have a significant impact on the required CPU resources.
-
 == Performance of new password hashing configuration
 
 Tests on a machine with an Intel i9-8950HK CPU (12) @ 4.800GHz yielded the following &#8960; time differences for hashing 1000 passwords (averages from 3 runs).
@@ -261,6 +259,16 @@ Note that the average duration for the `PBKDF2WithHmacSHA1` was computed with a 
 Users of the `pbkdf2` provider might need to explicitly reduce the
 number of hash iterations to regain acceptable performance.
 This can be done by configuring the hash iterations explicitly in the password policy of the realm.
+
+== Expected increased overall CPU usage and temporary increased database activity
+
+The Concepts for sizing CPU and memory resources in the Keycloak High Availability guide have been updated to reflect the new hashing defaults.
+While the CPU usage per password-based login in our tests increased by 33% (which includes both the changed password hashing and unchanged TLS connection handling), the overall CPU increase should be around 10% to 15%.
+This is due to the averaging effect of Keycloak's other activities like refreshing access tokens and client credential grants, still this depends on the unique workload of an installation.
+
+After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
+As this clears the user from Keycloak's internal cache, you'll also see an increased read activity on the database level.
+This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
 
 == How to keep using the old pbkdf2-sha256 password hashing?
 
