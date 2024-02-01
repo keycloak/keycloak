@@ -246,7 +246,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
                 try {
                     if (roles.isEmpty()) {
-                        policyStore.delete(clientModel.getRealm(), policy.getId());
+                        policyStore.delete(policy.getId());
                     } else {
                         policy.putConfig("roles", JsonSerialization.writeValueAsString(roles));
                     }

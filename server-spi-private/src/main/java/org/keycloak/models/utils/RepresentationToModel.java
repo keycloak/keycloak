@@ -1120,7 +1120,6 @@ public class RepresentationToModel {
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        RealmModel realm = resourceServer.getRealm();
 
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
@@ -1140,7 +1139,7 @@ public class RepresentationToModel {
                         Policy policy = policyStore.findByName(resourceServer, policyName);
 
                         if (policy == null) {
-                            policy = policyStore.findById(realm, resourceServer, policyName);
+                            policy = policyStore.findById(resourceServer, policyName);
                         }
 
                         if (policy == null) {
@@ -1160,7 +1159,7 @@ public class RepresentationToModel {
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.findById(realm, resourceServer, policyRepresentation.getId());
+            Policy policy = policyStore.findById(resourceServer, policyRepresentation.getId());
 
             if (policy == null) {
                 policy = policyStore.findByName(resourceServer, policyRepresentation.getName());
@@ -1267,7 +1266,6 @@ public class RepresentationToModel {
                 return;
             }
             ResourceServer resourceServer = policy.getResourceServer();
-            RealmModel realm = resourceServer.getRealm();
             for (String scopeId : scopeIds) {
                 boolean hasScope = false;
 
@@ -1277,7 +1275,7 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasScope) {
-                    Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, scopeId);
+                    Scope scope = storeFactory.getScopeStore().findById(resourceServer, scopeId);
 
                     if (scope == null) {
                         scope = storeFactory.getScopeStore().findByName(resourceServer, scopeId);
@@ -1309,7 +1307,6 @@ public class RepresentationToModel {
 
     private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
         ResourceServer resourceServer = policy.getResourceServer();
-        RealmModel realm = resourceServer.getRealm();
 
         if (policyIds != null) {
             if (policyIds.isEmpty()) {
@@ -1331,7 +1328,7 @@ public class RepresentationToModel {
                 }
 
                 if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(realm, resourceServer, policyId);
+                    Policy associatedPolicy = policyStore.findById(resourceServer, policyId);
 
                     if (associatedPolicy == null) {
                         associatedPolicy = policyStore.findByName(resourceServer, policyId);
@@ -1369,7 +1366,6 @@ public class RepresentationToModel {
                 }
             }
             ResourceServer resourceServer = policy.getResourceServer();
-            RealmModel realm = resourceServer.getRealm();
 
             for (String resourceId : resourceIds) {
                 boolean hasResource = false;
@@ -1379,7 +1375,7 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    Resource resource = storeFactory.getResourceStore().findById(realm, resourceServer, resourceId);
+                    Resource resource = storeFactory.getResourceStore().findById(resourceServer, resourceId);
 
                     if (resource == null) {
                         resource = storeFactory.getResourceStore().findByName(resourceServer, resourceId);
@@ -1445,7 +1441,7 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(realm, resourceServer, resource.getId());
+            existing = resourceStore.findById(resourceServer, resource.getId());
         } else {
             existing = resourceStore.findByName(resourceServer, resource.getName(), ownerId);
         }
@@ -1519,7 +1515,7 @@ public class RepresentationToModel {
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(resourceServer.getRealm(), resourceServer, scope.getId());
+            existing = scopeStore.findById(resourceServer, scope.getId());
         } else {
             existing = scopeStore.findByName(resourceServer, scope.getName());
         }
@@ -1545,13 +1541,13 @@ public class RepresentationToModel {
 
     public static PermissionTicket toModel(PermissionTicketRepresentation representation, ResourceServer resourceServer, AuthorizationProvider authorization) {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getRealm(), resourceServer, representation.getId());
+        PermissionTicket ticket = ticketStore.findById(resourceServer, representation.getId());
         boolean granted = representation.isGranted();
 
         if (granted && !ticket.isGranted()) {
             ticket.setGrantedTimestamp(System.currentTimeMillis());
         } else if (!granted) {
-            ticketStore.delete(resourceServer.getRealm(), ticket.getId());
+            ticketStore.delete(ticket.getId());
         }
 
         return ticket;

@@ -74,7 +74,7 @@ public class AbstractPermissionService {
                     throw new ErrorResponseException("invalid_resource_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
                 }
             } else {
-                Resource resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceSetId);
+                Resource resource = resourceStore.findById(resourceServer, resourceSetId);
 
                 if (resource != null) {
                     resources.add(resource);

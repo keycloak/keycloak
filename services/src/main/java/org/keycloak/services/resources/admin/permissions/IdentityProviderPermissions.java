@@ -92,7 +92,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
 
     }
@@ -102,7 +102,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
         if (server == null) return;
         deletePolicy(getExchangeToPermissionName(idp), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(idp));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override
