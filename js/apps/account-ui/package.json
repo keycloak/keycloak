@@ -1,6 +1,14 @@
 {
   "name": "account-ui",
   "type": "module",
+  "main": "dist/account-ui.js",
+  "types": "./dist/account-ui.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/account-ui.js",
+      "types": "./dist/account-ui.d.ts"
+    }
+  },
   "scripts": {
     "dev": "wireit",
     "build": "wireit",

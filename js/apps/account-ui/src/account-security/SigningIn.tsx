@@ -27,9 +27,9 @@ import {
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
+import { useEnvironment } from "../root/KeycloakContext";
 
 type MobileLinkProps = {
   title: string;
@@ -63,16 +63,19 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
   );
 };
 
-const SigningIn = () => {
+export const SigningIn = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
-  const { login } = keycloak;
+  const { login } = context.keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getCredentials({ signal }), setCredentials, [key]);
+  usePromise((signal) => getCredentials({ signal, context }), setCredentials, [
+    key,
+  ]);
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
@@ -181,7 +184,10 @@ const SigningIn = () => {
                             buttonVariant="danger"
                             onContinue={async () => {
                               try {
-                                await deleteCredentials(meta.credential);
+                                await deleteCredentials(
+                                  context,
+                                  meta.credential,
+                                );
                                 addAlert(
                                   t("successRemovedMessage", {
                                     userLabel: label(meta.credential),

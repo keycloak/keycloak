@@ -17,9 +17,10 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts, SelectControl, KeycloakTextInput } from "ui-shared";
+import { useEnvironment } from "../root/KeycloakContext";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -41,6 +42,7 @@ export const ShareTheResource = ({
   onClose,
 }: ShareTheResourceProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
   const form = useForm<FormValues>();
   const {
@@ -79,7 +81,7 @@ export const ShareTheResource = ({
         usernames
           .filter(({ value }) => value !== "")
           .map(({ value: username }) =>
-            updateRequest(resource._id, username, permissions),
+            updateRequest(context, resource._id, username, permissions),
           ),
       );
       addAlert(t("shareSuccess"));

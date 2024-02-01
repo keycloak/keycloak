@@ -28,12 +28,13 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { environment } from "../environment";
 import { TFuncKey, i18n } from "../i18n";
+import { useEnvironment } from "../root/KeycloakContext";
 import { usePromise } from "../utils/usePromise";
 
-const PersonalInfo = () => {
+export const PersonalInfo = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const keycloak = useKeycloak();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
@@ -45,8 +46,8 @@ const PersonalInfo = () => {
   usePromise(
     (signal) =>
       Promise.all([
-        getPersonalInfo({ signal }),
-        getSupportedLocales({ signal }),
+        getPersonalInfo({ signal, context }),
+        getSupportedLocales({ signal, context }),
       ]),
     ([personalInfo, supportedLocales]) => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
@@ -57,7 +58,7 @@ const PersonalInfo = () => {
 
   const onSubmit = async (user: UserRepresentation) => {
     try {
-      await savePersonalInfo(user);
+      await savePersonalInfo(context, user);
       const locale = user.attributes?.["locale"]?.toString();
       i18n.changeLanguage(locale, (error) => {
         if (error) {
@@ -87,7 +88,7 @@ const PersonalInfo = () => {
     updateEmailActionEnabled,
     isRegistrationEmailAsUsername,
     isEditUserNameAllowed,
-  } = environment.features;
+  } = context.environment.features;
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
@@ -136,7 +137,7 @@ const PersonalInfo = () => {
             {t("cancel")}
           </Button>
         </ActionGroup>
-        {environment.features.deleteAccountAllowed && (
+        {context.environment.features.deleteAccountAllowed && (
           <ExpandableSection
             data-testid="delete-account"
             toggleText={t("deleteAccount")}
