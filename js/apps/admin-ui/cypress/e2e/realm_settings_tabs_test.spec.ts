@@ -209,9 +209,7 @@ describe("Realm settings tabs tests", () => {
       cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage(
-        "Successfully removed translations(s).",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Realm Overrides - Search for and delete bundle", () => {
