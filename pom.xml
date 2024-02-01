@@ -184,7 +184,8 @@
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
-        <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
+        <maven.version>3.9.6</maven.version>
+        <maven.plugins.version>3.11.0</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
@@ -1717,7 +1718,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${maven.plugin.plugin.version}</version>
+                    <version>${maven.plugins.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.google.code.maven-replacer-plugin</groupId>
