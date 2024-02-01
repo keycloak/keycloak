@@ -66,7 +66,7 @@ public class KeycloakDistConfiguratorTest {
 
     @Test
     public void cache() {
-        testFirstClassCitizen(Map.of("cache-config-file", "/opt/keycloak/conf/cache/file.xml"));
+        testFirstClassCitizen(Map.of("cache-config-file", "cache/file.xml"));
     }
 
     @Test
