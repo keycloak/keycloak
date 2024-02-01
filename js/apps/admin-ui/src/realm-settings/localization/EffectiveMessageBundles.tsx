@@ -34,6 +34,7 @@ import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
+  defaultLocales: string[];
 };
 
 type EffectiveMessageBundlesSearchForm = {
@@ -52,6 +53,7 @@ const defaultValues: EffectiveMessageBundlesSearchForm = {
 
 export const EffectiveMessageBundles = ({
   defaultSupportedLocales,
+  defaultLocales,
 }: EffectiveMessageBundlesProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -136,6 +138,8 @@ export const EffectiveMessageBundles = ({
       return [];
     }
   };
+
+  const combinedLocales = [...defaultLocales, ...defaultSupportedLocales];
 
   function submitSearch() {
     setSearchDropdownOpen(false);
@@ -392,7 +396,7 @@ export const EffectiveMessageBundles = ({
                           isDisabled
                         />,
                       ].concat(
-                        defaultSupportedLocales.map((option) => (
+                        combinedLocales.map((option) => (
                           <SelectOption key={option} value={option}>
                             {localeToDisplayName(option, whoAmI.getLocale())}
                           </SelectOption>
