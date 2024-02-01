@@ -321,7 +321,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        ServicesLogger.LOGGER.loginFailure(event.userId, event.clientConnection.getRemoteAddr());
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
