@@ -74,7 +74,7 @@
     "file-selector": "^0.6.0",
     "flat": "^6.0.1",
     "i18next": "^23.8.1",
-    "i18next-http-backend": "^2.4.2",
+    "i18next-http-backend": "^2.4.3",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
     "monaco-editor": "^0.45.0",
