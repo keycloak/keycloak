@@ -112,7 +112,7 @@ public class KeycloakDistConfigurator {
 
     void configureCache() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getCacheSpec())
-                .mapOption("cache-config-file", cache -> Optional.ofNullable(cache.getConfigMapFile()).map(c -> Constants.CACHE_CONFIG_FOLDER + "/" + c.getKey()).orElse(null));
+                .mapOption("cache-config-file", cache -> Optional.ofNullable(cache.getConfigMapFile()).map(c -> Constants.CACHE_CONFIG_SUBFOLDER + "/" + c.getKey()).orElse(null));
     }
 
     void configureDatabase() {
