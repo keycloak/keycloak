@@ -352,6 +352,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- Quick workarkoud for https://github.com/quarkusio/quarkus/issues/38510 (affecting Quarkus 3.7.0 and 3.7.1) -->
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit-element</artifactId>
+                <version>4.0.3</version>
+            </dependency>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-bom</artifactId>
