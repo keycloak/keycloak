@@ -42,7 +42,7 @@
     "@vitejs/plugin-react-swc": "^3.5.0",
     "lightningcss": "^1.23.0",
     "vite": "^5.0.12",
-    "vite-plugin-checker": "^0.6.2"
+    "vite-plugin-checker": "^0.6.4"
   },
   "wireit": {
     "dev": {

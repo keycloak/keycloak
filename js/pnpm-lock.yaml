@@ -139,8 +139,8 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/node@20.11.15)(lightningcss@1.23.0)
       vite-plugin-checker:
-        specifier: ^0.6.2
-        version: 0.6.2(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
+        specifier: ^0.6.4
+        version: 0.6.4(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
 
   apps/admin-ui:
     dependencies:
@@ -281,8 +281,8 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/node@20.11.15)(lightningcss@1.23.0)
       vite-plugin-checker:
-        specifier: ^0.6.2
-        version: 0.6.2(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
+        specifier: ^0.6.4
+        version: 0.6.4(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
       vitest:
         specifier: ^1.2.2
         version: 1.2.2(@types/node@20.11.15)(jsdom@24.0.0)(lightningcss@1.23.0)
@@ -416,8 +416,8 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/node@20.11.15)(lightningcss@1.23.0)
       vite-plugin-checker:
-        specifier: ^0.6.2
-        version: 0.6.2(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
+        specifier: ^0.6.4
+        version: 0.6.4(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
       vite-plugin-dts:
         specifier: ^3.7.2
         version: 3.7.2(@types/node@20.11.15)(rollup@4.9.6)(typescript@5.3.3)(vite@5.0.12)
@@ -471,8 +471,8 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/node@20.11.15)(lightningcss@1.23.0)
       vite-plugin-checker:
-        specifier: ^0.6.2
-        version: 0.6.2(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
+        specifier: ^0.6.4
+        version: 0.6.4(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12)
       vite-plugin-dts:
         specifier: ^3.7.2
         version: 3.7.2(@types/node@20.11.15)(rollup@4.9.6)(typescript@5.3.3)(vite@5.0.12)
@@ -5340,10 +5340,6 @@ packages:
   /lodash-es@4.17.21:
     resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
 
-  /lodash.debounce@4.0.8:
-    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
-    dev: true
-
   /lodash.get@4.4.2:
     resolution: {integrity: sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ==}
     dev: true
@@ -5358,10 +5354,6 @@ packages:
 
   /lodash.once@4.1.1:
     resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
-    dev: true
-
-  /lodash.pick@4.4.0:
-    resolution: {integrity: sha512-hXt6Ul/5yWjfklSGvLQl8vM//l3FtyHZeuelpzK6mm99pNvN9yTDruNZPEJZD1oWrqo+izBmB7oUfWgcCX7s4Q==}
     dev: true
 
   /lodash@4.17.21:
@@ -7207,8 +7199,8 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-checker@0.6.2(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12):
-    resolution: {integrity: sha512-YvvvQ+IjY09BX7Ab+1pjxkELQsBd4rPhWNw8WLBeFVxu/E7O+n6VYAqNsKdK/a2luFlX/sMpoWdGFfg4HvwdJQ==}
+  /vite-plugin-checker@0.6.4(eslint@8.56.0)(typescript@5.3.3)(vite@5.0.12):
+    resolution: {integrity: sha512-2zKHH5oxr+ye43nReRbC2fny1nyARwhxdm0uNYp/ERy4YvU9iZpNOsueoi/luXw5gnpqRSvjcEPxXbS153O2wA==}
     engines: {node: '>=14.16'}
     peerDependencies:
       eslint: '>=7'
@@ -7246,8 +7238,6 @@ packages:
       eslint: 8.56.0
       fast-glob: 3.3.1
       fs-extra: 11.1.1
-      lodash.debounce: 4.0.8
-      lodash.pick: 4.4.0
       npm-run-path: 4.0.1
       semver: 7.5.4
       strip-ansi: 6.0.1
