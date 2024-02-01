@@ -49,7 +49,6 @@ team/community:
 
 team/core:
 team/store:
-team/other:
 
 no-team:
   - area/docs
