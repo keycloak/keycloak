@@ -86,7 +86,7 @@ export const EffectiveMessageBundles = ({
     }
 
     return localeSort(
-      Object.values(themes)
+      Object.values(themes as Record<string, { name: string }[]>)
         .flatMap((theme) => theme.map((item) => item.name))
         .filter((value, index, self) => self.indexOf(value) === index),
       (name) => name,
