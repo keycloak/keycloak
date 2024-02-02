@@ -68,10 +68,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
     defaultValue: realm.internationalizationEnabled,
   });
 
-  const defaultLocales = useMemo(
-    () => (realm.defaultLocale ? [realm.defaultLocale] : []),
-    [realm.defaultLocale],
-  );
+  const defaultLocales = useWatch({
+    name: "defaultLocale",
+    control,
+    defaultValue: realm.defaultLocale ? [realm.defaultLocale] : [],
+  });
 
   return (
     <Tabs

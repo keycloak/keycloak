@@ -4,12 +4,11 @@ import {
   Chip,
   ChipGroup,
   Divider,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
   FormGroup,
+  Icon,
   Select,
   SelectOption,
   SelectVariant,
@@ -31,6 +30,8 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
+import { CaretDownIcon } from "@patternfly/react-icons";
+import "../realm-settings-section.css";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -92,6 +93,10 @@ export const EffectiveMessageBundles = ({
     );
   }, [themes]);
 
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
+
   const filterLabels: Record<keyof EffectiveMessageBundlesSearchForm, string> =
     {
       theme: t("theme"),
@@ -139,10 +144,6 @@ export const EffectiveMessageBundles = ({
     }
   };
 
-  const combinedLocales = Array.from(
-    new Set([...defaultLocales, ...defaultSupportedLocales]),
-  );
-
   function submitSearch() {
     setSearchDropdownOpen(false);
     commitFilters();
@@ -185,6 +186,8 @@ export const EffectiveMessageBundles = ({
     setKey(key + 1);
   }
 
+  console.log("defaultLocales ", defaultLocales);
+
   const effectiveMessageBunldesSearchFormDisplay = () => {
     return (
       <Flex
@@ -199,276 +202,284 @@ export const EffectiveMessageBundles = ({
           </TextContent>
         </FlexItem>
         <FlexItem>
-          <Dropdown
-            id="effective-message-bundles-search-select"
-            data-testid="EffectiveMessageBundlesSearchSelector"
-            toggle={
-              <DropdownToggle
-                data-testid="effectiveMessageBundlesSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-              >
-                {t("searchForEffectiveMessageBundles")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <button
+            className="kc-effectiveMessageBundles-dropdown"
+            onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
+            aria-label={t("searchForEffectiveMessageBundles")}
           >
-            <Form
-              isHorizontal
-              className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
-              data-testid="effectiveMessageBundlesSearchForm"
-            >
-              <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
-                <Controller
-                  name="theme"
-                  control={control}
-                  rules={{
-                    validate: (value) => (value || "").length > 0,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      name="theme"
-                      data-testid="effective_message_bundles-theme-searchField"
-                      chipGroupProps={{
-                        numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      variant={SelectVariant.single}
-                      typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
-                      selections={field.value}
-                      onSelect={(_, selectedValue) => {
-                        field.onChange(selectedValue.toString());
-                      }}
-                      onClear={(theme) => {
-                        theme.stopPropagation();
-                        field.onChange("");
-                      }}
-                      isOpen={selectThemesOpen}
-                      aria-labelledby={t("theme")}
-                      chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
-                            key={field.value}
-                            onClick={(theme) => {
-                              theme.stopPropagation();
-                              field.onChange("");
-                            }}
-                          >
-                            {field.value}
-                          </Chip>
-                        </ChipGroup>
-                      }
-                    >
-                      {[
-                        <SelectOption
-                          key="theme_placeholder"
-                          value="Select theme"
-                          label={t("selectTheme")}
-                          className="kc__effective_message_bundles_search_theme__placeholder"
-                          isDisabled
-                        />,
-                      ].concat(
-                        themeNames.map((option) => (
-                          <SelectOption key={option} value={option} />
-                        )),
-                      )}
-                    </Select>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("themeType")}
-                fieldId="kc-themeType"
-                isRequired
+            {t("searchForEffectiveMessageBundles")}
+            <Icon className="kc-effectiveMessageBundles-icon">
+              <CaretDownIcon />
+            </Icon>
+          </button>
+
+          {searchDropdownOpen && (
+            <div className="kc-effectiveMessageBundles-dropdown-content">
+              <Form
+                isHorizontal
+                className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
+                data-testid="effectiveMessageBundlesSearchForm"
               >
-                <Controller
-                  name="themeType"
-                  control={control}
-                  rules={{
-                    validate: (value) => (value || "").length > 0,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      name="themeType"
-                      data-testid="effective-message-bundles-feature-searchField"
-                      chipGroupProps={{
-                        numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      variant={SelectVariant.single}
-                      typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
-                      selections={field.value}
-                      onSelect={(_, selectedValue) => {
-                        field.onChange(selectedValue.toString());
-                      }}
-                      onClear={(themeType) => {
-                        themeType.stopPropagation();
-                        field.onChange("");
-                      }}
-                      isOpen={selectThemeTypeOpen}
-                      aria-labelledby={t("themeType")}
-                      chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
-                            key={field.value}
-                            onClick={(themeType) => {
-                              themeType.stopPropagation();
-                              field.onChange("");
-                            }}
-                          >
-                            {field.value}
-                          </Chip>
-                        </ChipGroup>
-                      }
-                    >
-                      {[
-                        <SelectOption
-                          key="themeType_placeholder"
-                          value="Select theme type"
-                          label={t("selectThemeType")}
-                          className="pf-m-plain"
-                          isDisabled
-                        />,
-                      ].concat(
-                        themeTypes.map((option) => (
-                          <SelectOption key={option} value={option} />
-                        )),
-                      )}
-                    </Select>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup label={t("language")} fieldId="kc-language" isRequired>
-                <Controller
-                  name="locale"
-                  control={control}
-                  rules={{
-                    validate: (value) => (value || "").length > 0,
-                  }}
-                  render={({ field }) => (
-                    <Select
-                      name="language"
-                      data-testid="effective-message-bundles-language-searchField"
-                      chipGroupProps={{
-                        numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      variant={SelectVariant.single}
-                      typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectLanguageOpen(isOpen)}
-                      selections={field.value}
-                      onSelect={(_, selectedValue) => {
-                        field.onChange(selectedValue.toString());
-                      }}
-                      onClear={(language) => {
-                        language.stopPropagation();
-                        field.onChange("");
-                      }}
-                      isOpen={selectLanguageOpen}
-                      aria-labelledby="language"
-                      chipGroupComponent={
-                        <ChipGroup>
-                          {field.value ? (
+                <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
+                  <Controller
+                    name="theme"
+                    control={control}
+                    rules={{
+                      validate: (value) => (value || "").length > 0,
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        name="theme"
+                        data-testid="effective_message_bundles-theme-searchField"
+                        chipGroupProps={{
+                          numChips: 1,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
+                        }}
+                        variant={SelectVariant.single}
+                        typeAheadAriaLabel="Select"
+                        onToggle={setSelectThemesOpen}
+                        selections={field.value}
+                        onSelect={(_, selectedValue) => {
+                          field.onChange(selectedValue.toString());
+                          setSelectThemesOpen(false);
+                        }}
+                        onClear={(theme) => {
+                          theme.stopPropagation();
+                          field.onChange("");
+                        }}
+                        isOpen={selectThemesOpen}
+                        aria-labelledby={t("theme")}
+                        chipGroupComponent={
+                          <ChipGroup>
                             <Chip
                               key={field.value}
-                              onClick={(language) => {
-                                language.stopPropagation();
+                              onClick={(theme) => {
+                                theme.stopPropagation();
                                 field.onChange("");
                               }}
                             >
-                              {localeToDisplayName(
-                                field.value,
-                                whoAmI.getLocale(),
-                              )}
+                              {field.value}
                             </Chip>
-                          ) : null}
-                        </ChipGroup>
-                      }
-                    >
-                      {[
-                        <SelectOption
-                          key="language_placeholder"
-                          value="Select language"
-                          label={t("selectLanguage")}
-                          className="pf-m-plain"
-                          isDisabled
-                        />,
-                      ].concat(
-                        combinedLocales.map((option) => (
-                          <SelectOption key={option} value={option}>
-                            {localeToDisplayName(option, whoAmI.getLocale())}
-                          </SelectOption>
-                        )),
-                      )}
-                    </Select>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup label={t("hasWords")} fieldId="kc-hasWords">
-                <Controller
-                  name="hasWords"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <KeycloakTextInput
-                        id="kc-hasWords"
-                        data-testid="effective-message-bundles-hasWords-searchField"
-                        value={field.value.join(" ")}
-                        onChange={(e) => {
-                          const target = e.target as HTMLInputElement;
-                          const words = target.value
-                            .split(" ")
-                            .map((word) => word.trim());
-                          field.onChange(words);
+                          </ChipGroup>
+                        }
+                      >
+                        {[
+                          <SelectOption
+                            key="theme_placeholder"
+                            value="Select theme"
+                            label={t("selectTheme")}
+                            className="kc__effective_message_bundles_search_theme__placeholder"
+                            isDisabled
+                          />,
+                        ].concat(
+                          themeNames.map((option) => (
+                            <SelectOption key={option} value={option} />
+                          )),
+                        )}
+                      </Select>
+                    )}
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("themeType")}
+                  fieldId="kc-themeType"
+                  isRequired
+                >
+                  <Controller
+                    name="themeType"
+                    control={control}
+                    rules={{
+                      validate: (value) => (value || "").length > 0,
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        name="themeType"
+                        data-testid="effective-message-bundles-feature-searchField"
+                        chipGroupProps={{
+                          numChips: 1,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
                         }}
-                      />
-                      <ChipGroup>
-                        {field.value.map((word, index) => (
-                          <Chip
-                            key={index}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newWords = field.value.filter(
-                                (_, i) => i !== index,
-                              );
-                              field.onChange(newWords);
-                            }}
-                          >
-                            {word}
-                          </Chip>
-                        ))}
-                      </ChipGroup>
-                    </div>
-                  )}
-                />
-              </FormGroup>
-              <ActionGroup>
-                <Button
-                  variant={"primary"}
-                  onClick={() => {
-                    setSearchPerformed(true);
-                    submitSearch();
-                  }}
-                  data-testid="search-effective-message-bundles-btn"
-                  isDisabled={!isValid}
+                        variant={SelectVariant.single}
+                        typeAheadAriaLabel="Select"
+                        onToggle={setSelectThemeTypeOpen}
+                        selections={field.value}
+                        onSelect={(_, selectedValue) => {
+                          field.onChange(selectedValue.toString());
+                          setSelectThemeTypeOpen(false);
+                        }}
+                        onClear={(themeType) => {
+                          themeType.stopPropagation();
+                          field.onChange("");
+                        }}
+                        isOpen={selectThemeTypeOpen}
+                        aria-labelledby={t("themeType")}
+                        chipGroupComponent={
+                          <ChipGroup>
+                            <Chip
+                              key={field.value}
+                              onClick={(themeType) => {
+                                themeType.stopPropagation();
+                                field.onChange("");
+                              }}
+                            >
+                              {field.value}
+                            </Chip>
+                          </ChipGroup>
+                        }
+                      >
+                        {[
+                          <SelectOption
+                            key="themeType_placeholder"
+                            value="Select theme type"
+                            label={t("selectThemeType")}
+                            className="pf-m-plain"
+                            isDisabled
+                          />,
+                        ].concat(
+                          themeTypes.map((option) => (
+                            <SelectOption key={option} value={option} />
+                          )),
+                        )}
+                      </Select>
+                    )}
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("language")}
+                  fieldId="kc-language"
+                  isRequired
                 >
-                  {t("search")}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={resetSearch}
-                  data-testid="reset-search-effective-message-bundles-btn"
-                  isDisabled={!isDirty}
-                >
-                  {t("reset")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </Dropdown>
+                  <Controller
+                    name="locale"
+                    control={control}
+                    rules={{
+                      validate: (value) => (value || "").length > 0,
+                    }}
+                    render={({ field }) => (
+                      <Select
+                        name="language"
+                        data-testid="effective-message-bundles-language-searchField"
+                        chipGroupProps={{
+                          numChips: 1,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
+                        }}
+                        variant={SelectVariant.single}
+                        typeAheadAriaLabel="Select"
+                        onToggle={setSelectLanguageOpen}
+                        selections={field.value}
+                        onSelect={(_, selectedValue) => {
+                          field.onChange(selectedValue.toString());
+                          setSelectLanguageOpen(false);
+                        }}
+                        onClear={(language) => {
+                          language.stopPropagation();
+                          field.onChange("");
+                        }}
+                        isOpen={selectLanguageOpen}
+                        aria-labelledby="language"
+                        chipGroupComponent={
+                          <ChipGroup>
+                            {field.value ? (
+                              <Chip
+                                key={field.value}
+                                onClick={(language) => {
+                                  language.stopPropagation();
+                                  field.onChange("");
+                                }}
+                              >
+                                {localeToDisplayName(
+                                  field.value,
+                                  whoAmI.getLocale(),
+                                )}
+                              </Chip>
+                            ) : null}
+                          </ChipGroup>
+                        }
+                      >
+                        {[
+                          <SelectOption
+                            key="language_placeholder"
+                            value="Select language"
+                            label={t("selectLanguage")}
+                            className="pf-m-plain"
+                            isDisabled
+                          />,
+                        ].concat(
+                          combinedLocales.map((option) => (
+                            <SelectOption key={option} value={option}>
+                              {localeToDisplayName(option, whoAmI.getLocale())}
+                            </SelectOption>
+                          )),
+                        )}
+                      </Select>
+                    )}
+                  />
+                </FormGroup>
+                <FormGroup label={t("hasWords")} fieldId="kc-hasWords">
+                  <Controller
+                    name="hasWords"
+                    control={control}
+                    render={({ field }) => (
+                      <div>
+                        <KeycloakTextInput
+                          id="kc-hasWords"
+                          data-testid="effective-message-bundles-hasWords-searchField"
+                          value={field.value.join(" ")}
+                          onChange={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            const words = target.value
+                              .split(" ")
+                              .map((word) => word.trim());
+                            field.onChange(words);
+                          }}
+                        />
+                        <ChipGroup>
+                          {field.value.map((word, index) => (
+                            <Chip
+                              key={index}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newWords = field.value.filter(
+                                  (_, i) => i !== index,
+                                );
+                                field.onChange(newWords);
+                              }}
+                            >
+                              {word}
+                            </Chip>
+                          ))}
+                        </ChipGroup>
+                      </div>
+                    )}
+                  />
+                </FormGroup>
+                <ActionGroup className="pf-u-mt-sm">
+                  <Button
+                    variant={"primary"}
+                    onClick={() => {
+                      setSearchPerformed(true);
+                      submitSearch();
+                    }}
+                    data-testid="search-effective-message-bundles-btn"
+                    isDisabled={!isValid}
+                  >
+                    {t("search")}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={resetSearch}
+                    data-testid="reset-search-effective-message-bundles-btn"
+                    isDisabled={!isDirty}
+                  >
+                    {t("reset")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </div>
+          )}
           <Button
             variant="primary"
             className="pf-u-ml-md"
@@ -486,7 +497,6 @@ export const EffectiveMessageBundles = ({
                   keyof EffectiveMessageBundlesSearchForm,
                   string | string[],
                 ];
-
                 return (
                   <ChipGroup
                     className="pf-u-mt-md pf-u-mr-md"
