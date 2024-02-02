@@ -537,11 +537,11 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
         List<Policy> policies = policyStore
-                .find(realm, resourceServer, filters, null, null);
+                .find(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
 
         policies = policyStore
-                .find(realm, resourceServer, Collections.emptyMap(), null, null);
+                .find(resourceServer, Collections.emptyMap(), null, null);
         assertTrue(policies.isEmpty());
     }
 
@@ -964,7 +964,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-                .find(realm, resourceServer, filters, null, null);
+                .find(resourceServer, filters, null, null);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -973,13 +973,13 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         Resource resource = policy.getResources().iterator().next();
         assertEquals("Resource A", resource.getName());
 
-        provider.getStoreFactory().getResourceStore().delete(realm, resource.getId());
+        provider.getStoreFactory().getResourceStore().delete(resource.getId());
 
         filters = new HashMap<>();
 
         filters.put(OWNER, new String[] {user.getId()});
         policies = provider.getStoreFactory().getPolicyStore()
-                .find(realm, resourceServer, filters, null, null);
+                .find(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
     }
 
