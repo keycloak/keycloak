@@ -507,7 +507,10 @@ export const EffectiveMessageBundles = ({
                     {typeof value === "string" ? (
                       <Chip isReadOnly>
                         {key === "locale"
-                          ? localeToDisplayName(value, whoAmI.getLocale())
+                          ? localeToDisplayName(
+                              value,
+                              whoAmI.getLocale(),
+                            )?.toLowerCase()
                           : value}
                       </Chip>
                     ) : (
