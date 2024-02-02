@@ -1,15 +1,21 @@
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormGroup,
+  FormGroupProps,
+  ValidatedOptions,
+} from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 import { HelpItem } from "./HelpItem";
 
-export type FormLabelProps<T extends FieldValues = FieldValues> = {
+export type FieldProps<T extends FieldValues = FieldValues> = {
   label?: string;
   name: string;
   labelIcon?: string;
   error?: FieldError | Merge<FieldError, T>;
   isRequired: boolean;
 };
+
+type FormLabelProps = FieldProps & Omit<FormGroupProps, "label" | "labelIcon">;
 
 export const FormLabel = ({
   name,

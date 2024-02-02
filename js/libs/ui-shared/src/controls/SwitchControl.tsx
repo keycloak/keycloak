@@ -32,6 +32,7 @@ export const SwitchControl = <
   const { control } = useFormContext();
   return (
     <FormLabel
+      hasNoPaddingTop
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
