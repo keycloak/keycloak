@@ -6,13 +6,14 @@ import {
   Button,
   ButtonVariant,
   DropdownItem,
+  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { TextControl } from "ui-shared";
+import { KeycloakTextInput, TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";
@@ -113,7 +114,6 @@ export default function MappingDetails() {
     ({ config, mapping, data }) => {
       setConfig(config);
       setMapping(mapping);
-      setValue("mapperType", mapping?.name);
       if (data) {
         convertToFormValues(data, setValue);
       }
@@ -199,11 +199,15 @@ export default function MappingDetails() {
             onSubmit={handleSubmit(save)}
             role="manage-clients"
           >
-            <TextControl
-              name="mapperType"
-              label={t("mapperType")}
-              readOnlyVariant="default"
-            />
+            <FormGroup label={t("mapperType")} fieldId="mapperType">
+              <KeycloakTextInput
+                type="text"
+                id="mapperType"
+                name="mapperType"
+                readOnlyVariant="default"
+                value={mapping?.name}
+              />
+            </FormGroup>
             <TextControl
               name="name"
               label={t("name")}

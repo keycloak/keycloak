@@ -157,6 +157,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.display.on.consent.screen",
           )}
+          defaultValue={displayOnConsentScreen}
           label={t("displayOnConsentScreen")}
           labelIcon={t("displayOnConsentScreenHelp")}
           stringify
