@@ -19,7 +19,7 @@
 # Testsuite
 ###################################################################################################
 
-/testsuite/                                                 @keycloak/core-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers @keycloak/maintainers
+/testsuite/                                                 @keycloak/core-clients-maintainers @keycloak/core-iam-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Core (@keycloak/core-maintainers)
