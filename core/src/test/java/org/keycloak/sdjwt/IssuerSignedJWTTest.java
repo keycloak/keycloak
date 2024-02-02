@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.sdjwt;
 
 import static org.junit.Assert.assertEquals;
@@ -82,7 +98,6 @@ public class IssuerSignedJWTTest {
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-issuer-payload.json");
         assertEquals(expected, jwt.getPayload());
     }
-    
 
     @Test
     public void testIssuerSignedJWTWithUndiclosedClaims3_3() {
@@ -107,9 +122,9 @@ public class IssuerSignedJWTTest {
         ((ObjectNode) holderClaimSet).setAll((ObjectNode) issuerClaimSet);
 
         SdJwt sdJwt = SdJwt.builder()
-            .withDisclosureSpec(disclosureSpec)
-            .withClaimSet(holderClaimSet)
-            .build();
+                .withDisclosureSpec(disclosureSpec)
+                .withClaimSet(holderClaimSet)
+                .build();
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s3.3-issuer-payload.json");

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.sdjwt;
 
 import java.util.ArrayList;
@@ -31,18 +47,19 @@ public class SdJwt {
 
     private Optional<String> sdJwtString = Optional.empty();
 
-    private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts, Optional<KeyBindingJWT> keyBindingJWT,
+    private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts,
+            Optional<KeyBindingJWT> keyBindingJWT,
             SignatureSignerContext signer) {
         claims = new ArrayList<>();
         claimSet.fields()
                 .forEachRemaining(entry -> claims.add(createClaim(entry.getKey(), entry.getValue(), disclosureSpec)));
 
         this.issuerSignedJWT = IssuerSignedJWT.builder()
-            .withClaims(claims)
-            .withDecoyClaims(createdDecoyClaims(disclosureSpec))
-            .withNestedDisclosures(!nesteSdJwts.isEmpty())
-            .withSigner(signer)
-            .build();
+                .withClaims(claims)
+                .withDecoyClaims(createdDecoyClaims(disclosureSpec))
+                .withNestedDisclosures(!nesteSdJwts.isEmpty())
+                .withSigner(signer)
+                .build();
 
         nesteSdJwts.stream().forEach(nestedJwt -> this.disclosures.addAll(nestedJwt.getDisclosures()));
         this.disclosures.addAll(getDisclosureStrings(claims));
@@ -135,12 +152,12 @@ public class SdJwt {
         ArrayNode arrayNode = validateArrayNode(claimName, claimValue);
         ArrayDisclosure.Builder arrayDisclosureBuilder = ArrayDisclosure.builder().withClaimName(claimName);
 
-        if(undisclosedArrayElts!=null){
+        if (undisclosedArrayElts != null) {
             IntStream.range(0, arrayNode.size())
                     .forEach(i -> processArrayElement(arrayDisclosureBuilder, arrayNode.get(i),
                             undisclosedArrayElts.get(i)));
         }
-        
+
         if (decoyArrayElts != null) {
             decoyArrayElts.entrySet().stream()
                     .forEach(e -> arrayDisclosureBuilder.withDecoyElt(e.getKey(), e.getValue().getSalt()));

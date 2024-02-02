@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.sdjwt.sdjwtvp;
 
 import static org.junit.Assert.assertEquals;
@@ -125,16 +141,18 @@ public class SdJwtVPTest {
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
-        String presentation = sdJwtVP.present(null, keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
+        String presentation = sdJwtVP.present(null, keyBindingClaims,
+                TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
 
         // Verify with public key from settings
         presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.getInstance().getHolderVerifierContext());
-        
+
         // Verify with public key from cnf claim
-        presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+        presenteSdJwtVP.getKeyBindingJWT().get()
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
     }
 
     @Test(expected = VerificationException.class)
@@ -142,12 +160,14 @@ public class SdJwtVPTest {
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
-        String presentation = sdJwtVP.present(null, keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
+        String presentation = sdJwtVP.present(null, keyBindingClaims,
+                TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
         // Verify with public key from cnf claim
-        presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+        presenteSdJwtVP.getKeyBindingJWT().get()
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
 
         // Verify with wrong public key from settings (iisuer)
         presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.getInstance().getIssuerVerifierContext());
@@ -159,13 +179,15 @@ public class SdJwtVPTest {
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         // disclose only the given_name
-        String presentation = sdJwtVP.present(Arrays.asList("jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"), keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
+        String presentation = sdJwtVP.present(Arrays.asList("jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"),
+                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
 
         // Verify with public key from cnf claim
-        presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+        presenteSdJwtVP.getKeyBindingJWT().get()
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
     }
 
 }

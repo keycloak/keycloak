@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.sdjwt.vp;
 
 import java.io.IOException;
@@ -27,13 +43,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class SdJwtVP {
     private String sdJwtVpString;
     private final IssuerSignedJWT issuerSignedJWT;
-    
+
     private final Map<String, ArrayNode> claims;
     private final Map<String, String> disclosures;
     private final Map<String, String> recursiveDigests;
     private final List<String> ghostDigests;
     private final String hashAlgorithm;
-    
+
     private final Optional<KeyBindingJWT> keyBindingJWT;
 
     public IssuerSignedJWT getIssuerSignedJWT() {
@@ -64,7 +80,9 @@ public class SdJwtVP {
         return keyBindingJWT;
     }
 
-    private SdJwtVP(String sdJwtVpString, String hashAlgorithm, IssuerSignedJWT issuerSignedJWT, Map<String, ArrayNode> claims, Map<String, String> disclosures, Map<String, String> recursiveDigests, List<String> ghostDigests, Optional<KeyBindingJWT> keyBindingJWT) {
+    private SdJwtVP(String sdJwtVpString, String hashAlgorithm, IssuerSignedJWT issuerSignedJWT,
+            Map<String, ArrayNode> claims, Map<String, String> disclosures, Map<String, String> recursiveDigests,
+            List<String> ghostDigests, Optional<KeyBindingJWT> keyBindingJWT) {
         this.sdJwtVpString = sdJwtVpString;
         this.hashAlgorithm = hashAlgorithm;
         this.issuerSignedJWT = issuerSignedJWT;
@@ -93,13 +111,13 @@ public class SdJwtVP {
         String[] split = disclosuresString.split(SdJwt.DELIMITER);
         for (String disclosure : split) {
             String disclosureDigest = SdJwtUtils.hashAndBase64EncodeNoPad(disclosure.getBytes(), hashAlgorithm);
-            if(disclosures.containsKey(disclosureDigest)) {
+            if (disclosures.containsKey(disclosureDigest)) {
                 throw new IllegalArgumentException("Duplicate disclosure digest");
             }
             disclosures.put(disclosureDigest, disclosure);
             ArrayNode disclosureData;
             try {
-                disclosureData = (ArrayNode)SdJwtUtils.mapper.readTree(Base64Url.decode(disclosure));
+                disclosureData = (ArrayNode) SdJwtUtils.mapper.readTree(Base64Url.decode(disclosure));
                 claims.put(disclosureDigest, disclosureData);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Invalid disclosure data");
@@ -110,28 +128,28 @@ public class SdJwtVP {
         Map<String, String> recursiveDigests = new HashMap<>();
         List<String> ghostDigests = new ArrayList<>();
         allDigests.stream()
-            .forEach(disclosureDigest -> {
-                JsonNode node = findNode(issuerPayload, disclosureDigest);
-                if (node == null) {// digest is nested in another disclosure
-                    Set<Entry<String, ArrayNode>> entrySet = claims.entrySet();
-                    for (Entry<String, ArrayNode> entry : entrySet) {
-                        if(entry.getKey().equals(disclosureDigest)) {
-                            continue;
+                .forEach(disclosureDigest -> {
+                    JsonNode node = findNode(issuerPayload, disclosureDigest);
+                    if (node == null) {// digest is nested in another disclosure
+                        Set<Entry<String, ArrayNode>> entrySet = claims.entrySet();
+                        for (Entry<String, ArrayNode> entry : entrySet) {
+                            if (entry.getKey().equals(disclosureDigest)) {
+                                continue;
+                            }
+                            node = findNode(entry.getValue(), disclosureDigest);
+                            if (node != null) {
+                                recursiveDigests.put(disclosureDigest, entry.getKey());
+                                break;
+                            }
                         }
-                        node = findNode(entry.getValue(), disclosureDigest);
-                        if (node != null) {
-                            recursiveDigests.put(disclosureDigest, entry.getKey());
-                            break;
-                        }
-                    }                        
-                }
-                if(node==null) {// No digest found for disclosure.
-                    ghostDigests.add(disclosureDigest);
-                }
-            });
+                    }
+                    if (node == null) {// No digest found for disclosure.
+                        ghostDigests.add(disclosureDigest);
+                    }
+                });
 
         Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
-        if(sdJwtString.length() > disclosureEnd + 1) {
+        if (sdJwtString.length() > disclosureEnd + 1) {
             String keyBindingJWTString = sdJwtString.substring(disclosureEnd + 1);
             keyBindingJWT = Optional.of(KeyBindingJWT.of(keyBindingJWTString));
         }
@@ -139,7 +157,8 @@ public class SdJwtVP {
         // Drop the key binding String if any. As it is held by the keyBindingJwtObject
         String sdJWtVPString = sdJwtString.substring(0, disclosureEnd + 1);
 
-        return new SdJwtVP(sdJWtVPString, hashAlgorithm, issuerSignedJWT, claims, disclosures, recursiveDigests, ghostDigests, keyBindingJWT);
+        return new SdJwtVP(sdJWtVPString, hashAlgorithm, issuerSignedJWT, claims, disclosures, recursiveDigests,
+                ghostDigests, keyBindingJWT);
 
     }
 
@@ -147,9 +166,10 @@ public class SdJwtVP {
         return issuerSignedJWT.getPayload().get("cnf");
     }
 
-    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims, SignatureSignerContext holdSignatureSignerContext){
+    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
+            SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
-        if( disclosureDigests==null || disclosureDigests.isEmpty()) {
+        if (disclosureDigests == null || disclosureDigests.isEmpty()) {
             // disclose everything
             sb.append(sdJwtVpString);
         } else {
@@ -161,16 +181,15 @@ public class SdJwtVP {
             }
         }
         String unboundPresentation = sb.toString();
-        if(keyBindingClaims==null || holdSignatureSignerContext==null) {
+        if (keyBindingClaims == null || holdSignatureSignerContext == null) {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
         keyBindingClaims = ((ObjectNode) keyBindingClaims).put("sd_hash", sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims,holdSignatureSignerContext);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext);
         sb.append(keyBindingJWT.getJwsString());
         return sb.toString();
     }
-
 
     // Recursively seraches the node with the given value.
     // Returns the node if found, null otherwise.
@@ -197,11 +216,11 @@ public class SdJwtVP {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return sdJwtVpString;
     }
 
-    public String verbose(){
+    public String verbose() {
         StringBuilder sb = new StringBuilder();
         sb.append("Issuer Signed JWT: ");
         sb.append(issuerSignedJWT.getPayload());
@@ -227,7 +246,7 @@ public class SdJwtVP {
         sb.append(ghostDigests);
         sb.append("\n");
         sb.append("\n");
-        if(keyBindingJWT.isPresent()) {
+        if (keyBindingJWT.isPresent()) {
             sb.append("Key Binding JWT: ");
             sb.append("\n");
             sb.append(keyBindingJWT.get().getPayload().toString());
