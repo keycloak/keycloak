@@ -82,7 +82,7 @@ export const AttributeGeneralSettings = () => {
         label={t("attributeName")}
         labelIcon={
           <HelpItem
-            helpText={t("attributeNameHelp")}
+            helpText={t("upAttributeNameHelp")}
             fieldLabelId="attributeName"
           />
         }
