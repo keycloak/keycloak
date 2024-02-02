@@ -30,7 +30,7 @@ public class DefaultCorsFactory implements CorsFactory {
 
     @Override
     public Cors create(KeycloakSession session) {
-        return new DefaultCorsImpl(session.getContext().getHttpRequest());
+        return new DefaultCors(session.getContext().getHttpRequest());
     }
 
     @Override

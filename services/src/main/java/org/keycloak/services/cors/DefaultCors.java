@@ -38,9 +38,9 @@ import org.keycloak.representations.AccessToken;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultCorsImpl implements Cors {
+public class DefaultCors implements Cors {
 
-    private static final Logger logger = Logger.getLogger(DefaultCorsImpl.class);
+    private static final Logger logger = Logger.getLogger(DefaultCors.class);
 
     private HttpRequest request;
     private ResponseBuilder builder;
@@ -51,7 +51,7 @@ public class DefaultCorsImpl implements Cors {
     private boolean preflight;
     private boolean auth;
 
-    DefaultCorsImpl(HttpRequest request) {
+    DefaultCors(HttpRequest request) {
         this.request = request;
     }
 
