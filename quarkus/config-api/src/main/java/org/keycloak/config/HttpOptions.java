@@ -124,4 +124,12 @@ public class HttpOptions {
                          "Use this to shed load in an overload situation. Excess requests will return a \"503 Server not Available\" response.")
             .build();
 
+    public static final Option<Integer> HTTP_POOL_MAX_THREADS = new OptionBuilder<>("http-pool-max-threads", Integer.class)
+            .category(OptionCategory.HTTP)
+            .description("The maximum number of threads. If this is not specified then it will be automatically sized " +
+                         "to the greatest of 8 * the number of available processors and 200. " +
+                         "For example if there are 4 processors the max threads will be 200. " +
+                         "If there are 48 processors it will be 384.")
+            .build();
+
 }
