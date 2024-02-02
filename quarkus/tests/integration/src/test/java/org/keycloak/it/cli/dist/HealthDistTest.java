@@ -81,19 +81,6 @@ public class HealthDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--health-classic-probes-enabled=true" })
-    void testBlockingProbes() {
-        when().get("/health/live").then()
-                .statusCode(200);
-        when().get("/health/ready").then()
-                .statusCode(200)
-                .body("checks[0].name", equalTo("Keycloak database connections health check"))
-                .body("checks.size()", equalTo(1));
-        when().get("/lb-check").then()
-                .statusCode(404);
-    }
-
-    @Test
     void testUsingRelativePath(KeycloakDistribution distribution) {
         for (String relativePath : List.of("/auth", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-relative-path=" + relativePath);
