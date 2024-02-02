@@ -212,7 +212,6 @@ export const EffectiveMessageBundles = ({
               <CaretDownIcon />
             </Icon>
           </button>
-
           {searchDropdownOpen && (
             <div className="kc-effectiveMessageBundles-dropdown-content">
               <Form
