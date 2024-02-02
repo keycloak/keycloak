@@ -39,7 +39,10 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -963,5 +966,46 @@ public class RealmTest extends AbstractAdminTest {
 
         // this used to return non-empty collection
         assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+    }
+
+    @Test
+    public void testSetEmptyAttributeValues() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
+        String realmName = "testSetEmptyAttributeValues";
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmName);
+        rep.setAttributes(new HashMap<>());
+        rep.getAttributes().put("myboolean", "");
+        rep.getAttributes().put("mylong", "");
+        rep.getAttributes().put("myint", "");
+        rep.getAttributes().put(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + ".something", "");
+
+        adminClient.realms().create(rep);
+
+        try {
+            adminClient.realm(realmName);
+
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                Assert.assertTrue(realm instanceof org.keycloak.models.cache.infinispan.RealmAdapter);
+
+                Assert.assertNull(realm.getUserActionTokenLifespans().get("something"));
+                Assert.assertEquals(true, realm.getAttribute("myboolean", true));
+                Assert.assertEquals(Long.valueOf(123), realm.getAttribute("mylong", (long) 123));
+                Assert.assertEquals(Integer.valueOf(1234), realm.getAttribute("myint", 1234));
+
+                RealmProvider delegate = session.getProvider(CacheRealmProvider.class).getRealmDelegate();
+                RealmModel realm2 = delegate.getRealm(realm.getId());
+                Assert.assertTrue(realm2 instanceof org.keycloak.models.jpa.RealmAdapter);
+
+                Assert.assertNull(realm2.getUserActionTokenLifespans().get("something"));
+                Assert.assertEquals(true, realm2.getAttribute("myboolean", true));
+                Assert.assertEquals(Long.valueOf(123), realm2.getAttribute("mylong", (long) 123));
+                Assert.assertEquals(Integer.valueOf(1234), realm2.getAttribute("myint", 1234));
+            });
+        } finally {
+            adminClient.realm(realmName).remove();
+        }
     }
 }
