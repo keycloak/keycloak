@@ -86,17 +86,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer server = resourceServer(role);
         if (server == null) return;
 
-        RealmModel realm = server.getRealm();
-
         Policy policy = mapRolePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         policy = mapClientScopePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         policy = mapCompositePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getRoleResourceName(role));
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(realm, resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override

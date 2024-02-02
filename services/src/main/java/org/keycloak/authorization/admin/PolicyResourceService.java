@@ -114,7 +114,7 @@ public class PolicyResourceService {
             resource.onRemove(policy, authorization);
         }
 
-        policyStore.delete(resourceServer.getRealm(), policy.getId());
+        policyStore.delete(policy.getId());
 
         audit(policyRep, OperationType.DELETE);
 

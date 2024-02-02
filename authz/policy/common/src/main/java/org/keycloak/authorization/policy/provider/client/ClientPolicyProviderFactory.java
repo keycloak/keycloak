@@ -140,7 +140,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
                         try {
                             if (clients.isEmpty()) {
-                                policyStore.delete(removedClient.getRealm(), policy.getId());
+                                policyStore.delete(policy.getId());
                             } else {
                                 policy.putConfig("clients", JsonSerialization.writeValueAsString(clients));
                             }

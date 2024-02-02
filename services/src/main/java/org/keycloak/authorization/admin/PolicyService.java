@@ -93,7 +93,7 @@ public class PolicyService {
             return doCreatePolicyTypeResource(type);
         }
 
-        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getRealm(), resourceServer, type);
+        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, type);
 
         return doCreatePolicyResource(policy);
     }
@@ -227,7 +227,7 @@ public class PolicyService {
 
         if (resource != null && !"".equals(resource.trim())) {
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            Resource resourceModel = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource);
+            Resource resourceModel = resourceStore.findById(resourceServer, resource);
 
             if (resourceModel == null) {
                 Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
@@ -238,7 +238,7 @@ public class PolicyService {
                     resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
                 }
 
-                Set<String> resources = resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
+                Set<String> resources = resourceStore.find(resourceServer, resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
 
                 if (resources.isEmpty()) {
                     return Response.noContent().build();
@@ -252,7 +252,7 @@ public class PolicyService {
 
         if (scope != null && !"".equals(scope.trim())) {
             ScopeStore scopeStore = storeFactory.getScopeStore();
-            Scope scopeModel = scopeStore.findById(resourceServer.getRealm(), resourceServer, scope);
+            Scope scopeModel = scopeStore.findById(resourceServer, scope);
 
             if (scopeModel == null) {
                 Map<Scope.FilterOption, String[]> scopeFilters = new EnumMap<>(Scope.FilterOption.class);
@@ -286,7 +286,7 @@ public class PolicyService {
 
     protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        return policyStore.find(resourceServer.getRealm(), resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
+        return policyStore.find(resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                 .map(policy -> toRepresentation(policy, fields, authorization))
                 .collect(Collectors.toList());
     }
