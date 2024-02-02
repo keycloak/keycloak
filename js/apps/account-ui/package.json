@@ -28,7 +28,7 @@
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.49.3",
+    "react-hook-form": "^7.50.0",
     "react-i18next": "^14.0.1",
     "react-router-dom": "^6.21.3",
     "ui-shared": "workspace:*"
