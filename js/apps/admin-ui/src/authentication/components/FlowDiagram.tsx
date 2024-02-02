@@ -273,7 +273,7 @@ export const FlowDiagram = ({
   }, [expandableList]);
 
   const onInit = (reactFlowInstance: ReactFlowInstance) =>
-    reactFlowInstance.fitView();
+    reactFlowInstance.fitView({ duration: 100 });
 
   const onNodeClick: NodeMouseHandler = () => {
     setExpandDrawer(!expandDrawer);
