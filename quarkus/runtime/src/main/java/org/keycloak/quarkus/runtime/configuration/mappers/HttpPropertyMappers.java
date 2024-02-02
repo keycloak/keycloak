@@ -110,6 +110,10 @@ final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
                         .to("quarkus.thread-pool.queue-size")
                         .paramLabel("requests")
+                        .build(),
+                fromOption(HttpOptions.HTTP_POOL_MAX_THREADS)
+                        .to("quarkus.thread-pool.max-threads")
+                        .paramLabel("threads")
                         .build()
         };
     }
