@@ -815,11 +815,15 @@ public class DefaultExportImportManager implements ExportImportManager {
             realm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
-        WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyTwoFactor(rep);
-        realm.setWebAuthnPolicy(webAuthnPolicy);
+        if (rep.getWebAuthnPolicyRpEntityName() != null && !rep.getWebAuthnPolicyRpEntityName().isEmpty()) {
+            WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyTwoFactor(rep);
+            realm.setWebAuthnPolicy(webAuthnPolicy);
+        }
 
-        webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
-        realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+        if (rep.getWebAuthnPolicyPasswordlessRpEntityName() != null && !rep.getWebAuthnPolicyPasswordlessRpEntityName().isEmpty()) {
+            WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
+            realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+        }
 
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);
