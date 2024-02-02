@@ -97,7 +97,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
-import org.keycloak.quarkus.runtime.services.health.KeycloakReadyAsyncHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -624,24 +623,9 @@ class KeycloakProcessor {
 
         if (healthDisabled || metricsDisabled) {
             // disables the single check we provide which depends on metrics enabled
-            ClassInfo disabledBean1 = index.getIndex()
+            ClassInfo disabledBean = index.getIndex()
                     .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean1.asClass(), false));
-            ClassInfo disabledBean2 = index.getIndex()
-                    .getClassByName(DotName.createSimple(KeycloakReadyAsyncHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean2.asClass(), false));
-        } else {
-            if (isHealthClassicProbesEnabled()) {
-                // disable new async check
-                ClassInfo disabledBean2 = index.getIndex()
-                        .getClassByName(DotName.createSimple(KeycloakReadyAsyncHealthCheck.class.getName()));
-                removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean2.asClass(), false));
-            } else {
-                // disable old classic check
-                ClassInfo disabledBean1 = index.getIndex()
-                        .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-                removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean1.asClass(), false));
-            }
+            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
         }
     }
 
@@ -888,10 +872,6 @@ class KeycloakProcessor {
 
     private boolean isHealthEnabled() {
         return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
-    }
-
-    private boolean isHealthClassicProbesEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-classic-probes-enabled")).orElse(false);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
