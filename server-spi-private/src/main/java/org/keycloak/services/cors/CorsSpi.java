@@ -28,8 +28,6 @@ import org.keycloak.provider.Spi;
  */
 public class CorsSpi implements Spi {
 
-    private static final String SPI_ID = "cors";
-
     @Override
     public boolean isInternal() {
         return true;
@@ -37,7 +35,7 @@ public class CorsSpi implements Spi {
 
     @Override
     public String getName() {
-        return SPI_ID;
+        return "cors";
     }
 
     @Override
