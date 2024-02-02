@@ -79,6 +79,7 @@ import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.validator.PersonNameProhibitedCharactersValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.validators.EmailValidator;
@@ -1049,6 +1050,63 @@ public class UserProfileTest extends AbstractUserProfileTest {
         } catch (ValidationException ve) {
             assertTrue(ve.isAttributeOnError(UserModel.FIRST_NAME));
             assertTrue(ve.isAttributeOnError(UserModel.LAST_NAME));
+        }
+    }
+
+    @Test
+    @ModelTest(realmName = "test")
+    public void testPersonNameProhibitedCharsValidator(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseDefaultConfig();
+
+        UPAttribute lastNameAttr = config.getAttribute(UserModel.LAST_NAME);
+        Map<String, Object> origValidatorCfg = lastNameAttr.getValidations().get(PersonNameProhibitedCharactersValidator.ID);
+        try {
+            // Should fail with the default error message
+            Map<String, Object> attributes = new HashMap<>();
+
+            attributes.put(UserModel.USERNAME, "abc");
+            attributes.put(UserModel.EMAIL, "test@keycloak.org");
+            attributes.put(UserModel.FIRST_NAME, "Foo");
+            attributes.put(UserModel.LAST_NAME, "Jo&hn");
+
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError(PersonNameProhibitedCharactersValidator.MESSAGE_NO_MATCH));
+            }
+
+            // custom error message should be used
+            lastNameAttr.getValidations().put(PersonNameProhibitedCharactersValidator.ID, Map.of(PersonNameProhibitedCharactersValidator.CFG_ERROR_MESSAGE, "error-something"));
+            provider.setConfiguration(config);
+
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError("error-something"));
+            }
+
+            // error-message config parameters used with empty value. Default error message should be used
+            lastNameAttr = config.getAttribute(UserModel.LAST_NAME);
+            lastNameAttr.getValidations().put(PersonNameProhibitedCharactersValidator.ID, Map.of(PersonNameProhibitedCharactersValidator.CFG_ERROR_MESSAGE, ""));
+            provider.setConfiguration(config);
+
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError(PersonNameProhibitedCharactersValidator.MESSAGE_NO_MATCH));
+            }
+        } finally {
+            // Rollback
+            lastNameAttr.getValidations().put(PersonNameProhibitedCharactersValidator.ID, origValidatorCfg);
+            provider.setConfiguration(config);
         }
     }
 

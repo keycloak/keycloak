@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.keycloak.utils.StringUtil;
+
 /**
  * A typed wrapper around a {@link Map} based {@link Validator} configuration.
  */
@@ -90,7 +92,7 @@ public class ValidatorConfig {
 
     public String getStringOrDefault(String key, String defaultValue) {
         Object value = config.get(key);
-        if (value instanceof String) {
+        if (value instanceof String && StringUtil.isNotBlank((String) value)) {
             return (String) value;
         }
         return defaultValue;
