@@ -181,7 +181,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
                     .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
-            scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
+            if (!scopeNames.contains(OAuth2Constants.SCOPE_OPENID)) {
+                scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
+            }      
             config.setScopesSupported(scopeNames);
         }
 

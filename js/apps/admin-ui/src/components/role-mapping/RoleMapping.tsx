@@ -144,6 +144,10 @@ export const RoleMapping = ({
     messageKey: t("removeMappingConfirm", { count: selected.length }),
     continueButtonLabel: "remove",
     continueButtonVariant: ButtonVariant.danger,
+    onCancel: () => {
+      setSelected([]);
+      refresh();
+    },
     onConfirm: async () => {
       try {
         await Promise.all(deleteMapping(type, id, selected));

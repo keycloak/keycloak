@@ -283,17 +283,17 @@ public class WelcomeResource {
 
     private String setCsrfCookie() {
         String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
-        session.getProvider(CookieProvider.class).set(CookieType.WELCOME_STATE_CHECKER, stateChecker);
+        session.getProvider(CookieProvider.class).set(CookieType.WELCOME_CSRF, stateChecker);
         return stateChecker;
     }
 
     private void expireCsrfCookie() {
-        session.getProvider(CookieProvider.class).expire(CookieType.WELCOME_STATE_CHECKER);
+        session.getProvider(CookieProvider.class).expire(CookieType.WELCOME_CSRF);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
         String formStateChecker = formData.getFirst("stateChecker");
-        String cookieStateChecker = session.getProvider(CookieProvider.class).get(CookieType.WELCOME_STATE_CHECKER);
+        String cookieStateChecker = session.getProvider(CookieProvider.class).get(CookieType.WELCOME_CSRF);
 
         if (cookieStateChecker == null || !cookieStateChecker.equals(formStateChecker)) {
             throw new ForbiddenException();

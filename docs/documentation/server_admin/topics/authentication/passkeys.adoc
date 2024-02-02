@@ -4,7 +4,7 @@
 {project_name} provides preview support for https://fidoalliance.org/passkeys/[Passkeys]. {project_name} works as a Passkeys Relying Party (RP).
 
 Passkey registration and authentication are realized by the features of xref:webauthn_{context}[WebAuthn].
-Therefore, users of {project_name} can do passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registraton and authentication].
+Therefore, users of {project_name} can do passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication].
 
 [NOTE]
 ====

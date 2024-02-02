@@ -23,16 +23,10 @@ import java.io.IOException;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
@@ -76,16 +70,14 @@ public class AuthenticationStateCookie {
 
         try {
             String encoded = JsonSerialization.writeValueAsString(cookie);
-            logger.tracef("Generating new %s cookie. Cookie: %s, Cookie lifespan: %d", CookieType.KC_AUTH_STATE, encoded, cookieMaxAge);
-
-            session.getProvider(CookieProvider.class).set(CookieType.KC_AUTH_STATE, encoded, cookieMaxAge);
+            session.getProvider(CookieProvider.class).set(CookieType.AUTH_STATE, encoded, cookieMaxAge);
         } catch (IOException ioe) {
             throw new IllegalStateException("Exception thrown when encoding cookie", ioe);
         }
     }
 
     public static void expireCookie(KeycloakSession session) {
-        session.getProvider(CookieProvider.class).expire(CookieType.KC_AUTH_STATE);
+        session.getProvider(CookieProvider.class).expire(CookieType.AUTH_STATE);
     }
 
     @Override

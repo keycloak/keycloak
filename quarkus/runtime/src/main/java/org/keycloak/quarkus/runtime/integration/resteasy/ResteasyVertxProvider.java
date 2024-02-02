@@ -23,6 +23,8 @@ import io.vertx.ext.web.RoutingContext;
 import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.util.ResteasyProvider;
 
+import java.util.Optional;
+
 public class ResteasyVertxProvider implements ResteasyProvider {
 
     @Override
@@ -30,7 +32,9 @@ public class ResteasyVertxProvider implements ResteasyProvider {
         R data = ResteasyContext.getContextData(type);
 
         if (data == null) {
-            RoutingContext contextData = Arc.container().instance(CurrentVertxRequest.class).get().getCurrent();
+            RoutingContext contextData = Optional.ofNullable(Arc.container())
+                    .map(c -> c.instance(CurrentVertxRequest.class).get()).map(CurrentVertxRequest::getCurrent)
+                    .orElse(null);
 
             if (contextData == null) {
                 return null;

@@ -664,6 +664,7 @@ public class TokenEndpoint {
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setAuthenticationSession(authSession)
                 .setFlowId(flowId)
+                .setFlowPath("token")
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setRealm(realm)

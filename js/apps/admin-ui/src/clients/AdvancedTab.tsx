@@ -14,7 +14,6 @@ import { ClusteringPanel } from "./advanced/ClusteringPanel";
 import { FineGrainOpenIdConnect } from "./advanced/FineGrainOpenIdConnect";
 import { FineGrainSamlEndpointConfig } from "./advanced/FineGrainSamlEndpointConfig";
 import { OpenIdConnectCompatibilityModes } from "./advanced/OpenIdConnectCompatibilityModes";
-import { RevocationPanel } from "./advanced/RevocationPanel";
 
 export const parseResult = (
   result: GlobalRequestResult,
@@ -75,11 +74,6 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
       <ScrollForm
         label={t("jumpToSection")}
         sections={[
-          {
-            title: t("revocation"),
-            isHidden: protocol !== openIdConnect,
-            panel: <RevocationPanel client={client} save={save} />,
-          },
           {
             title: t("clustering"),
             isHidden: !publicClient,

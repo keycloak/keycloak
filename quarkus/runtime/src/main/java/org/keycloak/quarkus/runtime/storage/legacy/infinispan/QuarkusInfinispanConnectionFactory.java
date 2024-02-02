@@ -19,6 +19,10 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -42,5 +46,16 @@ public class QuarkusInfinispanConnectionFactory extends DefaultInfinispanConnect
     @Override
     public String getId() {
         return "quarkus";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("site-name")
+                .helpText("Site name for multi-site deployments")
+                .type("string")
+                .add()
+                .build();
     }
 }

@@ -132,7 +132,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        String localeCookie = session.getProvider(CookieProvider.class).get(CookieType.KEYCLOAK_LOCALE);
+        String localeCookie = session.getProvider(CookieProvider.class).get(CookieType.LOCALE);
         if (localeCookie == null) {
             return null;
         }

@@ -21,6 +21,8 @@ import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import org.keycloak.common.util.Time;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.AuthenticationStateCookie;
 import org.keycloak.models.ClientModel;
@@ -29,7 +31,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.RestartLoginCookie;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
@@ -39,8 +40,6 @@ import org.keycloak.sessions.StickySessionEncoderProvider;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationSessionManager {
-
-    public static final String AUTH_SESSION_ID = "AUTH_SESSION_ID";
 
     private static final Logger log = Logger.getLogger(AuthenticationSessionManager.class);
 
@@ -53,7 +52,7 @@ public class AuthenticationSessionManager {
 
     /**
      * Creates a fresh authentication session for the given realm . Optionally sets the browser
-     * authentication session cookie {@link #AUTH_SESSION_ID} with the ID of the new session.
+     * authentication session cookie with the ID of the new session.
      * @param realm
      * @param browserCookie Set the cookie in the browser for the
      * @return
@@ -62,7 +61,7 @@ public class AuthenticationSessionManager {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
 
         if (browserCookie) {
-            setAuthSessionCookie(rootAuthSession.getId(), realm);
+            setAuthSessionCookie(rootAuthSession.getId());
         }
 
         return rootAuthSession;
@@ -115,18 +114,12 @@ public class AuthenticationSessionManager {
 
     /**
      * @param authSessionId decoded authSessionId (without route info attached)
-     * @param realm
      */
-    public void setAuthSessionCookie(String authSessionId, RealmModel realm) {
-        UriInfo uriInfo = session.getContext().getUri();
-        String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-
-        boolean sslRequired = realm.getSslRequired().isRequired(session.getContext().getConnection());
-
+    public void setAuthSessionCookie(String authSessionId) {
         StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
         String encodedAuthSessionId = encoder.encodeSessionId(authSessionId);
 
-        CookieHelper.addCookie(AUTH_SESSION_ID, encodedAuthSessionId, cookiePath, null, null, -1, sslRequired, true, SameSiteAttributeValue.NONE, session);
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID, encodedAuthSessionId);
 
         log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
     }
@@ -151,7 +144,7 @@ public class AuthenticationSessionManager {
         if (!oldEncodedAuthSessionId.equals(newAuthSessionId.getEncodedId())) {
             log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedAuthSessionId,
                     newAuthSessionId.getEncodedId());
-            setAuthSessionCookie(newAuthSessionId.getDecodedId(), realm);
+            setAuthSessionCookie(newAuthSessionId.getDecodedId());
         }
     }
 
@@ -161,7 +154,7 @@ public class AuthenticationSessionManager {
      * @return the value of the AUTH_SESSION_ID cookie. It is assumed that values could be encoded with route added (EG. "5e161e00-d426-4ea6-98e9-52eb9844e2d7.node1" )
      */
     String getAuthSessionCookies(RealmModel realm) {
-        String oldEncodedId = CookieHelper.getCookieValue(session, AUTH_SESSION_ID);
+        String oldEncodedId = session.getProvider(CookieProvider.class).get(CookieType.AUTH_SESSION_ID);
         if (oldEncodedId == null || oldEncodedId.isEmpty()) {
             return null;
         }

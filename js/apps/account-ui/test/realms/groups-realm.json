@@ -12,6 +12,9 @@
   "users": [
     {
       "username": "jdoe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "jdoe@keycloak.org",
       "enabled": true,
       "realmRoles": [],
       "clientRoles": {

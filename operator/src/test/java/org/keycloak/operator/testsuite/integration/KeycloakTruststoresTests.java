@@ -24,8 +24,8 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,8 +46,8 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             StatefulSet statefulSet = stsResource.get();
             assertEquals("true",
-                    statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
-            assertTrue(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_WATCHING_ANNOTATION)
+                    statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
+            assertTrue(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)
                     .contains("xyz"));
         });
     }
@@ -64,7 +64,7 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
         StatefulSet statefulSet = stsResource.get();
         assertEquals("false",
-                statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
+                statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
         assertTrue(statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream()
                 .anyMatch(v -> v.getMountPath()
                         .equals("/opt/keycloak/conf/truststores/secret-example-truststore-secret")));

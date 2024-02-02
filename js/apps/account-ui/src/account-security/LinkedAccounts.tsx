@@ -7,15 +7,19 @@ import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { usePromise } from "../utils/usePromise";
 import { AccountRow } from "./AccountRow";
+import { useEnvironment } from "../root/KeycloakContext";
 
-const LinkedAccounts = () => {
+export const LinkedAccounts = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const [accounts, setAccounts] = useState<LinkedAccountRepresentation[]>([]);
 
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getLinkedAccounts({ signal }), setAccounts, [key]);
+  usePromise((signal) => getLinkedAccounts({ signal, context }), setAccounts, [
+    key,
+  ]);
 
   const linkedAccounts = useMemo(
     () => accounts.filter((account) => account.connected),

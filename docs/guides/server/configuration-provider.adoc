@@ -40,7 +40,7 @@ spi-connections-http-client-default-connection-pool-size=10
 
 == Setting a provider configuration option
 
-Provider configuration options are provided when starting the server, as shown in the following example:
+Provider configuration options are provided when starting the server. See all support configuration sources and formats for options in <@links.server id="configuration"/>. For example via a command line option:
 
 .Setting the `connection-pool-size` for the `default` provider of the `connections-http-client` SPI
 <@kc.start parameters="--spi-connections-http-client-default-connection-pool-size=10"/>

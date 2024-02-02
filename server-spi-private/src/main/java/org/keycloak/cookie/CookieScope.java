@@ -2,7 +2,7 @@ package org.keycloak.cookie;
 
 import org.keycloak.common.util.ServerCookie;
 
-enum CookieScope {
+public enum CookieScope {
     // Internal cookies are only available for direct requests to Keycloak
     INTERNAL(ServerCookie.SameSiteAttributeValue.STRICT, true),
 

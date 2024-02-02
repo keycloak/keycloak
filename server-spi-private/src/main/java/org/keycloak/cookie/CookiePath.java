@@ -1,6 +1,6 @@
 package org.keycloak.cookie;
 
-enum CookiePath {
+public enum CookiePath {
     REALM,
     REQUEST
 }

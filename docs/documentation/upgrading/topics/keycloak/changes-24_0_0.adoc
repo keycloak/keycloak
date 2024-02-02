@@ -270,6 +270,12 @@ realm password policy.
 * `Hashing Algorithm: pbkdf2-sha256`
 * `Hashing Iterations: 27500`
 
+= Operator Referenced Resource Polling
+
+Secrets and ConfigMaps referenced via the Keycloak CR will now be polled for changes, rather than watched via the api server. It may take around 1 minute for changes to be detected.
+
+This was done so to not require label manipulation on those resources. After upgrading if any Secret still has the operator.keycloak.org/component label, it may be removed or ignored.
+
 = Renaming JPA provider configuration options for migration
 
 After removal of the Map Store the following configuration options were renamed:
@@ -282,9 +288,10 @@ After removal of the Map Store the following configuration options were renamed:
 
 After removal of the Map Store the following modules were renamed:
 
-* `org.keycloak:keycloak-model-legacy` to `org.keycloak:keycloak-model-storage`
 * `org.keycloak:keycloak-model-legacy-private` to `org.keycloak:keycloak-model-storage-private`
 * `org.keycloak:keycloak-model-legacy-services` to `org.keycloak:keycloak-model-storage-services`
+
+and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module. 
 
 = Updates to cookies
 

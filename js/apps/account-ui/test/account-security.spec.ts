@@ -3,11 +3,7 @@ import { login } from "./login";
 
 test("Check page heading", async ({ page }) => {
   await login(page, "alice", "alice", "user-profile");
-  await page
-    .getByRole("button", {
-      name: "Account security",
-    })
-    .click();
+  await page.getByTestId("accountSecurity").click();
 
   const linkedAccountsNavItem = page.getByTestId(
     "account-security/linked-accounts",

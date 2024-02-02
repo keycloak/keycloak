@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -900,7 +901,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().refresh();
 
         // Assert authenticationSession in cache with 2 tabs
-        String authSessionId = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID).getValue();
+        String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
         Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
 
         loginPage.login("test-user@localhost", "password");
@@ -1016,7 +1017,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // make sure the authentication session is no longer available
             for (Cookie cookie : driver.manage().getCookies()) {
-                if (cookie.getName().startsWith(AuthenticationSessionManager.AUTH_SESSION_ID)) {
+                if (cookie.getName().startsWith(CookieType.AUTH_SESSION_ID.getName())) {
                     driver.manage().deleteCookie(cookie);
                 }
             }

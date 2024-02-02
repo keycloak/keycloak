@@ -44,26 +44,24 @@ public class MigrateTo23_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> {
-            KeycloakContext context = session.getContext();
-
-            try {
-                context.setRealm(realm);
-                migrateRealm(realm);
-            } finally {
-                context.setRealm(null);
-            }
-        });
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(realm);
+        migrateRealm(session, realm);
     }
 
-    private void migrateRealm(RealmModel realm) {
-        updateUserProfileConfig(realm);
-        removeRegistrationProfileFormExecution(realm);
+    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+        KeycloakContext context = session.getContext();
+
+        try {
+            context.setRealm(realm);
+            updateUserProfileConfig(realm);
+            removeRegistrationProfileFormExecution(realm);
+        } finally {
+            context.setRealm(null);
+        }
     }
 
     private void updateUserProfileConfig(RealmModel realm) {

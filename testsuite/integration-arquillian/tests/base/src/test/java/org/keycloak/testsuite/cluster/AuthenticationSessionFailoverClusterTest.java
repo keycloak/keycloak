@@ -24,8 +24,7 @@ import java.io.IOException;
 import jakarta.mail.MessagingException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.util.CookieHelper;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -113,9 +112,9 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
     }
 
     public static String getAuthSessionCookieValue(WebDriver driver) {
-        Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+        Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
         if (authSessionCookie == null) {
-            authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE);
+            authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName());
         }
         Assert.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();

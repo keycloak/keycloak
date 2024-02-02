@@ -22,29 +22,31 @@ import {
   useLocation,
 } from "react-router-dom";
 import fetchContentJson from "../content/fetchContent";
+import type { Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-import { Feature, environment } from "../environment";
+import { useEnvironment } from "./KeycloakContext";
 
 type RootMenuItem = {
   label: TFuncKey;
   path: string;
-  isHidden?: keyof Feature;
+  isVisible?: keyof Feature;
   modulePath?: string;
 };
 
 type MenuItemWithChildren = {
   label: TFuncKey;
   children: MenuItem[];
-  isHidden?: keyof Feature;
+  isVisible?: keyof Feature;
 };
 
 export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
+  const context = useEnvironment();
 
-  usePromise((signal) => fetchContentJson({ signal }), setMenuItems);
+  usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
     <PageSidebar
       nav={
@@ -53,8 +55,8 @@ export const PageNav = () => {
             <Suspense fallback={<Spinner />}>
               {menuItems
                 ?.filter((menuItem) =>
-                  menuItem.isHidden
-                    ? environment.features[menuItem.isHidden]
+                  menuItem.isVisible
+                    ? context.environment.features[menuItem.isVisible]
                     : true,
                 )
                 .map((menuItem) => (
@@ -77,6 +79,9 @@ type NavMenuItemProps = {
 
 function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
+  const {
+    environment: { features },
+  } = useEnvironment();
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),
@@ -99,7 +104,9 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
       isExpanded={isActive}
     >
       {menuItem.children
-        .filter((menuItem) => !menuItem.isHidden)
+        .filter((menuItem) =>
+          menuItem.isVisible ? features[menuItem.isVisible] : true,
+        )
         .map((child) => (
           <NavMenuItem key={child.label as string} menuItem={child} />
         ))}

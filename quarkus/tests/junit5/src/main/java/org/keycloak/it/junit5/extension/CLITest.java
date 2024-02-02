@@ -23,6 +23,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * When used for in-vm tests, use {@link ConfigurationTestResource} to reset the configuration
+ */
 @Target(ElementType.TYPE)
 @ExtendWith({ CLITestExtension.class })
 @Retention(RetentionPolicy.RUNTIME)

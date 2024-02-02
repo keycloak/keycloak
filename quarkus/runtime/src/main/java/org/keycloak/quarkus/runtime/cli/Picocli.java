@@ -192,7 +192,7 @@ public final class Picocli {
     private static List<String> getSanitizedRuntimeCliOptions() {
         List<String> properties = new ArrayList<>();
 
-        parseConfigArgs(new BiConsumer<String, String>() {
+        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
@@ -203,6 +203,8 @@ public final class Picocli {
 
                 properties.add(key + "=" + formatValue(key, value));
             }
+        }, arg -> {
+            properties.add(arg);
         });
 
         return properties;
@@ -225,7 +227,7 @@ public final class Picocli {
         exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), commandName, OPTIMIZED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
         }
 
         return exitCode;

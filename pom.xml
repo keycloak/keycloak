@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.9.Final</quarkus.version>
-        <quarkus.build.version>3.2.9.Final</quarkus.build.version>
+        <quarkus.version>3.7.0.CR1</quarkus.version>
+        <quarkus.build.version>3.7.0.CR1</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -86,6 +86,8 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
+        <!-- 1.0.2.4 exhibits class loading issues -->
+        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -106,8 +108,6 @@
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
-        <jboss.logmanager>2.1.19.Final</jboss.logmanager>
-        <jboss.marshalling.version>2.0.11.Final</jboss.marshalling.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
@@ -184,7 +184,8 @@
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
-        <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
+        <maven.version>3.9.6</maven.version>
+        <maven.plugins.version>3.11.0</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
@@ -427,6 +428,13 @@
                 <artifactId>bcpkix-fips</artifactId>
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
+            
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bc-fips</artifactId>
+            <version>${bouncycastle.bcfips.version}</version>
+          </dependency>
+            
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
                 <artifactId>uap-java</artifactId>
@@ -556,11 +564,6 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logmanager</groupId>
-                <artifactId>jboss-logmanager</artifactId>
-                <version>${jboss.logmanager}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
@@ -893,16 +896,6 @@
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
                 <version>${elytron.undertow-server.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling</artifactId>
-                <version>${jboss.marshalling.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling-river</artifactId>
-                <version>${jboss.marshalling.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -1725,7 +1718,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${maven.plugin.plugin.version}</version>
+                    <version>${maven.plugins.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.google.code.maven-replacer-plugin</groupId>

@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.events.Details;
@@ -52,13 +53,11 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -111,7 +110,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
@@ -366,9 +364,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .build());
 
             realmResource.users()
-                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("alice")
+                            .firstName("alice")
+                            .lastName("alice")
+                            .email("alice@keycloak.org")
+                            .password("alice").addRoles("offline_access").build());
             realmResource.users()
-                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("bob")
+                            .firstName("bob")
+                            .lastName("bob")
+                            .email("bob@keycloak.org")
+                            .password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
             oauth.clientId("public-client");
@@ -432,7 +438,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             oauth.openLoginForm();
 
-            Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+            Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
 
             oauth.fillLoginForm("alice", "alice");
 

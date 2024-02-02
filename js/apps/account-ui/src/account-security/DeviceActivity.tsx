@@ -32,12 +32,13 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
+import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
-const DeviceActivity = () => {
+export const DeviceActivity = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
@@ -58,11 +59,13 @@ const DeviceActivity = () => {
     setDevices(devices);
   };
 
-  usePromise((signal) => getDevices({ signal }), moveCurrentToTop, [key]);
+  usePromise((signal) => getDevices({ signal, context }), moveCurrentToTop, [
+    key,
+  ]);
 
   const signOutAll = async () => {
-    await deleteSession();
-    keycloak.logout();
+    await deleteSession(context);
+    context.keycloak.logout();
   };
 
   const signOutSession = async (
@@ -70,7 +73,7 @@ const DeviceActivity = () => {
     device: DeviceRepresentation,
   ) => {
     try {
-      await deleteSession(session.id);
+      await deleteSession(context, session.id);
       addAlert(
         t("signedOutSession", { browser: session.browser, os: device.os }),
       );

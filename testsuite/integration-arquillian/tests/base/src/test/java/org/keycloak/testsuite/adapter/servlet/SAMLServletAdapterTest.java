@@ -119,6 +119,7 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -144,10 +145,7 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -1812,12 +1810,12 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitForPageToLoad();
         infoPage.assertCurrent();
         Assert.assertEquals("You are already logged in.", infoPage.getInfo());
-        Cookie identityCookie = driver.manage().getCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        Cookie identityCookie = driver.manage().getCookieNamed(CookieType.IDENTITY.getName());
         Assert.assertNotNull(identityCookie);
-        driver.manage().deleteCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
-        driver.manage().deleteCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE);
-        driver.manage().addCookie(new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, "invalid-value", identityCookie.getPath()));
-        driver.manage().addCookie(new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE, "invalid-value", identityCookie.getPath()));
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName());
+        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getName(), "invalid-value", identityCookie.getPath()));
+        driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getSameSiteLegacyName(), "invalid-value", identityCookie.getPath()));
 
         // go back to the app page, re-login should work with the invalid cookie
         testRealmSAMLPostLoginPage.navigateTo();

@@ -119,15 +119,15 @@ public class RestartLoginCookie implements Token {
     public static void setRestartCookie(KeycloakSession session, AuthenticationSessionModel authSession) {
         RestartLoginCookie restart = new RestartLoginCookie(authSession);
         String encoded = session.tokens().encode(restart);
-        session.getProvider(CookieProvider.class).set(CookieType.KC_RESTART, encoded);
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_RESTART, encoded);
     }
 
     public static void expireRestartCookie(KeycloakSession session) {
-        session.getProvider(CookieProvider.class).expire(CookieType.KC_RESTART);
+        session.getProvider(CookieProvider.class).expire(CookieType.AUTH_RESTART);
     }
 
     public static String getRestartCookie(KeycloakSession session){
-        String cook = session.getProvider(CookieProvider.class).get(CookieType.KC_RESTART);
+        String cook = session.getProvider(CookieProvider.class).get(CookieType.AUTH_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
             return null;

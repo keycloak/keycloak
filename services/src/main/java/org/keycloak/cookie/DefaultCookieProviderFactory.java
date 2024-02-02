@@ -10,12 +10,12 @@ public class DefaultCookieProviderFactory implements CookieProviderFactory {
 
     @Override
     public CookieProvider create(KeycloakSession session) {
-        return new DefaultCookieProvider(session, legacyCookies);
+        return new DefaultCookieProvider(session.getContext(), legacyCookies);
     }
 
     @Override
     public void init(Config.Scope config) {
-        legacyCookies = config.getBoolean("legacyCookies", false);
+        legacyCookies = config.getBoolean("legacyCookies", true);
     }
 
     @Override

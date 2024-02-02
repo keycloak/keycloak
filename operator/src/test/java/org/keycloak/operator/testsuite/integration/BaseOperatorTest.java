@@ -20,8 +20,6 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
-import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -59,9 +57,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecFluent.PodTemplateNested;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.opentest4j.TestAbortedException;
@@ -405,12 +401,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static Keycloak disableProbes(Keycloak keycloak) {
       KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());
       var podTemplateSpecBuilder = specBuilder.editOrNewUnsupported().editOrNewPodTemplate().editOrNewSpec();
-      ContainersNested<SpecNested<PodTemplateNested<UnsupportedNested<KeycloakSpecBuilder>>>> containerBuilder = null;
-      if (podTemplateSpecBuilder.hasContainers()) {
-          containerBuilder = podTemplateSpecBuilder.editContainer(0);
-      } else {
-          containerBuilder = podTemplateSpecBuilder.addNewContainer();
-      }
+      var containerBuilder = podTemplateSpecBuilder.hasContainers() ? podTemplateSpecBuilder.editContainer(0)
+              : podTemplateSpecBuilder.addNewContainer();
       keycloak.setSpec(containerBuilder.withNewLivenessProbe().withNewExec().addToCommand("true").endExec()
               .endLivenessProbe().withNewReadinessProbe().withNewExec().addToCommand("true").endExec()
               .endReadinessProbe().withNewStartupProbe().withNewExec().addToCommand("true").endExec()

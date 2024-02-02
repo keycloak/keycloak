@@ -76,7 +76,8 @@ Client Scope::
     OIDC authorization requests with scope `fapi-example-scope` need to be FAPI compliant.
 
 Client Role::
-    Applies for clients with the client role of the specified name
+    Applies for clients with the client role of the specified name. Typically you can create a client role of specified name to requested clients and use it as a "marker role" to make
+    sure that specified client policy will be applied for requested clients.
 
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
@@ -105,7 +106,7 @@ on the OIDC authorization request). Events are:
 * Sending a token revocation request
 * Sending a token introspection request
 * Sending a userinfo request
-* Sending a logout request with a refresh token
+* Sending a logout request with a refresh token (note that logout with refresh token is proprietary {project_name} functionality unsupported by any specification. It is rather recommended to rely on the <<_oidc-logout,official OIDC logout>>).
 
 On each event, an executor can work in multiple phases. For example, on creating/updating a client, the executor can modify the client configuration by autoconfigure specific client
 settings. After that, the executor validates this configuration in validation phase.
@@ -129,6 +130,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce checking if a PAR request includes necessary parameters included by an authorization request
 * Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
 * Enforce <<_using_lightweight_access_token, using lightweight access token>>
+* Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
 
 [[_client_policy_profile]]
 === Profile
