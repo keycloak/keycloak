@@ -186,8 +186,6 @@ export const EffectiveMessageBundles = ({
     setKey(key + 1);
   }
 
-  console.log("defaultLocales ", defaultLocales);
-
   const effectiveMessageBunldesSearchFormDisplay = () => {
     return (
       <Flex
@@ -218,6 +216,7 @@ export const EffectiveMessageBundles = ({
                 isHorizontal
                 className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
                 data-testid="effectiveMessageBundlesSearchForm"
+                onSubmit={(e) => e.preventDefault()}
               >
                 <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                   <Controller
@@ -429,10 +428,16 @@ export const EffectiveMessageBundles = ({
                           value={field.value.join(" ")}
                           onChange={(e) => {
                             const target = e.target as HTMLInputElement;
-                            const words = target.value
-                              .split(" ")
-                              .map((word) => word.trim());
-                            field.onChange(words);
+                            const input = target.value;
+
+                            if (input.trim().length === 0) {
+                              field.onChange([]);
+                            } else {
+                              const words = input
+                                .split(" ")
+                                .map((word) => word.trim());
+                              field.onChange(words);
+                            }
                           }}
                         />
                         <ChipGroup>
