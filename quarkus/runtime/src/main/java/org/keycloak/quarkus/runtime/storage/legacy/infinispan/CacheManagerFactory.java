@@ -23,12 +23,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
+import org.infinispan.persistence.remote.configuration.ExhaustedAction;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 import org.jgroups.protocols.TCP_NIO2;
@@ -42,6 +45,12 @@ import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FI
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 public class CacheManagerFactory {
 
@@ -87,8 +96,9 @@ public class CacheManagerFactory {
     private DefaultCacheManager startCacheManager() {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
 
-        if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
+        if (builder.getNamedConfigurationBuilders().get(USER_SESSION_CACHE_NAME).clustering().cacheMode().isClustered()) {
             configureTransportStack(builder);
+            configureRemoteStores(builder);
         }
 
         if (metricsEnabled) {
@@ -175,6 +185,48 @@ public class CacheManagerFactory {
             }
         }
 
+    }
+
+    private void configureRemoteStores(ConfigurationBuilderHolder builder) {
+        if (builder.getNamedConfigurationBuilders().get(USER_SESSION_CACHE_NAME).clustering().cacheMode().isDistributed()) {
+            //if one of remote store command line parameters is defined, all other are required, otherwise assume it'd configured via xml only
+            if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent() ||
+                Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY).isPresent() ||
+                Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
+                Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent()) {
+
+                String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
+                String cacheRemotePort = requiredStringProperty(CACHE_REMOTE_PORT_PROPERTY);
+                String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
+                String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
+
+                DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+                    PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
+
+                    //if specified via command line -> cannot be defined in the xml file
+                    if (!persistenceCB.stores().isEmpty()) {
+                        throw new RuntimeException(String.format("Remote store for '%s' is already configured via CLI parameters. It should not be present in XML file a.", cacheName));
+                    }
+
+                    persistenceCB.addStore(RemoteStoreConfigurationBuilder.class)
+                            .rawValues(true)
+                            .shared(true)
+                            .remoteCacheName(cacheName)
+                            .connectionPool()
+                                .maxActive(16)
+                                .exhaustedAction(ExhaustedAction.CREATE_NEW)
+                            .remoteSecurity()
+                                .authentication()
+                                    .serverName("infinispan")
+                                    .username(cacheRemoteUsername)
+                                    .password(cacheRemotePassword)
+                                    .realm("default")
+                            .addServer()
+                                .host(cacheRemoteHost)
+                                .port(Integer.parseInt(cacheRemotePort));
+                });
+            }
+        }
     }
 
     private static boolean booleanProperty(String propertyName) {

@@ -11,6 +11,12 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
 
+    private static final String CACHE_REMOTE_PREFIX = "cache-remote";
+    public static final String CACHE_REMOTE_HOST_PROPERTY = CACHE_REMOTE_PREFIX + "-host";
+    public static final String CACHE_REMOTE_PORT_PROPERTY = CACHE_REMOTE_PREFIX + "-port";
+    public static final String CACHE_REMOTE_USERNAME_PROPERTY = CACHE_REMOTE_PREFIX + "-username";
+    public static final String CACHE_REMOTE_PASSWORD_PROPERTY = CACHE_REMOTE_PREFIX + "-password";
+
     public enum Mechanism {
         ispn,
         local
@@ -79,6 +85,30 @@ public class CachingOptions {
     public static final Option<String> CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description("The password to access the Truststore.")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("TODO")
+            .buildTime(true)
+            .build();
+
+    public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
+            .category(OptionCategory.CACHE)
+            .description("TODO")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_REMOTE_USERNAME = new OptionBuilder<>(CACHE_REMOTE_USERNAME_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("TODO")
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> CACHE_REMOTE_PASSWORD = new OptionBuilder<>(CACHE_REMOTE_PASSWORD_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("TODO")
             .buildTime(true)
             .build();
 

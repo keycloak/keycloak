@@ -48,6 +48,19 @@ final class CachingPropertyMappers {
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_HOST)
+                        .paramLabel("hostname")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_PORT)
+                        .paramLabel("port")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_USERNAME)
+                        .paramLabel("username")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_PASSWORD)
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
         };
     }
 
