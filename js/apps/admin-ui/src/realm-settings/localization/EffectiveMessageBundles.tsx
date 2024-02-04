@@ -209,7 +209,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
+              className="pf-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
               onSubmit={(e) => e.preventDefault()}
             >
@@ -477,7 +477,7 @@ export const EffectiveMessageBundles = ({
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
-            <div className="keycloak__searchChips">
+            <>
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof EffectiveMessageBundlesSearchForm,
@@ -513,7 +513,7 @@ export const EffectiveMessageBundles = ({
                   </ChipGroup>
                 );
               })}
-            </div>
+            </>
           )}
         </FlexItem>
       </Flex>
