@@ -29,7 +29,7 @@ export const SigningInRoute: RouteObject = {
 };
 
 export const ApplicationsRoute: RouteObject = {
-  path: "applications",
+  index: true,
   element: <Applications />,
 };
 
@@ -53,7 +53,7 @@ export const ContentRoute: RouteObject = {
 };
 
 export const PersonalInfoRoute: IndexRouteObject = {
-  index: true,
+  path: "personal-info",
   element: <PersonalInfo />,
 };
 
@@ -62,13 +62,12 @@ export const RootRoute: RouteObject = {
   element: <Root />,
   errorElement: <ErrorPage />,
   children: [
+    ApplicationsRoute,
     PersonalInfoRoute,
     DeviceActivityRoute,
     LinkedAccountsRoute,
     SigningInRoute,
-    ApplicationsRoute,
     GroupsRoute,
-    PersonalInfoRoute,
     ResourcesRoute,
     ContentRoute,
   ],
