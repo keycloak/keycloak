@@ -28,7 +28,7 @@ export const SigningInRoute: RouteObject = {
   element: <SigningIn />,
 };
 
-export const ApplicationsRoute: RouteObject = {
+export const ApplicationsRoute: IndexRouteObject = {
   index: true,
   element: <Applications />,
 };
@@ -52,7 +52,7 @@ export const ContentRoute: RouteObject = {
   element: <ContentComponent />,
 };
 
-export const PersonalInfoRoute: IndexRouteObject = {
+export const PersonalInfoRoute: RouteObject = {
   path: "personal-info",
   element: <PersonalInfo />,
 };
