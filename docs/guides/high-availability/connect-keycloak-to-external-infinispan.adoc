@@ -53,7 +53,7 @@ include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-configmap]
 include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn-secret]
 ----
 
-. Extend the {project_name} Custom Resource with `additionalOptions` and extend the `podTemplate` as shown below.
+. Extend the {project_name} Custom Resource with `additionalOptions` as shown below.
 +
 [NOTE]
 ====
@@ -67,14 +67,11 @@ Administrators should leave those configurations untouched.
 ----
 include::examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 ----
-<1> Custom cache configuration XML file definition, which includes configuration for remote or embedded {jdgserver_name} store.
+<1> The `name` and `key` of the ConfigMap with the {jdgserver_name} Cache configuration XML created in the previous step.
 <2> The hostname and port of the remote cache {jdgserver_name} cluster.
 <3> The credentials required, username and password, to access the remote cache {jdgserver_name} cluster.
-<4> Mounting the cache configuration Volume in Kubernetes.
-However, matching the `jboss.site.name` with the external {jdgserver_name} deployment site name helps debugging possible future issues.
+<4> The `spi-connections-infinispan-quarkus-site-name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its embedded {jdgserver_name} deployment when a remote store is used.
+This site-name is related only to the embedded {jdgserver_name} and does not need to match any value from the external {jdgserver_name} deployment.
 If you are using multiple sites for {project_name} in a cross-DC setup such as <@links.ha id="deploy-infinispan-kubernetes-crossdc" />, the site name must be different in each site.
-<5> `jboss.site.name` is an arbitrary {jdgserver_name} site name which {project_name} needs for its embedded {jdgserver_name} deployment when a remote store is used.
-This site name is related only to the embedded {jdgserver_name} and does not need to match any value from the external {jdgserver_name} deployment.
-<6> Defining the cache configuration Volume using the already created ConfigMap in Kubernetes.
 
 </@tmpl.guide>
