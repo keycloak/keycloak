@@ -18,14 +18,13 @@
 package org.keycloak.operator;
 
 import io.smallrye.config.ConfigMapping;
-import io.smallrye.config.WithDefault;
 
 import java.util.Map;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@ConfigMapping(prefix = "operator")
+@ConfigMapping(prefix = "kc.operator")
 public interface Config {
     Keycloak keycloak();
 
@@ -37,17 +36,4 @@ public interface Config {
 
         Map<String, String> podLabels();
     }
-
-    // workarounds for OLM env values
-    // to be removed after https://github.com/keycloak/keycloak/issues/12352
-
-    @WithDefault("keycloak-operator")
-    String name();
-
-    interface Condition {
-        @WithDefault("keycloak-operator.v999-SNAPSHOT")
-        String name();
-    }
-
-    Condition condition();
 }

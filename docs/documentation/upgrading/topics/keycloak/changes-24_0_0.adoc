@@ -301,6 +301,10 @@ After removal of the Map Store the following modules were renamed:
 
 and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module. 
 
+= Operator Customization Property Keys
+
+The property keys used by the operator for advanced configuration have changed from operator.keycloak to kc.operator.keycloak.
+
 = Updates to cookies
 
 As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:
