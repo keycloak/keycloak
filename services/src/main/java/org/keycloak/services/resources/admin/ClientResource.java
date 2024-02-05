@@ -26,8 +26,12 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -148,6 +152,17 @@ public class ClientResource {
             session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.FALSE);
             session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, client, auth.adminAuth()));
 
+            if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+                if (!ObjectUtil.isEqualOrBothNull(rep.getType(), client.getType())) {
+                    throw new ClientTypeException("Not supported to change client type");
+                }
+                if (rep.getType() != null) {
+                    ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+                    ClientType clientType = mgr.getClientType(realm, rep.getType());
+                    clientType.onUpdate(client, rep);
+                }
+            }
+
             updateClientFromRep(rep, client, session);
 
             ValidationUtil.validateClient(session, client, false, r -> {
@@ -170,6 +185,8 @@ public class ClientResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client already exists");
+        } catch (ClientTypeException cte) {
+            throw ErrorResponse.error(cte.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

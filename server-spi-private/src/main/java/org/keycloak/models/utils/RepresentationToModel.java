@@ -319,6 +319,7 @@ public class RepresentationToModel {
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
         if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
+        if (resourceRep.getType() != null) client.setType(resourceRep.getType());
         if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
         if (resourceRep.isAlwaysDisplayInConsole() != null) client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
         client.setManagementUrl(resourceRep.getAdminUrl());
@@ -493,6 +494,7 @@ public class RepresentationToModel {
         if (newClientId != null) resource.setClientId(newClientId);
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
+        if (rep.getType() != null) resource.setType(rep.getType());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
         if (rep.isAlwaysDisplayInConsole() != null) resource.setAlwaysDisplayInConsole(rep.isAlwaysDisplayInConsole());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
