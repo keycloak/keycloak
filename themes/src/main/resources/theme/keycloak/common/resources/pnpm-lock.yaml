@@ -9,8 +9,8 @@ dependencies:
     specifier: npm:@patternfly/patternfly@^5.1.0
     version: /@patternfly/patternfly@5.1.0
   '@patternfly/patternfly':
-    specifier: ^4.224.5
-    version: 4.224.5
+    specifier: ^5.2.0
+    version: 5.2.0
   '@patternfly/react-core':
     specifier: ^4.278.1
     version: 4.278.1(react-dom@18.2.0)(react@18.2.0)
@@ -86,12 +86,12 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@patternfly/patternfly@4.224.5:
-    resolution: {integrity: sha512-io0huj+LCP5FgDZJDaLv1snxktTYs8iCFz/W1VDRneYoebNHLmGfQdF7Yn8bS6PF7qmN6oJKEBlq3AjmmE8vdA==}
-    dev: false
-
   /@patternfly/patternfly@5.1.0:
     resolution: {integrity: sha512-wzVgL/0xPsmuRKWc6lMNEo5gDcTUtyU231eJSBTapOKXiwBOv2flvLEHPYLO6oDYXO+hwUrVgbcZFWMd1UlLwA==}
+    dev: false
+
+  /@patternfly/patternfly@5.2.0:
+    resolution: {integrity: sha512-phdsXcCRO+JICFXIKtORxSbOWoBr9zRCgtFTKTJ8hAIzm6wEUCdcHZrvsd+SXNR3q/4b/+KlmHUC4Q4KGUiuYw==}
     dev: false
 
   /@patternfly/react-core@4.278.1(react-dom@18.2.0)(react@18.2.0):
