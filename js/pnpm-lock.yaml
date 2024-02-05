@@ -233,8 +233,8 @@ importers:
         specifier: ^6.4.1
         version: 6.4.1(vitest@1.2.2)
       '@testing-library/react':
-        specifier: ^14.2.0
-        version: 14.2.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.2.1
+        version: 14.2.1(react-dom@18.2.0)(react@18.2.0)
       '@types/dagre':
         specifier: ^0.7.52
         version: 0.7.52
@@ -1832,8 +1832,8 @@ packages:
       vitest: 1.2.2(@types/node@20.11.16)(jsdom@24.0.0)(lightningcss@1.23.0)
     dev: true
 
-  /@testing-library/react@14.2.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-7uBnPHyOG6nDGCzv8SLeJbSa33ZoYw7swYpSLIgJvBALdq7l9zPNk33om4USrxy1lKTxXaVfufzLmq83WNfWIw==}
+  /@testing-library/react@14.2.1(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-sGdjws32ai5TLerhvzThYFbpnF9XtL65Cjf+gB0Dhr29BGqK+mAeN7SURSdu+eqgET4ANcWoC7FQpkaiGvBr+A==}
     engines: {node: '>=14'}
     peerDependencies:
       react: ^18.0.0
