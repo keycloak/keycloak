@@ -404,6 +404,32 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
     }
+
+    @Test
+    public void accessTokenRequestInPKCECodeVerifierWithNoCodeChallenge() throws Exception {
+        String codeVerifier = "12345678e01234567890g2345678h012a4567j90123"; // 43
+
+        // send oauth request without code_challenge because intercepted
+        oauth.codeChallenge(null);
+        oauth.codeChallengeMethod(null);
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        // get the code and add codeVerifier
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.codeVerifier(codeVerifier);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        // assert invalid code because no challenge in authorization
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("PKCE code verifier specified but challenge not present in authorization", response.getErrorDescription());
+
+        events.expectCodeToToken(codeId, sessionId).error(Errors.INVALID_CODE_VERIFIER).clearDetails().assertEvent();
+    }
     
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");

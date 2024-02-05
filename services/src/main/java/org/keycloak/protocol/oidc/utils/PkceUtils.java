@@ -84,6 +84,12 @@ public class PkceUtils {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
         }
 
+        if (codeChallenge == null && codeVerifier != null) {
+            logger.warnf("PKCE code verifier specified but challenge not present in authorization, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.INVALID_CODE_VERIFIER);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier specified but challenge not present in authorization", Response.Status.BAD_REQUEST);
+        }
+
         if (codeChallenge != null) {
             verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
         }
