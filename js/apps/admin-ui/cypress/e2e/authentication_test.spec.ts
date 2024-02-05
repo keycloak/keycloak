@@ -224,14 +224,17 @@ describe("Required actions", () => {
 
   it("should enable delete account", () => {
     const action = "Delete Account";
-    requiredActionsPage.enableAction(action);
+    requiredActionsPage.switchAction(action);
     masthead.checkNotificationMessage("Updated required action successfully");
     requiredActionsPage.isChecked(action);
   });
 
   it("should register an unregistered action", () => {
     const action = "Verify Profile";
-    requiredActionsPage.enableAction(action);
+    requiredActionsPage.isChecked(action).isDefaultEnabled(action);
+    requiredActionsPage.switchAction(action);
+    masthead.checkNotificationMessage("Updated required action successfully");
+    requiredActionsPage.switchAction(action);
     masthead.checkNotificationMessage("Updated required action successfully");
     requiredActionsPage.isChecked(action).isDefaultEnabled(action);
   });
