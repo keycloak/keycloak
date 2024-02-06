@@ -199,13 +199,10 @@ export const EffectiveMessageBundles = ({
         </FlexItem>
         <FlexItem>
           <DropdownPanel
-            actionButtonText={t("refresh")}
-            actionButtonVariant="primary"
             buttonText={t("searchForEffectiveMessageBundles")}
             setSearchDropdownOpen={setSearchDropdownOpen}
             searchDropdownOpen={searchDropdownOpen}
-            onSubmitAction={submitSearch}
-            width="20vw"
+            width="15vw"
           >
             <Form
               isHorizontal
@@ -474,6 +471,14 @@ export const EffectiveMessageBundles = ({
               </ActionGroup>
             </Form>
           </DropdownPanel>
+          <Button
+            variant="primary"
+            className="pf-u-ml-md"
+            onClick={() => submitSearch()}
+            data-testid="refresh-effective-message-bundles-btn"
+          >
+            {t("refresh")}
+          </Button>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
