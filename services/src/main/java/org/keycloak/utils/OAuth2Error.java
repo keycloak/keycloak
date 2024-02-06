@@ -125,7 +125,6 @@ public class OAuth2Error {
 
         try {
             Constructor<? extends WebApplicationException> constructor = clazz.getConstructor(new Class[] { Response.class });
-            cors.ifPresent(_cors -> { _cors.build(builder::header); });
 
             if (json) {
                 OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
@@ -137,8 +136,10 @@ public class OAuth2Error {
                 bearer.setErrorDescription(errorDescription);
                 WWWAuthenticate wwwAuthenticate = new WWWAuthenticate(bearer);
                 wwwAuthenticate.build(builder::header);
+                cors.ifPresent(_cors -> _cors.addExposedHeaders(WWW_AUTHENTICATE));
                 builder.entity("").type(MediaType.TEXT_PLAIN_UTF_8_TYPE);
             }
+            cors.ifPresent(_cors -> { _cors.build(builder::header); });
 
             return constructor.newInstance(builder.build());
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
