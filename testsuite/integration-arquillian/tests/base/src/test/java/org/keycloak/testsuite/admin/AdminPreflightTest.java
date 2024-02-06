@@ -7,7 +7,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import java.io.IOException;
 
