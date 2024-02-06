@@ -122,6 +122,16 @@ public class DefaultCors implements Cors {
     }
 
     @Override
+    public Cors addExposedHeaders(String... exposedHeaders) {
+        if (this.exposedHeaders == null) {
+            this.exposedHeaders(exposedHeaders);
+        } else {
+            this.exposedHeaders.addAll(Arrays.asList(exposedHeaders));
+        }
+        return this;
+    }
+
+    @Override
     public Response build() {
         if (builder == null) {
             throw new IllegalStateException("builder is not set");

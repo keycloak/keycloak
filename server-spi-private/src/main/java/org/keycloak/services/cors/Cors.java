@@ -83,6 +83,8 @@ public interface Cors extends Provider {
 
     public Cors exposedHeaders(String... exposedHeaders);
 
+    public Cors addExposedHeaders(String... exposedHeaders);
+
     public Response build();
 
     public boolean build(HttpResponse response);
