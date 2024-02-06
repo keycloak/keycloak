@@ -27,9 +27,9 @@ This step will save time in every subsequent start phase of the container image.
 The following `Dockerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Dockerfile:
-[source, dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 
 # Enable health and metrics support
 ENV KC_HEALTH_ENABLED=true
@@ -43,7 +43,7 @@ WORKDIR /opt/keycloak
 RUN keytool -genkeypair -storepass password -storetype PKCS12 -keyalg RSA -keysize 2048 -dname "CN=server" -alias server -ext "SAN:c=DNS:localhost,IP:127.0.0.1" -keystore conf/server.keystore
 RUN /opt/keycloak/bin/kc.sh build
 
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
 # change these values to point to a running postgres instance
@@ -64,10 +64,10 @@ The build process includes multiple stages:
 To install custom providers, you just need to define a step to include the JAR file(s) into the `/opt/keycloak/providers` directory.
 This step must be placed before the line that `RUNs` the `build` command, as below: 
 
-[source, dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
-FROM quay.io/keycloak/keycloak:latest as builder
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
 
 ...
 
@@ -166,11 +166,11 @@ By setting the `hostname-port` option you can now access the server at `https://
 The easiest way to try {project_name} from a container for development or testing purposes is to use the Development mode.
 You use the `start-dev` command:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start-dev
 ----
 
@@ -185,11 +185,11 @@ In these environments, you need containers that start fast, therefore you need t
 However, if your environment has different requirements, you can run a standard {project_name} image by just running the `start` command.
 For example:
 
-[source, bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name mykeycloak -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start \
         --db=postgres --features=token-exchange \
         --db-url=<JDBC-URL> --db-username=<DB-USER> --db-password=<DB-PASSWORD> \
@@ -218,12 +218,12 @@ This approach significantly increases startup time and creates an image that is 
 
 The {project_name} containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
 
-[source, bash]
+[source,bash,subs="attributes+"]
 ----
 podman|docker run --name keycloak_unoptimized -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         -v /path/to/realm/data:/opt/keycloak/data/import \
-        quay.io/keycloak/keycloak:latest \
+        quay.io/keycloak/keycloak:{containerlabel} \
         start-dev --import-realm
 ----
 

@@ -55,9 +55,9 @@ To install the Oracle Database driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
@@ -91,9 +91,9 @@ To install the Microsoft SQL Server driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
