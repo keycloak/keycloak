@@ -1,4 +1,4 @@
-import { ButtonVariant } from "@patternfly/react-core";
+import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
   IAction,
@@ -31,6 +31,7 @@ import { useFetch } from "../../utils/useFetch";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
+import { SyncAltIcon } from "@patternfly/react-icons";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -434,7 +435,16 @@ export function KeycloakDataTable<T>({
           inputGroupOnEnter={setSearch}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
-          toolbarItem={toolbarItem}
+          toolbarItem={
+            <>
+              {toolbarItem} <ToolbarItem variant="separator" />{" "}
+              <ToolbarItem>
+                <Button variant="link" onClick={refresh}>
+                  <SyncAltIcon /> {t("refresh")}
+                </Button>
+              </ToolbarItem>
+            </>
+          }
           subToolbar={subToolbar}
         >
           {!loading && !noData && (
