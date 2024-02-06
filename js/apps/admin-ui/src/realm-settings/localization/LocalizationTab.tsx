@@ -68,6 +68,12 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
     defaultValue: realm.internationalizationEnabled,
   });
 
+  const defaultLocales = useWatch({
+    name: "defaultLocale",
+    control,
+    defaultValue: realm.defaultLocale ? [realm.defaultLocale] : [],
+  });
+
   return (
     <Tabs
       activeKey={activeTab}
@@ -248,6 +254,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       >
         <EffectiveMessageBundles
           defaultSupportedLocales={defaultSupportedLocales}
+          defaultLocales={defaultLocales}
         />
       </Tab>
     </Tabs>
