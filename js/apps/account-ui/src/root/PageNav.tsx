@@ -4,7 +4,6 @@ import {
   NavItem,
   NavList,
   PageSidebar,
-  Spinner,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
@@ -52,7 +51,7 @@ export const PageNav = () => {
       nav={
         <Nav>
           <NavList>
-            <Suspense fallback={<Spinner />}>
+            <Suspense>
               {menuItems
                 ?.filter((menuItem) =>
                   menuItem.isVisible

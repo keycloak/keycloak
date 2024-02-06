@@ -1,4 +1,3 @@
-import { Spinner } from "@patternfly/react-core";
 import Keycloak from "keycloak-js";
 import {
   PropsWithChildren,
@@ -65,7 +64,7 @@ export const KeycloakProvider = ({
     calledOnce.current = true;
   }, [keycloak]);
 
-  if (!init) return <Spinner />;
+  if (!init) return;
 
   return (
     <KeycloakEnvContext.Provider value={{ environment, keycloak }}>

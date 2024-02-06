@@ -8,6 +8,7 @@ const adminClient = new KeycloakAdminClient({
   realmName: "master",
 });
 
+// @ts-ignore
 await adminClient.auth({
   username: "admin",
   password: "admin",

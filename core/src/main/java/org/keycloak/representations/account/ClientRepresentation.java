@@ -10,6 +10,7 @@ public class ClientRepresentation {
     private boolean userConsentRequired;
     private boolean inUse;
     private boolean offlineAccess;
+    private boolean alwaysDisplayInConsole;
     private String rootUrl;
     private String baseUrl;
     private String effectiveUrl;
@@ -65,6 +66,14 @@ public class ClientRepresentation {
 
     public void setOfflineAccess(boolean offlineAccess) {
         this.offlineAccess = offlineAccess;
+    }
+
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
+    }
+
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        this.alwaysDisplayInConsole = alwaysDisplayInConsole;
     }
 
     public String getRootUrl() {

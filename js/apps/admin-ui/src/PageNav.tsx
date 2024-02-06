@@ -57,7 +57,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
 
 export const PageNav = () => {
   const { t } = useTranslation();
-  const { hasSomeAccess } = useAccess();
+  const { hasSomeAccess, hasSomeAccessByString } = useAccess();
   const { componentTypes } = useServerInfo();
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
@@ -88,6 +88,11 @@ export const PageNav = () => {
     "view-realm",
     "query-clients",
     "view-identity-providers",
+  );
+
+  const showOrgs = hasSomeAccessByString(
+    "view-organizations",
+    "manage-organizations",
   );
 
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
@@ -129,6 +134,13 @@ export const PageNav = () => {
                   id="/page-section"
                 />
               ))}
+            </NavGroup>
+          )}
+          {!isOnAddRealm && (
+            <NavGroup aria-label={t("extensions")} title={t("extensions")}>
+              {showOrgs && (
+                <LeftNav title="Organizations" path="/organizations" />
+              )}
             </NavGroup>
           )}
         </Nav>

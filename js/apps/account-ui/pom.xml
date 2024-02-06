@@ -120,8 +120,8 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.svg" />]]></token>
-                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
+                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.ico" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.ico"}" />]]></value>
                         </replacement>
                         <replacement>
                             <token><![CDATA[<title>Account Management</title>]]></token>

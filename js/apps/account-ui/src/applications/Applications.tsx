@@ -11,42 +11,48 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Grid,
-  GridItem,
   Spinner,
 } from "@patternfly/react-core";
-import {
-  CheckIcon,
-  ExternalLinkAltIcon,
-  InfoAltIcon,
-} from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
-import { deleteConsent, getApplications } from "../api/methods";
+import { getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
-import { TFuncKey } from "../i18n";
 import { useEnvironment } from "../root/KeycloakContext";
-import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {
   open: boolean;
 };
 
+function filterRestrictClientIds(c: ClientRepresentation) {
+  return (
+    c.clientId !== "account" &&
+    c.clientId !== "account-console" &&
+    c.clientId !== "admin-cli" &&
+    c.clientId !== "broker" &&
+    c.clientId !== "master-realm" &&
+    c.clientId !== "security-admin-console" &&
+    c.clientId !== "security-admin-console-v2"
+  );
+}
+
 export const Applications = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
-  const { addAlert, addError } = useAlerts();
 
   const [applications, setApplications] = useState<Application[]>();
-  const [key, setKey] = useState(1);
-  const refresh = () => setKey(key + 1);
+  const [key] = useState(1);
 
   usePromise(
     (signal) => getApplications({ signal, context }),
-    (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
+    (clients) =>
+      setApplications(
+        clients.filter(filterRestrictClientIds).map((c) => ({
+          ...c,
+          open: false,
+        })),
+      ),
     [key],
   );
 
@@ -56,16 +62,6 @@ export const Applications = () => {
         a.clientId === clientId ? { ...a, open: !a.open } : a,
       ),
     ]);
-  };
-
-  const removeConsent = async (id: string) => {
-    try {
-      await deleteConsent(context, id);
-      refresh();
-      addAlert(t("removeConsentSuccess"));
-    } catch (error) {
-      addError(t("removeConsentError", { error }).toString());
-    }
   };
 
   if (!applications) {
@@ -96,18 +92,11 @@ export const Applications = () => {
                   <strong>{t("name")}</strong>
                 </DataListCell>,
                 <DataListCell
-                  key="applications-list-app-type-header"
-                  width={2}
-                  className="pf-u-pt-md"
-                >
-                  <strong>{t("applicationType")}</strong>
-                </DataListCell>,
-                <DataListCell
                   key="applications-list-status"
                   width={2}
                   className="pf-u-pt-md"
                 >
-                  <strong>{t("status")}</strong>
+                  <strong>Link</strong>
                 </DataListCell>,
               ]}
             />
@@ -130,34 +119,16 @@ export const Applications = () => {
                 className="pf-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
-                    {application.effectiveUrl && (
-                      <Button
-                        className="pf-u-pl-0 title-case"
-                        component="a"
-                        variant="link"
-                        onClick={() => window.open(application.effectiveUrl)}
-                      >
-                        {application.clientName || application.clientId}{" "}
-                        <ExternalLinkAltIcon />
-                      </Button>
-                    )}
-                    {!application.effectiveUrl && (
-                      <span>
-                        {application.clientName || application.clientId}
-                      </span>
-                    )}
-                  </DataListCell>,
-                  <DataListCell
-                    width={2}
-                    key={`internal${application.clientId}`}
-                  >
-                    {application.userConsentRequired
-                      ? t("thirdPartyApp")
-                      : t("internalApp")}
-                    {application.offlineAccess ? ", " + t("offlineAccess") : ""}
+                    <span>
+                      {application.clientName || application.clientId}
+                    </span>
                   </DataListCell>,
                   <DataListCell width={2} key={`status${application.clientId}`}>
-                    {application.inUse ? t("inUse") : t("notInUse")}
+                    {application.effectiveUrl && (
+                      <a href={application.effectiveUrl}>
+                        <Button variant="primary">Acessar plataforma</Button>
+                      </a>
+                    )}
                   </DataListCell>,
                 ]}
               />
@@ -172,12 +143,6 @@ export const Applications = () => {
               isHidden={!application.open}
             >
               <DescriptionList>
-                <DescriptionListGroup>
-                  <DescriptionListTerm>{t("client")}</DescriptionListTerm>
-                  <DescriptionListDescription>
-                    {application.clientId}
-                  </DescriptionListDescription>
-                </DescriptionListGroup>
                 {application.description && (
                   <DescriptionListGroup>
                     <DescriptionListTerm>
@@ -192,22 +157,19 @@ export const Applications = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>URL</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {application.effectiveUrl.split('"')}
+                      <Button
+                        className="pf-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        href={application.effectiveUrl}
+                      >
+                        {application.effectiveUrl.split('"')}
+                      </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 )}
                 {application.consent && (
                   <>
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>
-                        {t("hasAccessTo")}
-                      </DescriptionListTerm>
-                      {application.consent.grantedScopes.map((scope) => (
-                        <DescriptionListDescription key={`scope${scope.id}`}>
-                          <CheckIcon /> {t(scope.name as TFuncKey)}
-                        </DescriptionListDescription>
-                      ))}
-                    </DescriptionListGroup>
                     {application.tosUri && (
                       <DescriptionListGroup>
                         <DescriptionListTerm>
@@ -236,37 +198,9 @@ export const Applications = () => {
                         </DescriptionListDescription>
                       </DescriptionListGroup>
                     )}
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>
-                        {t("accessGrantedOn")}
-                      </DescriptionListTerm>
-                      <DescriptionListDescription>
-                        {formatDate(new Date(application.consent.createdDate))}
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
                   </>
                 )}
               </DescriptionList>
-              {(application.consent || application.offlineAccess) && (
-                <Grid hasGutter>
-                  <hr />
-                  <GridItem>
-                    <ContinueCancelModal
-                      buttonTitle={t("removeAccess")}
-                      modalTitle={t("removeAccess")}
-                      continueLabel={t("confirm")}
-                      cancelLabel={t("cancel")}
-                      buttonVariant="secondary"
-                      onContinue={() => removeConsent(application.clientId)}
-                    >
-                      {t("removeModalMessage", { name: application.clientId })}
-                    </ContinueCancelModal>
-                  </GridItem>
-                  <GridItem>
-                    <InfoAltIcon /> {t("infoMessage")}
-                  </GridItem>
-                </Grid>
-              )}
             </DataListContent>
           </DataListItem>
         ))}

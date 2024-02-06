@@ -237,6 +237,7 @@ public class AccountRestService {
         representation.setDescription(model.getDescription());
         representation.setUserConsentRequired(model.isConsentRequired());
         representation.setInUse(inUseClients.contains(model.getClientId()));
+        representation.setAlwaysDisplayInConsole(model.isAlwaysDisplayInConsole());
         representation.setOfflineAccess(offlineClients.contains(model.getClientId()));
         representation.setRootUrl(model.getRootUrl());
         representation.setBaseUrl(model.getBaseUrl());

@@ -1,5 +1,6 @@
 [
-  { "label": "personalInfo", "path": "/" },
+  { "label": "applications", "path": "/" },
+  { "label": "personalInfo", "path": "/personal-info" },
   {
     "label": "accountSecurity",
     "children": [
@@ -11,16 +12,5 @@
         "isVisible": "isLinkedAccountsEnabled"
       }
     ]
-  },
-  { "label": "applications", "path": "applications" },
-  {
-    "label": "groups",
-    "path": "groups",
-    "isVisible": "isViewGroupsEnabled"
-  },
-  {
-    "label": "resources",
-    "path": "resources",
-    "isVisible": "isMyResourcesEnabled"
   }
 ]

@@ -2,6 +2,7 @@ const adminGuide =
   "https://www.keycloak.org/docs/latest/server_admin/index.html";
 
 const keycloakHomepageURL = "https://www.keycloak.org";
+const phasetwoDocs = "https://phasetwo.io/docs";
 
 export default {
   documentationUrl: `${adminGuide}`,
@@ -20,4 +21,5 @@ export default {
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
+  orgsUrl: `${phasetwoDocs}/organizations/`,
 };

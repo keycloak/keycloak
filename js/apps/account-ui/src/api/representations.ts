@@ -12,6 +12,7 @@ export interface ClientRepresentation {
   description: string;
   userConsentRequired: boolean;
   inUse: boolean;
+  alwaysDisplayInConsole: boolean;
   offlineAccess: boolean;
   rootUrl: string;
   baseUrl: string;
