@@ -119,15 +119,15 @@ public interface RealmModel extends RoleContainerModel {
     String getAttribute(String name);
     default Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
     }
     default Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Long.valueOf(v) : defaultValue;
     }
     default Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
     Map<String, String> getAttributes();
 
