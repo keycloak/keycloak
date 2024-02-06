@@ -148,8 +148,10 @@
 
         <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.25.1</liquibase.version>
-        <osgi.version>4.2.0</osgi.version>
-        <pax.web.version>7.1.0</pax.web.version>
+        <!-- matches quarkus 3.7.1 version and the pax.web.version -->
+        <osgi.version>6.0.0</osgi.version>
+        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
+        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
@@ -914,13 +916,13 @@
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
+                <artifactId>osgi.core</artifactId>
                 <version>${osgi.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.version}</version>
+                <version>${osgi.enterprise.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.web</groupId>
