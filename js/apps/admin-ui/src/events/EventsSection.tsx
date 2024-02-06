@@ -11,8 +11,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -42,6 +40,7 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -232,20 +231,11 @@ export default function EventsSection() {
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Dropdown
-            id="user-events-search-select"
-            data-testid="UserEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="userEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForUserEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            buttonText={t("searchForUserEvent")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            width="15vw"
           >
             <Form
               data-testid="searchForm"
@@ -403,7 +393,7 @@ export default function EventsSection() {
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
+          </DropdownPanel>
           <Button
             className="pf-u-ml-md"
             onClick={refresh}
