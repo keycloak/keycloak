@@ -148,7 +148,7 @@
 
         <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.25.1</liquibase.version>
-        <!-- matches quarkus 3.7.1 version and the pax.web.version -->
+        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
         <osgi.version>6.0.0</osgi.version>
         <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
         <pax.web.version>7.4.6</pax.web.version>
