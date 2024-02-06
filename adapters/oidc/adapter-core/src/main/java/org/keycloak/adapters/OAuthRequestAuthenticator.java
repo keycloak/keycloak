@@ -398,6 +398,9 @@ public class OAuthRequestAuthenticator {
                 StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
                 redirectUriBuilder.append("://"+ url.getAuthority());
                 redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
+                if (url.getQuery() != null && !url.getQuery().isEmpty()) {
+	                redirectUriBuilder.append("?").append(url.getQuery());
+                }
                 return redirectUriBuilder.toString();
             } catch (MalformedURLException ex) {
                 log.error("Not a valid request url");
