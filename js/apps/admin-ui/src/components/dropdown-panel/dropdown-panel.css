@@ -9,6 +9,7 @@
   border-style: solid;
   text-align: left;
   cursor: pointer;
+  height: 2.25rem;
 }
 
 .kc-dropdown-panel:hover {
