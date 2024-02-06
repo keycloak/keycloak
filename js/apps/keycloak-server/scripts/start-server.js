@@ -37,12 +37,7 @@ async function startServer() {
   console.info("Starting server…");
   const child = spawn(
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
-    [
-      "start-dev",
-      "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,transient-users",
-      ...keycloakArgs,
-    ],
+    ["start-dev", "--http-port=8180", ...keycloakArgs],
     {
       env: {
         KEYCLOAK_ADMIN: ADMIN_USERNAME,
