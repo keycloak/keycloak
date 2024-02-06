@@ -1,0 +1,37 @@
+.kc-dropdown-panel {
+  background-color: transparent;
+  padding: var(--pf-global--spacer--form-element) var(--pf-global--spacer--sm)
+    var(--pf-global--spacer--form-element) var(--pf-global--spacer--sm);
+  border-color: var(--pf-global--BorderColor--300)
+    var(--pf-global--BorderColor--300) var(--pf-global--BorderColor--200)
+    var(--pf-global--BorderColor--300);
+  border-width: var(--pf-global--BorderWidth--sm);
+  border-style: solid;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kc-dropdown-panel:hover {
+  border-bottom-color: var(--pf-global--primary-color--100);
+}
+
+.kc-dropdown-panel:focus,
+.kc-dropdown-panel:active {
+  border-bottom-color: var(--pf-global--active-color--100);
+  border-bottom-width: var(--pf-global--BorderWidth--md);
+}
+
+.kc-dropdown-panel-icon {
+  float: right;
+  margin-top: 0.2rem;
+}
+
+.kc-dropdown-panel-content {
+  display: block;
+  position: absolute;
+  background-color: var(--pf-global--Color--light-100);
+  min-width: 10rem;
+  box-shadow: 0px 0.5rem 1rem 0px rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  z-index: 1;
+}

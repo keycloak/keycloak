@@ -4,8 +4,6 @@ import {
   Chip,
   ChipGroup,
   Divider,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -31,9 +29,11 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
+import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
+  defaultLocales: string[];
 };
 
 type EffectiveMessageBundlesSearchForm = {
@@ -52,6 +52,7 @@ const defaultValues: EffectiveMessageBundlesSearchForm = {
 
 export const EffectiveMessageBundles = ({
   defaultSupportedLocales,
+  defaultLocales,
 }: EffectiveMessageBundlesProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -83,12 +84,16 @@ export const EffectiveMessageBundles = ({
     }
 
     return localeSort(
-      Object.values(themes)
+      Object.values(themes as Record<string, { name: string }[]>)
         .flatMap((theme) => theme.map((item) => item.name))
         .filter((value, index, self) => self.indexOf(value) === index),
       (name) => name,
     );
   }, [themes]);
+
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
 
   const filterLabels: Record<keyof EffectiveMessageBundlesSearchForm, string> =
     {
@@ -193,23 +198,20 @@ export const EffectiveMessageBundles = ({
           </TextContent>
         </FlexItem>
         <FlexItem>
-          <Dropdown
-            id="effective-message-bundles-search-select"
-            data-testid="EffectiveMessageBundlesSearchSelector"
-            toggle={
-              <DropdownToggle
-                data-testid="effectiveMessageBundlesSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-              >
-                {t("searchForEffectiveMessageBundles")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            actionButtonText={t("refresh")}
+            actionButtonVariant="primary"
+            buttonText={t("searchForEffectiveMessageBundles")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            onSubmitAction={submitSearch}
+            width="20vw"
           >
             <Form
               isHorizontal
-              className="pf-c-form pf-u-mx-lg pf-u-mb-lg pf-u-w-25vw"
+              className="pf-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
+              onSubmit={(e) => e.preventDefault()}
             >
               <FormGroup label={t("theme")} fieldId="kc-theme" isRequired>
                 <Controller
@@ -229,10 +231,11 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemesOpen(isOpen)}
+                      onToggle={setSelectThemesOpen}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
+                        setSelectThemesOpen(false);
                       }}
                       onClear={(theme) => {
                         theme.stopPropagation();
@@ -293,10 +296,11 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectThemeTypeOpen(isOpen)}
+                      onToggle={setSelectThemeTypeOpen}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
+                        setSelectThemeTypeOpen(false);
                       }}
                       onClear={(themeType) => {
                         themeType.stopPropagation();
@@ -353,10 +357,11 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectLanguageOpen(isOpen)}
+                      onToggle={setSelectLanguageOpen}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
+                        setSelectLanguageOpen(false);
                       }}
                       onClear={(language) => {
                         language.stopPropagation();
@@ -392,7 +397,7 @@ export const EffectiveMessageBundles = ({
                           isDisabled
                         />,
                       ].concat(
-                        defaultSupportedLocales.map((option) => (
+                        combinedLocales.map((option) => (
                           <SelectOption key={option} value={option}>
                             {localeToDisplayName(option, whoAmI.getLocale())}
                           </SelectOption>
@@ -414,10 +419,16 @@ export const EffectiveMessageBundles = ({
                         value={field.value.join(" ")}
                         onChange={(e) => {
                           const target = e.target as HTMLInputElement;
-                          const words = target.value
-                            .split(" ")
-                            .map((word) => word.trim());
-                          field.onChange(words);
+                          const input = target.value;
+
+                          if (input.trim().length === 0) {
+                            field.onChange([]);
+                          } else {
+                            const words = input
+                              .split(" ")
+                              .map((word) => word.trim());
+                            field.onChange(words);
+                          }
                         }}
                       />
                       <ChipGroup>
@@ -440,7 +451,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <ActionGroup>
+              <ActionGroup className="pf-u-mt-sm">
                 <Button
                   variant={"primary"}
                   onClick={() => {
@@ -462,25 +473,16 @@ export const EffectiveMessageBundles = ({
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
-          <Button
-            variant="primary"
-            className="pf-u-ml-md"
-            onClick={() => submitSearch()}
-            data-testid="refresh-effective-message-bundles-btn"
-          >
-            {t("refresh")}
-          </Button>
+          </DropdownPanel>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
-            <div className="keycloak__searchChips pf-u-ml-md">
+            <>
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof EffectiveMessageBundlesSearchForm,
                   string | string[],
                 ];
-
                 return (
                   <ChipGroup
                     className="pf-u-mt-md pf-u-mr-md"
@@ -492,7 +494,10 @@ export const EffectiveMessageBundles = ({
                     {typeof value === "string" ? (
                       <Chip isReadOnly>
                         {key === "locale"
-                          ? localeToDisplayName(value, whoAmI.getLocale())
+                          ? localeToDisplayName(
+                              value,
+                              whoAmI.getLocale(),
+                            )?.toLowerCase()
                           : value}
                       </Chip>
                     ) : (
@@ -508,7 +513,7 @@ export const EffectiveMessageBundles = ({
                   </ChipGroup>
                 );
               })}
-            </div>
+            </>
           )}
         </FlexItem>
       </Flex>
