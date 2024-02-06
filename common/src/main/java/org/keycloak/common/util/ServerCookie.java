@@ -27,7 +27,11 @@ import java.util.TimeZone;
 
 /**
  * Server-side cookie representation.  borrowed from Tomcat.
+ *
+ * @deprecated Should not be used on the Keycloak server-side, or in extensions. Will be removed when no longer used by
+ * adapters
  */
+@Deprecated
 public class ServerCookie implements Serializable {
     private static final String tspecials = ",; ";
     private static final String tspecials2 = "()<>@,;:\\\"/[]?={} \t";
