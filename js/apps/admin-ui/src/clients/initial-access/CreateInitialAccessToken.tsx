@@ -72,7 +72,7 @@ export default function CreateInitialAccessToken() {
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText={t("expirationHelp")}
+                helpText={t("tokenExpirationHelp")}
                 fieldLabelId="expiration"
               />
             }
