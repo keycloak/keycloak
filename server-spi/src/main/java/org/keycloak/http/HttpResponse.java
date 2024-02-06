@@ -17,6 +17,8 @@
 
 package org.keycloak.http;
 
+import jakarta.ws.rs.core.NewCookie;
+
 /**
  * <p>Represents an out coming HTTP response.
  *
@@ -56,6 +58,17 @@ public interface HttpResponse {
      *
      * @param cookie the cookie
      */
-    void setCookieIfAbsent(HttpCookie cookie);
+    void setCookieIfAbsent(NewCookie cookie);
+
+    /**
+     * Sets a new cookie only if not yet set.
+     * @deprecated This method will be removed in the future. Please use {@link jakarta.ws.rs.core.NewCookie.Builder}
+     *
+     * @param cookie the cookie
+     */
+    @Deprecated(since = "24.0.0", forRemoval = true)
+    default void setCookieIfAbsent(HttpCookie cookie) {
+        setCookieIfAbsent((NewCookie) cookie);
+    }
 
 }

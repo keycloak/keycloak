@@ -306,9 +306,11 @@ and `org.keycloak:keycloak-model-legacy` module was deprecated and will be remov
 As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:
 
 * All cookies will now have the secure attribute set if the request is through a secure context
-* KEYCLOAK_LOCALE and WELCOME_STATE_CHECKER cookies now set SameSite=Strict
+* `WELCOME_STATE_CHECKER` cookies now set `SameSite=Strict`
 
 For custom extensions there may be some changes needed:
 
-* LocaleSelectorProvider.KEYCLOAK_LOCALE is deprecated as cookies are now managed through the CookieProvider
-* HttpResponse.setWriteCookiesOnTransactionComplete has been removed
+* `LocaleSelectorProvider.KEYCLOAK_LOCALE` is deprecated as cookies are now managed through the CookieProvider
+* `HttpResponse.setWriteCookiesOnTransactionComplete` has been removed
+* `HttpCookie` is deprecated, please use `NewCookie.Builder` instead
+* `ServerCookie` is deprecated, please use `NewCookie.Builder` instead
