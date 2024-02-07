@@ -198,7 +198,7 @@ export const AdminEvents = () => {
             buttonText={t("searchForAdminEvent")}
             setSearchDropdownOpen={setSearchDropdownOpen}
             searchDropdownOpen={searchDropdownOpen}
-            marginRight="3rem"
+            marginRight="2.5rem"
             width="15vw"
           >
             <Form
