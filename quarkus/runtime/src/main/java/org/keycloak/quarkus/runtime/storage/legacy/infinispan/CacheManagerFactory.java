@@ -192,7 +192,6 @@ public class CacheManagerFactory {
     private void configureRemoteStores(ConfigurationBuilderHolder builder) {
         //if one of remote store command line parameters is defined, some other are required, otherwise assume it'd configured via xml only
         if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent() ||
-            Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY).isPresent() ||
             Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
             Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent()) {
 

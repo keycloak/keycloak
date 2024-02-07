@@ -96,17 +96,14 @@ public class CachingOptions {
                     + "It replaces the 'host' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
                     + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
-            .buildTime(true)
             .build();
 
     public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
             .category(OptionCategory.CACHE)
             .description(String.format("The port of the remote server for the remote store configuration. "
-                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
-                    + "If the option is specified, '%s', '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
-                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
+                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.).", 
+                    CACHE_CONFIG_FILE_PROPERTY))
             .defaultValue(11222)
-            .buildTime(true)
             .build();
 
     public static final Option<String> CACHE_REMOTE_USERNAME = new OptionBuilder<>(CACHE_REMOTE_USERNAME_PROPERTY, String.class)
@@ -115,7 +112,6 @@ public class CachingOptions {
                     + "It replaces the 'username' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
                     + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
-            .buildTime(true)
             .build();
 
     public static final Option<String> CACHE_REMOTE_PASSWORD = new OptionBuilder<>(CACHE_REMOTE_PASSWORD_PROPERTY, String.class)
@@ -124,7 +120,6 @@ public class CachingOptions {
                     + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
                     + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
-            .buildTime(true)
             .build();
 
 }

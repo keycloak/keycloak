@@ -39,6 +39,28 @@ Cache:
                        'cache-mtls-truststore.p12' under conf/ directory.
 --cache-embedded-mtls-trust-store-password <password>
                      The password to access the Truststore.
+--cache-remote-host <hostname>
+                     The hostname of the remote server for the remote store configuration. It
+                       replaces the 'host' attribute of 'remote-server' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-username' and 'cache-remote-password' are required
+                       as well and the related configuration in XML file should not be present.
+--cache-remote-password <password>
+                     The password for the authentication to the remote server for the remote store.
+                       It replaces the 'password' attribute of 'digest' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-host' and 'cache-remote-username' are required as
+                       well and the related configuration in XML file should not be present.
+--cache-remote-port <port>
+                     The port of the remote server for the remote store configuration. It replaces
+                       the 'port' attribute of 'remote-server' tag of the configuration specified
+                       via XML file (see 'cache-config-file' option.). Default: 11222.
+--cache-remote-username <username>
+                     The username for the authentication to the remote server for the remote store.
+                       It replaces the 'username' attribute of 'digest' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-host' and 'cache-remote-password' are required as
+                       well and the related configuration in XML file should not be present.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
