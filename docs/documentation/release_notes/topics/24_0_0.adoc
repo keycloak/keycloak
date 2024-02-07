@@ -188,6 +188,14 @@ spec:
       key: config.xml
 ----
 
+= Temporary lockout log replaced with event
+
+There is now a new event `USER_DISABLED_BY_TEMPORARY_LOCKOUT` when a user is temporarily locked out by the brute force protector.
+The log with ID `KC-SERVICES0053` has been removed as the new event offers the information in a structured form.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Updates to cookies
 
 Cookie handling code has been refactored and improved, including a new Cookie Provider. This provides better consistency
