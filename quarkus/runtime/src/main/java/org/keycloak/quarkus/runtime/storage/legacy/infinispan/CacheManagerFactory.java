@@ -23,6 +23,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
+import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -196,7 +198,9 @@ public class CacheManagerFactory {
                 Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent()) {
 
                 String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
-                String cacheRemotePort = requiredStringProperty(CACHE_REMOTE_PORT_PROPERTY);
+                Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
+                        .map(Integer::parseInt)
+                        .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
                 String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
                 String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
 
@@ -205,25 +209,29 @@ public class CacheManagerFactory {
 
                     //if specified via command line -> cannot be defined in the xml file
                     if (!persistenceCB.stores().isEmpty()) {
-                        throw new RuntimeException(String.format("Remote store for '%s' is already configured via CLI parameters. It should not be present in XML file a.", cacheName));
+                        throw new RuntimeException(String.format("Remote store for cache '%s' is already configured via CLI parameters. It should not be present in the XML file.", cacheName));
                     }
 
                     persistenceCB.addStore(RemoteStoreConfigurationBuilder.class)
                             .rawValues(true)
                             .shared(true)
+                            .segmented(false)
                             .remoteCacheName(cacheName)
                             .connectionPool()
                                 .maxActive(16)
                                 .exhaustedAction(ExhaustedAction.CREATE_NEW)
                             .remoteSecurity()
+                                .ssl()
+                                    .enable()
                                 .authentication()
-                                    .serverName("infinispan")
+                                    .enable()
                                     .username(cacheRemoteUsername)
                                     .password(cacheRemotePassword)
                                     .realm("default")
+                                    .saslMechanism(AuthenticationConfigurationBuilder.DEFAULT_MECHANISM)
                             .addServer()
                                 .host(cacheRemoteHost)
-                                .port(Integer.parseInt(cacheRemotePort));
+                                .port(cacheRemotePort);
                 });
             }
         }

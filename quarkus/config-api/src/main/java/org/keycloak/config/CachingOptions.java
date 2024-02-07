@@ -97,6 +97,7 @@ public class CachingOptions {
     public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
             .category(OptionCategory.CACHE)
             .description("TODO")
+            .defaultValue(11222)
             .buildTime(true)
             .build();
 
