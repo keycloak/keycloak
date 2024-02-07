@@ -220,10 +220,6 @@ export default function EventsSection() {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const userEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -235,6 +231,7 @@ export default function EventsSection() {
             buttonText={t("searchForUserEvent")}
             setSearchDropdownOpen={setSearchDropdownOpen}
             searchDropdownOpen={searchDropdownOpen}
+            marginRight="3rem"
             width="15vw"
           >
             <Form
@@ -394,13 +391,6 @@ export default function EventsSection() {
               </ActionGroup>
             </Form>
           </DropdownPanel>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (

@@ -187,10 +187,6 @@ export const AdminEvents = () => {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const adminEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -202,6 +198,7 @@ export const AdminEvents = () => {
             buttonText={t("searchForAdminEvent")}
             setSearchDropdownOpen={setSearchDropdownOpen}
             searchDropdownOpen={searchDropdownOpen}
+            marginRight="3rem"
             width="15vw"
           >
             <Form
@@ -441,13 +438,6 @@ export const AdminEvents = () => {
               </ActionGroup>
             </Form>
           </DropdownPanel>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
