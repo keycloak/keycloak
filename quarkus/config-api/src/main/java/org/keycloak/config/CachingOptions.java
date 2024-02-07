@@ -4,6 +4,8 @@ import java.io.File;
 
 public class CachingOptions {
 
+    public static final String CACHE_CONFIG_FILE_PROPERTY = "cache-config-file";
+
     private static final String CACHE_EMBEDDED_MTLS_PREFIX = "cache-embedded-mtls";
     public static final String CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-enabled";
     public static final String CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-store-file";
@@ -47,7 +49,7 @@ public class CachingOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>("cache-config-file", File.class)
+    public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
@@ -90,26 +92,38 @@ public class CachingOptions {
 
     public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description("TODO")
+            .description(String.format("The hostname of the remote server for the remote store configuration. "
+                    + "It replaces the 'host' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .buildTime(true)
             .build();
 
     public static final Option<Integer> CACHE_REMOTE_PORT = new OptionBuilder<>(CACHE_REMOTE_PORT_PROPERTY, Integer.class)
             .category(OptionCategory.CACHE)
-            .description("TODO")
+            .description(String.format("The port of the remote server for the remote store configuration. "
+                    + "It replaces the 'port' attribute of 'remote-server' tag of the configuration specified via XML file (see '%s' option.). "
+                    + "If the option is specified, '%s', '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .defaultValue(11222)
             .buildTime(true)
             .build();
 
     public static final Option<String> CACHE_REMOTE_USERNAME = new OptionBuilder<>(CACHE_REMOTE_USERNAME_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description("TODO")
+            .description(String.format("The username for the authentication to the remote server for the remote store. "
+                    + "It replaces the 'username' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_PASSWORD_PROPERTY))
             .buildTime(true)
             .build();
 
     public static final Option<String> CACHE_REMOTE_PASSWORD = new OptionBuilder<>(CACHE_REMOTE_PASSWORD_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
-            .description("TODO")
+            .description(String.format("The password for the authentication to the remote server for the remote store. "
+                    + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
+                    + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
+                    CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
             .buildTime(true)
             .build();
 

@@ -36,6 +36,12 @@ For additional information on the infinispan configuration options, see the http
 include::examples/src/kcb-infinispan-cache-remote-store-config.xml[tag=keycloak-ispn-remotestore-work]
 ----
 
+[NOTE]
+====
+Alternatively there are CLI configuration options `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, `cache-remote-password` to configure <2> and <3>. 
+In that case the `persistence` tag <1> is expected not to be present in the file (default values will be used)
+====
+
 . Place the {jdgserver_name} Cache configuration XML in a ConfigMap.
 +
 [source,yaml]
