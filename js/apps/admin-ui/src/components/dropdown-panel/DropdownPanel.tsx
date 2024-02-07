@@ -8,6 +8,7 @@ type DropdownPanelProps = {
   children: React.ReactNode;
   setSearchDropdownOpen: (open: boolean) => void;
   searchDropdownOpen: boolean;
+  marginRight?: string;
   width: string;
 };
 
@@ -16,6 +17,7 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
   children,
   setSearchDropdownOpen,
   searchDropdownOpen,
+  marginRight,
   width,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
         className="kc-dropdown-panel"
         onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
         aria-label={buttonText}
-        style={{ width }}
+        style={{ width, marginRight }}
         data-testid="dropdown-panel-btn"
       >
         {buttonText}
