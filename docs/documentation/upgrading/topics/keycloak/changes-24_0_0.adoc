@@ -329,7 +329,17 @@ After removal of the Map Store the following modules were renamed:
 * `org.keycloak:keycloak-model-legacy-private` to `org.keycloak:keycloak-model-storage-private`
 * `org.keycloak:keycloak-model-legacy-services` to `org.keycloak:keycloak-model-storage-services`
 
-and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module. 
+and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module.
+
+= Temporary lockout log replaced with event
+
+There is now a new event `USER_DISABLED_BY_TEMPORARY_LOCKOUT` when a user is temporarily locked out by the brute force protector.
+The log with ID `KC-SERVICES0053` has been removed as the new event offers the information in a structured form.
+
+As it is a success event, the new event is logged by default at the `DEBUG` level.
+Use the setting `spi-events-listener-jboss-logging-success-level` as described in the link:{adminguide_eventlistener_link}[{adminguide_eventlistener_name} chapter in the {adminguide_name}] to change the log level of all success events.
+
+To trigger custom actions or custom log entries, write a custom event listener as described in the Event Listener SPI in the link:{developerguide_link}[{developerguide_name}].
 
 = Updates to cookies
 

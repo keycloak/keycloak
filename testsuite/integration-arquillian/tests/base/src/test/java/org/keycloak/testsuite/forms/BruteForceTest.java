@@ -516,6 +516,16 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testTemporaryLockout() throws Exception {
+        loginInvalidPassword("test-user@localhost");
+        loginInvalidPassword("test-user@localhost", false);
+
+        List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll());
+        assertIsContained(events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
+        assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+    }
+
+    @Test
     public void testResetLoginFailureCount() {
         RealmRepresentation realm = testRealm().toRepresentation();
 
