@@ -2,15 +2,10 @@ import {
   Button,
   DataList,
   DataListCell,
-  DataListContent,
   DataListItem,
   DataListItemCells,
   DataListItemRow,
   DataListToggle,
-  DescriptionList,
-  DescriptionListDescription,
-  DescriptionListGroup,
-  DescriptionListTerm,
   Spinner,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -48,21 +43,18 @@ export const Applications = () => {
     (signal) => getApplications({ signal, context }),
     (clients) =>
       setApplications(
-        clients.filter(filterRestrictClientIds).map((c) => ({
-          ...c,
-          open: false,
-        })),
+        clients
+          .filter(filterRestrictClientIds)
+          .filter((c) =>
+            context.keycloak.hasResourceRole("allow-access", c.clientId),
+          )
+          .map((c) => ({
+            ...c,
+            open: false,
+          })),
       ),
     [key],
   );
-
-  const toggleOpen = (clientId: string) => {
-    setApplications([
-      ...applications!.map((a) =>
-        a.clientId === clientId ? { ...a, open: !a.open } : a,
-      ),
-    ]);
-  };
 
   if (!applications) {
     return <Spinner />;
@@ -86,7 +78,7 @@ export const Applications = () => {
               dataListCells={[
                 <DataListCell
                   key="applications-list-client-id-header"
-                  width={2}
+                  width={5}
                   className="pf-u-pt-md"
                 >
                   <strong>{t("name")}</strong>
@@ -109,16 +101,10 @@ export const Applications = () => {
             isExpanded={application.open}
           >
             <DataListItemRow className="pf-u-align-items-center">
-              <DataListToggle
-                onClick={() => toggleOpen(application.clientId)}
-                isExpanded={application.open}
-                id={`toggle-${application.clientId}`}
-                aria-controls={`content-${application.clientId}`}
-              />
               <DataListItemCells
                 className="pf-u-align-items-center"
                 dataListCells={[
-                  <DataListCell width={2} key={`client${application.clientId}`}>
+                  <DataListCell width={5} key={`client${application.clientId}`}>
                     <span>
                       {application.clientName || application.clientId}
                     </span>
@@ -133,75 +119,6 @@ export const Applications = () => {
                 ]}
               />
             </DataListItemRow>
-
-            <DataListContent
-              id={`content-${application.clientId}`}
-              className="pf-u-pl-4xl"
-              aria-label={t("applicationDetails", {
-                clientId: application.clientId,
-              })}
-              isHidden={!application.open}
-            >
-              <DescriptionList>
-                {application.description && (
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      {t("description")}
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {application.description}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                )}
-                {application.effectiveUrl && (
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>URL</DescriptionListTerm>
-                    <DescriptionListDescription>
-                      <Button
-                        className="pf-u-pl-0 title-case"
-                        component="a"
-                        variant="link"
-                        href={application.effectiveUrl}
-                      >
-                        {application.effectiveUrl.split('"')}
-                      </Button>
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                )}
-                {application.consent && (
-                  <>
-                    {application.tosUri && (
-                      <DescriptionListGroup>
-                        <DescriptionListTerm>
-                          {t("termsOfService")}
-                        </DescriptionListTerm>
-                        <DescriptionListDescription>
-                          {application.tosUri}
-                        </DescriptionListDescription>
-                      </DescriptionListGroup>
-                    )}
-                    {application.policyUri && (
-                      <DescriptionListGroup>
-                        <DescriptionListTerm>
-                          {t("privacyPolicy")}
-                        </DescriptionListTerm>
-                        <DescriptionListDescription>
-                          {application.policyUri}
-                        </DescriptionListDescription>
-                      </DescriptionListGroup>
-                    )}
-                    {application.logoUri && (
-                      <DescriptionListGroup>
-                        <DescriptionListTerm>{t("logo")}</DescriptionListTerm>
-                        <DescriptionListDescription>
-                          <img src={application.logoUri} />
-                        </DescriptionListDescription>
-                      </DescriptionListGroup>
-                    )}
-                  </>
-                )}
-              </DescriptionList>
-            </DataListContent>
           </DataListItem>
         ))}
       </DataList>

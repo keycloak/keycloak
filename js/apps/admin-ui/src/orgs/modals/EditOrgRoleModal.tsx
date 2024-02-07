@@ -78,7 +78,7 @@ export const EditOrgRoleModal = ({
           form="role-name-form"
           isDisabled={isSubmitting}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -89,7 +89,7 @@ export const EditOrgRoleModal = ({
             handleModalToggle();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -102,7 +102,7 @@ export const EditOrgRoleModal = ({
           name="update-role-name"
           label={t("roleName")}
           fieldId="role-name"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -133,7 +133,7 @@ export const EditOrgRoleModal = ({
 
         <FormGroup
           name="role-description"
-          label={t("common:description")}
+          label={t("description")}
           fieldId="role-description"
           validated={
             errors.description

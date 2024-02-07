@@ -13,6 +13,7 @@ import useOrgFetcher from "./useOrgFetcher";
 import type { OrgParams } from "./routes/Org";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import OrgMembers from "./OrgMembers";
+import OrgClients from "./OrgClients";
 import OrgInvitations from "./OrgInvitations";
 import OrgRoles from "./OrgRoles";
 import { PortalLink } from "../components/portal-link/PortalLink";
@@ -51,6 +52,7 @@ export default function OrgDetails() {
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
+  const clientsTab = useTab("clients");
   const invitationsTab = useTab("invitations");
   const rolesTab = useTab("roles");
   const identityProvidersTab = useTab("identityproviders");
@@ -79,7 +81,7 @@ export default function OrgDetails() {
         <RoutableTabs data-testid="orgs-tabs" isBox mountOnEnter>
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <OrgSettings org={org} />
@@ -97,6 +99,13 @@ export default function OrgDetails() {
             {...membersTab}
           >
             <OrgMembers org={org} />
+          </Tab>
+          <Tab
+            id="clients"
+            title={<TabTitleText>Clients</TabTitleText>}
+            {...clientsTab}
+          >
+            <OrgClients org={org} />
           </Tab>
           <Tab
             id="invitations"

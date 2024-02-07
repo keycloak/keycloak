@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { OrgRepresentation } from "./routes";
 import useOrgFetcher from "./useOrgFetcher";
@@ -70,11 +73,11 @@ export default function OrgInvitations(props: OrgInvitationsTypeProps) {
             </Button>
           </ToolbarItem>
         }
-        actionResolver={() => [
+        actions={[
           {
             title: "Remove Pending Invitation",
             onRowClick: removeInvitation,
-          },
+          } as Action<OrgRepresentation>,
         ]}
         columns={[
           {

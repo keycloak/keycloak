@@ -10,7 +10,10 @@ import { Link } from "react-router-dom";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import helpUrls from "../help-urls";
 import useOrgFetcher from "./useOrgFetcher";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { NewOrgModal } from "./modals/NewOrgModal";
 import { toOrg } from "./routes/Org";
@@ -102,13 +105,11 @@ export default function OrgsSection() {
               </Button>
             </ToolbarItem>
           }
-          //@ts-ignore
           actions={[
             {
               title: "Delete organization",
-              //@ts-ignore
               onRowClick: deleteOrg,
-            },
+            } as Action<OrgRepresentation>,
           ]}
           columns={[
             {

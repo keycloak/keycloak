@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { AddMember } from "./AddMember";
@@ -93,14 +96,14 @@ export default function OrgMembers({ org }: OrgMembersTypeProps) {
             </Button>
           </ToolbarItem>
         }
-        actionResolver={() => [
+        actions={[
           {
             title: "Assign Role",
             onRowClick: async (user: UserRepresentation): Promise<boolean> => {
               setAssignRoleModalOpen(user);
               return Promise.resolve(true);
             },
-          },
+          } as Action<UserRepresentation>,
           {
             title: "Remove from Org",
             onRowClick: async (user: UserRepresentation): Promise<boolean> => {
@@ -108,7 +111,7 @@ export default function OrgMembers({ org }: OrgMembersTypeProps) {
               refresh();
               return Promise.resolve(true);
             },
-          },
+          } as Action<UserRepresentation>,
         ]}
         columns={[
           {
@@ -131,8 +134,8 @@ export default function OrgMembers({ org }: OrgMembersTypeProps) {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("users:noUsersFound")}
-            instructions={t("users:emptyInstructions")}
+            message={t("noUsersFound")}
+            instructions={t("emptyInstructions")}
             primaryActionText={t("addMember")}
             onPrimaryAction={toggleAddMembersVisibility}
           />

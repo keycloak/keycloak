@@ -121,14 +121,14 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.ico" />]]></token>
-                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.ico"}" />]]></value>
+                            <token><![CDATA[<link rel="icon" type="image/x-icon" href="${resourceUrl}/favicon.ico" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/x-icon"}" href="${resourceUrl}${properties.favIcon!"/favicon.ico"}" />]]></value>
                         </replacement>
                         <replacement>
-                            <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
+                            <token><![CDATA[<title>Magnet Customer IDP</title>]]></token>
                             <value xml:space="preserve">
 <![CDATA[
-    <title>${properties.title!"Keycloak Administration UI"}</title>
+    <title>${properties.title!"Magnet Customer IDP"}</title>
     <script type="importmap">
       {
         "imports": {

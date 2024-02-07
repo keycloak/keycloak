@@ -8,9 +8,14 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import environment from "../environment";
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
+};
+
+type ClientsOf = ClientRepresentation & {
+  client: GroupRepresentation[];
 };
 
 type OrgResp = Response & { error: string; data?: any[] };
@@ -182,6 +187,30 @@ export default function useOrgFetcher(realm: string) {
 
   async function removeMemberFromOrg(orgId: string, userId: string) {
     await fetchDelete(`${baseUrl}/orgs/${orgId}/members/${userId}`);
+  }
+
+  async function getOrgClients(orgId: string): Promise<ClientsOf[]> {
+    const resp = await fetchGet(`${baseUrl}/orgs/${orgId}/clients`);
+    const result = await resp.json();
+    return result;
+  }
+
+  async function addOrgClient(orgId: string, userId: string) {
+    const token = await adminClient.getAccessToken();
+    await fetch(`${baseUrl}/orgs/${orgId}/clients/${userId}`, {
+      method: "PUT",
+      mode: "cors",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      redirect: "follow",
+    });
+  }
+
+  async function removeClientFromOrg(orgId: string, userId: string) {
+    await fetchDelete(`${baseUrl}/orgs/${orgId}/clients/${userId}`);
   }
 
   async function createInvitation(
@@ -406,16 +435,114 @@ export default function useOrgFetcher(realm: string) {
     }
   }
 
+  // GET /:realm/orgs/:orgId/roles/:name/clients/:clientId
+  async function checkOrgRoleForClient(
+    orgId: string,
+    role: RoleRepresentation,
+    client: ClientRepresentation,
+  ) {
+    let resp = (await fetchGet(
+      `${baseUrl}/orgs/${orgId}/roles/${role.name}/clients/${client.id}`,
+    )) as OrgResp;
+
+    if (resp.ok) {
+      return {
+        success: true,
+        message: `Client has role: ${role.name}.`,
+      };
+    }
+
+    resp = await resp.json();
+    return {
+      error: true,
+      message: resp.error,
+    };
+  }
+
+  // GET /:realm/clients/:clientId/orgs/:orgId/roles
+  async function listOrgRolesForClient(
+    orgId: string,
+    client: ClientRepresentation,
+  ) {
+    const resp = (await fetchGet(
+      `${baseUrl}/clients/${client.id}/orgs/${orgId}/roles`,
+    )) as OrgResp;
+
+    if (resp.ok) {
+      return {
+        success: true,
+        data: await resp.json(),
+      };
+    }
+
+    return {
+      error: true,
+      message: await resp.json(),
+    };
+  }
+
+  // PUT /:realm/orgs/:orgId/roles/:name/clients/:clientId
+  async function setOrgRoleForClient(
+    orgId: string,
+    role: RoleRepresentation,
+    client: ClientRepresentation,
+  ) {
+    let resp = (await fetchPut(
+      `${baseUrl}/orgs/${orgId}/roles/${role.name}/clients/${client.id}`,
+      {},
+    )) as OrgResp;
+
+    if (resp.ok) {
+      return {
+        success: true,
+        message: `${role.name} assigned to client.`,
+      };
+    }
+
+    resp = await resp.json();
+    return {
+      error: true,
+      message: resp.error,
+    };
+  }
+
+  // DELETE /:realm/orgs/:orgId/roles/:name/clients/:clientId
+  async function revokeOrgRoleForClient(
+    orgId: string,
+    role: RoleRepresentation,
+    client: ClientRepresentation,
+  ) {
+    let resp = (await fetchDelete(
+      `${baseUrl}/orgs/${orgId}/roles/${role.name}/clients/${client.id}`,
+    )) as OrgResp;
+
+    if (resp.ok) {
+      return {
+        success: true,
+        message: `${role.name} revoked for client.`,
+      };
+    }
+
+    resp = await resp.json();
+    return {
+      error: true,
+      message: resp.error,
+    };
+  }
+
   return {
     refreshOrgs,
     orgs,
     getOrgMembers,
+    getOrgClients,
     createOrg,
     deleteOrg,
     getOrg,
     updateOrg,
     addOrgMember,
     removeMemberFromOrg,
+    addOrgClient,
+    removeClientFromOrg,
     getOrgInvitations,
     createInvitation,
     deleteOrgInvitation,
@@ -429,6 +556,10 @@ export default function useOrgFetcher(realm: string) {
     listOrgRolesForUser,
     getPortalLink,
     updateIdentityProvider,
+    checkOrgRoleForClient,
+    setOrgRoleForClient,
+    revokeOrgRoleForClient,
+    listOrgRolesForClient,
     org,
   };
 }

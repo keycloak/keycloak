@@ -26,6 +26,8 @@ type OrgRolesProps = {
 const defaultRoles = [
   "view-organization",
   "manage-organization",
+  "view-clients",
+  "manage-clients",
   "view-members",
   "manage-members",
   "view-roles",

@@ -19,7 +19,7 @@ type KeyValueInputProps = {
 };
 
 export const KeyValueInput = ({ name, allowFullClear }: KeyValueInputProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { control, register } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,

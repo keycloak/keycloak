@@ -16,9 +16,9 @@ export const NewOrg = () => {
       {/*Name*/}
       <FormGroup
         name="create-modal-org"
-        label={t("common:name")}
+        label={t("name")}
         fieldId="name"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }

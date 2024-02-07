@@ -23,7 +23,7 @@ type PortalLinkProps = {
 };
 
 export const PortalLink = ({ id, open, toggleDialog }: PortalLinkProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { orgId } = useParams<OrgParams>();
   const { realm } = useRealm();
   const { getPortalLink } = useOrgFetcher(realm);
@@ -39,7 +39,7 @@ export const PortalLink = ({ id, open, toggleDialog }: PortalLinkProps) => {
 
   return (
     <ConfirmDialogModal
-      titleKey={t("orgs:organizationPortal")}
+      titleKey={t("organizationPortal")}
       continueButtonLabel={t("Close")}
       onConfirm={() => {
         return;
@@ -54,15 +54,15 @@ export const PortalLink = ({ id, open, toggleDialog }: PortalLinkProps) => {
           <StackItem>
             <Alert
               id={id}
-              title={t("orgs:organizationPortalHelpTitle")}
+              title={t("organizationPortalHelpTitle")}
               variant={AlertVariant.info}
               isInline
             >
-              {t("orgs:portalLinkHelp")}
+              {t("portalLinkHelp")}
             </Alert>
           </StackItem>
           <StackItem>
-            <FormGroup fieldId="type" label={t("orgs:organizationPortalLink")}>
+            <FormGroup fieldId="type" label={t("organizationPortalLink")}>
               <ClipboardCopy isReadOnly>{portalLink}</ClipboardCopy>
             </FormGroup>
           </StackItem>

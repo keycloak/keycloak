@@ -9,28 +9,28 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import useOrgFetcher from "../useOrgFetcher";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { KeycloakDataTableCustomized } from "../../components/table-toolbar/KeycloakDataTableCustomized";
 import { differenceBy } from "lodash-es";
 
-type AssignRoleToMemberProps = {
+type AssignRoleToClientProps = {
   orgId: string;
   handleModalToggle: () => void;
   refresh: () => void;
-  user: UserRepresentation;
+  client: ClientRepresentation;
   orgRoles: RoleRepresentation[];
 };
 
-export const AssignRoleToMemberModal = ({
+export const AssignRoleToClientModal = ({
   handleModalToggle,
   orgId,
-  user,
+  client,
   orgRoles,
-}: AssignRoleToMemberProps) => {
+}: AssignRoleToClientProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const { setOrgRoleForUser, listOrgRolesForUser, revokeOrgRoleForUser } =
+  const { setOrgRoleForClient, listOrgRolesForClient, revokeOrgRoleForClient } =
     useOrgFetcher(realm);
   const { addAlert, addError } = useAlerts();
 
@@ -38,11 +38,11 @@ export const AssignRoleToMemberModal = ({
   const refreshRoles = () => setKey(key + 1);
 
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
-  const [userOrgRoles, setUserOrgRoles] = useState([]);
+  const [clientOrgRoles, setClientOrgRoles] = useState([]);
 
   const saveRoles = async () => {
-    const newRoles = differenceBy(selectedRows, userOrgRoles, "id");
-    const rolesToRemove = differenceBy(userOrgRoles, selectedRows, "id");
+    const newRoles = differenceBy(selectedRows, clientOrgRoles, "id");
+    const rolesToRemove = differenceBy(clientOrgRoles, selectedRows, "id");
 
     if (newRoles.length === 0 && rolesToRemove.length === 0) {
       return;
@@ -54,7 +54,7 @@ export const AssignRoleToMemberModal = ({
 
     try {
       await Promise.all(
-        newRoles.map((newRole) => setOrgRoleForUser(orgId, newRole, user)),
+        newRoles.map((newRole) => setOrgRoleForClient(orgId, newRole, client)),
       );
     } catch (e) {
       console.log("Error during assignment");
@@ -64,7 +64,7 @@ export const AssignRoleToMemberModal = ({
     try {
       await Promise.all(
         rolesToRemove.map((roleToRemove) =>
-          revokeOrgRoleForUser(orgId, roleToRemove, user),
+          revokeOrgRoleForClient(orgId, roleToRemove, client),
         ),
       );
     } catch (e) {
@@ -76,26 +76,26 @@ export const AssignRoleToMemberModal = ({
     refreshRoles();
   };
 
-  const getListOrgRolesForUser = async () => {
-    const getRolesForUser = await listOrgRolesForUser(orgId, user);
+  const getListOrgRolesForClient = async () => {
+    const getRolesForClient = await listOrgRolesForClient(orgId, client);
 
-    if (getRolesForUser.error) {
+    if (getRolesForClient.error) {
       addError(
         `Error attempting to fetch available roles. Please refresh and try again.`,
-        getRolesForUser,
+        getRolesForClient,
       );
 
       return [];
     }
 
-    setUserOrgRoles(getRolesForUser.data);
+    setClientOrgRoles(getRolesForClient.data);
 
-    return getRolesForUser.data;
+    return getRolesForClient.data;
   };
 
   const loader = async () => {
-    const getRolesForUser = await getListOrgRolesForUser();
-    const hasRoleIds = getRolesForUser.map((r: { id: string }) => r.id);
+    const getRolesForClient = await getListOrgRolesForClient();
+    const hasRoleIds = getRolesForClient.map((r: { id: string }) => r.id);
 
     let tSelected: any[] = [];
     const roleMap = orgRoles.map((orgRole) => {
@@ -120,7 +120,7 @@ export const AssignRoleToMemberModal = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={`${t("assignRole")} to ${user.username || "user"}`}
+      title={`${t("assignRole")} to ${client.clientId || "client"}`}
       isOpen={true}
       onClose={handleModalToggle}
       actions={[

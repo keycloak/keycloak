@@ -8,40 +8,39 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { adminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { emptyFormatter } from "../util";
-import { toAddUser } from "../user/routes/AddUser";
+import { toAddClient } from "../clients/routes/AddClient";
 import useOrgFetcher from "./useOrgFetcher";
 import { differenceBy } from "lodash-es";
 
-type MemberModalProps = {
+type ClientModalProps = {
   orgId: string;
   refresh: () => void;
   onClose: () => void;
 };
 
-export const AddMember = ({ orgId, onClose, refresh }: MemberModalProps) => {
+export const AddClient = ({ orgId, onClose, refresh }: ClientModalProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
-  const { getOrgMembers, addOrgMember } = useOrgFetcher(realm);
+  const { getOrgClients, addOrgClient } = useOrgFetcher(realm);
   const { addAlert, addError } = useAlerts();
-  const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [selectedRows, setSelectedRows] = useState<ClientRepresentation[]>([]);
 
   const navigate = useNavigate();
 
-  const goToCreate = () => navigate(toAddUser({ realm }));
+  const goToCreate = () => navigate(toAddClient({ realm }));
 
   const loader = async (
     first?: number,
     max?: number,
     search?: string,
-  ): Promise<UserRepresentation[]> => {
-    const members = await getOrgMembers(orgId);
+  ): Promise<ClientRepresentation[]> => {
+    const orgClients = await getOrgClients(orgId);
     const params: { [name: string]: string | number } = {
       first: first!,
       max: max || 100,
@@ -49,15 +48,15 @@ export const AddMember = ({ orgId, onClose, refresh }: MemberModalProps) => {
     };
 
     try {
-      const users = await adminClient.users.find({ ...params });
+      const clients = await adminClient.clients.find({ ...params });
       return Promise.resolve(
-        differenceBy(users as any, members as any, "id").slice(
+        differenceBy(clients as any, orgClients as any, "id").slice(
           0,
           100,
-        ) as UserRepresentation[],
+        ) as ClientRepresentation[],
       );
     } catch (error) {
-      addError("groups:noUsersFoundError", error);
+      addError("groups:noClientsFoundError", error);
       return Promise.resolve([]);
     }
   };
@@ -65,7 +64,7 @@ export const AddMember = ({ orgId, onClose, refresh }: MemberModalProps) => {
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("addMember")}
+      title={t("addClient")}
       isOpen={true}
       onClose={onClose}
       actions={[
@@ -77,18 +76,18 @@ export const AddMember = ({ orgId, onClose, refresh }: MemberModalProps) => {
           onClick={async () => {
             try {
               await Promise.all(
-                selectedRows.map(async (user) => {
-                  await addOrgMember(orgId, user.id!);
+                selectedRows.map(async (client) => {
+                  await addOrgClient(orgId, client.id!);
                   refresh();
                 }),
               );
               onClose();
               addAlert(
-                t("usersAdded", { count: selectedRows.length }),
+                t("clientsAdded", { count: selectedRows.length }),
                 AlertVariant.success,
               );
             } catch (error) {
-              addError("usersAddedError", error);
+              addError("clientsAddedError", error);
             }
           }}
         >
@@ -108,35 +107,25 @@ export const AddMember = ({ orgId, onClose, refresh }: MemberModalProps) => {
         loader={loader}
         isPaginated
         ariaLabelKey="title"
-        searchPlaceholderKey="searchForUser"
+        searchPlaceholderKey="searchForClient"
         canSelectAll
-        onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
+        onSelect={(rows: ClientRepresentation[]) => setSelectedRows([...rows])}
         emptyState={
           <ListEmptyState
-            message={t("noUsersAvailable")}
+            message={t("noClientsAvailable")}
             instructions={t("emptyInstructions")}
-            primaryActionText={t("createNewUser")}
+            primaryActionText={t("createNewClient")}
             onPrimaryAction={goToCreate}
           />
         }
         columns={[
           {
-            name: "username",
-            displayKey: "username",
+            name: "clientId",
+            displayKey: "clientId",
           },
           {
-            name: "email",
-            displayKey: "email",
-          },
-          {
-            name: "lastName",
-            displayKey: "lastName",
-            cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "firstName",
-            displayKey: "firstName",
-            cellFormatters: [emptyFormatter()],
+            name: "name",
+            displayKey: "name",
           },
         ]}
       />

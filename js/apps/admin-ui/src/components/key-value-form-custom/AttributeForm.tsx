@@ -26,7 +26,7 @@ export const AttributesForm = ({
   fineGrainedAccess,
   allowFullClear,
 }: AttributesFormProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const noSaveCancelButtons = !save && !reset;
   const {
     formState: { isDirty },
@@ -50,10 +50,10 @@ export const AttributesForm = ({
             type="submit"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button onClick={reset} variant="link" isDisabled={!isDirty}>
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       )}

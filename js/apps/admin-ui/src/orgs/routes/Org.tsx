@@ -6,6 +6,7 @@ export type OrgTab =
   | "settings"
   | "attributes"
   | "members"
+  | "clients"
   | "invitations"
   | "roles"
   | "identityproviders";

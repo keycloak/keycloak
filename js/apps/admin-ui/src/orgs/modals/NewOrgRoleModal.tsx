@@ -71,7 +71,7 @@ export const NewOrgRoleModal = ({
           form="role-name-form"
           isDisabled={isSubmitting}
         >
-          {t("common:create")}
+          {t("create")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -83,7 +83,7 @@ export const NewOrgRoleModal = ({
           }}
           isDisabled={isSubmitting}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -97,7 +97,7 @@ export const NewOrgRoleModal = ({
           label={t("roleName")}
           fieldId="role-name"
           helperText="All lowercase, no spaces."
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -125,7 +125,7 @@ export const NewOrgRoleModal = ({
 
         <FormGroup
           name="role-description"
-          label={t("common:description")}
+          label={t("description")}
           fieldId="role-description"
           validated={
             errors.description

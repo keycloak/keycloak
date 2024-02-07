@@ -88,7 +88,7 @@ export const NewOrgModal = ({
             toggleVisibility();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
