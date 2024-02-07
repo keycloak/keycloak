@@ -1010,6 +1010,13 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         assertEquals("Client is not within the token audience", response.getErrorDescription());
     }
 
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @UncaughtServerErrorExpected
+    public void testExchangeWithDynamicScopesEnabled() throws Exception {
+        testExchange();
+    }
+
     private static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
