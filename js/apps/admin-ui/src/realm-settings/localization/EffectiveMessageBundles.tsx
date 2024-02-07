@@ -116,6 +116,16 @@ export const EffectiveMessageBundles = ({
   const loader = async () => {
     try {
       const filter = getValues();
+
+      const requiredKeys = ["theme", "themeType", "locale"];
+      const shouldReturnEmpty = requiredKeys.some(
+        (key) => !filter[key as keyof EffectiveMessageBundlesSearchForm],
+      );
+
+      if (shouldReturnEmpty) {
+        return [];
+      }
+
       const messages = await adminClient.serverInfo.findEffectiveMessageBundles(
         {
           realm,
