@@ -23,7 +23,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
-import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
@@ -53,6 +52,7 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.DISTRIBUTED_REPLICATED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
 
@@ -190,50 +190,48 @@ public class CacheManagerFactory {
     }
 
     private void configureRemoteStores(ConfigurationBuilderHolder builder) {
-        if (builder.getNamedConfigurationBuilders().get(USER_SESSION_CACHE_NAME).clustering().cacheMode().isDistributed()) {
-            //if one of remote store command line parameters is defined, all other are required, otherwise assume it'd configured via xml only
-            if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent() ||
-                Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY).isPresent() ||
-                Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
-                Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent()) {
+        //if one of remote store command line parameters is defined, some other are required, otherwise assume it'd configured via xml only
+        if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent() ||
+            Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY).isPresent() ||
+            Configuration.getOptionalKcValue(CACHE_REMOTE_USERNAME_PROPERTY).isPresent() ||
+            Configuration.getOptionalKcValue(CACHE_REMOTE_PASSWORD_PROPERTY).isPresent()) {
 
-                String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
-                Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
-                        .map(Integer::parseInt)
-                        .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
-                String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
-                String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
+            String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
+            Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
+                    .map(Integer::parseInt)
+                    .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
+            String cacheRemoteUsername = requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY);
+            String cacheRemotePassword = requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY);
 
-                DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
-                    PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
+            DISTRIBUTED_REPLICATED_CACHE_NAMES.forEach(cacheName -> {
+                PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
 
-                    //if specified via command line -> cannot be defined in the xml file
-                    if (!persistenceCB.stores().isEmpty()) {
-                        throw new RuntimeException(String.format("Remote store for cache '%s' is already configured via CLI parameters. It should not be present in the XML file.", cacheName));
-                    }
+                //if specified via command line -> cannot be defined in the xml file
+                if (!persistenceCB.stores().isEmpty()) {
+                    throw new RuntimeException(String.format("Remote store for cache '%s' is already configured via CLI parameters. It should not be present in the XML file.", cacheName));
+                }
 
-                    persistenceCB.addStore(RemoteStoreConfigurationBuilder.class)
-                            .rawValues(true)
-                            .shared(true)
-                            .segmented(false)
-                            .remoteCacheName(cacheName)
-                            .connectionPool()
-                                .maxActive(16)
-                                .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                            .remoteSecurity()
-                                .ssl()
-                                    .enable()
-                                .authentication()
-                                    .enable()
-                                    .username(cacheRemoteUsername)
-                                    .password(cacheRemotePassword)
-                                    .realm("default")
-                                    .saslMechanism(AuthenticationConfigurationBuilder.DEFAULT_MECHANISM)
-                            .addServer()
-                                .host(cacheRemoteHost)
-                                .port(cacheRemotePort);
-                });
-            }
+                persistenceCB.addStore(RemoteStoreConfigurationBuilder.class)
+                        .rawValues(true)
+                        .shared(true)
+                        .segmented(false)
+                        .remoteCacheName(cacheName)
+                        .connectionPool()
+                            .maxActive(16)
+                            .exhaustedAction(ExhaustedAction.CREATE_NEW)
+                        .remoteSecurity()
+                            .ssl()
+                                .enable()
+                            .authentication()
+                                .enable()
+                                .username(cacheRemoteUsername)
+                                .password(cacheRemotePassword)
+                                .realm("default")
+                                .saslMechanism(SCRAM_SHA_512)
+                        .addServer()
+                            .host(cacheRemoteHost)
+                            .port(cacheRemotePort);
+            });
         }
     }
 
