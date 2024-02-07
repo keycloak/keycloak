@@ -18,11 +18,11 @@
 package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeystoreUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
@@ -30,7 +30,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -155,8 +154,7 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path,
-                    loadStore(path, type, Optional.ofNullable(password).map(String::toCharArray).orElse(null)));
+            mergeTrustStore(truststore, path, loadStore(path, type, password));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
@@ -173,11 +171,9 @@ public class TruststoreBuilder {
         return new File(securityDirectory, "cacerts");
     }
 
-    static KeyStore loadStore(String path, String type, char[] password) {
-        try (InputStream is = new FileInputStream(path)) {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(is, password);
-            return ks;
+    static KeyStore loadStore(String path, String type, String password) {
+        try {
+            return KeystoreUtil.loadKeyStore(path, password, type);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
