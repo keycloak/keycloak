@@ -55,9 +55,9 @@ To install the Oracle Database driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
@@ -91,9 +91,9 @@ To install the Microsoft SQL Server driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
@@ -226,6 +226,12 @@ show server_encoding;
 ----
 create database keycloak with encoding 'UTF8';
 ----
+
+== Configuring MySQL server
+
+Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
+If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
+You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading Keycloak.
 
 == Changing database locking timeout in a cluster configuration
 

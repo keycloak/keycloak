@@ -48,6 +48,36 @@ It is no longer allowed to have the same feature in both the `--features` and `-
 The usage of unversioned feature names, e.g. `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
 If you need more predictable behavior across releases, reference the particular version you want instead, e.g. `docker:v1`.
 
+= User Profile Changes
+
+== Default validations
+
+Default user profile configuration comes with a set of default validations for the basic predefined fields. Those validations were not present in previous versions when the `declarative-user-profile` feature was disabled by default.
+If you have issues due the backwards compatibility, you can change the default validators according to your needs. The default validators are as follows:
+
+* The`username`, `email`, `firstName` and `lastName` attributes have a maximum length of 255 characters. These validations were indirectly present in previous versions as well
+due there is a database constraint on the table `USER_ENTITY` for those fields with a maximum length of 255 characters. However when using user storage providers, it might be possible before to use longer values.
+
+* The `username` attribute has a minimum length of three characters. Username has also `username-prohibited-characters` and `up-username-not-idn-homograph` validator by default, which were not present in previous versions.
+See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that username is not editable by default unless you have the realm switch `Edit username enabled`.
+This change means that existing users with incorrect usernames should still work and they will not be enforced to update their usernames. But new users will be enforced to use correct usernames
+during their registration or creation by the admin REST API.
+
+* Attributes `firstName` and `lastName` have the `person-name-prohibited-characters` validator on them, which were not present in previous versions.
+See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that both first
+name and last name are editable by default, so users, who already have such incorrect first/last name from a previous version will be forced to update them when updating their user profiles.
+
+== User attribute names with strange characters
+
+In previous versions, it was possible to create a user with attribute names like `some:attribute` or `some/attribute`. User profile intentionally does not allow you to create
+attributes with such strange names in the user profile configuration. So you may need to configure `Unmanaged attributes` for your realm and enable unmanaged attributes for administrators
+(ideally) or for end users (if really needed). Although it is strongly preferred to avoid using such attribute names.
+
+== Verify Profile required action enabled by default
+
+The required action `verify-profile` is enabled by default for new realms. But when you are migrating from previous version, your existing realms will have same state of this `verify-profile` action as before, which
+usually means disabled as it was disabled by default in previous versions. For the details about this required action, see the link:{adminguide_link}#user-profile[User Profile Documentation].
+
 = Truststore Changes
 
 The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated, please use the new default location for truststore material, `conf/truststores`, or specify your desired paths via the `truststore-paths` option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
@@ -243,8 +273,6 @@ Also, the number of default hash iterations for `pbkdf2` based password hashing 
 If a realm does not explicitly configure a password policy with `hashAlgorithm` and `hashIterations`, then
 the new configuration will take effect on the next password based login, or when a user password is created or updated.
 
-Note that the increased iteration counts can have a significant impact on the required CPU resources.
-
 == Performance of new password hashing configuration
 
 Tests on a machine with an Intel i9-8950HK CPU (12) @ 4.800GHz yielded the following &#8960; time differences for hashing 1000 passwords (averages from 3 runs).
@@ -261,6 +289,16 @@ Note that the average duration for the `PBKDF2WithHmacSHA1` was computed with a 
 Users of the `pbkdf2` provider might need to explicitly reduce the
 number of hash iterations to regain acceptable performance.
 This can be done by configuring the hash iterations explicitly in the password policy of the realm.
+
+== Expected increased overall CPU usage and temporary increased database activity
+
+The Concepts for sizing CPU and memory resources in the Keycloak High Availability guide have been updated to reflect the new hashing defaults.
+While the CPU usage per password-based login in our tests increased by 33% (which includes both the changed password hashing and unchanged TLS connection handling), the overall CPU increase should be around 10% to 15%.
+This is due to the averaging effect of Keycloak's other activities like refreshing access tokens and client credential grants, still this depends on the unique workload of an installation.
+
+After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
+As this clears the user from Keycloak's internal cache, you'll also see an increased read activity on the database level.
+This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
 
 == How to keep using the old pbkdf2-sha256 password hashing?
 
@@ -298,9 +336,11 @@ and `org.keycloak:keycloak-model-legacy` module was deprecated and will be remov
 As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:
 
 * All cookies will now have the secure attribute set if the request is through a secure context
-* KEYCLOAK_LOCALE and WELCOME_STATE_CHECKER cookies now set SameSite=Strict
+* `WELCOME_STATE_CHECKER` cookies now set `SameSite=Strict`
 
 For custom extensions there may be some changes needed:
 
-* LocaleSelectorProvider.KEYCLOAK_LOCALE is deprecated as cookies are now managed through the CookieProvider
-* HttpResponse.setWriteCookiesOnTransactionComplete has been removed
+* `LocaleSelectorProvider.KEYCLOAK_LOCALE` is deprecated as cookies are now managed through the CookieProvider
+* `HttpResponse.setWriteCookiesOnTransactionComplete` has been removed
+* `HttpCookie` is deprecated, please use `NewCookie.Builder` instead
+* `ServerCookie` is deprecated, please use `NewCookie.Builder` instead

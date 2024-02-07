@@ -60,8 +60,8 @@ public class CustomLockService extends StandardLockService {
     private static final Logger log = Logger.getLogger(CustomLockService.class);
 
     @Override
-    protected boolean hasDatabaseChangeLogLockTable() throws DatabaseException {
-        boolean originalReturnValue = super.hasDatabaseChangeLogLockTable();
+    protected boolean isDatabaseChangeLogLockTableCreated() throws DatabaseException {
+        boolean originalReturnValue = super.isDatabaseChangeLogLockTableCreated();
         if (originalReturnValue && database.getConnection().getDatabaseProductName().equals("H2")) {
             /* Liquibase only checks that the table exists. On the H2 database, creation of a table with a primary key is not atomic,
                and the primary key might not be visible yet. The primary key would be needed to prevent inserting the data into the table
@@ -98,7 +98,7 @@ public class CustomLockService extends StandardLockService {
     public void init() throws DatabaseException {
         Executor executor = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database);
 
-        if (!hasDatabaseChangeLogLockTable()) {
+        if (!isDatabaseChangeLogLockTableCreated()) {
 
             try {
                 if (log.isTraceEnabled()) {

@@ -51,10 +51,10 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.util.TokenUtil;
 
 /**

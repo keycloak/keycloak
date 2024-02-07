@@ -9,7 +9,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -82,6 +82,12 @@ public class PkceUtils {
             logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
             event.error(Errors.CODE_VERIFIER_MISSING);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+        }
+
+        if (codeChallenge == null && codeVerifier != null) {
+            logger.warnf("PKCE code verifier specified but challenge not present in authorization, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.INVALID_CODE_VERIFIER);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier specified but challenge not present in authorization", Response.Status.BAD_REQUEST);
         }
 
         if (codeChallenge != null) {

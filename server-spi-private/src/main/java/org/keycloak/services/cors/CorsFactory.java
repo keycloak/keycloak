@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.representations.overrides;
+package org.keycloak.services.cors;
 
-import java.util.ArrayList;
+import org.keycloak.provider.ProviderFactory;
 
-public class NoSubGroupsGroupRepresentationList extends ArrayList<NoSubGroupsGroupRepresentation> {
+/**
+ * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
+ */
+public interface CorsFactory extends ProviderFactory<Cors> {
+
 }

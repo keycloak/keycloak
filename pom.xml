@@ -112,7 +112,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.4.Final</resteasy.version>
+        <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -147,7 +147,7 @@
         <freemarker.version>2.3.32</freemarker.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
-        <liquibase.version>4.23.2</liquibase.version>
+        <liquibase.version>4.25.1</liquibase.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -163,10 +163,10 @@
         <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>12.2.0.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>12.4.2.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
+        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
