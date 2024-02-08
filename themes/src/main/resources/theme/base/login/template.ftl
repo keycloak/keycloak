@@ -41,7 +41,7 @@
             checkCookiesAndSetTimer(
               "${authenticationSession.authSessionId}",
               "${authenticationSession.tabId}",
-              "${url.ssoLoginInOtherTabsUrl}"
+              "${url.ssoLoginInOtherTabsUrl?no_esc}"
             );
         </script>
     </#if>
