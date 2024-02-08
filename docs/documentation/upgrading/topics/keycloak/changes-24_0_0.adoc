@@ -341,6 +341,10 @@ Use the setting `spi-events-listener-jboss-logging-success-level` as described i
 
 To trigger custom actions or custom log entries, write a custom event listener as described in the Event Listener SPI in the link:{developerguide_link}[{developerguide_name}].
 
+= Operator Customization Property Keys
+
+The property keys used by the operator for advanced configuration have changed from operator.keycloak to kc.operator.keycloak.
+
 = Updates to cookies
 
 As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:
