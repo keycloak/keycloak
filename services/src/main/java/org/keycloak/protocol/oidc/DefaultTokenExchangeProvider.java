@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
@@ -29,6 +30,7 @@ import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
@@ -85,6 +87,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -128,7 +131,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         this.event = context.getEvent();
         this.clientConnection = context.getClientConnection();
         this.headers = context.getHeaders();
-        this.tokenManager = (TokenManager)context.getTokenManager();
+        this.tokenManager = (TokenManager) context.getTokenManager();
         this.clientAuthAttributes = context.getClientAuthAttributes();
         return tokenExchange();
     }
@@ -257,7 +260,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                     }
                 }
             }
-         }
+        }
     }
 
     protected Response exchangeToIdentityProvider(UserModel targetUser, UserSessionModel targetUserSession, String requestedIssuer) {
@@ -313,12 +316,24 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             }
         }
 
+        String scopesFromSubjectToken = null;
+        String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken != null) {
+            try {
+                scopesFromSubjectToken = TokenVerifier.create(subjectToken, AccessToken.class).parse().getToken().getScope();
+            } catch (VerificationException e) {
+                event.detail(Details.REASON, "unable to parse jwt subject_token");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid subject token", Response.Status.BAD_REQUEST);
+            }
+        }
+
         // verification of existing users consents for requested scopes of target client
-        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, targetClient, TokenManager.getRequestedClientScopes(OAuth2Constants.SCOPE, client))) {
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, targetClient, TokenManager.getRequestedClientScopes(scopesFromSubjectToken, client))) {
             event.error(Errors.NOT_ALLOWED);
             event.detail(Details.REASON, String.format(
                     "Missing some consents of [%s] for audience [%s]",
-                    TokenManager.getRequestedClientScopes(OAuth2Constants.SCOPE, client)
+                    TokenManager.getRequestedClientScopes(scopesFromSubjectToken, client)
                             .map(ClientScopeModel::getName)
                             .collect(Collectors.joining(",")),
                     targetClient.getClientId()));
@@ -438,7 +453,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-            && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
             responseBuilder.getRefreshToken().issuedFor(client.getClientId());
         }
@@ -450,7 +465,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         AccessTokenResponse res = responseBuilder.build();
         event.detail(Details.AUDIENCE, targetClient.getClientId())
-            .user(targetUser);
+                .user(targetUser);
 
         event.success();
 
@@ -500,7 +515,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
         event.detail(Details.AUDIENCE, targetClient.getClientId())
-            .user(targetUser);
+                .user(targetUser);
 
         event.success();
 
@@ -565,12 +580,12 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 .collect(Collectors.toSet());
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (IdentityProviderMapperModel mapper : mappers) {
-            IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+            IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
             target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
         UserModel user = null;
-        if (! context.getIdpConfig().isTransientUsers()) {
+        if (!context.getIdpConfig().isTransientUsers()) {
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
                     context.getUsername(), context.getToken());
 
@@ -618,7 +633,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             user.setLastName(context.getLastName());
 
 
-            if (! context.getIdpConfig().isTransientUsers()) {
+            if (!context.getIdpConfig().isTransientUsers()) {
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getModelUsername(), context.getToken());
                 session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
@@ -627,7 +642,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             context.getIdp().importNewUser(session, realm, user, context);
 
             for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
                 target.importNewUser(session, realm, user, mapper, context);
             }
 
@@ -658,7 +673,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             context.getIdp().updateBrokeredUser(session, realm, user, context);
 
             for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
                 IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
             }
         }
