@@ -342,8 +342,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       mocha:
-        specifier: ^10.2.0
-        version: 10.2.0
+        specifier: ^10.3.0
+        version: 10.3.0
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.11.16)(typescript@5.3.3)
@@ -4383,17 +4383,6 @@ packages:
       is-glob: 4.0.3
     dev: true
 
-  /glob@7.2.0:
-    resolution: {integrity: sha512-lmLf6gtyrPq8tTjSmrO94wBeQbFR3HbLHbuyD69wuyQkImp2hWqMGB47OX65FBkPffO641IP9jWa1z4ivqG26Q==}
-    dependencies:
-      fs.realpath: 1.0.0
-      inflight: 1.0.6
-      inherits: 2.0.4
-      minimatch: 3.1.2
-      once: 1.4.0
-      path-is-absolute: 1.0.1
-    dev: true
-
   /glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
     dependencies:
@@ -5523,8 +5512,8 @@ packages:
       ufo: 1.3.1
     dev: true
 
-  /mocha@10.2.0:
-    resolution: {integrity: sha512-IDY7fl/BecMwFHzoqF2sg/SHHANeBoMMXFlS9r0OXKDssYE1M5O43wUY/9BVPeIvfH2zmEbBfseqN9gBQZzXkg==}
+  /mocha@10.3.0:
+    resolution: {integrity: sha512-uF2XJs+7xSLsrmIvn37i/wnc91nw7XjOQB8ccyx5aEgdnohr7n+rEiZP23WkCYHjilR6+EboEnbq/ZQDz4LSbg==}
     engines: {node: '>= 14.0.0'}
     hasBin: true
     dependencies:
@@ -5535,13 +5524,12 @@ packages:
       diff: 5.0.0
       escape-string-regexp: 4.0.0
       find-up: 5.0.0
-      glob: 7.2.0
+      glob: 8.1.0
       he: 1.2.0
       js-yaml: 4.1.0
       log-symbols: 4.1.0
       minimatch: 5.0.1
       ms: 2.1.3
-      nanoid: 3.3.3
       serialize-javascript: 6.0.0
       strip-json-comments: 3.1.1
       supports-color: 8.1.1
@@ -5565,12 +5553,6 @@ packages:
 
   /muggle-string@0.3.1:
     resolution: {integrity: sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==}
-    dev: true
-
-  /nanoid@3.3.3:
-    resolution: {integrity: sha512-p1sjXuopFs0xg+fPASzQ28agW1oHD7xDsd9Xkf3T15H3c/cifrFHVwrh74PdoklAPi+i7MdRsE47vm2r6JoB+w==}
-    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
     dev: true
 
   /nanoid@3.3.7:
