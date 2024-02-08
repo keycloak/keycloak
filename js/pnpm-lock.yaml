@@ -193,8 +193,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       monaco-editor:
-        specifier: ^0.45.0
-        version: 0.45.0
+        specifier: ^0.46.0
+        version: 0.46.0
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1102,7 +1102,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 9.0.0(react@18.2.0)
-      react-monaco-editor: 0.51.0(@types/react@18.2.55)(monaco-editor@0.45.0)(react@18.2.0)
+      react-monaco-editor: 0.51.0(@types/react@18.2.55)(monaco-editor@0.46.0)(react@18.2.0)
       tslib: 2.6.2
     dev: false
 
@@ -5551,8 +5551,8 @@ packages:
       yargs-unparser: 2.0.0
     dev: true
 
-  /monaco-editor@0.45.0:
-    resolution: {integrity: sha512-mjv1G1ZzfEE3k9HZN0dQ2olMdwIfaeAAjFiwNprLfYNRSz7ctv9XuCT7gPtBGrMUeV1/iZzYKj17Khu1hxoHOA==}
+  /monaco-editor@0.46.0:
+    resolution: {integrity: sha512-ADwtLIIww+9FKybWscd7OCfm9odsFYHImBRI1v9AviGce55QY8raT+9ihH8jX/E/e6QVSGM+pKj4jSUSRmALNQ==}
     dev: false
 
   /ms@2.1.2:
@@ -6119,7 +6119,7 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: true
 
-  /react-monaco-editor@0.51.0(@types/react@18.2.55)(monaco-editor@0.45.0)(react@18.2.0):
+  /react-monaco-editor@0.51.0(@types/react@18.2.55)(monaco-editor@0.46.0)(react@18.2.0):
     resolution: {integrity: sha512-6jx1V8p6gHVKJHFaTvicOtmlhFjOJhekobeNd92ZAo7F5UvAin1cF7bxWLCKgtxClYZ7CB3Ar284Kpbhj22FpQ==}
     peerDependencies:
       '@types/react': '>=17 <= 18'
@@ -6127,7 +6127,7 @@ packages:
       react: '>=17 <= 18'
     dependencies:
       '@types/react': 18.2.55
-      monaco-editor: 0.45.0
+      monaco-editor: 0.46.0
       prop-types: 15.8.1
       react: 18.2.0
     dev: false
@@ -7752,7 +7752,7 @@ packages:
       i18next-http-backend: 2.4.3
       keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
-      monaco-editor: 0.45.0
+      monaco-editor: 0.46.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
