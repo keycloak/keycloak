@@ -802,10 +802,7 @@ function Keycloak (config) {
 
             setToken(accessToken, refreshToken, idToken, timeLocal);
 
-            if (useNonce && ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
-                (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
-                (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce))) {
-
+            if (useNonce && (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
                 logInfo('[KEYCLOAK] Invalid nonce, clearing token');
                 kc.clearToken();
                 promise && promise.setError();
