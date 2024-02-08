@@ -20,18 +20,6 @@ type Application = ClientRepresentation & {
   open: boolean;
 };
 
-function filterRestrictClientIds(c: ClientRepresentation) {
-  return (
-    c.clientId !== "account" &&
-    c.clientId !== "account-console" &&
-    c.clientId !== "admin-cli" &&
-    c.clientId !== "broker" &&
-    c.clientId !== "master-realm" &&
-    c.clientId !== "security-admin-console" &&
-    c.clientId !== "security-admin-console-v2"
-  );
-}
-
 export const Applications = () => {
   const { t } = useTranslation();
   const context = useEnvironment();
@@ -43,15 +31,10 @@ export const Applications = () => {
     (signal) => getApplications({ signal, context }),
     (clients) =>
       setApplications(
-        clients
-          .filter(filterRestrictClientIds)
-          .filter((c) =>
-            context.keycloak.hasResourceRole("allow-access", c.clientId),
-          )
-          .map((c) => ({
-            ...c,
-            open: false,
-          })),
+        clients.map((c) => ({
+          ...c,
+          open: false,
+        })),
       ),
     [key],
   );

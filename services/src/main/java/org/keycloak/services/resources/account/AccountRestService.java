@@ -470,6 +470,7 @@ public class AccountRestService {
 
         return clients.stream().filter(client -> !client.isBearerOnly() && !client.getClientId().isEmpty())
                 .filter(client -> matches(client, name))
+                .filter(client -> auth.hasClientRole(client, "allow-access"))
                 .map(client -> modelToRepresentation(client, inUseClients, offlineClients, consentModels));
     }
 
