@@ -98,6 +98,9 @@ public class UserAttributeEntity {
             this.longValue = null;
             this.longValueHash = null;
         } else if (value.length() > 255) {
+            if (value.length() > 10000) {
+                throw new IllegalArgumentException("Maximum lenght of attrtibute value exceeded.");
+            }
             this.value = null;
             this.longValue = value;
             this.longValueHash = HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8));
