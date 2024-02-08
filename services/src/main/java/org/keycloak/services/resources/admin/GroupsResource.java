@@ -100,13 +100,11 @@ public class GroupsResource {
             stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            stream = session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         } else {
-            stream = session.groups().getTopLevelGroupsStream(realm);
+            stream = session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         }
 
-        if(populateHierarchy) {
+        if (populateHierarchy) {
             return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
         }
         boolean canViewGlobal = groupsEvaluator.canView();
