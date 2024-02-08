@@ -61,7 +61,8 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
-import java.nio.charset.StandardCharsets;
+import org.keycloak.storage.jpa.JpaHashUtils;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -72,8 +73,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -759,7 +758,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .filter(user -> customLongValueSearchAttributes.isEmpty() || // are there some long attribute values
                         customLongValueSearchAttributes.entrySet().stream().allMatch(longAttrEntry -> //for all long search attributes
                                 user.getAttributes().stream().anyMatch(userAttribute -> //check whether the user indeed has the attribute
-                                        Objects.equals(longAttrEntry.getKey(), userAttribute.getName()) && longAttrEntry.getValue().equalsIgnoreCase(userAttribute.getValue())))
+                                        Objects.equals(longAttrEntry.getKey().toLowerCase(), userAttribute.getName().toLowerCase()) && JpaHashUtils.compareSourceValueLowerCase(longAttrEntry.getValue(), userAttribute.getValue())))
                 ).map(userEntity -> users.getUserById(realm, userEntity.getId()))
                 .filter(Objects::nonNull);
     }
@@ -767,11 +766,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         boolean longAttribute = attrValue != null && attrValue.length() > 255;
-        TypedQuery<UserEntity> query = longAttribute ? 
+        TypedQuery<UserEntity> query = longAttribute ?
                 em.createNamedQuery("getRealmUsersByAttributeNameAndLongValue", UserEntity.class)
                         .setParameter("realmId", realm.getId())
                         .setParameter("name", attrName)
-                        .setParameter("longValueHash", HashUtils.hash(JavaAlgorithm.SHA512, attrValue.toLowerCase().getBytes(StandardCharsets.UTF_8))) : 
+                        .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(attrValue)):
                 em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class)
                         .setParameter("realmId", realm.getId())
                         .setParameter("name", attrName)
@@ -780,7 +779,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return closing(query.getResultStream()
                 // following check verifies that there are no collisions with hashes
                 .filter(user -> !longAttribute || user.getAttributes().stream()
-                        .anyMatch(attribute -> Objects.equals(attrName, attribute.getName()) && attrValue.equalsIgnoreCase(attribute.getValue())))
+                        .anyMatch(attribute -> Objects.equals(attrName, attribute.getName()) && JpaHashUtils.compareSourceValue(attrValue, attribute.getValue())))
                 .map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
     }
 
@@ -1014,7 +1013,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                         customLongValueSearchAttributes.put(key, value);
                         attributePredicates.add(builder.and(
                                 builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
-                                builder.equal(attributesJoin.get("longValueHash"), HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8)))));
+                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
                         attributePredicates.add(builder.and(
                                 builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),

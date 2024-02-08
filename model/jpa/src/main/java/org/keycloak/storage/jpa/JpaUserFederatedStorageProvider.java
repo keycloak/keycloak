@@ -62,9 +62,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
-import java.nio.charset.StandardCharsets;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -168,17 +165,20 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public Stream<String> getUsersByUserAttributeStream(RealmModel realm, String name, String value) {
-        TypedQuery<String> query = value != null && value.length() > 2024 ? 
-                em.createNamedQuery("getFederatedAttributesByNameAndLongValue", String.class)
-                        .setParameter("realmId", realm.getId())
-                        .setParameter("name", name)
-                        .setParameter("longValueHash", HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8))) : 
-                em.createNamedQuery("getFederatedAttributesByNameAndValue", String.class)
-                        .setParameter("realmId", realm.getId())
-                        .setParameter("name", name)
-                        .setParameter("value", value);
-
-        return closing(query.getResultStream());
+        boolean longAttribute = value != null && value.length() > 2024;
+        if (longAttribute) {
+            TypedQuery<Object[]> query = em.createNamedQuery("getFederatedAttributesByNameAndLongValue", Object[].class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", name)
+                    .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(value));
+            return closing(query.getResultStream().filter(objects -> JpaHashUtils.compareSourceValue((String) objects[1], value)).map(objects -> (String) objects[0]));
+        } else {
+            TypedQuery<String> query = em.createNamedQuery("getFederatedAttributesByNameAndValue", String.class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", name)
+                    .setParameter("value", value);
+            return closing(query.getResultStream());
+        }
     }
 
     @Override

@@ -30,9 +30,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.nio.charset.StandardCharsets;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.storage.jpa.JpaHashUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -65,6 +63,8 @@ public class UserAttributeEntity {
 
     @Column(name = "LONG_VALUE_HASH")
     private byte[] longValueHash;
+    @Column(name = "LONG_VALUE_HASH_LOWER_CASE")
+    private byte[] longValueHashLowerCase;
     @Nationalized
     @Column(name = "LONG_VALUE")
     private String longValue;
@@ -97,17 +97,20 @@ public class UserAttributeEntity {
             this.value = null;
             this.longValue = null;
             this.longValueHash = null;
+            this.longValueHashLowerCase = null;
         } else if (value.length() > 255) {
             if (value.length() > 10000) {
-                throw new IllegalArgumentException("Maximum lenght of attrtibute value exceeded.");
+                throw new IllegalArgumentException("Maximum length of attribute value exceeded.");
             }
             this.value = null;
             this.longValue = value;
-            this.longValueHash = HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8));
+            this.longValueHash = JpaHashUtils.hashForAttributeValue(value);
+            this.longValueHashLowerCase = JpaHashUtils.hashForAttributeValueLowerCase(value);
         } else {
             this.value = value;
             this.longValue = null;
             this.longValueHash = null;
+            this.longValueHashLowerCase = null;
         }
     }
 

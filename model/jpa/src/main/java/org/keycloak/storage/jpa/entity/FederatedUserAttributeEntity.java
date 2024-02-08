@@ -25,9 +25,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.nio.charset.StandardCharsets;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.storage.jpa.JpaHashUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,7 +33,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
  */
 @NamedQueries({
         @NamedQuery(name="getFederatedAttributesByNameAndValue", query="select attr.userId from FederatedUserAttributeEntity attr where attr.name = :name and attr.value = :value and attr.realmId=:realmId"),
-        @NamedQuery(name="getFederatedAttributesByNameAndLongValue", query="select attr.userId from FederatedUserAttributeEntity attr where attr.name = :name and attr.longValueHash = :longValueHash and attr.realmId=:realmId"),
+        @NamedQuery(name="getFederatedAttributesByNameAndLongValue", query="select attr.userId, attr.longValue from FederatedUserAttributeEntity attr where attr.name = :name and attr.longValueHash = :longValueHash and attr.realmId=:realmId"),
         @NamedQuery(name="getFederatedAttributesByUser", query="select attr from FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId"),
         @NamedQuery(name="deleteUserFederatedAttributesByUser", query="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId"),
         @NamedQuery(name="deleteUserFederatedAttributesByUserAndName", query="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.name=:name and attr.realmId=:realmId"),
@@ -68,6 +66,8 @@ public class FederatedUserAttributeEntity {
 
     @Column(name = "LONG_VALUE_HASH")
     private byte[] longValueHash;
+    @Column(name = "LONG_VALUE_HASH_LOWER_CASE")
+    private byte[] longValueHashLowerCase;
     @Column(name = "LONG_VALUE")
     private String longValue;
 
@@ -99,17 +99,20 @@ public class FederatedUserAttributeEntity {
             this.value = null;
             this.longValue = null;
             this.longValueHash = null;
+            this.longValueHashLowerCase = null;
         } else if (value.length() > 2024) { // https://github.com/keycloak/keycloak/blob/2785bbd29bcc1b39d9abe90724333dd42af34b10/model/jpa/src/main/resources/META-INF/jpa-changelog-2.1.0.xml#L58
             if (value.length() > 10000) {
-                throw new IllegalArgumentException("Maximum lenght of attrtibute value exceeded.");
+                throw new IllegalArgumentException("Maximum length of attribute value exceeded.");
             }
             this.value = null;
             this.longValue = value;
-            this.longValueHash = HashUtils.hash(JavaAlgorithm.SHA512, value.toLowerCase().getBytes(StandardCharsets.UTF_8));
+            this.longValueHash = JpaHashUtils.hashForAttributeValue(value);
+            this.longValueHashLowerCase = JpaHashUtils.hashForAttributeValueLowerCase(value);
         } else {
             this.value = value;
             this.longValue = null;
             this.longValueHash = null;
+            this.longValueHashLowerCase = null;
         }
     }
 

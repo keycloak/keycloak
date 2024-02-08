@@ -20,10 +20,12 @@
     <changeSet author="keycloak" id="24.0.0-9758">
         <addColumn tableName="USER_ATTRIBUTE">
             <column name="LONG_VALUE_HASH" type="BINARY(64)" />
+            <column name="LONG_VALUE_HASH_LOWER_CASE" type="BINARY(64)" />
             <column name="LONG_VALUE" type="NCLOB" />
         </addColumn>
         <addColumn tableName="FED_USER_ATTRIBUTE">
             <column name="LONG_VALUE_HASH" type="BINARY(64)" />
+            <column name="LONG_VALUE_HASH_LOWER_CASE" type="BINARY(64)" />
             <column name="LONG_VALUE" type="NCLOB" />
         </addColumn>
         <createIndex tableName="USER_ATTRIBUTE" indexName="USER_ATTR_LONG_VALUES">
@@ -32,6 +34,14 @@
         </createIndex>
         <createIndex tableName="FED_USER_ATTRIBUTE" indexName="FED_USER_ATTR_LONG_VALUES">
             <column name="LONG_VALUE_HASH" />
+            <column name="NAME" />
+        </createIndex>
+        <createIndex tableName="USER_ATTRIBUTE" indexName="USER_ATTR_LONG_VALUES_LOWER_CASE">
+            <column name="LONG_VALUE_HASH_LOWER_CASE" />
+            <column name="NAME" />
+        </createIndex>
+        <createIndex tableName="FED_USER_ATTRIBUTE" indexName="FED_USER_ATTR_LONG_VALUES_LOWER_CASE">
+            <column name="LONG_VALUE_HASH_LOWER_CASE" />
             <column name="NAME" />
         </createIndex>
     </changeSet>

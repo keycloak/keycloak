@@ -70,6 +70,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,13 +80,13 @@ import java.util.stream.Stream;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -536,17 +537,19 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     public void searchByLongAttributeValue() {
         testingClient.server().run(session -> {
-            String longValue = RandomStringUtils.random(30000, true, true);
+            // random string with suffix that makes it case-sensitive
+            String longValue = RandomStringUtils.random(2999, true, true) + "v";
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel userModel = session.users().getUserByUsername(realm, "thor");
             userModel.setSingleAttribute("weapon", longValue);
 
             assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
-                    both(hasSize(1)).and(contains("thor")));
+                    containsInAnyOrder("thor"));
 
-            //case insesitive search
-            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue.toUpperCase()).map(UserModel::getUsername).collect(Collectors.toList()), 
-                    both(hasSize(1)).and(contains("thor")));
+            // searching here is always case sensitive
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue.toUpperCase(Locale.ENGLISH)).map(UserModel::getUsername).collect(Collectors.toList()),
+                    empty());
+
         });
     }
 
