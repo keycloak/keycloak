@@ -1682,9 +1682,11 @@ public class UserTest extends AbstractAdminTest {
             user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
             updateUser(realm.users().get(user1Id), user1);
             Assert.fail("Not supposed to successfully update user");
-        } catch (BadRequestException bre) {
+        } catch (BadRequestException expected) {
             // Expected
             assertAdminEvents.assertEmpty();
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("updateReadOnlyAttributesRejectedMessage", error.getErrorMessage());
         }
 
         // The same test as before, but with the case-sensitivity used
