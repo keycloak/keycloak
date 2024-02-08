@@ -428,13 +428,13 @@
                 <artifactId>bcpkix-fips</artifactId>
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
-            
+
           <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bc-fips</artifactId>
             <version>${bouncycastle.bcfips.version}</version>
           </dependency>
-            
+
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
                 <artifactId>uap-java</artifactId>
@@ -738,7 +738,7 @@
             </dependency>
             <!-- Needed for picketlink perf test -->
             <dependency>
-                <groupId>mysql</groupId>
+                <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
