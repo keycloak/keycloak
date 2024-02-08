@@ -33,6 +33,8 @@ public class SearchQueryUtils {
 
     public static final String SEARCH_USERNAME_PREFIX = "username:";
 
+    public static final String SEARCH_EMAIL_PREFIX = "email:";
+
     public static Map<String, String> getFields(final String query) {
         Matcher matcher = queryPattern.matcher(query);
         Map<String, String> ret = new HashMap<>();

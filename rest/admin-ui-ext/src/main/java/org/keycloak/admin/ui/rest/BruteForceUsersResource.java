@@ -93,6 +93,12 @@ public class BruteForceUsersResource {
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }
+            } else if (search.startsWith(SearchQueryUtils.SEARCH_EMAIL_PREFIX)) {
+                UserModel userModel =
+                        session.users().getUserByEmail(realm, search.substring(SearchQueryUtils.SEARCH_EMAIL_PREFIX.length()).trim());
+                if (userModel != null) {
+                    userModels = Stream.of(userModel);
+                }
             } else {
                 Map<String, String> attributes = new HashMap<>();
                 attributes.put(UserModel.SEARCH, search.trim());

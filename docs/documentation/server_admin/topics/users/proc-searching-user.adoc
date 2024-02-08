@@ -28,6 +28,7 @@ Keycloak supports direct user lookups for selected fields.
 
 * `id:myUUID` -> performs an exact user lookup by user with id `myUUID`;
 * `username:myuser` -> performs an exact user lookup by username for `"myuser"`;
+* `email:myuser@domain.org` -> performs an exact user lookup by email for `"myuser@domain.org"`;
 
 .Additional resources
 * For more information on user federation, see <<_user-storage-federation,User Federation>>.

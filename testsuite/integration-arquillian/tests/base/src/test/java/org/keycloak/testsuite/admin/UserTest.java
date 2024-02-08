@@ -1175,6 +1175,26 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmailSearch() {
+        String expectedUserId = createUsers().get(0);
+        UserRepresentation expectedUserRep = realm.users().get(expectedUserId).toRepresentation();
+        String expectedEmail = expectedUserRep.getEmail();
+
+        List<UserRepresentation> users = realm.users().search("email:" + expectedEmail, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+
+        // ensure spaces are ignored
+        users = realm.users().search("email:   " + expectedEmail + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+    }
+
+    @Test
     public void infixSearch() {
         List<String> userIds = createUsers();
 
