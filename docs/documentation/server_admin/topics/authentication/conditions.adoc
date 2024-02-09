@@ -26,7 +26,7 @@ The Execution requirements section includes an example of the OTP form.
 `Condition - User Attribute`::
 This checks if the user has set up the required attribute: optionally, the check can also evaluate the group attributes.
 There is a possibility to negate output, which means the user should not have the attribute.
-The xref:proc-configuring-user-attributes_{context}[User Attributes] section shows how to add a custom attribute.
+The link:#user-profile[User Attributes] section shows how to add a custom attribute.
 You can provide these fields:
 
 Alias:::
