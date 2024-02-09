@@ -1,5 +1,5 @@
 [[user-profile]]
-= Defining a user profile
+= Managing user attributes
 
 In {project_name} a user is associated with a set of attributes. These attributes are used to better describe and identify
 users within {project_name} as well as to pass over additional information about them to applications.
