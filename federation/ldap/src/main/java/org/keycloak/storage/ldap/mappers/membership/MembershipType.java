@@ -63,7 +63,7 @@ public enum MembershipType {
             Set<LDAPDn> result = new HashSet<>();
             for (String membership : allMemberships) {
                 LDAPDn childDn = LDAPDn.fromString(membership);
-                if (childDn.getFirstRdn().getAttrValue(rdnAttr) != null && childDn.isDescendantOf(requiredParentDn)) {
+                if (childDn.isDescendantOf(requiredParentDn) && childDn.getFirstRdn().getAttrValue(rdnAttr) != null) {
                     result.add(childDn);
                 }
             }
