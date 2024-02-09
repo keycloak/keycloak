@@ -444,4 +444,22 @@ public class PodTemplateTest {
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
     }
 
+    @Test
+    public void testServiceCaCrt() {
+        this.deployment.setUseServiceCaCrt(true);
+        try {
+            // Arrange
+            PodTemplateSpec additionalPodTemplate = null;
+
+            // Act
+            var podTemplate = getDeployment(additionalPodTemplate, null, null).getSpec().getTemplate();
+
+            // Assert
+            var paths = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)).findFirst().orElseThrow();
+            assertThat(paths.getValue()).isEqualTo("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt");
+        } finally {
+            this.deployment.setUseServiceCaCrt(false);
+        }
+    }
+
 }
