@@ -71,6 +71,7 @@ export default class RealmSettingsPage extends CommonPage {
   forgotPwdSwitch = "forgot-pw-switch";
   rememberMeSwitch = "remember-me-switch";
   emailAsUsernameSwitch = "email-as-username-switch";
+  editUsernameSwitch = "edit-username-switch";
   loginWithEmailSwitch = "login-with-email-switch";
   duplicateEmailsSwitch = "duplicate-emails-switch";
   verifyEmailSwitch = "verify-email-switch";
@@ -443,6 +444,22 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(switchName).click({ force: true });
     if (waitFor) {
       cy.wait("@load");
+    }
+
+    return this;
+  }
+
+  assertSwitch(switchName: string, on: boolean) {
+    cy.findByTestId(switchName).should("have.value", on ? "on" : "off");
+
+    return this;
+  }
+
+  setSwitch(switchName: string, on: boolean) {
+    if (on) {
+      cy.findByTestId(switchName).check({ force: true });
+    } else {
+      cy.findByTestId(switchName).uncheck({ force: true });
     }
 
     return this;

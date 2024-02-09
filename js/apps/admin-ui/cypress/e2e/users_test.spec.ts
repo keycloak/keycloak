@@ -73,7 +73,7 @@ describe("User creation", () => {
 
     createUserPage.createUser(itemId);
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -95,7 +95,7 @@ describe("User creation", () => {
 
     createUserPage.joinGroups();
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -109,7 +109,7 @@ describe("User creation", () => {
     createUserPage.createUser(itemIdWithCred);
 
     userDetailsPage.fillUserData();
-    createUserPage.save();
+    createUserPage.create();
     masthead.checkNotificationMessage("The user has been created");
     sidebarPage.waitForPageLoad();
 
@@ -493,7 +493,7 @@ describe("User creation", () => {
       createUserPage.goToCreateUser();
       createUserPage.createUser(a11yUser);
       userDetailsPage.fillUserData();
-      createUserPage.save();
+      createUserPage.create();
       cy.checkA11y();
     });
 
