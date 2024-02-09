@@ -40,10 +40,11 @@ async function startServer() {
     [
       "start-dev",
       "--http-port=8180",
-      "--features=account3,admin-fine-grained-authz,transient-users",
+      `--features="account3,admin-fine-grained-authz,transient-users"`,
       ...keycloakArgs,
     ],
     {
+      shell: true,
       env: {
         KEYCLOAK_ADMIN: ADMIN_USERNAME,
         KEYCLOAK_ADMIN_PASSWORD: ADMIN_PASSWORD,

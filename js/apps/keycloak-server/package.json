@@ -8,7 +8,7 @@
   },
   "wireit": {
     "start": {
-      "command": "./scripts/start-server.js",
+      "command": "node ./scripts/start-server.js",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
