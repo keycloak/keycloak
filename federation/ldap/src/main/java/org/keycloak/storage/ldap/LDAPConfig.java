@@ -65,8 +65,7 @@ public class LDAPConfig {
     }
 
     public String getUseTruststoreSpi() {
-        String value = config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI);
-        return LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY.equals(value) ? LDAPConstants.USE_TRUSTSTORE_ALWAYS : value;
+        return config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI);
     }
 
     public String getUsersDn() {
