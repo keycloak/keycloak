@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -58,6 +59,7 @@ public class MigrateTo24_0_0 implements Migration {
             context.setRealm(realm);
             updateUserProfileSettings(session);
             updateLdapProviderConfig(session);
+            createHS512ComponentModelKey(session);
         } finally {
             context.setRealm(null);
         }
@@ -95,5 +97,10 @@ public class MigrateTo24_0_0 implements Migration {
                     c.getConfig().putSingle(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
                     realm.updateComponent(c);
                 });
+    }
+
+    private void createHS512ComponentModelKey(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        DefaultKeyProviders.createSecretProvider(realm);
     }
 }

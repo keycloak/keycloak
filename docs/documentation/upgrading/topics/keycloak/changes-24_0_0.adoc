@@ -358,3 +358,7 @@ For custom extensions there may be some changes needed:
 * `HttpResponse.setWriteCookiesOnTransactionComplete` has been removed
 * `HttpCookie` is deprecated, please use `NewCookie.Builder` instead
 * `ServerCookie` is deprecated, please use `NewCookie.Builder` instead
+
+= Internal algorithm changed from HS256 to HS512
+
+The algorithm that {project_name} uses to sign internal tokens (a JWT which is consumed by {project_name} itself, for example a refresh or action token) is being changed from `HS256` to the more secure `HS512`. A new key provider named `hmac-generated-hs512` is now added for realms. Note that in migrated realms the old `hmac-generated` provider and the old `HS256` key are maintained and still validate tokens issued before the upgrade. The `HS256` provider can be manually deleted when no more old tokens exist following the {adminguide_link}#rotating-keys[rotating keys guidelines].
