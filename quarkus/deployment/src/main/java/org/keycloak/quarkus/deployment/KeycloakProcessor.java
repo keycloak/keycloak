@@ -114,7 +114,7 @@ import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
-import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
@@ -272,7 +272,7 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(UserProfileBuildItem.class)
     UserProfileBuildItem parseDefaultUserProfileConfig() {
-        final UPConfig defaultConfig = DeclarativeUserProfileProviderFactory.parseDefaultConfig();
+        UPConfig defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
         logger.debug("Parsing default configuration for the User Profile provider");
         return new UserProfileBuildItem(defaultConfig);
     }

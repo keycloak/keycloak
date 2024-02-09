@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
+import static org.keycloak.userprofile.config.UPConfigUtils.readSystemDefaultConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -53,12 +53,12 @@ public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Test
     public void testDefaultConfigIfNoneSet() {
-        JsonTestUtils.assertJsonEquals(readDefaultConfig(), testRealm().users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(readSystemDefaultConfig(), testRealm().users().userProfile().getConfiguration());
     }
 
     @Test
     public void testSetDefaultConfig() {
-        UPConfig config = UPConfigUtils.parseDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
         UserProfileResource userProfile = testRealm().users().userProfile();
         userProfile.update(config);
         getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));
