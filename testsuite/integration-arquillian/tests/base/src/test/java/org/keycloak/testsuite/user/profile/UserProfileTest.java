@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
-import static org.keycloak.userprofile.config.UPConfigUtils.parseDefaultConfig;
+import static org.keycloak.userprofile.config.UPConfigUtils.parseSystemDefaultConfig;
 
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -79,6 +79,7 @@ import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.PersonNameProhibitedCharactersValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
@@ -113,7 +114,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     @Test
     public void testReadOnlyAllowed() throws Exception {
         // create a user with attribute foo value 123 allowed by the profile now but disallowed later
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         config.getAttribute(UserModel.EMAIL).setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN)));
         RealmResource realmRes = testRealm();
@@ -205,7 +206,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
@@ -246,7 +247,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("business.address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(), Set.of("customer"))));
         provider.setConfiguration(config);
 
@@ -372,7 +373,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = session.users().addUser(realm, "profiled-user");
         UserProfileProvider provider = getUserProfileProvider(session);
 
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
@@ -409,7 +410,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         user.setEmail(org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
@@ -452,7 +453,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().addUser(realm, org.keycloak.models.utils.KeycloakModelUtils.generateId());
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UPGroup companyAddress = new UPGroup("companyaddress");
         companyAddress.setDisplayHeader("header");
         companyAddress.setDisplayDescription("description");
@@ -569,7 +570,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("department", Arrays.asList("sales"));
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("department", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         provider.setConfiguration(config);
 
@@ -621,7 +622,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.EMAIL, "readonly@foo.bar");
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("email", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
 
         // configure email r/o for user
@@ -670,7 +671,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.EMAIL, "canchange@foo.bar");
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
 
         config.getAttribute("email").getPermissions().setEdit(Set.of(ROLE_USER, ROLE_ADMIN));
 
@@ -715,7 +716,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("phone", Arrays.asList("fixed-phone"));
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("department", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         config.addOrReplaceAttribute(new UPAttribute("phone", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         config.addOrReplaceAttribute(new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
@@ -869,7 +870,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testCustomValidationForUsername(KeycloakSession session) {
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UPAttribute attribute = new UPAttribute(UserModel.USERNAME);
 
         Map<String, Object> validatorConfig = new HashMap<>();
@@ -968,7 +969,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testHomographValidator(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
 
         UPAttribute attribute = config.getAttribute(UserModel.LAST_NAME);
         attribute.addValidation(UsernameIDNHomographValidator.ID, Map.of(UsernameIDNHomographValidator.CFG_ERROR_MESSAGE, "error-something"));
@@ -1002,7 +1003,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testOptionalAttributes(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UPAttribute attribute = new UPAttribute();
         attribute.setName(UserModel.FIRST_NAME);
         Map<String, Object> validatorConfig = new HashMap<>();
@@ -1057,7 +1058,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     @ModelTest(realmName = "test")
     public void testPersonNameProhibitedCharsValidator(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
 
         UPAttribute lastNameAttr = config.getAttribute(UserModel.LAST_NAME);
         Map<String, Object> origValidatorCfg = lastNameAttr.getValidations().get(PersonNameProhibitedCharactersValidator.ID);
@@ -1117,7 +1118,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testCustomAttributeRequired(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UPAttribute attribute = new UPAttribute();
 
         attribute.setName(ATT_ADDRESS);
@@ -1183,7 +1184,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testCustomAttributeOptional(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UPAttribute attribute = new UPAttribute();
 
         attribute.setName(ATT_ADDRESS);
@@ -1235,7 +1236,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testRequiredIfUser(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
         provider.setConfiguration(config);
 
@@ -1283,7 +1284,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testRequiredIfAdmin(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN)), new UPAttributeRequired(Set.of(ROLE_ADMIN), Set.of())));
         provider.setConfiguration(config);
 
@@ -1328,7 +1329,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         // Email required for users by default, but not for admins
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         provider.setConfiguration(config);
         UPAttribute emailOrigConfig = config.getAttribute(UserModel.EMAIL);
         Assert.assertEquals(emailOrigConfig.getRequired().getRoles(), Set.of(ROLE_USER)); // Should be required only for users by default
@@ -1432,7 +1433,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testNoValidationsIfUserReadOnly(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
@@ -1465,7 +1466,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testNoValidationsIfAdminReadOnly(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
         provider.setConfiguration(config);
 
@@ -1494,7 +1495,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testIgnoreReadOnlyAttribute(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
         config.addOrReplaceAttribute(new UPAttribute(UserModel.FIRST_NAME, new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
         provider.setConfiguration(config);
@@ -1570,7 +1571,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testRequiredByClientScope(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(), Set.of("client-a"))));
         provider.setConfiguration(config);
 
@@ -1639,7 +1640,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         session.getContext().setRealm(realm);
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_ADMIN, ROLE_USER), Set.of("some-optional-scope"))));
         provider.setConfiguration(config);
 
@@ -1707,7 +1708,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     private static void testConfigurationInvalidScope(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)),
                 new UPAttributeRequired(Set.of(), Set.of("invalid")), new UPAttributeSelector(Set.of("invalid"))));
 
@@ -1767,7 +1768,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("foo", Arrays.asList("foo"));
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.removeAttribute(UserModel.FIRST_NAME);
         config.removeAttribute(UserModel.LAST_NAME);
         config.addOrReplaceAttribute(new UPAttribute("test-attribute", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN))));
@@ -1849,7 +1850,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("test-attribute", List.of(""));
 
         UserProfileProvider provider = getUserProfileProvider(session);
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("test-attribute", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER))));
         config.addOrReplaceAttribute(new UPAttribute(UserModel.FIRST_NAME, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER))));
         config.addOrReplaceAttribute(new UPAttribute(UserModel.LAST_NAME, new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN, ROLE_USER))));
@@ -1888,7 +1889,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testRemoveOptionalAttributesFromDefaultConfigIfNotSet(KeycloakSession session) {
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("foo"));
         config.removeAttribute(UserModel.FIRST_NAME);
         config.removeAttribute(UserModel.LAST_NAME);
@@ -1926,7 +1927,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testUnmanagedPolicy(KeycloakSession session) {
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("bar", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN))));
         UserProfileProvider provider = getUserProfileProvider(session);
         provider.setConfiguration(config);
@@ -1980,7 +1981,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testOptionalRootAttributesAsUnmanagedAttribute(KeycloakSession session) {
-        UPConfig config = parseDefaultConfig();
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         UserProfileProvider provider = getUserProfileProvider(session);
         provider.setConfiguration(config);
         Map<String, String> rawAttributes = new HashMap<>();

@@ -20,16 +20,19 @@
 package org.keycloak.userprofile;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
@@ -91,7 +94,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
-        PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
+        if (PARSED_DEFAULT_RAW_CONFIG == null) {
+            PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
+        }
     }
 
     private static boolean editUsernameCondition(AttributeContext c) {
@@ -206,15 +211,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return null;
     }
 
-    public static UPConfig parseDefaultConfig() {
-        return UPConfigUtils.parseDefaultConfig();
-    }
-
     @Override
     public void init(Config.Scope config) {
-        if (PARSED_DEFAULT_RAW_CONFIG == null) {
-            setDefaultConfig(parseDefaultConfig());
-        }
+        initDefaultConfiguration(config);
 
         // make sure registry is clear in case of re-deploy
         contextualMetadataRegistry.clear();
@@ -485,4 +484,21 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return contextualMetadataRegistry;
     }
 
+    private void initDefaultConfiguration(Scope config) {
+        // The user-defined configuration is always parsed during init and should be avoided as much as possible
+        // If no user-defined configuration is set, the system default configuration must have been set
+        // In Quarkus, the system default configuration is set at build time for optimization purposes
+        UPConfig defaultConfig = Optional.ofNullable(config.get("configFile"))
+                .map(Paths::get)
+                .map(UPConfigUtils::parseConfig)
+                .orElse(PARSED_DEFAULT_RAW_CONFIG);
+
+        if (defaultConfig == null) {
+            // as a fallback parse the system default config
+            defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        }
+
+        PARSED_DEFAULT_RAW_CONFIG = null;
+        setDefaultConfig(defaultConfig);
+    }
 }
