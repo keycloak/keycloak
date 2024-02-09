@@ -102,7 +102,7 @@ You can choose to completely disable or only support unmanaged attributes when m
 When unmanaged attributes are enabled (even if partially) you can manage them from the administration console at the `Attributes` tab in the User Details UI.
 If the policy is set to `Disabled` this tab is not available.
 
-As a recommendation, try to adhere to the most strict policy as much as possible (e.g.: `Disabled` or `Admin can edit`) to prevent unexpected
+As a security recommendation, try to adhere to the most strict policy as much as possible (e.g.: `Disabled` or `Admin can edit`) to prevent unexpected
 attributes (and values) set to your users when they are managing their profile through end-user contexts.
 Avoid setting the `Enabled` policy and prefer defining all the attributes that end-users can manage in your user profile configuration, under your control.
 
@@ -197,6 +197,8 @@ image:images/user-profile-validation.png[]
 
 Validation happens at any time when writing to an attribute, and they can throw errors that will be shown in UIs when the value
 fails a validation.
+
+For security reasons, every attribute that is editable by users should have a validation to restrict the size of the values users enter.
 
 === Built-in Validators
 
