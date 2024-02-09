@@ -153,6 +153,7 @@ unixHome=${env.HOME:Unix home not found}
 windowsHome=${env.HOMEPATH:Windows home not found}
 ----
 
+[[_theme_stylesheet]]
 ==== Add a stylesheet to a theme
 
 You can add one or more stylesheets to a theme.
@@ -345,8 +346,20 @@ Icons for social providers are already defined in `base` login theme properties 
 
 ==== Creating a custom HTML template
 
-{project_name} uses https://freemarker.apache.org/[Apache Freemarker] templates to generate HTML. You can override individual templates in your own theme by
-creating `<THEME TYPE>/<TEMPLATE>.ftl`. Admin and account console use a single template `index.ftl` for rendering the application. For a list of templates in other theme types used see `themes/base/<THEME TYPE>`.
+{project_name} uses https://freemarker.apache.org/[Apache Freemarker] templates to generate HTML and render pages.
+
+Although it is possible to create custom templates to change completely how pages are rendered, the recommendation is to leverage the built-in
+templates as much as possible. The reasons are:
+
+* During upgrades, you might be forced to update your custom templates to get the latest updates from newer versions
+* link:#_theme_stylesheet[Configuring CSS styles] to your themes allows you to adapt the UI to match your UI design standards and guidelines.
+* link:{adminguide_link}#user-profile[User Profile] allows you to support custom user attributes and configure how they are rendered.
+
+In most cases, you won't need to change templates to adapt {project_name} to your needs, but you can override individual
+templates in your own theme by creating `<THEME TYPE>/<TEMPLATE>.ftl`.
+Admin and account console use a single template `index.ftl` for rendering the application.
+
+For a list of templates in other theme types look at the `theme/base/<THEME_TYPE>` directory in the JAR file at `$KEYCLOAK_HOME/lib/lib/main/org.keycloak.keycloak-themes-<VERSION>.jar`.
 
 .Procedure
 
