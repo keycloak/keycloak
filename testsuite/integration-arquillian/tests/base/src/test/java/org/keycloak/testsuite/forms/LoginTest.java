@@ -42,6 +42,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -51,7 +52,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -461,7 +461,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         // Check identity cookie is signed with HS256
         String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals("HS256", algorithm);
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
@@ -474,7 +474,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // Check identity cookie is still signed with HS256
             algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-            assertEquals("HS256", algorithm);
+            assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
             // Check identity cookie still works
             oauth.openLoginForm();

@@ -42,6 +42,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -1736,42 +1737,42 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void tokenRefreshRequest_ClientRS384_RealmRS384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientRS512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS512_RealmPS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {
