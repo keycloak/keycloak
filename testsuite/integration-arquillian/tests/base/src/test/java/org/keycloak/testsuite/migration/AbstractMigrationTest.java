@@ -32,6 +32,7 @@ import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFa
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AccountRoles;
@@ -398,12 +399,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRegistrationProfileFormActionRemoved(migrationRealm2);
     }
 
-    protected void testMigrationTo24_0_0(boolean testUserProfileMigration) {
+    protected void testMigrationTo24_0_0(boolean testUserProfileMigration, boolean testLdapUseTruststoreSpiMigration) {
         if (testUserProfileMigration) {
             testUserProfileEnabledByDefault(migrationRealm);
             testUnmanagedAttributePolicySet(migrationRealm, UnmanagedAttributePolicy.ENABLED);
             testUserProfileEnabledByDefault(migrationRealm2);
             testUnmanagedAttributePolicySet(migrationRealm2, null);
+        }
+        if (testLdapUseTruststoreSpiMigration) {
+            testLdapUseTruststoreSpiMigration(migrationRealm2);
         }
     }
 
@@ -1092,7 +1096,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigrationTo24_x(boolean testUserProfileMigration) {
-        testMigrationTo24_0_0(testUserProfileMigration);
+        testMigrationTo24_0_0(testUserProfileMigration, false);
+    }
+
+    protected void testMigrationTo24_x(boolean testUserProfileMigration, boolean testLdapUseTruststoreSpiMigration) {
+        testMigrationTo24_0_0(testUserProfileMigration, testLdapUseTruststoreSpiMigration);
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
@@ -1210,5 +1218,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testUnmanagedAttributePolicySet(RealmResource realm, UnmanagedAttributePolicy policy) {
         UPConfig upConfig = realm.users().userProfile().getConfiguration();
         assertEquals(policy, upConfig.getUnmanagedAttributePolicy());
+    }
+
+    /**
+     * Checks if the {@code useTruststoreSpi} flag in the LDAP federation provider present in realm {@code Migration2}
+     * was properly migrated from the old value {@code ldapsOnly} to {@code always}.
+     * </p>
+     * This provider was added to the file migration-realm-19.0.3.json as a disabled provider, so it doesn't get involved
+     * in actual user searches and is there just to test the migration of the {@code useTruststoreSpi} config attribute.
+     *
+     * @param realm the migrated realm resource.
+     */
+    private void testLdapUseTruststoreSpiMigration(final RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        List<ComponentRepresentation> componentsRep = realm.components().query(rep.getId(), UserStorageProvider.class.getName());
+        assertThat(componentsRep.size(), equalTo(1));
+        MultivaluedHashMap<String, String> config = componentsRep.get(0).getConfig();
+        assertNotNull(config);
+        assertThat(config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI), equalTo(LDAPConstants.USE_TRUSTSTORE_ALWAYS));
     }
 }
