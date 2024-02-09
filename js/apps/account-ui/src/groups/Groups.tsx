@@ -24,7 +24,7 @@ export const Groups = () => {
   usePromise(
     (signal) => getGroups({ signal, context }),
     (groups) => {
-      if (directMembership) {
+      if (!directMembership) {
         groups.forEach((el) =>
           getParents(
             el,
@@ -66,6 +66,7 @@ export const Groups = () => {
                   <Checkbox
                     label={t("directMembership")}
                     id="directMembership-checkbox"
+                    data-testid="directMembership-checkbox"
                     isChecked={directMembership}
                     onChange={(checked) => setDirectMembership(checked)}
                   />

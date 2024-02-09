@@ -30,6 +30,9 @@
     },
     {
       "username": "alice",
+      "firstName": "Alice",
+      "lastName": "Alison",
+      "email": "alice@keycloak.org",
       "enabled": true,
       "realmRoles": [],
       "clientRoles": {
