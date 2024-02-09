@@ -21,6 +21,8 @@ include::users/proc-setting-required-actions.adoc[leveloffset=+3]
 include::users/proc-setting-default-required-actions.adoc[leveloffset=+3]
 include::users/proc-enabling-terms-conditions.adoc[leveloffset=+3]
 
+include::users/con-aia.adoc[leveloffset=+2]
+
 include::users/proc-searching-user.adoc[leveloffset=+2]
 
 include::users/proc-deleting-user.adoc[leveloffset=+2]
