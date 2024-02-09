@@ -99,9 +99,6 @@ public class UserAttributeEntity {
             this.longValueHash = null;
             this.longValueHashLowerCase = null;
         } else if (value.length() > 255) {
-            if (value.length() > 10000) {
-                throw new IllegalArgumentException("Maximum length of attribute value exceeded.");
-            }
             this.value = null;
             this.longValue = value;
             this.longValueHash = JpaHashUtils.hashForAttributeValue(value);

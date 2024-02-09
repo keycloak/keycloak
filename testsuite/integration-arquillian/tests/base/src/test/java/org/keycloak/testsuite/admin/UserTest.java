@@ -902,7 +902,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void storeAndReadUserWithLongAttributeValue() {
-        String longValue = RandomStringUtils.random(3000, true, true);
+        String longValue = RandomStringUtils.random(30000, true, true);
 
         getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", 
                 user -> user.setAttributes(Map.of("attr", List.of(longValue)))));

@@ -522,7 +522,7 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     public void storeAndReadUserWithLongAttributeValue() {
         testingClient.server().run(session -> {
-            String longValue = RandomStringUtils.random(3000, true, true);
+            String longValue = RandomStringUtils.random(30000, true, true);
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel userModel = session.users().getUserByUsername(realm, "thor");
             userModel.setSingleAttribute("weapon", longValue);

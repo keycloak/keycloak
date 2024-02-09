@@ -101,9 +101,6 @@ public class FederatedUserAttributeEntity {
             this.longValueHash = null;
             this.longValueHashLowerCase = null;
         } else if (value.length() > 2024) { // https://github.com/keycloak/keycloak/blob/2785bbd29bcc1b39d9abe90724333dd42af34b10/model/jpa/src/main/resources/META-INF/jpa-changelog-2.1.0.xml#L58
-            if (value.length() > 10000) {
-                throw new IllegalArgumentException("Maximum length of attribute value exceeded.");
-            }
             this.value = null;
             this.longValue = value;
             this.longValueHash = JpaHashUtils.hashForAttributeValue(value);
