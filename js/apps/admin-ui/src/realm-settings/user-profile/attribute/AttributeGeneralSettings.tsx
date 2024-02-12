@@ -42,6 +42,7 @@ const REQUIRED_FOR = [
 export const AttributeGeneralSettings = () => {
   const { t } = useTranslation();
   const form = useFormContext();
+  const tooltipRef = useRef();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
   const [config, setConfig] = useState<UserProfileConfig>();
@@ -52,7 +53,8 @@ export const AttributeGeneralSettings = () => {
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
   const [addTranslationsModalOpen, toggleModal] = useToggle();
-  const tooltipRef = useRef();
+  const displayNamePattern = /\$\{([^}]+)\}/;
+  const translationKeyExtractPattern = /\${(.+?)}/;
 
   const hasSelector = useWatch({
     control: form.control,
@@ -75,6 +77,21 @@ export const AttributeGeneralSettings = () => {
     name: "displayName",
   });
 
+  const translationKeyWithoutSpaces = hasDisplayName
+    ?.replace(/\b(\w+)/g, (match: boolean, word: string, index: number) => {
+      return index === 0 ? match : word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .replace(/\s+/g, "");
+
+  const displayNamePatternMatch = displayNamePattern.test(hasDisplayName);
+
+  const translationKeyExtracted = hasDisplayName?.match(
+    translationKeyExtractPattern,
+  );
+
+  const autocompletedTranslationKey =
+    translationKeyExtracted?.[1] ?? translationKeyWithoutSpaces;
+
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
@@ -92,8 +109,16 @@ export const AttributeGeneralSettings = () => {
 
   return (
     <>
-      {addTranslationsModalOpen && (
-        <AddTranslationsDialog toggleDialog={toggleModal} />
+      {addTranslationsModalOpen && attributeName && (
+        <AddTranslationsDialog
+          autocompletedTranslationKey={autocompletedTranslationKey}
+          toggleDialog={() => {
+            toggleModal();
+          }}
+          onCancel={() => {
+            toggleModal();
+          }}
+        />
       )}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
@@ -135,6 +160,7 @@ export const AttributeGeneralSettings = () => {
                 id="kc-attribute-display-name"
                 defaultValue=""
                 data-testid="attribute-display-name"
+                isDisabled={displayNamePatternMatch}
                 {...form.register("displayName")}
               />
             </GridItem>
@@ -146,7 +172,9 @@ export const AttributeGeneralSettings = () => {
                 data-testid="addAttributeTranslationBtn"
                 aria-label={t("addAttributeTranslationBtn")}
                 isDisabled={!hasDisplayName}
-                onClick={() => toggleModal()}
+                onClick={() => {
+                  toggleModal();
+                }}
                 icon={<GlobeRouteIcon />}
               />
               <Tooltip

@@ -13,28 +13,82 @@ import {
 import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Th, Thead, Tr } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRealm } from "../../../context/realm-context/RealmContext";
+import { adminClient } from "../../../admin-client";
+import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
+import EffectiveMessageBundleRepresentation from "libs/keycloak-admin-client/lib/defs/effectiveMessageBundleRepresentation";
 import { HelpItem } from "ui-shared";
 
 export type AddTranslationsDialogProps = {
+  autocompletedTranslationKey: string;
+  onCancel: () => void;
   toggleDialog: () => void;
 };
 
 export const AddTranslationsDialog = ({
+  autocompletedTranslationKey,
+  onCancel,
   toggleDialog,
 }: AddTranslationsDialogProps) => {
   const { t } = useTranslation();
+  const { realm } = useRealm();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
+  const [translations, setTranslations] = useState<
+    EffectiveMessageBundleRepresentation[]
+  >([]);
 
-  const translations = [
-    { key: "key1", value: "value1" },
-    { key: "key2", value: "value2" },
-  ];
+  useEffect(() => {
+    const fetchTranslations = async () => {
+      try {
+        const filter = {
+          hasWords: [autocompletedTranslationKey],
+          locale: "en",
+          theme: "keycloak",
+          themeType: "admin",
+        };
+
+        const translations =
+          await adminClient.serverInfo.findEffectiveMessageBundles({
+            realm,
+            ...filter,
+            locale: filter.locale || DEFAULT_LOCALE,
+            source: true,
+          });
+
+        const filteredMessages =
+          filter.hasWords.length > 0
+            ? translations.filter((m) => filter.hasWords.includes(m.key))
+            : translations;
+
+        setTranslations(filteredMessages);
+      } catch (error) {
+        console.error("Error fetching translations:", error);
+        setTranslations([]);
+      }
+    };
+
+    fetchTranslations();
+  }, []);
+
+  const removeAllTranslations = async () => {
+    try {
+      await adminClient.realms.deleteRealmLocalizationTexts({
+        realm,
+        selectedLocale: "en",
+        key: autocompletedTranslationKey,
+      });
+
+      setTranslations([]);
+    } catch (error) {
+      console.error("Error removing translations:", error);
+    }
+  };
 
   return (
     <Modal
@@ -42,7 +96,6 @@ export const AddTranslationsDialog = ({
       title={t("addTranslationsModalTitle")}
       isOpen
       onClose={toggleDialog}
-      width={"27%"}
       actions={[
         <Button
           key="save"
@@ -57,7 +110,7 @@ export const AddTranslationsDialog = ({
           key="cancel"
           data-testid="cancelTranslationBtn"
           variant="link"
-          onClick={toggleDialog}
+          onClick={onCancel}
         >
           {t("cancel")}
         </Button>,
@@ -67,17 +120,17 @@ export const AddTranslationsDialog = ({
         direction={{ default: "column" }}
         spaceItems={{ default: "spaceItemsNone" }}
       >
-        <FlexItem>
+        <FlexItem width="100%">
           <TextContent>
             <Text component={TextVariants.p}>
-              {t("addTranslationsModalSubTitle")}
+              {t("addTranslationsModalSubTitle")}{" "}
+              <strong>{t("addTranslationsModalSubTitleBolded")}</strong>
             </Text>
           </TextContent>
         </FlexItem>
-        <FlexItem>
+        <FlexItem width="100%">
           <Form
             id="add-translation"
-            className="pf-u-w-25vw"
             data-testid="addTranslationForm"
             onSubmit={(e) => e.preventDefault()}
           >
@@ -88,7 +141,7 @@ export const AddTranslationsDialog = ({
             >
               <KeycloakTextInput
                 id="kc-translation-key"
-                defaultValue=""
+                defaultValue={autocompletedTranslationKey}
                 data-testid="translation-key"
               />
             </FormGroup>
@@ -121,14 +174,15 @@ export const AddTranslationsDialog = ({
                 toolbarItem={
                   <>
                     <Button
-                      data-testid="remove-allTranslationsBtn"
+                      data-testid="remove-allTranslations"
                       variant="secondary"
                       isDanger
+                      onClick={() => removeAllTranslations()}
                     >
-                      {t("removeAllTranslationsBtn")}
+                      {t("removeAllTranslations")}
                     </Button>
                     <HelpItem
-                      helpText={t("removeAllTranslationsBtnHelp")}
+                      helpText={t("removeAllTranslationsHelp")}
                       fieldLabelId="removeAllTranslationsHelpBtn"
                     />
                   </>
