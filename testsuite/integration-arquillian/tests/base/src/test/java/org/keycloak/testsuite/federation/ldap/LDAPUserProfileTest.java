@@ -107,9 +107,9 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         updateProfilePage.assertCurrent();
         Assert.assertEquals("John", updateProfilePage.getFirstName());
         Assert.assertEquals("Doe", updateProfilePage.getLastName());
-        Assert.assertTrue(updateProfilePage.getFieldById("firstName").isEnabled());
-        Assert.assertTrue(updateProfilePage.getFieldById("lastName").isEnabled());
-        Assert.assertNull(updateProfilePage.getFieldById("postal_code"));
+        Assert.assertTrue(updateProfilePage.getElementById("firstName").isEnabled());
+        Assert.assertTrue(updateProfilePage.getElementById("lastName").isEnabled());
+        Assert.assertNull(updateProfilePage.getElementById("postal_code"));
         updateProfilePage.prepareUpdate().submit();
     }
 
@@ -145,10 +145,10 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
 
             Assert.assertEquals("John", updateProfilePage.getFirstName());
             Assert.assertEquals("Doe", updateProfilePage.getLastName());
-            Assert.assertEquals("1234", updateProfilePage.getFieldById("postal_code").getAttribute("value"));
-            Assert.assertTrue(updateProfilePage.getFieldById("firstName").isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById("lastName").isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
+            Assert.assertEquals("1234", updateProfilePage.getElementById("postal_code").getAttribute("value"));
+            Assert.assertTrue(updateProfilePage.getElementById("firstName").isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("lastName").isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
             updateProfilePage.prepareUpdate().submit();
         } finally {
             testRealm().users().userProfile().update(origConfig);
@@ -175,9 +175,9 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             updateProfilePage.assertCurrent();
             Assert.assertEquals("John", updateProfilePage.getFirstName());
             Assert.assertEquals("Doe", updateProfilePage.getLastName());
-            Assert.assertFalse(updateProfilePage.getFieldById("firstName").isEnabled());
-            Assert.assertFalse(updateProfilePage.getFieldById("lastName").isEnabled());
-            Assert.assertNull(updateProfilePage.getFieldById("postal_code"));
+            Assert.assertFalse(updateProfilePage.getElementById("firstName").isEnabled());
+            Assert.assertFalse(updateProfilePage.getElementById("lastName").isEnabled());
+            Assert.assertNull(updateProfilePage.getElementById("postal_code"));
             updateProfilePage.prepareUpdate().submit();
         } finally {
             setLDAPWritable();
@@ -206,9 +206,9 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             updateProfilePage.assertCurrent();
             Assert.assertEquals("Mary", updateProfilePage.getFirstName());
             Assert.assertEquals("Kelly", updateProfilePage.getLastName());
-            Assert.assertTrue(updateProfilePage.getFieldById("firstName").isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById("lastName").isEnabled());
-            Assert.assertNull(updateProfilePage.getFieldById("postal_code"));
+            Assert.assertTrue(updateProfilePage.getElementById("firstName").isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("lastName").isEnabled());
+            Assert.assertNull(updateProfilePage.getElementById("postal_code"));
             updateProfilePage.prepareUpdate().submit();
         } finally {
             setLDAPWritable();

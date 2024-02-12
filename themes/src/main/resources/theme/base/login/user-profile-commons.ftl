@@ -3,27 +3,31 @@
 	
 	<#list profile.attributes as attribute>
 
-		<#assign groupName = attribute.group!"">
-		<#if groupName != currentGroup>
-			<#assign currentGroup=groupName>
-			<#if currentGroup != "" >
-				<div class="${properties.kcFormGroupClass!}">
+		<#assign group = (attribute.group)!"">
+		<#if group != currentGroup>
+			<#assign currentGroup=group>
+			<#if currentGroup != "">
+				<div class="${properties.kcFormGroupClass!}"
+				<#list group.html5DataAnnotations as key, value>
+					data-${key}="${value}"
+				</#list>
+				>
 	
-					<#assign groupDisplayHeader=attribute.groupDisplayHeader!"">
+					<#assign groupDisplayHeader=group.displayHeader!"">
 					<#if groupDisplayHeader != "">
-						<#assign groupHeaderText=advancedMsg(attribute.groupDisplayHeader)!groupName>
+						<#assign groupHeaderText=advancedMsg(groupDisplayHeader)!group>
 					<#else>
-						<#assign groupHeaderText=groupName>
+						<#assign groupHeaderText=group.name!"">
 					</#if>
 					<div class="${properties.kcContentWrapperClass!}">
-						<label id="header-${groupName}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
+						<label id="header-${attribute.group.name}" class="${kcFormGroupHeader!}">${groupHeaderText}</label>
 					</div>
 	
-					<#assign groupDisplayDescription=attribute.groupDisplayDescription!"">
+					<#assign groupDisplayDescription=group.displayDescription!"">
 					<#if groupDisplayDescription != "">
-						<#assign groupDescriptionText=advancedMsg(attribute.groupDisplayDescription)!"">
+						<#assign groupDescriptionText=advancedMsg(groupDisplayDescription)!"">
 						<div class="${properties.kcLabelWrapperClass!}">
-							<label id="description-${groupName}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
+							<label id="description-${group.name}" class="${properties.kcLabelClass!}">${groupDescriptionText}</label>
 						</div>
 					</#if>
 				</div>
@@ -73,12 +77,18 @@
 		<@inputTagSelects attribute=attribute/>
 		<#break>
 	<#default>
-		<@inputTag attribute=attribute/>
+		<#if attribute.multivalued && attribute.values?has_content>
+			<#list attribute.values as value>
+				<@inputTag attribute=attribute value=value!''/>
+			</#list>
+		<#else>
+			<@inputTag attribute=attribute value=attribute.value!''/>
+		</#if>
 	</#switch>
 </#macro>
 
-<#macro inputTag attribute>
-	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(attribute.value!'')}" class="${properties.kcInputClass!}"
+<#macro inputTag attribute value>
+	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>

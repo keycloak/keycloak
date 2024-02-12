@@ -3714,6 +3714,7 @@ public class UserTest extends AbstractAdminTest {
     private UPAttribute createAttributeMetadata(String name) {
         UPAttribute attribute = new UPAttribute();
         attribute.setName(name);
+        attribute.setMultivalued(true);
         UPAttributePermissions permissions = new UPAttributePermissions();
         permissions.setEdit(Set.of("user", "admin"));
         attribute.setPermissions(permissions);

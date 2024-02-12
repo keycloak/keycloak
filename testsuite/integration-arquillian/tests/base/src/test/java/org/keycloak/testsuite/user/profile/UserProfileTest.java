@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -79,6 +80,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.userprofile.validator.PersonNameProhibitedCharactersValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
@@ -2169,4 +2171,77 @@ public class UserProfileTest extends AbstractUserProfileTest {
             assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
         }
      }
+
+    @Test
+    public void testMultivalued() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testMultivalued);
+    }
+
+    private static void testMultivalued(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        provider.setConfiguration(upConfig);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, List.of(userName));
+        attributes.put(UserModel.EMAIL, List.of(userName + "@keycloak.org"));
+        attributes.put(UserModel.FIRST_NAME, List.of("Joe"));
+        attributes.put(UserModel.LAST_NAME, List.of("Doe"));
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        profile = provider.create(UserProfileContext.USER_API, user);
+
+        containsInAnyOrder(profile.getAttributes().nameSet(), UserModel.EMAIL);
+
+        UPAttribute foo = new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(foo);
+        provider.setConfiguration(upConfig);
+        List<String> expectedValues = List.of("a", "b");
+        attributes.put("foo", expectedValues);
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail because foo attribute is single-valued by default");
+        } catch (ValidationException ve) {
+            assertTrue(ve.hasError(MultiValueValidator.MESSAGE_INVALID_SIZE));
+        }
+
+        foo.setMultivalued(true);
+        upConfig.addOrReplaceAttribute(foo);
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        List<String> actualValues = user.getAttributes().get("foo");
+        assertThat(actualValues, Matchers.containsInAnyOrder(expectedValues.toArray()));
+
+        attributes.put("foo", List.of("a", "b", "c"));
+        foo.addValidation(MultiValueValidator.ID, Map.of(MultiValueValidator.KEY_MAX, 2));
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail because foo attribute expects 2 values");
+        } catch (ValidationException ve) {
+            assertTrue(ve.hasError(MultiValueValidator.MESSAGE_INVALID_SIZE));
+        }
+
+        attributes.put("foo", List.of("a"));
+        foo.addValidation(MultiValueValidator.ID, Map.of(MultiValueValidator.KEY_MIN, 2, MultiValueValidator.KEY_MAX, 2));
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail because foo attribute expects at least 2 values");
+        } catch (ValidationException ve) {
+            assertTrue(ve.hasError(MultiValueValidator.MESSAGE_INVALID_SIZE));
+        }
+
+        attributes.put("foo", List.of("a", "b"));
+        foo.addValidation(MultiValueValidator.ID, Map.of(MultiValueValidator.KEY_MIN, 2, MultiValueValidator.KEY_MAX, 2));
+        provider.setConfiguration(upConfig);
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+    }
 }

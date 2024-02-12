@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,10 @@ public class ValidatorConfig {
      * An empty {@link ValidatorConfig}.
      */
     public static final ValidatorConfig EMPTY = new ValidatorConfig(Collections.emptyMap());
+
+    public static boolean isEmpty(ValidatorConfig config) {
+        return EMPTY.equals(Optional.ofNullable(config).orElse(EMPTY));
+    }
 
     /**
      * Holds the backing map for the {@link Validator} config.

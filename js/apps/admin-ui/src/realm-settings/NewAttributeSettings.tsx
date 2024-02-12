@@ -142,6 +142,7 @@ export default function NewAttributeSettings() {
         permissions,
         selector,
         required,
+        multivalued,
         ...values
       } = config.attributes!.find(
         (attribute) => attribute.name === attributeName,
@@ -172,6 +173,7 @@ export default function NewAttributeSettings() {
         })),
       );
       form.setValue("isRequired", required !== undefined);
+      form.setValue("multivalued", multivalued === true);
     },
     [],
   );
@@ -217,6 +219,7 @@ export default function NewAttributeSettings() {
             displayName: formFields.displayName!,
             selector: formFields.selector,
             permissions: formFields.permissions!,
+            multivalued: formFields.multivalued,
             annotations,
             validations,
           },
@@ -234,6 +237,7 @@ export default function NewAttributeSettings() {
             required: formFields.isRequired ? formFields.required : undefined,
             selector: formFields.selector,
             permissions: formFields.permissions!,
+            multivalued: formFields.multivalued,
             annotations,
             validations,
           },

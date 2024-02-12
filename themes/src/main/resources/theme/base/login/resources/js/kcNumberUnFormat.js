@@ -1,15 +1,19 @@
-import {formatNumber} from "./common.js";
+// @ts-check
+import { formatNumber } from "./common.js";
+import { registerElementAnnotatedBy } from "./userProfile.js";
 
-const DATA_KC_NUMBER_UNFORMAT = 'data-kcNumberUnFormat';
+const KC_NUMBER_UNFORMAT = 'kcNumberUnFormat';
 
-document.querySelectorAll(`[${DATA_KC_NUMBER_UNFORMAT}]`)
-    .forEach(input => {
+registerElementAnnotatedBy({
+    name: KC_NUMBER_UNFORMAT,
+    onAdd(element) {
         for (let form of document.forms) {
             form.addEventListener('submit', (event) => {
-                const rawFormat = input.getAttribute(DATA_KC_NUMBER_UNFORMAT);
+                const rawFormat = element.getAttribute(`data-${KC_NUMBER_UNFORMAT}`);
                 if (rawFormat) {
-                    input.value = formatNumber(input.value, rawFormat);
+                    element.value = formatNumber(element.value, rawFormat);
                 }
             });
         }
-    });
+    },
+});
