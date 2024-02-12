@@ -27,6 +27,8 @@ public interface KeycloakDistribution {
 
     boolean isManualStop();
 
+    void assertStopped();
+
     default String[] getCliArgs(List<String> arguments) {
         throw new RuntimeException("Not implemented");
     }

@@ -36,17 +36,21 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -58,6 +62,8 @@ import javax.net.ssl.X509TrustManager;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
 
+import org.awaitility.Awaitility;
+import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -65,6 +71,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -74,13 +81,18 @@ import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
 
+    // TODO: reconsider the hardcoded timeout once https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak
+    // ensures that the total wait time (two minutes for readiness + 200 seconds) is longer than the transaction timeout of 5 minutes
+    private static final int LONG_SHUTDOWN_WAIT = 200;
+
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
+    private static final Logger LOG = Logger.getLogger(RawKeycloakDistribution.class);
     private Process keycloak;
     private int exitCode = -1;
     private final Path distPath;
-    private final List<String> outputStream = new ArrayList<>();
-    private final List<String> errorStream = new ArrayList<>();
+    private final List<String> outputStream = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> errorStream = Collections.synchronizedList(new ArrayList<>());
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
@@ -89,7 +101,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean enableTls;
     private boolean reCreate;
     private boolean removeBuildOptionsAfterBuild;
-    private boolean createAdminUser;
     private ExecutorService outputExecutor;
     private boolean inited = false;
     private Map<String, String> envVars = new HashMap<>();
@@ -157,7 +168,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                keycloak.waitFor(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
@@ -253,6 +264,24 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return allArgs.toArray(String[]::new);
     }
 
+    @Override
+    public void assertStopped() {
+        try {
+            if (keycloak != null) {
+                keycloak.onExit().get(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            LOG.warn("Process did not exit as expected, will attempt a thread dump");
+            threadDump();
+            LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
+        }
+    }
+
     private void waitForReadiness() throws MalformedURLException {
         waitForReadiness("http", httpPort);
 
@@ -268,8 +297,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
-                throw new IllegalStateException(
-                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                threadDump();
+                LOG.warn("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+                LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
+                return;
             }
 
             if (!keycloak.isAlive()) {
@@ -306,6 +337,22 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    private void threadDump() {
+        if (Environment.isWindows()) {
+            return;
+        }
+        try {
+            ProcessBuilder builder = new ProcessBuilder("kill", "-3", String.valueOf(keycloak.pid()));
+            Process p = builder.start();
+            p.onExit().get(getStartTimeout(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            LOG.warn("A thread dump may not have been successfully triggered", e);
+            return;
+        }
+        Awaitility.await().atMost(1, TimeUnit.MINUTES)
+                .until(() -> getOutputStream().stream().anyMatch(s -> s.contains("JNI global refs")));
+    }
+
     private long getStartTimeout() {
         return TimeUnit.SECONDS.toMillis(120);
     }
@@ -321,12 +368,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
         TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+            @Override
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return null;
             }
