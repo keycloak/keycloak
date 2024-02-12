@@ -70,6 +70,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -342,6 +343,17 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           Log.warnf("%s not ready log: %s", instance.getMetadata().getName(), log);
       } catch (KubernetesClientException e) {
           Log.warnf("No %s log: %s", instance.getMetadata().getName(), e.getMessage());
+          if (instance instanceof Pod) {
+              try {
+                  String previous = k8sclient.raw(String.format("/api/v1/namespaces/%s/pods/%s/log?previous=true", namespace, instance.getMetadata().getName()));
+                  Log.warnf("%s previous log: %s", instance.getMetadata().getName(), previous);
+              } catch (KubernetesClientException pe) {
+                  // not available
+                  if (pe.getCode() != HttpURLConnection.HTTP_BAD_REQUEST) {
+                      Log.infof("Could not obtain previous log for %s: %s", instance.getMetadata().getName(), e.getMessage());
+                  }
+              }
+          }
       }
   }
 
