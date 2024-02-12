@@ -8,6 +8,7 @@ import type UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 
 interface Query {
+  q?: string;
   search?: string;
   exact?: boolean;
 }
@@ -35,7 +36,14 @@ export interface GroupCountQuery {
 export class Groups extends Resource<{ realm?: string }> {
   public find = this.makeRequest<GroupQuery, GroupRepresentation[]>({
     method: "GET",
-    queryParamKeys: ["search", "exact", "briefRepresentation", "first", "max"],
+    queryParamKeys: [
+      "search",
+      "q",
+      "exact",
+      "briefRepresentation",
+      "first",
+      "max",
+    ],
   });
 
   public create = this.makeRequest<GroupRepresentation, { id: string }>({
