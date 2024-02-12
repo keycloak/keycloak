@@ -305,8 +305,8 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       tar-fs:
-        specifier: ^3.0.4
-        version: 3.0.4
+        specifier: ^3.0.5
+        version: 3.0.5
 
   libs/keycloak-admin-client:
     dependencies:
@@ -2624,6 +2624,37 @@ packages:
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
+
+  /bare-events@2.2.0:
+    resolution: {integrity: sha512-Yyyqff4PIFfSuthCZqLlPISTWHmnQxoPuAvkmgzsJEmG3CesdIv6Xweayl0JkCZJSB2yYIdJyEz97tpxNhgjbg==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /bare-fs@2.1.3:
+    resolution: {integrity: sha512-Oa7F0QJV7We0mtKq7Tk246uiBrl7vun64cPEsJOEwv2vHjnVL9yO7aH3643aSrd4rXfVe7yhJ9LHZywQQAXKFQ==}
+    requiresBuild: true
+    dependencies:
+      bare-events: 2.2.0
+      bare-os: 2.1.2
+      bare-path: 2.1.0
+      streamx: 2.15.2
+    dev: false
+    optional: true
+
+  /bare-os@2.1.2:
+    resolution: {integrity: sha512-slQjOn78Q8itnzomNAamiKo5MDpEpV3JnoNZ93lyynaFh6paWcU+5c0GVcZ7EYIJC2unN2JGdF1qupdscYl0Yg==}
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /bare-path@2.1.0:
+    resolution: {integrity: sha512-DIIg7ts8bdRKwJRJrUMy/PICEaQZaPGZ26lsSx9MJSwIhSrcdHn7/C8W+XmnG/rKi6BaRcz+JO00CjZteybDtw==}
+    requiresBuild: true
+    dependencies:
+      bare-os: 2.1.2
+    dev: false
+    optional: true
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -5395,10 +5426,6 @@ packages:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
     dev: true
 
-  /mkdirp-classic@0.5.3:
-    resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
-    dev: false
-
   /mlly@1.4.2:
     resolution: {integrity: sha512-i/Ykufi2t1EZ6NaPLdfnZk2AX8cs0d+mTzVKuPfqPKPatxLApaBoxJQ9x1/uckXtrS/U5oisPMDkNs0yQTaBRg==}
     dependencies:
@@ -5911,6 +5938,7 @@ packages:
 
   /queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
+    requiresBuild: true
     dev: false
 
   /rambda@7.5.0:
@@ -6662,12 +6690,14 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /tar-fs@3.0.4:
-    resolution: {integrity: sha512-5AFQU8b9qLfZCX9zp2duONhPmZv0hGYiBPJsyUdqMjzq/mqVpy/rEUSeHk1+YitmxugaptgBh5oDGU3VsAJq4w==}
+  /tar-fs@3.0.5:
+    resolution: {integrity: sha512-JOgGAmZyMgbqpLwct7ZV8VzkEB6pxXFBVErLtb+XCOqzc6w1xiWKI9GVd6bwk68EX7eJ4DWmfXVmq8K2ziZTGg==}
     dependencies:
-      mkdirp-classic: 0.5.3
       pump: 3.0.0
       tar-stream: 3.1.6
+    optionalDependencies:
+      bare-fs: 2.1.3
+      bare-path: 2.1.0
     dev: false
 
   /tar-stream@3.1.6:
