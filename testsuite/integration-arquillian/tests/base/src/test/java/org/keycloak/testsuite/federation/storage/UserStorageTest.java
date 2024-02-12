@@ -56,6 +56,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.userprofile.DefaultAttributes;
 import org.openqa.selenium.Cookie;
 
 import jakarta.mail.internet.MimeMessage;
@@ -522,7 +523,7 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     public void storeAndReadUserWithLongAttributeValue() {
         testingClient.server().run(session -> {
-            String longValue = RandomStringUtils.random(30000, true, true);
+            String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel userModel = session.users().getUserByUsername(realm, "thor");
             userModel.setSingleAttribute("weapon", longValue);

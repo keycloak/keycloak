@@ -228,6 +228,23 @@ As of this release, {project_name} supports storing and searching by user attrib
 In setups where users are allowed to update attributes, for example, via the account console, prevent denial of service attacks by adding validations.
 Ensure that no unmanaged attributes are allowed and all editable attributes have a validation that limits the input length.
 
+For unmanaged attributes, the maximum length is 2048 characters.
+For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
+
+== Additional migration steps for custom user storage providers
+
+This is for installations that match all the following criteria:
+
+* Running MariaDB or MySQL as a database for {project_name}.
+* Entries in table `FED_USER_ATTRIBUTE` with contents in the `VALUE` column that are larger than 2048 characters.
+This table is used for custom user providers which have federation enabled.
+* The long attributes are changed by admins or users via the admin console or the account console.
+
+To be able to enable changing those attributes via UI and REST APIs,  perform the following steps:
+
+. Declare the attributes identified above as managed attributes in the user profile of the realm.
+. Define a `length` validator for each attribute added in the previous step specifying the desired minimum and maximum length of the attribute value.
+
 = The Admin send-verify-email API now uses the same email verification template
 
 ----

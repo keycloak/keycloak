@@ -93,6 +93,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
@@ -136,6 +137,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -902,22 +904,27 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void storeAndReadUserWithLongAttributeValue() {
-        String longValue = RandomStringUtils.random(30000, true, true);
+        String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
-        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", 
+        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com",
                 user -> user.setAttributes(Map.of("attr", List.of(longValue)))));
 
         List<UserRepresentation> users = realm.users().search("user1", true);
 
         assertThat(users, hasSize(1));
         assertThat(users.get(0).getAttributes().get("attr").get(0), equalTo(longValue));
+
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com",
+                user -> user.setAttributes(Map.of("attr", List.of(longValue + "a"))))));
+        assertThat(ex.getResponse().getStatusInfo().getStatusCode(), equalTo(400));
+        assertThat(ex.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("error-invalid-length"));
     }
 
     @Test
     public void searchByLongAttributes() {
         // random string with suffix that makes it case-sensitive and distinct
-        String longValue = RandomStringUtils.random(2999, true, true) + "u";
-        String longValue2 = RandomStringUtils.random(2999, true, true) + "v";
+        String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1) + "u";
+        String longValue2 = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "v";
 
         getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", 
                 user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of("v2")))));
