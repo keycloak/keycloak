@@ -11,5 +11,7 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: jvm-heap-dumps
-        path: '**/java_pid*.hprof'
+        path: |
+          '**/java_pid*.hprof'
+          !distribution/**
         if-no-files-found: ignore
