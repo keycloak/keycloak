@@ -45,7 +45,7 @@ import {
   LevelChange,
 } from "./execution-model";
 import { toAuthentication } from "./routes/Authentication";
-import type { FlowParams } from "./routes/Flow";
+import { toFlow, type FlowParams } from "./routes/Flow";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
@@ -310,9 +310,16 @@ export default function FlowDetails() {
       {bindFlowOpen && (
         <BindFlowDialog
           flowAlias={flow?.alias!}
-          onClose={() => {
+          onClose={(usedBy) => {
             toggleBindFlow();
-            refresh();
+            navigate(
+              toFlow({
+                realm,
+                id: id!,
+                usedBy: usedBy ? "DEFAULT" : "notInUse",
+                builtIn: builtIn ? "builtIn" : undefined,
+              }),
+            );
           }}
         />
       )}

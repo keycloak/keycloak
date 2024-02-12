@@ -22,7 +22,7 @@ type BindingForm = {
 
 type BindFlowDialogProps = {
   flowAlias: string;
-  onClose: () => void;
+  onClose: (used?: boolean) => void;
 };
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
@@ -44,7 +44,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
       addError("updateFlowError", error);
     }
 
-    onClose();
+    onClose(true);
   };
 
   const flowKeys = Array.from(REALM_FLOWS.keys());
@@ -62,7 +62,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={onClose}
+          onClick={() => onClose()}
         >
           {t("cancel")}
         </Button>,
