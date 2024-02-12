@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
-import static org.keycloak.userprofile.config.UPConfigUtils.parseSystemDefaultConfig;
 
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -85,6 +84,7 @@ import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
+import org.keycloak.validate.validators.UriValidator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -1107,6 +1107,74 @@ public class UserProfileTest extends AbstractUserProfileTest {
         } finally {
             // Rollback
             lastNameAttr.getValidations().put(PersonNameProhibitedCharactersValidator.ID, origValidatorCfg);
+            provider.setConfiguration(config);
+        }
+    }
+
+    @Test
+    @ModelTest(realmName = "test")
+    public void testUriValidator(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+
+        UPAttribute attribute = new UPAttribute("picture-url");
+        attribute.addValidation(UriValidator.ID, new HashMap<>());
+        config.addOrReplaceAttribute(attribute);
+        provider.setConfiguration(config);
+
+        try {
+            // Should fail with the default error message
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(UserModel.USERNAME, "abc");
+            attributes.put("picture-url", "some-invalid-url");
+
+            UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError(UriValidator.MESSAGE_INVALID_URI));
+            }
+
+            // URL with fragment should be OK by default
+            attributes.put("picture-url", "https://somehost/somepath?param=foo#frg=bar");
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+
+            // Not allow fragment
+            attribute.addValidation(UriValidator.ID, Map.of(UriValidator.KEY_ALLOW_FRAGMENT, false));
+            config.addOrReplaceAttribute(attribute);
+            provider.setConfiguration(config);
+
+            attributes.put("picture-url", "https://somehost/somepath?param=foo#frg=bar");
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError(UriValidator.MESSAGE_INVALID_FRAGMENT));
+            }
+
+            // not allow file URL by default
+            attributes.put("picture-url", "file:///somefile.txt");
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            try {
+                profile.validate();
+                fail("Should fail validation");
+            } catch (ValidationException ve) {
+                assertTrue(ve.hasError(UriValidator.MESSAGE_INVALID_SCHEME));
+            }
+
+            // Allow file scheme and check it works
+            attribute.addValidation(UriValidator.ID, Map.of(UriValidator.KEY_ALLOWED_SCHEMES, Arrays.asList("https", "http", "file")));
+            config.addOrReplaceAttribute(attribute);
+            provider.setConfiguration(config);
+
+            attributes.put("picture-url", "file:///somefile.txt");
+            profile = provider.create(UserProfileContext.USER_API, attributes);
+            profile.validate();
+        } finally {
+            config.removeAttribute("picture-url");
             provider.setConfiguration(config);
         }
     }
