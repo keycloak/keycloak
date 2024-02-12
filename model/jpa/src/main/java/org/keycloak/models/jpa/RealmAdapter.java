@@ -1560,14 +1560,14 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public AuthenticationFlowModel getFirstBrokerLoginFlow() {
-        String flowId = realm.getFirstBrokerLoginFlow();
+        String flowId = getAttribute(RealmAttributes.FIRST_BROKER_LOGIN_FLOW_ID);
         if (flowId == null) return null;
         return getAuthenticationFlowById(flowId);
     }
 
     @Override
     public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
-        realm.setFirstBrokerLoginFlow(flow.getId());
+        setAttribute(RealmAttributes.FIRST_BROKER_LOGIN_FLOW_ID, flow.getId());
     }
 
     @Override

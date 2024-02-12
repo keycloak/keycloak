@@ -869,6 +869,9 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getDockerAuthenticationFlow() != null) {
             realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
+        if (rep.getFirstBrokerLoginFlow() != null) {
+            realm.setFirstBrokerLoginFlow(realm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
+        }
     }
 
     @Override
@@ -1361,10 +1364,15 @@ public class DefaultExportImportManager implements ExportImportManager {
         } else {
             newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
-
-        // Added in 1.7
-        if (newRealm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW) == null) {
-            DefaultAuthenticationFlows.firstBrokerLoginFlow(newRealm, true);
+        if (rep.getFirstBrokerLoginFlow() == null) {
+            AuthenticationFlowModel firstBrokerLoginFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
+            if (firstBrokerLoginFlow == null) {
+                DefaultAuthenticationFlows.firstBrokerLoginFlow(newRealm, true);
+            } else {
+                newRealm.setFirstBrokerLoginFlow(firstBrokerLoginFlow);
+            }
+        } else {
+            newRealm.setFirstBrokerLoginFlow(newRealm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
         }
 
         // Added in 2.2

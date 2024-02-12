@@ -114,6 +114,8 @@ public class ModelToRepresentation {
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
+
+        REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
     }
 
     private static final Logger LOG = Logger.getLogger(ModelToRepresentation.class);
