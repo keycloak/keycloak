@@ -14,6 +14,7 @@ import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   UserProfileFields,
+  debeerify,
   setUserProfileServerError,
   useAlerts,
 } from "ui-shared";
@@ -58,8 +59,14 @@ export const PersonalInfo = () => {
 
   const onSubmit = async (user: UserRepresentation) => {
     try {
-      await savePersonalInfo(context, user);
-      const locale = user.attributes?.["locale"]?.toString();
+      const attributes = Object.fromEntries(
+        Object.entries(user.attributes || {}).map(([k, v]) => [
+          debeerify(k),
+          v,
+        ]),
+      );
+      await savePersonalInfo(context, { ...user, attributes });
+      const locale = attributes["locale"]?.toString();
       i18n.changeLanguage(locale, (error) => {
         if (error) {
           console.warn("Error(s) loading locale", locale, error);
