@@ -46,4 +46,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="24.0.0-9758-2">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.FederatedUserAttributeTextColumnMigration" />
+    </changeSet>
+
 </databaseChangeLog>
