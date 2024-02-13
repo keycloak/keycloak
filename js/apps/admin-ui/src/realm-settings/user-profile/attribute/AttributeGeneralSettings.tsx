@@ -76,11 +76,6 @@ export const AttributeGeneralSettings = () => {
     name: "displayName",
   });
 
-  const hasName = useWatch({
-    control: form.control,
-    name: "name",
-  });
-
   const displayNamePatternMatch = displayNamePattern.test(hasDisplayName);
 
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
@@ -102,7 +97,7 @@ export const AttributeGeneralSettings = () => {
     <>
       {addTranslationsModalOpen && attributeName && (
         <AddTranslationsDialog
-          translationKey={hasName}
+          translationKey={attributeName}
           toggleDialog={() => {
             toggleModal();
           }}
