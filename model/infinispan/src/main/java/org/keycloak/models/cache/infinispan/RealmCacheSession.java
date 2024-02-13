@@ -1024,10 +1024,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         boolean isInvalid = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
             || listInvalidations.contains(realm.getId());
 
-//        if (queryDB) {
-//            return getGroupDelegate().getTopLevelGroupsStream(realm);
-//        }
-
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
 
         if (Objects.nonNull(query)) {
@@ -1069,16 +1065,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         if(max != null && max >= 0) {
             groups = groups.limit(max);
         }
-
-        // TODO this is an N+1 in the cache. We should invalidate on updates. A stale cache read is resolved by refreshing
-//        for (String id : query.getGroups()) {
-//            GroupModel group = session.groups().getGroupById(realm, id);
-//            if (Objects.isNull(group)) {
-//                invalidations.add(cacheKey);
-//                return getGroupDelegate().getTopLevelGroupsStream(realm);
-//            }
-//            list.add(group);
-//        }
 
         return groups;
     }
