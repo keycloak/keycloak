@@ -18,11 +18,9 @@ package org.keycloak.keys;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.security.KeyPair;
@@ -30,19 +28,10 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.spec.ECGenParameterSpec;
 
-import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+public abstract class AbstractEcKeyProviderFactory<T extends KeyProvider> implements KeyProviderFactory<T> {
 
-public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFactory {
+    public static final String DEFAULT_EC_ELLIPTIC_CURVE = "P-256";
 
-    protected static final String ECDSA_PRIVATE_KEY_KEY = "ecdsaPrivateKey";
-    protected static final String ECDSA_PUBLIC_KEY_KEY = "ecdsaPublicKey";
-    protected static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
-
-    // only support NIST P-256 for ES256, P-384 for ES384, P-521 for ES512
-    protected static ProviderConfigProperty ECDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(ECDSA_ELLIPTIC_CURVE_KEY, "Elliptic Curve", "Elliptic Curve used in ECDSA", LIST_TYPE,
-            String.valueOf(GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE),
-            "P-256", "P-384", "P-521");
- 
     public final static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 .property(Attributes.PRIORITY_PROPERTY)
@@ -58,7 +47,7 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
                 .checkBoolean(Attributes.ACTIVE_PROPERTY, false);
     }
 
-    public static KeyPair generateEcdsaKeyPair(String keySpecName) {
+    public static KeyPair generateEcKeyPair(String keySpecName) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
             SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
@@ -75,44 +64,17 @@ public abstract class AbstractEcdsaKeyProviderFactory implements KeyProviderFact
         String ecInSecRep = null;
         switch(ecInNistRep) {
             case "P-256" :
-            	ecInSecRep = "secp256r1";
+                ecInSecRep = "secp256r1";
                 break;
             case "P-384" :
-            	ecInSecRep = "secp384r1";
+                ecInSecRep = "secp384r1";
                 break;
             case "P-521" :
-            	ecInSecRep = "secp521r1";
+                ecInSecRep = "secp521r1";
                 break;
             default :
                 // return null
         }
         return ecInSecRep;
     }
-
-    public static String convertECDomainParmNistRepToAlgorithm(String ecInNistRep) {
-        switch(ecInNistRep) {
-            case "P-256" :
-                return Algorithm.ES256;
-            case "P-384" :
-                return Algorithm.ES384;
-            case "P-521" :
-                return Algorithm.ES512;
-            default :
-                return null;
-        }
-    }
-
-    public static String convertAlgorithmToECDomainParmNistRep(String algorithm) {
-        switch(algorithm) {
-            case Algorithm.ES256 :
-                return "P-256";
-            case Algorithm.ES384 :
-                return "P-384";
-            case Algorithm.ES512 :
-                return "P-521";
-            default :
-                return null;
-        }
-    }
-
 }
