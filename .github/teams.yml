@@ -47,7 +47,6 @@ team/ui:
 team/community:
   - area/translations
 
-team/core:
 team/store:
 
 no-team:
