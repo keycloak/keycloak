@@ -234,6 +234,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                         status.addWarningMessage(
                                 "The image of the keycloak container cannot be modified using podTemplate");
                     }
+                    if (container.getResources() != null) {
+                        status.addWarningMessage("Resources requirements of the Keycloak container cannot be modified using podTemplate");
+                    }
                 });
 
         if (overlayTemplate.getSpec() != null &&

@@ -4,6 +4,10 @@ metadata:
   name: example-token-test-kc
 spec:
   keycloakCRName: example-kc
+  resources:
+    limits:
+      cpu: 4
+      memory: 8Gi
   realm:
     id: token-test
     realm: token-test
