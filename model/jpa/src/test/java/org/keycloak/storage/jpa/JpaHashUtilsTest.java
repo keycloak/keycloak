@@ -18,8 +18,12 @@
 package org.keycloak.storage.jpa;
 
 import org.junit.Test;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -65,4 +69,30 @@ public class JpaHashUtilsTest {
         assertThat(hash1, not(equalTo(hash2)));
     }
 
+    @Test
+    public void testPredicateForFilteringUsersByAttributes() {
+        UserEntity user = new UserEntity();
+        user.setAttributes(List.of(createAttribute("key1", "value1"), createAttribute("key2", "Value2")));
+
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1", "key2", "Value2"), JpaHashUtils::compareSourceValue).test(user), is(true));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1", "key2", "value2"), JpaHashUtils::compareSourceValue).test(user), is(false));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1"), JpaHashUtils::compareSourceValue).test(user), is(true));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value2"), JpaHashUtils::compareSourceValue).test(user), is(false));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key2", "value1"), JpaHashUtils::compareSourceValue).test(user), is(false));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "v1"), JpaHashUtils::compareSourceValue).test(user), is(false));
+
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1", "key2", "Value2"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(true));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1", "key2", "value2"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(true));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value1"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(true));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "value2"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(false));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key2", "value1"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(false));
+        assertThat(JpaHashUtils.predicateForFilteringUsersByAttributes(Map.of("key1", "v1"), JpaHashUtils::compareSourceValueLowerCase).test(user), is(false));
+    }
+
+    private UserAttributeEntity createAttribute(String key, String value) {
+        UserAttributeEntity attribute = new UserAttributeEntity();
+        attribute.setName(key);
+        attribute.setValue(value);
+        return attribute;
+    }
 }

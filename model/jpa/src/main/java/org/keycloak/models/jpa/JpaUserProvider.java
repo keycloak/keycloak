@@ -69,12 +69,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 
@@ -755,11 +757,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserProvider users = session.users();
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
                 // following check verifies that there are no collisions with hashes
-                .filter(user -> customLongValueSearchAttributes.isEmpty() || // are there some long attribute values
-                        customLongValueSearchAttributes.entrySet().stream().allMatch(longAttrEntry -> //for all long search attributes
-                                user.getAttributes().stream().anyMatch(userAttribute -> //check whether the user indeed has the attribute
-                                        Objects.equals(longAttrEntry.getKey().toLowerCase(), userAttribute.getName().toLowerCase()) && JpaHashUtils.compareSourceValueLowerCase(longAttrEntry.getValue(), userAttribute.getValue())))
-                ).map(userEntity -> users.getUserById(realm, userEntity.getId()))
+                .filter(predicateForFilteringUsersByAttributes(customLongValueSearchAttributes, JpaHashUtils::compareSourceValueLowerCase))
+                .map(userEntity -> users.getUserById(realm, userEntity.getId()))
                 .filter(Objects::nonNull);
     }
 
@@ -778,8 +777,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         return closing(query.getResultStream()
                 // following check verifies that there are no collisions with hashes
-                .filter(user -> !longAttribute || user.getAttributes().stream()
-                        .anyMatch(attribute -> Objects.equals(attrName, attribute.getName()) && JpaHashUtils.compareSourceValue(attrValue, attribute.getValue())))
+                .filter(longAttribute ? predicateForFilteringUsersByAttributes(Map.of(attrName, attrValue), JpaHashUtils::compareSourceValue) : u -> true)
                 .map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
     }
 
