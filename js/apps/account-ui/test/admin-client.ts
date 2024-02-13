@@ -58,11 +58,44 @@ export async function createUser(user: UserRepresentation, realm: string) {
   }
 }
 
+export async function getUserByUsername(username: string, realm: string) {
+  const users = await adminClient.users.find({ username, realm, exact: true });
+  return users.length > 0 ? users[0] : undefined;
+}
+
 export async function deleteUser(username: string, realm: string) {
   try {
     const users = await adminClient.users.find({ username, realm });
     const { id } = users[0];
     await adminClient.users.del({ id: id!, realm });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function updateUser(user: UserRepresentation, realm: string) {
+  try {
+    await adminClient.users.update({ id: user.id!, realm }, user);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function getCredentials(id: string, realm: string) {
+  try {
+    return await adminClient.users.getCredentials({ id, realm });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function deleteCredential(
+  id: string,
+  credentialId: string,
+  realm: string,
+) {
+  try {
+    await adminClient.users.deleteCredential({ id, credentialId, realm });
   } catch (error) {
     console.error(error);
   }
