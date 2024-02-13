@@ -108,7 +108,7 @@ public class TruststoreBuilder {
                     }
                 } else {
                     if (mergePemFile(truststore, file, topLevel) && !topLevel) {
-                        discoveredFiles.add(file);
+                        discoveredFiles.add(f.getAbsolutePath());
                     }
                 }
             }
