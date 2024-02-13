@@ -1,0 +1,6 @@
+{
+    "themes": [{
+        "name" : "account-fix",
+        "types": [ "account" ]
+    }]
+}
