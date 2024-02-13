@@ -62,17 +62,27 @@ export const AddTranslationsDialog = ({
     [],
   );
 
-  const defaultSupportedLocales = realm?.supportedLocales!.length
-    ? realm.supportedLocales
-    : [DEFAULT_LOCALE];
+  const defaultSupportedLocales = useMemo(() => {
+    return realm?.supportedLocales!.length
+      ? realm.supportedLocales
+      : [DEFAULT_LOCALE];
+  }, [realm]);
 
-  const defaultLocales = realm?.defaultLocale!.length
-    ? [realm.defaultLocale]
-    : [];
+  const defaultLocales = useMemo(() => {
+    return realm?.defaultLocale!.length ? [realm.defaultLocale] : [];
+  }, [realm]);
 
   const combinedLocales = useMemo(() => {
     return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
   }, [defaultLocales, defaultSupportedLocales]);
+
+  const filteredLocales = useMemo(() => {
+    return combinedLocales.filter((locale) =>
+      localeToDisplayName(locale, whoAmI.getLocale())!
+        .toLowerCase()
+        .includes(filter.toLowerCase()),
+    );
+  }, [combinedLocales, filter, whoAmI]);
 
   const removeAllTranslations = async () => {
     try {
@@ -92,6 +102,8 @@ export const AddTranslationsDialog = ({
       console.error("Error removing translations:", error);
     }
   };
+
+  console.log(translations);
 
   return (
     <Modal
@@ -158,7 +170,7 @@ export const AddTranslationsDialog = ({
                 </Text>
               </TextContent>
               <PaginatingTableToolbar
-                count={translations.length}
+                count={combinedLocales.length}
                 first={first}
                 max={max}
                 onNextClick={setFirst}
@@ -191,14 +203,14 @@ export const AddTranslationsDialog = ({
                   </>
                 }
               >
-                {combinedLocales.length === 0 && !filter && (
+                {filteredLocales.length === 0 && !filter && (
                   <ListEmptyState
                     hasIcon
                     message={t("noLanguages")}
                     instructions={t("noLanguagesInstructions")}
                   />
                 )}
-                {combinedLocales.length === 0 && filter && (
+                {filteredLocales.length === 0 && filter && (
                   <ListEmptyState
                     hasIcon
                     icon={SearchIcon}
@@ -209,56 +221,58 @@ export const AddTranslationsDialog = ({
                     )}
                   />
                 )}
-                <Table
-                  aria-label={t("addTranslationsDialogRowsTable")}
-                  data-testid="add-translations-dialog-rows-table"
-                >
-                  <Thead>
-                    <Tr>
-                      <Th className="pf-u-py-lg">
-                        {t("supportedLanguagesTableColumnName")}
-                      </Th>
-                      <Th className="pf-u-py-lg">
-                        {t("translationTableColumnName")}
-                      </Th>
-                      <Th aria-hidden="true" />
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {combinedLocales.map((locale, rowIndex) => (
-                      <Tr key={rowIndex}>
-                        <Td
-                          className="pf-m-sm pf-u-px-sm"
-                          dataLabel={t("supportedLanguage")}
-                        >
-                          {localeToDisplayName(locale, whoAmI.getLocale())}
-                          {locale === defaultLocales.toString() && (
-                            <Label className="pf-u-ml-xs" color="blue">
-                              {t("defaultLanguage")}
-                            </Label>
-                          )}
-                        </Td>
-                        <Td>
-                          <KeycloakTextInput
-                            aria-label={t("translationValue")}
-                            type="text"
-                            className="pf-u-w-initial"
-                            data-testid={`translationValueInput-${rowIndex}`}
-                            value={formValues[rowIndex] || ""}
-                            onChange={(
-                              event: ChangeEvent<HTMLInputElement>,
-                            ) => {
-                              const newFormValues = [...formValues];
-                              newFormValues[rowIndex] = event.target.value;
-                              setFormValues(newFormValues);
-                            }}
-                            key={`translation-input-${rowIndex}`}
-                          />
-                        </Td>
+                {filteredLocales.length !== 0 && (
+                  <Table
+                    aria-label={t("addTranslationsDialogRowsTable")}
+                    data-testid="add-translations-dialog-rows-table"
+                  >
+                    <Thead>
+                      <Tr>
+                        <Th className="pf-u-py-lg">
+                          {t("supportedLanguagesTableColumnName")}
+                        </Th>
+                        <Th className="pf-u-py-lg">
+                          {t("translationTableColumnName")}
+                        </Th>
+                        <Th aria-hidden="true" />
                       </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
+                    </Thead>
+                    <Tbody>
+                      {filteredLocales.map((locale, rowIndex) => (
+                        <Tr key={rowIndex}>
+                          <Td
+                            className="pf-m-sm pf-u-px-sm"
+                            dataLabel={t("supportedLanguage")}
+                          >
+                            {localeToDisplayName(locale, whoAmI.getLocale())}
+                            {locale === defaultLocales.toString() && (
+                              <Label className="pf-u-ml-xs" color="blue">
+                                {t("defaultLanguage")}
+                              </Label>
+                            )}
+                          </Td>
+                          <Td>
+                            <KeycloakTextInput
+                              aria-label={t("translationValue")}
+                              type="text"
+                              className="pf-u-w-initial"
+                              data-testid={`translationValueInput-${rowIndex}`}
+                              value={formValues[rowIndex] || ""}
+                              onChange={(
+                                event: ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                const newFormValues = [...formValues];
+                                newFormValues[rowIndex] = event.target.value;
+                                setFormValues(newFormValues);
+                              }}
+                              key={`translation-input-${rowIndex}`}
+                            />
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                )}
               </PaginatingTableToolbar>
             </FlexItem>
           </Form>
