@@ -22,6 +22,8 @@ The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-
 Depending on the available CPU cores, it can grow even larger.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
 
+{project_name} allows configuring the maximum thread pool size by the `http-pool-max-threads` configuration option. See <@links.ha id="deploy-keycloak-kubernetes" /> for an example.
+
 When running on Kubernetes, adjust the number of worker threads to avoid creating more load than what the CPU limit allows for the Pod to avoid throttling, which would lead to congestion.
 When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
 Congestion would result in longer response times and an increased memory usage, and eventually an unstable system.
