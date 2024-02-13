@@ -37,6 +37,8 @@ team/core-shared:
   - area/ldap
   - area/storage
 
+team/cross-dc:
+
 team/ui:
   - area/account/ui
   - area/adapter/javascript
