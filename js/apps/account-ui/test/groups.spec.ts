@@ -8,7 +8,7 @@ test.describe("Groups page", () => {
     await expect(page.getByTestId("group[1].name")).toHaveText("three");
   });
 
-  test("List my direct and indirect groups", async ({ page }) => {
+  test("List direct and indirect groups", async ({ page }) => {
     await login(page, "alice", "alice", "groups");
     await page.getByTestId("groups").click();
 
