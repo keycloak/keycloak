@@ -47,8 +47,6 @@ team/ui:
 team/community:
   - area/translations
 
-team/store:
-
 no-team:
   - area/docs
   - area/dependencies
