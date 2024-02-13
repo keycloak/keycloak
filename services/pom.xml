@@ -102,8 +102,14 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- for MockHttpRequest -->
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -130,7 +136,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-multipart-provider</artifactId>
+            <artifactId>resteasy-core-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
