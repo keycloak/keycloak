@@ -25,6 +25,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.storage.jpa.JpaHashUtils;
 
 /**
@@ -68,6 +69,7 @@ public class FederatedUserAttributeEntity {
     private byte[] longValueHash;
     @Column(name = "LONG_VALUE_HASH_LOWER_CASE")
     private byte[] longValueHashLowerCase;
+    @Nationalized
     @Column(name = "LONG_VALUE")
     private String longValue;
 
