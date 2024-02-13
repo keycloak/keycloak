@@ -29,6 +29,10 @@ public class JWEConstants {
     public static final String RSA1_5 = CryptoConstants.RSA1_5;
     public static final String RSA_OAEP = CryptoConstants.RSA_OAEP;
     public static final String RSA_OAEP_256 = CryptoConstants.RSA_OAEP_256;
+    public static final String ECDH_ES = CryptoConstants.ECDH_ES;
+    public static final String ECDH_ES_A128KW = CryptoConstants.ECDH_ES_A128KW;
+    public static final String ECDH_ES_A192KW = CryptoConstants.ECDH_ES_A192KW;
+    public static final String ECDH_ES_A256KW = CryptoConstants.ECDH_ES_A256KW;
 
     public static final String A128CBC_HS256 = "A128CBC-HS256";
     public static final String A192CBC_HS384 = "A192CBC-HS384";

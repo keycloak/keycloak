@@ -7,7 +7,9 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.keys.AbstractEcdsaKeyProviderFactory;
+import org.keycloak.keys.AbstractEcKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
@@ -40,8 +42,13 @@ public class KeyUtils {
 
         try {
             KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen("ECDSA");
-            String domainParamNistRep = AbstractEcdsaKeyProviderFactory.convertAlgorithmToECDomainParmNistRep(algorithm);
-            String curve = AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
+            String domainParamNistRep = GeneratedEcdsaKeyProviderFactory
+                    .convertJWSAlgorithmToECDomainParmNistRep(algorithm);
+            if (domainParamNistRep == null) {
+                domainParamNistRep = GeneratedEcdhKeyProviderFactory
+                        .convertJWEAlgorithmToECDomainParmNistRep(algorithm);
+            }
+            String curve = AbstractEcKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
             ECGenParameterSpec parameterSpec = new ECGenParameterSpec(curve);
             kpg.initialize(parameterSpec);
             return kpg.generateKeyPair();

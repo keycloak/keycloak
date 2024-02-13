@@ -128,7 +128,6 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
 
     private KeyWrapper loadECKey(RealmModel realm, ComponentModel model, KeyStore keyStore, String keyAlias) throws GeneralSecurityException {
         ECPrivateKey privateKey = (ECPrivateKey) keyStore.getKey(keyAlias, model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray());
-        String curve = AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToSecRep(AbstractEcdsaKeyProviderFactory.convertAlgorithmToECDomainParmNistRep(algorithm));
 
         PublicKey publicKey = CryptoIntegration.getProvider().getEcdsaCryptoProvider().getPublicFromPrivate(privateKey);
 
