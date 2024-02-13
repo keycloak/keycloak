@@ -54,7 +54,6 @@ export const AttributeGeneralSettings = () => {
   const editMode = attributeName ? true : false;
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const displayNamePattern = /\$\{([^}]+)\}/;
-  const translationKeyExtractPattern = /\${(.+?)}/;
 
   const hasSelector = useWatch({
     control: form.control,
@@ -77,20 +76,12 @@ export const AttributeGeneralSettings = () => {
     name: "displayName",
   });
 
-  const translationKeyWithoutSpaces = hasDisplayName
-    ?.replace(/\b(\w+)/g, (match: boolean, word: string, index: number) => {
-      return index === 0 ? match : word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .replace(/\s+/g, "");
+  const hasName = useWatch({
+    control: form.control,
+    name: "name",
+  });
 
   const displayNamePatternMatch = displayNamePattern.test(hasDisplayName);
-
-  const translationKeyExtracted = hasDisplayName?.match(
-    translationKeyExtractPattern,
-  );
-
-  const autocompletedTranslationKey =
-    translationKeyExtracted?.[1] ?? translationKeyWithoutSpaces;
 
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
@@ -111,7 +102,7 @@ export const AttributeGeneralSettings = () => {
     <>
       {addTranslationsModalOpen && attributeName && (
         <AddTranslationsDialog
-          autocompletedTranslationKey={autocompletedTranslationKey}
+          translationKey={hasName}
           toggleDialog={() => {
             toggleModal();
           }}

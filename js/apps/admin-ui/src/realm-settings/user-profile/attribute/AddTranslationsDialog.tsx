@@ -4,16 +4,17 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  Label,
   Modal,
   ModalVariant,
   Text,
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
-import { Table, Th, Thead, Tr } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { adminClient } from "../../../admin-client";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
@@ -21,70 +22,72 @@ import { KeycloakTextInput } from "../../../components/keycloak-text-input/Keycl
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import EffectiveMessageBundleRepresentation from "libs/keycloak-admin-client/lib/defs/effectiveMessageBundleRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useFetch } from "../../../utils/useFetch";
+import { localeToDisplayName } from "../../../util";
+import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { HelpItem } from "ui-shared";
 
 export type AddTranslationsDialogProps = {
-  autocompletedTranslationKey: string;
+  translationKey: string;
   onCancel: () => void;
   toggleDialog: () => void;
 };
 
 export const AddTranslationsDialog = ({
-  autocompletedTranslationKey,
+  translationKey,
   onCancel,
   toggleDialog,
 }: AddTranslationsDialogProps) => {
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const { whoAmI } = useWhoAmI();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
   const [translations, setTranslations] = useState<
     EffectiveMessageBundleRepresentation[]
   >([]);
+  const [formValues, setFormValues] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchTranslations = async () => {
-      try {
-        const filter = {
-          hasWords: [autocompletedTranslationKey],
-          locale: "en",
-          theme: "keycloak",
-          themeType: "admin",
-        };
-
-        const translations =
-          await adminClient.serverInfo.findEffectiveMessageBundles({
-            realm,
-            ...filter,
-            locale: filter.locale || DEFAULT_LOCALE,
-            source: true,
-          });
-
-        const filteredMessages =
-          filter.hasWords.length > 0
-            ? translations.filter((m) => filter.hasWords.includes(m.key))
-            : translations;
-
-        setTranslations(filteredMessages);
-      } catch (error) {
-        console.error("Error fetching translations:", error);
-        setTranslations([]);
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      if (!realm) {
+        throw new Error(t("notFound"));
       }
-    };
+      setRealm(realm);
+    },
+    [],
+  );
 
-    fetchTranslations();
-  }, []);
+  const defaultSupportedLocales = realm?.supportedLocales!.length
+    ? realm.supportedLocales
+    : [DEFAULT_LOCALE];
+
+  const defaultLocales = realm?.defaultLocale!.length
+    ? [realm.defaultLocale]
+    : [];
+
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
 
   const removeAllTranslations = async () => {
     try {
-      await adminClient.realms.deleteRealmLocalizationTexts({
-        realm,
-        selectedLocale: "en",
-        key: autocompletedTranslationKey,
-      });
+      await Promise.all(
+        combinedLocales.map(async (locale) => {
+          await adminClient.realms.deleteRealmLocalizationTexts({
+            realm: realmName,
+            selectedLocale: locale,
+            key: translationKey,
+          });
+        }),
+      );
 
       setTranslations([]);
+      toggleDialog();
     } catch (error) {
       console.error("Error removing translations:", error);
     }
@@ -141,7 +144,7 @@ export const AddTranslationsDialog = ({
             >
               <KeycloakTextInput
                 id="kc-translation-key"
-                defaultValue={autocompletedTranslationKey}
+                defaultValue={translationKey}
                 data-testid="translation-key"
               />
             </FormGroup>
@@ -188,14 +191,14 @@ export const AddTranslationsDialog = ({
                   </>
                 }
               >
-                {translations.length === 0 && !filter && (
+                {combinedLocales.length === 0 && !filter && (
                   <ListEmptyState
                     hasIcon
-                    message={t("noTranslations")}
-                    instructions={t("noTranslationsInstructions")}
+                    message={t("noLanguages")}
+                    instructions={t("noLanguagesInstructions")}
                   />
                 )}
-                {translations.length === 0 && filter && (
+                {combinedLocales.length === 0 && filter && (
                   <ListEmptyState
                     hasIcon
                     icon={SearchIcon}
@@ -206,24 +209,56 @@ export const AddTranslationsDialog = ({
                     )}
                   />
                 )}
-                {translations.length !== 0 && (
-                  <Table
-                    aria-label={t("editableRowsTable")}
-                    data-testid="editable-rows-table"
-                  >
-                    <Thead>
-                      <Tr>
-                        <Th className="pf-u-py-lg">
-                          {t("supportedLanguagesTableColumnName")}
-                        </Th>
-                        <Th className="pf-u-py-lg">
-                          {t("translationTableColumnName")}
-                        </Th>
-                        <Th aria-hidden="true" />
+                <Table
+                  aria-label={t("addTranslationsDialogRowsTable")}
+                  data-testid="add-translations-dialog-rows-table"
+                >
+                  <Thead>
+                    <Tr>
+                      <Th className="pf-u-py-lg">
+                        {t("supportedLanguagesTableColumnName")}
+                      </Th>
+                      <Th className="pf-u-py-lg">
+                        {t("translationTableColumnName")}
+                      </Th>
+                      <Th aria-hidden="true" />
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {combinedLocales.map((locale, rowIndex) => (
+                      <Tr key={rowIndex}>
+                        <Td
+                          className="pf-m-sm pf-u-px-sm"
+                          dataLabel={t("supportedLanguage")}
+                        >
+                          {localeToDisplayName(locale, whoAmI.getLocale())}
+                          {locale === defaultLocales.toString() && (
+                            <Label className="pf-u-ml-xs" color="blue">
+                              {t("defaultLanguage")}
+                            </Label>
+                          )}
+                        </Td>
+                        <Td>
+                          <KeycloakTextInput
+                            aria-label={t("translationValue")}
+                            type="text"
+                            className="pf-u-w-initial"
+                            data-testid={`translationValueInput-${rowIndex}`}
+                            value={formValues[rowIndex] || ""}
+                            onChange={(
+                              event: ChangeEvent<HTMLInputElement>,
+                            ) => {
+                              const newFormValues = [...formValues];
+                              newFormValues[rowIndex] = event.target.value;
+                              setFormValues(newFormValues);
+                            }}
+                            key={`translation-input-${rowIndex}`}
+                          />
+                        </Td>
                       </Tr>
-                    </Thead>
-                  </Table>
-                )}
+                    ))}
+                  </Tbody>
+                </Table>
               </PaginatingTableToolbar>
             </FlexItem>
           </Form>
