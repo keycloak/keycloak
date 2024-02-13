@@ -30,6 +30,7 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.utils.StringUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1016,40 +1017,70 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + search + first + max);
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
+        // TODO the way the cache is implemented, we can't invalidate keys based on only one property matching
+        // to take advantage of the cache we have to load all groups and then paginate/filter the stream
+        String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
+
+        boolean isInvalid = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
             || listInvalidations.contains(realm.getId());
-        if (queryDB) {
-            return getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max);
-        }
+
+//        if (queryDB) {
+//            return getGroupDelegate().getTopLevelGroupsStream(realm);
+//        }
 
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+
         if (Objects.nonNull(query)) {
             logger.tracev("getTopLevelGroups cache hit: {0}", realm.getName());
         }
 
+        List<GroupModel> model;
+        // cache miss so query db and populate the cache
         if (Objects.isNull(query)) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max).collect(Collectors.toList());
+            model = getGroupDelegate().getTopLevelGroupsStream(realm).collect(Collectors.toList());
             if (model.isEmpty()) return Stream.empty();
-            Set<String> ids = new HashSet<>();
-            for (GroupModel client : model) ids.add(client.getId());
-            query = new GroupListQuery(loaded, cacheKey, realm, ids);
-            logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
-            return model.stream();
-        }
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : query.getGroups()) {
-            GroupModel group = session.groups().getGroupById(realm, id);
-            if (Objects.isNull(group)) {
-                invalidations.add(cacheKey);
-                return getGroupDelegate().getTopLevelGroupsStream(realm);
+            if (!isInvalid) {
+                Set<String> ids = new HashSet<>();
+                for (GroupModel group : model) ids.add(group.getId());
+                query = new GroupListQuery(loaded, cacheKey, realm, ids);
+                logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+                cache.addRevisioned(query, startupRevision);
             }
-            list.add(group);
+        } else if (isInvalid) {
+            // cache invalid so get our groups from the db
+            model = getGroupDelegate().getTopLevelGroupsStream(realm).collect(Collectors.toList());
+        } else {
+            // cache hit so let's load from the cache
+            Set<String> groupIds = query.getGroups();
+            model = groupIds.stream().map(groupId -> getGroupById(realm, groupId))
+                    .filter(Objects::nonNull).collect(Collectors.toList());
         }
 
-        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
+        Stream<GroupModel> groups = model.stream().sorted(GroupModel.COMPARE_BY_NAME);
+        if(StringUtil.isNotBlank(search)) {
+            groups = groups.filter(g -> exact ? g.getName().equals(search) : g.getName().equalsIgnoreCase(search));
+        }
+
+        if(first != null && first >= 0) {
+            groups = groups.skip(first);
+        }
+
+        if(max != null && max >= 0) {
+            groups = groups.limit(max);
+        }
+
+        // TODO this is an N+1 in the cache. We should invalidate on updates. A stale cache read is resolved by refreshing
+//        for (String id : query.getGroups()) {
+//            GroupModel group = session.groups().getGroupById(realm, id);
+//            if (Objects.isNull(group)) {
+//                invalidations.add(cacheKey);
+//                return getGroupDelegate().getTopLevelGroupsStream(realm);
+//            }
+//            list.add(group);
+//        }
+
+        return groups;
     }
 
     @Override
