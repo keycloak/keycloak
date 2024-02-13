@@ -476,11 +476,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         try {
-            // TODO this can be replaced with a named query, this is just a proof of concept
-            Tuple groupWithSubCount = em.createQuery(
-                            "SELECT g, COUNT(s.id) FROM GroupEntity g LEFT JOIN GroupEntity s ON g.id = s.parentId WHERE g.id = :id GROUP BY g.id", Tuple.class)
-                    .setParameter("id", id)
-                    .getSingleResult();
+            Tuple groupWithSubCount = em.createNamedQuery("getGroupsWithSubGroupCount", Tuple.class).setParameter("id", id).getSingleResult();
             GroupEntity groupEntity = groupWithSubCount.get(0, GroupEntity.class);
             if (groupEntity == null) return null;
             if (!groupEntity.getRealm().equals(realm.getId())) return null;
