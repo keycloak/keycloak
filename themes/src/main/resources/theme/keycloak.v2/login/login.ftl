@@ -9,7 +9,11 @@
                 <form id="kc-form-login" class="${properties.kcFormClass!} onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
                     <#if !usernameHidden??>
                         <div class="${properties.kcFormGroupClass!}">
-                            <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
+                            <label for="username" class="${properties.kcLabelClass!}">
+                                <span class="pf-v5-c-form__label-text">
+                                    <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+                                </span>
+                            </label>
 
                             <span class="${properties.kcInputClass!} ${messagesPerField.existsError('username','password')?then('pf-m-error', '')}">
                                 <input tabindex="1" id="username" name="username" value="${(login.username!'')}" type="text" autofocus autocomplete="off"
@@ -34,7 +38,9 @@
                     </#if>
 
                     <div class="${properties.kcFormGroupClass!}">
-                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                        <label for="password" class="${properties.kcLabelClass!}">
+                            <span class="pf-v5-c-form__label-text">${msg("password")}</span>
+                        </label>
 
                         <div class="${properties.kcInputGroup!}">
                             <span class="${properties.kcInputClass!}">
@@ -63,11 +69,13 @@
                             <#if realm.rememberMe && !usernameHidden??>
                                 <div class="checkbox">
                                     <label>
+                                        <span class="pf-v5-c-form__label-text">
                                         <#if login.rememberMe??>
                                             <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox" checked> ${msg("rememberMe")}
                                         <#else>
                                             <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox"> ${msg("rememberMe")}
                                         </#if>
+                                        </span>
                                     </label>
                                 </div>
                             </#if>
