@@ -241,7 +241,7 @@ aws rds create-db-cluster \
 ----
 +
 NOTE: You should replace the `--master-username` and `--master-user-password` values.
-The values specified here must be used when configuring the Keycloak DB credentials.
+The values specified here must be used when configuring the {project_name} database credentials.
 +
 .Output:
 [source,json]

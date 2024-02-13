@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Deploy {project_name} for HA with the {project_name} Operator"
-summary="Building block for a Keycloak deployment"
+summary="Building block for a {project_name} deployment"
 preview="true"
 previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
@@ -76,7 +76,7 @@ When running load tests, or when having a reverse proxy in front of HAProxy, you
 
 Add the following supplementary configuration under the `spec` in the {project_name} Custom Resource to disable sticky sessions.
 
-[source,yaml]
+[source,yaml,subs="attributes+"]
 ----
 spec:
     ingress:
