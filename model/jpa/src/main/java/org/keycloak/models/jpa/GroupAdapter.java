@@ -51,11 +51,18 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
+    protected Long subGroupCount;
 
     public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
         this.em = em;
         this.group = group;
         this.realm = realm;
+        this.subGroupCount = null;
+    }
+
+    public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group, Long subGroupCount) {
+        this(realm, em, group);
+        this.subGroupCount = subGroupCount;
     }
 
     public GroupEntity getEntity() {
@@ -148,10 +155,13 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Long getSubGroupsCount() {
-        return em.createNamedQuery("getGroupCountByParent", Long.class)
-                .setParameter("realm", realm.getId())
-                .setParameter("parent", group.getId())
-                .getSingleResult();
+        if (subGroupCount == null) {
+            subGroupCount = em.createNamedQuery("getGroupCountByParent", Long.class)
+                    .setParameter("realm", realm.getId())
+                    .setParameter("parent", group.getId())
+                    .getSingleResult();
+        }
+        return subGroupCount;
     }
 
     @Override
