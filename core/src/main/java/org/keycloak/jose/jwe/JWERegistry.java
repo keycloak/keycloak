@@ -38,6 +38,8 @@ class JWERegistry {
     private static final Map<String, JWEEncryptionProvider> ENC_PROVIDERS = new HashMap<>();
 
     static {
+        ENC_PROVIDERS.put(JWEConstants.A128GCM, new AesGcmJWEEncryptionProvider(JWEConstants.A128GCM));
+        ENC_PROVIDERS.put(JWEConstants.A192GCM, new AesGcmJWEEncryptionProvider(JWEConstants.A192GCM));
         ENC_PROVIDERS.put(JWEConstants.A256GCM, new AesGcmJWEEncryptionProvider(JWEConstants.A256GCM));
         ENC_PROVIDERS.put(JWEConstants.A128CBC_HS256, new AesCbcHmacShaEncryptionProvider.Aes128CbcHmacSha256Provider());
         ENC_PROVIDERS.put(JWEConstants.A192CBC_HS384, new AesCbcHmacShaEncryptionProvider.Aes192CbcHmacSha384Provider());

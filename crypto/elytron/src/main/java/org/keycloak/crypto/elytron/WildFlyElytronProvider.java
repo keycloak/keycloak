@@ -61,6 +61,10 @@ public class WildFlyElytronProvider implements CryptoProvider {
         providers.put(CryptoConstants.RSA1_5, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding"));
         providers.put(CryptoConstants.RSA_OAEP, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
         providers.put(CryptoConstants.RSA_OAEP_256, new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
+        providers.put(CryptoConstants.ECDH_ES, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A128KW, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A192KW, new ElytronEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A256KW, new ElytronEcdhEsAlgorithmProvider());
     }
 
     @Override
