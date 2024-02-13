@@ -37,7 +37,7 @@
         <containers.home>${project.build.directory}/containers</containers.home>
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server>wildfly</app.server>
+        <app.server>disabled</app.server>
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
@@ -638,20 +638,5 @@
             </build>
         </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <name>Sonatype Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
 </project>

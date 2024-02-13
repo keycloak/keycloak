@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.authz.adapter.example;
-
-import java.io.IOException;
+package org.keycloak.testsuite.adapter.authz.example;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
@@ -33,11 +35,24 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-public class ServletAuthzNoLazyLoadPathsAdapterTest extends AbstractServletAuthzAdapterTest {
+public class ServletAuthzLazyLoadPathsAdapterTest extends AbstractServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
-        return exampleDeployment(RESOURCE_SERVER_ID);
+        return exampleDeployment(RESOURCE_SERVER_ID)
+                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/keycloak-lazy-load-authz-service.json"), "keycloak.json");
     }
 
+    @Test
+    public void testPathPEPDisabled() {
+        performTests(() -> {
+            login("alice", "alice");
+            assertWasNotDenied();
+
+            navigateTo();
+            getLink("PEP Disabled").click();
+
+            hasText("Policy enforcement is disabled. Access granted: true");
+        });
+    }
 }

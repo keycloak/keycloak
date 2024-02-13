@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.saml;
+package org.keycloak.testsuite.adapter.servlet;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -12,6 +12,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
