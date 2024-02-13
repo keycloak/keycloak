@@ -8,13 +8,12 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
+import { KeycloakTextInput, TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";
@@ -22,7 +21,6 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -38,12 +36,7 @@ export default function MappingDetails() {
 
   const { id, mapperId } = useParams<MapperParams>();
   const form = useForm();
-  const {
-    register,
-    setValue,
-    formState: { errors },
-    handleSubmit,
-  } = form;
+  const { setValue, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
   const [config, setConfig] = useState<{
     protocol?: string;
@@ -200,59 +193,45 @@ export default function MappingDetails() {
         }
       />
       <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="manage-clients"
-        >
-          <FormGroup label={t("mapperType")} fieldId="mapperType">
-            <KeycloakTextInput
-              type="text"
-              id="mapperType"
-              name="mapperType"
-              isReadOnly
-              value={mapping?.name}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("name")}
-            labelIcon={
-              <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
-            }
-            fieldId="name"
-            isRequired
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            onSubmit={handleSubmit(save)}
+            role="manage-clients"
           >
-            <KeycloakTextInput
-              id="name"
-              isReadOnly={isUpdating}
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              {...register("name", { required: true })}
+            <FormGroup label={t("mapperType")} fieldId="mapperType">
+              <KeycloakTextInput
+                type="text"
+                id="mapperType"
+                name="mapperType"
+                readOnlyVariant="default"
+                value={mapping?.name}
+              />
+            </FormGroup>
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("mapperNameHelp")}
+              readOnlyVariant={isUpdating ? "default" : undefined}
+              rules={{ required: { value: true, message: t("required") } }}
             />
-          </FormGroup>
-          <FormProvider {...form}>
             <DynamicComponents
               properties={mapping?.properties || []}
               isNew={!isUpdating}
             />
-          </FormProvider>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("save")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => <Link {...props} to={toDetails()} />}
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+            <ActionGroup>
+              <Button variant="primary" type="submit">
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                component={(props) => <Link {...props} to={toDetails()} />}
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );
