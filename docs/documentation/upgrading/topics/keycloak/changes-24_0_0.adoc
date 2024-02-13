@@ -231,6 +231,19 @@ Ensure that no unmanaged attributes are allowed and all editable attributes have
 For unmanaged attributes, the maximum length is 2048 characters.
 For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
 
+== Additional migration steps for LDAP
+
+This is for installations that match all the following criteria:
+
+* User attributes in the LDAP directory are larger than 2048 characters or binary attributes that are larger than 1500 bytes.
+* The attributes are changed by admins or users via the admin console, the APIs or the account console.
+
+To be able to enable changing those attributes via UI and REST APIs, perform the following steps:
+
+. Declare the attributes identified above as managed attributes in the user profile of the realm.
+. Define a `length` validator for each attribute added in the previous step specifying the desired minimum and maximum length of the attribute value.
+For binary values, add 33% to the expected binary length to count in the overhead for {project_name}'s internal base64 encoding of binary values.
+
 == Additional migration steps for custom user storage providers
 
 This is for installations that match all the following criteria:
