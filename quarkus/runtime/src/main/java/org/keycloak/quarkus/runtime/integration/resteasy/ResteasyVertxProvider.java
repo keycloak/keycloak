@@ -20,16 +20,24 @@ package org.keycloak.quarkus.runtime.integration.resteasy;
 import io.quarkus.arc.Arc;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.ext.web.RoutingContext;
-import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.util.ResteasyProvider;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class ResteasyVertxProvider implements ResteasyProvider {
 
+    private static final ThreadLocal<Map<Class<?>, Object>> contextualData = new ThreadLocal<Map<Class<?>, Object>>() {
+        @Override
+        protected Map<Class<?>, Object> initialValue() {
+            return new HashMap<>();
+        };
+    };
+
     @Override
     public <R> R getContextData(Class<R> type) {
-        R data = ResteasyContext.getContextData(type);
+        R data = (R) contextualData.get().get(type);
 
         if (data == null) {
             RoutingContext contextData = Optional.ofNullable(Arc.container())
@@ -48,7 +56,7 @@ public class ResteasyVertxProvider implements ResteasyProvider {
 
     @Override
     public void pushContext(Class type, Object instance) {
-        ResteasyContext.pushContext(type, instance);
+        contextualData.get().put(type, instance);
     }
 
     @Override
@@ -58,7 +66,7 @@ public class ResteasyVertxProvider implements ResteasyProvider {
 
     @Override
     public void clearContextData() {
-        ResteasyContext.clearContextData();
+        contextualData.remove();
     }
 
 }
