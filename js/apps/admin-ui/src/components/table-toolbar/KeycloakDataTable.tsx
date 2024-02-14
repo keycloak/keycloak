@@ -221,7 +221,8 @@ export function KeycloakDataTable<T>({
   const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const prevKey = useRef<number>();
+  const refresh = () => setKey(key + 1);
   const id = useId();
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
@@ -325,11 +326,13 @@ export function KeycloakDataTable<T>({
       }
       prevSearch.current = search;
       return typeof loader === "function"
-        ? unPaginatedData ||
-            (await loader(newSearch ? 0 : first, max + 1, search))
+        ? key === prevKey.current && unPaginatedData
+          ? unPaginatedData
+          : await loader(newSearch ? 0 : first, max + 1, search)
         : loader;
     },
     (data) => {
+      prevKey.current = key;
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
