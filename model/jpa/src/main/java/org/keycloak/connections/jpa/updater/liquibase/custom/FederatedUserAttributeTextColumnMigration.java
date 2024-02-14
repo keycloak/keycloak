@@ -40,17 +40,22 @@ public class FederatedUserAttributeTextColumnMigration extends CustomKeycloakTas
 
             try (PreparedStatement ps = connection.prepareStatement("SELECT t.ID, t.VALUE" +
                     "  FROM " + getTableName("FED_USER_ATTRIBUTE") + " t" +
-                    "  WHERE CHAR_LENGTH(t.VALUE) > 2024");
+                    "  WHERE LENGTH(t.VALUE) > 2024");
                  ResultSet resultSet = ps.executeQuery()
             ) {
                 while (resultSet.next()) {
                     String id = resultSet.getString(1);
                     String value = resultSet.getString(2);
-                    statements.add(new RawParameterizedSqlStatement("UPDATE " + getTableName("FED_USER_ATTRIBUTE") + " SET VALUE = null, LONG_VALUE_HASH = ?, LONG_VALUE_HASH_LOWER_CASE = ?, LONG_VALUE = ? WHERE ID = ?",
-                            JpaHashUtils.hashForAttributeValue(value),
-                            JpaHashUtils.hashForAttributeValueLowerCase(value),
-                            value,
-                            id));
+                    // The SQL LENGTH() will count bytes, where Java's length() will count Unicode characters.
+                    // There's also SQL CHAR_LENGTH() which is probably equivalent to Java's Character.codePointCount(),
+                    // but it is not a fit here as we're not using code points in the JPA entities
+                    if (value.length() > 2024) {
+                        statements.add(new RawParameterizedSqlStatement("UPDATE " + getTableName("FED_USER_ATTRIBUTE") + " SET VALUE = null, LONG_VALUE_HASH = ?, LONG_VALUE_HASH_LOWER_CASE = ?, LONG_VALUE = ? WHERE ID = ?",
+                                JpaHashUtils.hashForAttributeValue(value),
+                                JpaHashUtils.hashForAttributeValueLowerCase(value),
+                                value,
+                                id));
+                    }
                 }
             } catch (Exception e) {
                 throw new CustomChangeException(getTaskId() + ": Exception when updating data from previous version", e);
