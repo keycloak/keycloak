@@ -231,11 +231,11 @@ Feel free to join the open https://github.com/keycloak/keycloak/discussions/8549
 
 == Specifying different memory settings
 
-The {project_name} container, instead of specifying hardcoded values for the initial and maximum heap size, uses relative values to the total memory of a node.
+The {project_name} container, instead of specifying hardcoded values for the initial and maximum heap size, uses relative values to the total memory of a container.
 This behavior is achieved by JVM options `-XX:MaxRAMPercentage=70`, and `-XX:InitialRAMPercentage=50`.
 
-The `-XX:MaxRAMPercentage` option represents the maximum heap size as 70% of total node memory.
-The `-XX:InitialRAMPercentage` option represents the initial heap size as 50% of the total node memory.
+The `-XX:MaxRAMPercentage` option represents the maximum heap size as 70% of the total container memory.
+The `-XX:InitialRAMPercentage` option represents the initial heap size as 50% of the total container memory.
 These values were chosen based on a deeper analysis of Keycloak memory management.
 
 The JVM options related to the heap might be overridden by setting the environment variable `JAVA_OPTS_KC_HEAP`.

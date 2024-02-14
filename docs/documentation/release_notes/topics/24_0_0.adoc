@@ -199,7 +199,9 @@ spec:
 = Keycloak CR resources options
 
 The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
-It provides the ability to request and limit resources for the inner Keycloak CR and KeycloakRealmImport CR container.
+It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
 
 You can specify your custom values based on your requirements as follows:
 
@@ -219,11 +221,6 @@ spec:
       cpu: 6
       memory: 3Gi
 ----
-
-When the `resources` options are not specified, these default values are used:
-
-* `requests.memory` = 768Mi
-* `limits.memory` = 4Gi
 
 For more details, check the
 https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
@@ -260,7 +257,7 @@ mappers would never be used. The supported options were updated to only include 
 
 = Different JVM memory settings when running in container
 
-Instead of specifying hardcoded values for the initial and maximum heap size, Keycloak uses relative values to the total memory of a node when running in a container.
+Instead of specifying hardcoded values for the initial and maximum heap size, Keycloak uses relative values to the total memory of a container.
 The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, and `-XX:MaxRAMPercentage`.
 
 For more details, check the
