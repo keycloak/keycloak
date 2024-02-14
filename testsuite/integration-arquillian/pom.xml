@@ -503,6 +503,24 @@
             </properties>
         </profile>
         <profile>
+            <id>db-aurora-postgres</id>
+            <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>secret99</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.jdbcParameters/>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}${keycloak.connectionsJpa.jdbcParameters}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
             <id>db-allocator-db-postgres</id>
             <properties>
                 <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
