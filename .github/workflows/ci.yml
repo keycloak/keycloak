@@ -43,7 +43,7 @@ jobs:
       - id: conditional-stores
         run: |
           STORES="postgres, mysql, oracle, mssql, mariadb"
-          if [ $GITHUB_EVENT_NAME != "pull_request" ]; then
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]]; then
             STORES+=", aurora-postgres"
           fi
           echo "matrix=$(echo $STORES  | jq -Rc 'split(", ")')" >> $GITHUB_OUTPUT
@@ -371,9 +371,14 @@ jobs:
           ./aws_ec2.sh requirements
           ./aws_ec2.sh create ${REGION}
           ./keycloak_ec2_installer.sh ${REGION} /tmp/keycloak.zip
-          ./mvn_ec2_runner.sh ${REGION} "clean install -DskipTests -Pdistribution"
-          ./mvn_ec2_runner.sh ${REGION} "clean install -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Dmaven.build.cache.enabled=true"
-          ./mvn_ec2_runner.sh ${REGION} "test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} $PROPS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base"
+          ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -Pdistribution"
+          ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Dmaven.build.cache.enabled=true"
+          ./mvn_ec2_runner.sh ${REGION} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} $PROPS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
+
+          # Copy returned surefire-report directories to workspace root to ensure they're discovered
+          results=(files/keycloak/results/*)
+          rsync -a $results/* ../../../
+          rm -rf $results
 
       - name: Run base tests
         if: ${{ matrix.db != 'aurora-postgres' }}

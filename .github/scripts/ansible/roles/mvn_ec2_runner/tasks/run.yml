@@ -23,3 +23,29 @@
   register: result
 
 - debug: var=result
+
+- name: Recursively find surefire-report directories
+  ansible.builtin.find:
+    file_type: directory
+    paths: "{{ kc_home }}"
+    patterns: "surefire-reports*"
+    recurse: true
+  register: output
+
+- debug: var=output
+
+- name: Create local results directories
+  delegate_to: localhost
+  file:
+    path: "{{ local_results_dir }}/{{ item.path | replace(kc_home, '') }}"
+    state: directory
+  with_items:
+    - "{{ output.files }}"
+
+- name: Copy surefire-report directories to localhost
+  synchronize:
+    src: "{{ item.path }}/"
+    dest: "{{ local_results_dir }}/{{ item.path | replace(kc_home, '') }}"
+    mode: pull
+  with_items:
+    - "{{ output.files }}"
