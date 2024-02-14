@@ -64,7 +64,7 @@ public class KeystoreUtils {
     }
 
     public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType, String subject, String keystorePassword, String keyPassword, KeyPair keyPair) throws Exception {
-        String fileName = "keystore." + keystoreType.getFileExtension();
+        String fileName = "keystore." + keystoreType.getPrimaryExtension();
 
         X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
 
