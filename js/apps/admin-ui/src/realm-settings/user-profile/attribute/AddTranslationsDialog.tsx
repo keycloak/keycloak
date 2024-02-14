@@ -99,7 +99,7 @@ export const AddTranslationsDialog = ({
       setTranslations([]);
       toggleDialog();
     } catch (error) {
-      console.error("Error removing translations:", error);
+      throw new Error(t("errorRemovingTranslations"));
     }
   };
 
