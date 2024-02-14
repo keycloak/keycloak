@@ -38,7 +38,6 @@
             javax.servlet;version="[3.1,5)",
             javax.servlet.http;version="[3.1,5)",
             javax.net.ssl,
-            org.apache.camel.*,
             io.undertow.*;version="[1.4,3)",
             org.apache.camel;version="[2.13,3)",
             org.keycloak.*;version="${fuse.adapter.version}",

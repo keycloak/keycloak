@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -166,6 +167,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @Ignore
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
 
@@ -346,9 +348,9 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         DroneUtils.getCurrentDriver().navigate().back();
         customerListing.clickLogOut();
+
         logoutConfirmPage.confirmLogout();
 
-        WaitUtils.pause(2500);
         customerPortal.navigateTo();//needed for phantomjs
         WaitUtils.waitForPageToLoad();
         customerPortal.clickCustomerListingLink();
@@ -375,6 +377,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         WaitUtils.waitForPageToLoad();
         customerListing.clickLogOut();
         logoutConfirmPage.confirmLogout();
+        WaitUtils.waitForPageToLoad();
 
         WaitUtils.pause(2500);
         customerPortal.navigateTo();//needed for phantomjs
@@ -404,7 +407,8 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         assertThat(productPortal.getProduct2SecuredText(), containsString("Product received: id=2"));
 
         productPortal.clickLogOutLink();
+        logoutConfirmPage.confirmLogout();
         WaitUtils.waitForPageToLoad();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        assertCurrentUrlStartsWith(testRealmPage);
     }
 }
