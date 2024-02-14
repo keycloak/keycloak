@@ -19,15 +19,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.stream.Stream;
-
 import org.junit.Assume;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -36,6 +27,15 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.security.KeyPair;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;
 

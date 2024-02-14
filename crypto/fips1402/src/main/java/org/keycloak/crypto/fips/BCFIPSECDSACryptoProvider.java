@@ -1,5 +1,15 @@
 package org.keycloak.crypto.fips;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.asn1.x9.X9IntegerConverter;
+import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
+import org.bouncycastle.math.ec.ECPoint;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -10,20 +20,6 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
-
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequenceGenerator;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
-import org.bouncycastle.crypto.fips.FipsEC;
-import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECMultiplier;
-import org.bouncycastle.math.ec.ECPoint;
-import org.keycloak.common.crypto.ECDSACryptoProvider;
 
 public class BCFIPSECDSACryptoProvider implements ECDSACryptoProvider {
 

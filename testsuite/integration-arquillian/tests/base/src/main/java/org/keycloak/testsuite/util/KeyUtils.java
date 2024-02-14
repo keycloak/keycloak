@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.util;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -12,8 +13,6 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
-import jakarta.ws.rs.core.Response;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -22,10 +21,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;

@@ -18,7 +18,6 @@
 package org.keycloak.keys;
 
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
@@ -35,7 +34,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -51,10 +49,6 @@ import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPublicKeySpec;
-import java.security.spec.EllipticCurve;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
