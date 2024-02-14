@@ -22,6 +22,7 @@ pom.xml                                     ci ci-store operator
 federation/sssd/                            ci ci-sssd
 
 model/                                      ci-store
+operator/                                   operator
 
 docs/guides/                                guides
 docs/documentation/                         documentation
