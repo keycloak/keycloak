@@ -71,12 +71,12 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
-  const hasDisplayName = useWatch({
+  const attributeDisplayName = useWatch({
     control: form.control,
     name: "displayName",
   });
 
-  const displayNamePatternMatch = displayNamePattern.test(hasDisplayName);
+  const displayNamePatternMatch = displayNamePattern.test(attributeDisplayName);
 
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
@@ -98,6 +98,7 @@ export const AttributeGeneralSettings = () => {
       {addTranslationsModalOpen && attributeName && (
         <AddTranslationsDialog
           translationKey={attributeName}
+          defaultTranslationValue={attributeDisplayName}
           toggleDialog={() => {
             toggleModal();
           }}
@@ -157,7 +158,7 @@ export const AttributeGeneralSettings = () => {
                 className="pf-m-plain kc-attribute-display-name-iconBtn"
                 data-testid="addAttributeTranslationBtn"
                 aria-label={t("addAttributeTranslationBtn")}
-                isDisabled={!hasDisplayName}
+                isDisabled={!attributeDisplayName}
                 onClick={() => {
                   toggleModal();
                 }}

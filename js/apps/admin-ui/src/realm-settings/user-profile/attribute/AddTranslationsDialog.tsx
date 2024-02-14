@@ -14,28 +14,34 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { ChangeEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { adminClient } from "../../../admin-client";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import EffectiveMessageBundleRepresentation from "libs/keycloak-admin-client/lib/defs/effectiveMessageBundleRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { HelpItem } from "ui-shared";
 
+type Translation = {
+  locale: string;
+  value: string;
+};
+
 export type AddTranslationsDialogProps = {
   translationKey: string;
+  defaultTranslationValue: string;
   onCancel: () => void;
   toggleDialog: () => void;
 };
 
 export const AddTranslationsDialog = ({
   translationKey,
+  defaultTranslationValue,
   onCancel,
   toggleDialog,
 }: AddTranslationsDialogProps) => {
@@ -46,10 +52,7 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const [translations, setTranslations] = useState<
-    EffectiveMessageBundleRepresentation[]
-  >([]);
-  const [formValues, setFormValues] = useState<string[]>([]);
+  const [formValues, setFormValues] = useState<Translation[]>([]);
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
@@ -96,14 +99,13 @@ export const AddTranslationsDialog = ({
         }),
       );
 
-      setTranslations([]);
       toggleDialog();
     } catch (error) {
       throw new Error(t("errorRemovingTranslations"));
     }
   };
 
-  console.log(translations);
+  console.log("defaultTranslationValue", defaultTranslationValue);
 
   return (
     <Modal
@@ -257,15 +259,20 @@ export const AddTranslationsDialog = ({
                               type="text"
                               className="pf-u-w-initial"
                               data-testid={`translationValueInput-${rowIndex}`}
-                              value={formValues[rowIndex] || ""}
-                              onChange={(
-                                event: ChangeEvent<HTMLInputElement>,
-                              ) => {
+                              value={
+                                locale === defaultLocales.toString()
+                                  ? "test"
+                                  : formValues[rowIndex]?.value
+                              }
+                              onChange={(event) => {
                                 const newFormValues = [...formValues];
-                                newFormValues[rowIndex] = event.target.value;
+                                newFormValues[rowIndex] = {
+                                  locale: locale,
+                                  value: (event.target as HTMLInputElement)
+                                    .value,
+                                };
                                 setFormValues(newFormValues);
                               }}
-                              key={`translation-input-${rowIndex}`}
                             />
                           </Td>
                         </Tr>
