@@ -13,6 +13,12 @@ spec:
       value: postgres
     - name: db-password
       value: testpassword
+    - name: SMTP_SERVER
+      value: "test-smtp-server"
+    - name: SMTP_PORT
+      value: "567"
+    - name: SMTP_FROM
+      value: "test-smtp-from@example.com"
   hostname:
     hostname: example.com
   unsupported:
