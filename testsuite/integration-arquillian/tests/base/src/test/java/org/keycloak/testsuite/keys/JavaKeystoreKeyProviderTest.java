@@ -17,12 +17,21 @@
 
 package org.keycloak.testsuite.keys;
 
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jce.ECKeyUtil;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.math.ec.ECPoint;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
@@ -36,9 +45,18 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
 
 import jakarta.ws.rs.core.Response;
+
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -64,6 +82,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     @Page
     protected LoginPage loginPage;
     private KeystoreUtils.KeystoreInfo generatedKeystore;
+    private String keyAlgorithm;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -72,34 +91,49 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void createJks() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.JKS);
+    public void createJksRSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.RSA);
     }
 
     @Test
-    public void createPkcs12() throws Exception {
-        createSuccess(PKCS12);
+    public void createPkcs12RSA() throws Exception {
+        createSuccess(PKCS12, AlgorithmType.RSA);
     }
 
     @Test
-    public void createBcfks() throws Exception {
-        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS);
+    public void createBcfksRSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.RSA);
     }
 
-    private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
+    @Test
+    public void createJksECDSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ECDSA);
+    }
+
+    @Test
+    public void createPkcs12ECDSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ECDSA);
+    }
+
+    @Test
+    public void createBcfksECDSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ECDSA);
+    }
+
+    private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(keystoreType);
-        generateKeystore(keystoreType);
+        generateKeystore(keystoreType, algorithmType);
 
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createRep("valid", priority);
+        ComponentRepresentation rep = createRep("valid", priority, keyAlgorithm);
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         getCleanup().addComponentId(id);
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
-        assertEquals(5, createdRep.getConfig().size());
+        assertEquals(6, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keystorePassword"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keyPassword"));
@@ -109,16 +143,29 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
         assertEquals(id, key.getProviderId());
-        assertEquals(AlgorithmType.RSA.name(), key.getType());
+        switch (algorithmType) {
+            case RSA: {
+                assertEquals(algorithmType.name(), key.getType());
+                PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), "RSA");
+                PublicKey got = PemUtils.decodePublicKey(key.getPublicKey(), "RSA");
+                assertEquals(exp, got);
+                break;
+            }
+            case ECDSA:
+                assertEquals("EC", key.getType());
+                PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), "EC");
+                PublicKey got = PemUtils.decodePublicKey(key.getPublicKey(), "EC");
+                assertEquals(exp, got);
+        }
+
         assertEquals(priority, key.getProviderPriority());
-        assertEquals(generatedKeystore.getCertificateInfo().getPublicKey(), key.getPublicKey());
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
     }
 
     @Test
     public void invalidKeystore() throws Exception {
         generateKeystore(KeystoreUtils.getPreferredKeystoreType());
-        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "/nosuchfile");
 
         Response response = adminClient.realm("test").components().add(rep);
@@ -128,7 +175,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     @Test
     public void invalidKeystorePassword() throws Exception {
         generateKeystore(KeystoreUtils.getPreferredKeystoreType());
-        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
@@ -138,7 +185,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     @Test
     public void invalidKeyAlias() throws Exception {
         generateKeystore(KeystoreUtils.getPreferredKeystoreType());
-        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyAlias", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
@@ -158,7 +205,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
             log.infof("Fallback to keystore type '%s' for the invalidKeyPassword() test", keystoreType);
         }
         generateKeystore(keystoreType);
-        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyPassword", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
@@ -176,7 +223,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         response.close();
     }
 
-    protected ComponentRepresentation createRep(String name, long priority) {
+    protected ComponentRepresentation createRep(String name, long priority, String algorithm) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
         rep.setParentId(adminClient.realm("test").toRepresentation().getId());
@@ -188,11 +235,25 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keystorePassword", "password");
         rep.getConfig().putSingle("keyAlias", "selfsigned");
         rep.getConfig().putSingle("keyPassword", "password");
+        rep.getConfig().putSingle("algorithm", algorithm);
         return rep;
     }
 
     private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
-        this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password");
+        generateKeystore(keystoreType, AlgorithmType.RSA);
+    }
+
+    private void generateKeystore(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType) throws Exception {
+        switch (algorithmType) {
+            case RSA: {
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password");
+                this.keyAlgorithm = Algorithm.RS256;
+                return;
+            }
+            case ECDSA:
+                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "selfsigned", "password", "password", KeyUtils.generateECKey(Algorithm.ES256));
+                this.keyAlgorithm = Algorithm.ES256;
+        }
     }
 
 }

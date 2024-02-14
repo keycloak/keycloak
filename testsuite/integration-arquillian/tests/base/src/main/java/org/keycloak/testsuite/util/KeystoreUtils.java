@@ -63,16 +63,15 @@ public class KeystoreUtils {
                         .anyMatch(type -> type.equals(keystoreType.toString())));
     }
 
-    public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType, String subject, String keystorePassword, String keyPassword) throws Exception {
-        String fileName = "keystore." + keystoreType.getPrimaryExtension();
+    public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType, String subject, String keystorePassword, String keyPassword, KeyPair keyPair) throws Exception {
+        String fileName = "keystore." + keystoreType.getFileExtension();
 
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
 
         KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(keystoreType);
         keyStore.load(null, null);
 
-        Certificate[] chain =  {certificate};
+        Certificate[] chain = {certificate};
         keyStore.setKeyEntry(subject, keyPair.getPrivate(), keyPassword.trim().toCharArray(), chain);
 
         File file = folder.newFile(fileName);
@@ -83,6 +82,10 @@ public class KeystoreUtils {
         certRep.setPublicKey(PemUtils.encodeKey(keyPair.getPublic()));
         certRep.setCertificate(PemUtils.encodeCertificate(certificate));
         return new KeystoreInfo(certRep, file);
+    }
+
+    public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType, String subject, String keystorePassword, String keyPassword) throws Exception {
+        return generateKeystore(folder, keystoreType, subject, keystorePassword, keyPassword, KeyUtils.generateRsaKeyPair(2048));
     }
 
     public static class KeystoreInfo {

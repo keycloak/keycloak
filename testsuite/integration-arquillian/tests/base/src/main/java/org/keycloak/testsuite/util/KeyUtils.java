@@ -6,18 +6,26 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.AbstractEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
 import jakarta.ws.rs.core.Response;
+
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -31,6 +39,20 @@ import static org.junit.Assert.fail;
  * @author mhajas
  */
 public class KeyUtils {
+    public static KeyPair generateECKey(String algorithm) {
+
+        try {
+            KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen("ECDSA");
+            String domainParamNistRep = AbstractEcdsaKeyProviderFactory.convertAlgorithmToECDomainParmNistRep(algorithm);
+            String curve = AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToSecRep(domainParamNistRep);
+            ECGenParameterSpec parameterSpec = new ECGenParameterSpec(curve);
+            kpg.initialize(parameterSpec);
+            return kpg.generateKeyPair();
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public static PublicKey publicKeyFromString(String key) {
         try {
@@ -106,6 +128,7 @@ public class KeyUtils {
     public static AutoCloseable generateNewRealmKey(RealmResource realm, KeyUse keyUse, String algorithm) {
         return generateNewRealmKey(realm, keyUse, algorithm, "100");
     }
+
     /**
      * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
      */
