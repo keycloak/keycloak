@@ -32,7 +32,7 @@
     <packaging>pom</packaging>
     <properties>
         <camel.version>2.21.2</camel.version>
-        <fuse.adapter.version>18.0.7</fuse.adapter.version>
+        <fuse.adapter.version>18.0.12</fuse.adapter.version>
     </properties>
     <modules>
         <module>customer-app-fuse</module>

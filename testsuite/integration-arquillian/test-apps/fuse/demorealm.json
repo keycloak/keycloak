@@ -198,7 +198,10 @@
             "redirectUris": [
                 "http://localhost:8181/customer-portal/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "product-portal",
@@ -208,7 +211,10 @@
             "redirectUris": [
                 "http://localhost:8181/product-portal/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "builtin-cxf-app",
@@ -218,28 +224,40 @@
             "redirectUris": [
                 "http://localhost:8181/cxf/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "custom-cxf-endpoint",
             "enabled": true,
             "adminUrl": "http://localhost:8282/PersonServiceCF",
             "baseUrl": "http://localhost:8282/PersonServiceCF",
-            "bearerOnly": true
+            "bearerOnly": true,
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "admin-camel-endpoint",
             "enabled": true,
             "adminUrl": "http://localhost:8383/admin-camel-endpoint",
             "baseUrl": "http://localhost:8383/admin-camel-endpoint",
-            "bearerOnly": true
+            "bearerOnly": true,
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "admin-camel-restdsl",
             "enabled": true,
             "adminUrl": "http://localhost:8484/restdsl",
             "baseUrl": "http://localhost:8484/restdsl",
-            "bearerOnly": true
+            "bearerOnly": true,
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "ssh-jmx-admin-client",
@@ -247,7 +265,10 @@
             "publicClient": false,
             "standardFlowEnabled": false,
             "directAccessGrantsEnabled": true,
-            "secret": "password"
+            "secret": "password",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId": "external-config",
@@ -258,7 +279,10 @@
                 "http://localhost:8181/external-config",
                 "http://localhost:8181/external-config/*"
             ],
-            "secret": "password"
+            "secret": "password",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         },
         {
             "clientId" : "hawtio-client",
@@ -269,7 +293,10 @@
             "webOrigins" : [ "http://localhost:8080", "http://localhost:8181", "http://localhost:8081" ],
             "bearerOnly" : false,
             "publicClient" : true,
-            "protocol" : "openid-connect"
+            "protocol" : "openid-connect",
+            "attributes": {
+                "exclude.issuer.from.auth.response": "true"
+            }
         }
 
     ],
