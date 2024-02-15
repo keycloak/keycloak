@@ -23,8 +23,11 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -35,9 +38,12 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.RealmManager;
 import org.openqa.selenium.WebDriver;
 
 import java.util.LinkedList;
@@ -71,6 +77,9 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected LoginUsernameOnlyPage loginUsernameOnlyPage;
 
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
@@ -132,6 +141,45 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         events.expectLogin().assertEvent();
 
         assertEquals("All sessions are still active", 2, testUser.getUserSessions().size());
+    }
+
+    @Test
+    public void resetPasswordActionNotTriggered() {
+        String newFlowAlias = "browser - username only";
+
+        try {
+            RealmManager.realm(testRealm()).passwordPolicy("forceExpiredPasswordChange(1)");
+            setTimeOffset(60 * 60 * 48);
+
+            //create username only flow
+            testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+            testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                    .selectFlow(newFlowAlias)
+                    .clear()
+                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                    .defineAsBrowserFlow() // Activate this new flow
+            );
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("test-user@localhost");
+            events.expectLogin().assertEvent();
+        }
+        finally {
+            //reset browser flow and delete username only flow
+            RealmRepresentation realm = testRealm().toRepresentation();
+            realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
+            testRealm().update(realm);
+
+            testRealm().flows()
+                    .getFlows()
+                    .stream()
+                    .filter(flowRep -> flowRep.getAlias().equals(newFlowAlias))
+                    .findFirst()
+                    .ifPresent(authenticationFlowRepresentation ->
+                            testRealm().flows().deleteFlow(authenticationFlowRepresentation.getId()));
+
+            setTimeOffset(0);
+            RealmManager.realm(testRealm()).passwordPolicy(null);
+        }
     }
 
     private void requireUpdatePassword() {

@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
 import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
+import static org.keycloak.services.managers.AuthenticationManager.PASSWORD_VALIDATED;
 
 public class AuthenticatorUtil {
 
@@ -56,6 +57,10 @@ public class AuthenticatorUtil {
 
     public static boolean isForcedReauthentication(AuthenticationSessionModel authSession) {
         return "true".equals(authSession.getAuthNote(FORCED_REAUTHENTICATION));
+    }
+
+    public static boolean isPasswordValidated(AuthenticationSessionModel authSession) {
+        return "true".equals(authSession.getAuthNote(PASSWORD_VALIDATED));
     }
 
     /**
