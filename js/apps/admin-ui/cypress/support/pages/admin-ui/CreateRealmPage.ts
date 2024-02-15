@@ -2,7 +2,7 @@ export default class CreateRealmPage {
   #clearBtn = ".pf-c-file-upload__file-select button:last-child";
   #modalClearBtn = "clear-button";
   #realmNameInput = "#kc-realm-name";
-  #enabledSwitch = '[for="kc-realm-enabled-switch"] span.pf-c-switch__toggle';
+  #enabledSwitch = ".pf-c-toolbar .pf-c-switch__toggle";
   #createBtn = '.pf-c-form__group:last-child button[type="submit"]';
   #cancelBtn = '.pf-c-form__group:last-child button[type="button"]';
   #codeEditor = ".pf-c-code-editor__code";
