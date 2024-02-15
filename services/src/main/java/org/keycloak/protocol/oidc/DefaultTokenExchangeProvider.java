@@ -38,6 +38,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -278,13 +279,13 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
+        Response response = ((ExchangeTokenToIdentityProviderToken) provider).exchangeFromToken(session.getContext().getUri(), event, client, targetUserSession, targetUser, formParams);
         return cors.builder(Response.fromResponse(response)).build();
 
     }
 
     protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
-            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
+                                              AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
         String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
@@ -309,12 +310,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Audience not found", Response.Status.BAD_REQUEST);
 
             }
-        }
-
-        if (targetClient.isConsentRequired()) {
-            event.detail(Details.REASON, "audience requires consent");
-            event.error(Errors.CONSENT_DENIED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
 
         boolean isClientTheAudience = client.equals(targetClient);
@@ -363,6 +358,21 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
             //from return scope remove scopes that are not default or optional scopes for targetClient
             scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+        }
+
+
+        if (scope != null) {
+            // verification of existing users consents for requested scopes of target client
+            if (!TokenManager.verifyConsentStillAvailable(session, targetUser, targetClient, TokenManager.getRequestedClientScopes(scope, client))) {
+                event.error(Errors.NOT_ALLOWED);
+                event.detail(Details.REASON, String.format(
+                        "Missing some consents of [%s] for audience [%s]",
+                        TokenManager.getRequestedClientScopes(scope, client)
+                                .map(ClientScopeModel::getName)
+                                .collect(Collectors.joining(",")),
+                        targetClient.getClientId()));
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client requires user consent", Response.Status.BAD_REQUEST);
+            }
         }
 
         switch (requestedTokenType) {
