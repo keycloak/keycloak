@@ -1,3 +1,69 @@
+= Supported user profile and progressive profiling
+
+The user profile preview feature is promoted to be fully supported and user profile is enabled by default!
+
+In the past months, Keycloak team spent a huge amount of effort in polishing the user
+profile feature to make it fully supported. In this release, we continued the effort. Lots of improvements, fixes and
+polishing were done based on the thorough testing and feedback from our awesome community.
+
+Few highlights of the user profile feature:
+* Fine-grained control over the attributes that users and administrators can manage so that you can prevent unexpected attributes, and values, from being set. 
+* Ability to specify what user attributes are managed and should be displayed on the forms to regular users or administrators
+
+* Dynamic forms - Previously, the forms where users created or updated their profiles, contain four basic attributes like username, email, first name and last name. Any additional
+attributes (or removing some of the default attributes) required to create custom theme. Now custom themes may no longer be needed because users see exactly the requested attributes based on the requirement
+of the particular deployment
+
+* Validations - Ability to specify validators for the user attributes including built-in validators that you can use to specify a maximum or minimum length, a specific regex, or limiting a  
+particular attribute to be a URL or number.
+
+* Annotations - Ability to specify that particular attribute should be rendered for instance as text area or HTML select with specified options or calendar and lots of other options. You can also bind JavaScript code to a specific field to change how an attribute is rendered and customize its behavior.
+
+* Progressive profiling - Ability to specify that some fields are required or available on the forms just for particular values of `scope` parameter. This effectively allow progressive
+profiling. You no longer need to ask the user for twenty attributes during registration; you can instead ask the user to fill in attributes incrementally according to the requirements of the individual client
+applications that are used by the user.
+
+* Migration from previous versions - User profile is now always enabled, but it operates as before for those who did not use this feature previously. You can
+benefit from the user profile capabilities, but you are not strictly forced to use them. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
+
+This first release of the user profile as a supported feature is just the starting point and the baseline for delivering many more capabilities around identity management.
+
+We would like to huge Thanks to awesome Keycloak community as lots of ideas, requirements and contributions came from the community! Special thanks to:
+
+* https://github.com/velias[Vlastimil Eliáš]
+* https://github.com/alechenninger[Alec Henninger]
+* https://github.com/thomasdarimont[Thomas Darimont]
+* https://github.com/bs-matil[Markus Till]
+* https://github.com/sschu[Sebastian Schuster]
+* https://github.com/antikalk[Oliver]
+* https://github.com/patrickjennings[Patrick Jennings]
+* https://github.com/adrhine[Andrew]
+
+For more details about user profile capabilities, check link:{adminguide_link}#user-profile[{adminguide_name}].
+
+== Breaking changes to the User Profile SPI
+
+In this release, changes to the User Profile SPI might impact existing implementations based on this SPI. For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+== Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+== The update profile page when logging in for the first time through a broker now has its own Freemarker templates
+
+In this release, the server renders the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Java adapter deprecation and removal
 
 Back in 2022 we announced the https://www.keycloak.org/2022/02/adapter-deprecation.html[deprecation of Keycloak adapters in Keycloak 19].
@@ -98,11 +164,6 @@ It is now possible to separately enable parsing of either `Forwarded` or `X-Forw
 For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
 The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
 
-= Breaking changes to the User Profile SPI
-
-In this release, there are changes to the User Profile SPI that might impact existing implementations based on this SPI. For more details, check the
-link:{upgradingguide_link}[{upgradingguide_name}].
-
 = Changes to the user representation in both Admin API and Account contexts
 
 In this release, we are encapsulating the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) by moving them to a base/abstract class in order to align how these attributes
@@ -110,24 +171,6 @@ are marshalled and unmarshalled when using both Admin and Account REST APIs.
 
 This strategy provides consistency in how attributes are managed by clients and makes sure they conform to the user profile
 configuration set to a realm.
-
-For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
-
-= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
-
-In this release, the following templates were updated to make it possible to dynamically render attributes based
-on the user profile configuration set to a realm:
-
-* `login-update-profile.ftl`
-* `register.ftl`
-* `update-email.ftl`
-
-For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
-
-= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
-
-In this release, the server will render the update profile page when the user is authenticating through a broker for the
-first time using the `idp-review-user-profile.ftl` template.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
 

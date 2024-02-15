@@ -50,6 +50,24 @@ If you need more predictable behavior across releases, reference the particular 
 
 = User Profile Changes
 
+== User profile enabled by default
+
+The user profile feature is now enabled by default. The  `declarative-user-profile`feature is no longer available, because the user profile is assumed to be enabled.
+Therefore, the *User Profile Enabled* switch is removed from the *Realm Settings* and replaced by *Unmanaged attributes*.
+When migrating from previous version, the behavior is as follows:
+
+* For the deployments where *User Profile Enabled* was set to *ON*, *Unmanaged attributes* will be set to *OFF* after the upgrade. As a result, only user attributes supported explicitly
+by user profile will be allowed.
+
+* For the deployments where the *User Profile Enabled* was set to *OFF* (which was also the default settings for the deployments with `declarative-user-profile` feature disabled, which was the default),
+*Unmanaged attributes* will be set to *ON*` after the upgrade. As a result, the behavior should be basically the same as in previous versions with the user profile disabled. 
+The *Attributes* tab will remain in the user details part of the Admin Console. Also users can now set arbitrary attributes through UI pages such as the registration page and update profile page  as long as 
+a particular custom theme supports it. The custom themes should work as before as well. However, consider updating your themes to use the user-profile (See below in the themes section) and
+maybe even remove your custom themes if those themes were need to add custom attributes. We also recommend switching *Unmanaged attributes* to *OFF* or enable this switch only for
+administrators so that you can rely on mainly on using managed attributes.
+
+See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the *Unmanaged attributes*.
+
 == Default validations
 
 Default user profile configuration comes with a set of default validations for the basic predefined fields. Those validations were not present in previous versions when the `declarative-user-profile` feature was disabled by default.
@@ -77,6 +95,55 @@ attributes with such strange names in the user profile configuration. So you may
 
 The required action `verify-profile` is enabled by default for new realms. But when you are migrating from previous version, your existing realms will have same state of this `verify-profile` action as before, which
 usually means disabled as it was disabled by default in previous versions. For the details about this required action, see the link:{adminguide_link}#user-profile[User Profile Documentation].
+
+== Breaking changes to the User Profile SPI
+
+If you are using the User Profile SPI in your extension, you might be impacted by the API changes introduced in this release.
+
+The `org.keycloak.userprofile.Attributes` interface includes the following changes:
+
+* Method `getValues` was renamed to `get` to make it more aligned with the same operation from a regular Java `Map`
+* Method `isRootAttribute` was moved to the utility class `org.keycloak.userprofile.UserProfileUtil.isRootAttribute`
+* Method `getFirstValue` was renamed to `getFirst` to make it less verbose
+* Method `getReadable(boolean)` was removed and now all attributes (including root attributes) are returned whenever they have read rights.
+
+== Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+These templates are responsible for rendering the update profile (when the *Update Profile* required action is enabled for a user), 
+the registration, and the update email (when the *UPDATE_EMAIL* feature is enabled) pages, respectively.
+
+If you use a custom theme to change these templates, they will function as expected because only the content is updated.
+However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
+changing the built-in templates by using all the capabilities provided by this feature.
+
+Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are longer necessary and removed in this release:
+
+* `update-user-profile.ftl`
+* `register-user-profile.ftl`
+
+If you were using the `declarative-user-profile` feature in a previous release with customizations to the above templates,
+update the `login-update-profile.ftl` and `register.ftl` accordingly.
+
+== The update profile page when logging in for the first time through a broker now has its own Freemarker templates
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
+to update the profile when users are authenticating to a realm.
+
+By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
+and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
+
+If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
+to the new template.
 
 = Truststore Changes
 
@@ -107,17 +174,6 @@ The `--proxy` option has been deprecated and will be removed in a future release
 NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
 the case before for `--proxy edge` and `--proxy reencrypt`).
 
-= Breaking changes to the User Profile SPI
-
-If you are using the User Profile SPI in your extension, you might be impacted by the API changes introduced in this release.
-
-The `org.keycloak.userprofile.Attributes` interface includes the following changes:
-
-* Method `getValues` was renamed to `get` to make it more aligned with the same operation from a regular Java `Map`
-* Method `isRootAttribute` was moved to the utility class `org.keycloak.userprofile.UserProfileUtil.isRootAttribute`
-* Method `getFirstValue` was renamed to `getFirst` to make it less verbose
-* Method `getReadable(boolean)` was removed and now all attributes (including root attributes) are returned whenever they have read rights.
-
 = Changes to the user representation in both Admin API and Account contexts
 
 Both `org.keycloak.representations.idm.UserRepresentation` and `org.keycloak.representations.account.UserRepresentation` representation classes have changed
@@ -135,44 +191,6 @@ this method is not available from the representation payload and it is targeted 
 = `https-client-auth` is a build time option
 
 Option `https-client-auth` had been treated as a run time option, however this is not supported by Quarkus. The option needs to be handled at build time instead.
-
-= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
-
-In this release, the following templates were updated to make it possible to dynamically render attributes based
-on the user profile configuration set to a realm:
-
-* `login-update-profile.ftl`
-* `register.ftl`
-* `update-email.ftl`
-
-These templates are responsible for rendering the update profile (when the `Update Profile` required action is enabled to a user),
-the registration, and the update email (when the `UPDATE_EMAIL` feature is enabled) pages, respectively.
-
-If you use a custom theme to change these templates, they will function as expect because only the content is updated.
-However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
-changing the built-in templates by using all the capabilities provided by this feature.
-
-Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are longer necessary and removed in this release:
-
-* `update-user-profile.ftl`
-* `register-user-profile.ftl`
-
-If you were using the `declarative-user-profile` feature in previously releases with customizations to the above templates,
-update the `login-update-profile.ftl` and `register.ftl` accordingly.
-
-= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
-
-In this release, the server will render the update profile page when the user is authenticating through a broker for the
-first time using the `idp-review-user-profile.ftl` template.
-
-In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
-to update profile when users are authenticating to a realm.
-
-By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
-and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
-
-If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
-to the new template.
 
 = Sequential loading of offline sessions and remote sessions
 
