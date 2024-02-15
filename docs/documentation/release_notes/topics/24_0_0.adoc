@@ -225,6 +225,7 @@ In previous versions of Keycloak when the last member of a User, Group or Client
 
 The Keycloak CR now allows for specifying the `cache-config-file` option via the `cache` spec `configMapFile` field, for example:
 
+[source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
@@ -237,6 +238,35 @@ spec:
       name: my-configmap
       key: config.xml
 ----
+
+= Keycloak CR resources options
+
+The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
+It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+
+You can specify your custom values based on your requirements as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  resources:
+    requests:
+      cpu: 1200m
+      memory: 896Mi
+    limits:
+      cpu: 6
+      memory: 3Gi
+----
+
+For more details, check the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
 
 = Temporary lockout log replaced with event
 
@@ -267,3 +297,11 @@ mappers would never be used. The supported options were updated to only include 
 - `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`
 - `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`
 - `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
+
+= Different JVM memory settings when running in container
+
+Instead of specifying hardcoded values for the initial and maximum heap size, Keycloak uses relative values to the total memory of a container.
+The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, and `-XX:MaxRAMPercentage`.
+
+For more details, check the
+https://www.keycloak.org/server/containers[Running Keycloak in a container].

@@ -20,6 +20,8 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
@@ -36,6 +38,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
@@ -56,6 +59,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.inject.Inject;
+
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,6 +74,10 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBe
 
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
+
+    @Inject
+    Config config;
+
     @Test
     public void testBasicKeycloakDeploymentAndDeletion() {
         // CR
@@ -641,6 +650,79 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 "testLabelWithExpression", "my-value"
         );
         assertThat(labels).containsAllEntriesOf(expected);
+    }
+
+    @Test
+    public void testApplyingResourcesParametersContainer() {
+        var kc = getTestKeycloakDeployment(true);
+
+        var resourceRequirements = new ResourceRequirements();
+        resourceRequirements.setLimits(Map.of(
+                "memory", new Quantity("3", "G")));
+        resourceRequirements.setRequests(Map.of(
+                "memory", new Quantity("500", "M")));
+
+        kc.getSpec().setResourceRequirements(resourceRequirements);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory").getAmount()).isEqualTo("500");
+        assertThat(requests.get("memory").getFormat()).isEqualTo("M");
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory").getAmount()).isEqualTo("3");
+        assertThat(limits.get("memory").getFormat()).isEqualTo("G");
+    }
+
+    @Test
+    public void testApplyingResourcesDefaultValues() {
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory")).isEqualTo(config.keycloak().resources().requests().memory());
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
     }
 
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,

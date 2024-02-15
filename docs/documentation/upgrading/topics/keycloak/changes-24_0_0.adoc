@@ -361,7 +361,12 @@ To trigger custom actions or custom log entries, write a custom event listener a
 
 = Operator Customization Property Keys
 
-The property keys used by the operator for advanced configuration have changed from operator.keycloak to kc.operator.keycloak.
+The property keys used by the operator for advanced configuration have changed from `operator.keycloak` to `kc.operator.keycloak`.
+
+= Keycloak CR resources options
+
+When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
+The default `requests` memory for Keycloak deployment and the realm import Job is set to `768MiB`, and the `limits` memory is set to `4GiB`.
 
 = Updates to cookies
 

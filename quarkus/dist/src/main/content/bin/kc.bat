@@ -78,7 +78,23 @@ if not "x%JAVA_OPTS%" == "x" (
   rem If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
   rem To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
   rem Both ZGC and Shenandoah GC seem to be more eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning as it is not as aggressive as ParallelGC in reclaiming dead objects.
-  set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+  set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+
+  if "x%JAVA_OPTS_KC_HEAP%" == "x" (
+    set "JAVA_OPTS_KC_HEAP=-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
+
+    if "%KC_RUN_IN_CONTAINER%" == "true" (
+      rem Maximum utilization of the heap is set to 70% of the total container memory
+      rem Initial heap size is set to 50% of the total container memory in order to reduce GC executions
+      set "JAVA_OPTS_KC_HEAP=%JAVA_OPTS_KC_HEAP% -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
+    ) else (
+      set "JAVA_OPTS_KC_HEAP=%JAVA_OPTS_KC_HEAP% -Xms64m -Xmx512m"
+    )
+
+    set "JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_KC_HEAP%"
+  ) else (
+    echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values: %JAVA_OPTS_KC_HEAP%"
+  )
 )
 
 @REM See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60

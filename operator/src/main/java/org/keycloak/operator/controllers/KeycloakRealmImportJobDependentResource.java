@@ -31,8 +31,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import jakarta.inject.Inject;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -40,14 +42,19 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import java.util.List;
 import java.util.Set;
 
+import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 
 public class KeycloakRealmImportJobDependentResource extends KubernetesDependentResource<Job, KeycloakRealmImport> implements Creator<Job, KeycloakRealmImport>, GarbageCollected<KeycloakRealmImport> {
 
-    KeycloakRealmImportJobDependentResource() {
+    private final Config config;
+
+    KeycloakRealmImportJobDependentResource(Config config) {
         super(Job.class);
-        this.configureWith(new KubernetesDependentResourceConfig<Job>()
-                .setLabelSelector(Constants.DEFAULT_LABELS_AS_STRING));
+        this.config = config;
+        this.configureWith(new KubernetesDependentResourceConfigBuilder<Job>()
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .build());
     }
 
     @Override
@@ -61,7 +68,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         String secretName = KeycloakRealmImportSecretDependentResource.getSecretName(primary);
         String volumeName = KubernetesResourceUtil.sanitizeName(secretName + "-volume");
 
-        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), volumeName, primary.getRealmName());
+        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0), primary, volumeName);
         keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume(volumeName, secretName));
 
         var labels = keycloakPodTemplate.getMetadata().getLabels();
@@ -114,7 +121,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .build();
     }
 
-    private void buildKeycloakJobContainer(Container keycloakContainer, String volumeName, String realmName) {
+    private void buildKeycloakJobContainer(Container keycloakContainer, KeycloakRealmImport keycloakRealmImport, String volumeName) {
         var importMntPath = "/mnt/realm-import/";
 
         var command = List.of("/bin/bash");
@@ -124,7 +131,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + keycloakRealmImport.getRealmName() + "-realm.json' " + override);
 
         keycloakContainer.setCommand(command);
         keycloakContainer.setArgs(commandArgs);
@@ -139,5 +146,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         // Disable probes since we are not really starting the server
         keycloakContainer.setReadinessProbe(null);
         keycloakContainer.setLivenessProbe(null);
+
+        addResources(keycloakRealmImport.getSpec().getResourceRequirements(), config, keycloakContainer);
     }
 }

@@ -16,8 +16,10 @@
  */
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Required;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 public class KeycloakRealmImportSpec {
@@ -28,6 +30,10 @@ public class KeycloakRealmImportSpec {
     @Required
     @JsonPropertyDescription("The RealmRepresentation to import into Keycloak.")
     private RealmRepresentation realm;
+
+    @JsonProperty("resources")
+    @JsonPropertyDescription("Compute Resources required by Keycloak container. If not specified, the value is inherited from the Keycloak CR.")
+    private ResourceRequirements resourceRequirements;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -45,4 +51,11 @@ public class KeycloakRealmImportSpec {
         this.realm = realm;
     }
 
+    public ResourceRequirements getResourceRequirements() {
+        return resourceRequirements;
+    }
+
+    public void setResourceRequirements(ResourceRequirements resourceRequirements) {
+        this.resourceRequirements = resourceRequirements;
+    }
 }

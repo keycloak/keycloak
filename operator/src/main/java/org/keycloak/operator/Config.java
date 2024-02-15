@@ -17,6 +17,7 @@
 
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.smallrye.config.ConfigMapping;
 
 import java.util.Map;
@@ -34,6 +35,16 @@ public interface Config {
         boolean startOptimized();
         int pollIntervalSeconds();
 
+        ResourceRequirements resources();
         Map<String, String> podLabels();
+    }
+
+    interface ResourceRequirements {
+        Resources requests();
+        Resources limits();
+
+        interface Resources {
+            Quantity memory();
+        }
     }
 }

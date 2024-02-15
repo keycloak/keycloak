@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.PodResourceClaim;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -66,6 +67,7 @@ import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
 
+import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
@@ -112,6 +114,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         addTruststores(primary, baseDeployment, kcContainer, allSecrets);
         addEnvVars(baseDeployment, primary, allSecrets);
+        addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
                 .ifPresent(c -> configureCache(primary, baseDeployment, kcContainer, c, context.getClient()));
 
