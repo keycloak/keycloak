@@ -1072,9 +1072,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
      */
     private AuthenticationSessionModel parseSessionCode(String code, String clientId, String tabId) {
         if (code == null || clientId == null || tabId == null) {
-            logger.debugf("Invalid request. Authorization code, clientId or tabId was null. Code=%s, clientId=%s, tabID=%s", code, clientId, tabId);
-            Response staleCodeError = redirectToErrorPage(Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-            throw new WebApplicationException(staleCodeError);
+            String error = String.format("Invalid request. Authorization code, clientId or tabId was null. Code=%s, clientId=%s, tabID=%s", code, clientId, tabId);
+            throw new WebApplicationException(error);
         }
 
         SessionCodeChecks checks = new SessionCodeChecks(realmModel, session.getContext().getUri(), request, clientConnection, session, event, null, code, null, clientId, tabId, LoginActionsService.AUTHENTICATE_PATH);
