@@ -222,6 +222,7 @@ public class RealmEntity {
     @Column(name="DOCKER_AUTH_FLOW")
     protected String dockerAuthenticationFlow;
 
+
     @Column(name="INTERNATIONALIZATION_ENABLED")
     protected boolean internationalizationEnabled;
 

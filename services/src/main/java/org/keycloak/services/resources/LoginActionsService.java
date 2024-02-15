@@ -829,15 +829,15 @@ public class LoginActionsService {
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
 
         String flowId;
-		if (firstBrokerLogin) {
-			flowId = brokerContext.getIdpConfig().getFirstBrokerLoginFlowId();
+        if (firstBrokerLogin) {
+            flowId = brokerContext.getIdpConfig().getFirstBrokerLoginFlowId();
             if (flowId == null) {
                 flowId = realm.getFirstBrokerLoginFlow().getId();
             }
-		} else {
-			flowId = brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
-		}
-		if (flowId == null) {
+        } else {
+            flowId = brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
+        }
+        if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);
             String message = "Flow not configured for identity provider";
             event.error(message);
