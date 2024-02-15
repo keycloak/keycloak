@@ -72,8 +72,12 @@ export default class ListingPage extends CommonElements {
   }
 
   showNextPageTableItems() {
-    cy.get(this.#nextPageBtn).scrollIntoView();
-    cy.get(this.#nextPageBtn).click();
+    cy.get("body").then(($body) => {
+      if (!$body.find('[data-testid="' + this.#nextPageBtn + '"]').length) {
+        cy.get(this.#nextPageBtn).scrollIntoView();
+        cy.get(this.#nextPageBtn).click();
+      }
+    });
 
     return this;
   }
