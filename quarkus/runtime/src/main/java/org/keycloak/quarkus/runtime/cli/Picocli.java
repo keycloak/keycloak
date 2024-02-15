@@ -482,7 +482,7 @@ public final class Picocli {
     }
 
     public static CommandLine createCommandLine(List<String> cliArgs) {
-        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main(), new DefaultFactory()).name(Environment.getCommand());
+        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main()).name(Environment.getCommand());
 
         for (CommandLine subCommand : spec.subcommands().values()) {
             CommandSpec subCommandSpec = subCommand.getCommandSpec();

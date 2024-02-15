@@ -37,6 +37,7 @@ abs_path () {
 SERVER_OPTS="-Dkc.home.dir='$(abs_path '..')'"
 SERVER_OPTS="$SERVER_OPTS -Djboss.server.config.dir='$(abs_path '../conf')'"
 SERVER_OPTS="$SERVER_OPTS -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+SERVER_OPTS="$SERVER_OPTS -Dpicocli.disable.closures=true"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
