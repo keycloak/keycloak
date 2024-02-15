@@ -1778,7 +1778,7 @@ $ kcadm.sh create components -r demorealm -s name=full-name-ldap-mapper -s provi
 . Set the realm's `passwordPolicy` attribute to an enumeration expression that includes the specific policy provider ID and optional configuration.
 . Use the following example to set a password policy to default values. The default values include:
 
-* 27,500 hashing iterations
+* 210,000 hashing iterations
 * at least one special character
 * at least one uppercase character
 * at least one digit character
@@ -1792,7 +1792,7 @@ $ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations and specia
 . To use values different from defaults, pass the configuration in brackets.
 . Use the following example to set a password policy to:
 
-* 25,000 hash iterations
+* 300,000 hash iterations
 * at least two special characters
 * at least two uppercase characters
 * at least two lowercase characters
@@ -1803,7 +1803,7 @@ $ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations and specia
 +
 [options="nowrap"]
 ----
-$ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations(25000) and specialChars(2) and upperCase(2) and lowerCase(2) and digits(2) and length(9) and notUsername and passwordHistory(4)"'
+$ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations(300000) and specialChars(2) and upperCase(2) and lowerCase(2) and digits(2) and length(9) and notUsername and passwordHistory(4)"'
 ----
 
 [discrete]
