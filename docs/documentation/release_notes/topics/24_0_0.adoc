@@ -103,6 +103,46 @@ The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-expor
 
 The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. This enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you are using the adapter on a system that doesn't support PKCE, you can set the `pkceMethod` option to `false` to disable it.
 
+= OAuth/OIDC related improvements
+
+== Lightweight access tokens support
+
+This release contains support for Lightweight access tokens. This allows to use smaller access tokens for specified clients. Such tokens will not contain much
+claims and hence will be much shorter in size. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
+
+From this release, there is a flag *Add to lightweight access token* available on some OIDC protocol mappers. This flag allows to specify if particular claim will be added to lightweight
+access token. It is *OFF* by default, so most of the claims are not added by default. There is also client policy executor, which allows to specify if particular client request
+should use lightweight access tokens or regular access tokens. Note that in previous release, there was already added switch *Add to token introspection*, so it is possible to add
+claims, which are not present in the access token, into introspection endpoint response. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
+
+== Scope parameter supported in the refresh token flow
+
+Since this release, we support `scope` parameter in the OAuth2/OIDC endpoint for token refresh. Note that it is possible to use it to request access tokens with smaller amount
+of scopes than originally granted (so it is not possible to increase access token scope) and it does not affect scope of the refreshed refresh token. This works as
+described in the OAuth2 specification. Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
+
+== Client policy executor for enforcing DPoP
+
+There is new client policy executor `dpop-bind-enforcer`, which can be used to enforce DPoP is used for particular client. This is available just if `dpop` preview
+feature is enabled. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+== Supporting EdDSA
+
+It is possible to create EdDSA realm keys and use them as signature algorithms for various clients. For instance to sign tokens or for client authentication with signed JWT.
+This includes also identity brokering where Keycloak itself signs client assertion used for `private_key_jwt` authentication to 3rd party identity provider. Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
+
+== Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
+
+OIDC identity providers now have the option *Add X.509 Headers to the JWT* for the case when client authentication with JWT signed by private key is used. This can be useful
+for interoperability with some identity providers like Azure AD, which require the thumbprint to be present on the JWT. Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+
+= Cors improvements
+
+The CORS related Keycloak functionality was extracted into the SPI, which can allow additional flexibility. Just a note that `CorsSPI` is internal and may change in the
+future. Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
+
 = Truststore Improvements
 
 Keycloak introduces an improved truststores configuration options. The Keycloak truststore is now used across the server: for outgoing connections, mTLS, database drivers and more. It's no longer needed to configure separate truststores for individual areas. To configure the truststore, you can put your truststores files or certificates in the default `conf/truststores`, or use the new `truststore-paths` config option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
