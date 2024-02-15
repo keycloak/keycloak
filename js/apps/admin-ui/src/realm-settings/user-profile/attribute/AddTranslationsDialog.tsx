@@ -28,11 +28,6 @@ import { localeToDisplayName } from "../../../util";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { HelpItem } from "ui-shared";
 
-type Translation = {
-  key: string;
-  translations: Translations[];
-};
-
 type Translations = {
   locale: string;
   value: string;
@@ -57,7 +52,10 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const { handleSubmit, control } = useForm<Translation[]>({
+  const { handleSubmit, control } = useForm<{
+    key: string;
+    translations: Translations[];
+  }>({
     mode: "onChange",
   });
 
@@ -113,7 +111,10 @@ export const AddTranslationsDialog = ({
     }
   };
 
-  const save = async (formData: Translation[]) => {
+  const save = async (formData: {
+    key: string;
+    translations: Translations[];
+  }) => {
     console.log("formData >>> ", formData);
   };
 
