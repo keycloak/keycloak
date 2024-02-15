@@ -214,28 +214,20 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
      * add a default length restriction to avoid a denial of service by a caller.
      */
     private static void limitLengthOnAttributesWithNoLengthRestriction(String name, List<AttributeMetadata> metadatas) {
-        boolean lengthValidatorExists = false;
-
         for (AttributeMetadata metadata : metadatas) {
             for (AttributeValidatorMetadata validator : metadata.getValidators()) {
                 if (validator.getValidatorId().equals(LengthValidator.ID)) {
-                    lengthValidatorExists = true;
-                    break;
+                    return;
                 }
-            }
-            if (lengthValidatorExists) {
-                break;
             }
         }
 
-        if (!lengthValidatorExists) {
-            AttributeMetadata am = new AttributeMetadata(name, -1);
-            Map<String, Object> vc = new HashMap<>();
-            vc.put(LengthValidator.KEY_MIN, "0");
-            vc.put(LengthValidator.KEY_MAX, DEFAULT_MAX_LENGTH_ATTRIBUTES);
-            am.addValidators(Collections.singletonList(new AttributeValidatorMetadata(LengthValidator.ID, new ValidatorConfig(vc))));
-            metadatas.add(am);
-        }
+        AttributeMetadata am = new AttributeMetadata(name, -1);
+        Map<String, Object> vc = new HashMap<>();
+        vc.put(LengthValidator.KEY_MIN, "0");
+        vc.put(LengthValidator.KEY_MAX, DEFAULT_MAX_LENGTH_ATTRIBUTES);
+        am.addValidators(Collections.singletonList(new AttributeValidatorMetadata(LengthValidator.ID, new ValidatorConfig(vc))));
+        metadatas.add(am);
     }
 
     @Override
