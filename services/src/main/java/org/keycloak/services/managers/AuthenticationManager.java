@@ -148,6 +148,9 @@ public class AuthenticationManager {
     // authSession note with flag that is true if user is forced to re-authenticate by client (EG. in case of OIDC client by sending "prompt=login")
     public static final String FORCED_REAUTHENTICATION = "FORCED_REAUTHENTICATION";
 
+    // authSession note with flag that is true if the user's password has been correctly validated
+    public static final String PASSWORD_VALIDATED = "PASSWORD_VALIDATED";
+
     protected static final Logger logger = Logger.getLogger(AuthenticationManager.class);
 
     public static final String FORM_USERNAME = "username";
