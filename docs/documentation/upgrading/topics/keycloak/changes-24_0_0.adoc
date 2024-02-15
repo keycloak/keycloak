@@ -52,21 +52,21 @@ If you need more predictable behavior across releases, reference the particular 
 
 == User profile enabled by default
 
-User profile feature is now enabled by default. The feature `declarative-user-profile` is now not available anymore as the user profile is always considered enabled now.
-This means that realm switch `User Profile Enabled` is also not available and it was removed from the realm settings. Instead of `User Profile Enabled` switch, there is new switch `Unmanaged attributes` added to the realm settings.
-When migrating from previous version, the behaviour is like this:
+The user profile feature is now enabled by default. The  `declarative-user-profile`feature is no longer available, because the user profile is assumed to be enabled.
+Therefore, the *User Profile Enabled* switch is removed from the *Realm Settings* and replaced by *Unmanaged attributes*.
+When migrating from previous version, the behavior is as follows:
 
-* For the deployments where the realm switch `User Profile Enabled` was set to ON, the `Unmanaged attributes` switch will be set to `Disabled` after the migration. This means that just user attributes supported explicitly
+* For the deployments where *User Profile Enabled* was set to *ON*, *Unmanaged attributes* will be set to *OFF* after the upgrade. As a result, only user attributes supported explicitly
 by user profile will be allowed.
 
-* For the deployments where the realm switch `User Profile Enabled` was set to OFF (which was also the default settings for the deployments with `declarative-user-profile` feature disabled, which was the default),
-the `Unmanaged attributes` switch will be `Enabled` after the migration. This means the behaviour should be pretty much the same as in previous versions with user profile disabled. There will be still
-`Attributes` tab available in user details in the admin console. Also users themselves are able to set arbitrary attributes through UI pages like registration page, update profile page etc as long as
-particular custom themes support it. The custom themes should work like before as well. However it is recommended to possibly update your themes to leverage user-profile (See below in the themes section) and
-maybe even remove your custom themes at all if the only reason for them was adding custom attributes. It is also recommended to switch `Unmanaged attributes` to `Disabled` or enabled just for
-administrators if possible and rather rely on managed attributes as much as possible.
+* For the deployments where the *User Profile Enabled* was set to *OFF* (which was also the default settings for the deployments with `declarative-user-profile` feature disabled, which was the default),
+*Unmanaged attributes* will be set to *ON*` after the upgrade. As a result, the behavior should be basically the same as in previous versions with the user profile disabled. 
+The *Attributes* tab will remain in the user details part of the Admin Console. Also users can now set arbitrary attributes through UI pages such as the registration page and update profile page  as long as 
+a particular custom theme supports it. The custom themes should work as before as well. However, consider updating your themes to use the user-profile (See below in the themes section) and
+maybe even remove your custom themes if those themes were need to add custom attributes. We also recommend switching *Unmanaged attributes* to *OFF* or enable this switch only for
+administrators so that you can rely on mainly on using managed attributes.
 
-See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the `Unmanaged attributes`.
+See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the *Unmanaged attributes*.
 
 == Default validations
 
@@ -116,10 +116,10 @@ on the user profile configuration set to a realm:
 * `register.ftl`
 * `update-email.ftl`
 
-These templates are responsible for rendering the update profile (when the `Update Profile` required action is enabled to a user),
-the registration, and the update email (when the `UPDATE_EMAIL` feature is enabled) pages, respectively.
+These templates are responsible for rendering the update profile (when the *Update Profile* required action is enabled for a user), 
+the registration, and the update email (when the *UPDATE_EMAIL* feature is enabled) pages, respectively.
 
-If you use a custom theme to change these templates, they will function as expect because only the content is updated.
+If you use a custom theme to change these templates, they will function as expected because only the content is updated.
 However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
 changing the built-in templates by using all the capabilities provided by this feature.
 
@@ -128,16 +128,16 @@ Also, the templates used by the `declarative-user-profile` feature to render the
 * `update-user-profile.ftl`
 * `register-user-profile.ftl`
 
-If you were using the `declarative-user-profile` feature in previously releases with customizations to the above templates,
+If you were using the `declarative-user-profile` feature in a previous release with customizations to the above templates,
 update the `login-update-profile.ftl` and `register.ftl` accordingly.
 
-== The update profile page when logging in for the first time through a broker now have its own Freemarker templates
+== The update profile page when logging in for the first time through a broker now has its own Freemarker templates
 
 In this release, the server will render the update profile page when the user is authenticating through a broker for the
 first time using the `idp-review-user-profile.ftl` template.
 
 In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
-to update profile when users are authenticating to a realm.
+to update the profile when users are authenticating to a realm.
 
 By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
 and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
