@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Deploy AWS Aurora in multiple availability zones"
 summary="Building block for a database"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.

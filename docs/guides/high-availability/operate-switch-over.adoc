@@ -3,9 +3,7 @@
 
 <@tmpl.guide
 title="Switch over to the secondary site"
-summary="This topic describes the operational procedures necessary"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
+summary="This topic describes the operational procedures necessary" >
 
 This procedure switches from the primary site to the secondary site when using a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
 
