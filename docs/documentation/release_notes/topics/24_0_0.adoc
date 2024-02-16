@@ -108,7 +108,7 @@ The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. T
 == Lightweight access tokens support
 
 This release contains support for Lightweight access tokens. This allows to use smaller access tokens for specified clients. Such tokens will not contain much
-claims and hence will be much shorter in size. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
+claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
 
 From this release, there is a flag *Add to lightweight access token* available on some OIDC protocol mappers. This flag allows to specify if particular claim will be added to lightweight
 access token. It is *OFF* by default, so most of the claims are not added by default. There is also client policy executor, which allows to specify if particular client request
