@@ -39,7 +39,7 @@ export default class AdvancedTab extends PageObject {
   #directGrantInput = "#directGrant";
 
   #jumpToOIDCCompatabilitySettings =
-    "jump-link-open-id-connect-compatibility-modes";
+    "jump-link-openid-connect-compatibility-modes";
   #jumpToAdvancedSettings = "jump-link-advanced-settings";
   #jumpToAuthFlowOverride = "jump-link-authentication-flow-overrides";
 
