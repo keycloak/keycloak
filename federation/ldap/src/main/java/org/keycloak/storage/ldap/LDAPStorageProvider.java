@@ -676,7 +676,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if(getLdapIdentityStore().getConfig().isTrustEmail()){
             imported.setEmailVerified(true);
         }
-        if (kerberosConfig.getKerberosPrincipalAttribute() != null) {
+        if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.getKerberosPrincipalAttribute() != null) {
             String kerberosPrincipal = ldapUser.getAttributeAsString(kerberosConfig.getKerberosPrincipalAttribute());
             if (kerberosPrincipal == null) {
                 logger.warnf("Kerberos principal attribute not found on LDAP user [%s]. Configured kerberos principal attribute name is [%s]", ldapUser.getDn(), kerberosConfig.getKerberosPrincipalAttribute());
