@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import {
   Button,
   Flex,
@@ -42,6 +43,7 @@ export type AddTranslationsDialogProps = {
 
 export const AddTranslationsDialog = ({
   translationKey,
+  defaultTranslationValue,
   onCancel,
   toggleDialog,
 }: AddTranslationsDialogProps) => {
@@ -96,18 +98,29 @@ export const AddTranslationsDialog = ({
     try {
       await Promise.all(
         combinedLocales.map(async (locale) => {
-          await adminClient.realms.deleteRealmLocalizationTexts({
-            realm: realmName,
-            selectedLocale: locale,
-            key: translationKey,
-          });
+          try {
+            const response = await adminClient.realms.getRealmLocalizationTexts(
+              {
+                realm: realmName,
+                selectedLocale: locale,
+              },
+            );
+
+            if (response) {
+              await adminClient.realms.deleteRealmLocalizationTexts({
+                realm: realmName,
+                selectedLocale: locale,
+                key: translationKey,
+              });
+            }
+          } catch (error) {
+            console.error(`Error removing translations for ${locale}`);
+          }
         }),
       );
-
       toggleDialog();
     } catch (error) {
-      toggleDialog();
-      throw new Error(t("errorRemovingTranslations"));
+      console.error(`Error removing translations: ${error}`);
     }
   };
 
@@ -120,7 +133,7 @@ export const AddTranslationsDialog = ({
 
   return (
     <Modal
-      variant={ModalVariant.small}
+      variant={ModalVariant.medium}
       title={t("addTranslationsModalTitle")}
       isOpen
       onClose={toggleDialog}
@@ -148,7 +161,7 @@ export const AddTranslationsDialog = ({
         direction={{ default: "column" }}
         spaceItems={{ default: "spaceItemsNone" }}
       >
-        <FlexItem width="100%">
+        <FlexItem>
           <TextContent>
             <Text component={TextVariants.p}>
               {t("addTranslationsModalSubTitle")}{" "}
@@ -156,7 +169,7 @@ export const AddTranslationsDialog = ({
             </Text>
           </TextContent>
         </FlexItem>
-        <FlexItem width="100%">
+        <FlexItem>
           <Form
             id="add-translation"
             data-testid="addTranslationForm"
@@ -275,35 +288,69 @@ export const AddTranslationsDialog = ({
                             </FormGroup>
                           </Td>
                           <Td>
-                            <FormGroup
-                              fieldId="kc-translationValue"
-                              helperText={
-                                locale === defaultLocales.toString() &&
-                                t("addTranslationDialogHelperText")
-                              }
-                              isRequired
-                              helperTextInvalid={t("required")}
-                            >
-                              <Controller
-                                name={`translations.${rowIndex}`}
-                                control={control}
-                                rules={{ required: true }}
-                                render={({ field }) => (
-                                  <KeycloakTextInput
-                                    id="translationValue"
-                                    aria-label={t("translationValue")}
-                                    onChange={(e) => {
-                                      const updatedTranslation = {
-                                        locale,
-                                        value: (e.target as HTMLInputElement)
-                                          .value,
-                                      };
-                                      field.onChange(updatedTranslation);
-                                    }}
-                                  />
-                                )}
-                              />
-                            </FormGroup>
+                            {locale === defaultLocales.toString() && (
+                              <FormGroup
+                                fieldId="kc-translationValue"
+                                helperText={
+                                  locale === defaultLocales.toString() &&
+                                  t("addTranslationDialogHelperText")
+                                }
+                                isRequired
+                                helperTextInvalid={t("required")}
+                              >
+                                <Controller
+                                  name={`translations.${rowIndex}`}
+                                  control={control}
+                                  rules={{ required: true }}
+                                  render={({ field }) => (
+                                    <KeycloakTextInput
+                                      id="translationValue"
+                                      defaultValue={defaultTranslationValue}
+                                      aria-label={t("translationValue")}
+                                      onChange={(e) => {
+                                        const updatedTranslation = {
+                                          locale,
+                                          value: (e.target as HTMLInputElement)
+                                            .value,
+                                        };
+                                        field.onChange(updatedTranslation);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </FormGroup>
+                            )}
+                            {locale !== defaultLocales.toString() && (
+                              <FormGroup
+                                fieldId="kc-translationValue"
+                                helperText={
+                                  locale === defaultLocales.toString() &&
+                                  t("addTranslationDialogHelperText")
+                                }
+                                isRequired
+                                helperTextInvalid={t("required")}
+                              >
+                                <Controller
+                                  name={`translations.${rowIndex}`}
+                                  control={control}
+                                  rules={{ required: true }}
+                                  render={({ field }) => (
+                                    <KeycloakTextInput
+                                      id="translationValue"
+                                      aria-label={t("translationValue")}
+                                      onChange={(e) => {
+                                        const updatedTranslation = {
+                                          locale,
+                                          value: (e.target as HTMLInputElement)
+                                            .value,
+                                        };
+                                        field.onChange(updatedTranslation);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </FormGroup>
+                            )}
                           </Td>
                         </Tr>
                       ))}
