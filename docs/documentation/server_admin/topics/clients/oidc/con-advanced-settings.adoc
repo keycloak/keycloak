@@ -64,7 +64,7 @@ The procedure to select the algorithm is:
 . Open *Fine Grain OpenID Connect Configuration*.
 . Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
-== Open ID Connect Compatibility Modes
+== OpenID Connect Compatibility Modes
 
 This section exists for backward compatibility.  Click the question mark icons for details on each field.
 
