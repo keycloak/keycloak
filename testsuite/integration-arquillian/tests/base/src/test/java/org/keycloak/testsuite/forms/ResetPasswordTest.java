@@ -16,8 +16,10 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
@@ -29,6 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -80,6 +83,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.*;
 
 /**
@@ -155,6 +159,22 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     public void resetPasswordLink() throws IOException, MessagingException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+
+        openResetPasswordUrlAndDoFlow(resetUri, "account", oauth.AUTH_SERVER_ROOT + "/realms/test/account/");
+
+        AccountHelper.logout(testRealm(), username);
+
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login(username, "resetPassword");
+
+        appPage.assertCurrent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    // Starts by opening "reset-password-url". Then go through the successful reset-password flow for the particular user. After user confirms new password, this method ends.
+    private void openResetPasswordUrlAndDoFlow(String resetUri, String expectedClientId, String expectedRedirectUri) throws IOException {
+        String username = "login-test";
         driver.navigate().to(resetUri);
 
         resetPasswordPage.assertCurrent();
@@ -164,14 +184,18 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+        AssertEvents.ExpectedEvent event = events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
+                .client(expectedClientId)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, "login@test.com")
-                .session((String)null)
-                .assertEvent();
+                .session((String)null);
+        if (expectedRedirectUri != null) {
+            event.detail(Details.REDIRECT_URI,  expectedRedirectUri);
+        } else {
+            event.removeDetail(Details.REDIRECT_URI);
+        }
+        event.assertEvent();
 
         assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -185,19 +209,71 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
-                .detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
-                .user(userId).detail(Details.USERNAME, username).assertEvent();
+        event = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .client(expectedClientId)
+                .user(userId).detail(Details.USERNAME, username);
+        if (expectedRedirectUri != null) {
+            event.detail(Details.REDIRECT_URI,  expectedRedirectUri);
+        } else {
+            event.removeDetail(Details.REDIRECT_URI);
+        }
+        event.assertEvent();
+    }
 
-        AccountHelper.logout(testRealm(), username);
+    @Test
+    public void resetPasswordLinkTestAppWithoutRedirectUriParam() throws IOException {
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app";
 
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        testAppHelper.login("login-test", "resetPassword");
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", null);
 
+        // Link "Back to application" with the baseUrl of client "test-app"
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        infoPage.clickBackToApplicationLink();
+        WaitUtils.waitForPageToLoad();
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+    }
+
+    @Test
+    public void resetPasswordLinkTestAppWithRedirectUriParam() throws IOException {
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=" + oauth.getRedirectUri();
+
+        openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri());
+
+        // Should be directly redirected to "application because of "redirect_uri" parameter
         appPage.assertCurrent();
+    }
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    @Test
+    public void resetPasswordLinkErrorFlows() throws IOException {
+        // Client not found
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=not_found");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Client not found.", errorPage.getError());
+
+        // Redirect_uri without client
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?redirect_uri=https://foo/bar/");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Missing parameters: client_id", errorPage.getError());
+
+        // Incorrect redirect_uri
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=https://foo/bar/");
+        errorPage.assertCurrent();
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        // Client disabled
+        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setEnabled(false);
+        client.update(clientRep);
+        try {
+            driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app");
+            Assert.assertEquals("Client disabled.", errorPage.getError());
+        } finally {
+            clientRep.setEnabled(true);
+            client.update(clientRep);
+        }
     }
 
 

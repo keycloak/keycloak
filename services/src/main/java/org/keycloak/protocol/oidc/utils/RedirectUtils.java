@@ -287,13 +287,4 @@ public class RedirectUtils {
         }
         return redirectUri;
     }
-
-    private static String getFirstValidRedirectUri(Collection<String> validRedirects) {
-        final String redirectUri = validRedirects.stream().findFirst().orElse(null);
-        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri) : null;
-    }
-
-    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
-        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects));
-    }
 }
