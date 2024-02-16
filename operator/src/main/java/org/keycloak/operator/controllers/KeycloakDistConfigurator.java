@@ -32,6 +32,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ public class KeycloakDistConfigurator {
         configureHttp();
         configureDatabase();
         configureCache();
+        configureProxy();
     }
 
     /**
@@ -128,6 +130,11 @@ public class KeycloakDistConfigurator {
                 .mapOption("db-pool-initial-size", DatabaseSpec::getPoolInitialSize)
                 .mapOption("db-pool-min-size", DatabaseSpec::getPoolMinSize)
                 .mapOption("db-pool-max-size", DatabaseSpec::getPoolMaxSize);
+    }
+
+    void configureProxy() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getProxySpec())
+                .mapOption("proxy-headers", ProxySpec::getHeaders);
     }
 
     /* ---------- END of configuration of first-class citizen fields ---------- */

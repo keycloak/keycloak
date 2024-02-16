@@ -63,6 +63,8 @@ spec:
     limits:
       cpu: "2"
       memory: "1500M"
+  proxy:
+    headers: forwarded
   unsupported:
     podTemplate:
       metadata:
