@@ -13,11 +13,12 @@
   ignore_errors: yes
 
 - name: Run mvn command on the remote hosts
-  # Kill any currently running Java process from a previous (possibly aborted) run before starting the next.
-  shell: |
+  ansible.builtin.shell: |
+    set -o pipefail
     cd {{ kc_home }}
     ./mvnw {{ mvn_params }}
-  # Executing load run can be scheduled for hours. To prevent the test from failing when the SSH connection breaks, use asynchronous polling.
+  executable: /usr/bin/bash
+  # Tests can run for hours. To prevent the test from failing when the SSH connection breaks, use asynchronous polling.
   async: 86400
   poll: 10
   register: result
