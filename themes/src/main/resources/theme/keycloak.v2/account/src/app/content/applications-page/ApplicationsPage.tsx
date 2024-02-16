@@ -220,7 +220,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       {application.consent &&
                         <React.Fragment>
                           <DescriptionListGroup>
-                            <DescriptionListTerm>Has access to</DescriptionListTerm>
+                            <DescriptionListTerm>{Msg.localize('hasAccessTo')}</DescriptionListTerm>
                             {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
                                 return (
                                   <React.Fragment key={'scope-' + scopeIndex} >

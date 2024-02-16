@@ -10,7 +10,7 @@ export default class TabPage extends CommonElements {
     this.tabsList = '[role="tablist"]';
   }
 
-  private getTab(tabName: string, index: number | undefined = 0) {
+  #getTab(tabName: string, index: number | undefined = 0) {
     return cy
       .get(this.parentSelector)
       .eq(index)
@@ -19,13 +19,13 @@ export default class TabPage extends CommonElements {
   }
 
   clickTab(tabName: string, index: number | undefined = 0) {
-    this.getTab(tabName, index).click();
+    this.#getTab(tabName, index).click();
     this.checkIsCurrentTab(tabName, index);
     return this;
   }
 
   checkIsCurrentTab(tabName: string, index: number | undefined = 0) {
-    this.getTab(tabName, index).parent().should("have.class", "pf-m-current");
+    this.#getTab(tabName, index).parent().should("have.class", "pf-m-current");
     return this;
   }
 
@@ -35,7 +35,7 @@ export default class TabPage extends CommonElements {
     index: number | undefined = 0,
   ) {
     const condition = exists ? "exist" : "not.exist";
-    this.getTab(tabName, index).should(condition);
+    this.#getTab(tabName, index).should(condition);
     return this;
   }
 

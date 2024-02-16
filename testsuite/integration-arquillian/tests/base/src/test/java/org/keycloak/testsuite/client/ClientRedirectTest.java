@@ -119,7 +119,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             log.debug("Current URL: " + driver.getCurrentUrl());
 
             log.debug("check logout_error");
-            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).assertEvent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).client(AssertEvents.DEFAULT_CLIENT_ID).assertEvent();
             assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
         } finally {
             log.debug("removing disabled-client");

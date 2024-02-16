@@ -23,7 +23,7 @@ import { toClients } from "../routes/Clients";
 import { AccessTokenDialog } from "./AccessTokenDialog";
 
 export default function CreateInitialAccessToken() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     handleSubmit,
     control,
@@ -44,7 +44,7 @@ export default function CreateInitialAccessToken() {
       );
       setToken(access.token!);
     } catch (error) {
-      addError("clients:tokenSaveError", error);
+      addError("tokenSaveError", error);
     }
   };
 
@@ -60,10 +60,7 @@ export default function CreateInitialAccessToken() {
           }}
         />
       )}
-      <ViewHeader
-        titleKey="clients:createToken"
-        subKey="clients-help:createToken"
-      />
+      <ViewHeader titleKey="createToken" subKey="createTokenHelp" />
       <PageSection variant="light">
         <FormAccess
           isHorizontal
@@ -75,8 +72,8 @@ export default function CreateInitialAccessToken() {
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:expiration")}
-                fieldLabelId="clients:expiration"
+                helpText={t("tokenExpirationHelp")}
+                fieldLabelId="expiration"
               />
             }
             helperTextInvalid={t("expirationValueNotValid")}
@@ -102,10 +99,7 @@ export default function CreateInitialAccessToken() {
             label={t("count")}
             fieldId="count"
             labelIcon={
-              <HelpItem
-                helpText={t("clients-help:count")}
-                fieldLabelId="clients:count"
-              />
+              <HelpItem helpText={t("countHelp")} fieldLabelId="count" />
             }
           >
             <Controller
@@ -138,7 +132,7 @@ export default function CreateInitialAccessToken() {
               data-testid="save"
               isDisabled={!isValid}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               data-testid="cancel"
@@ -150,7 +144,7 @@ export default function CreateInitialAccessToken() {
                 />
               )}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

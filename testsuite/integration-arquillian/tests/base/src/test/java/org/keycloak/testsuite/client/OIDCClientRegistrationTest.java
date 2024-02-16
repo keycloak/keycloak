@@ -54,6 +54,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -147,7 +148,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
-        assertNotNull(response.getRegistrationClientUri());
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
         assertEquals(1, response.getRedirectUris().size());
@@ -173,6 +174,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
     }
 
     @Test
@@ -186,6 +188,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
         OIDCClientRepresentation updated = reg.oidc().update(response);
 
+        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + updated.getClientId(), updated.getRegistrationClientUri());
         assertTrue(CollectionUtil.collectionEquals(Collections.singletonList("http://newredirect"), updated.getRedirectUris()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD), updated.getGrantTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"), updated.getResponseTypes()));

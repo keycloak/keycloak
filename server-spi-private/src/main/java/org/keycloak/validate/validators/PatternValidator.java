@@ -62,7 +62,7 @@ public class PatternValidator extends AbstractStringValidator implements Configu
         property = new ProviderConfigProperty();
         property.setName(CFG_ERROR_MESSAGE);
         property.setLabel("Error message key");
-        property.setHelpText("Key of the error message in i18n bundle. Dafault message key is " + MESSAGE_NO_MATCH);
+        property.setHelpText("Key of the error message in i18n bundle. Default message key is " + MESSAGE_NO_MATCH);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:3.1">
+    <copy-path src="docs/licenses/licenses.xsl" relative-to="content" target="docs/licenses/keycloak-saml-adapter-galleon-pack-licenses.xsl"/>
+    <transform stylesheet="docs/licenses/keycloak-saml-adapter-galleon-pack-licenses.xsl" src="docs/licenses/keycloak-saml-adapter-galleon-pack-licenses.xml" output="docs/licenses/keycloak-saml-adapter-galleon-pack-licenses.html" feature-pack-properties="true" phase="FINALIZING"/>
+    <delete path="docs/licenses/keycloak-saml-adapter-galleon-pack-licenses.xsl"/>
+    <line-endings phase="FINALIZING">
+      <unix>
+        <filter pattern="docs?licenses?keycloak-saml-adapter-galleon-pack-licenses.html" include="true"/>
+      </unix>
+    </line-endings>
+</tasks>

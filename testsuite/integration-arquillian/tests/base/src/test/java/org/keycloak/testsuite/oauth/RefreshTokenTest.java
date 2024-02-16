@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.events.Details;
@@ -41,6 +42,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -53,13 +55,15 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
+import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -105,8 +109,9 @@ import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX
 import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -285,6 +290,41 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void refreshTokenWithDifferentIssuer() throws Exception {
+        final String proxyHost = "proxy.kc.127.0.0.1.nip.io";
+        final int httpPort = 8666;
+        final int httpsPort = 8667;
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        SimpleUndertowLoadBalancer proxy = new SimpleUndertowLoadBalancer(proxyHost, httpPort, httpsPort, "node1=" + getHttpAuthServerContextRoot() + "/auth");
+        proxy.start();
+
+        oauth.baseUrl(String.format("http://%s:%s", proxyHost, httpPort));
+
+        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+        Assert.assertEquals(400, response.getStatusCode());
+        events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+
+        proxy.stop();
+
+        oauth.baseUrl(AUTH_SERVER_ROOT);
+    }
+
+    @Test
     public void refreshTokenWithAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -325,9 +365,17 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .build());
 
             realmResource.users()
-                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("alice")
+                            .firstName("alice")
+                            .lastName("alice")
+                            .email("alice@keycloak.org")
+                            .password("alice").addRoles("offline_access").build());
             realmResource.users()
-                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("bob")
+                            .firstName("bob")
+                            .lastName("bob")
+                            .email("bob@keycloak.org")
+                            .password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
             oauth.clientId("public-client");
@@ -391,7 +439,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             oauth.openLoginForm();
 
-            Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+            Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
 
             oauth.fillLoginForm("alice", "alice");
 
@@ -456,6 +504,69 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(200, response3.getStatusCode());
 
         events.expectRefresh(refreshToken1.getId(), sessionId).assertEvent();
+    }
+
+
+    @Test
+    public void refreshTokenReuseTokenWithoutRefreshTokensRevokedWithLessScopes() throws Exception {
+        //add phone,address as optional scope and request them
+        ClientScopeRepresentation phoneScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"phone".equals(clientScope.getName())).findFirst().get();
+        ClientScopeRepresentation addressScope = adminClient.realm("test").clientScopes().findAll().stream().filter((ClientScopeRepresentation clientScope) ->"address".equals(clientScope.getName())).findFirst().get();
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(phoneScope.getId(),false);
+        ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(addressScope.getId(),false);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            String optionalScope = "phone address";
+            oauth.scope(optionalScope);
+            OAuthClient.AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "email phone";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(200, response2.getStatusCode());
+            AbstractOIDCScopeTest.assertScopes("openid email phone profile",  response2.getScope());
+            RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
+            assertNotNull(refreshToken2);
+            AbstractOIDCScopeTest.assertScopes("openid email phone address profile",  refreshToken2.getScope());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
+    }
+
+    @Test
+    public void refreshTokenReuseTokenScopeParameterNotInRefreshToken() throws Exception {
+        try {
+            //scope parameter consists scope that is not part of scope refresh token => error thrown
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
+            AbstractOIDCScopeTest.assertScopes("openid email profile",  refreshToken1.getScope());
+
+            setTimeOffset(2);
+
+            String scope = "openid email ssh_public_key";
+            oauth.scope(scope);
+            OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
+            assertEquals(400, response2.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_SCOPE, response2.getError());
+
+        } finally {
+            setTimeOffset(0);
+            oauth.scope(null);
+        }
     }
 
     @Test
@@ -1626,42 +1737,42 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void tokenRefreshRequest_ClientRS384_RealmRS384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS384, Algorithm.RS384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientRS512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.RS512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientES512_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES512, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS256_RealmRS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.RS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.RS256);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS384_RealmES384() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.ES384);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS384, Algorithm.ES384);
     }
 
     @Test
     public void tokenRefreshRequest_ClientPS512_RealmPS256() throws Exception {
-        conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+        conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {

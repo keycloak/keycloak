@@ -36,15 +36,15 @@ public final class PropertyMappers {
         MAPPERS.addAll(FeaturePropertyMappers.getMappers());
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
         MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
-        MAPPERS.addAll(StoragePropertyMappers.getMappers());
         MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
         MAPPERS.addAll(SecurityPropertyMappers.getMappers());
         MAPPERS.addAll(ExportPropertyMappers.getMappers());
         MAPPERS.addAll(ImportPropertyMappers.getMappers());
+        MAPPERS.addAll(TruststorePropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
+        PropertyMapper<?> mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
         return mapper.getConfigValue(name, context);
     }
 
@@ -53,7 +53,7 @@ public final class PropertyMappers {
             return true;
         }
 
-        PropertyMapper mapper = MAPPERS.get(name);
+        PropertyMapper<?> mapper = MAPPERS.get(name);
         boolean isBuildTimeProperty = mapper == null ? false : mapper.isBuildTime();
 
         return isBuildTimeProperty
@@ -75,17 +75,17 @@ public final class PropertyMappers {
         return name.startsWith("kc.features");
     }
 
-    public static Map<OptionCategory, List<PropertyMapper>> getRuntimeMappers() {
+    public static Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
         return MAPPERS.getRuntimeMappers();
     }
 
-    public static Map<OptionCategory, List<PropertyMapper>> getBuildTimeMappers() {
+    public static Map<OptionCategory, List<PropertyMapper<?>>> getBuildTimeMappers() {
         return MAPPERS.getBuildTimeMappers();
     }
 
     public static String formatValue(String property, String value) {
         property = removeProfilePrefixIfNeeded(property);
-        PropertyMapper mapper = getMapper(property);
+        PropertyMapper<?> mapper = getMapper(property);
 
         if (mapper != null && mapper.isMask()) {
             return VALUE_MASK;
@@ -102,28 +102,28 @@ public final class PropertyMappers {
         return property;
     }
 
-    public static PropertyMapper getMapper(String property) {
+    public static PropertyMapper<?> getMapper(String property) {
         if (property.startsWith("%")) {
             return MAPPERS.get(property.substring(property.indexOf('.') + 1));
         }
         return MAPPERS.get(property);
     }
 
-    public static Collection<PropertyMapper> getMappers() {
+    public static Collection<PropertyMapper<?>> getMappers() {
         return MAPPERS.values();
     }
 
-    public static boolean isSupported(PropertyMapper mapper) {
+    public static boolean isSupported(PropertyMapper<?> mapper) {
         return mapper.getCategory().getSupportLevel().equals(ConfigSupportLevel.SUPPORTED);
     }
 
-    private static class MappersConfig extends HashMap<String, PropertyMapper> {
+    private static class MappersConfig extends HashMap<String, PropertyMapper<?>> {
 
-        private Map<OptionCategory, List<PropertyMapper>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
-        private Map<OptionCategory, List<PropertyMapper>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
+        private Map<OptionCategory, List<PropertyMapper<?>>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
+        private Map<OptionCategory, List<PropertyMapper<?>>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
 
-        public void addAll(PropertyMapper[] mappers) {
-            for (PropertyMapper mapper : mappers) {
+        public void addAll(PropertyMapper<?>[] mappers) {
+            for (PropertyMapper<?> mapper : mappers) {
                 super.put(mapper.getTo(), mapper);
                 super.put(mapper.getFrom(), mapper);
                 super.put(mapper.getCliFormat(), mapper);
@@ -137,29 +137,29 @@ public final class PropertyMappers {
             }
         }
 
-        private void addMapperByStage(PropertyMapper mapper, Map<OptionCategory, List<PropertyMapper>> mappers) {
+        private void addMapperByStage(PropertyMapper<?> mapper, Map<OptionCategory, List<PropertyMapper<?>>> mappers) {
             mappers.computeIfAbsent(mapper.getCategory(),
-                    new Function<OptionCategory, List<PropertyMapper>>() {
+                    new Function<OptionCategory, List<PropertyMapper<?>>>() {
                         @Override
-                        public List<PropertyMapper> apply(OptionCategory c) {
+                        public List<PropertyMapper<?>> apply(OptionCategory c) {
                             return new ArrayList<>();
                         }
                     }).add(mapper);
         }
 
         @Override
-        public PropertyMapper put(String key, PropertyMapper value) {
+        public PropertyMapper<?> put(String key, PropertyMapper<?> value) {
             if (containsKey(key)) {
                 throw new IllegalArgumentException("Duplicated mapper for key [" + key + "]");
             }
             return super.put(key, value);
         }
 
-        public Map<OptionCategory, List<PropertyMapper>> getRuntimeMappers() {
+        public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
             return runtimeTimeMappers;
         }
 
-        public Map<OptionCategory, List<PropertyMapper>> getBuildTimeMappers() {
+        public Map<OptionCategory, List<PropertyMapper<?>>> getBuildTimeMappers() {
             return buildTimeMappers;
         }
     }

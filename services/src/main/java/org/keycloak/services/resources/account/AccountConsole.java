@@ -17,7 +17,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
@@ -35,6 +35,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
@@ -49,7 +50,7 @@ import org.keycloak.utils.MediaType;
 /**
  * Created by st on 29/03/17.
  */
-public class AccountConsole {
+public class AccountConsole implements AccountResourceProvider {
 
     // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
@@ -71,6 +72,7 @@ public class AccountConsole {
         this.client = client;
         this.theme = theme;
         this.authManager = new AppAuthManager();
+        init();
     }
 
     public void init() {
@@ -79,6 +81,14 @@ public class AccountConsole {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
         }
     }
+
+    @Override
+    public Object getResource() {
+        return this;
+    }
+
+    @Override
+    public void close() {}
 
     @GET
     @NoCache

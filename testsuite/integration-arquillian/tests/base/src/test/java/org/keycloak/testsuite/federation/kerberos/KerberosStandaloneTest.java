@@ -22,23 +22,30 @@ import java.util.List;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.junit.Assert;
-import org.junit.Before;
+import org.keycloak.testsuite.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.KerberosRule;
+
+import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
 
 /**
  * Test for the KerberosFederationProvider (kerberos without LDAP integration)
@@ -56,12 +63,6 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     @Override
     protected KerberosRule getKerberosRule() {
         return kerberosRule;
-    }
-
-    @Before
-    public void before() {
-        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Override
@@ -90,7 +91,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         // Switch updateProfileOnFirstLogin to on
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
+        Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
@@ -124,7 +125,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     public void noProvider() throws Exception {
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
+        Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         testRealmResource().components().component(kerberosProvider.getId()).remove();
 
@@ -171,7 +172,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         // Switch kerberos realm to "unavailable
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
+        Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_REALM, "unavailable");
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
@@ -182,6 +183,35 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         Response response = testRealmResource().users().create(john);
         Assert.assertEquals(500, response.getStatus());
         response.close();
+    }
+
+    @Test
+    public void testUserProfile() throws Exception {
+        assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+
+        // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
+
+        // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
+        UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
+        Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
+        Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
+
+        // Test Update profile
+        john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
+
+        Response spnegoResponse = spnegoLogin("hnelson", "secret");
+        Assert.assertEquals(200, spnegoResponse.getStatus());
+        String responseText = spnegoResponse.readEntity(String.class);
+        Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
+        spnegoResponse.close();
+
+        john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
     }
 
 }

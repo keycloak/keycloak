@@ -1,130 +1,15 @@
 
 [[_saml-jboss-adapter-installation]]
-==== Installing adapters from a ZIP file
+==== Installing adapters from a Galleon feature pack
 
-Each adapter is a separate download on the {project_name} download site.
+For the WildFly 29 or newer, the SAML adapter is provided as a Galleon feature pack. More details about this is
+in the https://docs.wildfly.org/30/WildFly_Elytron_Security.html#Keycloak_SAML_Integration[WildFly documentation]. The same option will be provided
+for JBoss EAP 8 GA.
 
-ifeval::[{project_community}==true]
+{project_name} provided adapter ZIP download in the past, but it is not provided anymore. For the older WildFly versions, it is recommended to upgrade
+to newer WildFly/EAP and use Galleon. Otherwise, you will need to stick with the older {project_name} adapters, but those are not maintained and officially supported.
+For JBoss EAP 7, it is possible to stick with the Red Hat Single Sign-On 7.6 adapters, which is still supported.
 
-NOTE: We only test and maintain adapter with the most recent version of WildFly available upon the release. Once the new version of WildFly is released, the current adapters become deprecated and support for them will be removed after the next WildFly release.
-The other alternative is to switch your applications from WildFly to the JBoss EAP, as the JBoss EAP adapter is supported for a much longer period.
+For more details on how to integrate {project_name} with JakartaEE applications running on latest Wildfly/EAP, take a look at the Jakarta EE quickstart in the {quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
 
-.Procedure
-
-. Install the adapter that applies to your application server from the link:https://www.keycloak.org/downloads[Downloads] site.
-
-* Install on WildFly or on JBoss EAP 7:
-+
-[source]
-----
-$ cd $WILDFLY_HOME
-$ unzip keycloak-saml-wildfly-adapter-dist.zip
-----
-+
-These zip files create new JBoss Modules specific to the WildFly/JBoss EAP SAML Adapter within your WildFly or JBoss EAP distro.
-endif::[]
-ifeval::[{project_product}==true]
-.Procedure
-
-. Install the adapter that applies to your application server from the link:https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Downloads] site.
-
-* Install on JBoss EAP 7.x:
-+
-[source]
-----
-$ cd $EAP_HOME
-$ unzip rh-sso-saml-eap7-adapter.zip
-----
-
-* Install on JBoss EAP 6.x:
-+
-[source]
-+
-----
-$ cd $EAP_HOME
-$ unzip rh-sso-saml-eap6-adapter.zip
-----
-+
-These ZIP files create new JBoss Modules specific to the JBoss EAP SAML Adapter within your JBoss EAP distribution.
-endif::[]
-
-. Use a CLI script to enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
-+
-Start the server and run the script that applies to your application server.
-ifeval::[{project_community}==true]
-
-* Install on WildFly.
-+
-[source]
-----
-$ cd $JBOSS_HOME
-$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
-----
-
-endif::[]
-ifeval::[{project_product}==true]
-* Use this command for JBoss EAP 7.1 or newer
-+
-[source]
-----
-$ cd $JBOSS_HOME
-$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
-----
-+
-NOTE: https://access.redhat.com/articles/2026253#EAP_74[EAP supports OpenJDK 17 and Oracle JDK 17] since 7.4.CP7 and 7.4.CP8 respectively. Note that the new java version makes the elytron variant compulsory, so do not use the legacy adapter with JDK 17. Also, after running the adapter CLI file, execute the `enable-elytron-se17.cli` script provided by EAP. Both scripts are necessary to configure the elytron adapter and remove the incompatible EAP subsystems. For more details, see this https://access.redhat.com/articles/6956863[Security Configuration Changes] article.
-
-* Use this command for JBoss EAP 7.0 and EAP 6.4
-+
-[source]
-----
-$ cd $JBOSS_HOME
-$ ./bin/jboss-cli.sh -c --file=bin/adapter-install-saml.cli
-----
-+
-NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-saml.cli`
-even on those versions. However, we recommend to use the newer Elytron adapter.
-+
-endif::[]
-The script will add the extension, subsystem, and optional security-domain as described below. 
-
-[source,xml]
-----
-<server xmlns="urn:jboss:domain:1.4">
-
-    <extensions>
-        <extension module="org.keycloak.keycloak-saml-adapter-subsystem"/>
-          ...
-    </extensions>
-
-    <profile>
-        <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1"/>
-         ...
-    </profile>
-----    
-
-The `keycloak` security domain should be used with EJBs and other components when you need the security context created
-in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.
-Otherwise this configuration is optional. 
-
-[source,xml]
-----
-
-<server xmlns="urn:jboss:domain:1.4">
- <subsystem xmlns="urn:jboss:domain:security:1.2">
-    <security-domains>
-...
-      <security-domain name="keycloak">
-         <authentication>
-           <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
-                         flag="required"/>
-          </authentication>
-      </security-domain>
-    </security-domains>
-----
-
-The security context is propagated to the EJB tier automatically.
-
-===== JBoss SSO
-
-{appserver_name} has built-in support for single sign-on for web applications deployed to the same {appserver_name}
-instance. This should not be enabled when using {project_name}.
+Below are the details on how to configure the SAML adapter secured by Galleon.

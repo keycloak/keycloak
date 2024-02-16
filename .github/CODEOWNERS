@@ -19,7 +19,7 @@
 # Testsuite
 ###################################################################################################
 
-/testsuite/                                                 @keycloak/core-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers @keycloak/maintainers
+/testsuite/                                                 @keycloak/core-clients-maintainers @keycloak/core-iam-maintainers @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Core (@keycloak/core-maintainers)
@@ -34,13 +34,7 @@
 /quarkus/                                                   @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/server/                                        @keycloak/cloud-native-maintainers @keycloak/maintainers
 /docs/guides/operator/                                      @keycloak/cloud-native-maintainers @keycloak/maintainers
-
-###################################################################################################
-# Store (@keycloak/store-maintainers)
-###################################################################################################
-
-/model/                                                     @keycloak/store-maintainers @keycloak/maintainers
-/testsuite/model/                                           @keycloak/store-maintainers @keycloak/maintainers
+/integration/client-cli/admin-cli                           @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # UI (@keycloak/ui-maintainers)

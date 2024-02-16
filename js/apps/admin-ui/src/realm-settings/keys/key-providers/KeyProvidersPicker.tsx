@@ -19,7 +19,7 @@ export const KeyProvidersPicker = ({
   onConfirm,
   onClose,
 }: KeyProvidersPickerProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const serverInfo = useServerInfo();
   const keyProviderComponentTypes =
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];

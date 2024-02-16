@@ -16,4 +16,5 @@
 #
 
 org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory
+org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory
 org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory

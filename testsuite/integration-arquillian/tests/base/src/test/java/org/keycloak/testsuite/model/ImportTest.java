@@ -38,13 +38,11 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.config.UPAttribute;
-import org.keycloak.userprofile.config.UPAttributeSelector;
-import org.keycloak.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributeSelector;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -141,7 +139,6 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
     public void importUserProfile() throws Exception {
         final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/import-userprofile.json"), StandardCharsets.UTF_8);
 
@@ -157,7 +154,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             session.getContext().setRealm(realm);
 
             UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-            UPConfig config = UPConfigUtils.readConfig(new ByteArrayInputStream(provider.getConfiguration().getBytes()));
+            UPConfig config = provider.getConfiguration();
 
             Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("email"::equals));
             Assert.assertTrue(config.getAttributes().stream().map(UPAttribute::getName).anyMatch("test"::equals));

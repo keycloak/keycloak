@@ -41,7 +41,7 @@ export default function UserFederationSection() {
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -99,7 +99,7 @@ export default function UserFederationSection() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("userFedDeleteConfirmTitle"),
     messageKey: t("userFedDeleteConfirm"),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -107,7 +107,7 @@ export default function UserFederationSection() {
         refresh();
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("user-federation:userFedDeleteError", error);
+        addError("userFedDeleteError", error);
       }
     },
   });
@@ -150,15 +150,15 @@ export default function UserFederationSection() {
               }}
               data-testid="card-delete"
             >
-              {t("common:delete")}
+              {t("delete")}
             </DropdownItem>,
           ]}
           title={userFederation.name!}
           footerText={toUpperCase(userFederation.providerId!)}
           labelText={
             userFederation.config?.["enabled"]?.[0] !== "false"
-              ? `${t("common:enabled")}`
-              : `${t("common:disabled")}`
+              ? `${t("enabled")}`
+              : `${t("disabled")}`
           }
           labelColor={
             userFederation.config?.["enabled"]?.[0] !== "false"
@@ -181,12 +181,12 @@ export default function UserFederationSection() {
       )}
       <ViewHeader
         titleKey="userFederation"
-        subKey="user-federation:userFederationExplain"
+        subKey="userFederationExplain"
         helpUrl={helpUrls.userFederationUrl}
         {...(userFederations && userFederations.length > 0
           ? {
               lowerDropdownItems: ufAddProviderDropdownItems,
-              lowerDropdownMenuTitle: "user-federation:addNewProvider",
+              lowerDropdownMenuTitle: "addNewProvider",
               lowerButton: lowerButtonProps,
             }
           : {})}

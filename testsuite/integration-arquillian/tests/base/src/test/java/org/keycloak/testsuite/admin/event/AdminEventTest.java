@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.event;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -45,6 +46,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
@@ -165,6 +167,23 @@ public class AdminEventTest extends AbstractEventTest {
         assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null).size(), is(equalTo(100)));
         assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 105).size(), is(equalTo(105)));
         assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size(), is(greaterThanOrEqualTo(110)));
+    }
+
+    @Test
+    public void adminEventRepresentationLenght() {
+        RealmResource realm = adminClient.realms().realm("test");
+        AdminEventRepresentation event = new AdminEventRepresentation();
+        event.setOperationType(OperationType.CREATE.toString());
+        event.setAuthDetails(new AuthDetailsRepresentation());
+        event.setRealmId(realm.toRepresentation().getId());
+        String longValue = RandomStringUtils.random(30000, true, true);
+        event.setRepresentation(longValue);
+
+        testingClient.testing("test").onAdminEvent(event, true);
+        List<AdminEventRepresentation> adminEvents = realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null);
+
+        assertThat(adminEvents, hasSize(1));
+        assertThat(adminEvents.get(0).getRepresentation(), equalTo(longValue));
     }
 
     @Test

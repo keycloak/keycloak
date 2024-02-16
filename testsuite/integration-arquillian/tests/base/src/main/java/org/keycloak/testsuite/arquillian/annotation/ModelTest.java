@@ -34,5 +34,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.METHOD}) // TODO: Maybe ElementClass.TYPE too? That way it will be possible to add the annotation on the the test class and not need to add on all the test methods inside the class
 public @interface ModelTest {
 
-    boolean skipForMapStorage() default false;
+    /**
+     * Name of the realm to be set on the KeycloakContext when the test is executed. Defaults to "master" for backwards compatibility
+     */
+    String realmName() default "master";
 }

@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
@@ -38,6 +39,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -121,10 +123,35 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("realm", group.getRealm());
-        query.setParameter("parent", group.getId());
-        return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
+        return getSubGroupsStream("", false, -1, -1);
+    }
+
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        TypedQuery<String> query;
+        if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
+        }
+        query.setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .setParameter("search", search == null ? "" : search);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
+                .map(realm::getGroupById)
+                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+                .filter(Objects::nonNull)
+                .sorted(GroupModel.COMPARE_BY_NAME)
+        );
+    }
+
+    @Override
+    public Long getSubGroupsCount() {
+        return em.createNamedQuery("getGroupCountByParent", Long.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("parent", group.getId())
+                .getSingleResult();
     }
 
     @Override

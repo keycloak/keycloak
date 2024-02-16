@@ -37,6 +37,7 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
@@ -59,6 +60,8 @@ import org.wildfly.security.x500.cert.X509CertificateExtension;
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  */
 public class ElytronCertificateUtils  implements CertificateUtilsProvider {
+
+    Logger log = Logger.getLogger(getClass());
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.
@@ -249,16 +252,29 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                 case ASN1.UTF8_STRING_TYPE:
                    distPointUrls.add(der.decodeUtf8String());
                    break;
-                case 0xa0:
-                   der.decodeImplicit(0xa0);
-                   byte[] edata = der.decodeOctetString();
-                   while(!Character.isLetterOrDigit(edata[0])) {
-                    edata = Arrays.copyOfRange(edata, 1, edata.length);
-                }
-                   distPointUrls.add(new String(edata));
+                case 0xa0: // Decode CRLDistributionPoint FullName list
+                   der.startExplicit(0xa0);
+                   break;
+                case 0x86: // Decode CRLDistributionPoint FullName
+                   der.decodeImplicit(0x86);
+                   distPointUrls.add(der.decodeOctetStringAsString());
+                   log.debug("Adding Dist point name: " + distPointUrls.get(distPointUrls.size()-1));
                    break;
                 default:
                    der.skipElement();
+            }
+            // Check to see if there is another sequence to process
+            try {
+                if(!der.hasNextElement() && der.peekType() == ASN1.SEQUENCE_TYPE) {
+                    der.startSequence();
+                } else if (!der.hasNextElement() && der.peekType() == 0xa0) {
+                    der.startExplicit(0xa0);
+                }
+
+            } catch(Exception e) {
+                // Just log this error. Likely the Dist points have been parsed, but
+                // the end of the cert is failing to parse.
+                log.warn("There is an issue parsing the certificate for Distribution Points", e);
 
             }
         }

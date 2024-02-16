@@ -40,6 +40,7 @@ public class WebAuthnPolicy implements Serializable {
     protected int createTimeout = 0; // not specified as option
     protected boolean avoidSameAuthenticatorRegister = false;
     protected List<String> acceptableAaguids;
+    protected List<String> extraOrigins;
 
     public WebAuthnPolicy() {
     }
@@ -129,5 +130,13 @@ public class WebAuthnPolicy implements Serializable {
 
     public void setAcceptableAaguids(List<String> acceptableAaguids) {
         this.acceptableAaguids = acceptableAaguids;
+    }
+
+    public List<String> getExtraOrigins(){
+        return extraOrigins;
+    }
+
+    public void setExtraOrigins(List<String> extraOrigins) {
+        this.extraOrigins = extraOrigins;
     }
 }

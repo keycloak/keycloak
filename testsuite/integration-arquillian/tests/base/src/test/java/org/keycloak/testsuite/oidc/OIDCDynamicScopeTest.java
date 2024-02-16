@@ -40,7 +40,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;

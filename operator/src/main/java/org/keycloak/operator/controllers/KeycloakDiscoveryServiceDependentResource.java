@@ -26,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
         @Override
         public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return KeycloakServiceDependentResource.getService(KeycloakDiscoveryServiceDependentResource::getName, primary, context);
+            return Utils.getByName(Service.class, KeycloakDiscoveryServiceDependentResource::getName, primary, context);
         }
     }
 
@@ -50,7 +51,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
-              .withSelector(OperatorManagedResource.allInstanceLabels(keycloak))
+              .withSelector(Utils.allInstanceLabels(keycloak))
               .withClusterIP("None")
               .withPublishNotReadyAddresses(Boolean.TRUE)
               .build();
@@ -62,7 +63,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
                 .withNewMetadata()
                 .withName(getName(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
-                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withSpec(getServiceSpec(primary))
                 .build();

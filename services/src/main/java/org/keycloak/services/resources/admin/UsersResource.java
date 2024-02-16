@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
@@ -34,9 +34,10 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -152,7 +153,7 @@ public class UsersResource {
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
 
-        UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
+        UserProfile profile = profileProvider.create(USER_API, rep.getRawAttributes());
 
         try {
             Response response = UserResource.validateUserProfile(profile, session, auth.adminAuth());
@@ -164,7 +165,7 @@ public class UsersResource {
 
             UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
-            RepresentationToModel.createGroups(rep, realm, user);
+            RepresentationToModel.createGroups(session, rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
@@ -200,7 +201,7 @@ public class UsersResource {
 
         List<GroupModel> groups = Optional.ofNullable(rep.getGroups())
                 .orElse(Collections.emptyList())
-                .stream().map(path -> findGroupByPath(realm, path))
+                .stream().map(path -> findGroupByPath(session, realm, path))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -224,9 +225,18 @@ public class UsersResource {
      * @param id User id
      * @return
      */
-    @Path("{id}")
-    public UserResource user(final @PathParam("id") String id) {
-        UserModel user = session.users().getUserById(realm, id);
+    @Path("{user-id}")
+    public UserResource user(final @PathParam("user-id") String id) {
+        UserModel user = null;
+        if (LightweightUserAdapter.isLightweightUser(id)) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, LightweightUserAdapter.getLightweightUserId(id));
+            if (userSession != null) {
+                user = userSession.getUser();
+            }
+        } else {
+            user = session.users().getUserById(realm, id);
+        }
+
         if (user == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("User not found");
@@ -449,7 +459,7 @@ public class UsersResource {
      */
     @Path("profile")
     public UserProfileResource userProfile() {
-        return new UserProfileResource(session, auth);
+        return new UserProfileResource(session, auth, adminEvent);
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

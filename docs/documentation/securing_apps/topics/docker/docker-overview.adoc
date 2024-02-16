@@ -5,7 +5,7 @@ NOTE: Docker authentication is disabled by default. To enable see the https://ww
 
 This section describes how you can configure a Docker registry to use {project_name} as its authentication server.
 
-For more information on how to set up and configure a Docker registry, see the link:https://docs.docker.com/registry/configuration/[Docker Registry Configuration Guide].
+For more information on how to set up and configure a Docker registry, see the link:https://distribution.github.io/distribution/about/configuration/[Docker Registry Configuration Guide].
 
 
 
@@ -22,7 +22,7 @@ auth:
     issuer: http://localhost:8080{kc_realms_path}/master
 ----
 
-This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with link:https://github.com/distribution/distribution/blob/main/cmd/registry/config-example.yml[a basic example].
+This output can then be copied into any existing registry config file.  See the link:https://distribution.github.io/distribution/about/configuration/[registry config file specification] for more information on how the file should be set up, or start with link:https://github.com/distribution/distribution/blob/main/cmd/registry/config-example.yml[a basic example].
 
 WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's public key.  The auth configuration will not work without this argument.
 

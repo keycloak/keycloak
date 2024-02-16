@@ -28,6 +28,7 @@ import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -62,22 +63,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
     }
 
     public void setupKeyPair(KeyPair keyPair, String algorithm) {
-        // check the algorithm is valid
-        switch (keyPair.getPublic().getAlgorithm()) {
-            case KeyType.RSA:
-                if (!JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
-                    throw new RuntimeException("Invalid algorithm for a RSA KeyPair: " + algorithm);
-                }
-                break;
-            case KeyType.EC:
-                if (!JavaAlgorithm.isECJavaAlgorithm(algorithm)) {
-                    throw new RuntimeException("Invalid algorithm for a EC KeyPair: " + algorithm);
-                }
-                break;
-            default:
-                throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());
-        }
-        // create the key and signature context
+        // create a key wrapper for the key pair
         KeyWrapper keyWrapper = new KeyWrapper();
         keyWrapper.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
         keyWrapper.setAlgorithm(algorithm);
@@ -85,8 +71,26 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         keyWrapper.setPublicKey(keyPair.getPublic());
         keyWrapper.setType(keyPair.getPublic().getAlgorithm());
         keyWrapper.setUse(KeyUse.SIG);
+
+        // check the algorithm is valid
+        switch (keyPair.getPublic().getAlgorithm()) {
+            case KeyType.RSA:
+                if (!JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a RSA KeyPair: " + algorithm);
+                }
+                this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
+                break;
+            case KeyType.EC:
+                if (!JavaAlgorithm.isECJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a EC KeyPair: " + algorithm);
+                }
+                this.sigCtx = new ECDSASignatureSignerContext(keyWrapper);
+                break;
+            default:
+                throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());
+        }
+        // create the key and signature context
         this.keyPair = keyPair;
-        this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
     }
 
     public void setTokenTimeout(int tokenTimeout) {

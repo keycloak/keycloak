@@ -1,4 +1,0 @@
-{
-  "syncMode": "Standardsyncmodus für alle Mapper. Mögliche Werte sind: 'Legacy' um das alte Verhalten beizubehalten, 'Importieren' um den Nutzer einmalig zu importieren, 'Erzwingen' um den Nutzer immer zu importieren.",
-  "syncModeOverride": "Überschreibt den normalen Synchronisationsmodus des IDP für diesen Mapper. Were sind 'Legacy' um das alte Verhalten beizubehalten, 'Importieren' um den Nutzer einmalig zu importieren, 'Erzwingen' um den Nutzer immer zu updaten."
-}

@@ -10,22 +10,22 @@ export enum ClientScopeDetailsTab {
 }
 
 export default class ClientScopeDetailsPage extends CommonPage {
-  private settingsTab = new SettingsTab();
-  private scopesTab = new ScopeTab();
-  private mappersTab = new MappersTab();
+  #settingsTab = new SettingsTab();
+  #scopesTab = new ScopeTab();
+  #mappersTab = new MappersTab();
 
   goToSettingsTab() {
     this.tabUtils().clickTab(ClientScopeDetailsTab.SettingsTab);
-    return this.settingsTab;
+    return this.#settingsTab;
   }
 
   goToMappersTab() {
     this.tabUtils().clickTab(ClientScopeDetailsTab.MappersTab);
-    return this.mappersTab;
+    return this.#mappersTab;
   }
 
   goToScopesTab() {
     this.tabUtils().clickTab(ClientScopeDetailsTab.Scope);
-    return this.scopesTab;
+    return this.#scopesTab;
   }
 }

@@ -36,6 +36,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -61,13 +62,11 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -390,78 +389,6 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Creates a new {@link KeycloakSession} and runs the specified callable in a new transaction. If the transaction fails
-     * with a SQL retriable error, the method re-executes the specified callable until it either succeeds or the maximum number
-     * of attempts is reached, leaving some increasing random delay milliseconds between the invocations. It uses the exponential
-     * backoff + jitter algorithm to compute the delay, which is limited to {@code attemptsCount * retryIntervalMillis}.
-     * More details https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-     *
-     * @param factory a reference to the {@link KeycloakSessionFactory}.
-     * @param callable a reference to the {@link KeycloakSessionTaskWithResult} that will be executed in a retriable way.
-     * @param attemptsCount the maximum number of attempts to execute the callable.
-     * @param retryIntervalMillis the base interval value in millis used to compute the delay.
-     * @param <V> the type returned by the callable.
-     * @return the value computed by the callable.
-     */
-    public static <V> V runJobInRetriableTransaction(final KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable,
-                                                     final int attemptsCount, final int retryIntervalMillis) {
-        int retryCount = 0;
-        Random rand = new Random();
-        while (true) {
-            try (KeycloakSession session = factory.create()) {
-                session.getTransactionManager().begin();
-                return callable.run(session);
-            } catch (RuntimeException re) {
-                if (isExceptionRetriable(re) && ++retryCount < attemptsCount) {
-                    int delay = Math.min(retryIntervalMillis * attemptsCount, (1 << retryCount) * retryIntervalMillis)
-                            + rand.nextInt(retryIntervalMillis);
-                    logger.debugf("Caught retriable exception, retrying request. Retry count = %s, retry delay = %s", retryCount, delay);
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ie) {
-                        ie.addSuppressed(re);
-                        throw new RuntimeException(ie);
-                    }
-                } else {
-                    if (retryCount == attemptsCount) {
-                        logger.debug("Exhausted all retry attempts for request.");
-                        throw new RuntimeException("retries exceeded", re);
-                    }
-                    throw re;
-                }
-            }
-        }
-    }
-
-    /**
-     * Checks if the specified exception is retriable or not. A retriable exception must be an instance of {@code SQLException}
-     * and must have a 40001 SQL retriable state. This is a standard SQL state as defined in SQL standard, and across the
-     * implementations its meaning boils down to "deadlock" (applies to Postgres, MSSQL, Oracle, MySQL, and others).
-     *
-     * @param exception the exception to be checked.
-     * @return {@code true} if the exception is retriable; {@code false} otherwise.
-     */
-    public static boolean isExceptionRetriable(final Throwable exception) {
-        Objects.requireNonNull(exception);
-        // first find the root cause and check if it is a SQLException
-        Throwable rootCause = exception;
-        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
-            rootCause = rootCause.getCause();
-        }
-        // JTA transaction handler might add multiple suppressed exceptions to the root cause, evaluate each of those
-        for (Throwable suppressed : rootCause.getSuppressed()) {
-            if (isExceptionRetriable(suppressed)) {
-                return true;
-            }
-        };
-        if (rootCause instanceof SQLException) {
-            // check if the exception state is a recoverable one (40001)
-            return "40001".equals(((SQLException) rootCause).getSQLState());
-        }
-        return false;
-    }
-
-    /**
      * Wrap given runnable job into KeycloakTransaction. Set custom timeout for the JTA transaction (in case we're in the environment with JTA enabled)
      *
      * @param factory
@@ -763,7 +690,18 @@ public final class KeycloakModelUtils {
         return segments;
     }
 
-    public static GroupModel findGroupByPath(RealmModel realm, String path) {
+    /**
+     * Finds group by path. Path is separated by '/' character. For example: /group/subgroup/subsubgroup
+     * <p />
+     * The method takes into consideration also groups with '/' in their name. For example: /group/sub/group/subgroup
+     *
+     * @param session Keycloak session
+     * @param realm The realm
+     * @param path Path that will be searched among groups
+     *
+     * @return {@code GroupModel} corresponding to the given {@code path} or {@code null} if no group was found
+     */
+    public static GroupModel findGroupByPath(KeycloakSession session, RealmModel realm, String path) {
         if (path == null) {
             return null;
         }
@@ -775,24 +713,41 @@ public final class KeycloakModelUtils {
         }
         String[] split = path.split(GROUP_PATH_SEPARATOR);
         if (split.length == 0) return null;
+        return getGroupModel(session.groups(), realm, null, split, 0);
+    }
 
-        return realm.getTopLevelGroupsStream().map(group -> {
-            String groupName = group.getName();
-            String[] pathSegments = formatPathSegments(split, 0, groupName);
-
-            if (groupName.equals(pathSegments[0])) {
-                if (pathSegments.length == 1) {
-                    return group;
-                } else {
-                    if (pathSegments.length > 1) {
-                        GroupModel subGroup = findSubGroup(pathSegments, 1, group);
-                        if (subGroup != null) return subGroup;
-                    }
-                }
-
-            }
+    /**
+     * Finds group by path. Variant when you have the path already separated by
+     * group names.
+     *
+     * @param session Keycloak session
+     * @param realm The realm
+     * @param path Path The path hierarchy of groups
+     *
+     * @return {@code GroupModel} corresponding to the given {@code path} or {@code null} if no group was found
+     */
+    public static GroupModel findGroupByPath(KeycloakSession session, RealmModel realm, String[] path) {
+        if (path == null || path.length == 0) {
             return null;
-        }).filter(Objects::nonNull).findFirst().orElse(null);
+        }
+        return getGroupModel(session.groups(), realm, null, path, 0);
+    }
+
+    private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int i = index; i < split.length; i++) {
+            nameBuilder.append(split[i]);
+            GroupModel group = groupProvider.getGroupByName(realm, parent, nameBuilder.toString());
+            if (group != null) {
+                if (i < split.length-1) {
+                    return getGroupModel(groupProvider, realm, group, split, i+1);
+                } else {
+                    return group;
+                }
+            }
+            nameBuilder.append(GROUP_PATH_SEPARATOR);
+        }
+        return null;
     }
 
     private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent) {
@@ -1050,9 +1005,9 @@ public final class KeycloakModelUtils {
 
     /**
      * Returns <code>true</code> if given realm has attribute {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE}
-     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting 
+     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting
      * can be seen at {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT}.
-     * 
+     *
      * @param realm
      * @return See the description
      * @throws NullPointerException if <code>realm</code> is <code>null</code>
@@ -1060,4 +1015,21 @@ public final class KeycloakModelUtils {
     public static boolean isUsernameCaseSensitive(RealmModel realm) {
         return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
     }
+
+    /**
+     * Sets the default groups on the realm
+     * @param session
+     * @param realm
+     * @param groups
+     * @throws RuntimeException if a group does not exist
+     */
+    public static void setDefaultGroups(KeycloakSession session, RealmModel realm, Stream<String> groups) {
+        realm.getDefaultGroupsStream().collect(Collectors.toList()).forEach(realm::removeDefaultGroup);
+        groups.forEach(path -> {
+            GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
+            if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
+            realm.addDefaultGroup(found);
+        });
+    }
+
 }

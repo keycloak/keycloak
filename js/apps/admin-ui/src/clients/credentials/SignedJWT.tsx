@@ -25,7 +25,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
       ? cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? []
       : cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
 
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const [open, isOpen] = useState(false);
   return (
@@ -34,8 +34,8 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
       fieldId="kc-signature-algorithm"
       labelIcon={
         <HelpItem
-          helpText={t("clients-help:signature-algorithm")}
-          fieldLabelId="clients:signatureAlgorithm"
+          helpText={t("signatureAlgorithmHelp")}
+          fieldLabelId="signatureAlgorithm"
         />
       }
     >

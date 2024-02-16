@@ -22,7 +22,7 @@ export const LogoutPanel = ({
   reset,
   client: { access },
 }: ClientSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -46,8 +46,8 @@ export const LogoutPanel = ({
         label={t("frontchannelLogout")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:frontchannelLogout")}
-            fieldLabelId="clients:frontchannelLogout"
+            helpText={t("frontchannelLogoutHelp")}
+            fieldLabelId="frontchannelLogout"
           />
         }
         fieldId="kc-frontchannelLogout"
@@ -60,8 +60,8 @@ export const LogoutPanel = ({
           render={({ field }) => (
             <Switch
               id="kc-frontchannelLogout-switch"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value}
               onChange={field.onChange}
               aria-label={t("frontchannelLogout")}
@@ -75,8 +75,8 @@ export const LogoutPanel = ({
           fieldId="frontchannelLogoutUrl"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:frontchannelLogoutUrl")}
-              fieldLabelId="clients:frontchannelLogoutUrl"
+              helpText={t("frontchannelLogoutUrlHelp")}
+              fieldLabelId="frontchannelLogoutUrl"
             />
           }
           helperTextInvalid={
@@ -116,8 +116,8 @@ export const LogoutPanel = ({
             fieldId="backchannelLogoutUrl"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:backchannelLogoutUrl")}
-                fieldLabelId="clients:backchannelLogoutUrl"
+                helpText={t("backchannelLogoutUrlHelp")}
+                fieldLabelId="backchannelLogoutUrl"
               />
             }
             helperTextInvalid={
@@ -153,8 +153,8 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutSessionRequired")}
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:backchannelLogoutSessionRequired")}
-                fieldLabelId="clients:backchannelLogoutSessionRequired"
+                helpText={t("backchannelLogoutSessionRequiredHelp")}
+                fieldLabelId="backchannelLogoutSessionRequired"
               />
             }
             fieldId="backchannelLogoutSessionRequired"
@@ -169,8 +169,8 @@ export const LogoutPanel = ({
               render={({ field }) => (
                 <Switch
                   id="backchannelLogoutSessionRequired"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutSessionRequired")}
@@ -182,10 +182,8 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutRevokeOfflineSessions")}
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "clients-help:backchannelLogoutRevokeOfflineSessions",
-                )}
-                fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
+                helpText={t("backchannelLogoutRevokeOfflineSessionsHelp")}
+                fieldLabelId="backchannelLogoutRevokeOfflineSessions"
               />
             }
             fieldId="backchannelLogoutRevokeOfflineSessions"
@@ -200,8 +198,8 @@ export const LogoutPanel = ({
               render={({ field }) => (
                 <Switch
                   id="backchannelLogoutRevokeOfflineSessions"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutRevokeOfflineSessions")}

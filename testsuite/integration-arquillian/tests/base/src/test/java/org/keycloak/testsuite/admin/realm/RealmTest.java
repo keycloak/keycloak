@@ -18,10 +18,12 @@
 package org.keycloak.testsuite.admin.realm;
 
 import com.google.common.collect.Sets;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -39,7 +41,10 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -60,7 +65,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -70,12 +74,11 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,12 +91,15 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -130,32 +136,65 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void renameRealm() {
+        String OLD = "old";
+        String NEW = "new";
+
         getCleanup()
-          .addCleanup(() -> adminClient.realms().realm("old").remove())
-          .addCleanup(() -> adminClient.realms().realm("new").remove());
+          .addCleanup(() -> adminClient.realms().realm(OLD).remove())
+          .addCleanup(() -> adminClient.realms().realm(NEW).remove());
 
         RealmRepresentation rep = new RealmRepresentation();
-        rep.setId("old");
-        rep.setRealm("old");
+        rep.setId(OLD);
+        rep.setRealm(OLD);
 
         adminClient.realms().create(rep);
 
-        rep.setRealm("new");
-        adminClient.realm("old").update(rep);
+        Map<String, String> newBaseUrls = new HashMap<>();
+        Map<String, List<String>> newRedirectUris = new HashMap<>();
+
+        // memorize all existing clients with their soon-to-be URIs
+        adminClient.realm(OLD).clients().findAll().forEach(client -> {
+            if (client.getBaseUrl() != null && client.getBaseUrl().contains("/" + OLD + "/")) {
+                newBaseUrls.put(client.getClientId(), client.getBaseUrl().replace("/" + OLD + "/", "/" + NEW + "/"));
+            }
+            if (client.getRedirectUris() != null) {
+                newRedirectUris.put(
+                        client.getClientId(),
+                        client.getRedirectUris()
+                                .stream()
+                                .map(redirectUri -> redirectUri.replace("/" + OLD + "/", "/" + NEW + "/"))
+                                .collect(Collectors.toList())
+                );
+            }
+        });
+
+        // at least those three default clients should be in the list of things to be tested
+        assertThat(newBaseUrls.keySet(), hasItems(Constants.ADMIN_CONSOLE_CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+        assertThat(newRedirectUris.keySet(), hasItems(Constants.ADMIN_CONSOLE_CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+
+        rep.setRealm(NEW);
+        adminClient.realm(OLD).update(rep);
 
         // Check client in master realm renamed
         Assert.assertEquals(0, adminClient.realm("master").clients().findByClientId("old-realm").size());
         Assert.assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
 
-        ClientRepresentation adminConsoleClient = adminClient.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation adminConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
         assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
-        assertEquals("/admin/new/console/", adminConsoleClient.getBaseUrl());
-        assertEquals("/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
 
-        ClientRepresentation accountClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation accountClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
-        assertEquals("/realms/new/account/", accountClient.getBaseUrl());
-        assertEquals("/realms/new/account/*", accountClient.getRedirectUris().get(0));
+
+        ClientRepresentation accountConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+
+        newBaseUrls.forEach((clientId, baseUrl) -> {
+            assertEquals(baseUrl, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getBaseUrl());
+        });
+        newRedirectUris.forEach((clientId, redirectUris) -> {
+            assertEquals(redirectUris, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getRedirectUris());
+        });
+
     }
 
     @Test
@@ -178,11 +217,13 @@ public class RealmTest extends AbstractAdminTest {
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void createRealmRejectReservedChar() {
+    @Test
+    public void createRealmRejectReservedCharOrEmptyName() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm("new-re;alm");
-        adminClient.realms().create(rep);
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> adminClient.realms().create(rep));
     }
 
     /**
@@ -215,13 +256,106 @@ public class RealmTest extends AbstractAdminTest {
         );
 
         // This attribute is represented in Legacy store as attribute and for Map store as a field
-        if (!StoreProvider.getCurrentProvider().isMapStore()) {
-            expectedAttributes.add(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE);
-            expectedAttributesCount++;
-        }
+        expectedAttributes.add(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE);
+        expectedAttributesCount++;
 
         assertThat(attributesKeys.size(), CoreMatchers.is(expectedAttributesCount));
         assertThat(attributesKeys, CoreMatchers.is(expectedAttributes));
+    }
+
+    /**
+     * Checks attributes exposed as fields are not deleted on update realm
+     */
+    @Test
+    public void testFieldNotErased() {
+        Long dummyLong = Long.valueOf(999);
+        Integer dummyInt = Integer.valueOf(999);
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("attributes");
+        rep.setDisplayName("DISPLAY_NAME");
+        rep.setDisplayNameHtml("DISPLAY_NAME_HTML");
+        rep.setDefaultSignatureAlgorithm("RS256");
+        rep.setBruteForceProtected(true);
+        rep.setPermanentLockout(true);
+        rep.setMaxFailureWaitSeconds(dummyInt);
+        rep.setWaitIncrementSeconds(dummyInt);
+        rep.setQuickLoginCheckMilliSeconds(dummyLong);
+        rep.setMinimumQuickLoginWaitSeconds(dummyInt);
+        rep.setMaxDeltaTimeSeconds(dummyInt);
+        rep.setFailureFactor(dummyInt);
+        rep.setActionTokenGeneratedByAdminLifespan(dummyInt);
+        rep.setActionTokenGeneratedByUserLifespan(dummyInt);
+        rep.setOfflineSessionMaxLifespanEnabled(true);
+        rep.setOfflineSessionMaxLifespan(dummyInt);
+
+        rep.setWebAuthnPolicyRpEntityName("RP_ENTITY_NAME");
+        rep.setWebAuthnPolicySignatureAlgorithms(Collections.singletonList("RS256"));
+        rep.setWebAuthnPolicyRpId("localhost");
+        rep.setWebAuthnPolicyAttestationConveyancePreference("Direct");
+        rep.setWebAuthnPolicyAuthenticatorAttachment("Platform");
+        rep.setWebAuthnPolicyRequireResidentKey("Yes");
+        rep.setWebAuthnPolicyUserVerificationRequirement("Required");
+        rep.setWebAuthnPolicyCreateTimeout(dummyInt);
+        rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(true);
+        rep.setWebAuthnPolicyAcceptableAaguids(Collections.singletonList("00000000-0000-0000-0000-000000000000"));
+
+        rep.setWebAuthnPolicyPasswordlessRpEntityName("RP_ENTITY_NAME");
+        rep.setWebAuthnPolicyPasswordlessSignatureAlgorithms(Collections.singletonList("RS256"));
+        rep.setWebAuthnPolicyPasswordlessRpId("localhost");
+        rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference("Direct");
+        rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment("Platform");
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey("Yes");
+        rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement("Required");
+        rep.setWebAuthnPolicyPasswordlessCreateTimeout(dummyInt);
+        rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(true);
+        rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(Collections.singletonList("00000000-0000-0000-0000-000000000000"));
+
+        adminClient.realms().create(rep);
+        getCleanup().addCleanup(() -> adminClient.realms().realm("attributes").remove());
+
+        RealmRepresentation rep2 = new RealmRepresentation();
+        rep2.setAttributes(Collections.singletonMap("frontendUrl", "http://localhost/frontEnd"));
+        adminClient.realm("attributes").update(rep2);
+
+        rep = adminClient.realm("attributes").toRepresentation();
+        assertEquals("DISPLAY_NAME", rep.getDisplayName());
+        assertEquals("DISPLAY_NAME_HTML", rep.getDisplayNameHtml());
+        assertEquals("RS256", rep.getDefaultSignatureAlgorithm());
+        assertTrue(rep.isBruteForceProtected());
+        assertTrue(rep.isPermanentLockout());
+        assertEquals(dummyInt, rep.getMaxFailureWaitSeconds());
+        assertEquals(dummyInt, rep.getWaitIncrementSeconds());
+        assertEquals(dummyLong, rep.getQuickLoginCheckMilliSeconds());
+        assertEquals(dummyInt, rep.getMinimumQuickLoginWaitSeconds());
+        assertEquals(dummyInt, rep.getMaxDeltaTimeSeconds());
+        assertEquals(dummyInt, rep.getFailureFactor());
+        assertEquals(dummyInt, rep.getActionTokenGeneratedByAdminLifespan());
+        assertEquals(dummyInt, rep.getActionTokenGeneratedByUserLifespan());
+        assertTrue(rep.getOfflineSessionMaxLifespanEnabled());
+        assertEquals(dummyInt, rep.getOfflineSessionMaxLifespan());
+
+        assertEquals("RP_ENTITY_NAME", rep.getWebAuthnPolicyRpEntityName());
+        assertEquals(Collections.singletonList("RS256"), rep.getWebAuthnPolicySignatureAlgorithms());
+        assertEquals("localhost", rep.getWebAuthnPolicyRpId());
+        assertEquals("Direct", rep.getWebAuthnPolicyAttestationConveyancePreference());
+        assertEquals("Platform", rep.getWebAuthnPolicyAuthenticatorAttachment());
+        assertEquals("Yes", rep.getWebAuthnPolicyRequireResidentKey());
+        assertEquals("Required", rep.getWebAuthnPolicyUserVerificationRequirement());
+        assertEquals(dummyInt, rep.getWebAuthnPolicyCreateTimeout());
+        assertTrue(rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister());
+        assertEquals(Collections.singletonList("00000000-0000-0000-0000-000000000000"), rep.getWebAuthnPolicyAcceptableAaguids());
+
+        assertEquals("RP_ENTITY_NAME", rep.getWebAuthnPolicyPasswordlessRpEntityName());
+        assertEquals(Collections.singletonList("RS256"), rep.getWebAuthnPolicyPasswordlessSignatureAlgorithms());
+        assertEquals("localhost", rep.getWebAuthnPolicyPasswordlessRpId());
+        assertEquals("Direct", rep.getWebAuthnPolicyPasswordlessAttestationConveyancePreference());
+        assertEquals("Platform", rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment());
+        assertEquals("Yes", rep.getWebAuthnPolicyPasswordlessRequireResidentKey());
+        assertEquals("Required", rep.getWebAuthnPolicyPasswordlessUserVerificationRequirement());
+        assertEquals(dummyInt, rep.getWebAuthnPolicyPasswordlessCreateTimeout());
+        assertTrue(rep.isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister());
+        assertEquals(Collections.singletonList("00000000-0000-0000-0000-000000000000"), rep.getWebAuthnPolicyPasswordlessAcceptableAaguids());
     }
 
     @Test
@@ -331,7 +465,7 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation realmRep = testContext.getTestRealmReps().stream().filter((RealmRepresentation realm) -> {
             return realm.getRealm().equals(REALM_NAME);
         }).findFirst().get();
-        adminClient.realms().create(realmRep);
+        importRealm(realmRep);
     }
 
     @Test
@@ -427,11 +561,13 @@ public class RealmTest extends AbstractAdminTest {
         checkRealmEventsConfigRepresentation(repOrig, actual);
     }
 
-    @Test(expected = BadRequestException.class)
-    public void updateRealmWithReservedCharInName() {
+    @Test
+    public void updateRealmWithReservedCharInNameOrEmptyName() {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setRealm("fo#o");
-        realm.update(rep);
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
+        rep.setRealm("");
+        assertThrows(BadRequestException.class, () -> realm.update(rep));
     }
     
     @Test
@@ -526,6 +662,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.getAttributes().put("foo1", "bar1");
         rep.getAttributes().put("foo2", "bar2");
 
+        rep.setWebAuthnPolicyRpEntityName("keycloak");
         rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
         rep.setBruteForceProtected(true);
         rep.setDisplayName("dn1");
@@ -606,7 +743,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void convertOIDCClientDescription() throws IOException {
-        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/client-oidc.json"));
+        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/client-oidc.json"), Charset.defaultCharset());
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals(1, converted.getRedirectUris().size());
@@ -615,7 +752,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void convertSAMLClientDescription() throws IOException {
-        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/saml-entity-descriptor.xml"));
+        String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/saml-entity-descriptor.xml"), Charset.defaultCharset());
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals("loadbalancer-9.siroe.com", converted.getClientId());
@@ -702,7 +839,6 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearRealmCache() {
-        Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
         RealmRepresentation realmRep = realm.toRepresentation();
         assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
@@ -714,7 +850,6 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearUserCache() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         UserRepresentation user = new UserRepresentation();
         user.setUsername("clearcacheuser");
         Response response = realm.users().create(user);
@@ -945,4 +1080,60 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
     }
 
+    @Test
+    public void testNoUserProfileProviderComponentUponRealmChange() {
+        String realmName = "new-realm";
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmName);
+
+        adminClient.realms().create(rep);
+        getCleanup().addCleanup(() -> adminClient.realms().realm(realmName).remove());
+
+        assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+
+        rep.setDisplayName("displayName");
+        adminClient.realm(realmName).update(rep);
+
+        // this used to return non-empty collection
+        assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+    }
+
+    @Test
+    public void testSetEmptyAttributeValues() {
+        String realmName = "testSetEmptyAttributeValues";
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmName);
+        rep.setAttributes(new HashMap<>());
+        rep.getAttributes().put("myboolean", "");
+        rep.getAttributes().put("mylong", "");
+        rep.getAttributes().put("myint", "");
+        rep.getAttributes().put(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + ".something", "");
+
+        adminClient.realms().create(rep);
+
+        try {
+            adminClient.realm(realmName);
+
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                Assert.assertTrue(realm instanceof org.keycloak.models.cache.infinispan.RealmAdapter);
+
+                Assert.assertNull(realm.getUserActionTokenLifespans().get("something"));
+                Assert.assertEquals(true, realm.getAttribute("myboolean", true));
+                Assert.assertEquals(Long.valueOf(123), realm.getAttribute("mylong", (long) 123));
+                Assert.assertEquals(Integer.valueOf(1234), realm.getAttribute("myint", 1234));
+
+                RealmProvider delegate = session.getProvider(CacheRealmProvider.class).getRealmDelegate();
+                RealmModel realm2 = delegate.getRealm(realm.getId());
+                Assert.assertTrue(realm2 instanceof org.keycloak.models.jpa.RealmAdapter);
+
+                Assert.assertNull(realm2.getUserActionTokenLifespans().get("something"));
+                Assert.assertEquals(true, realm2.getAttribute("myboolean", true));
+                Assert.assertEquals(Long.valueOf(123), realm2.getAttribute("mylong", (long) 123));
+                Assert.assertEquals(Integer.valueOf(1234), realm2.getAttribute("myint", 1234));
+            });
+        } finally {
+            adminClient.realm(realmName).remove();
+        }
+    }
 }

@@ -142,7 +142,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
             value = configValue.getValue();
         }
 
-        PropertyMapper mapper = PropertyMappers.getMapper(property);
+        PropertyMapper<?> mapper = PropertyMappers.getMapper(property);
 
         if (mapper != null && mapper.isRunTime()) {
             value = getRuntimeProperty(property).orElse(value);
@@ -170,5 +170,10 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
                 || property.startsWith(MicroProfileConfigProvider.NS_QUARKUS)
                 || property.startsWith("%"))
                 && !ignoredPropertyKeys.contains(property);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

@@ -8,7 +8,7 @@ import { DecisionStrategySelect } from "../DecisionStrategySelect";
 import { ResourcesPolicySelect } from "../ResourcesPolicySelect";
 
 export const Aggregate = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id } = useParams<PolicyDetailsParams>();
 
   return (
@@ -17,10 +17,7 @@ export const Aggregate = () => {
         label={t("applyPolicy")}
         fieldId="policies"
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:applyPolicy")}
-            fieldLabelId="clients:policies"
-          />
+          <HelpItem helpText={t("applyPolicyHelp")} fieldLabelId="policies" />
         }
       >
         <ResourcesPolicySelect name="policies" clientId={id} />

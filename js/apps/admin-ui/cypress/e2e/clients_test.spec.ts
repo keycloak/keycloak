@@ -149,9 +149,7 @@ describe("Clients test", () => {
           .checkModalTitle("Add client scopes to " + clientId);
         commonPage.tableUtils().selectRowItemCheckbox(itemName);
         commonPage.modalUtils().confirmModalWithItem(assignedType);
-        commonPage
-          .masthead()
-          .checkNotificationMessage("Scope mapping successfully updated");
+        commonPage.masthead().checkNotificationMessage("Scope mapping updated");
         commonPage.tableToolbarUtils().searchItem(itemName, false);
         commonPage
           .tableUtils()
@@ -230,6 +228,81 @@ describe("Clients test", () => {
         .tableUtils()
         .checkRowItemExists(FilterAssignedType.Default, false)
         .checkRowItemExists(FilterAssignedType.Optional);
+    });
+  });
+
+  describe("Client scopes evaluate subtab", () => {
+    const clientName = "testClient";
+
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      commonPage.sidebar().goToClients();
+    });
+
+    before(async () => {
+      await adminClient.createClient({
+        protocol: "openid-connect",
+        clientId: clientName,
+        publicClient: false,
+      });
+    });
+
+    after(async () => {
+      await adminClient.deleteClient(clientName);
+    });
+
+    it("check effective protocol mappers list is not empty and find effective protocol mapper locale", () => {
+      commonPage.tableToolbarUtils().searchItem(clientName);
+      commonPage.tableUtils().clickRowItemLink(clientName);
+
+      clientDetailsPage.goToClientScopesEvaluateTab();
+
+      cy.findByTestId("effective-protocol-mappers")
+        .find("tr")
+        .should("have.length.gt", 0);
+    });
+
+    it("check role scope mappings list list is not empty and find role scope mapping admin", () => {
+      commonPage.tableToolbarUtils().searchItem(clientName);
+      commonPage.tableUtils().clickRowItemLink(clientName);
+
+      clientDetailsPage.goToClientScopesEvaluateTab();
+      clientDetailsPage.goToClientScopesEvaluateEffectiveRoleScopeMappingsTab();
+
+      cy.findByTestId("effective-role-scope-mappings")
+        .find("tr")
+        .should("have.length.gt", 0);
+    });
+
+    it("check generated id token and user info", () => {
+      commonPage.tableToolbarUtils().searchItem(clientName);
+      commonPage.tableUtils().clickRowItemLink(clientName);
+
+      clientDetailsPage.goToClientScopesEvaluateTab();
+      cy.get("div#generatedAccessToken").contains("No generated access token");
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
+      cy.get("div#generatedIdToken").contains("No generated id token");
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
+      cy.get("div#generatedUserInfo").contains("No generated user info");
+
+      cy.get("input#user-select-typeahead").type("admin");
+      cy.get("li[id*=select-option-] > button:first-child").click();
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
+      cy.get("div#generatedAccessToken").contains(
+        '"preferred_username": "admin"',
+      );
+      cy.get("div#generatedAccessToken").contains('"scope": "');
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
+      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
+      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+      cy.get("div#generatedIdToken").contains('"session_state"');
     });
   });
 
@@ -1070,14 +1143,14 @@ describe("Clients test", () => {
   });
 
   describe("Accessibility tests for clients", () => {
+    const clientId = "a11y-client";
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
       commonPage.sidebar().goToClients();
       cy.injectAxe();
     });
-
-    const clientId = "a11y-client";
 
     it("Check a11y violations on load/ clients list tab", () => {
       cy.checkA11y();
@@ -1108,6 +1181,21 @@ describe("Clients test", () => {
       cy.checkA11y();
 
       clientDetailsPage.goToClientScopesTab();
+      cy.checkA11y();
+
+      clientDetailsPage.goToClientScopesEvaluateTab();
+      cy.checkA11y();
+
+      clientDetailsPage.goToClientScopesEvaluateEffectiveRoleScopeMappingsTab();
+      cy.checkA11y();
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
+      cy.checkA11y();
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
+      cy.checkA11y();
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
       cy.checkA11y();
 
       clientDetailsPage.goToAdvancedTab();

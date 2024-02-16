@@ -16,6 +16,8 @@
  */
 package org.keycloak.client.admin.cli.util;
 
+import org.apache.http.entity.ContentType;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -50,7 +52,7 @@ public class HeadersBody {
 
     public String readBodyString() {
         byte [] buffer = readBodyBytes();
-        return new String(buffer, Charset.forName(getContentCharset()));
+        return new String(buffer, getContentCharset());
     }
 
     public byte[] readBodyBytes() {
@@ -59,14 +61,8 @@ public class HeadersBody {
         return os.toByteArray();
     }
 
-    public String getContentCharset() {
-        Header contentType = headers.get("Content-Type");
-        if (contentType != null) {
-            int pos = contentType.getValue().lastIndexOf("charset=");
-            if (pos != -1) {
-                return contentType.getValue().substring(pos + 8);
-            }
-        }
-        return "iso-8859-1";
+    public Charset getContentCharset() {
+        return headers.getContentType().map(ContentType::getCharset).orElseGet(() -> Charset.forName("iso-8859-1"));
     }
+
 }

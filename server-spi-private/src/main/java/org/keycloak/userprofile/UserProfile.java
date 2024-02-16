@@ -17,22 +17,38 @@
 
 package org.keycloak.userprofile;
 
-import java.util.function.BiConsumer;
+import java.util.List;
+import java.util.Map;
 
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AbstractUserRepresentation;
 
 /**
- * <p>An interface providing as an entry point for managing users.
+ * <p>An interface that serves an entry point for managing users and their attributes.
  *
- * <p>A {@code UserProfile} provides a manageable view for user information that also takes into account the context where it is being used.
- * The context represents the different places in Keycloak where users are created, updated, or validated.
+ * <p>A {@code UserProfile} provides methods for creating, and updating users as well as for accessing their attributes.
+ * All its operations are based the {@link UserProfileContext}. By taking the context into account, the state and behavior of
+ * {@link UserProfile} instances depend on the context they are associated with where creating, updating, validating, and
+ * accessing the attribute set of a user is based on the configuration (see {@link org.keycloak.representations.userprofile.config.UPConfig})
+ * and the constraints associated with a given context.
+ *
+ * <p>The {@link UserProfileContext} represents the different areas in Keycloak where users, and their attributes are managed.
  * Examples of contexts are: managing users through the Admin API, or through the Account API.
  *
- * <p>By taking the context into account, the state and behavior of {@link UserProfile} instances depend on the context they
- * are associated with, where validating, updating, creating, or obtaining representations of users is based on the configuration
- * and constraints associated with a context.
+ * <p>A {@code UserProfile} instance can be obtained through the {@link UserProfileProvider}:
  *
- * <p>A {@code UserProfile} instance can be obtained through the {@link UserProfileProvider}.
+ * <pre> {@code
+ * // resolve an existing user
+ * UserModel user = getExistingUser();
+ * // obtain the user profile provider
+ * UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+ * // create a instance for managing the user profile through the USER_API context
+ * UserProfile profile = provider.create(USER_API, user);
+ * }</pre>
+ *
+ * <p>The {@link UserProfileProvider} provides different methods for creating {@link UserProfile} instances, each one
+ * target for a specific scenario such as creating a new user, updating an existing one, or only for accessing the attributes
+ * for an existing user as shown in the above example.
  *
  * @see UserProfileContext
  * @see UserProfileProvider
@@ -69,20 +85,23 @@ public interface UserProfile {
     void update(boolean removeAttributes, AttributeChangeListener... changeListener) throws ValidationException;
 
     /**
-     * <p>The same as {@link #update(boolean, BiConsumer[])} but forcing the removal of attributes.
+     * <p>The same as {@link #update(boolean, AttributeChangeListener...)}} but forcing the removal of attributes.
      *
      * @param changeListener a set of one or more listeners to listen for attribute changes
      * @throws ValidationException in case of any validation error
      */
-    default void update(AttributeChangeListener... changeListener) throws            ValidationException, RuntimeException {
+    default void update(AttributeChangeListener... changeListener) throws ValidationException {
         update(true, changeListener);
     }
 
     /**
      * Returns the attributes associated with this instance. Note that the attributes returned by this method are not necessarily
-     * the same from the {@link UserModel}, but those that should be validated and possibly updated to the {@link UserModel}.
+     * the same from the {@link UserModel} as they are based on the configurations set in the {@link org.keycloak.representations.userprofile.config.UPConfig} and
+     * the context this instance is based on.
      *
      * @return the attributes associated with this instance.
      */
     Attributes getAttributes();
+
+    <R extends AbstractUserRepresentation> R toRepresentation();
 }

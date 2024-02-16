@@ -30,6 +30,8 @@ import java.util.Properties;
  */
 public interface Theme {
 
+    public static final String ACCOUNT_RESOURCE_PROVIDER_KEY = "accountResourceProvider";
+
     enum Type { LOGIN, ACCOUNT, ADMIN, EMAIL, WELCOME, COMMON };
 
     String getName();

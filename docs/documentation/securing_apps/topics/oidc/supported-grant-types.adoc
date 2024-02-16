@@ -28,10 +28,15 @@ browser history. You can somewhat mitigate this problem by using short expiratio
 
 For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
+Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-implicit-grant[OAuth 2.0 Security Best Current Practice], this flow should not be used.
+This flow is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-09[OAuth 2.1 specification].
+
 [[_resource_owner_password_credentials_flow]]
 ==== Resource Owner Password Credentials
 
-Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens. Using this flow is not recommended unlesss it is essential. Examples where this flow could be useful are legacy applications and command-line interfaces.
+Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens.
+Per current https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-resource-owner-password-cre[OAuth 2.0 Security Best Practices],
+this flow should not be used, preferring alternative methods such as <<Device Authorization Grant>> or <<Authorization code>>.
 
 The limitations of using this flow include:
 
@@ -42,9 +47,16 @@ The limitations of using this flow include:
 * No support for identity brokering or social login
 * Flows are not supported (user self-registration, required actions, and so on.)
 
+Security concerns with this flow include:
+
+* Involving more than {project_name} in handling of credentials
+* Increased vulnerable surface area where credential leaks can happen
+* Creating an ecosystem where users trust another application for entering their credentials and not {project_name}
+
 For a client to be permitted to use the Resource Owner Password Credentials grant, the client has to have the `Direct Access Grants Enabled` option enabled.
 
 This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
+It is removed from the future https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-09[OAuth 2.1 specification].
 
 For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant] chapter in the OAuth 2.0 specification.
 
@@ -78,12 +90,13 @@ For more details, see the https://datatracker.ietf.org/doc/html/rfc6749#section-
 ==== Device Authorization Grant
 
 Device Authorization Grant is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser.
-. The application requests {project_name} a device code and a user code. 
-. {project_name} creates a device code and a user code. 
-. {project_name} returns a response including the device code and the user code to the application. 
-. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. 
-. The application repeatedly polls {project_name} until {project_name} completes the user authorization. 
-. If user authentication is complete, the application obtains the device code. 
+
+. The application requests  that {project_name} provide a device code and a user code.
+. {project_name} creates a device code and a user code.
+. {project_name} returns a response including the device code and the user code to the application.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
+. The application repeatedly polls {project_name} until {project_name} completes the user authorization.
+. If user authentication is complete, the application obtains the device code.
 . The application uses the device code along with its credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
 
 For more details, see  the https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].

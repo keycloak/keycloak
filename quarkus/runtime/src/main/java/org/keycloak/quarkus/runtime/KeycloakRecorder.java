@@ -17,12 +17,13 @@
 
 package org.keycloak.quarkus.runtime;
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
@@ -33,28 +34,30 @@ import liquibase.Scope;
 
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.manager.DefaultCacheManager;
-import io.vertx.ext.web.RoutingContext;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.TruststoreOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
+import org.keycloak.truststore.TruststoreBuilder;
 
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.servicelocator.ServiceLocator;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 @Recorder
 public class KeycloakRecorder {
@@ -68,6 +71,23 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    public void configureTruststore() {
+        String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
+                .map(s -> s.split(",")).orElse(new String[0]);
+
+        String dataDir = Environment.getDataDir();
+
+        File truststoresDir = Optional.ofNullable(Environment.getHomePath()).map(path -> path.resolve("conf").resolve("truststores").toFile()).orElse(null);
+
+        if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
+            truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
+        } else if (truststores.length == 0) {
+            return; // nothing to configure, we'll just use the system default
+        }
+
+        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
@@ -105,6 +125,10 @@ public class KeycloakRecorder {
         }
     }
 
+    public void setDefaultUserProfileConfiguration(UPConfig configuration) {
+        DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
+    }
+
     public void registerShutdownHook(ShutdownContext shutdownContext) {
         shutdownContext.addShutdownTask(new Runnable() {
             @Override
@@ -138,29 +162,6 @@ public class KeycloakRecorder {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
                 propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
-            }
-        };
-    }
-
-    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths, ExecutorService executor) {
-        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths), executor);
-    }
-
-    private Predicate<RoutingContext> createIgnoredHttpPathsPredicate(List<String> ignoredPaths) {
-        if (ignoredPaths == null || ignoredPaths.isEmpty()) {
-            return null;
-        }
-
-        return new Predicate<>() {
-            @Override
-            public boolean test(RoutingContext context) {
-                for (String ignoredPath : ignoredPaths) {
-                    if (context.request().uri().startsWith(ignoredPath)) {
-                        return true;
-                    }
-                }
-
-                return false;
             }
         };
     }

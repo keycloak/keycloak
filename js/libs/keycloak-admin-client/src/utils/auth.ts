@@ -20,6 +20,7 @@ export interface Credentials {
 export interface Settings {
   realmName?: string;
   baseUrl?: string;
+  scope?: string;
   credentials: Credentials;
   requestOptions?: RequestInit;
 }

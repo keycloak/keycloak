@@ -31,14 +31,18 @@ export type DefaultValue = {
 
 type KeyValueInputProps = {
   name: string;
+  label?: string;
   defaultKeyValue?: DefaultValue[];
+  isDisabled?: boolean;
 };
 
 export const KeyValueInput = ({
   name,
+  label = "attributes",
   defaultKeyValue,
+  isDisabled = false,
 }: KeyValueInputProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -89,6 +93,7 @@ export const KeyValueInput = ({
                     {...register(`${name}.${index}.key`, { required: true })}
                     validated={keyError ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
                 {keyError && (
@@ -115,6 +120,7 @@ export const KeyValueInput = ({
                     {...register(`${name}.${index}.value`, { required: true })}
                     validated={valueError ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
                 {valueError && (
@@ -131,6 +137,7 @@ export const KeyValueInput = ({
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
+                  isDisabled={isDisabled}
                 >
                   <MinusCircleIcon />
                 </Button>
@@ -147,8 +154,9 @@ export const KeyValueInput = ({
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
+            isDisabled={isDisabled}
           >
-            {t("addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
@@ -159,15 +167,16 @@ export const KeyValueInput = ({
       className="pf-u-p-0"
       variant="xs"
     >
-      <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
       <Button
         data-testid={`${name}-add-row`}
         variant="link"
         icon={<PlusCircleIcon />}
         isSmall
         onClick={appendNew}
+        isDisabled={isDisabled}
       >
-        {t("addAttribute")}
+        {t("addAttribute", { label })}
       </Button>
     </EmptyState>
   );

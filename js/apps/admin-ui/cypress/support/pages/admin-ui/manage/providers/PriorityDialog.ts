@@ -1,11 +1,11 @@
 const expect = chai.expect;
 
 export default class PriorityDialog {
-  private managePriorityOrder = "viewHeader-lower-btn";
-  private list = "manageOrderDataList";
+  #managePriorityOrder = "viewHeader-lower-btn";
+  #list = "manageOrderDataList";
 
   openDialog() {
-    cy.findByTestId(this.managePriorityOrder).click({ force: true });
+    cy.findByTestId(this.#managePriorityOrder).click({ force: true });
     return this;
   }
 
@@ -21,7 +21,7 @@ export default class PriorityDialog {
   }
 
   checkOrder(providerNames: string[]) {
-    cy.get(`[data-testid=${this.list}] li`).should((providers) => {
+    cy.get(`[data-testid=${this.#list}] li`).should((providers) => {
       expect(providers).to.have.length(providerNames.length);
       for (let index = 0; index < providerNames.length; index++) {
         expect(providers.eq(index)).to.contain(providerNames[index]);

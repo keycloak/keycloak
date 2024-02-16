@@ -95,7 +95,7 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
             String permissionId = withRealm(realmId, (session, realm) -> {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
-                ResourceServer rs = aStore.getResourceServerStore().findById(realm, resourceServerId);
+                ResourceServer rs = aStore.getResourceServerStore().findById(resourceServerId);
 
                 UserModel u = session.users().addUser(realm, "user" + index);
 
@@ -113,20 +113,20 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
 
-                aStore.getPolicyStore().delete(realm, permissionId);
+                aStore.getPolicyStore().delete(permissionId);
                 return null;
             });
 
             withRealm(realmId, (session, realm) -> {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
-                ResourceServer rs = aStore.getResourceServerStore().findById(realm, resourceServerId);
+                ResourceServer rs = aStore.getResourceServerStore().findById(resourceServerId);
 
                 Map<Policy.FilterOption, String[]> searchMap = new HashMap<>();
                 searchMap.put(Policy.FilterOption.TYPE, new String[]{"uma"});
                 searchMap.put(Policy.FilterOption.OWNER, new String[]{adminId});
                 searchMap.put(Policy.FilterOption.PERMISSION, new String[] {"true"});
-                Set<String> s = aStore.getPolicyStore().find(realm, rs, searchMap, 0, 500).stream().map(Policy::getId).collect(Collectors.toSet());
+                Set<String> s = aStore.getPolicyStore().find(rs, searchMap, 0, 500).stream().map(Policy::getId).collect(Collectors.toSet());
                 assertThat(s, not(contains(permissionId)));
                 return null;
             });
@@ -140,7 +140,7 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
             StoreFactory aStore = authorization.getStoreFactory();
             UserModel u = session.users().getUserById(realm, adminId);
-            ResourceServer rs = aStore.getResourceServerStore().findById(realm, resourceServerId);
+            ResourceServer rs = aStore.getResourceServerStore().findById(resourceServerId);
 
 
             UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
@@ -157,8 +157,8 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
             String createdPolicyId = withRealm(realmId, (session, realm) -> {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
-                ResourceServer rs = aStore.getResourceServerStore().findById(realm, resourceServerId);
-                Policy permission = aStore.getPolicyStore().findById(realm, rs, permissionId);
+                ResourceServer rs = aStore.getResourceServerStore().findById(resourceServerId);
+                Policy permission = aStore.getPolicyStore().findById(rs, permissionId);
 
                 UserPolicyRepresentation userRep = new UserPolicyRepresentation();
                 userRep.setName("isAdminUser" + index);
@@ -171,8 +171,8 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
             withRealm(realmId, (session, realm) -> {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
-                ResourceServer rs = aStore.getResourceServerStore().findById(realm, resourceServerId);
-                Policy permission = aStore.getPolicyStore().findById(realm, rs, permissionId);
+                ResourceServer rs = aStore.getResourceServerStore().findById(resourceServerId);
+                Policy permission = aStore.getPolicyStore().findById(rs, permissionId);
 
                 assertThat(permission.getAssociatedPolicies(), not(contains(nullValue())));
                 ModelToRepresentation.toRepresentation(permission, authorization);
@@ -183,7 +183,7 @@ public class ConcurrentAuthzTest extends KeycloakModelTest {
             withRealm(realmId, (session, realm) -> {
                 AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
                 StoreFactory aStore = authorization.getStoreFactory();
-                aStore.getPolicyStore().delete(realm, createdPolicyId);
+                aStore.getPolicyStore().delete(createdPolicyId);
                 return null;
             });
         });

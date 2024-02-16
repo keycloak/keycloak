@@ -61,6 +61,13 @@ describe("Realm settings general tab tests", () => {
     masthead.checkNotificationMessage("Realm successfully updated");
   });
 
+  it("Fail to set Realm ID to empty", () => {
+    sidebarPage.goToRealmSettings();
+    realmSettingsPage.clearRealmId();
+    realmSettingsPage.saveGeneral();
+    cy.get("#kc-realm-id-helper").should("have.text", "Required field");
+  });
+
   it("Modify Display name", () => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.fillDisplayName("display_name");

@@ -7,7 +7,7 @@
 [role="_additional-resources"]
 .Additional resources
 
-* The Account Console can be configured in terms of appearance and language preferences. An example is adding attributes to the *Personal info* page by clicking *Personal info* link and completing and saving details. For more information, see reference:{developerguide_link}[{developerguide_name}].
+* The Account Console can be configured in terms of appearance and language preferences. An example is adding attributes to the *Personal info* page by clicking *Personal info* link and completing and saving details. For more information, see the {developerguide_link}[{developerguide_name}].
 
 === Accessing the Account Console
 

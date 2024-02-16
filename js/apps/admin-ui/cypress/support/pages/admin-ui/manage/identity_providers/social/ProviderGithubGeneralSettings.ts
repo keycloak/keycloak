@@ -4,28 +4,28 @@ const base_url_input_test_value = "base_url_input_test_value";
 const api_url_input_test_value = "api_url_input_test_value";
 
 export default class ProviderGithubGeneralSettings extends ProviderBaseGeneralSettingsPage {
-  private baseUrlInput = "baseUrl";
-  private apiUrlInput = "apiUrl";
+  #baseUrlInput = "baseUrl";
+  #apiUrlInput = "apiUrl";
 
   public typeBaseUrlInput(value: string) {
-    cy.findByTestId(this.baseUrlInput).type(value);
-    cy.findByTestId(this.baseUrlInput).blur();
+    cy.findByTestId(this.#baseUrlInput).type(value);
+    cy.findByTestId(this.#baseUrlInput).blur();
     return this;
   }
 
   public typeApiUrlInput(value: string) {
-    cy.findByTestId(this.apiUrlInput).type(value);
-    cy.findByTestId(this.apiUrlInput).blur();
+    cy.findByTestId(this.#apiUrlInput).type(value);
+    cy.findByTestId(this.#apiUrlInput).blur();
     return this;
   }
 
   public assertBaseUrlInputInputEqual(value: string) {
-    cy.findByTestId(this.baseUrlInput).should("have.value", value);
+    cy.findByTestId(this.#baseUrlInput).should("have.value", value);
     return this;
   }
 
   public assertApiUrlInputEqual(value: string) {
-    cy.findByTestId(this.apiUrlInput).should("have.value", value);
+    cy.findByTestId(this.#apiUrlInput).should("have.value", value);
     return this;
   }
 

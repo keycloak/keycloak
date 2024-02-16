@@ -1,6 +1,0 @@
-{
-  "multiValued": "Indica si el atributo soporta múltiples valores. Si está habilitado, la lista de todos los valores de este atributo se fijará como reclamación. Si está deshabilitado, solo el primer valor será fijado como reclamación.",
-  "tokenClaimName": "Nombre del reclamo a insertar en el token. Puede ser un nombre completo como ''address.street''. En este caso, se creará un objeto JSON anidado.",
-  "claimJsonType": "El tipo de JSON que debería ser usado para rellenar la petición de JSON en el token. long, int, boolean y String son valores válidos",
-  "protocolMapper": "Protocolo."
-}

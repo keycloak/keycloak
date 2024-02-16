@@ -16,12 +16,14 @@
  */
 package org.keycloak.quarkus.runtime.services.resources;
 
+import io.quarkus.resteasy.reactive.server.EndpointDisabled;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.services.Urls;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Path("/realms")
+@EndpointDisabled(name = "kc.hostname-debug", stringValue = "false", disableIfMissing = true)
 public class DebugHostnameSettingsResource {
     public static final String DEFAULT_PATH_SUFFIX = "hostname-debug";
     public static final String PATH_FOR_TEST_CORS_IN_HEADERS = "test";
@@ -66,8 +69,13 @@ public class DebugHostnameSettingsResource {
     @Path("/{realmName}/" + DEFAULT_PATH_SUFFIX)
     @Produces(MediaType.TEXT_HTML)
     public String debug(final @PathParam("realmName") String realmName) throws IOException, FreeMarkerException {
-        FreeMarkerProvider freeMarkerProvider = keycloakSession.getProvider(FreeMarkerProvider.class);
         RealmModel realmModel = keycloakSession.realms().getRealmByName(realmName);
+
+        if (realmModel == null) {
+            throw new NotFoundException();
+        }
+
+        FreeMarkerProvider freeMarkerProvider = keycloakSession.getProvider(FreeMarkerProvider.class);
 
         URI frontendUri = keycloakSession.getContext().getUri(UrlType.FRONTEND).getBaseUri();
         URI backendUri = keycloakSession.getContext().getUri(UrlType.BACKEND).getBaseUri();

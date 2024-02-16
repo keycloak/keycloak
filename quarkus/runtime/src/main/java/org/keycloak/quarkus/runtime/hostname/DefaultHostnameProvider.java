@@ -18,7 +18,12 @@
 package org.keycloak.quarkus.runtime.hostname;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
+import static org.keycloak.config.ProxyOptions.PROXY;
+import static org.keycloak.config.ProxyOptions.PROXY_HEADERS;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 import static org.keycloak.urls.UrlType.ADMIN;
+import static org.keycloak.urls.UrlType.LOCAL_ADMIN;
 import static org.keycloak.urls.UrlType.BACKEND;
 import static org.keycloak.urls.UrlType.FRONTEND;
 import static org.keycloak.utils.StringUtil.isNotBlank;
@@ -32,17 +37,21 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.HostnameOptions;
+import org.keycloak.config.ProxyOptions;
+import org.keycloak.config.ProxyOptions.Mode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 import org.keycloak.urls.UrlType;
 
-public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory {
+public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(DefaultHostnameProvider.class);
     private static final String REALM_URI_SESSION_ATTRIBUTE = DefaultHostnameProvider.class.getName() + ".realmUrl";
@@ -61,11 +70,15 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     private int hostnamePort;
     private URI frontEndBaseUri;
     private URI adminBaseUri;
+    private URI localAdminUri;
 
     @Override
     public String getScheme(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getScheme, adminBaseUri, getScheme(originalUriInfo));
+        }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getScheme, localAdminUri, getScheme(originalUriInfo));
         }
 
         String scheme = forNonStrictBackChannel(originalUriInfo, urlType, this::getScheme, this::getScheme);
@@ -82,6 +95,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getHost, adminBaseUri, adminHostName == null ? getHostname(originalUriInfo) : adminHostName);
         }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getHost, localAdminUri, getHostname(originalUriInfo));
+        }
 
         String hostname = forNonStrictBackChannel(originalUriInfo, urlType, this::getHostname, this::getHostname);
 
@@ -97,6 +113,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getPath, adminBaseUri, getContextPath(originalUriInfo));
         }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getPath, localAdminUri, getContextPath(originalUriInfo));
+        }
 
         String path = forNonStrictBackChannel(originalUriInfo, urlType, this::getContextPath, this::getContextPath);
 
@@ -111,6 +130,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     public int getPort(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
             return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort(originalUriInfo));
+        }
+        if (LOCAL_ADMIN.equals(urlType)) {
+            return fromBaseUriOrDefault(URI::getPort, localAdminUri, getRequestPort(originalUriInfo));
         }
 
         Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getRequestPort);
@@ -174,6 +196,11 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     protected URI getRealmFrontEndUrl() {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+
+        if (session == null) {
+            return null;
+        }
+
         RealmModel realm = session.getContext().getRealm();
 
         if (realm == null) {
@@ -218,6 +245,20 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     @Override
     public void init(Config.Scope config) {
+        boolean isHttpEnabled = Boolean.parseBoolean(getConfigValue("kc.http-enabled").getValue());
+        String configPath = getConfigValue("kc.http-relative-path").getValue();
+
+        if (!configPath.startsWith("/")) {
+            configPath = "/" + configPath;
+        }
+
+        String httpsPort = getConfigValue("kc.https-port").getValue();
+        String configPort = isHttpEnabled ? getConfigValue("kc.http-port").getValue() : httpsPort ;
+
+        String scheme = isHttpEnabled ? "http://" : "https://";
+
+        localAdminUri = URI.create(scheme + "localhost:" + configPort + configPath);
+
         frontEndHostName = config.get("hostname");
 
         try {
@@ -252,15 +293,21 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path", frontEndBaseUri == null ? null : frontEndBaseUri.getPath());
-        noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
-        defaultTlsPort = Integer.parseInt(Configuration.getConfigValue("kc.https-port").getValue());
+
+        if (getKcConfigValue(PROXY_HEADERS.getKey()).getValue() != null) { // proxy-headers option was explicitly configured
+            noProxy = false;
+        } else { // falling back to proxy option
+            noProxy = Mode.none.equals(ProxyOptions.Mode.valueOf(getKcConfigValue(PROXY.getKey()).getValue()));
+        }
+
+        defaultTlsPort = Integer.parseInt(httpsPort);
 
         if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
             defaultTlsPort = RESTEASY_DEFAULT_PORT_VALUE;
         }
 
         if (frontEndBaseUri == null) {
-            hostnamePort = Integer.parseInt(Configuration.getConfigValue("kc.hostname-port").getValue());
+            hostnamePort = Integer.parseInt(getConfigValue("kc.hostname-port").getValue());
         } else {
             hostnamePort = frontEndBaseUri.getPort();
         }
@@ -300,8 +347,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     private int getRequestPort(UriInfo uriInfo) {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        return session.getContext().getHttpRequest().getUri().getBaseUri().getPort();
+        return uriInfo.getBaseUri().getPort();
     }
 
     private <T> T fromBaseUriOrDefault(Function<URI, T> resolver, URI baseUri, T defaultValue) {
@@ -310,5 +356,10 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         return defaultValue;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Feature.HOSTNAME_V1);
     }
 }

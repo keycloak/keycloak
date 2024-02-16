@@ -71,4 +71,29 @@ public interface RoleLookupProvider {
      * Never returns {@code null}.
      */
     Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max);
+
+    /**
+     * Case-insensitive search for client roles that contain the given string in its name or their client's public identifier (clientId - ({@code client_id} in OIDC or {@code entityID} in SAML)).
+     * @param realm Realm.
+     * @param ids Stream of ids to include in search. Ignored when {@code null}. Returns empty {@code Stream} when empty.
+     * @param search String to search by role's name or client's public identifier.
+     * @param first First result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of the client roles where role name or client public identifier contains given search string.
+     * Never returns {@code null}.
+     */
+    Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max);
+
+    /**
+     * Case-insensitive search for client roles that contain the given string in their name or their client's public identifier (clientId - ({@code client_id} in OIDC or {@code entityID} in SAML)).
+     *
+     * @param realm       Realm.
+     * @param search      String to search by role's name or client's public identifier.
+     * @param excludedIds Stream of ids to exclude. Ignored if empty or {@code null}.
+     * @param first       First result to return. Ignored if negative or {@code null}.
+     * @param max         Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of the client roles where role name or client's public identifier contains given search string.
+     * Never returns {@code null}.
+     */
+    Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max);
 }

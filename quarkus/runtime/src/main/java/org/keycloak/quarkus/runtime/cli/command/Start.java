@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
-import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
@@ -45,14 +44,6 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start";
 
-    @CommandLine.Option(names = {AUTO_BUILD_OPTION_SHORT, AUTO_BUILD_OPTION_LONG},
-            description = "(Deprecated) Automatically detects whether the server configuration changed and a new server image must be built" +
-                    " prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "'" +
-                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time.",
-            paramLabel = NO_PARAM_LABEL,
-            order = 1)
-    Boolean autoConfig;
-
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin;
 
@@ -68,24 +59,21 @@ public final class Start extends AbstractStartCommand implements Runnable {
     }
 
     private void devProfileNotAllowedError() {
-        if (isDevProfileNotAllowed(spec.commandLine().getParseResult().expandedArgs())) {
+        if (isDevProfileNotAllowed()) {
             executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
         }
     }
 
-    public static boolean isDevProfileNotAllowed(List<String> currentCliArgs) {
+    public static boolean isDevProfileNotAllowed() {
         Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
         Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
 
         setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
 
-        if (Environment.isDevProfile() && (!currentCliArgs.contains(AUTO_BUILD_OPTION_LONG) || !currentCliArgs.contains(AUTO_BUILD_OPTION_SHORT))) {
-            return true;
-        }
-
-        return false;
+        return Environment.isDevProfile();
     }
 
+    @Override
     public List<OptionCategory> getOptionCategories() {
         return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
@@ -93,5 +81,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @Override
     public boolean includeRuntime() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 }

@@ -47,6 +47,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestAppHelper;
 
+
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
 /**
@@ -180,7 +181,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, false, true);
+                true, false, true, true);
         ProtocolMapperRepresentation protocolMapperRep = ModelToRepresentation.toRepresentation(protocolMapper);
         ClientResource clientResource = findClientByClientId(testRealmResource(), "kerberos-app");
         Response response = clientResource.getProtocolMappers().createMapper(protocolMapperRep);

@@ -6,6 +6,7 @@ import {
   ButtonVariant,
   Divider,
   DropdownItem,
+  DropdownSeparator,
   Form,
   PageSection,
   Tab,
@@ -13,9 +14,16 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { ScrollForm } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -30,7 +38,6 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
-import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import {
   Action,
   KeycloakDataTable,
@@ -76,15 +83,32 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+  const { addAlert, addError } = useAlerts();
+  const { setValue, formState, control } = useFormContext();
+
+  const validateSignature = useWatch({
+    control,
+    name: "config.validateSignature",
+  });
+
+  const useMetadataDescriptorUrl = useWatch({
+    control,
+    name: "config.useMetadataDescriptorUrl",
+  });
+
+  const metadataDescriptorUrl = useWatch({
+    control,
+    name: "config.metadataDescriptorUrl",
+  });
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias: displayName }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       setProvider(fetchedProvider);
     },
@@ -92,14 +116,49 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: displayName }),
-    continueButtonLabel: "common:disable",
+    titleKey: "disableProvider",
+    messageKey: t("disableConfirmIdentityProvider", { provider: displayName }),
+    continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);
       save();
     },
   });
+
+  const importSamlKeys = async (
+    providerId: string,
+    metadataDescriptorUrl: string,
+  ) => {
+    try {
+      const result = await adminClient.identityProviders.importFromUrl({
+        providerId: providerId,
+        fromUrl: metadataDescriptorUrl,
+      });
+      if (result.signingCertificate) {
+        setValue(`config.signingCertificate`, result.signingCertificate);
+        addAlert(t("importKeysSuccess"), AlertVariant.success);
+      } else {
+        addError("importKeysError", t("importKeysErrorNoSigningCertificate"));
+      }
+    } catch (error) {
+      addError("importKeysError", error);
+    }
+  };
+
+  const reloadSamlKeys = async (alias: string) => {
+    try {
+      const result = await adminClient.identityProviders.reloadKeys({
+        alias: alias,
+      });
+      if (result) {
+        addAlert(t("reloadKeysSuccess"), AlertVariant.success);
+      } else {
+        addAlert(t("reloadKeysSuccessButFalse"), AlertVariant.warning);
+      }
+    } catch (error) {
+      addError("reloadKeysError", error);
+    }
+  };
 
   return (
     <>
@@ -114,8 +173,42 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         )}
         divider={false}
         dropdownItems={[
+          ...(provider?.providerId?.includes("saml") &&
+          validateSignature === "true" &&
+          useMetadataDescriptorUrl === "true" &&
+          metadataDescriptorUrl &&
+          !formState.isDirty &&
+          value
+            ? [
+                <DropdownItem
+                  key="reloadKeys"
+                  onClick={() => reloadSamlKeys(provider.alias!)}
+                >
+                  {t("reloadKeys")}
+                </DropdownItem>,
+              ]
+            : provider?.providerId?.includes("saml") &&
+                validateSignature === "true" &&
+                useMetadataDescriptorUrl !== "true" &&
+                metadataDescriptorUrl &&
+                !formState.isDirty
+              ? [
+                  <DropdownItem
+                    key="importKeys"
+                    onClick={() =>
+                      importSamlKeys(
+                        provider.providerId!,
+                        metadataDescriptorUrl,
+                      )
+                    }
+                  >
+                    {t("importKeys")}
+                  </DropdownItem>,
+                ]
+              : []),
+          <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
         isEnabled={value}
@@ -155,7 +248,7 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
@@ -191,7 +284,7 @@ export default function DetailSettings() {
     () => adminClient.identityProviders.findOne({ alias }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       reset(fetchedProvider);
@@ -249,34 +342,35 @@ export default function DetailSettings() {
           providerId,
         },
       );
-      addAlert(t("updateSuccess"), AlertVariant.success);
+      reset(p);
+      addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
-      addError("identity-providers:updateError", error);
+      addError("updateErrorIdentityProvider", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:deleteProvider",
-    messageKey: t("identity-providers:deleteConfirm", { provider: alias }),
-    continueButtonLabel: "common:delete",
+    titleKey: "deleteProvider",
+    messageKey: t("deleteConfirmIdentityProvider", { provider: alias }),
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.identityProviders.del({ alias: alias });
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
         navigate(toIdentityProviders({ realm }));
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
 
   const [toggleDeleteMapperDialog, DeleteMapperConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:deleteProviderMapper",
-    messageKey: t("identity-providers:deleteMapperConfirm", {
+    titleKey: "deleteProviderMapper",
+    messageKey: t("deleteMapperConfirm", {
       mapper: selectedMapper?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -290,7 +384,7 @@ export default function DetailSettings() {
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -336,16 +430,12 @@ export default function DetailSettings() {
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && (
-            <>
-              <GeneralSettings create={false} id={alias} />
-              {providerInfo && (
-                <DynamicComponents properties={providerInfo.properties} />
-              )}
-            </>
+          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
+          {isOIDC && <OIDCGeneralSettings />}
+          {isSAML && <SamlGeneralSettings isAliasReadonly />}
+          {providerInfo && (
+            <DynamicComponents stringify properties={providerInfo.properties} />
           )}
-          {isOIDC && <OIDCGeneralSettings id={alias} />}
-          {isSAML && <SamlGeneralSettings id={alias} isAliasReadonly />}
         </FormAccess>
       ),
     },
@@ -419,23 +509,27 @@ export default function DetailSettings() {
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
-            <ScrollForm className="pf-u-px-lg" sections={sections} />
+            <ScrollForm
+              label={t("jumpToSection")}
+              className="pf-u-px-lg"
+              sections={sections}
+            />
           </Tab>
           <Tab
             id="mappers"
             data-testid="mappers-tab"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
             <KeycloakDataTable
               emptyState={
                 <ListEmptyState
-                  message={t("identity-providers:noMappers")}
-                  instructions={t("identity-providers:noMappersInstructions")}
-                  primaryActionText={t("identity-providers:addMapper")}
+                  message={t("noMappers")}
+                  instructions={t("noMappersInstructions")}
+                  primaryActionText={t("addMapper")}
                   onPrimaryAction={() =>
                     navigate(
                       toIdentityProviderAddMapper({
@@ -450,8 +544,8 @@ export default function DetailSettings() {
               }
               loader={loader}
               key={key}
-              ariaLabelKey="identity-providers:mappersList"
-              searchPlaceholderKey="identity-providers:searchForMapper"
+              ariaLabelKey="mappersList"
+              searchPlaceholderKey="searchForMapper"
               toolbarItem={
                 <ToolbarItem>
                   <Button
@@ -476,23 +570,23 @@ export default function DetailSettings() {
               columns={[
                 {
                   name: "name",
-                  displayKey: "common:name",
+                  displayKey: "name",
                   cellRenderer: (row) => (
                     <MapperLink {...row} provider={provider} />
                   ),
                 },
                 {
                   name: "category",
-                  displayKey: "common:category",
+                  displayKey: "category",
                 },
                 {
                   name: "type",
-                  displayKey: "common:type",
+                  displayKey: "type",
                 },
               ]}
               actions={[
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (mapper) => {
                     setSelectedMapper(mapper);
                     toggleDeleteMapperDialog();
@@ -505,7 +599,7 @@ export default function DetailSettings() {
             <Tab
               id="permissions"
               data-testid="permissionsTab"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab id={alias} type="identityProviders" />

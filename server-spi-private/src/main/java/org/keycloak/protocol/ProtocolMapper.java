@@ -54,4 +54,20 @@ public interface ProtocolMapper extends Provider, ProviderFactory<ProtocolMapper
     default void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
     };
 
+    /**
+     * Get effective configuration of protocol mapper. Effective configuration takes "default values" of the options into consideration
+     * and hence it is the configuration, which would be actually used when processing this protocolMapper during issuing tokens/assertions.
+     *
+     * So for instance, when configuration option "introspection.token.claim" is unset in the protocolMapperModel, but default value of this option is supposed to be "true", then
+     * effective config returned by this method will contain "introspection.token.claim" config option with value "true" . If the "introspection.token.claim" is set, then the
+     * default value is typically ignored in the effective configuration, but this can depend on the implementation of particular protocol mapper.
+     *
+     * @param session
+     * @param realm
+     * @param protocolMapperModel
+     */
+    default ProtocolMapperModel getEffectiveModel(KeycloakSession session, RealmModel realm, ProtocolMapperModel protocolMapperModel) {
+        return protocolMapperModel;
+    }
+
 }

@@ -19,15 +19,24 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.Config;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -72,10 +81,16 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
         return token;
     }
 
+    boolean getShouldUseLightweightToken(KeycloakSession session) {
+        Object attributeValue = session.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
+        return (attributeValue != null) ? (boolean) attributeValue : false;
+    }
+
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)){
+        boolean shouldUseLightweightToken = getShouldUseLightweightToken(session);
+        boolean includeInAccessToken = shouldUseLightweightToken ?  OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : OIDCAttributeMapperHelper.includeInAccessToken(mappingModel);
+        if (!includeInAccessToken){
             return token;
         }
 
@@ -104,6 +119,17 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
         setClaim(accessTokenResponse, mappingModel, userSession, session, clientSessionCtx);
         return accessTokenResponse;
+    }
+
+    public AccessToken transformIntrospectionToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+        if (!OIDCAttributeMapperHelper.includeInIntrospection(mappingModel)){
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+        return token;
     }
 
     /**
@@ -143,5 +169,23 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession,
                             ClientSessionContext clientSessionCtx) {
 
+    }
+
+    @Override
+    public ProtocolMapperModel getEffectiveModel(KeycloakSession session, RealmModel realm, ProtocolMapperModel protocolMapperModel) {
+        // Effectively clone
+        ProtocolMapperModel copy = RepresentationToModel.toModel(ModelToRepresentation.toRepresentation(protocolMapperModel));
+
+        // UserInfo - if not set, default value is the same as includeInIDToken
+        if (copy.getConfig().get(INCLUDE_IN_ID_TOKEN) != null) {
+            copy.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(OIDCAttributeMapperHelper.includeInUserInfo(protocolMapperModel)));
+        }
+
+        // Introspection - if not set, default value is the same as includeInAccessToken
+        if (copy.getConfig().get(INCLUDE_IN_ACCESS_TOKEN) != null) {
+            copy.getConfig().put(INCLUDE_IN_INTROSPECTION, String.valueOf(OIDCAttributeMapperHelper.includeInIntrospection(protocolMapperModel)));
+        }
+
+        return copy;
     }
 }

@@ -10,12 +10,15 @@ type ForbiddenSectionProps = {
 export const ForbiddenSection = ({
   permissionNeeded,
 }: ForbiddenSectionProps) => {
-  const { t } = useTranslation("common");
-  const count = Array.isArray(permissionNeeded) ? permissionNeeded.length : 1;
+  const { t } = useTranslation();
+  const permissionNeededArray = Array.isArray(permissionNeeded)
+    ? permissionNeeded
+    : [permissionNeeded];
 
   return (
     <PageSection>
-      {t("forbidden", { count })} {permissionNeeded}
+      {t("forbidden", { count: permissionNeededArray.length })}{" "}
+      {permissionNeededArray.map((p) => p.toString())}
     </PageSection>
   );
 };

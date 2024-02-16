@@ -29,14 +29,12 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
 @DistributionTest(keepAlive =true)
-@LegacyStore
 public class MetricsDistTest {
 
     @Test

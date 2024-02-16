@@ -38,6 +38,10 @@ for C in "${CONDITIONS[@]}"; do
   if [ "$IS_PR" == true ]; then
     PATTERN="${CONDITION[0]}"
 
+    if [[ "$PATTERN" =~ testsuite::* ]]; then
+      PATTERN=$(cat testsuite/integration-arquillian/tests/base/testsuites/database-suite | grep -v -e '^[[:space:]]*$' | sed -z 's/\n$//g' | sed -z 's/\n/|/g' | sed 's/\./\//g' | sed 's/\*\*/*/g')
+    fi
+
     # Convert pattern to regex
     REGEX="$PATTERN"
 

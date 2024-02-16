@@ -101,6 +101,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -214,7 +215,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
-        return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+        return servletDeployment(SecurePortal.DEPLOYMENT_NAME,  AdapterActionsFilter.class, CallAuthenticatedServlet.class);
     }
     @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
     protected static WebArchive securePortalRewriteRedirectUri() {
@@ -861,7 +862,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     private static Map<String, String> getQueryFromUrl(String url) {
         try {
-            return URLEncodedUtils.parse(new URI(url), "UTF-8").stream()
+            return URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8).stream()
                 .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
         } catch (URISyntaxException e) {
             return null;
@@ -1100,6 +1101,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertEvents.expectLogout(null)
                 .realm(realm.getId())
                 .user(userId)
+                .client("account")
                 .session(AssertEvents.isUUID())
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();

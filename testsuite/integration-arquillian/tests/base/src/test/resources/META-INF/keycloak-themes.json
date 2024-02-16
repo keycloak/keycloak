@@ -12,6 +12,12 @@
       "types": [
         "login"
       ]
+    },
+    {
+      "name": "custom-account-provider",
+      "types": [
+        "account"
+      ]
     }
   ]
 }

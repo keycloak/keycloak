@@ -45,7 +45,7 @@ export type Role = RoleRepresentation & {
 };
 
 export default function AddMapper() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const form = useForm<IdPMapperRepresentationWithAttributes>({
     shouldUnregister: true,
@@ -88,7 +88,7 @@ export default function AddMapper() {
             id: id!,
             alias: alias!,
           },
-          { ...identityProviderMapper },
+          { ...identityProviderMapper, id },
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
@@ -117,11 +117,11 @@ export default function AddMapper() {
   };
 
   const [toggleDeleteMapperDialog, DeleteMapperConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:deleteProviderMapper",
-    messageKey: t("identity-providers:deleteMapperConfirm", {
+    titleKey: "deleteProviderMapper",
+    messageKey: t("deleteMapperConfirm", {
       mapper: currentMapper?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -134,7 +134,7 @@ export default function AddMapper() {
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -189,7 +189,7 @@ export default function AddMapper() {
           id
             ? [
                 <DropdownItem key="delete" onClick={toggleDeleteMapperDialog}>
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -204,12 +204,12 @@ export default function AddMapper() {
       >
         {id && (
           <FormGroup
-            label={t("common:id")}
+            label={t("id")}
             fieldId="kc-name"
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               value={currentMapper.id}
@@ -243,7 +243,7 @@ export default function AddMapper() {
             variant="primary"
             type="submit"
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="new-mapper-cancel-button"
@@ -260,7 +260,7 @@ export default function AddMapper() {
               />
             )}
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Button>
         </ActionGroup>
       </FormAccess>

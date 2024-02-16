@@ -17,11 +17,10 @@
 
 package org.keycloak.quarkus.runtime.transaction;
 
-import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.services.DefaultKeycloakSession;
 
 /**
@@ -37,7 +36,7 @@ public interface TransactionalSessionHandler {
      * @return a transactional keycloak session
      */
     default KeycloakSession create() {
-        KeycloakSessionFactory sessionFactory = getSessionFactory();
+        KeycloakSessionFactory sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
         KeycloakSession session = sessionFactory.create();
         session.getTransactionManager().begin();
         return session;

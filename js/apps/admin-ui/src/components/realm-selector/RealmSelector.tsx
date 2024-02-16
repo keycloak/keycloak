@@ -32,7 +32,7 @@ type AddRealmProps = {
 
 const AddRealm = ({ onClick }: AddRealmProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
 
   return (
     <Button
@@ -84,7 +84,7 @@ export const RealmSelector = () => {
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const recentRealms = useRecentRealms();
 
   const all = useMemo(

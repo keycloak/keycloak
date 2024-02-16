@@ -69,9 +69,9 @@ public class KcAdmCmd extends AbstractGlobalOptionsCmd {
         out.println();
         out.println("For example:");
         out.println();
-        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:8080/auth --realm master --user admin");
+        out.println("  " + PROMPT + " " + CMD + " config credentials --server http://localhost:8080 --realm master --user admin");
         out.println("  Enter password: ");
-        out.println("  Logging into http://localhost:8080/auth as user admin of realm master");
+        out.println("  Logging into http://localhost:8080 as user admin of realm master");
         out.println();
         out.println("Any configured username can be used for login, but to perform admin operations the user");
         out.println("needs proper roles, otherwise operations will fail.");

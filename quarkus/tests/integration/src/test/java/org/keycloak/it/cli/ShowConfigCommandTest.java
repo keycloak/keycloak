@@ -20,7 +20,9 @@ package org.keycloak.it.cli;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLITest;
+import org.keycloak.it.junit5.extension.ConfigurationTestResource;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
@@ -28,6 +30,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
+@QuarkusTestResource(value = ConfigurationTestResource.class, restrictToAnnotatedClass = true)
 @CLITest
 public class ShowConfigCommandTest {
 

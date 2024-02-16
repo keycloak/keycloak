@@ -27,7 +27,7 @@ type DiscoverySettingsProps = {
 };
 
 const Fields = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [pkceMethodOpen, setPkceMethodOpen] = useState(false);
   const {
     register,
@@ -59,7 +59,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -84,7 +84,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -134,6 +134,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               <FormGroupField label="validatingPublicKey">
                 <KeycloakTextArea
                   data-testid="validatingPublicKey"
+                  aria-label={t("validatingPublicKey")}
                   {...register("config.publicKeySignatureVerifier")}
                 />
               </FormGroupField>
@@ -157,8 +158,8 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           label={t("pkceMethod")}
           labelIcon={
             <HelpItem
-              helpText={t("identity-providers-help:pkceMethod")}
-              fieldLabelId="identity-providers:pkceMethod"
+              helpText={t("pkceMethodHelp")}
+              fieldLabelId="pkceMethod"
             />
           }
           fieldId="pkceMethod"
@@ -201,7 +202,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
 };
 
 export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (

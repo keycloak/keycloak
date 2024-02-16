@@ -81,7 +81,7 @@ public class PersistenceExceptionConverter implements InvocationHandler {
     public static ModelException convert(Throwable t) {
         final Predicate<Throwable> checkDuplicationMessage = throwable -> {
             final String message = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-            return message.toLowerCase().contains("duplicate");
+            return message == null ? false : message.toLowerCase().contains("duplicate");
         };
 
         Predicate<Throwable> throwModelDuplicateEx = throwable ->

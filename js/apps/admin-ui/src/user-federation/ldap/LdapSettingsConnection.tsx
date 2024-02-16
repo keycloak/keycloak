@@ -59,8 +59,7 @@ export const LdapSettingsConnection = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const edit = !!id;
@@ -74,7 +73,7 @@ export const LdapSettingsConnection = ({
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("user-federation:testError", error);
+      addError("testError", error);
     }
   };
 
@@ -94,9 +93,7 @@ export const LdapSettingsConnection = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
-          description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription",
-          )}
+          description={t("ldapConnectionAndAuthorizationSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -105,10 +102,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText={t(
-                "user-federation-help:consoleDisplayConnectionUrlHelp",
-              )}
-              fieldLabelId="user-federation:connectionURL"
+              helpText={t("consoleDisplayConnectionUrlHelp")}
+              fieldLabelId="connectionURL"
             />
           }
           fieldId="kc-ui-connection-url"
@@ -144,8 +139,8 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:enableStartTlsHelp")}
-              fieldLabelId="user-federation:enableStartTls"
+              helpText={t("enableStartTlsHelp")}
+              fieldLabelId="enableStartTls"
             />
           }
           fieldId="kc-enable-start-tls"
@@ -162,8 +157,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -174,8 +169,8 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:useTruststoreSpiHelp")}
-              fieldLabelId="user-federation:useTruststoreSpi"
+              helpText={t("useTruststoreSpiHelp")}
+              fieldLabelId="useTruststoreSpi"
             />
           }
           fieldId="kc-use-truststore-spi"
@@ -207,8 +202,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:connectionPoolingHelp")}
-              fieldLabelId="user-federation:connectionPooling"
+              helpText={t("connectionPoolingHelp")}
+              fieldLabelId="connectionPooling"
             />
           }
           fieldId="kc-connection-pooling"
@@ -225,8 +220,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -236,8 +231,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:connectionTimeoutHelp")}
-              fieldLabelId="user-federation:consoleTimeout"
+              helpText={t("connectionTimeoutHelp")}
+              fieldLabelId="consoleTimeout"
             />
           }
           fieldId="kc-ui-connection-timeout"
@@ -257,16 +252,13 @@ export const LdapSettingsConnection = ({
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
-            {t("common:testConnection")}
+            {t("testConnection")}
           </Button>
         </FormGroup>
         <FormGroup
           label={t("bindType")}
           labelIcon={
-            <HelpItem
-              helpText={t("user-federation-help:bindTypeHelp")}
-              fieldLabelId="user-federation:bindType"
-            />
+            <HelpItem helpText={t("bindTypeHelp")} fieldLabelId="bindType" />
           }
           fieldId="kc-bind-type"
           isRequired
@@ -290,6 +282,7 @@ export const LdapSettingsConnection = ({
                 selections={field.value}
                 variant={SelectVariant.single}
                 data-testid="ldap-bind-type"
+                aria-label={t("selectBindType")}
               >
                 <SelectOption value="simple" />
                 <SelectOption value="none" />
@@ -303,10 +296,7 @@ export const LdapSettingsConnection = ({
             <FormGroup
               label={t("bindDn")}
               labelIcon={
-                <HelpItem
-                  helpText={t("user-federation-help:bindDnHelp")}
-                  fieldLabelId="user-federation:bindDn"
-                />
+                <HelpItem helpText={t("bindDnHelp")} fieldLabelId="bindDn" />
               }
               fieldId="kc-ui-bind-dn"
               helperTextInvalid={t("validateBindDn")}
@@ -333,8 +323,8 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText={t("user-federation-help:bindCredentialsHelp")}
-                  fieldLabelId="user-federation:bindCredentials"
+                  helpText={t("bindCredentialsHelp")}
+                  fieldLabelId="bindCredentials"
                 />
               }
               fieldId="kc-ui-bind-credentials"

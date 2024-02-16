@@ -9,23 +9,25 @@ import {
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useMatch, useNavigate } from "react-router-dom";
-
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
+import { useServerInfo } from "./context/server-info/ServerInfoProvider";
+import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 
 import "./page-nav.css";
 
-type LeftNavProps = { title: string; path: string };
+type LeftNavProps = { title: string; path: string; id?: string };
 
-const LeftNav = ({ title, path }: LeftNavProps) => {
-  const { t } = useTranslation("common");
+const LeftNav = ({ title, path, id }: LeftNavProps) => {
+  const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const route = routes.find(
-    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path,
+    (route) =>
+      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === (id || path),
   );
 
   const accessAllowed =
@@ -54,8 +56,11 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
 };
 
 export const PageNav = () => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { hasSomeAccess } = useAccess();
+  const { componentTypes } = useServerInfo();
+  const pages =
+    componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
 
   const navigate = useNavigate();
 
@@ -116,6 +121,14 @@ export const PageNav = () => {
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
+              {pages?.map((p) => (
+                <LeftNav
+                  key={p.id}
+                  title={p.id}
+                  path={toPage({ providerId: p.id }).pathname!}
+                  id="/page-section"
+                />
+              ))}
             </NavGroup>
           )}
         </Nav>

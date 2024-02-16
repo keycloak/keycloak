@@ -18,46 +18,46 @@ enum AuthorizationSubTab {
 }
 
 export default class AuthorizationTab extends CommonPage {
-  private settingsSubTab = new SettingsTab();
-  private resourcesSubTab = new ResourcesTab();
-  private scopesSubTab = new ScopesTab();
-  private policiesSubTab = new PoliciesTab();
-  private permissionsSubTab = new PermissionsTab();
-  private evaluateSubTab = new EvaluateTab();
-  private exportSubTab = new ExportTab();
+  #settingsSubTab = new SettingsTab();
+  #resourcesSubTab = new ResourcesTab();
+  #scopesSubTab = new ScopesTab();
+  #policiesSubTab = new PoliciesTab();
+  #permissionsSubTab = new PermissionsTab();
+  #evaluateSubTab = new EvaluateTab();
+  #exportSubTab = new ExportTab();
 
   goToSettingsSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Settings, 1);
-    return this.settingsSubTab;
+    return this.#settingsSubTab;
   }
 
   goToResourcesSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Resources, 1);
-    return this.resourcesSubTab;
+    return this.#resourcesSubTab;
   }
 
   goToScopesSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Scopes, 1);
-    return this.scopesSubTab;
+    return this.#scopesSubTab;
   }
 
   goToPoliciesSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Policies, 1);
-    return this.policiesSubTab;
+    return this.#policiesSubTab;
   }
 
   goToPermissionsSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Permissions, 1);
-    return this.permissionsSubTab;
+    return this.#permissionsSubTab;
   }
 
   goToEvaluateSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Evaluate, 1);
-    return this.evaluateSubTab;
+    return this.#evaluateSubTab;
   }
 
   goToExportSubTab() {
     this.tabUtils().clickTab(AuthorizationSubTab.Export, 1);
-    return this.exportSubTab;
+    return this.#exportSubTab;
   }
 }

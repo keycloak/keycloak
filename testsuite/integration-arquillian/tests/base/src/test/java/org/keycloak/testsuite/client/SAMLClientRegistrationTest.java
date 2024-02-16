@@ -23,8 +23,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.events.Errors;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
@@ -35,17 +33,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -74,7 +71,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void createClient() throws ClientRegistrationException, IOException {
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"));
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
         assertClientCreation(entityDescriptor);
     }
 
@@ -92,7 +89,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         String accessToken = oauth.clientId("oidc-client").doClientCredentialsGrantAccessTokenRequest("secret").getAccessToken();
         reg.auth(Auth.token(accessToken));
 
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"));
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
         assertClientCreation(entityDescriptor);
     }
 

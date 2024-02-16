@@ -44,7 +44,7 @@ const DetailLink = (comp: ComponentRepresentation) => {
 export const ClientRegistrationList = ({
   subType,
 }: ClientRegistrationListProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { subTab } = useParams<ClientRegistrationParams>();
   const navigate = useNavigate();
 
@@ -65,11 +65,11 @@ export const ClientRegistrationList = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:clientRegisterPolicyDeleteConfirmTitle",
+    titleKey: "clientRegisterPolicyDeleteConfirmTitle",
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: selectedPolicy?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -80,7 +80,7 @@ export const ClientRegistrationList = ({
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
         setSelectedPolicy(undefined);
       } catch (error) {
-        addError("clients:clientRegisterPolicyDeleteError", error);
+        addError("clientRegisterPolicyDeleteError", error);
       }
     },
   });
@@ -103,19 +103,23 @@ export const ClientRegistrationList = ({
       )}
       <DeleteConfirm />
       <KeycloakDataTable
-        ariaLabelKey="clients:initialAccessToken"
-        searchPlaceholderKey="clients:searchInitialAccessToken"
+        ariaLabelKey="clientRegistration"
+        searchPlaceholderKey="searchClientRegistration"
+        data-testid={`clientRegistration-${subType}`}
         loader={policies}
         toolbarItem={
           <ToolbarItem>
-            <Button data-testid="createPolicy" onClick={toggleAddDialog}>
+            <Button
+              data-testid={`createPolicy-${subType}`}
+              onClick={toggleAddDialog}
+            >
               {t("createPolicy")}
             </Button>
           </ToolbarItem>
         }
         actions={[
           {
-            title: t("common:delete"),
+            title: t("delete"),
             onRowClick: (policy) => {
               setSelectedPolicy(policy);
               toggleDeleteDialog();
@@ -125,12 +129,12 @@ export const ClientRegistrationList = ({
         columns={[
           {
             name: "name",
-            displayKey: "common:name",
+            displayKey: "name",
             cellRenderer: DetailLink,
           },
           {
             name: "providerId",
-            displayKey: "clients:providerId",
+            displayKey: "providerId",
           },
         ]}
       />

@@ -20,10 +20,10 @@ package org.keycloak.protocol.oidc.endpoints;
 import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
 import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
@@ -64,12 +64,12 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.LogoutSessionCodeChecks;
 import org.keycloak.services.resources.SessionCodeChecks;
 import org.keycloak.services.util.LocaleUtil;
@@ -129,6 +129,9 @@ public class LogoutEndpoint {
         this.event = event;
         this.providerConfig = providerConfig;
         this.offlineSessionsLazyLoadingEnabled = !Config.scope("userSessions").scope("infinispan").getBoolean("preloadOfflineSessionsFromDatabase", false);
+        if (!this.offlineSessionsLazyLoadingEnabled && !Profile.isFeatureEnabled(Profile.Feature.OFFLINE_SESSION_PRELOADING)) {
+            throw new RuntimeException("The deprecated offline session preloading feature is disabled in this configuration. Read the migration guide to learn more.");
+        }
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
@@ -232,6 +235,7 @@ public class LogoutEndpoint {
         }
         if (client != null) {
             session.getContext().setClient(client);
+            event.client(client);
         }
 
         String validatedRedirectUri = null;
@@ -367,10 +371,7 @@ public class LogoutEndpoint {
             logger.debugf("Failed verification during logout. logoutSessionId=%s, clientId=%s, tabId=%s",
                     logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
 
-            if (logoutSession == null || logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()))) {
-                // Cleanup system client URL to avoid links to account management
-                session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
             event.error(Errors.SESSION_EXPIRED);
 
@@ -401,11 +402,7 @@ public class LogoutEndpoint {
         if (logoutSession == null) {
             logger.debugf("Failed verification when changing locale logout. clientId=%s, tabId=%s", clientId, tabId);
 
-            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class);
-            if (clientId == null || clientId.equals(SystemClientUtil.getSystemClient(realm).getClientId())) {
-                // Cleanup system client URL to avoid links to account management
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
+            SystemClientUtil.checkSkipLink(session, logoutSession);
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
@@ -413,7 +410,7 @@ public class LogoutEndpoint {
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
-                return loginForm.setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
+                return session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
             }
         }
 
@@ -434,7 +431,7 @@ public class LogoutEndpoint {
         String idTokenIssuedAtStr = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (userSessionIdFromIdToken != null && idTokenIssuedAtStr != null) {
             try {
-                userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionIdFromIdToken));
+                userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
                     event.event(EventType.LOGOUT);
@@ -451,8 +448,7 @@ public class LogoutEndpoint {
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session,
-                () -> AuthenticationManager.authenticateIdentityCookie(session, realm, false));
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
             return initiateBrowserLogout(userSession);
@@ -532,7 +528,7 @@ public class LogoutEndpoint {
                 userSessionModel = sessionManager.findOfflineUserSession(realm, token.getSessionState());
             } else {
                 String sessionState = token.getSessionState();
-                userSessionModel = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionState));
+                userSessionModel = session.sessions().getUserSession(realm, sessionState);
             }
 
             if (userSessionModel != null) {
@@ -632,8 +628,7 @@ public class LogoutEndpoint {
         AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
         backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
-            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm,
-                    identityProviderAlias + "." + sessionId));
+            UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, identityProviderAlias + "." + sessionId);
 
             if (logoutOfflineSessions) {
                 if (offlineSessionsLazyLoadingEnabled) {

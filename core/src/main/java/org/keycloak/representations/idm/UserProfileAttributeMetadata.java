@@ -29,12 +29,13 @@ public class UserProfileAttributeMetadata {
     private boolean readOnly;
     private Map<String, Object> annotations;
     private Map<String, Map<String, Object>> validators;
+    private String group;
 
     public UserProfileAttributeMetadata() {
 
     }
 
-    public UserProfileAttributeMetadata(String name, String displayName, boolean required, boolean readOnly, Map<String, Object> annotations,
+    public UserProfileAttributeMetadata(String name, String displayName, boolean required, boolean readOnly, String group, Map<String, Object> annotations,
             Map<String, Map<String, Object>> validators) {
         this.name = name;
         this.displayName = displayName;
@@ -42,6 +43,7 @@ public class UserProfileAttributeMetadata {
         this.readOnly = readOnly;
         this.annotations = annotations;
         this.validators = validators;
+        this.group = group;
     }
 
     public String getName() {
@@ -61,6 +63,10 @@ public class UserProfileAttributeMetadata {
 
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    public String getGroup() {
+        return group;
     }
 
     /**

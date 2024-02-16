@@ -77,22 +77,9 @@ public class QuarkusPlatform implements PlatformProvider {
         }
     }
 
-    Runnable startupHook;
-    Runnable shutdownHook;
-
     private AtomicBoolean started = new AtomicBoolean(false);
     private List<Throwable> deferredExceptions = new CopyOnWriteArrayList<>();
     private File tmpDir;
-
-    @Override
-    public void onStartup(Runnable startupHook) {
-        this.startupHook = startupHook;
-    }
-
-    @Override
-    public void onShutdown(Runnable shutdownHook) {
-        this.shutdownHook = shutdownHook;
-    }
 
     @Override
     public void exit(Throwable cause) {
@@ -102,7 +89,7 @@ public class QuarkusPlatform implements PlatformProvider {
     /**
      * Called when Quarkus platform is started
      */
-    void started() {
+    public void started() {
         this.started.set(true);
     }
 

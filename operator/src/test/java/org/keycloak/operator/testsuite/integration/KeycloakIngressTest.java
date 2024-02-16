@@ -26,9 +26,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
@@ -46,22 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {
-    private static String baseDomain;
-
-    @BeforeAll
-    public static void beforeKeycloakIngressTest() {
-        if (isOpenShift) {
-            Log.info("OpenShift detected, using real domain");
-            // see https://docs.openshift.com/container-platform/4.12/networking/ingress-operator.html#configuring-ingress
-            baseDomain = k8sclient.genericKubernetesResources("config.openshift.io/v1", "Ingress")
-                    .withName("cluster")
-                    .get()
-                    .get("spec", "domain");
-            if (baseDomain == null || baseDomain.isBlank()) {
-                throw new IllegalStateException("Couldn't fetch the base Ingress domain");
-            }
-        }
-    }
 
     @Test
     public void testIngressOnHTTP() {
@@ -71,13 +55,9 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
-        String testHostname;
-        String baseUrl;
         if (isOpenShift) {
-            testHostname = "kc-http-" + namespace + "." + baseDomain;
-            // on OpenShift, when Keycloak is configured for HTTP only, we use edge TLS termination, i.e. Route still uses TLS
-            baseUrl = "https://" + testHostname + ":443";
-            hostnameSpecBuilder.withHostname(testHostname);
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+
             // see https://github.com/keycloak/keycloak/issues/14400#issuecomment-1659900081
             kc.getSpec().setUnsupported(new UnsupportedSpecBuilder()
                     .withNewPodTemplate()
@@ -92,12 +72,20 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     .endPodTemplate()
                     .build());
         }
-        else {
-            baseUrl = "http://" + kubernetesIp + ":80";
-        }
+
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String baseUrl;
+
+        if (isOpenShift) {
+            String testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
+            // on OpenShift, when Keycloak is configured for HTTP only, we use edge TLS termination, i.e. Route still uses TLS
+            baseUrl = "https://" + testHostname + ":443";
+        } else {
+            baseUrl = "http://" + kubernetesIp + ":80";
+        }
 
         testIngressURLs(baseUrl);
     }
@@ -108,17 +96,19 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
-        String testHostname;
         if (isOpenShift) {
-            testHostname = "kc-https-" + namespace + "." + baseDomain;
-            hostnameSpecBuilder.withHostname(testHostname);
-        }
-        else {
-            testHostname = kubernetesIp;
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
         }
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String testHostname;
+        if (isOpenShift) {
+            testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
+        } else {
+            testHostname = kubernetesIp;
+        }
 
         testIngressURLs("https://" + testHostname + ":443");
     }

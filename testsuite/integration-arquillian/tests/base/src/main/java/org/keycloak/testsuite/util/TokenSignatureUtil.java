@@ -118,6 +118,10 @@ public class TokenSignatureUtil {
             case Algorithm.ES512:
                 registerKeyProvider(realm, "ecdsaEllipticCurveKey", convertAlgorithmToECDomainParamNistRep(jwaAlgorithmName), GeneratedEcdsaKeyProviderFactory.ID, adminClient, testContext);
                 break;
+            case Algorithm.Ed25519:
+            case Algorithm.Ed448:
+                registerKeyProvider(realm, "eddsaEllipticCurveKey", jwaAlgorithmName, "eddsa-generated", adminClient, testContext);
+                break;
         }
     }
 

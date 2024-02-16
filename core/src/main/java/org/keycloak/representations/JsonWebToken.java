@@ -40,6 +40,9 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class JsonWebToken implements Serializable, Token {
+    public static final String AZP = "azp";
+    public static final String SUBJECT = "sub";
+
     @JsonProperty("jti")
     protected String id;
 
@@ -53,11 +56,11 @@ public class JsonWebToken implements Serializable, Token {
     @JsonSerialize(using = StringOrArraySerializer.class)
     @JsonDeserialize(using = StringOrArrayDeserializer.class)
     protected String[] audience;
-    @JsonProperty("sub")
+    @JsonProperty(SUBJECT)
     protected String subject;
     @JsonProperty("typ")
     protected String type;
-    @JsonProperty("azp")
+    @JsonProperty(AZP)
     public String issuedFor;
     protected Map<String, Object> otherClaims = new HashMap<>();
 
@@ -184,7 +187,7 @@ public class JsonWebToken implements Serializable, Token {
         this.iat = iat;
         return this;
     }
-    
+
     /**
      * @deprecated int will overflow with values after 2038. Use {@link #iat(Long)} ()} instead.
      */

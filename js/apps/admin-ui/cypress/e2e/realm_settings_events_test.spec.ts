@@ -89,12 +89,6 @@ describe("Realm settings events tab tests", () => {
     return this;
   };
 
-  const addBundle = () => {
-    realmSettingsPage.addKeyValuePair("key_" + uuid(), "value_" + uuid());
-
-    return this;
-  };
-
   it("Enable user events", () => {
     cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as("load");
     sidebarPage.goToRealmSettings();
@@ -238,35 +232,6 @@ describe("Realm settings events tab tests", () => {
     sidebarPage.goToRealmSettings();
     keysTab.goToKeysTab();
     realmSettingsPage.checkKeyPublic();
-  });
-
-  it("add locale", () => {
-    sidebarPage.goToRealmSettings();
-
-    cy.findByTestId("rs-localization-tab").click();
-    cy.findByTestId("internationalization-disabled").click({ force: true });
-
-    cy.get(realmSettingsPage.supportedLocalesTypeahead)
-      .click()
-      .get(".pf-c-select__menu-item")
-      .contains("dansk")
-      .click();
-    cy.get("#kc-l-supported-locales").click();
-
-    cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
-      "load",
-    );
-
-    cy.findByTestId("localization-tab-save").click();
-    cy.wait("@load");
-
-    addBundle();
-
-    masthead.checkNotificationMessage(
-      "Success! The message bundle has been added.",
-    );
-    realmSettingsPage.setDefaultLocale("dansk");
-    cy.findByTestId("localization-tab-save").click();
   });
 
   it("Realm header settings", () => {

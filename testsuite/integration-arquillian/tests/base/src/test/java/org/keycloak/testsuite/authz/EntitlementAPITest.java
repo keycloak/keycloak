@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -2019,6 +2018,32 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         token = toAccessToken(authorizationResponse.getToken());
         assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
         assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+    }
+
+    @Test
+    public void testRefreshTokenFromClientOtherThanAudience() throws Exception {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        assertNotNull(accessTokenResponse.getAccessToken());
+        assertNotNull(accessTokenResponse.getRefreshToken());
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setAudience(RESOURCE_SERVER_TEST);
+        AuthorizationResponse authorizationResponse = getAuthzClient(PUBLIC_TEST_CLIENT_CONFIG).authorization(accessTokenResponse.getAccessToken()).authorize(request);
+        AccessToken token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+        assertEquals(RESOURCE_SERVER_TEST, token.getAudience()[0]);
+        assertFalse(token.getAuthorization().getPermissions().isEmpty());
+
+        accessTokenResponse = oauth.doRefreshTokenRequest(authorizationResponse.getRefreshToken(), null);
+        assertNotNull(accessTokenResponse.getAccessToken());
+        assertNotNull(accessTokenResponse.getRefreshToken());
+        token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+        assertFalse(token.getAuthorization().getPermissions().isEmpty());
     }
 
     @Test

@@ -19,7 +19,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
         <!-- Necessary for proper execution of IDELauncher -->
         <!-- Can be removed as part of the https://github.com/keycloak/keycloak/issues/22455 enhancement -->
         <dependency>

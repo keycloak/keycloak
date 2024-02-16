@@ -6,6 +6,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.keycloak.config.ConfigSupportLevel;
+import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -32,11 +33,12 @@ public class Options {
     private final Map<String, Option> options;
     private final Map<String, Map<String, List<Option>>> providerOptions = new LinkedHashMap<>();
 
+    @SuppressWarnings("unchecked")
     public Options() {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
-                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), null, m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues()))
+                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), null, m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues(), (DeprecatedMetadata) m.getDeprecatedMetadata().orElse(null)))
                 .sorted(Comparator.comparing(Option::getKey))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());
@@ -59,7 +61,8 @@ public class Options {
                                 m.getType(),
                                 m.getHelpText(),
                                 m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
-                                m.getOptions() == null ? Collections.emptyList() : m.getOptions()))
+                                m.getOptions() == null ? Collections.emptyList() : m.getOptions(),
+                                null))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
 
                 ArrayList<String> booleanValues = new ArrayList<>();
@@ -115,8 +118,9 @@ public class Options {
         private String description;
         private String defaultValue;
         private List<String> expectedValues;
+        private DeprecatedMetadata deprecated;
 
-        public Option(String key, OptionCategory category, boolean build, String type, String description, String defaultValue, Iterable<String> expectedValues) {
+        public Option(String key, OptionCategory category, boolean build, String type, String description, String defaultValue, Iterable<String> expectedValues, DeprecatedMetadata deprecatedMetadata) {
             this.key = key;
             this.category = category;
             this.build = build;
@@ -124,6 +128,7 @@ public class Options {
             this.description = description;
             this.defaultValue = defaultValue;
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
+            this.deprecated = deprecatedMetadata;
         }
 
         public boolean isBuild() {
@@ -171,6 +176,10 @@ public class Options {
 
         public List<String> getExpectedValues() {
             return expectedValues;
+        }
+
+        public DeprecatedMetadata getDeprecated() {
+            return deprecated;
         }
     }
 

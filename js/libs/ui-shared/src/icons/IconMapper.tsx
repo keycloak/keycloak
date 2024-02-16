@@ -34,6 +34,7 @@ function getIcon(icon: string) {
     case "google":
       return GoogleIcon;
     case "linkedin":
+    case "linkedin-openid-connect":
       return LinkedinIcon;
 
     case "openshift-v3":

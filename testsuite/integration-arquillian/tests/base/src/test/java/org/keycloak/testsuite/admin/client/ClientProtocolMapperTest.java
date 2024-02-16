@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.util.Collections;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -26,6 +28,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -211,6 +216,43 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         } catch (NotFoundException nfe) {
             // Expected
         }
+    }
+
+    @Test
+    public void test10EffectiveMappers() {
+        // Web origins mapper
+        ProtocolMapperRepresentation rep = makeMapper(OIDCLoginProtocol.LOGIN_PROTOCOL, "web-origins", AllowedWebOriginsProtocolMapper.PROVIDER_ID, Collections.emptyMap());
+
+        Response resp = oidcMappersRsc.createMapper(rep);
+        resp.close();
+        String createdId = ApiUtil.getCreatedId(resp);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        rep = oidcMappersRsc.getMapperById(createdId);
+
+        // Test default values available on the protocol mapper
+        Assert.assertEquals("true", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+        Assert.assertEquals("true", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+
+        // Update mapper to not contain default values
+        rep.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
+        rep.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION);
+        oidcMappersRsc.update(createdId, rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+
+        // Test configuration will contain "effective values", which are the default values of particular options
+        rep = oidcMappersRsc.getMapperById(createdId);
+        Assert.assertEquals("true", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+        Assert.assertEquals("true", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+
+        // Override "includeInIntrospection"
+        rep.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "false");
+        oidcMappersRsc.update(createdId, rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+
+        // Get mapper and check that "includeInIntrospection" is using overriden value instead of the default
+        rep = oidcMappersRsc.getMapperById(createdId);
+        Assert.assertEquals("true", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+        Assert.assertEquals("false", rep.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
     }
 
 }

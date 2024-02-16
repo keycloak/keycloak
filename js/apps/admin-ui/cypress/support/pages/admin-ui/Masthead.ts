@@ -1,26 +1,25 @@
 import CommonElements from "../CommonElements";
 export default class Masthead extends CommonElements {
-  private logoBtn = ".pf-c-page__header-brand-link img";
-  private helpBtn = "#help";
-  private closeAlertMessageBtn = ".pf-c-alert__action button";
-  private closeLastAlertMessageBtn =
-    "li:first-child .pf-c-alert__action button";
+  #logoBtn = ".pf-c-page__header-brand-link img";
+  #helpBtn = "#help";
+  #closeAlertMessageBtn = ".pf-c-alert__action button";
+  #closeLastAlertMessageBtn = "li:first-child .pf-c-alert__action button";
 
-  private alertMessage = ".pf-c-alert__title";
-  private userDrpDwn = "#user-dropdown";
-  private userDrpDwnKebab = "#user-dropdown-kebab";
-  private globalAlerts = "global-alerts";
-  private documentationLink = "#link";
-  private backToAdminConsoleLink = "#landingReferrerLink";
-  private userDrpdwnItem = ".pf-c-dropdown__menu-item";
+  #alertMessage = ".pf-c-alert__title";
+  #userDrpDwn = "#user-dropdown";
+  #userDrpDwnKebab = "#user-dropdown-kebab";
+  #globalAlerts = "global-alerts";
+  #documentationLink = "#link";
+  #backToAdminConsoleLink = "referrer-link";
+  #userDrpdwnItem = ".pf-c-dropdown__menu-item";
 
-  private getAlertsContainer() {
-    return cy.findByTestId(this.globalAlerts);
+  #getAlertsContainer() {
+    return cy.findByTestId(this.#globalAlerts);
   }
 
   checkIsAdminUI() {
-    cy.get(this.logoBtn).should("exist");
-    cy.get(this.userDrpDwn).should("exist");
+    cy.get(this.#logoBtn).should("exist");
+    cy.get(this.#userDrpDwn).should("exist");
 
     return this;
   }
@@ -34,7 +33,7 @@ export default class Masthead extends CommonElements {
   }
 
   toggleGlobalHelp() {
-    cy.get(this.helpBtn).click();
+    cy.get(this.#helpBtn).click();
     cy.get("#enableHelp").click({ force: true });
   }
 
@@ -44,22 +43,22 @@ export default class Masthead extends CommonElements {
   }
 
   toggleMobileViewHelp() {
-    cy.get(this.userDrpdwnItem).contains("Help").click();
+    cy.get(this.#userDrpdwnItem).contains("Help").click();
     return this;
   }
 
   clickRealmInfo() {
-    cy.get(this.userDrpdwnItem).contains("Realm info").click();
+    cy.get(this.#userDrpdwnItem).contains("Realm info").click();
     return this;
   }
 
   clickGlobalHelp() {
-    cy.get(this.helpBtn).click();
+    cy.get(this.#helpBtn).click();
     return this;
   }
 
   getDocumentationLink() {
-    return cy.get(this.documentationLink);
+    return cy.get(this.#documentationLink);
   }
 
   clickDocumentationLink() {
@@ -71,7 +70,7 @@ export default class Masthead extends CommonElements {
   }
 
   goToAdminConsole() {
-    cy.get(this.backToAdminConsoleLink).click({ force: true });
+    cy.findByTestId(this.#backToAdminConsoleLink).click({ force: true });
     return this;
   }
 
@@ -80,7 +79,7 @@ export default class Masthead extends CommonElements {
       .document()
       .then(({ documentElement }) => documentElement.getBoundingClientRect())
       .then(({ width }) =>
-        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn),
+        cy.get(width < 1024 ? this.#userDrpDwnKebab : this.#userDrpDwn),
       );
   }
 
@@ -96,12 +95,12 @@ export default class Masthead extends CommonElements {
   }
 
   checkNotificationMessage(message: string, closeNotification = true) {
-    this.getAlertsContainer()
-      .find(this.alertMessage)
+    this.#getAlertsContainer()
+      .find(this.#alertMessage)
       .should("contain.text", message);
 
     if (closeNotification) {
-      this.getAlertsContainer()
+      this.#getAlertsContainer()
         .find(`button[title="` + message.replaceAll('"', '\\"') + `"]`)
         .last()
         .click({ force: true });
@@ -110,12 +109,12 @@ export default class Masthead extends CommonElements {
   }
 
   closeLastAlertMessage() {
-    this.getAlertsContainer().find(this.closeLastAlertMessageBtn).click();
+    this.#getAlertsContainer().find(this.#closeLastAlertMessageBtn).click();
     return this;
   }
 
   closeAllAlertMessages() {
-    this.getAlertsContainer().find(this.closeAlertMessageBtn).click({
+    this.#getAlertsContainer().find(this.#closeAlertMessageBtn).click({
       force: true,
       multiple: true,
     });
@@ -124,15 +123,15 @@ export default class Masthead extends CommonElements {
   }
 
   assertIsDesktopView() {
-    cy.get(this.userDrpDwn).should("be.visible");
-    cy.get(this.userDrpDwnKebab).should("not.be.visible");
+    cy.get(this.#userDrpDwn).should("be.visible");
+    cy.get(this.#userDrpDwnKebab).should("not.be.visible");
 
     return this;
   }
 
   assertIsMobileView() {
-    cy.get(this.userDrpDwn).should("not.be.visible");
-    cy.get(this.userDrpDwnKebab).should("be.visible");
+    cy.get(this.#userDrpDwn).should("not.be.visible");
+    cy.get(this.#userDrpDwnKebab).should("be.visible");
 
     return this;
   }

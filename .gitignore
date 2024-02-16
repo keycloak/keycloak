@@ -6,6 +6,7 @@
 ###################
 .idea
 *.iml
+!.idea/icon.png
 
 # Eclipse #
 ###########
@@ -28,6 +29,7 @@ nbproject
 # VS Code #
 ###########
 *.code-workspace
+*.vscode
 
 # Compiled source #
 ###################
@@ -82,6 +84,7 @@ quarkus/data/*.db
 /adapters/saml/jakarta-servlet-filter/src/
 /adapters/oidc/jakarta-servlet-filter/src/
 /adapters/saml/wildfly-elytron-jakarta/src/
+/adapters/saml/core-jakarta/src/
 /adapters/saml/wildfly/wildfly-jakarta-subsystem/src/
 /.metadata/
 
@@ -91,5 +94,11 @@ quarkus/data/*.db
 # Node.js for frontend-maven-plugin #
 node
 
+# NPM
+node_modules
+
 # SDKMAM environment file
 .sdkmanrc
+
+# JENV
+.java-version

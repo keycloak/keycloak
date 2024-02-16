@@ -16,7 +16,7 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
@@ -24,7 +24,6 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.KeyWrapper;
@@ -48,7 +47,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -58,16 +56,12 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.UserSessionCrossDCManager;
-import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
@@ -145,15 +139,15 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            
+
             String contentType = headers.getHeaderString(HttpHeaders.CONTENT_TYPE);
             jakarta.ws.rs.core.MediaType mediaType = jakarta.ws.rs.core.MediaType.valueOf(contentType);
-            
+
             if (jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(mediaType)) {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authorization(accessToken);  
+                authorization(accessToken);
             }
         } catch (IllegalArgumentException e) {
             // not application/x-www-form-urlencoded, ignore
@@ -229,7 +223,7 @@ public class UserInfoEndpoint {
             throw error.invalidToken("Client disabled");
         }
 
-        UserSessionModel userSession = findValidSession(token, event, clientModel);
+        UserSessionModel userSession = UserSessionUtil.findValidSession(session, realm, token, event, clientModel, error);
 
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
@@ -269,8 +263,8 @@ public class UserInfoEndpoint {
         // Existence of authenticatedClientSession for our client already handled before
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
-        // Retrieve by latest scope parameter
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        // Retrieve by access token scope parameter
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
 
         AccessToken userInfo = new AccessToken();
 
@@ -348,73 +342,6 @@ public class UserInfoEndpoint {
             throw new RuntimeException(e);
         }
         return encryptedToken;
-    }
-
-    private UserSessionModel createTransientSessionForClient(AccessToken token, ClientModel client) {
-        // create a transient session
-        UserModel user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
-        if (user == null) {
-            throw error.invalidToken("User not found");
-        }
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
-                ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
-        // attach an auth session for the client
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
-        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
-        authSession.setAuthenticatedUser(userSession.getUser());
-        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-        AuthenticationManager.setClientScopesInSession(authSession);
-        TokenManager.attachAuthenticationSession(session, userSession, authSession);
-        return userSession;
-    }
-
-    private UserSessionModel findValidSession(AccessToken token, EventBuilder event, ClientModel client) {
-        if (token.getSessionState() == null) {
-            return createTransientSessionForClient(token, client);
-        }
-
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
-        UserSessionModel offlineUserSession = null;
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            checkTokenIssuedAt(token, userSession, event, client);
-            event.session(userSession);
-            return userSession;
-        } else {
-            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
-                checkTokenIssuedAt(token, offlineUserSession, event, client);
-                event.session(offlineUserSession);
-                return offlineUserSession;
-            }
-        }
-
-        if (userSession == null && offlineUserSession == null) {
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw error.invalidToken("User session not found or doesn't have client attached on it");
-        }
-
-        if (userSession != null) {
-            event.session(userSession);
-        } else {
-            event.session(offlineUserSession);
-        }
-
-        event.error(Errors.SESSION_EXPIRED);
-        throw error.invalidToken("Session expired");
-    }
-
-    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event, ClientModel client) {
-        if (token.isIssuedBeforeSessionStart(userSession.getStarted())) {
-            event.error(Errors.INVALID_TOKEN);
-            throw error.invalidToken("Stale token");
-        }
-
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (token.isIssuedBeforeSessionStart(clientSession.getStarted())) {
-            event.error(Errors.INVALID_TOKEN);
-            throw error.invalidToken("Stale token");
-        }
     }
 
     private void checkAccessTokenDuplicated(MultivaluedMap<String, String> formParams) {

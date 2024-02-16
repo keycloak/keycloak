@@ -38,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -94,7 +95,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     private RealmRepresentation loadFromClasspath(String fileName, Properties properties) {
         InputStream is = KcSamlIdPInitiatedSsoTest.class.getResourceAsStream(fileName);
         try {
-            String template = StreamUtil.readString(is);
+            String template = StreamUtil.readString(is, Charset.defaultCharset());
             String realmString = StringPropertyReplacer.replaceProperties(template, properties);
             return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes("UTF-8")));
         } catch (IOException ex) {

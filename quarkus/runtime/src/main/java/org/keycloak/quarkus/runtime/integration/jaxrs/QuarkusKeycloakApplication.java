@@ -17,26 +17,37 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
 import org.keycloak.config.HostnameOptions;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.quarkus.runtime.services.resources.QuarkusWelcomeResource;
-import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.services.resources.WelcomeResource;
+
+import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.StartupEvent;
+import io.smallrye.common.annotation.Blocking;
 
 @ApplicationPath("/")
+@Blocking
 public class QuarkusKeycloakApplication extends KeycloakApplication {
 
-    private static boolean filterSingletons(Object o) {
-        return !WelcomeResource.class.isInstance(o);
+    void onStartupEvent(@Observes StartupEvent event) {
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        platform.started();
+        QuarkusPlatform.exitOnError();
+        startup();
+    }
+
+    void onShutdownEvent(@Observes ShutdownEvent event) {
+        shutdown();
     }
 
     @Override
@@ -53,16 +64,18 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     public Set<Object> getSingletons() {
-        Set<Object> singletons = super.getSingletons().stream()
-                .filter(QuarkusKeycloakApplication::filterSingletons)
-                .collect(Collectors.toSet());
+        return Set.of();
+    }
 
-        singletons.add(new QuarkusWelcomeResource());
+    @Override
+    public Set<Class<?>> getClasses() {
+        Set<Class<?>> classes = new HashSet<>(super.getClasses());
 
-        if (Configuration.getOptionalBooleanValue("--" + HostnameOptions.HOSTNAME_DEBUG.getKey()).orElse(Boolean.FALSE)) {
-            singletons.add(new DebugHostnameSettingsResource());
-        }
+        classes.add(QuarkusObjectMapperResolver.class);
+        classes.add(CloseSessionHandler.class);
 
-        return singletons;
+        classes.add(DebugHostnameSettingsResource.class);
+
+        return classes;
     }
 }

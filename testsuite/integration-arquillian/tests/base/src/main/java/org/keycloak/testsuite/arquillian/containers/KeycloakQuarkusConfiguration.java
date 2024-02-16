@@ -47,6 +47,8 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     private FipsMode fipsMode = FipsMode.valueOfOption(System.getProperty("auth.server.fips.mode"));
 
+    private String defaultFeatures;
+
     @Override
     public void validate() throws ConfigurationException {
         int basePort = getBindHttpPort();
@@ -228,5 +230,13 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public void setFipsMode(FipsMode fipsMode) {
         this.fipsMode = fipsMode;
+    }
+
+    public void setDefaultFeatures(String defaultFeatures) {
+        this.defaultFeatures = defaultFeatures;
+    }
+
+    public String getDefaultFeatures() {
+        return defaultFeatures;
     }
 }

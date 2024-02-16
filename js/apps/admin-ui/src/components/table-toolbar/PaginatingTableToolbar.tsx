@@ -38,7 +38,7 @@ const KeycloakPagination = ({
   onPreviousClick,
   onPerPageSelect,
 }: KeycloakPaginationProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const page = Math.round(first / max);
   return (
     <Pagination

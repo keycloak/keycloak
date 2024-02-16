@@ -40,7 +40,7 @@ export const AdvancedSettings = ({
   protocol,
   hasConfigureAccess,
 }: AdvancedSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -68,8 +68,8 @@ export const AdvancedSettings = ({
           fieldId="assertionLifespan"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:assertionLifespan")}
-              fieldLabelId="clients:assertionLifespan"
+              helpText={t("assertionLifespanHelp")}
+              fieldLabelId="assertionLifespan"
             />
           }
         >
@@ -134,7 +134,7 @@ export const AdvancedSettings = ({
             )}
             defaultValue={
               realm?.offlineSessionMaxLifespanEnabled
-                ? realm?.offlineSessionMaxLifespan
+                ? realm.offlineSessionMaxLifespan
                 : undefined
             }
             units={["minute", "day", "hour"]}
@@ -146,8 +146,8 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:oAuthMutual")}
-                fieldLabelId="clients:oAuthMutual"
+                helpText={t("oAuthMutualHelp")}
+                fieldLabelId="oAuthMutual"
               />
             }
           >
@@ -160,8 +160,8 @@ export const AdvancedSettings = ({
               render={({ field }) => (
                 <Switch
                   id="oAuthMutual-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange("" + value)}
                   aria-label={t("oAuthMutual")}
@@ -176,8 +176,8 @@ export const AdvancedSettings = ({
               hasNoPaddingTop
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:oAuthDPoP")}
-                  fieldLabelId="clients:oAuthDPoP"
+                  helpText={t("oAuthDPoPHelp")}
+                  fieldLabelId="oAuthDPoP"
                 />
               }
             >
@@ -190,8 +190,8 @@ export const AdvancedSettings = ({
                 render={({ field }) => (
                   <Switch
                     id="oAuthDPoP-switch"
-                    label={t("common:on")}
-                    labelOff={t("common:off")}
+                    label={t("on")}
+                    labelOff={t("off")}
                     isChecked={field.value === "true"}
                     onChange={(value) => field.onChange("" + value)}
                     aria-label={t("oAuthDPoP")}
@@ -206,8 +206,8 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:keyForCodeExchange")}
-                fieldLabelId="clients:keyForCodeExchange"
+                helpText={t("keyForCodeExchangeHelp")}
+                fieldLabelId="keyForCodeExchange"
               />
             }
           >
@@ -227,11 +227,11 @@ export const AdvancedSettings = ({
                     field.onChange(value);
                     setOpen(false);
                   }}
-                  selections={[field.value || t("common:choose")]}
+                  selections={[field.value || t("choose")]}
                 >
                   {["", "S256", "plain"].map((v) => (
                     <SelectOption key={v} value={v}>
-                      {v || t("common:choose")}
+                      {v || t("choose")}
                     </SelectOption>
                   ))}
                 </Select>
@@ -243,8 +243,8 @@ export const AdvancedSettings = ({
             fieldId="pushedAuthorizationRequestRequired"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:pushedAuthorizationRequestRequired")}
-                fieldLabelId="clients:pushedAuthorizationRequestRequired"
+                helpText={t("pushedAuthorizationRequestRequiredHelp")}
+                fieldLabelId="pushedAuthorizationRequestRequired"
               />
             }
           >
@@ -257,8 +257,8 @@ export const AdvancedSettings = ({
               render={({ field }) => (
                 <Switch
                   id="pushedAuthorizationRequestRequired"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("pushedAuthorizationRequestRequired")}
@@ -271,12 +271,13 @@ export const AdvancedSettings = ({
             fieldId="acrToLoAMapping"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:acrToLoAMapping")}
-                fieldLabelId="clients:acrToLoAMapping"
+                helpText={t("acrToLoAMappingHelp")}
+                fieldLabelId="acrToLoAMapping"
               />
             }
           >
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>
@@ -285,8 +286,8 @@ export const AdvancedSettings = ({
             fieldId="defaultACRValues"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:defaultACRValues")}
-                fieldLabelId="clients:defaultACRValues"
+                helpText={t("defaultACRValuesHelp")}
+                fieldLabelId="defaultACRValues"
               />
             }
           >
@@ -305,10 +306,10 @@ export const AdvancedSettings = ({
           onClick={save}
           data-testid="OIDCAdvancedSave"
         >
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button variant="link" onClick={reset} data-testid="OIDCAdvancedRevert">
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

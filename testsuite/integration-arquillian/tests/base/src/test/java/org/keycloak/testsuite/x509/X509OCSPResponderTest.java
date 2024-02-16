@@ -39,8 +39,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.openqa.selenium.WebDriver;
+
 import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;

@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -32,7 +31,6 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -102,22 +100,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.event(EventType.LOGIN);
     }
 
-    private AuthorizationEndpoint(final KeycloakSession session, final EventBuilder event, final Action action) {
-        this(session, event);
-        this.action = action;
-    }
-
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response buildPost() {
         logger.trace("Processing @POST request");
-        return processInRetriableTransaction(httpRequest.getDecodedFormParameters());
+        return process(httpRequest.getDecodedFormParameters());
     }
 
     @GET
     public Response buildGet() {
         logger.trace("Processing @GET request");
-        return processInRetriableTransaction(session.getContext().getUri().getQueryParameters());
+        return process(session.getContext().getUri().getQueryParameters());
     }
 
     /**
@@ -125,31 +118,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      */
     @Path("device")
     public Object authorizeDevice() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
+            return null;
+        }
         return new DeviceEndpoint(session, event);
     }
 
-    /**
-     * Process the request in a retriable transaction.
-     */
-    private Response processInRetriableTransaction(final MultivaluedMap<String, String> formParameters) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-                @Override
-                public Response runInternal(KeycloakSession session) {
-                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
-                    // create another instance of the endpoint to isolate each run.
-                    AuthorizationEndpoint other = new AuthorizationEndpoint(session,
-                            new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
-                    // process the request in the created instance.
-                    return other.process(formParameters);
-                }
-            }, 10, 100);
-        } else {
-            return process(formParameters);
-        }
-    }
-
-    private Response process(MultivaluedMap<String, String> params) {
+    private Response process(final MultivaluedMap<String, String> params) {
         String clientId = AuthorizationEndpointRequestParserProcessor.getClientId(event, session, params);
 
         checkSsl();
@@ -363,7 +338,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildRegister() {
-        authManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+        authManager.expireIdentityCookie(session);
 
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
@@ -375,7 +350,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildForgotCredential() {
-        authManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+        authManager.expireIdentityCookie(session);
 
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();

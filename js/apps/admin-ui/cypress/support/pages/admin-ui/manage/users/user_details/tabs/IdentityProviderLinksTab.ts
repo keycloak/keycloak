@@ -5,42 +5,42 @@ const modalUtils = new ModalUtils();
 const masthead = new Masthead();
 
 export default class IdentityProviderLinksTab {
-  private linkedProvidersSection = ".kc-linked-idps";
-  private availableProvidersSection = ".kc-available-idps";
-  private linkAccountBtn = ".pf-c-button.pf-m-link";
-  private linkAccountModalIdentityProviderInput = "idpNameInput";
-  private linkAccountModalUserIdInput = "userIdInput";
-  private linkAccountModalUsernameInput = "usernameInput";
+  #linkedProvidersSection = ".kc-linked-idps";
+  #availableProvidersSection = ".kc-available-idps";
+  #linkAccountBtn = ".pf-c-button.pf-m-link";
+  #linkAccountModalIdentityProviderInput = "idpNameInput";
+  #linkAccountModalUserIdInput = "userIdInput";
+  #linkAccountModalUsernameInput = "usernameInput";
 
   public clickLinkAccount(idpName: string) {
-    cy.get(this.availableProvidersSection + " tr")
+    cy.get(this.#availableProvidersSection + " tr")
       .contains(idpName)
       .parent()
-      .find(this.linkAccountBtn)
+      .find(this.#linkAccountBtn)
       .click();
 
     return this;
   }
 
   public clickUnlinkAccount(idpName: string) {
-    cy.get(this.linkedProvidersSection + " tr")
+    cy.get(this.#linkedProvidersSection + " tr")
       .contains(idpName)
       .parent()
       .parent()
-      .find(this.linkAccountBtn)
+      .find(this.#linkAccountBtn)
       .click();
 
     return this;
   }
 
   public typeLinkAccountModalUserId(userId: string) {
-    cy.findByTestId(this.linkAccountModalUserIdInput).type(userId);
+    cy.findByTestId(this.#linkAccountModalUserIdInput).type(userId);
 
     return this;
   }
 
   public typeLinkAccountModalUsername(username: string) {
-    cy.findByTestId(this.linkAccountModalUsernameInput).type(username);
+    cy.findByTestId(this.#linkAccountModalUsernameInput).type(username);
 
     return this;
   }
@@ -58,7 +58,7 @@ export default class IdentityProviderLinksTab {
   }
 
   public assertNoIdentityProvidersLinkedMessageExist(exist: boolean) {
-    cy.get(this.linkedProvidersSection).should(
+    cy.get(this.#linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
       "No identity providers linked. Choose one from the list below.",
     );
@@ -67,7 +67,7 @@ export default class IdentityProviderLinksTab {
   }
 
   public assertNoAvailableIdentityProvidersMessageExist(exist: boolean) {
-    cy.get(this.availableProvidersSection).should(
+    cy.get(this.#availableProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
       "No available identity providers.",
     );
@@ -88,7 +88,7 @@ export default class IdentityProviderLinksTab {
   }
 
   public assertLinkAccountModalIdentityProviderInputEqual(idpName: string) {
-    cy.findByTestId(this.linkAccountModalIdentityProviderInput).should(
+    cy.findByTestId(this.#linkAccountModalIdentityProviderInput).should(
       "have.value",
       idpName,
     );
@@ -118,11 +118,11 @@ export default class IdentityProviderLinksTab {
 
   public assertLinkedIdentityProvidersItemsEqual(count: number) {
     if (count > 0) {
-      cy.get(this.linkedProvidersSection + " tbody")
+      cy.get(this.#linkedProvidersSection + " tbody")
         .find("tr")
         .should("have.length", count);
     } else {
-      cy.get(this.linkedProvidersSection + " tbody").should("not.exist");
+      cy.get(this.#linkedProvidersSection + " tbody").should("not.exist");
     }
 
     return this;
@@ -130,17 +130,17 @@ export default class IdentityProviderLinksTab {
 
   public assertAvailableIdentityProvidersItemsEqual(count: number) {
     if (count > 0) {
-      cy.get(this.availableProvidersSection + " tbody")
+      cy.get(this.#availableProvidersSection + " tbody")
         .find("tr")
         .should("have.length", count);
     } else {
-      cy.get(this.availableProvidersSection + " tbody").should("not.exist");
+      cy.get(this.#availableProvidersSection + " tbody").should("not.exist");
     }
     return this;
   }
 
   public assertLinkedIdentityProviderExist(idpName: string, exist: boolean) {
-    cy.get(this.linkedProvidersSection).should(
+    cy.get(this.#linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
       idpName,
     );
@@ -149,7 +149,7 @@ export default class IdentityProviderLinksTab {
   }
 
   public assertAvailableIdentityProviderExist(idpName: string, exist: boolean) {
-    cy.get(this.availableProvidersSection).should(
+    cy.get(this.#availableProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
       idpName,
     );

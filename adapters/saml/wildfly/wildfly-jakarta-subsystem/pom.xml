@@ -118,7 +118,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-web-common</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -141,6 +141,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.common</groupId>
+            <artifactId>wildfly-common</artifactId>
+            <version>${wildfly.common.wildfly.aligned.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-subsystem-test-framework</artifactId>
             <scope>test</scope>
@@ -152,7 +158,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

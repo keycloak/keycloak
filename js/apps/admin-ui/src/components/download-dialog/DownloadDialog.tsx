@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import {
   Form,
   FormGroup,
@@ -11,8 +12,8 @@ import {
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem, useHelp } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -36,7 +37,7 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();
 
@@ -55,13 +56,13 @@ export const DownloadDialog = ({
   const sanitizeSnippet = (snippet: string) =>
     snippet.replace(
       /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
-      `<PrivateKeyPem>${t("clients:privateKeyMask")}</PrivateKeyPem>`,
+      `<PrivateKeyPem>${t("privateKeyMask")}</PrivateKeyPem>`,
     );
 
   useFetch(
     async () => {
       if (selectedConfig?.mediaType === "application/zip") {
-        const response = await fetch(
+        const response = await fetchWithError(
           `${addTrailingSlash(
             adminClient.baseUrl,
           )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,
@@ -95,7 +96,7 @@ export const DownloadDialog = ({
 
   return (
     <ConfirmDialogModal
-      titleKey={t("clients:downloadAdaptorTitle")}
+      titleKey={t("downloadAdaptorTitle")}
       continueButtonLabel={t("download")}
       onConfirm={() => {
         saveAs(
@@ -112,11 +113,11 @@ export const DownloadDialog = ({
           <StackItem>
             <FormGroup
               fieldId="type"
-              label={t("clients:formatOption")}
+              label={t("formatOption")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:downloadType")}
-                  fieldLabelId="clients:formatOption"
+                  helpText={t("downloadType")}
+                  fieldLabelId="formatOption"
                 />
               }
             >
@@ -154,8 +155,8 @@ export const DownloadDialog = ({
                 label={t("details")}
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:details")}
-                    fieldLabelId="clients:details"
+                    helpText={t("detailsHelp")}
+                    fieldLabelId="details"
                   />
                 }
               >

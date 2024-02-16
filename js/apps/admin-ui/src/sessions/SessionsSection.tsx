@@ -30,7 +30,7 @@ type SessionFilterProps = {
 };
 
 const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
 
   const [open, toggle] = useToggle();
 
@@ -61,7 +61,7 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
 };
 
 export default function SessionsSection() {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -91,15 +91,15 @@ export default function SessionsSection() {
   };
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
-    titleKey: "sessions:logoutAllSessions",
-    messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "common:confirm",
+    titleKey: "logoutAllSessions",
+    messageKey: "logoutAllDescription",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.realms.logoutAll({ realm });
         refresh();
       } catch (error) {
-        addError("sessions:logoutAllSessionsError", error);
+        addError("logoutAllSessionsError", error);
       }
     },
   });
@@ -129,8 +129,8 @@ export default function SessionsSection() {
       <LogoutConfirm />
       <ViewHeader
         dropdownItems={dropdownItems}
-        titleKey="sessions:title"
-        subKey="sessions:sessionExplain"
+        titleKey="titleSessions"
+        subKey="sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">

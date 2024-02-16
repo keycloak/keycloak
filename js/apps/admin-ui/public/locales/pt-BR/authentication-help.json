@@ -1,9 +1,0 @@
-{
-  "flowType": "What kind of form is it",
-  "topLevelFlowType": "What kind of top level flow is it? Type 'client' is used for authentication of clients (applications) when generic is for users and everything else",
-  "alias": "Name of the configuration",
-  "otpType": "totp is Time-Based One Time Password. 'hotp' is a counter base one time password in which the server keeps a counter to hash against.",
-  "otpHashAlgorithm": "What hashing algorithm should be used to generate the OTP.",
-  "otpPolicyDigits": "How many digits should the OTP have?",
-  "otpPolicyPeriod": "How many seconds should an OTP token be valid? Defaults to 30 seconds."
-}

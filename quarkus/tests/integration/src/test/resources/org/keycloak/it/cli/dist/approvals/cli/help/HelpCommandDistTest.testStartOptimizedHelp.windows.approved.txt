@@ -8,17 +8,13 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
-                       and a new server image must be built prior to starting the server. This
-                       option provides an alternative to manually running the 'build' prior to
-                       starting the server. Use this configuration carefully in production as it
-                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
 --optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
 
 Database:
 
@@ -43,8 +39,10 @@ Database:
 --db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
                        option is set, this option is ignored.
 --db-url-properties <properties>
-                     Sets the properties of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
@@ -59,6 +57,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -74,11 +75,14 @@ Hostname:
                        URL this option should be enabled. Default: false.
 --hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
-HTTP/TLS:
+HTTP(S):
 
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
@@ -86,9 +90,6 @@ HTTP/TLS:
                      The file path to a private key in PEM format.
 --https-cipher-suites <ciphers>
                      The cipher suites to use. If none is given, a reasonable default is selected.
---https-client-auth <auth>
-                     Configures the server to require/request client authentication. Possible
-                       values are: none, request, required. Default: none.
 --https-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files.
@@ -102,24 +103,44 @@ HTTP/TLS:
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     The trust store which holds the certificate information of the certificates to
-                       trust.
+                     DEPRECATED. The trust store which holds the certificate information of the
+                       certificates to trust. Use the System Truststore instead, see the docs for
+                       details.
 --https-trust-store-password <password>
-                     The password of the trust store file.
+                     DEPRECATED. The password of the trust store file. Use the System Truststore
+                       instead, see the docs for details.
 --https-trust-store-type <type>
-                     The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                     DEPRECATED. The type of the trust store file. If not given, the type is
+                       automatically detected based on the file name. If 'fips-mode' is set to
+                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
+                       Truststore instead, see the docs for details.
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
 
 Proxy:
 
---proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none, edge, reencrypt, passthrough. Default: none.
+--proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
+                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
+                       Default: none. Use the following option instead: proxy-headers.
+--proxy-headers <headers>
+                     The proxy headers that should be accepted by the server. Misconfiguration
+                       might leave the server exposed to security vulnerabilities. Takes precedence
+                       over the deprecated proxy option. Possible values are: forwarded, xforwarded.
 
 Vault:
 
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 
@@ -170,6 +191,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the

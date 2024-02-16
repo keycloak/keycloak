@@ -20,18 +20,18 @@ export default class ActionToolbarPage extends CommonElements {
     return this;
   }
 
-  private getDropdownItem(itemName: string) {
+  #getDropdownItem(itemName: string) {
     return cy.get(this.dropdownMenuItem).contains(itemName);
   }
 
   checkActionItemExists(itemName: string, exists: boolean) {
     const condition = exists ? "exist" : "not.exist";
-    this.getDropdownItem(itemName).should(condition);
+    this.#getDropdownItem(itemName).should(condition);
     return this;
   }
 
   clickDropdownItem(itemName: string) {
-    this.getDropdownItem(itemName).click();
+    this.#getDropdownItem(itemName).click();
     return this;
   }
 }

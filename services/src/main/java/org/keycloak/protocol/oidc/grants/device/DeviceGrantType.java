@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.grants.device;
 
 import static org.keycloak.protocol.oidc.OIDCLoginProtocolService.tokenServiceBaseUrl;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -50,9 +49,9 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -291,7 +290,7 @@ public class DeviceGrantType {
             client.getId());
 
         if (userSession == null) {
-            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionId));
+            userSession = session.sessions().getUserSession(realm, userSessionId);
             if (userSession == null) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING,
                     "The authorization request is verified but can not lookup the user session yet",

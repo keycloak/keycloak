@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { union, filter } from "lodash-es";
 import {
+  ActionList,
+  ActionListItem,
   Brand,
+  Button,
   Card,
   CardBody,
   CardTitle,
@@ -23,16 +25,19 @@ import {
   TabTitleText,
   Text,
   TextContent,
+  TextVariants,
   Title,
 } from "@patternfly/react-core";
 
+import FeatureRepresentation, {
+  FeatureType,
+} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../util";
 import { HelpItem } from "ui-shared";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import useLocaleSort from "../utils/useLocaleSort";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -41,11 +46,18 @@ import { DashboardTab, toDashboard } from "./routes/Dashboard";
 import { ProviderInfo } from "./ProviderInfo";
 
 import "./dashboard.css";
+import { useFetch } from "../utils/useFetch";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { adminClient } from "../admin-client";
+import helpUrls from "../help-urls";
 
 const EmptyDashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
+  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
+  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
+  const realmDisplayInfo = realmInfo?.displayName || realm;
 
   return (
     <PageSection variant="light">
@@ -59,7 +71,7 @@ const EmptyDashboard = () => {
           {t("welcome")}
         </Title>
         <Title headingLevel="h1" size="4xl">
-          {realm}
+          {realmDisplayInfo}
         </Title>
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
@@ -67,48 +79,48 @@ const EmptyDashboard = () => {
   );
 };
 
+type FeatureItemProps = {
+  feature: FeatureRepresentation;
+};
+
+const FeatureItem = ({ feature }: FeatureItemProps) => {
+  const { t } = useTranslation();
+  return (
+    <ListItem className="pf-u-mb-sm">
+      {feature.name}&nbsp;
+      {feature.type === FeatureType.Experimental && (
+        <Label color="orange">{t("experimental")}</Label>
+      )}
+      {feature.type === FeatureType.Preview && (
+        <Label color="blue">{t("preview")}</Label>
+      )}
+      {feature.type === FeatureType.Default && (
+        <Label color="green">{t("supported")}</Label>
+      )}
+    </ListItem>
+  );
+};
+
 const Dashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
+  const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
 
-  const isDeprecatedFeature = (feature: string) =>
-    disabledFeatures.includes(feature);
-
-  const isExperimentalFeature = (feature: string) =>
-    serverInfo.profileInfo?.experimentalFeatures?.includes(feature);
-
-  const isPreviewFeature = (feature: string) =>
-    serverInfo.profileInfo?.previewFeatures?.includes(feature);
-
-  const isSupportedFeature = (feature: string) =>
-    !isExperimentalFeature(feature) && !isPreviewFeature(feature);
+  const sortedFeatures = useMemo(
+    () => localeSort(serverInfo.features ?? [], mapByKey("name")),
+    [serverInfo.features],
+  );
 
   const disabledFeatures = useMemo(
-    () =>
-      localeSort(
-        serverInfo.profileInfo?.disabledFeatures ?? [],
-        (item) => item,
-      ),
-    [serverInfo.profileInfo],
+    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () =>
-      localeSort(
-        filter(
-          union(
-            serverInfo.profileInfo?.experimentalFeatures,
-            serverInfo.profileInfo?.previewFeatures,
-          ),
-          (feature) => {
-            return !isDeprecatedFeature(feature);
-          },
-        ),
-        (item) => item,
-      ),
-    [serverInfo.profileInfo],
+    () => sortedFeatures.filter((f) => f.enabled) || [],
+    [serverInfo.features],
   );
 
   const useTab = (tab: DashboardTab) =>
@@ -119,6 +131,11 @@ const Dashboard = () => {
       }),
     );
 
+  useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
+
+  const realmDisplayInfo = realmInfo?.displayName || realm;
+
+  const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
   const providersTab = useTab("providers");
 
@@ -130,7 +147,7 @@ const Dashboard = () => {
     <>
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
-          <Text component="h1">{t("realmName", { name: realm })}</Text>
+          <Text component="h1">{t("realmNameTitle", { name: realm })}</Text>
         </TextContent>
       </PageSection>
       <PageSection variant="light" className="pf-u-p-0">
@@ -138,11 +155,77 @@ const Dashboard = () => {
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
             realm,
-            tab: "info",
+            tab: "welcome",
           })}
           isBox
           mountOnEnter
         >
+          <Tab
+            id="welcome"
+            data-testid="welcomeTab"
+            title={<TabTitleText>{t("welcomeTabTitle")}</TabTitleText>}
+            {...welcomeTab}
+          >
+            <PageSection variant="light">
+              <div className="pf-l-grid pf-u-ml-lg">
+                <div className="pf-l-grid__item pf-m-12-col">
+                  <Title
+                    className="pf-u-font-weight-bold"
+                    headingLevel="h2"
+                    size="3xl"
+                  >
+                    {t("welcomeTo", { realmDisplayInfo })}
+                  </Title>
+                </div>
+                <div className="pf-l-grid__item keycloak__dashboard_welcome_tab">
+                  <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
+                </div>
+                <div className="pf-l-grid__item pf-m-10-col pf-u-mt-md">
+                  <Button
+                    className="pf-u-px-lg pf-u-py-sm"
+                    component="a"
+                    href={helpUrls.documentation}
+                    target="_blank"
+                    variant="primary"
+                  >
+                    {t("viewDocumentation")}
+                  </Button>
+                </div>
+                <ActionList className="pf-u-mt-sm">
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.guides}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("viewGuides")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.community}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("joinCommunity")}
+                    </Button>
+                  </ActionListItem>
+                  <ActionListItem>
+                    <Button
+                      component="a"
+                      href={helpUrls.blog}
+                      target="_blank"
+                      variant="tertiary"
+                    >
+                      {t("readBlog")}
+                    </Button>
+                  </ActionListItem>
+                </ActionList>
+              </div>
+            </PageSection>
+          </Tab>
           <Tab
             id="info"
             data-testid="infoTab"
@@ -162,12 +245,6 @@ const Dashboard = () => {
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             {serverInfo.systemInfo?.version}
-                          </DescriptionListDescription>
-                          <DescriptionListTerm>
-                            {t("product")}
-                          </DescriptionListTerm>
-                          <DescriptionListDescription>
-                            {toUpperCase(serverInfo.profileInfo?.name!)}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
@@ -208,24 +285,17 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("enabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:enabledFeatures"
-                              helpText={t("dashboard:infoEnabledFeatures")}
+                              fieldLabelId="enabledFeatures"
+                              helpText={t("infoEnabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {enabledFeatures.map((feature) => (
-                                <ListItem key={feature} className="pf-u-mb-sm">
-                                  {feature}{" "}
-                                  {isExperimentalFeature(feature) ? (
-                                    <Label color="orange">
-                                      {t("experimental")}
-                                    </Label>
-                                  ) : null}
-                                  {isPreviewFeature(feature) ? (
-                                    <Label color="blue">{t("preview")}</Label>
-                                  ) : null}
-                                </ListItem>
+                                <FeatureItem
+                                  key={feature.name}
+                                  feature={feature}
+                                />
                               ))}
                             </List>
                           </DescriptionListDescription>
@@ -234,29 +304,17 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("disabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:disabledFeatures"
-                              helpText={t("dashboard:infoDisabledFeatures")}
+                              fieldLabelId="disabledFeatures"
+                              helpText={t("infoDisabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {disabledFeatures.map((feature) => (
-                                <ListItem key={feature} className="pf-u-mb-sm">
-                                  {feature}{" "}
-                                  {isExperimentalFeature(feature) ? (
-                                    <Label color="orange">
-                                      {t("experimental")}
-                                    </Label>
-                                  ) : null}
-                                  {isPreviewFeature(feature) ? (
-                                    <Label color="blue">{t("preview")}</Label>
-                                  ) : null}
-                                  {isSupportedFeature(feature) ? (
-                                    <Label color="green">
-                                      {t("supported")}
-                                    </Label>
-                                  ) : null}
-                                </ListItem>
+                                <FeatureItem
+                                  key={feature.name}
+                                  feature={feature}
+                                />
                               ))}
                             </List>
                           </DescriptionListDescription>

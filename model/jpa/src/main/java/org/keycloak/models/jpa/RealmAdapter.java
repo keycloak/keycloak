@@ -35,7 +35,18 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Collections;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -46,7 +57,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
+public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
@@ -578,6 +589,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         getAttributes().entrySet().stream()
                 .filter(Objects::nonNull)
                 .filter(entry -> nonNull(entry.getValue()))
+                .filter(entry -> !entry.getValue().isEmpty())
                 .filter(entry -> entry.getKey().startsWith(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "."))
                 .forEach(entry -> userActionTokens.put(entry.getKey().substring(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN.length() + 1), Integer.valueOf(entry.getValue())));
 
@@ -762,6 +774,11 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     @Override
     public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAuthenticationFlowBindingOverrides(this, overrides, firstResult, maxResults);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
@@ -961,6 +978,12 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
             acceptableAaguids = Arrays.asList(acceptableAaguidsString.split(","));
         policy.setAcceptableAaguids(acceptableAaguids);
 
+        String extraOriginsString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
+        List<String> extraOrigins = new ArrayList<>();
+        if (extraOriginsString != null && !extraOriginsString.isEmpty())
+            extraOrigins = Arrays.asList(extraOriginsString.split(","));
+        policy.setExtraOrigins(extraOrigins);
+
         return policy;
     }
 
@@ -1003,6 +1026,14 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS + attributePrefix, acceptableAaguidsString);
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS + attributePrefix);
+        }
+
+        List<String> extraOrigins = policy.getExtraOrigins();
+        if (extraOrigins != null && !extraOrigins.isEmpty()) {
+            String extraOriginsString = String.join(",", extraOrigins);
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix, extraOriginsString);
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
         }
     }
 

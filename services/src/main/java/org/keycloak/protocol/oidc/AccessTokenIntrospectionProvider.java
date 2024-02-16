@@ -24,6 +24,13 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -31,6 +38,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.MediaType;
@@ -52,14 +61,21 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         this.tokenManager = new TokenManager();
     }
 
-    public Response introspect(String token) {
+    public Response introspect(String token, EventBuilder eventBuilder) {
+        AccessToken accessToken = null;
         try {
-            AccessToken accessToken = verifyAccessToken(token);
+            accessToken = verifyAccessToken(token, eventBuilder);
+            accessToken = transformAccessToken(accessToken);
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
                 tokenMetadata = JsonSerialization.createObjectNode(accessToken);
                 tokenMetadata.put("client_id", accessToken.getIssuedFor());
+
+                String scope = accessToken.getScope();
+                if (scope != null && scope.trim().isEmpty()) {
+                    tokenMetadata.remove("scope");
+                }
 
                 if (!tokenMetadata.has("username")) {
                     if (accessToken.getPreferredUsername() != null) {
@@ -91,17 +107,74 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
+                logger.debug("Keycloak token introspection return false");
+                eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             }
 
             tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
+            String clientId = accessToken != null ? accessToken.getIssuedFor() : "unknown";
+            logger.debugf(e, "Exception during Keycloak introspection for %s client in realm %s", clientId, realm.getName());
+            eventBuilder.detail(Details.REASON, e.getMessage());
+            eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             throw new RuntimeException("Error creating token introspection response.", e);
         }
     }
 
-    protected AccessToken verifyAccessToken(String token) {
+    private AccessToken transformAccessToken(AccessToken token) {
+        if (token == null) {
+            return null;
+        }
+
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        EventBuilder event = new EventBuilder(realm, session, session.getContext().getConnection())
+                .event(EventType.INTROSPECT_TOKEN)
+                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
+        UserSessionModel userSession;
+        try {
+            userSession = UserSessionUtil.findValidSession(session, realm, token, event, client);
+        } catch (Exception e) {
+            logger.debugf("Can not get user session: %s", e.getMessage());
+            // Backwards compatibility
+            return token;
+        }
+        if (userSession.getUser() == null) {
+            logger.debugf("User not found");
+            // Backwards compatibility
+            return token;
+        }
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
+        AccessToken smallToken = getAccessTokenFromStoredData(token, userSession);
+        return tokenManager.transformIntrospectionAccessToken(session, smallToken, userSession, clientSessionCtx);
+    }
+
+    private AccessToken getAccessTokenFromStoredData(AccessToken token, UserSessionModel userSession) {
+        // Copy just "basic" claims from the initial token. The same like filled in TokenManager.initToken. The rest should be possibly added by protocol mappers (only if configured for introspection response)
+        AccessToken newToken = new AccessToken();
+        newToken.id(token.getId());
+        newToken.type(token.getType());
+        newToken.subject(token.getSubject() != null ? token.getSubject() : userSession.getUser().getId());
+        newToken.iat(token.getIat());
+        newToken.exp(token.getExp());
+        newToken.issuedFor(token.getIssuedFor());
+        newToken.issuer(token.getIssuer());
+        newToken.setNonce(token.getNonce());
+        newToken.setScope(token.getScope());
+        newToken.setAuth_time(token.getAuth_time());
+        newToken.setSessionState(token.getSessionState());
+
+        // In the case of a refresh token, aud is a basic claim.
+        newToken.audience(token.getAudience());
+
+        // The cnf is not a claim controlled by the protocol mapper.
+        newToken.setConfirmation(token.getConfirmation());
+        return newToken;
+    }
+
+    protected AccessToken verifyAccessToken(String token, EventBuilder eventBuilder) {
         AccessToken accessToken;
 
         try {
@@ -113,13 +186,14 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
             accessToken = verifier.verify().getToken();
         } catch (VerificationException e) {
-            logger.debugf("JWT check failed: %s", e.getMessage());
+            logger.debugf("Introspection access token : JWT check failed: %s", e.getMessage());
+            eventBuilder.detail(Details.REASON,"Access token JWT check failed");
             return null;
         }
 
         RealmModel realm = this.session.getContext().getRealm();
 
-        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken, false) ? accessToken : null;
+        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken, false, eventBuilder) ? accessToken : null;
     }
 
     @Override

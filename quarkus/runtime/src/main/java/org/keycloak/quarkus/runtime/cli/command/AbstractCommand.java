@@ -20,6 +20,9 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
@@ -60,4 +63,10 @@ public abstract class AbstractCommand {
     public List<OptionCategory> getOptionCategories() {
         return Arrays.asList(OptionCategory.values());
     }
+
+    protected void validateConfig() {
+        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
+    }
+
+    public abstract String getName();
 }

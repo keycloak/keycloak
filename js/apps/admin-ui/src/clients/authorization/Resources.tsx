@@ -37,6 +37,7 @@ import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type ResourcesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 type ExpandableResourceRepresentation = ResourceRepresentation & {
@@ -49,8 +50,11 @@ const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
   </>
 );
 
-export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
-  const { t } = useTranslation("clients");
+export const AuthorizationResources = ({
+  clientId,
+  isDisabled = false,
+}: ResourcesProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -97,7 +101,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deleteResource",
+    titleKey: "deleteResource",
     children: (
       <>
         {t("deleteResourceConfirm")}
@@ -120,7 +124,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         )}
       </>
     ),
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delResource({
@@ -130,7 +134,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:resourceDeletedError", error);
+        addError("resourceDeletedError", error);
       }
     },
   });
@@ -161,13 +165,14 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                 <SearchDropdown
                   search={search}
                   onSearch={setSearch}
-                  isResource
+                  type="resource"
                 />
               </ToolbarItem>
 
               <ToolbarItem>
                 <Button
                   data-testid="createResource"
+                  isDisabled={isDisabled}
                   component={(props) => (
                     <Link
                       {...props}
@@ -186,13 +191,17 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("common:name")}</Th>
+                  <Th>{t("name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th>{t("common:type")}</Th>
+                  <Th>{t("type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
-                  <Th aria-hidden="true" />
-                  <Th aria-hidden="true" />
+                  {!isDisabled && (
+                    <>
+                      <Th aria-hidden="true" />
+                      <Th aria-hidden="true" />
+                    </>
+                  )}
                 </Tr>
               </Thead>
               {resources.map((resource, rowIndex) => (
@@ -232,40 +241,44 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                     <Td>
                       <UriRenderer row={resource} />
                     </Td>
-                    <Td width={10}>
-                      <Button
-                        variant="link"
-                        component={(props) => (
-                          <Link
-                            {...props}
-                            to={toNewPermission({
-                              realm,
-                              id: clientId,
-                              permissionType: "resource",
-                              selectedId: resource._id,
-                            })}
-                          />
-                        )}
-                      >
-                        {t("createPermission")}
-                      </Button>
-                    </Td>
-                    <Td
-                      actions={{
-                        items: [
-                          {
-                            title: t("common:delete"),
-                            onClick: async () => {
-                              setSelectedResource(resource);
-                              setPermission(
-                                await fetchPermissions(resource._id!),
-                              );
-                              toggleDeleteDialog();
-                            },
-                          },
-                        ],
-                      }}
-                    />
+                    {!isDisabled && (
+                      <>
+                        <Td width={10}>
+                          <Button
+                            variant="link"
+                            component={(props) => (
+                              <Link
+                                {...props}
+                                to={toNewPermission({
+                                  realm,
+                                  id: clientId,
+                                  permissionType: "resource",
+                                  selectedId: resource._id,
+                                })}
+                              />
+                            )}
+                          >
+                            {t("createPermission")}
+                          </Button>
+                        </Td>
+                        <Td
+                          actions={{
+                            items: [
+                              {
+                                title: t("delete"),
+                                onClick: async () => {
+                                  setSelectedResource(resource);
+                                  setPermission(
+                                    await fetchPermissions(resource._id!),
+                                  );
+                                  toggleDeleteDialog();
+                                },
+                              },
+                            ],
+                          }}
+                        />
+                      </>
+                    )}
                   </Tr>
                   <Tr
                     key={`child-${resource._id}`}
@@ -293,14 +306,15 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("common:noSearchResults")}
-          instructions={t("common:noSearchResultsInstructions")}
+          message={t("noSearchResults")}
+          instructions={t("noSearchResultsInstructions")}
         />
       )}
       {noData && !searching && (
         <ListEmptyState
           message={t("emptyResources")}
           instructions={t("emptyResourcesInstructions")}
+          isDisabled={isDisabled}
           primaryActionText={t("createResource")}
           onPrimaryAction={() =>
             navigate(toCreateResource({ realm, id: clientId }))

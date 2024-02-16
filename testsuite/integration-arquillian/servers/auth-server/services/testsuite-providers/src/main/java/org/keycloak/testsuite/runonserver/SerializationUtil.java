@@ -51,6 +51,9 @@ public class SerializationUtil {
             oos.close();
 
             return "EXCEPTION:" + Base64.encodeBytes(os.toByteArray());
+        } catch (NotSerializableException e) {
+            // when the exception can't be serialized, at least log the original exception, so it can be analyzed
+            throw new RuntimeException("Unable to serialize exception due to not serializable class " + e.getMessage(), t);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

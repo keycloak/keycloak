@@ -32,7 +32,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
     @Option(name = "no-config", description = "No configuration file should be used, no authentication info is loaded or saved", hasValue = false)
     protected boolean noconfig;
 
-    @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080/auth')", hasValue = true)
+    @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080')", hasValue = true)
     protected String server;
 
     @Option(name = "realm", description = "Realm name to authenticate against", hasValue = true)

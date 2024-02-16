@@ -29,6 +29,7 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     public static final String TOKEN_TYPE = "verify-email";
 
     private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
+    private static final String JSON_FIELD_REDIRECT_URI = "reduri";
 
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
@@ -48,5 +49,19 @@ public class VerifyEmailActionToken extends DefaultActionToken {
 
     public void setCompoundOriginalAuthenticationSessionId(String originalAuthenticationSessionId) {
         this.originalAuthenticationSessionId = originalAuthenticationSessionId;
+    }
+
+    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
+    public String getRedirectUri() {
+        return (String) getOtherClaims().get(JSON_FIELD_REDIRECT_URI);
+    }
+
+    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
+    public final void setRedirectUri(String redirectUri) {
+        if (redirectUri == null) {
+            getOtherClaims().remove(JSON_FIELD_REDIRECT_URI);
+        } else {
+            setOtherClaims(JSON_FIELD_REDIRECT_URI, redirectUri);
+        }
     }
 }

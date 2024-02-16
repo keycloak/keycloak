@@ -33,8 +33,6 @@ import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionPr
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
-import org.keycloak.services.legacysessionsupport.LegacySessionSupportProviderFactory;
-import org.keycloak.services.legacysessionsupport.LegacySessionSupportSpi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.sessions.StickySessionEncoderSpi;
@@ -72,8 +70,6 @@ public class Infinispan extends KeycloakModelParameters {
       .add(PublicKeyStorageSpi.class)
       .add(CachePublicKeyProviderSpi.class)
 
-      .add(LegacySessionSupportSpi.class) // necessary as it will call session.userCredentialManager().onCache()
-
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -90,7 +86,6 @@ public class Infinispan extends KeycloakModelParameters {
       .add(TimerProviderFactory.class)
       .add(InfinispanPublicKeyStorageProviderFactory.class)
       .add(InfinispanCachePublicKeyProviderFactory.class)
-      .add(LegacySessionSupportProviderFactory.class)
       .build();
 
     @Override
@@ -107,6 +102,8 @@ public class Infinispan extends KeycloakModelParameters {
                 .spi(UserSessionSpi.NAME)
                 .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
                 .config("sessionPreloadStalledTimeoutInSeconds", "10")
+                .config("offlineSessionCacheEntryLifespanOverride", "43200")
+                .config("offlineClientSessionCacheEntryLifespanOverride", "43200")
         ;
     }
 

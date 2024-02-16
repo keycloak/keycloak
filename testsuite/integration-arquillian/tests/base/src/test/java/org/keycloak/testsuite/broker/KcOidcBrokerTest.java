@@ -100,7 +100,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         IdentityProviderMapperRepresentation attrMapper2 = new IdentityProviderMapperRepresentation();
         attrMapper2.setName("user-role-mapper");
         attrMapper2.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper2.setConfig(ImmutableMap.<String,String>builder()
+        attrMapper2.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_USER)
                 .put("role", ROLE_USER)
@@ -114,7 +114,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         IdentityProviderMapperRepresentation friendlyManagerMapper = new IdentityProviderMapperRepresentation();
         friendlyManagerMapper.setName("friendly-manager-role-mapper");
         friendlyManagerMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        friendlyManagerMapper.setConfig(ImmutableMap.<String,String>builder()
+        friendlyManagerMapper.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_FRIENDLY_MANAGER)
                 .put("role", ROLE_FRIENDLY_MANAGER)
@@ -197,7 +197,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
             logInWithBroker(bc);
 
-            waitForPage(driver, loginIsDenied? "We are sorry..." : "update account information", false);
+            waitForPage(driver, loginIsDenied ? "We are sorry..." : "update account information", false);
             if (loginIsDenied) {
                 return;
             }
@@ -243,7 +243,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
         IdentityProviderResource identityProviderResource = getIdentityProviderResource();
 
-        clients.get(brokerApp.getId()).getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true)).close();
+        clients.get(brokerApp.getId()).getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true, true)).close();
 
         IdentityProviderMapperRepresentation hardCodedSessionNoteMapper = new IdentityProviderMapperRepresentation();
 
@@ -445,7 +445,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
         ClientResource clientResource = realm.clients().get(rep.getId());
-        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true);
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);
 
         log.debug("Logging in");
@@ -469,7 +469,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
         ClientResource clientResource = realm.clients().get(rep.getId());
-        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true);
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);
 
         log.debug("Logging in");
@@ -564,7 +564,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         loginFetchingUserFromUserEndpoint(true);
         Assert.assertEquals("The ID token issued by the identity provider does not match the configured essential claim. Please contact your administrator.",
-            loginPage.getInstruction());
+                loginPage.getInstruction());
 
 
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(bc.getUserLogin());
@@ -572,8 +572,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     protected void postInitializeUser(UserRepresentation user) {
-        user.setAttributes(ImmutableMap.<String, List<String>> builder()
-                .put(USER_ATTRIBUTE_NAME, ImmutableList.<String> builder().add(USER_ATTRIBUTE_VALUE).build())
+        user.setAttributes(ImmutableMap.<String, List<String>>builder()
+                .put(USER_ATTRIBUTE_NAME, ImmutableList.<String>builder().add(USER_ATTRIBUTE_VALUE).build())
                 .build());
     }
 
@@ -585,8 +585,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(claimFilterValue, Matchers.notNullValue());
 
         if (idProvider.getConfig().getOrDefault(IdentityProviderModel.FILTERED_BY_CLAIMS, "false").equals(Boolean.toString(filteredByClaim)) &&
-            idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_NAME, "").equals(claimFilterName) &&
-            idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_VALUE, "").equals(claimFilterValue)
+                idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_NAME, "").equals(claimFilterName) &&
+                idProvider.getConfig().getOrDefault(IdentityProviderModel.CLAIM_FILTER_VALUE, "").equals(claimFilterValue)
         ) {
             return;
         }
@@ -722,7 +722,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
-            IdentityProviderSyncMode syncMode, boolean trustEmail) {
+                                   IdentityProviderSyncMode syncMode, boolean trustEmail) {
         assertThat(idProvider, Matchers.notNullValue());
         assertThat(idProviderResource, Matchers.notNullValue());
         assertThat(syncMode, Matchers.notNullValue());
@@ -755,6 +755,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private static final CustomKcOidcBrokerConfiguration BROKER_CONFIG_INSTANCE = new CustomKcOidcBrokerConfiguration();
+
     static class CustomKcOidcBrokerConfiguration extends KcOidcBrokerConfiguration {
 
         @Override
@@ -766,7 +767,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             userAttrMapper.setName(USER_ATTRIBUTE_NAME);
             userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-    
+
             Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
             userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, USER_ATTRIBUTE_NAME);
             userAttrMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_ATTRIBUTE_NAME);
@@ -781,6 +782,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             client.setProtocolMappers(mappers);
 
             return clients;
-        }    
+        }
     }
 }

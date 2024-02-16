@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.model.session;
 
 import org.hamcrest.Matchers;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
+import org.infinispan.context.Flag;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -35,7 +37,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.services.managers.UserSessionManager;
@@ -49,8 +53,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -66,7 +72,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 @RequireProvider(UserSessionPersisterProvider.class)
-@RequireProvider(value=UserSessionProvider.class, only={"infinispan"})
+@RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
@@ -409,6 +415,102 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 // each associated offline client session should be found by looking into persister
                 Assert.assertNotNull(offlineUserSession.getAuthenticatedClientSessionByClient(clientUUID));
             });
+            return null;
+        });
+    }
+
+    @Test
+    public void testLoadingOfflineClientSessionWhenCreatedBeforeSessionTime() {
+        // setup idle timeout for the realm
+        int idleTimeout = (int) TimeUnit.DAYS.toSeconds(1);
+        withRealm(realmId, (session, realmModel) -> {
+            realmModel.setClientOfflineSessionIdleTimeout(idleTimeout);
+            return null;
+        });
+
+        // create online user and client sessions
+        inComittedTransaction((Consumer<KeycloakSession>) session -> UserSessionPersisterProviderTest.createSessions(session, realmId));
+
+        // create offline user and client sessions
+        List<String> offlineUserSessionIds = withRealm(realmId, (session, realm) -> session.sessions()
+                .getUserSessionsStream(realm, realm.getClientByClientId("test-app"))
+                .map(userSession -> {
+                            UserSessionModel offlineUserSession = Optional.ofNullable(
+                                    session.sessions().getOfflineUserSession(realm, userSession.getId())
+                            ).orElseGet(() -> session.sessions().createOfflineUserSession(userSession));
+
+                            userSession.getAuthenticatedClientSessions()
+                                    .values()
+                                    .forEach(clientSession -> {
+                                        // set timestamp manually to make sure the client session is created before session time
+                                        // this simulates the cases when the offline client sessions are created before the session time
+                                        clientSession.setTimestamp(Time.currentTime() - idleTimeout * 2);
+
+                                        session.sessions().createOfflineClientSession(clientSession, offlineUserSession);
+                                    });
+
+                            return offlineUserSession.getId();
+                        }
+                ).collect(Collectors.toList())
+        );
+
+        withRealm(realmId, (session, realm) -> {
+            // remove offline client sessions from the cache
+            // this simulates the cases when offline client sessions are lost from the cache due to various reasons (a cache limit/expiration/preloading issue)
+            session.getProvider(InfinispanConnectionProvider.class)
+                    .getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).clear();
+
+            String clientUUID = realm.getClientByClientId("test-app").getId();
+
+            offlineUserSessionIds.forEach(id -> {
+                UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, id);
+
+                // each associated offline client session should be found by looking into persister
+                AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessionByClient(clientUUID);
+                Assert.assertNotNull(offlineClientSession);
+                Assert.assertEquals(offlineUserSession.getLastSessionRefresh(), offlineClientSession.getTimestamp());
+            });
+            return null;
+        });
+    }
+
+    @Test
+    public void testOfflineSessionLifespanOverride() {
+        // skip the test for CrossDC or when offline session preloading is enabled
+        Assume.assumeFalse(Objects.equals(CONFIG.scope("userSessions.infinispan").get("preloadOfflineSessionsFromDatabase"), "true") ||
+                Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
+
+        createOfflineSessions("user1", 2, new LinkedList<>(), new LinkedList<>());
+
+        reinitializeKeycloakSessionFactory();
+
+        withRealm(realmId, (session, realm) -> {
+            InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+
+            // skip remote cache load as we are only interested in embedded caches
+            AdvancedCache offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+            AdvancedCache offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+
+            Assert.assertEquals(0, offlineUSCache.size());
+            Assert.assertEquals(0, offlineCSCache.size());
+
+            // lazy load offline user sessions from DB => this should also import user and client sessions to the caches
+            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
+
+            // check sessions were imported to the caches
+            Assert.assertEquals(2, offlineUSCache.size());
+            Assert.assertEquals(4, offlineCSCache.size());
+
+            // lifespan override set to 12h (43200s)
+            setTimeOffset(44000);
+
+            // check sessions were evicted from the caches
+            Assert.assertEquals(0, offlineUSCache.size());
+            Assert.assertEquals(0, offlineCSCache.size());
+
+            // sessions should still be in the DB
+            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
+
             return null;
         });
     }

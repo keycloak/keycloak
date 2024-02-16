@@ -19,6 +19,8 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -53,4 +55,5 @@ public interface RolePermissionEvaluator {
 
     void requireView(RoleContainerModel container);
 
+    Set<String> getRolesWithPermission(String scope);
 }

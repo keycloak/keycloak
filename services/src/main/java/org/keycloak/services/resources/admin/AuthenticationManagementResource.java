@@ -19,9 +19,10 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -157,17 +158,27 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get client authenticator providers Returns a stream of client authenticator providers.")
     public Stream<Map<String, Object>> getClientAuthenticatorProviders() {
         auth.realm().requireViewClientAuthenticatorProviders();
+        Stream<ProviderFactory> factories =  session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class);
 
-        return buildProviderMetadata(session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class));
+        return factories.map(factory -> {
+            Map<String, Object> data = new HashMap<>();
+            buildProviderMetadataHelper(data, factory);
+            data.put("supportsSecret", ((ClientAuthenticatorFactory) factory).supportsSecret());
+            return data;
+        });
+    }
+
+    private void buildProviderMetadataHelper(Map<String, Object> data, ProviderFactory factory) {
+        data.put("id", factory.getId());
+        ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory) factory;
+        data.put("description", configured.getHelpText());
+        data.put("displayName", configured.getDisplayType());
     }
 
     public Stream<Map<String, Object>> buildProviderMetadata(Stream<ProviderFactory> factories) {
         return factories.map(factory -> {
             Map<String, Object> data = new HashMap<>();
-            data.put("id", factory.getId());
-            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
-            data.put("description", configured.getHelpText());
-            data.put("displayName", configured.getDisplayType());
+            buildProviderMetadataHelper(data, factory);
             return data;
         });
     }
@@ -290,6 +301,8 @@ public class AuthenticationManagementResource {
         if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
             throw ErrorResponse.exists("Failed to update flow with empty alias name");
         }
+
+        ReservedCharValidator.validate(flow.getAlias());
 
         //check if updating a correct flow
         AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(id);
@@ -838,6 +851,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Raise execution's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void raisePriority(@Parameter(description = "Execution id") @PathParam("executionId") String execution) {
         auth.realm().requireManageRealm();
 
@@ -880,6 +894,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Lower execution's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void lowerPriority(@Parameter( description = "Execution id") @PathParam("executionId") String execution) {
         auth.realm().requireManageRealm();
 
@@ -1047,6 +1062,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Register a new required actions")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void registerRequiredAction(@Parameter(description = "JSON containing 'providerId', and 'name' attributes.") Map<String, String> data) {
         auth.realm().requireManageRealm();
 
@@ -1183,6 +1199,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Raise required action's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void raiseRequiredActionPriority(@Parameter(description = "Alias of required action") @PathParam("alias") String alias) {
         auth.realm().requireManageRealm();
 
@@ -1218,6 +1235,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.AUTHENTICATION_MANAGEMENT)
     @Operation( summary = "Lower required action's priority")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void lowerRequiredActionPriority(@Parameter(description = "Alias of required action") @PathParam("alias") String alias) {
         auth.realm().requireManageRealm();
 

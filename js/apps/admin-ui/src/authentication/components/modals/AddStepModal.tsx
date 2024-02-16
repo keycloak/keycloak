@@ -56,7 +56,7 @@ type AddStepModalProps = {
 };
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();
   const [providers, setProviders] =
@@ -90,16 +90,16 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
     [],
   );
 
-  const page = useMemo(
-    () =>
-      localeSort(providers ?? [], mapByKey("displayName"))
-        .filter(
-          (p) =>
-            p.displayName?.includes(search) || p.description?.includes(search),
-        )
-        .slice(first, first + max + 1),
-    [providers, search, first, max],
-  );
+  const page = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return localeSort(providers ?? [], mapByKey("displayName"))
+      .filter(
+        ({ displayName, description }) =>
+          displayName?.toLowerCase().includes(normalizedSearch) ||
+          description?.toLowerCase().includes(normalizedSearch),
+      )
+      .slice(first, first + max + 1);
+  }, [providers, search, first, max]);
 
   return (
     <Modal
@@ -114,7 +114,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           key="add"
           onClick={() => onSelect(value)}
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -125,7 +125,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             onSelect();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -141,7 +141,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             setMax(max);
           }}
           inputGroupName="search"
-          inputGroupPlaceholder={t("common:search")}
+          inputGroupPlaceholder={t("search")}
           inputGroupOnEnter={setSearch}
         >
           <AuthenticationProviderList

@@ -17,6 +17,7 @@
 
 package org.keycloak.services;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.HttpRequest;
@@ -31,8 +32,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
@@ -47,7 +46,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     private ClientModel client;
 
-    private KeycloakSession session;
+    protected KeycloakSession session;
 
     private Map<UrlType, KeycloakUriInfo> uriInfo;
 
@@ -176,6 +175,10 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(session, getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
+        return new HttpResponseImpl(getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
     }
 }

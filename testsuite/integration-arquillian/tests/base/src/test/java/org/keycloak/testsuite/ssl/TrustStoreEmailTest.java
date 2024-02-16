@@ -20,6 +20,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -33,8 +35,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
@@ -81,10 +85,12 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         SslMailServer.stop();
     }
 
-
     @Test
     public void verifyEmailWithSslEnabled() {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setEmailVerified(false);
+        userResource.update(user);
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
         driver.navigate().to(oauth.getLoginFormUrl());
@@ -126,11 +132,11 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        assertCurrentUrlStartsWith(oauth.APP_AUTH_ROOT);
+        assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
         AccountHelper.logout(testRealm(), user.getUsername());
         driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(user.getUsername(), "password");
-        assertCurrentUrlStartsWith(oauth.APP_AUTH_ROOT);
+        assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
     }
 
     @Test
@@ -162,11 +168,9 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     public void verifyEmailWithSslWrongHostname() throws Exception {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
-        RealmRepresentation realmRep = testRealm().toRepresentation();
-        realmRep.getSmtpServer().put("host", "localhost.localdomain");
-        testRealm().update(realmRep);
-
-        try {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+                .setSmtpServer("host", "localhost.localdomain")
+                .update()) {
             SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
             driver.navigate().to(oauth.getLoginFormUrl());
             loginPage.form().login(user.getUsername(), "password");
@@ -186,9 +190,18 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
             assertEquals("You need to verify your email address to activate your account.",
                     testRealmVerifyEmailPage.feedbackMessage().getText());
+        }
+    }
+
+    @Test
+    public void verifyEmailWithSslWrongHostnameButAnyHostnamePolicy() throws Exception {
+        testingClient.testing().modifyTruststoreSpiHostnamePolicy(HostnameVerificationPolicy.ANY);
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+                .setSmtpServer("host", "localhost.localdomain")
+                .update()) {
+            verifyEmailWithSslEnabled();
         } finally {
-            realmRep.getSmtpServer().put("host", "localhost");
-            testRealm().update(realmRep);
+            testingClient.testing().reenableTruststoreSpi();
         }
     }
 }

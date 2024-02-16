@@ -32,16 +32,16 @@ type SearchDropdownProps = {
   types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  isResource?: boolean;
+  type: "resource" | "policy" | "permission";
 };
 
 export const SearchDropdown = ({
   types,
   search,
   onSearch,
-  isResource = false,
+  type,
 }: SearchDropdownProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -84,7 +84,9 @@ export const SearchDropdown = ({
           onToggle={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForPermission")}
+          {type === "resource" && t("searchClientAuthorizationResource")}
+          {type === "policy" && t("searchClientAuthorizationPolicy")}
+          {type === "permission" && t("searchClientAuthorizationPermission")}
         </DropdownToggle>
       }
       isOpen={open}
@@ -94,16 +96,16 @@ export const SearchDropdown = ({
         className="keycloak__client_authentication__searchdropdown_form"
         onSubmit={handleSubmit(submit)}
       >
-        <FormGroup label={t("common:name")} fieldId="name">
+        <FormGroup label={t("name")} fieldId="name">
           <KeycloakTextInput
             id="name"
             data-testid="searchdropdown_name"
             {...register("name")}
           />
         </FormGroup>
-        {isResource && (
+        {type === "resource" && (
           <>
-            <FormGroup label={t("common:type")} fieldId="type">
+            <FormGroup label={t("type")} fieldId="type">
               <KeycloakTextInput
                 id="type"
                 data-testid="searchdropdown_type"
@@ -126,7 +128,7 @@ export const SearchDropdown = ({
             </FormGroup>
           </>
         )}
-        {!isResource && (
+        {type !== "resource" && type !== "policy" && (
           <FormGroup label={t("resource")} fieldId="resource">
             <KeycloakTextInput
               id="resource"
@@ -135,15 +137,17 @@ export const SearchDropdown = ({
             />
           </FormGroup>
         )}
-        <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
-            id="scope"
-            data-testid="searchdropdown_scope"
-            {...register("scope")}
-          />
-        </FormGroup>
-        {!isResource && (
-          <FormGroup label={t("common:type")} fieldId="type">
+        {type !== "policy" && (
+          <FormGroup label={t("scope")} fieldId="scope">
+            <KeycloakTextInput
+              id="scope"
+              data-testid="searchdropdown_scope"
+              {...register("scope")}
+            />
+          </FormGroup>
+        )}
+        {type !== "resource" && (
+          <FormGroup label={t("type")} fieldId="type">
             <Controller
               name="type"
               defaultValue=""
@@ -159,7 +163,7 @@ export const SearchDropdown = ({
                   }}
                   selections={field.value || t("allTypes")}
                   variant={SelectVariant.single}
-                  aria-label={t("common:type")}
+                  aria-label={t("type")}
                   isOpen={typeOpen}
                 >
                   {typeOptions(field.value)}
@@ -175,14 +179,14 @@ export const SearchDropdown = ({
             data-testid="search-btn"
             isDisabled={!isDirty}
           >
-            {t("common:search")}
+            {t("search")}
           </Button>
           <Button
             variant="link"
             data-testid="revert-btn"
             onClick={() => onSearch({})}
           >
-            {t("common:clear")}
+            {t("clear")}
           </Button>
         </ActionGroup>
       </Form>

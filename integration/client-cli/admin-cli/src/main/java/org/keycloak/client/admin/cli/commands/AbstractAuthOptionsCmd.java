@@ -42,7 +42,7 @@ import static org.keycloak.client.admin.cli.util.ConfigUtil.loadConfig;
  */
 public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
 
-    @Option(shortName = 'a', name = "admin-root", description = "URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin")
+    @Option(shortName = 'a', name = "admin-root", description = "URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin")
     String adminRestRoot;
 
     @Option(name = "config", description = "Path to the config file (~/.keycloak/kcadm.config by default)")
@@ -51,7 +51,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
     @Option(name = "no-config", description = "Don't use config file - no authentication info is loaded or saved", hasValue = false)
     boolean noconfig;
 
-    @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080/auth')")
+    @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080')")
     String server;
 
     @Option(shortName = 'r', name = "target-realm", description = "Realm to target - when it's different than the realm we authenticate against")

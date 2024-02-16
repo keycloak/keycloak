@@ -42,7 +42,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, EnvironmentDependentProviderFactory {
+public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(AcrProtocolMapper.class);
 
@@ -87,7 +87,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         token.setAcr(acr);
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken) {
+    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -95,6 +95,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         Map<String, String> config = new HashMap<>();
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
         mapper.setConfig(config);
         return mapper;
     }

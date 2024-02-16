@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "ui-shared";
 import { fetchPermission, updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
+import { useEnvironment } from "../root/KeycloakContext";
 
 type PermissionRequestProps = {
   resource: Resource;
@@ -32,6 +33,7 @@ export const PermissionRequest = ({
   refresh,
 }: PermissionRequestProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [open, setOpen] = useState(false);
@@ -43,12 +45,13 @@ export const PermissionRequest = ({
     approve: boolean = false,
   ) => {
     try {
-      const permissions = await fetchPermission({}, resource._id);
+      const permissions = await fetchPermission({ context }, resource._id);
       const { scopes, username } = permissions.find(
         (p) => p.username === shareRequest.username,
       )!;
 
       await updateRequest(
+        context,
         resource._id,
         username,
         approve
@@ -70,7 +73,7 @@ export const PermissionRequest = ({
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
-        title={t("permissionRequest", [resource.name])}
+        title={t("permissionRequest", { name: resource.name })}
         variant={ModalVariant.large}
         isOpen={open}
         onClose={toggle}

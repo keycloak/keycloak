@@ -21,11 +21,14 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
@@ -35,6 +38,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
@@ -49,6 +53,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.urls.UrlType;
+
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,7 +100,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             validateClient(clientModel, clientOIDC, true);
 
-            URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+            URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
@@ -112,7 +118,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
         ClientRepresentation clientRepresentation = get(client);
 
-        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, session.getContext().getUri().getRequestUri());
+        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, getRegistrationClientUri(client));
         return Response.ok(clientOIDC).build();
     }
 
@@ -136,7 +142,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             validateClient(clientModel, clientOIDC, false);
 
-            URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+            URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
@@ -188,5 +194,12 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         List<ProtocolMapperRepresentation> mappings =
                 clientModel.getProtocolMappersStream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
         rep.setProtocolMappers(mappings);
+    }
+
+    private URI getRegistrationClientUri(ClientModel client) {
+        KeycloakContext context = session.getContext();
+        RealmModel realm = context.getRealm();
+        URI backendUri = context.getUri(UrlType.BACKEND).getBaseUri();
+        return Urls.clientRegistration(backendUri, realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, client.getClientId());
     }
 }

@@ -92,6 +92,21 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>mssqlserver</artifactId>
         </dependency>
+
+        <!-- JDBC Drivers -->
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.nls</groupId>
+            <artifactId>orai18n</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
             <artifactId>wagon-http-shared</artifactId>

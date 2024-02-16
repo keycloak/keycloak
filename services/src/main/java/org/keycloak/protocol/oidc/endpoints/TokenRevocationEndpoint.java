@@ -51,9 +51,10 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -241,7 +242,7 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeClient() {
-        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
+        UserConsentManager.revokeConsentForClient(session, realm, user, client.getId());
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
             new UserSessionManager(session).revokeOfflineToken(user, client);
         }

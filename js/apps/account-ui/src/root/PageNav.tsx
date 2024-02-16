@@ -4,11 +4,14 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  Spinner,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
   MouseEvent as ReactMouseEvent,
+  Suspense,
   useMemo,
+  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,77 +21,57 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
-import { environment } from "../environment";
+import fetchContentJson from "../content/fetchContent";
+import type { Feature } from "../environment";
 import { TFuncKey } from "../i18n";
+import { usePromise } from "../utils/usePromise";
+import { useEnvironment } from "./KeycloakContext";
 
 type RootMenuItem = {
   label: TFuncKey;
   path: string;
-  isHidden?: boolean;
+  isVisible?: keyof Feature;
+  modulePath?: string;
 };
 
 type MenuItemWithChildren = {
   label: TFuncKey;
   children: MenuItem[];
-  isHidden?: boolean;
+  isVisible?: keyof Feature;
 };
 
-type MenuItem = RootMenuItem | MenuItemWithChildren;
+export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
-const menuItems: MenuItem[] = [
-  {
-    label: "personalInfo",
-    path: "/",
-  },
-  {
-    label: "accountSecurity",
-    children: [
-      {
-        label: "signingIn",
-        path: "account-security/signing-in",
-      },
-      {
-        label: "deviceActivity",
-        path: "account-security/device-activity",
-      },
-      {
-        label: "linkedAccounts",
-        path: "account-security/linked-accounts",
-        isHidden: !environment.features.isLinkedAccountsEnabled,
-      },
-    ],
-  },
-  {
-    label: "applications",
-    path: "applications",
-  },
-  {
-    label: "groups",
-    path: "groups",
-    isHidden: !environment.features.isViewGroupsEnabled,
-  },
-  {
-    label: "resources",
-    path: "resources",
-    isHidden: !environment.features.isMyResourcesEnabled,
-  },
-];
+export const PageNav = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>();
+  const context = useEnvironment();
 
-export const PageNav = () => (
-  <PageSidebar
-    nav={
-      <Nav>
-        <NavList>
-          {menuItems
-            .filter((menuItem) => !menuItem.isHidden)
-            .map((menuItem) => (
-              <NavMenuItem key={menuItem.label as string} menuItem={menuItem} />
-            ))}
-        </NavList>
-      </Nav>
-    }
-  />
-);
+  usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
+  return (
+    <PageSidebar
+      nav={
+        <Nav>
+          <NavList>
+            <Suspense fallback={<Spinner />}>
+              {menuItems
+                ?.filter((menuItem) =>
+                  menuItem.isVisible
+                    ? context.environment.features[menuItem.isVisible]
+                    : true,
+                )
+                .map((menuItem) => (
+                  <NavMenuItem
+                    key={menuItem.label as string}
+                    menuItem={menuItem}
+                  />
+                ))}
+            </Suspense>
+          </NavList>
+        </Nav>
+      }
+    />
+  );
+};
 
 type NavMenuItemProps = {
   menuItem: MenuItem;
@@ -96,6 +79,9 @@ type NavMenuItemProps = {
 
 function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
+  const {
+    environment: { features },
+  } = useEnvironment();
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),
@@ -112,12 +98,15 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
 
   return (
     <NavExpandable
+      data-testid={menuItem.label}
       title={t(menuItem.label)}
       isActive={isActive}
       isExpanded={isActive}
     >
       {menuItem.children
-        .filter((menuItem) => !menuItem.isHidden)
+        .filter((menuItem) =>
+          menuItem.isVisible ? features[menuItem.isVisible] : true,
+        )
         .map((child) => (
           <NavMenuItem key={child.label as string} menuItem={child} />
         ))}
@@ -138,7 +127,7 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
-const NavLink = ({
+export const NavLink = ({
   to,
   isActive,
   children,

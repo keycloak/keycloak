@@ -1,5 +1,9 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import {
   Breadcrumb,
   BreadcrumbItem,
   Button,
@@ -14,9 +18,8 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -24,7 +27,7 @@ import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar"
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
-import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
+import { countGroups } from "../../groups/components/GroupTree";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -32,6 +35,7 @@ export type GroupPickerDialogProps = {
   filterGroups?: GroupRepresentation[];
   text: { title: string; ok: string };
   canBrowse?: boolean;
+  isMove?: boolean;
   onConfirm: (groups: GroupRepresentation[] | undefined) => void;
   onClose: () => void;
 };
@@ -46,6 +50,7 @@ export const GroupPickerDialog = ({
   filterGroups,
   text,
   canBrowse = true,
+  isMove = false,
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
@@ -71,29 +76,31 @@ export const GroupPickerDialog = ({
       let group;
       let groups;
       let existingUserGroups;
-      let count = 0;
-      if (!groupId) {
-        groups = await fetchAdminUI<GroupRepresentation[]>(
-          "ui-ext/groups",
-          Object.assign(
-            {
-              first: `${first}`,
-              max: `${max + 1}`,
-            },
-            isSearching ? null : { search: filter },
-          ),
-        );
-      } else if (!navigation.map(({ id }) => id).includes(groupId)) {
-        group = await adminClient.groups.findOne({ id: groupId });
-        if (!group) {
-          throw new Error(t("common:notFound"));
-        }
-        groups = group.subGroups!;
-      }
 
-      if (isSearching) {
-        count = (await adminClient.groups.count({ search: filter, top: true }))
-          .count;
+      if (!groupId) {
+        const args: GroupQuery = {
+          first: first,
+          max: max + 1,
+        };
+        if (isSearching) {
+          args.search = filter;
+        }
+        groups = await adminClient.groups.find(args);
+      } else {
+        if (!navigation.map(({ id }) => id).includes(groupId)) {
+          group = await adminClient.groups.findOne({ id: groupId });
+          if (!group) {
+            throw new Error(t("notFound"));
+          }
+        }
+        if (group?.id) {
+          const args: SubGroupQuery = {
+            first: first,
+            max: max + 1,
+            parentId: group.id,
+          };
+          groups = await adminClient.groups.listSubGroups(args);
+        }
       }
 
       if (id) {
@@ -102,9 +109,9 @@ export const GroupPickerDialog = ({
         });
       }
 
-      return { group, groups, existingUserGroups, count };
+      return { group, groups, existingUserGroups };
     },
-    async ({ group: selectedGroup, groups, existingUserGroups, count }) => {
+    async ({ group: selectedGroup, groups, existingUserGroups }) => {
       setJoinedGroups(existingUserGroups || []);
       if (selectedGroup) {
         setNavigation([...navigation, selectedGroup]);
@@ -116,7 +123,7 @@ export const GroupPickerDialog = ({
         });
         setGroups(groups);
       }
-      setCount(count);
+      setCount(isSearching ? countGroups(groups || []) : groups?.length || 0);
     },
     [groupId, filter, first, max],
   );
@@ -148,8 +155,8 @@ export const GroupPickerDialog = ({
               type === "selectMany"
                 ? selectedRows
                 : navigation.length
-                ? [currentGroup()]
-                : undefined,
+                  ? [currentGroup()]
+                  : undefined,
             );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}
@@ -159,10 +166,7 @@ export const GroupPickerDialog = ({
       ]}
     >
       <PaginatingTableToolbar
-        count={
-          (isSearching ? count : groups.length) -
-          (groupId || isSearching ? first : 0)
-        }
+        count={count - (groupId || isSearching ? first : 0)}
         first={first}
         max={max}
         onNextClick={setFirst}
@@ -171,7 +175,7 @@ export const GroupPickerDialog = ({
           setFirst(first);
           setMax(max);
         }}
-        inputGroupName={"common:search"}
+        inputGroupName={"search"}
         inputGroupOnEnter={(search) => {
           setFilter(search);
           setIsSearching(search !== "");
@@ -180,7 +184,7 @@ export const GroupPickerDialog = ({
           setNavigation([]);
           setGroupId(undefined);
         }}
-        inputGroupPlaceholder={t("users:searchForGroups")}
+        inputGroupPlaceholder={t("searchForGroups")}
       >
         <Breadcrumb>
           {navigation.length > 0 && (
@@ -221,7 +225,7 @@ export const GroupPickerDialog = ({
           {groups
             .slice(groupId ? first : 0, max + (groupId ? first : 0))
             .map((group: SelectableGroup) => (
-              <>
+              <Fragment key={group.id}>
                 <GroupRow
                   key={group.id}
                   group={group}
@@ -235,8 +239,7 @@ export const GroupPickerDialog = ({
                   canBrowse={canBrowse}
                 />
                 {isSearching &&
-                  group.subGroups?.length !== 0 &&
-                  group.subGroups!.map((g) => (
+                  group.subGroups?.map((g) => (
                     <GroupRow
                       key={g.id}
                       group={g}
@@ -250,20 +253,20 @@ export const GroupPickerDialog = ({
                       canBrowse={canBrowse}
                     />
                   ))}
-              </>
+              </Fragment>
             ))}
         </DataList>
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
             hasIcon={false}
-            message={t("groups:moveGroupEmpty")}
-            instructions={t("groups:moveGroupEmptyInstructions")}
+            message={t("moveGroupEmpty")}
+            instructions={isMove ? t("moveGroupEmptyInstructions") : undefined}
           />
         )}
         {groups.length === 0 && isSearching && (
           <ListEmptyState
-            message={t("common:noSearchResults")}
-            instructions={t("common:noSearchResultsInstructions")}
+            message={t("noSearchResults")}
+            instructions={t("noSearchResultsInstructions")}
           />
         )}
       </PaginatingTableToolbar>
@@ -296,9 +299,6 @@ const GroupRow = ({
 }: GroupRowProps) => {
   const { t } = useTranslation();
 
-  const hasSubgroups = (group: GroupRepresentation) =>
-    group.subGroups?.length !== 0;
-
   return (
     <DataListItem
       aria-labelledby={group.name}
@@ -307,18 +307,15 @@ const GroupRow = ({
       onClick={(e) => {
         if (type === "selectOne") {
           onSelect(group.id!);
-        } else if (
-          hasSubgroups(group) &&
-          (e.target as HTMLInputElement).type !== "checkbox"
-        ) {
+        } else if ((e.target as HTMLInputElement).type !== "checkbox") {
           onSelect(group.id!);
           setIsSearching(false);
         }
       }}
     >
       <DataListItemRow
-        className={`join-group-dialog-row-${
-          isRowDisabled(group) ? "m-disabled" : ""
+        className={`join-group-dialog-row${
+          isRowDisabled(group) ? "-m-disabled" : ""
         }`}
         data-testid={group.name}
       >
@@ -364,8 +361,8 @@ const GroupRow = ({
           aria-label={t("groupName")}
           isPlainButtonAction
         >
-          {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
-            <Button variant="link" aria-label={t("common:select")}>
+          {(canBrowse || type === "selectOne") && (
+            <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>
           )}

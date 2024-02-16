@@ -16,8 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
-import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
 @CSVMetadata(
     version = "KCOP_NEXT",
@@ -41,7 +41,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
     },
     links = {
         @CSVMetadata.Link(
-            url = "https://www.keycloak.org/docs/latest/server_installation/index.html#_operator",
+            url = "https://www.keycloak.org/guides#operator",
             name = "Documentation"
         ),
         @CSVMetadata.Link(
@@ -77,6 +77,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
         capabilities = "Deep Insights",
         categories = "Security",
         certified = false,
+        // language=JSON
         almExamples =
             "[\n" +
             "  {\n" +
@@ -90,8 +91,12 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
             "    },\n" +
             "    \"spec\": {\n" +
             "      \"instances\": 1,\n" +
-            "      \"hostname\": \"example.org\",\n" +
-            "      \"tlsSecret\": \"my-tls-secret\"\n" +
+            "      \"hostname\": {\n" +
+            "        \"hostname\": \"example.org\"\n" +
+            "      },\n" +
+            "      \"http\": {\n" +
+            "        \"tlsSecret\": \"my-tls-secret\"\n" +
+            "      }\n" +
             "    }\n" +
             "  },\n" +
             "  {\n" +

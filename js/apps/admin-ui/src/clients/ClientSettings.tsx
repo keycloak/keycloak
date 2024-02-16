@@ -1,17 +1,16 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
-import { Form } from "@patternfly/react-core";
-
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { ScrollForm } from "../components/scroll-form/ScrollForm";
+import { Form } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { ScrollForm } from "ui-shared";
 import { ClientDescription } from "./ClientDescription";
-import { CapabilityConfig } from "./add/CapabilityConfig";
-import { SamlConfig } from "./add/SamlConfig";
-import { SamlSignature } from "./add/SamlSignature";
+import { FormFields } from "./ClientDetails";
 import { AccessSettings } from "./add/AccessSettings";
+import { CapabilityConfig } from "./add/CapabilityConfig";
 import { LoginSettingsPanel } from "./add/LoginSettingsPanel";
 import { LogoutPanel } from "./add/LogoutPanel";
-import { FormFields } from "./ClientDetails";
+import { SamlConfig } from "./add/SamlConfig";
+import { SamlSignature } from "./add/SamlSignature";
 
 export type ClientSettingsProps = {
   client: ClientRepresentation;
@@ -20,7 +19,7 @@ export type ClientSettingsProps = {
 };
 
 export const ClientSettings = (props: ClientSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const { watch } = useFormContext<FormFields>();
   const protocol = watch("protocol");
@@ -29,6 +28,7 @@ export const ClientSettings = (props: ClientSettingsProps) => {
 
   return (
     <ScrollForm
+      label={t("jumpToSection")}
       className="pf-u-px-lg pf-u-pb-lg"
       sections={[
         {

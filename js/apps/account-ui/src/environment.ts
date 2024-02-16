@@ -1,3 +1,17 @@
+export type Feature = {
+  isRegistrationEmailAsUsername: boolean;
+  isEditUserNameAllowed: boolean;
+  isInternationalizationEnabled: boolean;
+  isLinkedAccountsEnabled: boolean;
+  isEventsEnabled: boolean;
+  isMyResourcesEnabled: boolean;
+  isTotpConfigured: boolean;
+  deleteAccountAllowed: boolean;
+  updateEmailFeatureEnabled: boolean;
+  updateEmailActionEnabled: boolean;
+  isViewGroupsEnabled: boolean;
+};
+
 export type Environment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
@@ -11,20 +25,10 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
+  /** The locale of the user */
+  locale: string;
   /** Feature flags */
-  features: {
-    isRegistrationEmailAsUsername: boolean;
-    isEditUserNameAllowed: boolean;
-    isInternationalizationEnabled: boolean;
-    isLinkedAccountsEnabled: boolean;
-    isEventsEnabled: boolean;
-    isMyResourcesEnabled: boolean;
-    isTotpConfigured: boolean;
-    deleteAccountAllowed: boolean;
-    updateEmailFeatureEnabled: boolean;
-    updateEmailActionEnabled: boolean;
-    isViewGroupsEnabled: boolean;
-  };
+  features: Feature;
 };
 
 // The default environment, used during development.
@@ -36,6 +40,7 @@ const defaultEnvironment: Environment = {
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
   logoUrl: "/",
+  locale: "en",
   features: {
     isRegistrationEmailAsUsername: false,
     isEditUserNameAllowed: true,

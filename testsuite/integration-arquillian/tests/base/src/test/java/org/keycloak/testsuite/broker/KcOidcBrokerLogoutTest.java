@@ -5,9 +5,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -88,10 +87,10 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         String idToken = response.getIdToken();
 
         // simulate browser restart by deleting an identity cookie
-        log.debugf("Deleting %s and %s cookies", AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE,
-                AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
-        driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
+        log.debugf("Deleting %s and %s cookies", CookieType.IDENTITY.getName(),
+                CookieType.IDENTITY.getSameSiteLegacyName());
+        driver.manage().deleteCookieNamed(CookieType.IDENTITY.getName());
+        driver.manage().deleteCookieNamed(CookieType.IDENTITY.getSameSiteLegacyName());
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());

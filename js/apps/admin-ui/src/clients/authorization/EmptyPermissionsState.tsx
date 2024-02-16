@@ -25,7 +25,7 @@ const EmptyButton = ({
   disabled = false,
   clientId,
 }: EmptyButtonProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
   return (
@@ -50,7 +50,7 @@ const TooltipEmptyButton = ({
   disabled,
   ...props
 }: EmptyButtonProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   return disabled ? (
     <Tooltip content={t(`no${toUpperCase(permissionType)}CreateHint`)}>
       <EmptyButton
@@ -79,7 +79,7 @@ export const EmptyPermissionsState = ({
   isResourceEnabled,
   isScopeEnabled,
 }: EmptyPermissionsStateProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   return (
     <EmptyState data-testid="empty-state" variant="large">
       <EmptyStateIcon icon={PlusCircleIcon} />

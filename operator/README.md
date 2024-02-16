@@ -30,13 +30,13 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 The Keycloak image can be configured, when starting the operator, using the Java property:
 
 ```
-operator.keycloak.image
+kc.operator.keycloak.image
 ```
 
 And the imagePullPolicy with:
 
 ```
-operator.keycloak.image-pull-policy
+kc.operator.keycloak.image-pull-policy
 ```
 
 ## Contributing
@@ -109,7 +109,7 @@ To avoid skipping tests that are depending on custom Keycloak images, you need t
 And run the tests passing an extra Java property:
 
 ```bash
--Dtest.operator.custom.image=custom-keycloak:latest
+-Dtest.kc.operator.custom.image=custom-keycloak:latest
 ```
 
 ### Testing using a pre-built operator image from a remote registry

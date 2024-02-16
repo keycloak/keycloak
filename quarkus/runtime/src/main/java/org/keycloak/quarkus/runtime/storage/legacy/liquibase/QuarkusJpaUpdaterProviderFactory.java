@@ -18,17 +18,15 @@
 package org.keycloak.quarkus.runtime.storage.legacy.liquibase;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory, EnvironmentDependentProviderFactory {
+public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory {
 
     @Override
     public JpaUpdaterProvider create(KeycloakSession session) {
@@ -56,10 +54,5 @@ public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFacto
     @Override
     public int order() {
         return 100;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

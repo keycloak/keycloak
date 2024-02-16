@@ -15,5 +15,6 @@
 # limitations under the License.
 #
 
+org.keycloak.testsuite.broker.oidc.ClientIdRequiredJWTClientAuthenticator
 org.keycloak.testsuite.forms.PassThroughClientAuthenticator
 org.keycloak.testsuite.forms.DummyClientAuthenticator

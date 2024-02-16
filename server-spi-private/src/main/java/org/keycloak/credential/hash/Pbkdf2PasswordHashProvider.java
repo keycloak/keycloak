@@ -33,6 +33,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
 /**
+ * Implementation PBKDF2 password hash algorithm.
+ *
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
 public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
@@ -136,5 +138,9 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new RuntimeException("PBKDF2 algorithm not found", e);
         }
+    }
+
+    public String getPbkdf2Algorithm() {
+        return pbkdf2Algorithm;
     }
 }

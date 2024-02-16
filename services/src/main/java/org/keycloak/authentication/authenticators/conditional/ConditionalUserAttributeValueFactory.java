@@ -33,6 +33,7 @@ public class ConditionalUserAttributeValueFactory implements ConditionalAuthenti
     public static final String CONF_ATTRIBUTE_EXPECTED_VALUE = "attribute_expected_value";
     public static final String CONF_INCLUDE_GROUP_ATTRIBUTES = "include_group_attributes";
     public static final String CONF_NOT = "not";
+    public static final String REGEX = "regex";
 
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.DISABLED
@@ -109,7 +110,13 @@ public class ConditionalUserAttributeValueFactory implements ConditionalAuthenti
         negateOutput.setLabel("Negate output");
         negateOutput.setHelpText("Apply a not to the check result");
 
-        return Arrays.asList(authNoteName, authNoteExpectedValue, includeGroupAttributes, negateOutput);
+        ProviderConfigProperty regexOutput = new ProviderConfigProperty();
+        regexOutput.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        regexOutput.setName(REGEX);
+        regexOutput.setLabel(REGEX);
+        regexOutput.setHelpText("Check equality with regex");
+
+        return Arrays.asList(authNoteName, authNoteExpectedValue, includeGroupAttributes, negateOutput, regexOutput);
     }
 
     @Override

@@ -16,6 +16,9 @@
  */
 package org.keycloak.models;
 
+import static org.keycloak.common.util.UriUtils.parseQueryParameters;
+
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.resteasy.spi.ResteasyUriBuilder;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
@@ -26,6 +29,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 public class KeycloakUriInfo implements UriInfo {
 
@@ -153,7 +157,22 @@ public class KeycloakUriInfo implements UriInfo {
 
     @Override
     public MultivaluedMap<String, String> getQueryParameters(boolean decode) {
-        return delegate.getQueryParameters(decode);
+        if (decode) {
+            return delegate.getQueryParameters(decode);
+        }
+
+        MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
+        String rawQuery = delegate.getRequestUri().getRawQuery();
+
+        if (rawQuery == null) {
+            return result;
+        }
+
+        for (Map.Entry<String, List<String>> entry : parseQueryParameters(rawQuery, false).entrySet()) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+
+        return result;
     }
 
     @Override

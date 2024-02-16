@@ -1,10 +1,7 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.models.KeycloakSession;
-
-import java.io.IOException;
 
 public class ECDSASignatureProvider implements SignatureProvider {
 
@@ -41,29 +38,5 @@ public class ECDSASignatureProvider implements SignatureProvider {
     @Override
     public boolean isAsymmetricAlgorithm() {
         return true;
-    }
-
-    public static byte[] concatenatedRSToASN1DER(final byte[] signature, int signLength) throws IOException {
-        return CryptoIntegration.getProvider().getEcdsaCryptoProvider().concatenatedRSToASN1DER(signature, signLength);
-    }
-
-    public static byte[] asn1derToConcatenatedRS(final byte[] derEncodedSignatureValue, int signLength) throws IOException {
-        return CryptoIntegration.getProvider().getEcdsaCryptoProvider().asn1derToConcatenatedRS(derEncodedSignatureValue, signLength);
-    }
-
-    public enum ECDSA {
-        ES256(64),
-        ES384(96),
-        ES512(132);
-
-        private final int signatureLength;
-
-        ECDSA(int signatureLength) {
-            this.signatureLength = signatureLength;
-        }
-
-        public int getSignatureLength() {
-            return this.signatureLength;
-        }
     }
 }

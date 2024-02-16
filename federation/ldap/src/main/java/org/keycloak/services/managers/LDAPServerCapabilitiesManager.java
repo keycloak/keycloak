@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import java.util.Collections;
 import java.util.Set;
+import javax.naming.ldap.LdapContext;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -31,6 +32,7 @@ import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,6 +44,21 @@ public class LDAPServerCapabilitiesManager {
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
     public static final String QUERY_SERVER_CAPABILITIES = "queryServerCapabilities";
+    public static final int DEFAULT_TEST_TIMEOUT = 30000; // 30s default test timeout
+
+    private static int parseConnectionTimeout(String connectionTimeout) {
+        if (StringUtil.isNotBlank(connectionTimeout)) {
+            try {
+                int timeout = Integer.parseInt(connectionTimeout);
+                if (timeout > 0) {
+                    return timeout;
+                }
+            } catch (NumberFormatException e) {
+                // just use default timeout
+            }
+        }
+        return DEFAULT_TEST_TIMEOUT;
+    }
 
     public static LDAPConfig buildLDAPConfig(TestLdapConnectionRepresentation config, RealmModel realm) {
         String bindCredential = config.getBindCredential();
@@ -54,7 +71,11 @@ public class LDAPServerCapabilitiesManager {
         configMap.putSingle(LDAPConstants.BIND_CREDENTIAL, bindCredential);
         configMap.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
         configMap.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
-        configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, config.getConnectionTimeout());
+        // set a forced timeout even when the timeout is infinite for testing
+        // this is needed to not wait forever in the test and force connection creation in ldap
+        String timeoutStr = Integer.toString(parseConnectionTimeout(config.getConnectionTimeout()));
+        configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, timeoutStr);
+        configMap.putSingle(LDAPConstants.READ_TIMEOUT, timeoutStr);
         configMap.add(LDAPConstants.START_TLS, config.getStartTls());
         return new LDAPConfig(configMap);
     }
@@ -136,7 +157,11 @@ public class LDAPServerCapabilitiesManager {
         // Create ldapContextManager in try-with-resource so that ldapContext/tlsResponse/VaultSecret is closed/removed when it
         // is not needed anymore
         try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
-            ldapContextManager.getLdapContext();
+            LdapContext ldapContext = ldapContextManager.getLdapContext();
+            if (TEST_AUTHENTICATION.equals(config.getAction()) && LDAPConstants.AUTH_TYPE_NONE.equals(config.getAuthType())) {
+                // reconnect to force an anonymous bind operation
+                ldapContext.reconnect(null);
+            }
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(config.getAction())) ? "Error when authenticating to LDAP: "
                 : "Error when connecting to LDAP: ";

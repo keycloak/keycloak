@@ -76,7 +76,9 @@ describe("Client Scopes test", () => {
 
     it("should filter item by name", () => {
       const itemName = clientScopeName + 0;
+
       listingPage
+        .checkEmptySearch()
         .searchItem(itemName, false)
         .itemsEqualTo(1)
         .itemExist(itemName, true);
@@ -269,11 +271,15 @@ describe("Client Scopes test", () => {
       sidebarPage.waitForPageLoad();
       listingPage.goToCreateItem();
 
+      createClientScopePage.save_is_disabled(true);
       createClientScopePage.fillClientScopeData("address").save();
 
       masthead.checkNotificationMessage(
         "Could not create client scope: 'Client Scope address already exists'",
       );
+
+      createClientScopePage.fillClientScopeData("");
+      createClientScopePage.save_is_disabled(true);
     });
 
     it("hides 'consent text' field when 'display consent' switch is disabled", () => {

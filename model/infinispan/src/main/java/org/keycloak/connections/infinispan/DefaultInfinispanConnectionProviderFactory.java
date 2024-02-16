@@ -38,7 +38,6 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -46,13 +45,19 @@ import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
@@ -64,19 +69,20 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, EnvironmentDependentProviderFactory {
+public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
 
-    protected static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
+    private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+    private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
-    protected Config.Scope config;
+    private Config.Scope config;
 
-    protected EmbeddedCacheManager cacheManager;
+    private volatile EmbeddedCacheManager cacheManager;
 
-    protected RemoteCacheProvider remoteCacheProvider;
+    private volatile RemoteCacheProvider remoteCacheProvider;
 
-    protected boolean containerManaged;
+    protected volatile boolean containerManaged;
 
-    private TopologyInfo topologyInfo;
+    private volatile TopologyInfo topologyInfo;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -85,25 +91,52 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, topologyInfo);
     }
 
+    /*
+        Workaround for Infinispan 12.1.7.Final and tested until 14.0.19.Final to prevent a deadlock while
+        DefaultInfinispanConnectionProviderFactory is shutting down. Kept as a permanent solution and considered
+        good enough after a lot of analysis went into this difficult to reproduce problem.
+        See https://github.com/keycloak/keycloak/issues/9871 for the discussion.
+    */
+    public static void runWithReadLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static <T> T runWithReadLockOnCacheManager(Supplier<T> task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
+        lock.lock();
+        try {
+            return task.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static void runWithWriteLockOnCacheManager(Runnable task) {
+        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.writeLock();
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public void close() {
-        /*
-            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-            that acquires a writeLock and this removal that acquires a readLock.
-            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-            Tracked in https://github.com/keycloak/keycloak/issues/9871
-        */
-        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+        runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null && !containerManaged) {
                 cacheManager.stop();
             }
             if (remoteCacheProvider != null) {
                 remoteCacheProvider.stop();
             }
-            cacheManager = null;
-        }
+        });
     }
 
     @Override
@@ -120,7 +153,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void postInit(KeycloakSessionFactory factory) {
         factory.register((ProviderEvent event) -> {
             if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, session -> { registerSystemWideListeners(session); });
+                KeycloakModelUtils.runJobInTransaction(factory, this::registerSystemWideListeners);
             }
         });
     }
@@ -142,69 +175,74 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                         
                         managedCacheManager = provider.getCacheManager(config);
                     }
-                    
+
+                    // store it in a locale variable first, so it is not visible to the outside, yet
+                    EmbeddedCacheManager localCacheManager;
                     if (managedCacheManager == null) {
                         if (!config.getBoolean("embedded", false)) {
                             throw new RuntimeException("No " + ManagedCacheManagerProvider.class.getName() + " found. If running in embedded mode set the [embedded] property to this provider.");
                         }
-                        initEmbedded();
+                        localCacheManager = initEmbedded();
                     } else {
-                        initContainerManaged(managedCacheManager);
+                        localCacheManager = initContainerManaged(managedCacheManager);
                     }
 
                     logger.infof(topologyInfo.toString());
 
-                    remoteCacheProvider = new RemoteCacheProvider(config, cacheManager);
+                    remoteCacheProvider = new RemoteCacheProvider(config, localCacheManager);
+                    // only set the cache manager attribute at the very end to avoid passing a half-initialized entry callers
+                    cacheManager = localCacheManager;
                 }
             }
         }
     }
 
-    protected void initContainerManaged(EmbeddedCacheManager cacheManager) {
-        this.cacheManager = cacheManager;
+    protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {
         containerManaged = true;
 
-        long realmRevisionsMaxEntries = this.cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME).getCacheConfiguration().memory().size();
+        long realmRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME).getCacheConfiguration().memory().size();
         realmRevisionsMaxEntries = realmRevisionsMaxEntries > 0
                 ? 2 * realmRevisionsMaxEntries
                 : InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX;
 
-        this.cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(realmRevisionsMaxEntries));
-        this.cacheManager.getCache(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, true);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(realmRevisionsMaxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, true);
 
-        long userRevisionsMaxEntries = this.cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().memory().size();
+        long userRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().memory().size();
         userRevisionsMaxEntries = userRevisionsMaxEntries > 0
                 ? 2 * userRevisionsMaxEntries
                 : InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
 
-        this.cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(userRevisionsMaxEntries));
-        this.cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
-        this.cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
-        this.cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
-        this.cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
-        this.cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(userRevisionsMaxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
-        long authzRevisionsMaxEntries = this.cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().memory().size();
+        long authzRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().memory().size();
         authzRevisionsMaxEntries = authzRevisionsMaxEntries > 0
                 ? 2 * authzRevisionsMaxEntries
                 : InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
 
-        this.cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
-        this.cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
 
-        this.topologyInfo = new TopologyInfo(this.cacheManager, config, false);
+        this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
 
         logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheManager);
+
+        return cacheManager;
     }
 
-    protected void initEmbedded() {
+    protected EmbeddedCacheManager initEmbedded() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
         boolean useKeycloakTimeService = config.getBoolean("useKeycloakTimeService", false);
 
-        this.topologyInfo = new TopologyInfo(cacheManager, config, true);
+        this.topologyInfo = new TopologyInfo(cacheManager, config, true, getId());
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
@@ -221,7 +259,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
         gcb.serialization().marshaller(new JBossUserMarshaller());
 
-        cacheManager = new DefaultCacheManager(gcb.build());
+        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
             setTimeServiceToKeycloakTime(cacheManager);
         }
@@ -374,6 +412,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
         cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
+
+        return cacheManager;
     }
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
@@ -499,10 +539,5 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             }
         });
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

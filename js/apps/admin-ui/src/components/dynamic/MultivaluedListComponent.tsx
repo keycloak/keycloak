@@ -12,6 +12,14 @@ import { HelpItem } from "ui-shared";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
+function stringToMultiline(value?: string): string[] {
+  return typeof value === "string" && value.length > 0 ? value.split("##") : [];
+}
+
+function toStringValue(formValue: string[]): string {
+  return formValue.join("##");
+}
+
 export const MultiValuedListComponent = ({
   name,
   label,
@@ -19,18 +27,19 @@ export const MultiValuedListComponent = ({
   defaultValue,
   options,
   isDisabled = false,
+  stringify,
+  required,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}
@@ -43,26 +52,31 @@ export const MultiValuedListComponent = ({
             isDisabled={isDisabled}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("common:hide"),
-              collapsedText: t("common:showRemaining"),
+              expandedText: t("hide"),
+              collapsedText: t("showRemaining"),
             }}
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel="Select"
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={field.value}
+            selections={
+              stringify ? stringToMultiline(field.value) : field.value
+            }
             onSelect={(_, v) => {
               const option = v.toString();
-              if (field.value.includes(option)) {
-                field.onChange(
-                  field.value.filter((item: string) => item !== option),
-                );
+              const values = stringify
+                ? stringToMultiline(field.value)
+                : field.value;
+              let newValue;
+              if (values.includes(option)) {
+                newValue = values.filter((item: string) => item !== option);
               } else {
-                field.onChange([...field.value, option]);
+                newValue = [...values, option];
               }
+              field.onChange(stringify ? toStringValue(newValue) : newValue);
             }}
             onClear={(event) => {
               event.stopPropagation();
-              field.onChange([]);
+              field.onChange(stringify ? "" : []);
             }}
             isOpen={open}
             aria-label={t(label!)}

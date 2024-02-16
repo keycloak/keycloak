@@ -73,6 +73,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         commands.add(getCommand());
         commands.add("-v");
         commands.add(command);
+        addFeaturesOption(commands);
         if (args != null) {
             commands.addAll(Arrays.asList(args));
         }
@@ -146,10 +147,7 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
-        final boolean isJpaStore = storeProvider.equals(StoreProvider.JPA) || storeProvider.equals(StoreProvider.LEGACY);
-
-        if (!isJpaStore) {
+        if (!StoreProvider.JPA.equals(StoreProvider.getCurrentProvider())) {
             builder.environment().put("KEYCLOAK_ADMIN", "admin");
             builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
         }
@@ -176,6 +174,13 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     private ProcessBuilder getProcessBuilder() {
         Map<String, String> env = new HashMap<>();
         String[] processCommands = getArgs(env).toArray(new String[0]);
+        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
+            for (int i = 0; i < processCommands.length; i++) {
+                if (processCommands[i].startsWith("--db-url=")) {
+                    processCommands[i]= "--db-url=\"" + processCommands[i].substring(9) + "\"";
+                }
+            }
+        }
         ProcessBuilder pb = new ProcessBuilder(processCommands);
 
         pb.environment().putAll(env);

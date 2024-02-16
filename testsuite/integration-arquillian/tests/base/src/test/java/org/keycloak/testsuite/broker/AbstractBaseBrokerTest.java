@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.IdpLinkEmailPage;
@@ -179,8 +180,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeBrokerTest() {
-        importRealm(bc.createConsumerRealm());
-        importRealm(bc.createProviderRealm());
+        RealmRepresentation consumerRealm = bc.createConsumerRealm();
+        RealmRepresentation providerRealm = bc.createProviderRealm();
+        importRealm(consumerRealm);
+        importRealm(providerRealm);
+
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
+        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
     }
 
     @After

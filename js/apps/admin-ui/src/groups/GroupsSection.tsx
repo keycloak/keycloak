@@ -23,7 +23,7 @@ import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
+import { adminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { useFetch } from "../utils/useFetch";
@@ -43,7 +43,7 @@ import { toGroups } from "./routes/Groups";
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
@@ -84,16 +84,16 @@ export default function GroupsSection() {
       if (isNavigationStateInValid) {
         const groups: GroupRepresentation[] = [];
         for (const i of ids!) {
-          const group =
-            i !== "search"
-              ? await fetchAdminUI<GroupRepresentation | undefined>(
-                  "ui-ext/groups/" + i,
-                )
-              : { name: t("searchGroups"), id: "search" };
+          let group = undefined;
+          if (i !== "search") {
+            group = await adminClient.groups.findOne({ id: i });
+          } else {
+            group = { name: t("searchGroups"), id: "search" };
+          }
           if (group) {
             groups.push(group);
           } else {
-            throw new Error(t("common:notFound"));
+            throw new Error(t("notFound"));
           }
         }
         return groups;
@@ -143,9 +143,9 @@ export default function GroupsSection() {
             }
           >
             <DrawerContentBody>
-              <Tooltip content={open ? t("common:hide") : t("common:show")}>
+              <Tooltip content={open ? t("hide") : t("show")}>
                 <Button
-                  aria-label={open ? t("common:hide") : t("common:show")}
+                  aria-label={open ? t("hide") : t("show")}
                   variant="plain"
                   icon={open ? <AngleLeftIcon /> : <TreeIcon />}
                   onClick={toggle}
@@ -153,8 +153,8 @@ export default function GroupsSection() {
               </Tooltip>
               <GroupBreadCrumbs />
               <ViewHeader
-                titleKey={!id ? "groups:groups" : currentGroup()?.name!}
-                subKey={!id ? "groups:groupsDescription" : ""}
+                titleKey={!id ? "groups" : currentGroup()?.name!}
+                subKey={!id ? "groupsDescription" : ""}
                 helpUrl={!id ? helpUrls.groupsUrl : ""}
                 divider={!id}
                 dropdownItems={
@@ -197,10 +197,7 @@ export default function GroupsSection() {
                     eventKey={0}
                     title={<TabTitleText>{t("childGroups")}</TabTitleText>}
                   >
-                    <GroupTable
-                      refresh={refresh}
-                      canViewDetails={canViewDetails}
-                    />
+                    <GroupTable refresh={refresh} />
                   </Tab>
                   {canViewMembers && (
                     <Tab
@@ -214,9 +211,7 @@ export default function GroupsSection() {
                   <Tab
                     data-testid="attributes"
                     eventKey={2}
-                    title={
-                      <TabTitleText>{t("common:attributes")}</TabTitleText>
-                    }
+                    title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   >
                     <GroupAttributes />
                   </Tab>
@@ -233,18 +228,14 @@ export default function GroupsSection() {
                     <Tab
                       eventKey={4}
                       data-testid="permissionsTab"
-                      title={
-                        <TabTitleText>{t("common:permissions")}</TabTitleText>
-                      }
+                      title={<TabTitleText>{t("permissions")}</TabTitleText>}
                     >
                       <PermissionsTab id={id} type="groups" />
                     </Tab>
                   )}
                 </Tabs>
               )}
-              {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} canViewDetails={canViewDetails} />
-              )}
+              {subGroups.length === 0 && <GroupTable refresh={refresh} />}
             </DrawerContentBody>
           </DrawerContent>
         </Drawer>

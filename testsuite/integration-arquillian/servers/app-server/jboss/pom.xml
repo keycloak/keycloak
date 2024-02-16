@@ -34,10 +34,14 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
+        <app.server.jboss.unpacked.folder.path>${containers.home}</app.server.jboss.unpacked.folder.path>
+        <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
+
         <oidc-adapter.version>${project.version}</oidc-adapter.version>
         <saml-adapter.version>${project.version}</saml-adapter.version>
         <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
         <skip.adapter.offline.installation>true</skip.adapter.offline.installation>
+        <skip.oidc.adapter.installation>false</skip.oidc.adapter.installation>
         <skip.java17.enablement>true</skip.java17.enablement>
         <!-- Workaround for WFCORE-5335 issue -->
         <cli.executable>bash</cli.executable>
@@ -127,7 +131,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-wildfly-and-oidc-adapter</id>
+                                <id>unpack-jboss-distribution</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -139,8 +143,20 @@
                                             <artifactId>${app.server.jboss.artifactId}</artifactId>
                                             <version>${app.server.jboss.version}</version>
                                             <type>zip</type>
-                                            <outputDirectory>${containers.home}</outputDirectory>
+                                            <outputDirectory>${app.server.jboss.unpacked.folder.path}</outputDirectory>
                                         </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>unpack-oidc-adapter</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.oidc.adapter.installation}</skip>
+                                    <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
@@ -794,7 +810,7 @@
             </build>
         </profile>
 
-        <!-- Latest EAP (currently 7.2.X) -->
+        <!-- Latest EAP (currently 7.4.X) -->
         <profile>
             <id>app-server-eap</id>
             <activation>
@@ -805,6 +821,20 @@
             </activation>
             <modules>
                 <module>eap</module>
+            </modules>
+        </profile>
+
+        <!-- EAP8 (not available to community yet) -->
+        <profile>
+            <id>app-server-eap8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>eap8</value>
+                </property>
+            </activation>
+            <modules>
+                <module>galleon</module>
             </modules>
         </profile>
 

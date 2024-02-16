@@ -18,7 +18,7 @@ export const AccessTokenDialog = ({
   token,
   toggleDialog,
 }: AccessTokenDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   return (
     <Modal
       title={t("initialAccessTokenDetails")}

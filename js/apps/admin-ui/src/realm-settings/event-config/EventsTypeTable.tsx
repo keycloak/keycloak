@@ -26,7 +26,7 @@ export function EventsTypeTable({
   onSelect,
   onDelete,
 }: EventsTypeTableProps) {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const data = eventTypes.map((type) => ({
     id: type,
@@ -36,7 +36,7 @@ export function EventsTypeTable({
   return (
     <KeycloakDataTable
       ariaLabelKey={ariaLabelKey}
-      searchPlaceholderKey="realm-settings:searchEventType"
+      searchPlaceholderKey="searchEventType"
       loader={data}
       onSelect={onSelect ? onSelect : undefined}
       canSelectAll={!!onSelect}
@@ -54,7 +54,7 @@ export function EventsTypeTable({
           ? []
           : [
               {
-                title: t("common:remove"),
+                title: t("remove"),
                 onRowClick: onDelete,
               } as Action<EventType>,
             ]
@@ -62,7 +62,7 @@ export function EventsTypeTable({
       columns={[
         {
           name: "name",
-          displayKey: "realm-settings:eventType",
+          displayKey: "eventType",
         },
         {
           name: "description",

@@ -1,4 +1,4 @@
-import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   ButtonVariant,
@@ -21,7 +21,7 @@ import { useUserProfile } from "./UserProfileContext";
 
 export const AttributesGroupTab = () => {
   const { config, save } = useUserProfile();
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
@@ -35,14 +35,14 @@ export const AttributesGroupTab = () => {
   }
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteDialogTitle",
+    titleKey: "deleteDialogTitle",
     children: (
-      <Trans i18nKey="realm-settings:deleteDialogDescription">
+      <Trans i18nKey="deleteDialogDescription">
         {" "}
         <strong>{{ group: groupToDelete?.name }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm() {
       const groups = (config?.groups ?? []).filter(
@@ -52,8 +52,8 @@ export const AttributesGroupTab = () => {
       save(
         { ...config, groups },
         {
-          successMessageKey: "realm-settings:deleteSuccess",
-          errorMessageKey: "realm-settings:deleteAttributeGroupError",
+          successMessageKey: "deleteSuccess",
+          errorMessageKey: "deleteAttributeGroupError",
         },
       );
     },
@@ -70,12 +70,16 @@ export const AttributesGroupTab = () => {
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="realm-settings:tableTitle"
+        ariaLabelKey="tableTitle"
         toolbarItem={
           <ToolbarItem>
             <Button
               component={(props) => (
-                <Link {...props} to={toNewAttributesGroup({ realm })} />
+                <Link
+                  data-testid="create-attributes-groups-action"
+                  {...props}
+                  to={toNewAttributesGroup({ realm })}
+                />
               )}
             >
               {t("createGroupText")}
@@ -85,7 +89,7 @@ export const AttributesGroupTab = () => {
         columns={[
           {
             name: "name",
-            displayKey: "realm-settings:columnName",
+            displayKey: "columnName",
             cellRenderer: (group) => (
               <Link to={toEditAttributesGroup({ realm, name: group.name! })}>
                 {group.name}
@@ -94,16 +98,16 @@ export const AttributesGroupTab = () => {
           },
           {
             name: "displayHeader",
-            displayKey: "realm-settings:columnDisplayName",
+            displayKey: "columnDisplayName",
           },
           {
             name: "displayDescription",
-            displayKey: "realm-settings:columnDisplayDescription",
+            displayKey: "columnDisplayDescription",
           },
         ]}
         actions={[
           {
-            title: t("common:delete"),
+            title: t("delete"),
             onRowClick: deleteAttributeGroup,
           } as Action<UserProfileGroup>,
         ]}

@@ -13,7 +13,7 @@ import { PasswordPolicy } from "./PasswordPolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
 
 export const Policies = () => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const [subTab, setSubTab] = useState(1);
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -22,7 +22,7 @@ export const Policies = () => {
     async () => {
       const realm = await adminClient.realms.findOne({ realm: realmName });
       if (!realm) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       return realm;
     },

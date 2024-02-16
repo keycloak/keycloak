@@ -40,6 +40,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -94,7 +96,7 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectRequiredAction(EventType event) {
-        return expectLogin().event(event).removeDetail(Details.CONSENT).session(Matchers.isEmptyOrNullString());
+        return expectLogin().event(event).removeDetail(Details.CONSENT).session(is(emptyOrNullString()));
     }
 
     public ExpectedEvent expectLogin() {
@@ -175,7 +177,7 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectLogout(String sessionId) {
-        return expect(EventType.LOGOUT).client((String) null)
+        return expect(EventType.LOGOUT)
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .session(sessionId);
     }
@@ -361,7 +363,7 @@ public class AssertEvents implements TestRule {
         }
 
         public EventRepresentation assertEvent(EventRepresentation actual) {
-            if (expected.getError() != null && ! expected.getType().toString().endsWith("_ERROR")) {
+            if (expected.getError() != null && ! expected.getType().endsWith("_ERROR")) {
                 expected.setType(expected.getType() + "_ERROR");
             }
             assertThat("type", actual.getType(), is(expected.getType()));

@@ -16,24 +16,42 @@
  */
 package org.keycloak.crypto.elytron;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CRLReason;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorResult;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXParameters;
+import java.security.cert.PKIXRevocationChecker;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.TrustManagerFactory;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.OCSPProvider;
 import org.wildfly.security.asn1.ASN1;
@@ -61,31 +79,46 @@ public class ElytronOCSPProvider extends OCSPProvider {
      * @throws CertPathValidatorException
      */
     @Override
-    protected OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    protected OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert,
+            X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date)
+            throws CertPathValidatorException {
         if (responderURIs == null || responderURIs.size() == 0)
             throw new IllegalArgumentException("Need at least one responder");
 
-            try {
+        try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(null,"pass".toCharArray());
-            trustStore.setCertificateEntry("trust", cert);
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    
-            
-                X509RevocationTrustManager trustMgr = X509RevocationTrustManager.builder()
-                .setOcspResponderCert(responderCert)
-                .setTrustStore(trustStore)
-                .setTrustManagerFactory(trustManagerFactory)
-                .build()
-                ;
-            
-                X509Certificate[] certs = { cert };
-                trustMgr.checkClientTrusted(certs, cert.getType());
-        } catch (NoSuchAlgorithmException | CertificateException | IOException | KeyStoreException e) {
+            trustStore.load(null, "pass".toCharArray());
+            trustStore.setCertificateEntry("trust", issuerCertificate);
+
+            CertPathBuilder cpb = CertPathBuilder.getInstance("PKIX");
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+            PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
+            X509CertSelector certSelector = new X509CertSelector();
+
+            X509Certificate[] certs = { cert };
+            certSelector.setCertificate(cert);
+            certSelector.setCertificateValid(date);
+
+            CertPath cp = cf.generateCertPath(Arrays.asList(certs));
+
+            PKIXParameters params = new PKIXBuilderParameters(trustStore, certSelector);
+
+            rc.setOcspResponder(responderURIs.get(0));
+            rc.setOcspResponderCert(responderCert);
+            rc.setOptions(EnumSet.noneOf(PKIXRevocationChecker.Option.class));
+            params.setRevocationEnabled(false);
+            params.addCertPathChecker(rc);
+
+            PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult) cpv.validate(cp, params);
+            logger.debug("Certificate validated by CA: " + result.getTrustAnchor().getCAName());
+
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | CertificateException | IOException
+                | KeyStoreException e) {
             logger.warn("OSCP Response check failed.", e);
             return unknownStatus();
         }
-        
+
         return new OCSPRevocationStatus() {
 
             @Override
@@ -102,7 +135,7 @@ public class ElytronOCSPProvider extends OCSPProvider {
             public CRLReason getRevocationReason() {
                 return null;
             }
-            
+
         };
     }
 
@@ -155,6 +188,7 @@ public class ElytronOCSPProvider extends OCSPProvider {
             }
         }
         
+        logger.warn("OCSP Responder URIs" + Arrays.toString(responderURIs.toArray()));
         return responderURIs;
     }
 }

@@ -153,6 +153,7 @@ public class SAMLDecryptionKeysLocator implements XMLEncryptionUtil.DecryptionKe
         // Map keys to PrivateKey
         return keysStream
                 .map(KeyWrapper::getPrivateKey)
+                .filter(Objects::nonNull)
                 .map(Key::getEncoded)
                 .map(encoded -> {
                     try {

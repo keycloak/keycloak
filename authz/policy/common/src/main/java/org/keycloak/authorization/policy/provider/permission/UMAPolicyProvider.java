@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.policy.provider.permission;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.permission.ResourcePermission;
@@ -26,8 +27,11 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
  */
 public class UMAPolicyProvider extends AbstractPermissionProvider {
 
+    private static final Logger logger = Logger.getLogger(UMAPolicyProvider.class);
+
     @Override
     public void evaluate(Evaluation evaluation) {
+        logger.debugv("UMA policy {} evaluating using parent class", evaluation.getPolicy().getName());
         ResourcePermission permission = evaluation.getPermission();
         Resource resource = permission.getResource();
 
@@ -36,6 +40,7 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
 
             // no need to evaluate UMA permissions to resource owner resources
             if (resource.getOwner().equals(identity.getId())) {
+                logger.debugv("UMA resource is owned by the current user, bypassing evaluation");
                 evaluation.grant();
                 return;
             }

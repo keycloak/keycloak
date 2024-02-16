@@ -17,14 +17,10 @@
 
 package org.keycloak.truststore;
 
-import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -92,29 +88,6 @@ public class JSSETruststoreConfigurator {
             }
         }
         return tm;
-    }
-
-    public HostnameVerifier getHostnameVerifier() {
-        if (provider == null) {
-            return null;
-        }
-
-        HostnameVerificationPolicy policy = provider.getPolicy();
-        switch (policy) {
-            case ANY:
-                return new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String s, SSLSession sslSession) {
-                        return true;
-                    }
-                };
-            case WILDCARD:
-                return new BrowserCompatHostnameVerifier();
-            case STRICT:
-                return new StrictHostnameVerifier();
-            default:
-                throw new IllegalStateException("Unknown policy: " + policy.name());
-        }
     }
 
     public TruststoreProvider getProvider() {

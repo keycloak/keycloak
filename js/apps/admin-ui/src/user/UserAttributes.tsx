@@ -1,42 +1,46 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { PageSection, PageSectionVariants } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { UseFormReturn, useFormContext } from "react-hook-form";
 
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
-import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
-import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
+import { UserFormFields, toUserFormFields } from "./form-state";
+import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 
 type UserAttributesProps = {
   user: UserRepresentation;
-  save: (user: UserRepresentation) => void;
+  save: (user: UserFormFields) => void;
+  upConfig?: UserProfileConfig;
 };
 
-export const UserAttributes = ({ user, save }: UserAttributesProps) => {
-  const form = useForm<AttributeForm>({ mode: "onChange" });
-  const { config } = useUserProfile();
-
-  const convertAttributes = () => {
-    return arrayToKeyValue<UserRepresentation>(user.attributes!);
-  };
-
-  useEffect(() => {
-    form.setValue("attributes", convertAttributes());
-  }, [user, config]);
+export const UserAttributes = ({
+  user,
+  save,
+  upConfig,
+}: UserAttributesProps) => {
+  const form = useFormContext<UserFormFields>();
 
   return (
     <PageSection variant={PageSectionVariants.light}>
       <AttributesForm
-        form={form}
+        form={form as UseFormReturn<AttributeForm>}
         save={save}
         fineGrainedAccess={user.access?.manage}
         reset={() =>
           form.reset({
-            attributes: convertAttributes(),
+            ...form.getValues(),
+            attributes: toUserFormFields(user).attributes,
           })
+        }
+        name="unmanagedAttributes"
+        isDisabled={
+          UnmanagedAttributePolicy.AdminView ==
+          upConfig?.unmanagedAttributePolicy
         }
       />
     </PageSection>

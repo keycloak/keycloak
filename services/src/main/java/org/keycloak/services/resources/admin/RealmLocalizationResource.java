@@ -21,11 +21,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
@@ -48,6 +50,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
@@ -90,6 +93,7 @@ public class RealmLocalizationResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation( summary = "Import localization from uploaded JSON file")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale) {
         this.auth.realm().requireManageRealm();
 
@@ -112,6 +116,7 @@ public class RealmLocalizationResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
+    @APIResponse(responseCode = "204", description = "No Content")
     public void createOrUpdateRealmLocalizationTexts(@PathParam("locale") String locale,
             Map<String, String> localizationTexts) {
         this.auth.realm().requireManageRealm();
@@ -157,7 +162,9 @@ public class RealmLocalizationResource {
     @Operation()
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
             @Deprecated @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
-        auth.requireAnyAdminRole();
+        if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
+            throw new ForbiddenException();
+        }
 
         // this fallback is no longer needed since the fix for #15845, don't forget to remove it from the API
         if (useFallback != null && useFallback) {

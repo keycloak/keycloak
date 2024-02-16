@@ -5,8 +5,12 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - quarkus-next
   pull_request:
   workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -25,7 +29,7 @@ jobs:
     outputs:
       documentation: ${{ steps.conditional.outputs.documentation }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -38,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: setup-java
         name: Setup Java
@@ -48,18 +52,11 @@ jobs:
         name: Maven cache
         uses: ./.github/actions/maven-cache
 
-      - id: build-documentation
-        name: Build Keycloak
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
         shell: bash
         run: |
-          MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -DskipTests -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e $MVN_HTTP_CONFIG -Pdocumentation
-
-      - id: test-documentation
-        name: Verify Keycloak documentation
-        shell: bash
-        run: |
-          ./mvnw test -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e -Pdocumentation 
+          ./mvnw install -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -e -Pdocumentation
 
       - id: upload-keycloak-documentation
         name: Upload Keycloak documentation
@@ -75,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: setup-java
         name: Setup Java
@@ -85,27 +82,21 @@ jobs:
         name: Maven cache
         uses: ./.github/actions/maven-cache
 
-      - id: build-documentation
-        name: Build Keycloak
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
         shell: bash
         run: |
-          MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -DskipTests -am -pl docs/documentation/tests -nsu -B -e -Pdocumentation $MVN_HTTP_CONFIG 
-
-      - id: test-documentation
-        name: Verify Keycloak documentation
-        shell: bash
-        run: |
-          ./mvnw test -Dtest=ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e -Pdocumentation
+          ./mvnw install -Dtest=ExternalLinksTest -am -pl docs/documentation/tests -e -Pdocumentation 
 
   check:
     name: Status Check - Keycloak Documentation
     if: always()
     needs:
+      - conditional
       - build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

@@ -1,8 +1,28 @@
 == Migration Changes
 
+=== Migrating to 24.0.0
+
+include::changes-24_0_0.adoc[leveloffset=3]
+
+=== Migrating to 23.0.5
+
+include::changes-23_0_5.adoc[leveloffset=3]
+
+=== Migrating to 23.0.4
+
+include::changes-23_0_4.adoc[leveloffset=3]
+
+=== Migrating to 23.0.2
+
+include::changes-23_0_2.adoc[leveloffset=3]
+
 === Migrating to 23.0.0
 
 include::changes-23_0_0.adoc[leveloffset=3]
+
+=== Migrating to 22.0.4
+
+include::changes-22_0_4.adoc[leveloffset=3]
 
 === Migrating to 22.0.2
 
@@ -128,7 +148,7 @@ use:
 * Any other custom functionality, where some of the user attributes are used as the metadata for storing authentication/authorization/identity context rather
 than simple user profile information.
 
-See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
+See the details in the link:{adminguide_link}#read_only_user_attributes[Threat model mitigation chapter].
 
 ==== Valid Request URIs
 
@@ -890,7 +910,7 @@ Same goes with mongo and Infinispan under modules keycloak-model-mongo and keycl
 
 ==== For adapters, session id changed after login
 
-To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/WildFly, Jetty 9), the Keycloak OIDC and SAML adapters will change the session id after login.
+To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/WildFly), the Keycloak OIDC and SAML adapters will change the session id after login.
 You can turn off this behavior check adapter config switches.
 
 ==== SAML SP Client adapter changes

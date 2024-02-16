@@ -92,11 +92,11 @@ const ClientDetailHeader = ({
   toggleDownloadDialog,
   toggleDeleteDialog,
 }: ClientDetailHeaderProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "clients:disableConfirmTitle",
-    messageKey: "clients:disableConfirm",
-    continueButtonLabel: "common:disable",
+    titleKey: "disableConfirmClientTitle",
+    messageKey: "disableConfirmClient",
+    continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);
       save();
@@ -136,7 +136,7 @@ const ClientDetailHeader = ({
       {t("downloadAdapterConfig")}
     </DropdownItem>,
     <DropdownItem key="export" onClick={() => exportClient(client)}>
-      {t("common:export")}
+      {t("export")}
     </DropdownItem>,
     ...(!isRealmClient(client) && isManager
       ? [
@@ -146,7 +146,7 @@ const ClientDetailHeader = ({
             key="delete"
             onClick={toggleDeleteDialog}
           >
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]
       : []),
@@ -157,11 +157,11 @@ const ClientDetailHeader = ({
       <DisableConfirm />
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="clients:clientsExplain"
+        subKey="clientsExplain"
         badges={badges}
         divider={false}
         isReadOnly={!isManager}
-        helpTextKey="clients-help:enableDisable"
+        helpTextKey="enableDisable"
         dropdownItems={dropdownItems}
         isEnabled={value}
         onToggle={(value) => {
@@ -188,18 +188,20 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const hasManageAuthorization = hasAccess("manage-authorization");
+  const hasViewAuthorization = hasAccess("view-authorization");
   const hasManageClients = hasAccess("manage-clients");
   const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
   const permissionsEnabled =
-    isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
+    isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+    (hasManageAuthorization || hasViewAuthorization);
 
   const navigate = useNavigate();
 
@@ -273,9 +275,9 @@ export default function ClientDetails() {
   const authorizationExportTab = useAuthorizationTab("export");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:clientDeleteConfirmTitle",
-    messageKey: "clients:clientDeleteConfirm",
-    continueButtonLabel: "common:delete",
+    titleKey: "clientDeleteConfirmTitle",
+    messageKey: "clientDeleteConfirm",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -283,7 +285,7 @@ export default function ClientDetails() {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         navigate(toClients({ realm }));
       } catch (error) {
-        addError("clients:clientDeleteError", error);
+        addError("clientDeleteError", error);
       }
     },
   });
@@ -306,7 +308,7 @@ export default function ClientDetails() {
     () => adminClient.clients.findOne({ id: clientId }),
     (fetchedClient) => {
       if (!fetchedClient) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       setClient(cloneDeep(fetchedClient));
       setupForm(fetchedClient);
@@ -361,7 +363,7 @@ export default function ClientDetails() {
       setClient(newClient);
       addAlert(t(messageKey), AlertVariant.success);
     } catch (error) {
-      addError("clients:clientSaveError", error);
+      addError("clientSaveError", error);
     }
   };
 
@@ -372,8 +374,8 @@ export default function ClientDetails() {
   return (
     <>
       <ConfirmDialogModal
-        continueButtonLabel="common:yes"
-        cancelButtonLabel="common:no"
+        continueButtonLabel="yes"
+        cancelButtonLabel="no"
         titleKey={t("changeAuthenticatorConfirmTitle", {
           clientAuthenticatorType: clientAuthenticatorType,
         })}
@@ -422,7 +424,7 @@ export default function ClientDetails() {
             <Tab
               id="settings"
               data-testid="clientSettingsTab"
-              title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+              title={<TabTitleText>{t("settings")}</TabTitleText>}
               {...settingsTab}
             >
               <ClientSettings
@@ -478,7 +480,7 @@ export default function ClientDetails() {
               <RolesList
                 loader={loader}
                 paginated={false}
-                messageBundle="clients"
+                messageBundle="client"
                 toCreate={toCreateRole({ realm, clientId: client.id! })}
                 toDetail={(roleId) =>
                   toClientRole({
@@ -507,6 +509,7 @@ export default function ClientDetails() {
                 >
                   <Tab
                     id="setup"
+                    data-testid="clientScopesSetupTab"
                     title={<TabTitleText>{t("setup")}</TabTitleText>}
                     {...clientScopesSetupTab}
                   >
@@ -519,6 +522,7 @@ export default function ClientDetails() {
                   </Tab>
                   <Tab
                     id="evaluate"
+                    data-testid="clientScopesEvaluateTab"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                     {...clientScopesEvaluateTab}
                   >
@@ -530,83 +534,98 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.authorizationServicesEnabled && hasManageAuthorization && (
-              <Tab
-                id="authorization"
-                data-testid="authorizationTab"
-                title={<TabTitleText>{t("authorization")}</TabTitleText>}
-                {...authorizationTab}
-              >
-                <RoutableTabs
-                  mountOnEnter
-                  unmountOnExit
-                  defaultLocation={toAuthorizationTab({
-                    realm,
-                    clientId,
-                    tab: "settings",
-                  })}
+            {client!.authorizationServicesEnabled &&
+              (hasManageAuthorization || hasViewAuthorization) && (
+                <Tab
+                  id="authorization"
+                  data-testid="authorizationTab"
+                  title={<TabTitleText>{t("authorization")}</TabTitleText>}
+                  {...authorizationTab}
                 >
-                  <Tab
-                    id="settings"
-                    data-testid="authorizationSettings"
-                    title={<TabTitleText>{t("settings")}</TabTitleText>}
-                    {...authorizationSettingsTab}
+                  <RoutableTabs
+                    mountOnEnter
+                    unmountOnExit
+                    defaultLocation={toAuthorizationTab({
+                      realm,
+                      clientId,
+                      tab: "settings",
+                    })}
                   >
-                    <AuthorizationSettings clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="resources"
-                    data-testid="authorizationResources"
-                    title={<TabTitleText>{t("resources")}</TabTitleText>}
-                    {...authorizationResourcesTab}
-                  >
-                    <AuthorizationResources clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="scopes"
-                    data-testid="authorizationScopes"
-                    title={<TabTitleText>{t("scopes")}</TabTitleText>}
-                    {...authorizationScopesTab}
-                  >
-                    <AuthorizationScopes clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="policies"
-                    data-testid="authorizationPolicies"
-                    title={<TabTitleText>{t("policies")}</TabTitleText>}
-                    {...authorizationPoliciesTab}
-                  >
-                    <AuthorizationPolicies clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="permissions"
-                    data-testid="authorizationPermissions"
-                    title={
-                      <TabTitleText>{t("common:permissions")}</TabTitleText>
-                    }
-                    {...authorizationPermissionsTab}
-                  >
-                    <AuthorizationPermissions clientId={clientId} />
-                  </Tab>
-                  <Tab
-                    id="evaluate"
-                    data-testid="authorizationEvaluate"
-                    title={<TabTitleText>{t("evaluate")}</TabTitleText>}
-                    {...authorizationEvaluateTab}
-                  >
-                    <AuthorizationEvaluate client={client} save={save} />
-                  </Tab>
-                  <Tab
-                    id="export"
-                    data-testid="authorizationExport"
-                    title={<TabTitleText>{t("common:export")}</TabTitleText>}
-                    {...authorizationExportTab}
-                  >
-                    <AuthorizationExport />
-                  </Tab>
-                </RoutableTabs>
-              </Tab>
-            )}
+                    <Tab
+                      id="settings"
+                      data-testid="authorizationSettings"
+                      title={<TabTitleText>{t("settings")}</TabTitleText>}
+                      {...authorizationSettingsTab}
+                    >
+                      <AuthorizationSettings clientId={clientId} />
+                    </Tab>
+                    <Tab
+                      id="resources"
+                      data-testid="authorizationResources"
+                      title={<TabTitleText>{t("resources")}</TabTitleText>}
+                      {...authorizationResourcesTab}
+                    >
+                      <AuthorizationResources
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="scopes"
+                      data-testid="authorizationScopes"
+                      title={<TabTitleText>{t("scopes")}</TabTitleText>}
+                      {...authorizationScopesTab}
+                    >
+                      <AuthorizationScopes
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="policies"
+                      data-testid="authorizationPolicies"
+                      title={<TabTitleText>{t("policies")}</TabTitleText>}
+                      {...authorizationPoliciesTab}
+                    >
+                      <AuthorizationPolicies
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    <Tab
+                      id="permissions"
+                      data-testid="authorizationPermissions"
+                      title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                      {...authorizationPermissionsTab}
+                    >
+                      <AuthorizationPermissions
+                        clientId={clientId}
+                        isDisabled={!hasManageAuthorization}
+                      />
+                    </Tab>
+                    {hasViewUsers && (
+                      <Tab
+                        id="evaluate"
+                        data-testid="authorizationEvaluate"
+                        title={<TabTitleText>{t("evaluate")}</TabTitleText>}
+                        {...authorizationEvaluateTab}
+                      >
+                        <AuthorizationEvaluate client={client} save={save} />
+                      </Tab>
+                    )}
+                    {hasAccess("manage-authorization") && (
+                      <Tab
+                        id="export"
+                        data-testid="authorizationExport"
+                        title={<TabTitleText>{t("export")}</TabTitleText>}
+                        {...authorizationExportTab}
+                      >
+                        <AuthorizationExport />
+                      </Tab>
+                    )}
+                  </RoutableTabs>
+                </Tab>
+              )}
             {client!.serviceAccountsEnabled && hasViewUsers && (
               <Tab
                 id="serviceAccount"
@@ -630,7 +649,7 @@ export default function ClientDetails() {
                 <Tab
                   id="permissions"
                   data-testid="permissionsTab"
-                  title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+                  title={<TabTitleText>{t("permissions")}</TabTitleText>}
                   {...permissionsTab}
                 >
                   <PermissionsTab id={client.id!} type="clients" />

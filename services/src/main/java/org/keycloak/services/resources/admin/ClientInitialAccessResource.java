@@ -19,6 +19,9 @@ package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.events.admin.OperationType;
@@ -76,6 +79,7 @@ public class ClientInitialAccessResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
     @Operation( summary = "Create a new initial access token.")
+    @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
     public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 

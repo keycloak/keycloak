@@ -84,19 +84,14 @@ public class KcAdmMain {
             StringBuilder b = new StringBuilder();
             for (String s : args) {
                 // quote if necessary
-                boolean needQuote = false;
-                needQuote = s.indexOf(' ') != -1 || s.indexOf('\"') != -1 || s.indexOf('\'') != -1;
                 b.append(' ');
-                if (needQuote) {
-                    b.append('\'');
-                }
+                s = s.replace("'", "\\'");
+                b.append('\'');
                 b.append(s);
-                if (needQuote) {
-                    b.append('\'');
-                }
+                b.append('\'');
             }
             console.setEcho(false);
-            
+
             console.execute("kcadm" + b.toString());
             
             console.start();

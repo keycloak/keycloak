@@ -2,6 +2,8 @@ import {
   ActionList,
   ActionListItem,
   Button,
+  EmptyState,
+  EmptyStateBody,
   Flex,
   FlexItem,
   FormGroup,
@@ -22,8 +24,14 @@ type IdKeyValueType = KeyValueType & {
   id: number;
 };
 
-export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+export const MapComponent = ({
+  name,
+  label,
+  helpText,
+  required,
+  isDisabled,
+}: ComponentProps) => {
+  const { t } = useTranslation();
 
   const { getValues, setValue, register } = useFormContext();
   const [map, setMap] = useState<IdKeyValueType[]>([]);
@@ -32,15 +40,20 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
   useEffect(() => {
     register(fieldName);
     const values: KeyValueType[] = JSON.parse(getValues(fieldName) || "[]");
-    if (!values.length) {
-      values.push({ key: "", value: "" });
-    }
     setMap(values.map((value) => ({ ...value, id: generateId() })));
-  }, [register, getValues]);
+  }, []);
+
+  const appendNew = () =>
+    setMap([...map, { key: "", value: "", id: generateId() }]);
 
   const update = (val = map) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    setValue(fieldName, JSON.stringify(val.map(({ id, ...entry }) => entry)));
+    setValue(
+      fieldName,
+      JSON.stringify(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        val.filter((e) => e.key !== "").map(({ id, ...entry }) => entry),
+      ),
+    );
   };
 
   const updateKey = (index: number, key: string) => {
@@ -60,13 +73,12 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
     update(value);
   };
 
-  return (
+  return map.length !== 0 ? (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
+      isRequired={required}
     >
       <Flex direction={{ default: "column" }}>
         <Flex>
@@ -74,10 +86,10 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             grow={{ default: "grow" }}
             spacer={{ default: "spacerNone" }}
           >
-            <strong>{t("common:key")}</strong>
+            <strong>{t("key")}</strong>
           </FlexItem>
           <FlexItem grow={{ default: "grow" }}>
-            <strong>{t("common:value")}</strong>
+            <strong>{t("value")}</strong>
           </FlexItem>
         </Flex>
         {map.map((attribute, index) => (
@@ -85,7 +97,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             <FlexItem grow={{ default: "grow" }}>
               <TextInput
                 name={`${fieldName}.${index}.key`}
-                placeholder={t("common:keyPlaceholder")}
+                placeholder={t("keyPlaceholder")}
                 aria-label={t("key")}
                 defaultValue={attribute.key}
                 data-testid={`${fieldName}.${index}.key`}
@@ -99,8 +111,8 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             >
               <TextInput
                 name={`${fieldName}.${index}.value`}
-                placeholder={t("common:valuePlaceholder")}
-                aria-label={t("common:value")}
+                placeholder={t("valuePlaceholder")}
+                aria-label={t("value")}
                 defaultValue={attribute.value}
                 data-testid={`${fieldName}.${index}.value`}
                 onChange={(value) => updateValue(index, value)}
@@ -110,8 +122,8 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             <FlexItem>
               <Button
                 variant="link"
-                title={t("common:removeAttribute")}
-                isDisabled={map.length === 1}
+                title={t("removeAttribute")}
+                isDisabled={isDisabled}
                 onClick={() => remove(index)}
                 data-testid={`${fieldName}.${index}.remove`}
               >
@@ -128,14 +140,30 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
             className="pf-u-px-0 pf-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
-            onClick={() =>
-              setMap([...map, { key: "", value: "", id: generateId() }])
-            }
+            onClick={() => appendNew()}
           >
-            {t("common:addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
     </FormGroup>
+  ) : (
+    <EmptyState
+      data-testid={`${name}-empty-state`}
+      className="pf-u-p-0"
+      variant="xs"
+    >
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
+      <Button
+        data-testid={`${name}-add-row`}
+        variant="link"
+        icon={<PlusCircleIcon />}
+        isSmall
+        onClick={appendNew}
+        isDisabled={isDisabled}
+      >
+        {t("addAttribute", { label })}
+      </Button>
+    </EmptyState>
   );
 };

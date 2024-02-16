@@ -88,7 +88,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
             ContentAlert.success(Msg.localize('shareSuccess'));
             this.props.onClose();
         } catch (e) {
-            console.error('Could not update permissions', e.error);
+            console.error('Could not update permissions', (e as any).error);
         }
     };
 

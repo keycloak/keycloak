@@ -445,7 +445,7 @@
                 <xs:documentation>The value is the file path to a keystore file. If you prefix the path with classpath:,
                     then the truststore will be obtained from the deployment's classpath instead. Used for outgoing 
                     HTTPS communications to the IDP server. Client making HTTPS requests need
-                    a way to verify the host of the server they are talking to. This is what the trustore does.
+                    a way to verify the host of the server they are talking to. This is what the truststore does.
                     The keystore contains one or more trusted host certificates or certificate authorities.
                     You can create this truststore by extracting the public certificate of the IDP's SSL keystore.
                 </xs:documentation>

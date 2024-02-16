@@ -176,7 +176,6 @@ describe("Authentication management", () => {
         "clients",
         "first broker login",
         "docker auth",
-        "http challenge",
       ]);
     });
 

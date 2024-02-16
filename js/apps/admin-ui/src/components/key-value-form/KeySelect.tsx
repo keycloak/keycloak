@@ -11,7 +11,7 @@ type KeySelectProp = UseControllerProps & {
 };
 
 export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const [open, toggle] = useToggle();
   const { field } = useController(rest);
   const [custom, setCustom] = useState(

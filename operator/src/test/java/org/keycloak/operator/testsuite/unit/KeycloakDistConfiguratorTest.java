@@ -17,10 +17,7 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Test;
@@ -39,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,19 +47,26 @@ import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatu
 @QuarkusTest
 public class KeycloakDistConfiguratorTest {
 
+    final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator();
+
     @Test
     public void enabledFeatures() {
-        testFirstClassCitizen(Map.of("features", "docker,authorization"), KeycloakDistConfigurator::configureFeatures);
+        testFirstClassCitizen(Map.of("features", "docker,authorization"));
     }
 
     @Test
     public void disabledFeatures() {
-        testFirstClassCitizen(Map.of("features-disabled", "admin,step-up-authentication"), KeycloakDistConfigurator::configureFeatures);
+        testFirstClassCitizen(Map.of("features-disabled", "admin,step-up-authentication"));
     }
 
     @Test
     public void transactions() {
-        testFirstClassCitizen(Map.of("transaction-xa-enabled", "false"), KeycloakDistConfigurator::configureTransactions);
+        testFirstClassCitizen(Map.of("transaction-xa-enabled", "false"));
+    }
+
+    @Test
+    public void cache() {
+        testFirstClassCitizen(Map.of("cache-config-file", "cache/file.xml"));
     }
 
     @Test
@@ -76,17 +79,13 @@ public class KeycloakDistConfiguratorTest {
                 "https-certificate-key-file", Constants.CERTIFICATES_FOLDER + "/tls.key"
         );
 
-        testFirstClassCitizen(expectedValues, KeycloakDistConfigurator::configureHttp);
+        testFirstClassCitizen(expectedValues);
     }
 
     @Test
     public void featuresEmptyLists() {
         final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
-        final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
-
-        final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        distConfig.configureFeatures();
+        var envVars = distConfig.configureDistOptions(keycloak);
         assertEnvVarNotPresent(envVars, "KC_FEATURES");
         assertEnvVarNotPresent(envVars, "KC_FEATURES_DISABLED");
     }
@@ -107,7 +106,7 @@ public class KeycloakDistConfiguratorTest {
         ));
         expectedValues.put("db-url", "url");
 
-        testFirstClassCitizen(expectedValues, KeycloakDistConfigurator::configureDatabase);
+        testFirstClassCitizen(expectedValues);
     }
 
     @Test
@@ -120,39 +119,30 @@ public class KeycloakDistConfiguratorTest {
                 "hostname-admin", "my-admin-hostname"
         );
 
-        testFirstClassCitizen(expectedValues, KeycloakDistConfigurator::configureHostname);
+        testFirstClassCitizen(expectedValues);
     }
 
     @Test
     public void missingHostname() {
         final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
-        final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
 
-        final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-
-        distConfig.configureHostname();
+        var envVars = distConfig.configureDistOptions(keycloak);
 
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN_URL");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT");
-        assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT-BACKCHANNEL");
+        assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT_BACKCHANNEL");
     }
 
     /* UTILS */
 
-    private void testFirstClassCitizen(Map<String, String> expectedValues, Consumer<KeycloakDistConfigurator> config) {
-        testFirstClassCitizen("/test-serialization-keycloak-cr.yml", expectedValues, config);
+    private void testFirstClassCitizen(Map<String, String> expectedValues) {
+        testFirstClassCitizen("/test-serialization-keycloak-cr.yml", expectedValues);
     }
 
-    private void testFirstClassCitizen(String crName, Map<String, String> expectedValues, Consumer<KeycloakDistConfigurator> config) {
+    private void testFirstClassCitizen(String crName, Map<String, String> expectedValues) {
         final Keycloak keycloak = K8sUtils.getResourceFromFile(crName, Keycloak.class);
-        final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
-
-        final Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertThat(container).isNotNull();
 
         final List<ValueOrSecret> serverConfig = expectedValues.keySet()
                 .stream()
@@ -163,16 +153,10 @@ public class KeycloakDistConfiguratorTest {
 
         final var expectedFields = expectedValues.keySet();
 
-        assertWarningStatusFirstClassFields(distConfig, false, expectedFields);
-        expectedValues.forEach((k, v) -> assertEnvVarNotPresent(container.getEnv(), getKeycloakOptionEnvVarName(k)));
+        assertWarningStatusFirstClassFields(keycloak, distConfig, true, expectedFields);
 
-        // mimic what KeycloakDeployment does and set all additionalOptions as env first
-        expectedValues.forEach((k, v) -> container.getEnv().add(new EnvVar(getKeycloakOptionEnvVarName(k), v, null)));
-
-        config.accept(distConfig);
-
-        assertWarningStatusFirstClassFields(distConfig, true, expectedFields);
-        expectedValues.forEach((k, v) -> assertContainerEnvVar(container.getEnv(), getKeycloakOptionEnvVarName(k), v));
+        var envVars = distConfig.configureDistOptions(keycloak);
+        expectedValues.forEach((k, v) -> assertContainerEnvVar(envVars, getKeycloakOptionEnvVarName(k), v));
     }
 
     /**
@@ -210,10 +194,10 @@ public class KeycloakDistConfiguratorTest {
         assertThat(containsEnvironmentVariable(envVars, varName)).isFalse();
     }
 
-    private void assertWarningStatusFirstClassFields(KeycloakDistConfigurator distConfig, boolean expectWarning, Collection<String> firstClassFields) {
+    private void assertWarningStatusFirstClassFields(Keycloak keycloak, KeycloakDistConfigurator distConfig, boolean expectWarning, Collection<String> firstClassFields) {
         final String message = "warning: You need to specify these fields as the first-class citizen of the CR: ";
         final KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator(1L);
-        distConfig.validateOptions(statusBuilder);
+        distConfig.validateOptions(keycloak, statusBuilder);
         final KeycloakStatus status = statusBuilder.build();
 
         if (expectWarning) {
@@ -238,21 +222,6 @@ public class KeycloakDistConfiguratorTest {
                 .filter(f -> f.getMessage().contains(containedMessage))
                 .findAny()
                 .map(KeycloakStatusCondition::getMessage);
-    }
-
-    private StatefulSet getBasicKcDeployment() {
-        return new StatefulSetBuilder()
-                .withNewSpec()
-                .withNewTemplate()
-                .withNewSpec()
-                .addNewContainer()
-                .withName("keycloak")
-                .withArgs("start")
-                .endContainer()
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
     }
 
     private boolean containsEnvironmentVariable(List<EnvVar> envVars, String varName) {

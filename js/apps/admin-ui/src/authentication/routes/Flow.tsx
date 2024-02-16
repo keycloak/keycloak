@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type FlowParams = {
@@ -15,7 +15,7 @@ const FlowDetails = lazy(() => import("../FlowDetails"));
 export const FlowRoute: AppRouteObject = {
   path: "/:realm/authentication/:id/:usedBy",
   element: <FlowDetails />,
-  breadcrumb: (t) => t("authentication:flowDetails"),
+  breadcrumb: (t) => t("flowDetails"),
   handle: {
     access: "view-authorization",
   },
@@ -30,6 +30,6 @@ export const toFlow = (params: FlowParams): Partial<Path> => {
   const path = params.builtIn ? FlowWithBuiltInRoute.path : FlowRoute.path;
 
   return {
-    pathname: generatePath(path, params),
+    pathname: generateEncodedPath(path, params),
   };
 };

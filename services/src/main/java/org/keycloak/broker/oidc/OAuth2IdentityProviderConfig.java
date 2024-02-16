@@ -35,6 +35,8 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public static final String PKCE_ENABLED = "pkceEnabled";
     public static final String PKCE_METHOD = "pkceMethod";
 
+    public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
+
     public OAuth2IdentityProviderConfig(IdentityProviderModel model) {
         super(model);
     }
@@ -154,7 +156,28 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public void setClientAssertionSigningAlg(String signingAlg) {
         getConfig().put("clientAssertionSigningAlg", signingAlg);
     }
-    
+
+    public String getClientAssertionAudience() {
+        return getConfig().get("clientAssertionAudience");
+    }
+
+    public void setClientAssertionAudience(String audience) {
+        getConfig().put("clientAssertionAudience", audience);
+    }
+
+
+    public boolean isJwtX509HeadersEnabled() {
+        if (getClientAuthMethod().equals(OIDCLoginProtocol.PRIVATE_KEY_JWT)
+            && Boolean.parseBoolean(getConfig().getOrDefault(JWT_X509_HEADERS_ENABLED, "false"))) {
+            return true;
+        }
+        return false;
+    }
+
+    public void setJwtX509HeadersEnabled(boolean enabled) {
+        getConfig().put(JWT_X509_HEADERS_ENABLED, String.valueOf(enabled));
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();

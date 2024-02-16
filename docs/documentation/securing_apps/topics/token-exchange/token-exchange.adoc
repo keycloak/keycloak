@@ -9,7 +9,7 @@ include::../templates/techpreview.adoc[]
 
 [NOTE]
 ====
-To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin_fine_grained_authz` feature.
+To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
 For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 
@@ -76,9 +76,8 @@ requested_issuer::
 requested_subject::
     _OPTIONAL._ This specifies a username or user id if your client wants to impersonate a different user.
 scope::
-    _NOT IMPLEMENTED._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
-    is requesting.  It is not implemented at this time but will be once {project_name} has better support for
-    scopes in general.
+    _OPTIONAL._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
+    is requesting. Returned scope is the Cartesian product of scope parameter and access token scope.
 
 NOTE:   We currently only support OpenID Connect and OAuth exchanges.  Support for SAML based clients and identity providers may be added in the future depending on user demand.
 

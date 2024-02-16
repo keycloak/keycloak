@@ -30,8 +30,7 @@ export const LdapSettingsGeneral = ({
   showSectionDescription = false,
   vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   useFetch(
@@ -103,7 +102,7 @@ export const LdapSettingsGeneral = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("generalOptions")}
-          description={helpText("ldapGeneralOptionsSettingsDescription")}
+          description={t("ldapGeneralOptionsSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -112,8 +111,8 @@ export const LdapSettingsGeneral = ({
           label={t("uiDisplayName")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:uiDisplayNameHelp")}
-              fieldLabelId="user-federation:uiDisplayName"
+              helpText={t("uiDisplayNameHelp")}
+              fieldLabelId="uiDisplayName"
             />
           }
           fieldId="kc-ui-display-name"
@@ -157,10 +156,7 @@ export const LdapSettingsGeneral = ({
         <FormGroup
           label={t("vendor")}
           labelIcon={
-            <HelpItem
-              helpText={t("user-federation-help:vendorHelp")}
-              fieldLabelId="user-federation:vendor"
-            />
+            <HelpItem helpText={t("vendorHelp")} fieldLabelId="vendor" />
           }
           fieldId="kc-vendor"
           isRequired
@@ -183,6 +179,7 @@ export const LdapSettingsGeneral = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
+                aria-label={t("selectVendor")}
               >
                 <SelectOption key={0} value="ad" isPlaceholder>
                   Active Directory

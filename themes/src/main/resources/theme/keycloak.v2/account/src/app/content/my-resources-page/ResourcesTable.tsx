@@ -91,8 +91,8 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
     }
 
     private fetchPermissions(resource: Resource, row: number): void {
-        this.context!.doGet(`/resources/${encodeURIComponent(resource._id)}/permissions`)
-            .then((response: HttpResponse<Permission[]>) => {
+        this.context!.doGet<Permission[]>(`/resources/${encodeURIComponent(resource._id)}/permissions`)
+            .then((response) => {
                 const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
                 newPermissions.set(row, response.data || []);
                 this.setState({ permissions: newPermissions });

@@ -158,7 +158,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
             // Assert DN was changed
             String rdnAttrName = ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute();
-            Assert.assertEquals(rdnAttrName + "=johnkeycloak3+sn=Doe3", john2.getDn().getFirstRdn().toString());
+            Assert.assertEquals("sn=Doe3+" + rdnAttrName + "=johnkeycloak3", john2.getDn().getFirstRdn().toString());
         });
 
         // Update some user attributes not mapped to DN. DN won't be changed

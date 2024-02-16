@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
+import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 import CreateUserPage from "../support/pages/admin-ui/manage/users/CreateUserPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
@@ -23,6 +24,7 @@ let groupsList: string[] = [];
 describe("User creation", () => {
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
+  const realmSettingsPage = new RealmSettingsPage();
   const createUserPage = new CreateUserPage();
   const userGroupsPage = new UserGroupsPage();
   const masthead = new Masthead();
@@ -30,7 +32,7 @@ describe("User creation", () => {
   const listingPage = new ListingPage();
   const userDetailsPage = new UserDetailsPage();
   const credentialsPage = new CredentialsPage();
-  const attributesTab = new AttributesTab();
+  const attributesTab = new AttributesTab(true);
   const usersPage = new UsersPage();
   const identityProviderLinksTab = new IdentityProviderLinksTab();
 
@@ -71,7 +73,7 @@ describe("User creation", () => {
 
     createUserPage.createUser(itemId);
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -93,7 +95,7 @@ describe("User creation", () => {
 
     createUserPage.joinGroups();
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -107,7 +109,7 @@ describe("User creation", () => {
     createUserPage.createUser(itemIdWithCred);
 
     userDetailsPage.fillUserData();
-    createUserPage.save();
+    createUserPage.create();
     masthead.checkNotificationMessage("The user has been created");
     sidebarPage.waitForPageLoad();
 
@@ -143,12 +145,32 @@ describe("User creation", () => {
     listingPage.searchItem(itemId).itemExist(itemId);
   });
 
+  it("Select Unmanaged attributes", () => {
+    sidebarPage.goToRealmSettings();
+    sidebarPage.waitForPageLoad();
+    realmSettingsPage.fillUnmanagedAttributes("Enabled");
+    realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
+    masthead.checkNotificationMessage("Realm successfully updated", true);
+  });
+
   it("User attributes test", () => {
     listingPage.goToItemDetails(itemId);
 
-    attributesTab.goToAttributesTab().addAttribute("key", "value").save();
+    attributesTab
+      .goToAttributesTab()
+      .addAttribute("key_test", "value_test")
+      .save();
 
     masthead.checkNotificationMessage("The user has been saved");
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab
+      .goToAttributesTab()
+      .checkAttribute("key_test", true)
+      .deleteAttribute(0);
+
+    userDetailsPage.goToDetailsTab();
+    attributesTab.goToAttributesTab().checkAttribute("key_test", false);
   });
 
   it("User attributes with multiple values test", () => {
@@ -168,7 +190,6 @@ describe("User creation", () => {
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);
       expect(request.body.attributes, "response body").deep.equal({
-        key: ["value"],
         "key-multiple": ["other value"],
       });
     });
@@ -472,7 +493,7 @@ describe("User creation", () => {
       createUserPage.goToCreateUser();
       createUserPage.createUser(a11yUser);
       userDetailsPage.fillUserData();
-      createUserPage.save();
+      createUserPage.create();
       cy.checkA11y();
     });
 

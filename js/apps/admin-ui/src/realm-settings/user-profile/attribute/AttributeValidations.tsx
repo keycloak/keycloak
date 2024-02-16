@@ -27,7 +27,7 @@ import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import "../../realm-settings-section.css";
 
 export const AttributeValidations = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addValidatorModalOpen, toggleModal] = useToggle();
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
   const { setValue, control, register, getValues } = useFormContext();
@@ -47,7 +47,7 @@ export const AttributeValidations = () => {
     messageKey: t("deleteValidatorConfirmMsg", {
       validatorName: validatorToDelete,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
@@ -92,7 +92,7 @@ export const AttributeValidations = () => {
           className="kc--attributes-validations--add-validation-button"
           icon={<PlusCircleIcon />}
         >
-          {t("realm-settings:addValidator")}
+          {t("addValidator")}
         </Button>
         <Divider />
         {validators.length !== 0 ? (
@@ -123,7 +123,7 @@ export const AttributeValidations = () => {
                         setValidatorToDelete(validator.key);
                       }}
                     >
-                      {t("common:delete")}
+                      {t("delete")}
                     </Button>
                   </Td>
                 </Tr>
@@ -131,8 +131,8 @@ export const AttributeValidations = () => {
             </Tbody>
           </TableComposable>
         ) : (
-          <Text className="kc-emptyValidators" component={TextVariants.h6}>
-            {t("realm-settings:emptyValidators")}
+          <Text className="kc-emptyValidators" component={TextVariants.p}>
+            {t("emptyValidators")}
           </Text>
         )}
       </div>

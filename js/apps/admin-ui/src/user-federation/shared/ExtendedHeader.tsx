@@ -25,7 +25,7 @@ export const ExtendedHeader = ({
   save,
   noDivider = false,
 }: ExtendedHeaderProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 
@@ -37,22 +37,22 @@ export const ExtendedHeader = ({
   })[0];
 
   const [toggleUnlinkUsersDialog, UnlinkUsersDialog] = useConfirmDialog({
-    titleKey: "user-federation:userFedUnlinkUsersConfirmTitle",
-    messageKey: "user-federation:userFedUnlinkUsersConfirm",
-    continueButtonLabel: "user-federation:unlinkUsers",
+    titleKey: "userFedUnlinkUsersConfirmTitle",
+    messageKey: "userFedUnlinkUsersConfirm",
+    continueButtonLabel: "unlinkUsers",
     onConfirm: () => unlinkUsers(),
   });
 
   const [toggleRemoveUsersDialog, RemoveUsersConfirm] = useConfirmDialog({
     titleKey: t("removeImportedUsers"),
     messageKey: t("removeImportedUsersMessage"),
-    continueButtonLabel: "common:remove",
+    continueButtonLabel: "remove",
     onConfirm: async () => {
       try {
         removeImportedUsers();
         addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("user-federation:removeImportedUsersError", error);
+        addError("removeImportedUsersError", error);
       }
     },
   });
@@ -64,7 +64,7 @@ export const ExtendedHeader = ({
       }
       addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("user-federation:removeImportedUsersError", error);
+      addError("removeImportedUsersError", error);
     }
   };
 
@@ -86,7 +86,7 @@ export const ExtendedHeader = ({
         }
       }
     } catch (error) {
-      addError("user-federation:syncUsersError", error);
+      addError("syncUsersError", error);
     }
   };
 
@@ -108,7 +108,7 @@ export const ExtendedHeader = ({
         }
       }
     } catch (error) {
-      addError("user-federation:syncUsersError", error);
+      addError("syncUsersError", error);
     }
   };
 
@@ -119,7 +119,7 @@ export const ExtendedHeader = ({
       }
       addAlert(t("unlinkUsersSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("user-federation:unlinkUsersError", error);
+      addError("unlinkUsersError", error);
     }
   };
 
@@ -148,7 +148,7 @@ export const ExtendedHeader = ({
           </DropdownItem>,
           <DropdownItem
             key="unlink"
-            isDisabled={editMode ? !editMode.includes("UNSYNCED") : false}
+            isDisabled={editMode ? editMode.includes("UNSYNCED") : false}
             onClick={toggleUnlinkUsersDialog}
           >
             {t("unlinkUsers")}

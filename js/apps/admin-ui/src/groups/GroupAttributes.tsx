@@ -21,7 +21,7 @@ import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
     mode: "onChange",
@@ -37,7 +37,7 @@ export const GroupAttributes = () => {
       convertToFormValues(group!, form.setValue);
       setCurrentGroup(group);
     },
-    [],
+    [id],
   );
 
   const save = async (attributeForm: AttributeForm) => {
@@ -51,7 +51,7 @@ export const GroupAttributes = () => {
       setCurrentGroup({ ...currentGroup, attributes });
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
-      addError("groups:groupUpdateError", error);
+      addError("groupUpdateError", error);
     }
   };
 

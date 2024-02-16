@@ -29,7 +29,7 @@ export const Header = ({
   noDivider = false,
   dropdownItems = [],
 }: HeaderProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id } = useParams<Partial<CustomUserFederationRouteParams>>();
   const navigate = useNavigate();
 
@@ -39,9 +39,9 @@ export const Header = ({
   const { control, setValue } = useFormContext();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDisableConfirmTitle",
-    messageKey: "user-federation:userFedDisableConfirm",
-    continueButtonLabel: "common:disable",
+    titleKey: "userFedDisableConfirmTitle",
+    messageKey: "userFedDisableConfirm",
+    continueButtonLabel: "disable",
     onConfirm: () => {
       setValue("config.enabled[0]", "false");
       save();
@@ -49,9 +49,9 @@ export const Header = ({
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDeleteConfirmTitle",
-    messageKey: "user-federation:userFedDeleteConfirm",
-    continueButtonLabel: "common:delete",
+    titleKey: "userFedDeleteConfirmTitle",
+    messageKey: "userFedDeleteConfirm",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -59,7 +59,7 @@ export const Header = ({
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
         navigate(toUserFederation({ realm }), { replace: true });
       } catch (error) {
-        addError("user-federation:userFedDeleteError", error);
+        addError("userFedDeleteError", error);
       }
     },
   });

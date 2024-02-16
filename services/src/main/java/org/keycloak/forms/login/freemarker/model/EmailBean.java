@@ -16,20 +16,40 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import org.keycloak.models.UserModel;
+import java.util.stream.Stream;
 
-public class EmailBean {
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+
+public class EmailBean extends AbstractUserProfileBean {
 
 	private final UserModel user;
-	private final MultivaluedMap<String, String> formData;
-
-	public EmailBean(UserModel user, MultivaluedMap<String, String> formData) {
+	public EmailBean(UserModel user, MultivaluedMap<String, String> formData, KeycloakSession session) {
+		super(formData);
 		this.user = user;
-		this.formData = formData;
+		init(session, false);
 	}
 
 	public String getValue() {
 		return formData != null ? formData.getFirst("email") : user.getEmail();
+	}
+
+	@Override
+	protected UserProfile createUserProfile(UserProfileProvider provider) {
+		return provider.create(UserProfileContext.UPDATE_EMAIL, user);
+	}
+
+	@Override
+	protected Stream<String> getAttributeDefaultValues(String name) {
+		return user.getAttributeStream(name);
+	}
+
+	@Override
+	public String getContext() {
+		return UserProfileContext.UPDATE_PROFILE.name();
 	}
 }

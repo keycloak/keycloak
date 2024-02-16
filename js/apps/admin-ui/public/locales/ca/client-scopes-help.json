@@ -1,6 +1,0 @@
-{
-  "multiValued": "Indica si l''atribut suporta múltiples valors. Si està habilitat, la llista de tots els valors d''aquest atribut es fixarà com a reclamació. Si està deshabilitat, només el primer valor serà fixat com a reclamació.",
-  "tokenClaimName": "Nom del reclam a inserir en el testimoni. Pot ser un nom complet com ''address.street''. En aquest cas, es crearà un objecte JSON niat.",
-  "claimJsonType": "El tipus de JSON que hauria de fer-se servir per omplir la petició de JSON en el token. long, int, boolean i String són valors vàlids",
-  "protocolMapper": "Protocol."
-}

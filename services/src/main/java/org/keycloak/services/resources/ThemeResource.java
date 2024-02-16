@@ -16,22 +16,40 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Theme resource
@@ -86,4 +104,85 @@ public class ThemeResource {
         }
     }
 
+    @Path("/{realm}/{themeType}/{locale}")
+    @OPTIONS
+    public Response localizationTextPreflight() {
+        return Cors.add(session.getContext().getHttpRequest(), Response.ok()).auth().preflight().build();
+    }
+
+    @GET
+    @Path("/{realm}/{themeType}/{locale}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getLocalizationTexts(@PathParam("realm") String realmName, @QueryParam("theme") String theme,
+                                         @PathParam("locale") String localeString, @PathParam("themeType") String themeType,
+                                         @QueryParam("source") boolean showSource) throws IOException {
+        final RealmModel realm = session.realms().getRealmByName(realmName);
+        if (realm == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        session.getContext().setRealm(realm);
+        List<KeySource> result;
+
+        Theme theTheme;
+        final Theme.Type type = Theme.Type.valueOf(themeType.toUpperCase());
+        if (theme == null) {
+            theTheme = session.theme().getTheme(type);
+        } else {
+            theTheme = session.theme().getTheme(theme, type);
+        }
+
+        final Locale locale = Locale.forLanguageTag(localeString);
+        if (showSource) {
+            Properties messagesByLocale = theTheme.getMessages("messages", locale);
+            Set<KeySource> resultSet = messagesByLocale.entrySet().stream().map(e ->
+                    new KeySource((String) e.getKey(), (String) e.getValue(), Source.THEME)).collect(toSet());
+
+            Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
+            for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
+                final List<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
+                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM)).collect(toList());
+                resultSet.addAll(realmOverride);
+            }
+            result = new ArrayList<>(resultSet);
+        } else {
+            result = theTheme.getEnhancedMessages(realm, locale).entrySet().stream().map(e ->
+                    new KeySource((String) e.getKey(), (String) e.getValue())).collect(toList());
+        }
+
+        Response.ResponseBuilder responseBuilder = Response.ok(result);
+        return Cors.add(session.getContext().getHttpRequest(), responseBuilder).allowedOrigins("*").auth().build();
+    }
+}
+
+enum Source {
+    THEME,
+    REALM
+}
+
+class KeySource {
+    private String key;
+    private String value;
+    private Source source;
+
+    public KeySource(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public KeySource(String key, String value, Source source) {
+        this(key, value);
+        this.source = source;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public Source getSource() {
+        return source;
+    }
 }

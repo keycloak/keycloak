@@ -17,7 +17,6 @@
 
 package org.keycloak.broker.saml.mappers;
 
-
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.saml.SAMLEndpoint;
@@ -114,8 +113,9 @@ public class AdvancedAttributeToGroupMapper extends AbstractAttributeToGroupMapp
         return "If all attributes exists, assign the user to the specified group.";
     }
 
+    @Override
     protected boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context) {
-        Map<String, String> attributes = mapperModel.getConfigMap(ATTRIBUTE_PROPERTY_NAME);
+        Map<String, List<String>> attributes = mapperModel.getConfigMap(ATTRIBUTE_PROPERTY_NAME);
         boolean areAttributeValuesRegexes = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME));
 
         AssertionType assertion = (AssertionType) context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
@@ -124,19 +124,21 @@ public class AdvancedAttributeToGroupMapper extends AbstractAttributeToGroupMapp
             return false;
         }
 
-        for (Map.Entry<String, String> attribute : attributes.entrySet()) {
-            String attributeKey = attribute.getKey();
-            List<Object> attributeValues = attributeAssertions.stream()
-                    .flatMap(statements -> statements.getAttributes().stream())
-                    .filter(choiceType -> attributeKey.equals(choiceType.getAttribute().getName())
-                            || attributeKey.equals(choiceType.getAttribute().getFriendlyName()))
-                    // Several statements with same name are treated like one with several values
-                    .flatMap(choiceType -> choiceType.getAttribute().getAttributeValue().stream())
-                    .collect(Collectors.toList());
+        for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
+            String attributeKey = entry.getKey();
+            for (String value : entry.getValue()) {
+                List<Object> attributeValues = attributeAssertions.stream()
+                        .flatMap(statements -> statements.getAttributes().stream())
+                        .filter(choiceType -> attributeKey.equals(choiceType.getAttribute().getName())
+                        || attributeKey.equals(choiceType.getAttribute().getFriendlyName()))
+                        // Several statements with same name are treated like one with several values
+                        .flatMap(choiceType -> choiceType.getAttribute().getAttributeValue().stream())
+                        .collect(Collectors.toList());
 
-            boolean attributeValueMatch = areAttributeValuesRegexes ? valueMatchesRegex(attribute.getValue(), attributeValues) : attributeValues.contains(attribute.getValue());
-            if (!attributeValueMatch) {
-                return false;
+                boolean attributeValueMatch = areAttributeValuesRegexes ? valueMatchesRegex(value, attributeValues) : attributeValues.contains(value);
+                if (!attributeValueMatch) {
+                    return false;
+                }
             }
         }
 

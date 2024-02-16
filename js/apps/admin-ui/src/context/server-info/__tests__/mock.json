@@ -39,7 +39,8 @@
       "SCRIPTS",
       "OPENSHIFT_INTEGRATION",
       "ADMIN_FINE_GRAINED_AUTHZ",
-      "TOKEN_EXCHANGE"
+      "TOKEN_EXCHANGE",
+      "CLIENT_TYPES"
     ],
     "previewFeatures": [
       "DECLARATIVE_USER_PROFILE",
@@ -48,7 +49,7 @@
       "ADMIN_FINE_GRAINED_AUTHZ",
       "TOKEN_EXCHANGE"
     ],
-    "experimentalFeatures": ["ADMIN2", "MAP_STORAGE", "DYNAMIC_SCOPES"]
+    "experimentalFeatures": ["ADMIN2", "MAP_STORAGE", "DYNAMIC_SCOPES", "CLIENT_TYPES"]
   },
   "themes": {
     "common": [{ "name": "keycloak" }],
@@ -527,6 +528,8 @@
         "HS256": { "order": 0 },
         "HS512": { "order": 0 },
         "ES256": { "order": 0 },
+        "Ed25519": { "order": 0 },
+        "Ed448": { "order": 0 },
         "RS256": { "order": 0 },
         "HS384": { "order": 0 },
         "ES512": { "order": 0 },
@@ -927,6 +930,8 @@
         "HS256": { "order": 0 },
         "HS512": { "order": 0 },
         "ES256": { "order": 0 },
+        "Ed25519": { "order": 0 },
+        "Ed448": { "order": 0 },
         "RS256": { "order": 0 },
         "HS384": { "order": 0 },
         "ES512": { "order": 0 },

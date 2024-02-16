@@ -17,6 +17,8 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -34,7 +36,7 @@ public class FileTruststoreProvider implements TruststoreProvider {
     private final Map<X500Principal, X509Certificate> rootCertificates;
     private final Map<X500Principal, X509Certificate> intermediateCertificates;
 
-    FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, X509Certificate> rootCertificates, Map<X500Principal, X509Certificate> intermediateCertificates) {
+    public FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, X509Certificate> rootCertificates, Map<X500Principal, X509Certificate> intermediateCertificates) {
         this.policy = policy;
         this.truststore = truststore;
         this.rootCertificates = rootCertificates;

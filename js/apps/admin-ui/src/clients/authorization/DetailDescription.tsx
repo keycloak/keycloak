@@ -26,7 +26,7 @@ export function DetailDescriptionLink<T>({
   convert,
   link,
 }: DetailDescriptionLinkProps<T>) {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   return (
     <DescriptionListGroup>
       <DescriptionListTerm>{t(name)}</DescriptionListTerm>
@@ -44,7 +44,7 @@ export function DetailDescriptionLink<T>({
             </span>
           );
         })}
-        {array?.length === 0 && <i>{t("common:none")}</i>}
+        {array?.length === 0 && <i>{t("none")}</i>}
       </DescriptionListDescription>
     </DescriptionListGroup>
   );

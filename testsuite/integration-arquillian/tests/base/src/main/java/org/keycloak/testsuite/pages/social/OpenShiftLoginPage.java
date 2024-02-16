@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
@@ -35,6 +36,9 @@ public class OpenShiftLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
+    @FindBy(name = "approve")
+    private WebElement authorizeButton;
+
     private String userLoginLinkTitle;
 
     private WebElement userLoginLink;
@@ -48,9 +52,18 @@ public class OpenShiftLoginPage extends AbstractSocialLoginPage {
             }
         }
 
+        WaitUtils.pause(3000);
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
+
+        try {
+            WaitUtils.pause(3000);
+            authorizeButton.click();
+        }
+        catch (NoSuchElementException e) {
+            log.info("User already allowed in the app");
+        }
     }
 
     public void setUserLoginLinkTitle(String title) {

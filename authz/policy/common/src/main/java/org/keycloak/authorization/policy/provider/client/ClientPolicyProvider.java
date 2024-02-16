@@ -2,6 +2,7 @@ package org.keycloak.authorization.policy.provider.client;
 
 import java.util.function.BiFunction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -13,6 +14,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 
 public class ClientPolicyProvider implements PolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(ClientPolicyProvider.class);
     private final BiFunction<Policy, AuthorizationProvider, ClientPolicyRepresentation> representationFunction;
 
     public ClientPolicyProvider(BiFunction<Policy, AuthorizationProvider, ClientPolicyRepresentation> representationFunction) {
@@ -31,6 +33,7 @@ public class ClientPolicyProvider implements PolicyProvider {
 
             if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
                 evaluation.grant();
+                logger.debugv("Client policy {} matched with client {} and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
                 return;
             }
         }

@@ -1,6 +1,0 @@
-{
-  "temporaryLocked": "Brukeren kan ha blitt låst på grunn av at innloggingsforsøk har feilet for mange ganger.",
-  "emailVerified": "Har brukerens e-post blitt verifisert?",
-  "requiredUserActions": "Krev en handling når brukeren logger inn. 'Verifiser e-post' sender en e-post til brukeren for å verifisere deres e-postadresse. 'Oppdater profil' krever at bruker legger inn personlig informasjon. 'Oppdater passord' krever at bruker skriver inn et nytt passord. 'Konfigurer OTP' krever installasjon av en passordgenerator for mobil.",
-  "groups": "Gruppen som brukeren er medlem av. Velg en gruppe på listen og klikk på 'Forlat' for å forlate gruppen."
-}

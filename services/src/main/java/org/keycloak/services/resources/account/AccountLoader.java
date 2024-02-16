@@ -26,10 +26,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.HttpMethod;
@@ -78,14 +79,14 @@ public class AccountLoader {
         Theme theme = getTheme(session);
         UriInfo uriInfo = session.getContext().getUri();
 
+        AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
+        
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             return getAccountRestService(client, null);
-        } else if (Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2) || Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3)) {
-            AccountConsole console = new AccountConsole(session, client, theme);
-            console.init();
-            return console;
+        } else if (accountResourceProvider != null) {
+            return accountResourceProvider.getResource();
         } else {
             throw new NotFoundException();
         }
@@ -107,6 +108,7 @@ public class AccountLoader {
             throw new InternalServerErrorException(e);
         }
     }
+
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
@@ -147,4 +149,12 @@ public class AccountLoader {
         return client;
     }
 
+    private AccountResourceProvider getAccountResourceProvider(Theme theme) {
+      try {
+        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        }
+      } catch (IOException ignore) {}
+      return session.getProvider(AccountResourceProvider.class);
+    }
 }

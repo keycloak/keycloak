@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
@@ -59,7 +60,7 @@ export const REALM_FLOWS = new Map<string, string>([
 ]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   return (
@@ -81,7 +82,7 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 };
 
 export default function AuthenticationSection() {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -101,7 +102,7 @@ export default function AuthenticationSection() {
   ]);
 
   const loader = async () => {
-    const flowsRequest = await fetch(
+    const flowsRequest = await fetchWithError(
       `${addTrailingSlash(
         adminClient.baseUrl,
       )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
@@ -130,14 +131,14 @@ export default function AuthenticationSection() {
   const policiesTab = useTab("policies");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "authentication:deleteConfirmFlow",
+    titleKey: "deleteConfirmFlow",
     children: (
-      <Trans i18nKey="authentication:deleteConfirmFlowMessage">
+      <Trans i18nKey="deleteConfirmFlowMessage">
         {" "}
         <strong>{{ flow: selectedFlow ? selectedFlow.alias : "" }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -147,7 +148,7 @@ export default function AuthenticationSection() {
         refresh();
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("authentication:deleteFlowError", error);
+        addError("deleteFlowError", error);
       }
     },
   });
@@ -178,8 +179,8 @@ export default function AuthenticationSection() {
         />
       )}
       <ViewHeader
-        titleKey="authentication:title"
-        subKey="authentication:authenticationExplain"
+        titleKey="titleAuthentication"
+        subKey="authenticationExplain"
         helpUrl={helpUrls.authenticationUrl}
         divider={false}
       />
@@ -196,8 +197,8 @@ export default function AuthenticationSection() {
             <KeycloakDataTable
               key={key}
               loader={loader}
-              ariaLabelKey="authentication:title"
-              searchPlaceholderKey="authentication:searchForFlow"
+              ariaLabelKey="titleAuthentication"
+              searchPlaceholderKey="searchForFlow"
               toolbarItem={
                 <ToolbarItem>
                   <Button
@@ -234,7 +235,7 @@ export default function AuthenticationSection() {
                 ...(!data.builtIn && !data.usedBy
                   ? [
                       {
-                        title: t("common:delete"),
+                        title: t("delete"),
                         onClick: () => {
                           setSelectedFlow(data);
                           toggleDeleteDialog();
@@ -246,19 +247,19 @@ export default function AuthenticationSection() {
               columns={[
                 {
                   name: "alias",
-                  displayKey: "authentication:flowName",
+                  displayKey: "flowName",
                   cellRenderer: (row) => <AliasRenderer {...row} />,
                 },
                 {
                   name: "usedBy",
-                  displayKey: "authentication:usedBy",
+                  displayKey: "usedBy",
                   cellRenderer: (row) => (
                     <UsedBy authType={row} realm={realm} />
                   ),
                 },
                 {
                   name: "description",
-                  displayKey: "common:description",
+                  displayKey: "description",
                 },
               ]}
               emptyState={

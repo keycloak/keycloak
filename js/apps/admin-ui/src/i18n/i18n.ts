@@ -1,52 +1,35 @@
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 
+import HttpBackend from "i18next-http-backend";
 import environment from "../environment";
 import { joinPath } from "../utils/joinPath";
-import { OverridesBackend } from "./OverridesBackend";
+
+type KeyValue = { key: string; value: string };
 
 export const DEFAULT_LOCALE = "en";
-export const DEFAULT_NAMESPACE = "common";
-export const NAMESPACE_SEPARATOR = ":";
 export const KEY_SEPARATOR = ".";
 
 export const i18n = createInstance({
   fallbackLng: DEFAULT_LOCALE,
-  defaultNS: DEFAULT_NAMESPACE,
-  nsSeparator: NAMESPACE_SEPARATOR,
   keySeparator: KEY_SEPARATOR,
-  ns: [
-    DEFAULT_NAMESPACE,
-    "common-help",
-    "dashboard",
-    "clients",
-    "clients-help",
-    "client-scopes",
-    "client-scopes-help",
-    "groups",
-    "realm",
-    "roles",
-    "users",
-    "users-help",
-    "sessions",
-    "events",
-    "realm-settings",
-    "realm-settings-help",
-    "authentication",
-    "authentication-help",
-    "user-federation",
-    "user-federation-help",
-    "identity-providers",
-    "identity-providers-help",
-    "dynamic",
-  ],
   interpolation: {
     escapeValue: false,
   },
   backend: {
-    loadPath: joinPath(environment.resourceUrl, "locales/{{lng}}/{{ns}}.json"),
+    loadPath: joinPath(
+      environment.authServerUrl,
+      `resources/${environment.loginRealm}/admin/{{lng}}`,
+    ),
+    parse: (data: string) => {
+      const messages = JSON.parse(data);
+
+      const result: Record<string, string> = {};
+      messages.forEach((v: KeyValue) => (result[v.key] = v.value));
+      return result;
+    },
   },
 });
 
-i18n.use(OverridesBackend);
+i18n.use(HttpBackend);
 i18n.use(initReactI18next);

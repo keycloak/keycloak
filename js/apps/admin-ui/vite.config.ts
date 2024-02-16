@@ -10,23 +10,15 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-    target: "ES2022",
-    // Code splitting results in broken CSS for production builds.
-    // This is due to an unknown bug, presumably in Rollup.
-    // TODO: Revisit if we can re-enable this in the future.
-    cssCodeSplit: false,
-  },
-  resolve: {
-    // Resolve the 'module' entrypoint at all times (not the default due to Node.js compatibility issues).
-    mainFields: ["module"],
+    target: "esnext",
+    modulePreload: false,
+    cssMinify: "lightningcss",
+    rollupOptions: {
+      external: ["react", "react/jsx-runtime", "react-dom"],
+    },
   },
   plugins: [react(), checker({ typescript: true })],
   test: {
-    setupFiles: "vitest.setup.ts",
     watch: false,
-    deps: {
-      // Ensure '.mjs' files are used for '@patternfly/react-styles'.
-      inline: [/@patternfly\/react-styles/],
-    },
   },
 });

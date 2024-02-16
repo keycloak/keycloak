@@ -15,7 +15,7 @@ import { adminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 export const Client = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -66,10 +66,7 @@ export const Client = () => {
     <FormGroup
       label={t("clients")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:policyClient")}
-          fieldLabelId="clients:client"
-        />
+        <HelpItem helpText={t("policyClientHelp")} fieldLabelId="client" />
       }
       fieldId="clients"
       helperTextInvalid={t("requiredClient")}
@@ -87,9 +84,11 @@ export const Client = () => {
           <Select
             toggleId="clients"
             variant={SelectVariant.typeaheadMulti}
+            typeAheadAriaLabel={t("clients")}
             onToggle={(open) => setOpen(open)}
             isOpen={open}
             selections={field.value}
+            aria-label={t("selectClients")}
             onFilter={(_, value) => {
               setSearch(value);
               return convert(clients);
@@ -105,7 +104,6 @@ export const Client = () => {
               }
               setOpen(false);
             }}
-            aria-label={t("clients")}
           >
             {convert(clients)}
           </Select>

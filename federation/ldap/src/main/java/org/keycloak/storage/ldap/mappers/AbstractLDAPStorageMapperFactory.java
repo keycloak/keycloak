@@ -77,6 +77,12 @@ public abstract class AbstractLDAPStorageMapperFactory implements LDAPStorageMap
         return configProperty;
     }
 
+    public static ProviderConfigProperty createConfigProperty(String name, String label, String helpText, String type, List<String> options, boolean required) {
+        ProviderConfigProperty property = createConfigProperty(name, label, helpText, type, options);
+        property.setRequired(required);
+        return property;
+    }
+
     protected void checkMandatoryConfigAttribute(String name, String displayName, ComponentModel mapperModel) throws ComponentValidationException {
         String attrConfigValue = mapperModel.getConfig().getFirst(name);
         if (attrConfigValue == null || attrConfigValue.trim().isEmpty()) {

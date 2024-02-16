@@ -77,7 +77,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-servlet-filter-adapter</artifactId>
+            <artifactId>keycloak-jakarta-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

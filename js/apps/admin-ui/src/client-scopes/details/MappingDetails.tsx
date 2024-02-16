@@ -8,13 +8,12 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
+import { KeycloakTextInput, TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";
@@ -22,7 +21,6 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -33,17 +31,12 @@ import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 export default function MappingDetails() {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const { id, mapperId } = useParams<MapperParams>();
   const form = useForm();
-  const {
-    register,
-    setValue,
-    formState: { errors },
-    handleSubmit,
-  } = form;
+  const { setValue, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
   const [config, setConfig] = useState<{
     protocol?: string;
@@ -78,7 +71,7 @@ export default function MappingDetails() {
           });
         }
         if (!data) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
 
         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
@@ -99,7 +92,7 @@ export default function MappingDetails() {
           ? await adminClient.clientScopes.findOne({ id })
           : await adminClient.clients.findOne({ id });
         if (!model) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         const protocolMappers =
           serverInfo.protocolMapperTypes![model.protocol!];
@@ -107,7 +100,7 @@ export default function MappingDetails() {
           (mapper) => mapper.id === mapperId,
         );
         if (!mapping) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         return {
           mapping,
@@ -129,9 +122,9 @@ export default function MappingDetails() {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "common:deleteMappingTitle",
-    messageKey: "common:deleteMappingConfirm",
-    continueButtonLabel: "common:delete",
+    titleKey: "deleteMappingTitle",
+    messageKey: "deleteMappingConfirm",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -146,10 +139,10 @@ export default function MappingDetails() {
             mapperId,
           });
         }
-        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
         navigate(toDetails());
       } catch (error) {
-        addError("common:mappingDeletedError", error);
+        addError("mappingDeletedError", error);
       }
     },
   });
@@ -173,9 +166,9 @@ export default function MappingDetails() {
           ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
           : await adminClient.clients.addProtocolMapper({ id }, mapping);
       }
-      addAlert(t(`common:mapping${key}Success`), AlertVariant.success);
+      addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {
-      addError(`common:mapping${key}Error`, error);
+      addError(`mapping${key}Error`, error);
     }
   };
 
@@ -183,8 +176,8 @@ export default function MappingDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={isUpdating ? mapping?.name! : t("common:addMapper")}
-        subKey={isUpdating ? mapperId : "client-scopes:addMapperExplain"}
+        titleKey={isUpdating ? mapping?.name! : t("addMapper")}
+        subKey={isUpdating ? mapperId : "addMapperExplain"}
         dropdownItems={
           isUpdating
             ? [
@@ -193,69 +186,52 @@ export default function MappingDetails() {
                   value="delete"
                   onClick={toggleDeleteDialog}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
         }
       />
       <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="manage-clients"
-        >
-          <FormGroup label={t("common:mapperType")} fieldId="mapperType">
-            <KeycloakTextInput
-              type="text"
-              id="mapperType"
-              name="mapperType"
-              isReadOnly
-              value={mapping?.name}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("common:name")}
-            labelIcon={
-              <HelpItem
-                helpText={t("client-scopes-help:mapperName")}
-                fieldLabelId="name"
-              />
-            }
-            fieldId="name"
-            isRequired
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("common:required")}
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            onSubmit={handleSubmit(save)}
+            role="manage-clients"
           >
-            <KeycloakTextInput
-              id="name"
-              isReadOnly={isUpdating}
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              {...register("name", { required: true })}
+            <FormGroup label={t("mapperType")} fieldId="mapperType">
+              <KeycloakTextInput
+                type="text"
+                id="mapperType"
+                name="mapperType"
+                readOnlyVariant="default"
+                value={mapping?.name}
+              />
+            </FormGroup>
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("mapperNameHelp")}
+              readOnlyVariant={isUpdating ? "default" : undefined}
+              rules={{ required: { value: true, message: t("required") } }}
             />
-          </FormGroup>
-          <FormProvider {...form}>
             <DynamicComponents
               properties={mapping?.properties || []}
               isNew={!isUpdating}
             />
-          </FormProvider>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("common:save")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => <Link {...props} to={toDetails()} />}
-            >
-              {t("common:cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+            <ActionGroup>
+              <Button variant="primary" type="submit">
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                component={(props) => <Link {...props} to={toDetails()} />}
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

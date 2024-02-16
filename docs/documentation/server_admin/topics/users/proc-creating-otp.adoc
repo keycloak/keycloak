@@ -18,7 +18,5 @@ Alternatively, you can send an email to the user that requests the user reset th
 . Select a user.
 . Click the *Credentials* tab.
 . Click *Credential Reset*.
-. Select *Configure OTP*. 
-. Navigate to the *Reset Actions* list.
-. Click *Configure OTP*. 
+. Set *Reset Actions* to *Configure OTP*. 
 . Click *Send Email*. The sent email contains a link that directs the user to the *OTP setup page*. 

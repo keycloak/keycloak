@@ -16,13 +16,12 @@ import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
-import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { convertAttributeNameToForm } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
@@ -70,7 +69,7 @@ const KeySection = ({
   onGenerate,
   onImport,
 }: KeySectionProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control, watch } = useFormContext<FormFields>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
@@ -82,7 +81,11 @@ const KeySection = ({
   return (
     <>
       {showImportDialog && (
-        <ExportSamlKeyDialog clientId={clientId} close={toggleImportDialog} />
+        <ExportSamlKeyDialog
+          keyType={attr}
+          clientId={clientId}
+          close={toggleImportDialog}
+        />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
         <TextContent className="pf-u-pb-lg">
@@ -91,10 +94,7 @@ const KeySection = ({
         <FormAccess role="manage-clients" isHorizontal>
           <FormGroup
             labelIcon={
-              <HelpItem
-                helpText={t(`clients-help:${key}`)}
-                fieldLabelId={`clients:${key}`}
-              />
+              <HelpItem helpText={t(`${key}Help`)} fieldLabelId={key} />
             }
             label={t(key)}
             fieldId={key}
@@ -108,8 +108,8 @@ const KeySection = ({
                 <Switch
                   data-testid={key}
                   id={key}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => {
                     const v = value.toString();
@@ -143,7 +143,7 @@ const KeySection = ({
                   {t("importKey")}
                 </Button>
                 <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("common:export")}
+                  {t("export")}
                 </Button>
               </ActionGroup>
             </Form>
@@ -155,7 +155,7 @@ const KeySection = ({
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();
   const [selectedType, setSelectedType] = useState<KeyTypes>();
@@ -195,7 +195,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -207,8 +207,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: t("disableSigningExplain", {
       key: t(key),
     }),
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
       save();
@@ -216,10 +216,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   });
 
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "clients:reGenerateSigning",
-    messageKey: "clients:reGenerateSigningExplain",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "reGenerateSigning",
+    messageKey: "reGenerateSigningExplain",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       generate(selectedType!);
     },

@@ -20,6 +20,7 @@ package org.keycloak.authorization.policy.provider.role;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
@@ -36,6 +37,8 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 public class RolePolicyProvider implements PolicyProvider {
 
     private final BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction;
+
+    private static final Logger logger = Logger.getLogger(RolePolicyProvider.class);
 
     public RolePolicyProvider(BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction) {
         this.representationFunction = representationFunction;
@@ -63,6 +66,7 @@ public class RolePolicyProvider implements PolicyProvider {
                 }
             }
         }
+        logger.debugv("policy {} evaluated with status {} on identity {}", policy.getName(), evaluation.getEffect(), identity.getId());
     }
 
     private boolean hasRole(Identity identity, RoleModel role, RealmModel realm) {

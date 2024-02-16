@@ -4,7 +4,7 @@ module.exports = {
   rollup: {
     plugins: [
       postcss({
-        extract: 'app.css'
+        extract: '../resources/public/app.css'
       })
     ]
   }

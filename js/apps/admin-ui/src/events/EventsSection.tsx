@@ -11,8 +11,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -42,6 +40,7 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -59,7 +58,7 @@ type UserEventSearchForm = {
   dateTo: string;
   user: string;
   type: EventType[];
-  authIpAddress: string;
+  ipAddress: string;
 };
 
 const defaultValues: UserEventSearchForm = {
@@ -68,7 +67,7 @@ const defaultValues: UserEventSearchForm = {
   dateTo: "",
   user: "",
   type: [],
-  authIpAddress: "",
+  ipAddress: "",
 };
 
 const StatusRow = (event: EventRepresentation) =>
@@ -103,7 +102,7 @@ const DetailCell = (event: EventRepresentation) => (
 );
 
 const UserDetailLink = (event: EventRepresentation) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   return (
@@ -126,7 +125,7 @@ const UserDetailLink = (event: EventRepresentation) => {
 };
 
 export default function EventsSection() {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -143,7 +142,7 @@ export default function EventsSection() {
     dateTo: t("dateTo"),
     user: t("userId"),
     type: t("eventType"),
-    authIpAddress: t("ipAddress"),
+    ipAddress: t("ipAddress"),
   };
 
   const {
@@ -221,10 +220,6 @@ export default function EventsSection() {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const userEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -232,20 +227,12 @@ export default function EventsSection() {
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Dropdown
-            id="user-events-search-select"
-            data-testid="UserEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="userEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForUserEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            buttonText={t("searchForUserEvent")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            marginRight="2.5rem"
+            width="15vw"
           >
             <Form
               data-testid="searchForm"
@@ -279,8 +266,8 @@ export default function EventsSection() {
                       data-testid="event-type-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -312,7 +299,7 @@ export default function EventsSection() {
                                 );
                               }}
                             >
-                              {t(`realm-settings:eventTypes.${chip}.name`)}
+                              {t(`eventTypes.${chip}.name`)}
                             </Chip>
                           ))}
                         </ChipGroup>
@@ -320,7 +307,7 @@ export default function EventsSection() {
                     >
                       {events?.enabledEventTypes?.map((option) => (
                         <SelectOption key={option} value={option}>
-                          {t(`realm-settings:eventTypes.${option}.name`)}
+                          {t(`eventTypes.${option}.name`)}
                         </SelectOption>
                       ))}
                     </Select>
@@ -382,7 +369,7 @@ export default function EventsSection() {
                 <KeycloakTextInput
                   id="kc-ipAddress"
                   data-testid="ipAddress-searchField"
-                  {...register("authIpAddress")}
+                  {...register("ipAddress")}
                 />
               </FormGroup>
               <ActionGroup>
@@ -403,14 +390,7 @@ export default function EventsSection() {
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
+          </DropdownPanel>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
@@ -437,7 +417,7 @@ export default function EventsSection() {
                           key={entry}
                           onClick={() => removeFilterValue(key, entry)}
                         >
-                          {t(`realm-settings:eventTypes.${entry}.name`)}
+                          {t(`eventTypes.${entry}.name`)}
                         </Chip>
                       ))
                     )}
@@ -454,9 +434,9 @@ export default function EventsSection() {
   return (
     <>
       <ViewHeader
-        titleKey="events:title"
+        titleKey="titleEvents"
         subKey={
-          <Trans i18nKey="events:eventExplain">
+          <Trans i18nKey="eventExplain">
             If you want to configure user events, Admin events or Event
             listeners, please enter
             <Link to={toRealmSettings({ realm, tab: "events" })}>
@@ -489,34 +469,34 @@ export default function EventsSection() {
                   },
                 ]}
                 isPaginated
-                ariaLabelKey="events:title"
+                ariaLabelKey="titleEvents"
                 toolbarItem={userEventSearchFormDisplay()}
                 columns={[
                   {
                     name: "time",
-                    displayKey: "events:time",
+                    displayKey: "time",
                     cellFormatters: [expandable],
                     cellRenderer: (row) =>
                       formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
                   },
                   {
                     name: "userId",
-                    displayKey: "events:user",
+                    displayKey: "user",
                     cellRenderer: UserDetailLink,
                   },
                   {
                     name: "type",
-                    displayKey: "events:eventType",
+                    displayKey: "eventType",
                     cellRenderer: StatusRow,
                   },
                   {
                     name: "ipAddress",
-                    displayKey: "events:ipAddress",
+                    displayKey: "ipAddress",
                     transforms: [cellWidth(10)],
                   },
                   {
                     name: "clientId",
-                    displayKey: "events:client",
+                    displayKey: "client",
                   },
                 ]}
                 emptyState={

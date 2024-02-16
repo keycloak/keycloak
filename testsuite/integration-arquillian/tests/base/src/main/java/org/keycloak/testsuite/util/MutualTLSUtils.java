@@ -53,7 +53,7 @@ public class MutualTLSUtils {
     public static CloseableHttpClient newCloseableHttpClientWithOBBKeyStoreAndTrustStore() {
         return newCloseableHttpClient(OBB_KEYSTOREPATH, OBB_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
     }
-    
+
     public static CloseableHttpClient newCloseableHttpClientWithoutKeyStoreAndTrustStore() {
         return newCloseableHttpClient(null, null, null, null);
     }
@@ -70,7 +70,7 @@ public class MutualTLSUtils {
             }
         }
 
-        // load the trustore
+        // load the truststore
         KeyStore truststore = null;
         if (trustStorePath != null) {
             try {

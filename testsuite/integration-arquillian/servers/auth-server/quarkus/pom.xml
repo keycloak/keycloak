@@ -13,7 +13,7 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/${dist.archive.dir}</auth.server.home>
         <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
@@ -187,31 +187,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>includeProprietaryDependencies</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.oracle.database.jdbc</groupId>
-                                    <artifactId>ojdbc11</artifactId>
-                                    <version>${oracle-jdbc.version}</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.oracle.database.nls</groupId>
-                                    <artifactId>orai18n</artifactId>
-                                    <version>${oracle-jdbc.version}</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>copy-testsuite-providers</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -363,5 +338,54 @@
 
         </profile>
 
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.oracle.database.jdbc</groupId>
+                                            <artifactId>ojdbc11</artifactId>
+                                            <version>${oracle-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.oracle.database.nls</groupId>
+                                            <artifactId>orai18n</artifactId>
+                                            <version>${oracle-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.microsoft.sqlserver</groupId>
+                                            <artifactId>mssql-jdbc</artifactId>
+                                            <version>${mssql-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

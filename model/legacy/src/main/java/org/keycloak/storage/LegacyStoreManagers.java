@@ -17,26 +17,10 @@
 
 package org.keycloak.storage;
 
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.ClientScopeProvider;
-import org.keycloak.models.GroupProvider;
-import org.keycloak.models.RoleProvider;
-import org.keycloak.models.UserProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
+/**
+ * @deprecated Interface was renamed to {@link StoreManagers} in org.keycloak:keycloak-model-storage which should be used from now on. This Interface will be removed in the next release.
+ */
+@Deprecated
+public interface LegacyStoreManagers extends StoreManagers {
 
-public interface LegacyStoreManagers {
-    
-    ClientProvider clientStorageManager();
-
-    ClientScopeProvider clientScopeStorageManager();
-
-    RoleProvider roleStorageManager();
-
-    GroupProvider groupStorageManager();
-
-    UserProvider userStorageManager();
-
-    UserProvider userLocalStorage();
-
-    UserFederatedStorageProvider userFederatedStorage();
 }

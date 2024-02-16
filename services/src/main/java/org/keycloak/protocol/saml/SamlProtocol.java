@@ -236,7 +236,8 @@ public class SamlProtocol implements LoginProtocol {
                 );
             }
         } finally {
-            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+            // Remove authenticationSession of current browser tab
+            new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
         }
     }
 

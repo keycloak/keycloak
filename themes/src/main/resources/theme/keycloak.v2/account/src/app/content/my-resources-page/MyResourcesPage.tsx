@@ -139,8 +139,8 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchShareRequests(resource: Resource): void {
-        this.context!.doGet('/resources/' + resource._id + '/permissions/requests')
-            .then((response: HttpResponse<Permission[]>) => {
+        this.context!.doGet<Permission[]>('/resources/' + resource._id + '/permissions/requests')
+            .then((response) => {
                 resource.shareRequests = response.data || [];
                 if (resource.shareRequests.length > 0) {
                     this.forceUpdate();
@@ -203,7 +203,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         return (
             <ContentPage title="resources" onRefresh={this.fetchInitialResources.bind(this)}>
                 <PageSection variant={PageSectionVariants.light}>
-                    <Tabs activeKey={this.state.activeTabKey} onSelect={this.handleTabClick}>
+                    <Tabs activeKey={this.state.activeTabKey} onSelect={(event, index) => this.handleTabClick(index as number)}>
                         {this.makeTab(0, 'myResources', this.state.myResources, false)}
                         {this.makeTab(1, 'sharedwithMe', this.state.sharedWithMe, true)}
                     </Tabs>
@@ -258,7 +258,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         }
     }
 
-    private handleTabClick = (event: React.MouseEvent<HTMLInputElement>, tabIndex: number) => {
+    private handleTabClick = (tabIndex: number) => {
         if (this.state.activeTabKey === tabIndex) return;
 
         this.setState({

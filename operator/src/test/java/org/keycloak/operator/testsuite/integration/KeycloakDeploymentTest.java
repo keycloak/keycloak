@@ -20,6 +20,8 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
@@ -28,6 +30,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -35,6 +38,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
@@ -43,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -53,6 +58,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.inject.Inject;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -67,6 +74,10 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBe
 
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
+
+    @Inject
+    Config config;
+
     @Test
     public void testBasicKeycloakDeploymentAndDeletion() {
         // CR
@@ -92,6 +103,26 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient.resource(kc).delete();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
+    }
+
+    @Test
+    public void testKeycloakDeploymentBeforeSecret() {
+        // CR
+        var kc = getTestKeycloakDeployment(true);
+        var deploymentName = kc.getMetadata().getName();
+        deployKeycloak(k8sclient, kc, false, false);
+
+        // Check Operator has deployed Keycloak and the statefulset exists, this allows for the watched secret to be picked up
+        Log.info("Checking Operator has deployed Keycloak deployment");
+        Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
+        Resource<Keycloak> keycloakResource = k8sclient.resources(Keycloak.class).withName(deploymentName);
+        // expect no errors and not ready, which means we'll keep reconciling
+        Awaitility.await().ignoreExceptions().untilAsserted(() -> {
+            assertThat(stsResource.get()).isNotNull();
+            Keycloak keycloak = keycloakResource.get();
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
+        });
     }
 
     @Test
@@ -230,7 +261,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         // managed changes
         deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-        String originalLabelValue = deployment.getMetadata().getLabels().put(Constants.MANAGED_BY_LABEL, "not-right");
+        String originalAnnotationValue = deployment.getMetadata().getAnnotations().put(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION, "not-right");
 
         deployment.getMetadata().setResourceVersion(null);
         k8sclient.resource(deployment).update();
@@ -245,7 +276,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue();
                     // managed changes should get reverted
                     assertThat(d.getSpec()).isEqualTo(expectedSpec); // specs should be reconciled expected merged state
-                    assertThat(d.getMetadata().getLabels().get(Constants.MANAGED_BY_LABEL)).isEqualTo(originalLabelValue);
+                    assertThat(d.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)).isEqualTo(originalAnnotationValue);
                 });
     }
 
@@ -468,7 +499,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("--verbose", "start", "--optimized");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
     }
 
     @Test
@@ -491,7 +522,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .list()
                 .getItems();
 
-        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("--verbose", "start", "--optimized");
+        assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).endsWith("--verbose", "start", "--optimized");
         assertThat(pods.get(0).getSpec().getImagePullSecrets().size()).isEqualTo(1);
         assertThat(pods.get(0).getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
     }
@@ -621,6 +652,79 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         assertThat(labels).containsAllEntriesOf(expected);
     }
 
+    @Test
+    public void testApplyingResourcesParametersContainer() {
+        var kc = getTestKeycloakDeployment(true);
+
+        var resourceRequirements = new ResourceRequirements();
+        resourceRequirements.setLimits(Map.of(
+                "memory", new Quantity("3", "G")));
+        resourceRequirements.setRequests(Map.of(
+                "memory", new Quantity("500", "M")));
+
+        kc.getSpec().setResourceRequirements(resourceRequirements);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory").getAmount()).isEqualTo("500");
+        assertThat(requests.get("memory").getFormat()).isEqualTo("M");
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory").getAmount()).isEqualTo("3");
+        assertThat(limits.get("memory").getFormat()).isEqualTo("G");
+    }
+
+    @Test
+    public void testApplyingResourcesDefaultValues() {
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        var pods = k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .withLabels(Constants.DEFAULT_LABELS)
+                .list()
+                .getItems();
+
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+
+        var containers = pods.get(0).getSpec().getContainers();
+        assertThat(containers).isNotNull();
+        assertThat(containers).isNotEmpty();
+
+        var resources = containers.get(0).getResources();
+        assertThat(resources).isNotNull();
+
+        var requests = resources.getRequests();
+        assertThat(requests).isNotNull();
+        assertThat(requests.get("memory")).isEqualTo(config.keycloak().resources().requests().memory());
+
+        var limits = resources.getLimits();
+        assertThat(limits).isNotNull();
+        assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
+    }
+
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 
@@ -640,7 +744,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
                             .stream().map(ServicePort::getName).anyMatch(protocol::equals));
 
-                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port + "/admin/master/console/";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

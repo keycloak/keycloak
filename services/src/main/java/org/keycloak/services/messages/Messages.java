@@ -109,6 +109,7 @@ public class Messages {
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
+    public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
 
     public static final String EMAIL_SENT = "emailSentMessage";
 
@@ -184,6 +185,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
+
+    public static final String IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR = "identityProviderMissingCodeOrErrorMessage";
 
     public static final String IDENTITY_PROVIDER_INVALID_RESPONSE = "identityProviderInvalidResponseMessage";
 

@@ -18,9 +18,11 @@ package org.keycloak.social.linkedin;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
@@ -29,14 +31,15 @@ import java.util.List;
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
+@Deprecated
 public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFactory<LinkedInIdentityProvider>
-        implements SocialIdentityProviderFactory<LinkedInIdentityProvider> {
+        implements SocialIdentityProviderFactory<LinkedInIdentityProvider>, EnvironmentDependentProviderFactory  {
 
     public static final String PROVIDER_ID = "linkedin";
 
     @Override
     public String getName() {
-        return "LinkedIn";
+        return "LinkedIn (deprecated)";
     }
 
     @Override
@@ -61,5 +64,10 @@ public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFac
                 .label("Profile projection")
                 .helpText("Projection parameter for profile request. Leave empty for default projection.")
                 .add().build();
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.LINKEDIN_OAUTH);
     }
 }

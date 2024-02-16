@@ -29,7 +29,7 @@ export const FineGrainOpenIdConnect = ({
   reset,
   hasConfigureAccess,
 }: FineGrainOpenIdConnectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const providers = useServerInfo().providers;
   const clientSignatureProviders = providers?.clientSignature.providers;
   const contentEncryptionProviders = providers?.contentencryption.providers;
@@ -72,7 +72,7 @@ export const FineGrainOpenIdConnect = ({
 
   const keyOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -80,7 +80,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const cekManagementOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -96,7 +96,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const contentOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -105,10 +105,10 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     <SelectOption key="none" value="none">
-      {t("common:none")}
+      {t("none")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -117,7 +117,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncryptionOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -126,7 +126,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncodingOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -135,7 +135,7 @@ export const FineGrainOpenIdConnect = ({
 
   const authorizationSignedResponseOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(signatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -165,8 +165,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="accessTokenSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:accessTokenSignatureAlgorithm")}
-            fieldLabelId="clients:accessTokenSignatureAlgorithm"
+            helpText={t("accessTokenSignatureAlgorithmHelp")}
+            fieldLabelId="accessTokenSignatureAlgorithm"
           />
         }
       >
@@ -187,6 +187,7 @@ export const FineGrainOpenIdConnect = ({
                 setAccessTokenOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAccessTokenSignatureAlgorithm")}
             >
               {keyOptions}
             </Select>
@@ -198,8 +199,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="kc-id-token-signature"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:idTokenSignatureAlgorithm")}
-            fieldLabelId="clients:idTokenSignatureAlgorithm"
+            helpText={t("idTokenSignatureAlgorithmHelp")}
+            fieldLabelId="idTokenSignatureAlgorithm"
           />
         }
       >
@@ -220,6 +221,7 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectIdTokenSignatureAlgorithm")}
             >
               {keyOptions}
             </Select>
@@ -231,8 +233,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:idTokenEncryptionKeyManagementAlgorithm")}
-            fieldLabelId="clients:idTokenEncryptionKeyManagementAlgorithm"
+            helpText={t("idTokenEncryptionKeyManagementAlgorithmHelp")}
+            fieldLabelId="idTokenEncryptionKeyManagementAlgorithm"
           />
         }
       >
@@ -253,6 +255,7 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenKeyManagementOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectIdTokenEncryptionKeyManagementAlgorithm")}
             >
               {cekManagementOptions}
             </Select>
@@ -264,10 +267,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionContentEncryptionAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:idTokenEncryptionContentEncryptionAlgorithm",
-            )}
-            fieldLabelId="clients:idTokenEncryptionContentEncryptionAlgorithm"
+            helpText={t("idTokenEncryptionContentEncryptionAlgorithmHelp")}
+            fieldLabelId="idTokenEncryptionContentEncryptionAlgorithm"
           />
         }
       >
@@ -288,6 +289,9 @@ export const FineGrainOpenIdConnect = ({
                 setIdTokenContentOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectIdTokenEncryptionContentEncryptionAlgorithm",
+              )}
             >
               {contentOptions}
             </Select>
@@ -299,8 +303,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoSignedResponseAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:userInfoSignedResponseAlgorithm")}
-            fieldLabelId="clients:userInfoSignedResponseAlgorithm"
+            helpText={t("userInfoSignedResponseAlgorithmHelp")}
+            fieldLabelId="userInfoSignedResponseAlgorithm"
           />
         }
       >
@@ -321,6 +325,7 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoSignedResponseOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectUserInfoSignedResponseAlgorithm")}
             >
               {signatureOptions}
             </Select>
@@ -332,10 +337,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoResponseEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:userInfoResponseEncryptionKeyManagementAlgorithm",
-            )}
-            fieldLabelId="clients:userInfoResponseEncryptionKeyManagementAlgorithm"
+            helpText={t("userInfoResponseEncryptionKeyManagementAlgorithmHelp")}
+            fieldLabelId="userInfoResponseEncryptionKeyManagementAlgorithm"
           />
         }
       >
@@ -356,6 +359,9 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoResponseEncryptionKeyManagementOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectUserInfoResponseEncryptionKeyManagementAlgorithm",
+              )}
             >
               {cekManagementOptions}
             </Select>
@@ -368,9 +374,9 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm",
+              "userInfoResponseEncryptionContentEncryptionAlgorithmHelp",
             )}
-            fieldLabelId="clients:userInfoResponseEncryptionContentEncryptionAlgorithm"
+            fieldLabelId="userInfoResponseEncryptionContentEncryptionAlgorithm"
           />
         }
       >
@@ -391,6 +397,9 @@ export const FineGrainOpenIdConnect = ({
                 setUserInfoResponseEncryptionContentEncryptionOpen(false);
               }}
               selections={field.value}
+              aria-label={t(
+                "selectUserInfoResponseEncryptionContentEncryptionAlgorithm",
+              )}
             >
               {contentOptions}
             </Select>
@@ -402,8 +411,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectSignatureAlgorithm")}
-            fieldLabelId="clients:requestObjectSignatureAlgorithm"
+            helpText={t("requestObjectSignatureAlgorithmHelp")}
+            fieldLabelId="requestObjectSignatureAlgorithm"
           />
         }
       >
@@ -424,6 +433,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectSignatureOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectSignatureAlgorithm")}
             >
               {requestObjectOptions}
             </Select>
@@ -435,8 +445,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncryption"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectEncryption")}
-            fieldLabelId="clients:requestObjectEncryption"
+            helpText={t("requestObjectEncryptionHelp")}
+            fieldLabelId="requestObjectEncryption"
           />
         }
       >
@@ -457,6 +467,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectEncryptionOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectEncryption")}
             >
               {requestObjectEncryptionOptions}
             </Select>
@@ -468,8 +479,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncoding"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectEncoding")}
-            fieldLabelId="clients:requestObjectEncoding"
+            helpText={t("requestObjectEncodingHelp")}
+            fieldLabelId="requestObjectEncoding"
           />
         }
       >
@@ -490,6 +501,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectEncodingOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectEncoding")}
             >
               {requestObjectEncodingOptions}
             </Select>
@@ -501,8 +513,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectRequired"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectRequired")}
-            fieldLabelId="clients:requestObjectRequired"
+            helpText={t("requestObjectRequiredHelp")}
+            fieldLabelId="requestObjectRequired"
           />
         }
       >
@@ -523,6 +535,7 @@ export const FineGrainOpenIdConnect = ({
                 setRequestObjectRequiredOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectRequestObjectRequired")}
             >
               {requestObjectRequiredOptions}
             </Select>
@@ -534,15 +547,15 @@ export const FineGrainOpenIdConnect = ({
         fieldId="validRequestURIs"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:validRequestURIs")}
-            fieldLabelId="clients:validRequestURIs"
+            helpText={t("validRequestURIsHelp")}
+            fieldLabelId="validRequestURIs"
           />
         }
       >
         <MultiLineInput
           name={convertAttributeNameToForm("attributes.request.uris")}
           aria-label={t("validRequestURIs")}
-          addButtonLabel="clients:addRequestUri"
+          addButtonLabel="addRequestUri"
           stringify
         />
       </FormGroup>
@@ -551,8 +564,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationSignedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationSignedResponseAlg")}
-            fieldLabelId="clients:authorizationSignedResponseAlg"
+            helpText={t("authorizationSignedResponseAlgHelp")}
+            fieldLabelId="authorizationSignedResponseAlg"
           />
         }
       >
@@ -573,6 +586,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationSignedOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationSignedResponseAlg")}
             >
               {authorizationSignedResponseOptions}
             </Select>
@@ -584,8 +598,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationEncryptedResponseAlg")}
-            fieldLabelId="clients:authorizationEncryptedResponseAlg"
+            helpText={t("authorizationEncryptedResponseAlgHelp")}
+            fieldLabelId="authorizationEncryptedResponseAlg"
           />
         }
       >
@@ -606,6 +620,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationEncryptedOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationEncryptedResponseAlg")}
             >
               {cekManagementOptions}
             </Select>
@@ -617,8 +632,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseEnc"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationEncryptedResponseEnc")}
-            fieldLabelId="clients:authorizationEncryptedResponseEnc"
+            helpText={t("authorizationEncryptedResponseEncHelp")}
+            fieldLabelId="authorizationEncryptedResponseEnc"
           />
         }
       >
@@ -639,6 +654,7 @@ export const FineGrainOpenIdConnect = ({
                 setAuthorizationEncryptedResponseOpen(false);
               }}
               selections={field.value}
+              aria-label={t("selectAuthorizationEncryptedResponseEnc")}
             >
               {contentOptions}
             </Select>
@@ -647,10 +663,10 @@ export const FineGrainOpenIdConnect = ({
       </FormGroup>
       <ActionGroup>
         <Button variant="secondary" id="fineGrainSave" onClick={save}>
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button id="fineGrainRevert" variant="link" onClick={reset}>
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

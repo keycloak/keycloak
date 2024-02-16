@@ -37,7 +37,7 @@ const SecretInput = ({
   secret,
   toggle,
 }: SecretInputProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useFormContext<ClientRepresentation>();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
@@ -69,7 +69,7 @@ const SecretInput = ({
 };
 
 const ExpireDateFormatter = ({ time }: { time: number }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const formatDate = useFormatDate();
   const unixTimeToString = (time: number) =>
     time
@@ -85,7 +85,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 };
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(
@@ -99,9 +99,9 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const expired = (time: number) => new Date().getTime() >= time * 1000;
 
   const [toggleInvalidateConfirm, InvalidateConfirm] = useConfirmDialog({
-    titleKey: "clients:invalidateRotatedSecret",
-    messageKey: "clients:invalidateRotatedSecretExplain",
-    continueButtonLabel: "common:confirm",
+    titleKey: "invalidateRotatedSecret",
+    messageKey: "invalidateRotatedSecretExplain",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.invalidateSecret({
@@ -110,7 +110,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
         setSecretRotated(undefined);
         addAlert(t("invalidateRotatedSuccess"));
       } catch (error) {
-        addError("clients:invalidateRotatedError", error);
+        addError("invalidateRotatedError", error);
       }
     },
   });

@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -334,7 +333,6 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
      */
     @Test
     public void test04_syncRoleMappings() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
@@ -446,7 +444,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), carlos, "Password1");
 
             // Update group mapper
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel,
+            LDAPTestUtils.updateConfigOptions(mapperModel,
                     RoleMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, RoleMapperConfig.GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE,
                     RoleMapperConfig.MEMBEROF_LDAP_ATTRIBUTE, LDAPConstants.STREET);
             appRealm.updateComponent(mapperModel);

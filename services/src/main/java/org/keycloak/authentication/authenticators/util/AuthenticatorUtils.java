@@ -17,17 +17,25 @@
 
 package org.keycloak.authentication.authenticators.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class AuthenticatorUtils {
+    private static final Logger logger = Logger.getLogger(AuthenticatorUtils.class);
+
     public static String getDisabledByBruteForceEventError(BruteForceProtector protector, KeycloakSession session, RealmModel realm, UserModel user) {
         if (realm.isBruteForceProtected()) {
             if (protector.isPermanentlyLockedOut(session, realm, user)) {
@@ -43,5 +51,50 @@ public final class AuthenticatorUtils {
 
     public static String getDisabledByBruteForceEventError(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {
         return AuthenticatorUtils.getDisabledByBruteForceEventError(authnFlowContext.getProtector(), authnFlowContext.getSession(), authnFlowContext.getRealm(), authenticatedUser);
+    }
+
+    /**
+     * Get all completed authenticator executions from the user session notes.
+     * @param note The serialized note value to parse
+     * @return A list of execution ids that were successfully completed to create this authentication session
+     */
+    public static Map<String, Integer> parseCompletedExecutions(String note){
+        // default to empty map
+        if (note == null){
+            note = "{}";
+        }
+
+        try {
+            return JsonSerialization.readValue(note, new TypeReference<Map<String, Integer>>() {});
+        } catch (IOException e) {
+            logger.warnf("Invalid format of the completed authenticators map. Saved value was: %s", note);
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Update the completed authenticators note on the new auth session
+     * @param authSession The current authentication session
+     * @param userSession The previous user session
+     * @param executionId The completed execution id
+     */
+    public static void updateCompletedExecutions(AuthenticationSessionModel authSession, UserSessionModel userSession, String executionId){
+        Map<String, Integer> completedExecutions = parseCompletedExecutions(authSession.getUserSessionNotes().get(Constants.AUTHENTICATORS_COMPLETED));
+
+        // attempt to fetch previously completed authenticators
+        if (userSession != null){
+            Map<String, Integer> prevCompleted = parseCompletedExecutions(userSession.getNote(Constants.AUTHENTICATORS_COMPLETED));
+            logger.debugf("merging completed executions from previous authentication session %s", prevCompleted);
+            completedExecutions.putAll(prevCompleted);
+        }
+
+        // set new execution and serialize note
+        completedExecutions.put(executionId, Time.currentTime());
+        try {
+            String updated = JsonSerialization.writeValueAsString(completedExecutions);
+            authSession.setUserSessionNote(Constants.AUTHENTICATORS_COMPLETED, updated);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

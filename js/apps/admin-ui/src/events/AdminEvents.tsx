@@ -6,8 +6,6 @@ import {
   Chip,
   ChipGroup,
   DatePicker,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -37,6 +35,7 @@ import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -79,7 +78,7 @@ const DisplayDialog = ({
   onClose,
   children,
 }: PropsWithChildren<DisplayDialogProps>) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   return (
     <Modal
       variant={ModalVariant.medium}
@@ -93,7 +92,7 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();
@@ -188,10 +187,6 @@ export const AdminEvents = () => {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const adminEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -199,20 +194,12 @@ export const AdminEvents = () => {
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Dropdown
-            id="admin-events-search-select"
-            data-testid="AdminEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="adminEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForAdminEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            buttonText={t("searchForAdminEvent")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            marginRight="2.5rem"
+            width="15vw"
           >
             <Form
               isHorizontal
@@ -234,8 +221,8 @@ export const AdminEvents = () => {
                       data-testid="resource-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -295,8 +282,8 @@ export const AdminEvents = () => {
                       data-testid="operation-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -450,14 +437,7 @@ export const AdminEvents = () => {
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
+          </DropdownPanel>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (
@@ -548,7 +528,7 @@ export const AdminEvents = () => {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="events:adminEvents"
+        ariaLabelKey="adminEvents"
         toolbarItem={adminEventSearchFormDisplay()}
         actions={
           [
@@ -565,27 +545,27 @@ export const AdminEvents = () => {
         columns={[
           {
             name: "time",
-            displayKey: "events:time",
+            displayKey: "time",
             cellRenderer: (row) =>
               formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
           },
           {
             name: "resourcePath",
-            displayKey: "events:resourcePath",
+            displayKey: "resourcePath",
             cellRenderer: CellResourceLinkRenderer,
           },
           {
             name: "resourceType",
-            displayKey: "events:resourceType",
+            displayKey: "resourceType",
           },
           {
             name: "operationType",
-            displayKey: "events:operationType",
+            displayKey: "operationType",
             transforms: [cellWidth(10)],
           },
           {
             name: "",
-            displayKey: "events:user",
+            displayKey: "user",
             cellRenderer: (event) => event.authDetails?.userId || "",
           },
         ]}

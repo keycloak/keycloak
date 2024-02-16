@@ -44,14 +44,17 @@ DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
 
-CONFIG_ARGS=${CONFIG_ARGS:-""}
+esceval() {
+    printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
+}
 
+PRE_BUILD=true
 while [ "$#" -gt 0 ]
 do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\+$' >/dev/null; then
+          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
               DEBUG_PORT=$2
               shift
           fi
@@ -61,10 +64,16 @@ do
           break
           ;;
       *)
+          OPT=$(esceval "$1")
           case "$1" in
             start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
-            -D*) SERVER_OPTS="$SERVER_OPTS $1";;
-            *) CONFIG_ARGS="$CONFIG_ARGS $1";;
+            -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
+            *) case "$1" in
+                 --optimized | --help | --help-all | -h) PRE_BUILD=false;;
+                 build) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
+               esac 
+               CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
+               ;;
           esac
           ;;
     esac
@@ -87,7 +96,23 @@ if [ -z "$JAVA_OPTS" ]; then
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
    # Both ZGC and Shenandoah GC seem to be more eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning as as it is not as aggressive as ParallelGC in reclaiming dead objects.
-   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90"
+   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+
+   if [ -z "$JAVA_OPTS_KC_HEAP" ]; then
+      JAVA_OPTS_KC_HEAP="-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
+      if [ "$KC_RUN_IN_CONTAINER" = "true" ]; then
+         # Maximum utilization of the heap is set to 70% of the total container memory
+         # Initial heap size is set to 50% of the total container memory in order to reduce GC executions
+         JAVA_OPTS_KC_HEAP="$JAVA_OPTS_KC_HEAP -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
+      else
+         JAVA_OPTS_KC_HEAP="$JAVA_OPTS_KC_HEAP -Xms64m -Xmx512m"
+      fi
+   else
+      echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values: $JAVA_OPTS_KC_HEAP"
+   fi
+
+   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_KC_HEAP"
+
 else
    echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 fi
@@ -115,19 +140,25 @@ if [ "$DEBUG_MODE" = "true" ]; then
     fi
 fi
 
-JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+esceval_args() {
+  while IFS= read -r entry; do
+    result="$result $(esceval "$entry")"
+  done
+  echo $result
+}
+
+JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
+
+JAVA_RUN_OPTS="$JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_OPTS: $JAVA_OPTS"
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-case "$CONFIG_ARGS" in
-  " build"* | *--optimized* | *-h | *--help*) ;;
-  *)
-    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
-    JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-    ;;
-esac
+if [ "$PRE_BUILD" = "true" ]; then
+  eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+  JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
+fi
 
 eval exec "'$JAVA'" $JAVA_RUN_OPTS

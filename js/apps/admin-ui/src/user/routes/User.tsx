@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type UserTab =
@@ -24,12 +24,12 @@ const EditUser = lazy(() => import("../EditUser"));
 export const UserRoute: AppRouteObject = {
   path: "/:realm/users/:id/:tab",
   element: <EditUser />,
-  breadcrumb: (t) => t("users:userDetails"),
+  breadcrumb: (t) => t("userDetails"),
   handle: {
     access: "query-users",
   },
 };
 
 export const toUser = (params: UserParams): Partial<Path> => ({
-  pathname: generatePath(UserRoute.path, params),
+  pathname: generateEncodedPath(UserRoute.path, params),
 });

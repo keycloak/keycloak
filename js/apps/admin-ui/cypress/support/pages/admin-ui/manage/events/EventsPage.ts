@@ -8,16 +8,16 @@ export enum EventsTab {
 }
 
 export default class EventsPage extends CommonPage {
-  private userEventsTab = new UserEventsTab();
-  private adminEventsTab = new AdminEventsTab();
+  #userEventsTab = new UserEventsTab();
+  #adminEventsTab = new AdminEventsTab();
 
   goToUserEventsTab() {
     this.tabUtils().clickTab(EventsTab.UserEvents);
-    return this.userEventsTab;
+    return this.#userEventsTab;
   }
 
   goToAdminEventsTab() {
     this.tabUtils().clickTab(EventsTab.AdminEvents);
-    return this.adminEventsTab;
+    return this.#adminEventsTab;
   }
 }

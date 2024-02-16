@@ -31,7 +31,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -49,7 +48,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
@@ -87,13 +85,13 @@ import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.DPoPUtil;
@@ -125,8 +123,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -178,25 +174,6 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
-            // exceptions on DBs with SERIALIZABLE isolation level.
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-                @Override
-                public Response runInternal(KeycloakSession session) {
-                    // create another instance of the endpoint to isolate each run.
-                    TokenEndpoint other = new TokenEndpoint(session, tokenManager,
-                            new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                    // process the request in the created instance.
-                    return other.processGrantRequestInternal();
-                }
-            }, 10, 100);
-        } else {
-            return processGrantRequestInternal();
-        }
-    }
-
-    private Response processGrantRequestInternal() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
@@ -309,17 +286,24 @@ public class TokenEndpoint {
             event.event(EventType.PERMISSION_TOKEN);
             action = Action.PERMISSION;
         } else if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
+                throw newUnsupportedGrantTypeException();
+            }
             event.event(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN);
             action = Action.OAUTH2_DEVICE_CODE;
         } else if (grantType.equals(OAuth2Constants.CIBA_GRANT_TYPE)) {
             event.event(EventType.AUTHREQID_TO_TOKEN);
             action = Action.CIBA;
         } else {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
-                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
+            throw newUnsupportedGrantTypeException();
         }
 
         event.detail(Details.GRANT_TYPE, grantType);
+    }
+
+    private CorsErrorResponseException newUnsupportedGrantTypeException() {
+        return new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
+                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Status.BAD_REQUEST);
     }
 
     private void checkParameterDuplicated() {
@@ -567,6 +551,8 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
 
+        String scopeParameter = getRequestedScopes();
+
         try {
             session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
@@ -578,17 +564,17 @@ public class TokenEndpoint {
         AccessTokenResponse res;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
-
-            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, scopeParameter);
 
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
             checkAndBindDPoPToken(responseBuilder, clientConfig.isUseRefreshToken() && (client.isPublicClient() || client.isBearerOnly()), Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
+            session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
+
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
-                UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, res.getSessionState()));
+                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
@@ -678,6 +664,7 @@ public class TokenEndpoint {
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setAuthenticationSession(authSession)
                 .setFlowId(flowId)
+                .setFlowPath("token")
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setRealm(realm)

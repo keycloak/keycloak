@@ -40,19 +40,19 @@
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.276.8",
-    "@patternfly/react-styles": "^4.11.8",
+    "@patternfly/react-core": "^4.278.0",
+    "@patternfly/react-styles": "^4.92.8",
     "keycloak-js": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18.2.7",
-    "@vitejs/plugin-react-swc": "^3.3.2",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react-swc": "^3.6.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^4.4.9",
-    "vite-plugin-checker": "^0.6.2",
-    "vite-plugin-dts": "^3.5.3"
+    "vite": "^5.1.2",
+    "vite-plugin-checker": "^0.6.4",
+    "vite-plugin-dts": "^3.7.2"
   }
 }

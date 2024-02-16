@@ -17,7 +17,7 @@ import { UserProfileProvider } from "./UserProfileContext";
 
 export const UserProfileTab = () => {
   const { realm } = useRealm();
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const useTab = (tab: IUserProfileTab) =>
     useRoutableTab(toUserProfile({ realm, tab }));

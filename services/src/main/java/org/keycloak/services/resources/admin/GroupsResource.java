@@ -16,12 +16,26 @@
  */
 package org.keycloak.services.resources.admin;
 
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import jakarta.ws.rs.NotFoundException;
-
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -38,21 +52,7 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluato
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
+
 
 /**
  * @resource Groups
@@ -94,21 +94,23 @@ public class GroupsResource {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
 
-        Stream<GroupModel> stream = null;
+        Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
+            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
-            stream = ModelToRepresentation.searchForGroupModelByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            stream = ModelToRepresentation.toGroupModelHierarchy(realm, !briefRepresentation, firstResult, maxResults);
+            stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else {
-            stream = realm.getTopLevelGroupsStream();
+            stream = session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         }
 
+        if (populateHierarchy) {
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
+        }
         boolean canViewGlobal = groupsEvaluator.canView();
-        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
-                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation, false));
+        return stream
+            .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 
     /**
@@ -117,8 +119,8 @@ public class GroupsResource {
      * @param id
      * @return
      */
-    @Path("{id}")
-    public GroupResource getGroupById(@PathParam("id") String id) {
+    @Path("{group-id}")
+    public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
@@ -139,6 +141,8 @@ public class GroupsResource {
     @Operation( summary = "Returns the groups counts.")
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
         Long results;
         Map<String, Long> map = new HashMap<>();
         if (Objects.nonNull(search)) {

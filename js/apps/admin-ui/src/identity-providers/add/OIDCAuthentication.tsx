@@ -10,8 +10,10 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "ui-shared";
 import { ClientIdSecret } from "../component/ClientIdSecret";
+import { SwitchField } from "../component/SwitchField";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { TextField } from "../component/TextField";
 
 const clientAuthentications = [
   "client_secret_post",
@@ -22,7 +24,7 @@ const clientAuthentications = [
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
   const providers = useServerInfo().providers!.clientSignature.providers;
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const { control } = useFormContext();
   const [openClientAuth, setOpenClientAuth] = useState(false);
@@ -39,8 +41,8 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAuthentication")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:clientAuthentication")}
-            fieldLabelId="identity-providers:clientAuthentication"
+            helpText={t("clientAuthenticationHelp")}
+            fieldLabelId="clientAuthentication"
           />
         }
         fieldId="clientAuthentication"
@@ -84,8 +86,8 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAssertionSigningAlg")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:clientAssertionSigningAlg")}
-            fieldLabelId="identity-providers:clientAssertionSigningAlg"
+            helpText={t("clientAssertionSigningAlgHelp")}
+            fieldLabelId="clientAssertionSigningAlg"
           />
         }
         fieldId="clientAssertionSigningAlg"
@@ -105,6 +107,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
               }}
               selections={field.value || t("algorithmNotSpecified")}
               variant={SelectVariant.single}
+              aria-label={t("selectClientAssertionSigningAlg")}
               isOpen={openClientAuthSigAlg}
             >
               {[
@@ -123,6 +126,19 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
           )}
         />
       </FormGroup>
+      {(clientAuthMethod === "private_key_jwt" ||
+        clientAuthMethod === "client_secret_jwt") && (
+        <TextField
+          field="config.clientAssertionAudience"
+          label="clientAssertionAudience"
+        />
+      )}
+      {clientAuthMethod === "private_key_jwt" && (
+        <SwitchField
+          field="config.jwtX509HeadersEnabled"
+          label="jwtX509HeadersEnabled"
+        />
+      )}
     </>
   );
 };

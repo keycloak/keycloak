@@ -49,18 +49,19 @@ export class KeycloakAdminClient {
   // Members
   public baseUrl: string;
   public realmName: string;
+  public scope?: string;
   public accessToken?: string;
   public refreshToken?: string;
 
-  private requestOptions?: RequestInit;
-  private globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
-  private tokenProvider?: TokenProvider;
+  #requestOptions?: RequestInit;
+  #globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
+  #tokenProvider?: TokenProvider;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
     this.realmName = connectionConfig?.realmName || defaultRealm;
-    this.requestOptions = connectionConfig?.requestOptions;
-    this.globalRequestArgOptions = connectionConfig?.requestArgOptions;
+    this.#requestOptions = connectionConfig?.requestOptions;
+    this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
 
     // Initialize resources
     this.users = new Users(this);
@@ -84,19 +85,20 @@ export class KeycloakAdminClient {
     const { accessToken, refreshToken } = await getToken({
       baseUrl: this.baseUrl,
       realmName: this.realmName,
+      scope: this.scope,
       credentials,
-      requestOptions: this.requestOptions,
+      requestOptions: this.#requestOptions,
     });
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
   }
 
   public registerTokenProvider(provider: TokenProvider) {
-    if (this.tokenProvider) {
+    if (this.#tokenProvider) {
       throw new Error("An existing token provider was already registered.");
     }
 
-    this.tokenProvider = provider;
+    this.#tokenProvider = provider;
   }
 
   public setAccessToken(token: string) {
@@ -104,21 +106,21 @@ export class KeycloakAdminClient {
   }
 
   public async getAccessToken() {
-    if (this.tokenProvider) {
-      return this.tokenProvider.getAccessToken();
+    if (this.#tokenProvider) {
+      return this.#tokenProvider.getAccessToken();
     }
 
     return this.accessToken;
   }
 
   public getRequestOptions() {
-    return this.requestOptions;
+    return this.#requestOptions;
   }
 
   public getGlobalRequestArgOptions():
     | Pick<RequestArgs, "catchNotFound">
     | undefined {
-    return this.globalRequestArgOptions;
+    return this.#globalRequestArgOptions;
   }
 
   public setConfig(connectionConfig: ConnectionConfig) {
@@ -135,6 +137,6 @@ export class KeycloakAdminClient {
     ) {
       this.realmName = connectionConfig.realmName;
     }
-    this.requestOptions = connectionConfig.requestOptions;
+    this.#requestOptions = connectionConfig.requestOptions;
   }
 }

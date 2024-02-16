@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
@@ -19,7 +20,7 @@ type FormFields = IdentityProviderRepresentation & {
 };
 
 export const SamlConnectSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const id = "saml";
 
   const { realm } = useRealm();
@@ -47,7 +48,7 @@ export const SamlConnectSettings = () => {
     formData.append("file", new Blob([xml]));
 
     try {
-      const response = await fetch(
+      const response = await fetchWithError(
         `${addTrailingSlash(
           adminClient.baseUrl,
         )}admin/realms/${realm}/identity-provider/import-config`,
@@ -85,12 +86,12 @@ export const SamlConnectSettings = () => {
         fieldId="kc-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:serviceProviderEntityId")}
-            fieldLabelId="identity-providers:serviceProviderEntityId"
+            helpText={t("serviceProviderEntityIdHelp")}
+            fieldLabelId="serviceProviderEntityId"
           />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.config?.entityId ? "error" : "default"}
       >
         <KeycloakTextInput
@@ -110,8 +111,8 @@ export const SamlConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:importConfig")}
-                fieldLabelId="identity-providers:importConfig"
+                helpText={t("importConfigHelp")}
+                fieldLabelId="importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

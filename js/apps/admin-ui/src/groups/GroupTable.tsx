@@ -1,4 +1,8 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import {
+  GroupQuery,
+  SubGroupQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +11,6 @@ import { Link, useLocation } from "react-router-dom";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import useToggle from "../utils/useToggle";
 import { GroupsModal } from "./GroupsModal";
 import { useSubGroups } from "./SubGroupsContext";
@@ -15,17 +18,14 @@ import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
+import { adminClient } from "../admin-client";
 
 type GroupTableProps = {
   refresh: () => void;
-  canViewDetails: boolean;
 };
 
-export const GroupTable = ({
-  refresh: viewRefresh,
-  canViewDetails,
-}: GroupTableProps) => {
-  const { t } = useTranslation("groups");
+export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+  const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 
@@ -47,23 +47,21 @@ export const GroupTable = ({
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
   const loader = async (first?: number, max?: number) => {
-    const params: Record<string, string> = {
-      search: search || "",
-      first: first?.toString() || "",
-      max: max?.toString() || "",
-    };
-
     let groupsData = undefined;
     if (id) {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>(
-        "ui-ext/groups/subgroup",
-        { ...params, id },
-      );
+      const args: SubGroupQuery = {
+        first: first,
+        max: max,
+        parentId: id,
+      };
+      groupsData = await adminClient.groups.listSubGroups(args);
     } else {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
-        ...params,
-        global: "false",
-      });
+      const args: GroupQuery = {
+        search: search || "",
+        first: first || undefined,
+        max: max || undefined,
+      };
+      groupsData = await adminClient.groups.find(args);
     }
 
     return groupsData;
@@ -119,7 +117,7 @@ export const GroupTable = ({
         onSelect={(rows) => setSelectedRows([...rows])}
         canSelectAll
         loader={loader}
-        ariaLabelKey="groups:groups"
+        ariaLabelKey="groups"
         isPaginated
         isSearching={!!search}
         toolbarItem={
@@ -176,7 +174,7 @@ export const GroupTable = ({
                   isSeparator: true,
                 },
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: async (group: GroupRepresentation) => {
                     setSelectedRows([group]);
                     toggleShowDelete();
@@ -188,9 +186,9 @@ export const GroupTable = ({
         columns={[
           {
             name: "name",
-            displayKey: "groups:groupName",
+            displayKey: "groupName",
             cellRenderer: (group) =>
-              canViewDetails ? (
+              group.access?.view ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>

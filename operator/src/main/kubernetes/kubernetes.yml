@@ -5,9 +5,6 @@ metadata:
 rules:
   - apiGroups:
       - apps
-      # Extensions enabled for backward compatibility:
-      # https://github.com/fabric8io/kubernetes-client/issues/3996
-      - extensions
     resources:
       - statefulsets
     verbs:
@@ -63,6 +60,18 @@ rules:
       - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keycloak-operator-clusterrole
+rules:
+  - apiGroups:
+      - config.openshift.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
@@ -75,3 +84,18 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: keycloak-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+  name: keycloak-operator-clusterrole-binding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: keycloak-operator-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: keycloak-operator
+    namespace: keycloak

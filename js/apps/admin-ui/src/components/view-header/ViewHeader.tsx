@@ -93,7 +93,11 @@ export const ViewHeader = ({
             <Level>
               <LevelItem>
                 <TextContent className="pf-u-mr-sm">
-                  <Text className={className} component="h1">
+                  <Text
+                    className={className}
+                    component="h1"
+                    data-testid="view-header"
+                  >
                     {i18n.exists(titleKey) ? t(titleKey) : titleKey}
                   </Text>
                 </TextContent>
@@ -124,12 +128,12 @@ export const ViewHeader = ({
                     <Switch
                       id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
-                      label={t("common:enabled")}
-                      labelOff={t("common:disabled")}
+                      label={t("enabled")}
+                      labelOff={t("disabled")}
                       className="pf-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
-                      aria-label={t("common:enabled")}
+                      aria-label={t("enabled")}
                       onChange={(value) => {
                         onToggle(value);
                       }}
@@ -152,7 +156,7 @@ export const ViewHeader = ({
                           id={actionsDropdownId}
                           onToggle={onDropdownToggle}
                         >
-                          {t("common:action")}
+                          {t("action")}
                         </DropdownToggle>
                       }
                       isOpen={isDropdownOpen}
@@ -171,11 +175,11 @@ export const ViewHeader = ({
               {isValidElement(subKey)
                 ? subKey
                 : subKey
-                ? t(subKey as string)
-                : ""}
+                  ? t(subKey as string)
+                  : ""}
               {helpUrl && (
                 <FormattedLink
-                  title={t("common:learnMore")}
+                  title={t("learnMore")}
                   href={helpUrl}
                   isInline
                   className="pf-u-ml-md"

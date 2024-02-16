@@ -6,8 +6,10 @@ type SharedWithProps = {
   permissions?: Permission[];
 };
 
-export const SharedWith = ({ permissions: p = [] }: SharedWithProps) => {
-  return (
+export const SharedWith = ({ permissions: p = [] }: SharedWithProps) => (
+  <div
+    data-testid={`shared-with-${p.length ? p.map((e) => e.username) : "none"}`}
+  >
     <Trans i18nKey="resourceSharedWith" count={p.length}>
       <strong>
         {{
@@ -20,5 +22,5 @@ export const SharedWith = ({ permissions: p = [] }: SharedWithProps) => {
         }}
       </strong>
     </Trans>
-  );
-};
+  </div>
+);

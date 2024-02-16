@@ -8,7 +8,7 @@ title="Configuring logging"
 summary="Learn how to configure Logging"
 includedOptions="log-*">
 
-Keycloak uses the JBoss Logging framework. The following is a high-level overview for the available log handlers:
+{project_name} uses the JBoss Logging framework. The following is a high-level overview for the available log handlers:
 
 * root
 ** console (_default_)
@@ -18,7 +18,7 @@ Keycloak uses the JBoss Logging framework. The following is a high-level overvie
 </@profile.ifCommunity>
 
 == Logging configuration
-Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This {section} describes how to configure logging.
+Logging is done on a per-category basis in {project_name}. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This {section} describes how to configure logging.
 
 === Log levels
 
@@ -31,7 +31,7 @@ The following table defines the available log levels.
 |FATAL|Critical failures with complete inability to serve any kind of request.
 |ERROR|A significant error or problem leading to the inability to process requests.
 |WARN|A non-critical error or problem that might not require immediate correction.
-|INFO|Keycloak lifecycle events or important information. Low frequency.
+|INFO|{project_name} lifecycle events or important information. Low frequency.
 |DEBUG|More detailed information for debugging purposes, such as database logs. Higher frequency.
 |TRACE|Most detailed debugging information. Very high frequency.
 |ALL|Special level for all log messages.
@@ -52,7 +52,7 @@ Use these guidelines for this command:
 * If you were to accidentally set the log level twice, the last occurrence in the list becomes the log level. For example, if you included the syntax `--log-level="info,...,DEBUG,..."`, the root logger would be `DEBUG`.
 
 === Configuring category-specific log levels
-You can set different log levels for specific areas in Keycloak. Use this command to provide a comma-separated list of categories for which you want a different log level:
+You can set different log levels for specific areas in {project_name}. Use this command to provide a comma-separated list of categories for which you want a different log level:
 
 <@kc.start parameters="--log-level=\"<root-level>,<org.category1>:<org.category1-level>\""/>
 
@@ -85,7 +85,7 @@ The more specific handler configuration mentioned below will only take effect wh
 The console log handler is enabled by default, providing unstructured log messages for the console.
 
 === Configuring the console log format
-Keycloak uses a pattern-based logging formatter that generates human-readable text logs by default.
+{project_name} uses a pattern-based logging formatter that generates human-readable text logs by default.
 
 The logging format template for these lines can be applied at the root level. The default format template is:
 
@@ -175,7 +175,7 @@ To change where the log file is created and the file name, perform these steps:
 
 . Create a writable directory to store the log file.
 +
-If the directory is not writable, Keycloak will start correctly, but it will issue an error and no log file will be created.
+If the directory is not writable, {project_name} will start correctly, but it will issue an error and no log file will be created.
 
 . Enter this command:
 +
@@ -191,13 +191,13 @@ See <<Configuring the console log format>> for more information and a table of t
 <@profile.ifCommunity>
 
 == Centralized logging using GELF
-Keycloak can send logs to a centralized log management system such as the following:
+{project_name} can send logs to a centralized log management system such as the following:
 
 * Graylog
 * Logstash, inside the Elasticsearch, Logstash, Kibana (ELK) logging stack
 * Fluentd, inside the Elasticsearch, Fluentd, Kibana (EFK) logging stack
 
-Keycloak uses the https://quarkus.io/guides/centralized-log-management[Quarkus Logging GELF] extension to support these environments.
+{project_name} uses the https://quarkus.io/guides/centralized-log-management[Quarkus Logging GELF] extension to support these environments.
 
 === Enabling the GELF handler
 To enable logging using GELF, add it to the list of activated log handlers.
@@ -214,7 +214,7 @@ To configure the Host and Port of your centralized logging system, enter the fol
 When the GELF handler is enabled, the host is using `localhost` as host value and UDP for communication. To use TCP instead of UDP, prefix the host value with `tcp:`. The Default port is `12201`.
 
 .Include or exclude Stacktraces
-Keycloak includes the complete Stacktrace inside the `StackTrace` field. To exclude this field, enter the following command:
+{project_name} includes the complete Stacktrace inside the `StackTrace` field. To exclude this field, enter the following command:
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-stack-trace=false"/>
 
@@ -237,7 +237,7 @@ The `facility` field is an indicator of the process or program that is the sourc
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-facility=MyKeycloak"/>
 
-To use the CLI to configure Keycloak and use whitespaces for `facility`, enter the following command:
+To use the CLI to configure {project_name} and use whitespaces for `facility`, enter the following command:
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-facility=\"\'my keycloak\'\""/>
 
@@ -249,25 +249,25 @@ log-gelf-facility=my keycloak
 ----
 
 .Configure the default message size
-To change the default message size of 8kb (8192 bytes) of GELF log messages for Keycloak, enter the following command:
+To change the default message size of 8kb (8192 bytes) of GELF log messages for {project_name}, enter the following command:
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-max-message-size=16384"/>
 
 The maximum size of one GELF log message is set in Bytes. The preceding example increases the size to 16kb. When messages exceed the maximum size, GELF submits the message in multiple chunks.
 
 .Configure sending of message parameters
-Keycloak includes message parameters of the occurred log event. These fields appear in the output as `MessageParam0`, `MessageParam1`, and so on, depending on the parameter length.
+{project_name} includes message parameters of the occurred log event. These fields appear in the output as `MessageParam0`, `MessageParam1`, and so on, depending on the parameter length.
 To switch off this behavior, enter the following command:
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-message-parameters=false"/>
 
 .Configure sending of source code location
-Keycloak includes the `SourceClassName`, `SourceMethodName` and `SourceSimpleClassName` fields in the GELF log messages. These fields provide detail on the location of an exception that occurred. To stop sending these fields, enter the following command:
+{project_name} includes the `SourceClassName`, `SourceMethodName` and `SourceSimpleClassName` fields in the GELF log messages. These fields provide detail on the location of an exception that occurred. To stop sending these fields, enter the following command:
 
 <@kc.start parameters="--log=\"console,gelf\" --log-gelf-include-location=false"/>
 
 === Example: Send logs to Graylog
-The following example shows how to send Keycloak logs to the Graylog centralized logging stack. This example assumes you have a container tool such as https://www.docker.com/[docker] installed to start the `compose.yml`.
+The following example shows how to send {project_name} logs to the Graylog centralized logging stack. This example assumes you have a container tool such as https://www.docker.com/[docker] installed to start the `compose.yml`.
 
 ==== Starting the Graylog stack
 The composed stack consists of:
@@ -341,10 +341,10 @@ http://localhost:9000/api/system/inputs
 
 If the stack is still in the bootstrap phase, you receive a response containing `* Empty reply from server`. A successful response includes `HTTP/1.1 201 Created` to indicate that the UDP input is created.
 
-==== Configure Keycloak to send logs using GELF
-Keycloak needs to be configured to send logs using GELF. The appropriate configuration can be seen in the following keycloak.conf example. The example includes the `log-gelf-host` and `log-gelf-port` values. These are optional values that are included for illustration purposes; default values exist.
+==== Configure {project_name} to send logs using GELF
+{project_name} needs to be configured to send logs using GELF. The appropriate configuration can be seen in the following keycloak.conf example. The example includes the `log-gelf-host` and `log-gelf-port` values. These are optional values that are included for illustration purposes; default values exist.
 
-.Keycloak GELF Configuration
+.{project_name} GELF Configuration
 
 [source, conf]
 ----
@@ -358,12 +358,12 @@ log-gelf-port=12201
 . Log in to the Graylog web UI using the administrator credentials (admin/admin).
 . Go to Streams, All Messages.
 . Start updating the stream by pressing the Play button in the upper right corner.
-. Start Keycloak using `start` or `start-dev` and your GELF config.
+. Start {project_name} using `start` or `start-dev` and your GELF config.
 
-After a few seconds, Keycloak messages appear in the Graylog dashboard.
+After a few seconds, {project_name} messages appear in the Graylog dashboard.
 
 === Example Setup using the ELK Stack
-The following example shows how to send Keycloak logs to the ELK centralized logging stack. It assumes you have a container tool such as https://www.docker.com/[docker] installed to start the `compose.yml`.
+The following example shows how to send {project_name} logs to the ELK centralized logging stack. It assumes you have a container tool such as https://www.docker.com/[docker] installed to start the `compose.yml`.
 
 ==== Enable the logstash GELF plugin and create a pipeline
 Logstash uses an input plugin that understands and parses the GELF format. To activate this plugin when you are starting the ELK stack later on, create a directory `pipelines` and a file `gelf.conf` located in this directory. Then create an empty `compose.yml` in the parent directory.
@@ -458,10 +458,10 @@ docker compose up -d
 ----
 After a few seconds the Stack should be ready to serve requests.
 
-==== Configuring Keycloak to send logs using GELF
-Keycloak needs to be configured to send logs using GELF. The appropriate configuration can be seen in the following keycloak.conf example. This example includes the `log-gelf-host` and `log-gelf-port` values. These are optional values, which are included for illustration purposes; default values exist.
+==== Configuring {project_name} to send logs using GELF
+{project_name} needs to be configured to send logs using GELF. The appropriate configuration can be seen in the following keycloak.conf example. This example includes the `log-gelf-host` and `log-gelf-port` values. These are optional values, which are included for illustration purposes; default values exist.
 
-.Keycloak Gelf Configuration
+.{project_name} Gelf Configuration
 
 [source, conf]
 ----
@@ -470,13 +470,13 @@ log-gelf-host=localhost
 log-gelf-port=12201
 ----
 
-With this configuration applied, start keycloak using `start-dev` or `start`.
+With this configuration applied, start {project_name} using `start-dev` or `start`.
 
 ==== Kibana: See the results
-Open http://localhost:5601 to reach the Kibana dashboard. The exact configuration of a good monitoring dashboard is out of scope for this {section}. To find out if logs sent by Keycloak are delivered to Kibana, open the http://localhost:5601/app/kibana#/dev_tools/console?_g=()[Dev Tools] and execute the default `match_all` query. The logs should appear in the result field.
+Open http://localhost:5601 to reach the Kibana dashboard. The exact configuration of a good monitoring dashboard is out of scope for this {section}. To find out if logs sent by {project_name} are delivered to Kibana, open the http://localhost:5601/app/kibana#/dev_tools/console?_g=()[Dev Tools] and execute the default `match_all` query. The logs should appear in the result field.
 
 === Configure a different log level for the GELF logger
-To keep log storage costs and verbosity low, it is often wanted to only store a subset of the verbose application logs inside a centralized log management system. To configure Keycloak to use a different log level for the logs you want to ingest, use the following configuration:
+To keep log storage costs and verbosity low, it is often wanted to only store a subset of the verbose application logs inside a centralized log management system. To configure {project_name} to use a different log level for the logs you want to ingest, use the following configuration:
 
 [source, conf]
 ----
@@ -505,7 +505,7 @@ Keep in mind that `--log-level` is setting the leading log level, so for example
 nothing below the error level will be sent to your logging stack. That means that even GELF in this example will receive only error level log messages.
 
 === Configure additional key values
-Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties. For example, they are used when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
+Currently, the {project_name} configuration does not support partly dynamic configuration keys, as they are used in quarkus properties. For example, they are used when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
 
 To add user-defined fields, you can provide these fields through a quarkus.properties file. See <@links.server id="configuration"/> and the _Using raw Quarkus properties_ section.
 

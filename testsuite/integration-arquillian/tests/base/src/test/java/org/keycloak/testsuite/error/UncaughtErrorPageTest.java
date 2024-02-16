@@ -12,6 +12,7 @@ import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
@@ -25,7 +26,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -37,10 +37,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.ws.rs.core.Response;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -93,8 +96,8 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusLine().getStatusCode());
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals("unknown_error", error.getError());
-            assertNull(error.getErrorDescription());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertNotNull(error.getErrorDescription());
         }
     }
 
@@ -113,8 +116,8 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusLine().getStatusCode());
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals("unknown_error", error.getError());
-            assertNull(error.getErrorDescription());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+            assertNotNull(error.getErrorDescription());
         }
     }
 

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;

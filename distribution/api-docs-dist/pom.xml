@@ -51,11 +51,6 @@
         <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
         This avoids warnings when generating the JavaDoc -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-build-processor</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
         </dependency>
@@ -68,11 +63,6 @@
             That is used in annotations in FilesPlainTextVaultProvider -->
             <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
             <artifactId>owasp-java-html-sanitizer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan.protostream</groupId>
-            <artifactId>protostream-processor</artifactId>
-            <version>${infinispan.protostream.processor.version}</version>
         </dependency>
     </dependencies>
 

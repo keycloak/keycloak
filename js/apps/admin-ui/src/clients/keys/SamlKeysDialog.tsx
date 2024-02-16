@@ -70,7 +70,7 @@ export const SamlKeysDialog = ({
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
   const form = useForm<SamlKeysDialogForm>({ mode: "onChange" });
@@ -84,7 +84,7 @@ export const SamlKeysDialog = ({
   const submit = (form: SamlKeysDialogForm) => {
     submitForm(form, id, attr, (error) => {
       if (error) {
-        addError("clients:importError", error);
+        addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
       }
@@ -107,14 +107,14 @@ export const SamlKeysDialog = ({
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
   return (
     <Modal
       variant={ModalVariant.medium}
-      aria-labelledby={t("enableClientSignatureRequired")}
+      aria-label={t("enableClientSignatureRequiredModal")}
       header={
         <TextContent>
           <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
@@ -146,7 +146,7 @@ export const SamlKeysDialog = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -184,8 +184,8 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:certificate")}
-                  fieldLabelId="clients:certificate"
+                  helpText={t("certificateHelp")}
+                  fieldLabelId="certificate"
                 />
               }
             >

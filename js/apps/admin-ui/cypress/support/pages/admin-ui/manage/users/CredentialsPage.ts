@@ -1,82 +1,82 @@
 export default class CredentialsPage {
-  private readonly credentialsTab = "credentials";
-  private readonly emptyStatePasswordBtn = "no-credentials-empty-action";
-  private readonly emptyStateResetBtn = "credential-reset-empty-action";
-  private readonly resetBtn = "credentialResetBtn";
-  private readonly setPasswordBtn = "confirm";
-  private readonly credentialResetModal = "credential-reset-modal";
-  private readonly resetModalActionsToggleBtn =
+  readonly #credentialsTab = "credentials";
+  readonly #emptyStatePasswordBtn = "no-credentials-empty-action";
+  readonly #emptyStateResetBtn = "credential-reset-empty-action";
+  readonly #resetBtn = "credentialResetBtn";
+  readonly #setPasswordBtn = "confirm";
+  readonly #credentialResetModal = "credential-reset-modal";
+  readonly #resetModalActionsToggleBtn =
     "[data-testid=credential-reset-modal] #actions-actions";
 
-  private readonly passwordField = "passwordField";
-  private readonly passwordConfirmationField = "passwordConfirmationField";
-  private readonly resetActions = [
+  readonly #passwordField = "passwordField";
+  readonly #passwordConfirmationField = "passwordConfirmationField";
+  readonly #resetActions = [
     "VERIFY_EMAIL-option",
     "UPDATE_PROFILE-option",
     "CONFIGURE_TOTP-option",
     "UPDATE_PASSWORD-option",
     "TERMS_AND_CONDITIONS-option",
   ];
-  private readonly confirmationButton = "confirm";
-  private readonly editLabelBtn = "editUserLabelBtn";
-  private readonly labelField = "userLabelFld";
-  private readonly editConfirmationBtn = "editUserLabelAcceptBtn";
-  private readonly showDataDialogBtn = "showDataBtn";
-  private readonly closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
+  readonly #confirmationButton = "confirm";
+  readonly #editLabelBtn = "editUserLabelBtn";
+  readonly #labelField = "userLabelFld";
+  readonly #editConfirmationBtn = "editUserLabelAcceptBtn";
+  readonly #showDataDialogBtn = "showDataBtn";
+  readonly #closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
 
   goToCredentialsTab() {
     cy.intercept("/admin/realms/*/users/*/credentials").as("load");
-    cy.findByTestId(this.credentialsTab).click();
+    cy.findByTestId(this.#credentialsTab).click();
     cy.wait("@load");
     cy.wait(200);
 
     return this;
   }
   clickEmptyStatePasswordBtn() {
-    cy.findByTestId(this.emptyStatePasswordBtn).click();
+    cy.findByTestId(this.#emptyStatePasswordBtn).click();
 
     return this;
   }
 
   clickEmptyStateResetBtn() {
-    cy.findByTestId(this.emptyStateResetBtn).click();
+    cy.findByTestId(this.#emptyStateResetBtn).click();
 
     return this;
   }
 
   clickResetBtn() {
-    cy.findByTestId(this.resetBtn).click();
+    cy.findByTestId(this.#resetBtn).click();
 
     return this;
   }
 
   clickResetModalActionsToggleBtn() {
-    cy.get(this.resetModalActionsToggleBtn).click();
+    cy.get(this.#resetModalActionsToggleBtn).click();
 
     return this;
   }
 
   clickResetModalAction(index: number) {
-    cy.findByTestId(this.resetActions[index]).click();
+    cy.findByTestId(this.#resetActions[index]).click();
 
     return this;
   }
 
   clickConfirmationBtn() {
-    cy.findByTestId(this.confirmationButton).click();
+    cy.findByTestId(this.#confirmationButton).click();
 
     return this;
   }
 
   fillPasswordForm() {
-    cy.findByTestId(this.passwordField).type("test");
-    cy.findByTestId(this.passwordConfirmationField).type("test");
+    cy.findByTestId(this.#passwordField).type("test");
+    cy.findByTestId(this.#passwordConfirmationField).type("test");
 
     return this;
   }
 
   fillResetCredentialForm() {
-    cy.findByTestId(this.credentialResetModal);
+    cy.findByTestId(this.#credentialResetModal);
     this.clickResetModalActionsToggleBtn()
       .clickResetModalAction(2)
       .clickResetModalAction(3)
@@ -86,13 +86,13 @@ export default class CredentialsPage {
   }
 
   clickSetPasswordBtn() {
-    cy.findByTestId(this.setPasswordBtn).click();
+    cy.findByTestId(this.#setPasswordBtn).click();
 
     return this;
   }
 
   clickEditCredentialLabelBtn() {
-    cy.findByTestId(this.editLabelBtn)
+    cy.findByTestId(this.#editLabelBtn)
       .should("be.visible")
       .click({ force: true });
 
@@ -100,25 +100,25 @@ export default class CredentialsPage {
   }
 
   fillEditCredentialForm() {
-    cy.findByTestId(this.labelField).focus().type("test");
+    cy.findByTestId(this.#labelField).focus().type("test");
 
     return this;
   }
 
   clickEditConfirmationBtn() {
-    cy.findByTestId(this.editConfirmationBtn).click();
+    cy.findByTestId(this.#editConfirmationBtn).click();
 
     return this;
   }
 
   clickShowDataDialogBtn() {
-    cy.findByTestId(this.showDataDialogBtn).click();
+    cy.findByTestId(this.#showDataDialogBtn).click();
 
     return this;
   }
 
   clickCloseDataDialogBtn() {
-    cy.get(this.closeDataDialogBtn).click({ force: true });
+    cy.get(this.#closeDataDialogBtn).click({ force: true });
 
     return this;
   }

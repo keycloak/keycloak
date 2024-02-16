@@ -30,7 +30,7 @@ To start the development server run the following command:
 pnpm run dev
 ```
 
-Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default username and password (`admin`).
+Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default credentials (`admin`/`admin`).
 
 You can now start making changes to the source code, and they will be reflected in your browser.
 

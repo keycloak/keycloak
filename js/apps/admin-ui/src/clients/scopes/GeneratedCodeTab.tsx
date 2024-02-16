@@ -22,7 +22,7 @@ export const GeneratedCodeTab = ({
   user,
   label,
 }: GeneratedCodeTabProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   return user ? (
     <CodeBlock
@@ -33,7 +33,12 @@ export const GeneratedCodeTab = ({
         </CodeBlockAction>
       }
     >
-      <KeycloakTextArea id={`text-area-${label}`} rows={20} value={text} />
+      <KeycloakTextArea
+        id={`text-area-${label}`}
+        rows={20}
+        value={text}
+        aria-label={label}
+      />
     </CodeBlock>
   ) : (
     <EmptyState variant="large" id={label}>

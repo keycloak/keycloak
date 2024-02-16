@@ -20,7 +20,7 @@ import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -61,10 +61,7 @@ export const Role = () => {
     <FormGroup
       label={t("roles")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:policyRoles")}
-          fieldLabelId="clients:roles"
-        />
+        <HelpItem helpText={t("policyRolesHelp")} fieldLabelId="roles" />
       }
       fieldId="roles"
       helperTextInvalid={t("requiredRoles")}

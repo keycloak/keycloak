@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.Profile;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -309,6 +310,12 @@ public interface TestingResource {
     String runOnServer(String runOnServer);
 
     @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    Response runOnServerWithResponse(String runOnServer);
+
+    @POST
     @Path("/run-model-test-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
@@ -341,6 +348,16 @@ public interface TestingResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     Set<Profile.Feature> disableFeature(@PathParam("feature") String feature);
+
+    /**
+     * Resets the given feature to it's default state.
+     *
+     * @param feature
+     */
+    @POST
+    @Path("/reset-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void resetFeature(@PathParam("feature") String feature);
 
     /**
      * If property-value is null, the system property will be unset (removed) on the server
@@ -408,6 +425,15 @@ public interface TestingResource {
     void disableTruststoreSpi();
 
     /**
+     * Temporarily changes the truststore SPI with another hostname verification policy. Call reenableTruststoreSpi to revert.
+     * @param hostnamePolicy The hostname verification policy to set
+     */
+    @GET
+    @Path("/modify-truststore-spi-hostname-policy")
+    @NoCache
+    public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy);
+
+    /**
      * Re-enable truststore SPI after it was temporarily disabled by {@link #disableTruststoreSpi()}
      */
     @GET
@@ -415,4 +441,19 @@ public interface TestingResource {
     @NoCache
     void reenableTruststoreSpi();
 
+    /**
+     * Get count of tabs (child authentication sessions) for given "root authentication session"
+     *
+     * @param realm realm name (not ID)
+     * @param authSessionId ID of authentication session
+     * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
+     */
+    @GET
+    @Path("/get-authentication-session-tabs-count")
+    @NoCache
+    Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realm, @QueryParam("authSessionId") String authSessionId);
+
+    @GET
+    @Path("/no-cache-annotated-endpoint")
+    Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
 }

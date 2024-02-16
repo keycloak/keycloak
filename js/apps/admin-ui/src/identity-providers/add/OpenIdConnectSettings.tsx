@@ -9,7 +9,7 @@ import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { DiscoverySettings } from "./DiscoverySettings";
 
 export const OpenIdConnectSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const id = "oidc";
 
   const {
@@ -59,8 +59,8 @@ export const OpenIdConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:importConfig")}
-                fieldLabelId="identity-providers:importConfig"
+                helpText={t("importConfigHelp")}
+                fieldLabelId="importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

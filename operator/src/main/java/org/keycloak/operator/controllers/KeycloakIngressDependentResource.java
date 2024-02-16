@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 
@@ -73,8 +74,7 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .withNewMetadata()
                     .withName(getName(keycloak))
                     .withNamespace(keycloak.getMetadata().getNamespace())
-                    .addToLabels(Constants.DEFAULT_LABELS)
-                    .addToLabels(OperatorManagedResource.updateWithInstanceLabels(null, keycloak.getMetadata().getName()))
+                    .addToLabels(Utils.allInstanceLabels(keycloak))
                     .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()

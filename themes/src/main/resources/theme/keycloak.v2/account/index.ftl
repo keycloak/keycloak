@@ -107,10 +107,10 @@
             var content = <#include "resources/content.json"/>
         </script>
 
-        <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/base.css"/>
-        <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/app.css"/>
-        <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/patternfly/patternfly-addons.css"/>
-        <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
+        <link rel="stylesheet" href="${resourceCommonUrl}/node_modules/@patternfly/react-core/dist/styles/base.css"/>
+        <link rel="stylesheet" href="${resourceCommonUrl}/node_modules/@patternfly/patternfly/patternfly-addons.css"/>
+        <link rel="stylesheet" href="${resourceUrl}/public/app.css"/>
+        <link rel="stylesheet" href="${resourceUrl}/public/layout.css"/>
 
         <#if properties.styles?has_content>
             <#list properties.styles?split(' ') as style>
@@ -127,7 +127,7 @@
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256', promiseType: 'native'}).then((authenticated) => {
+            keycloak.init({onLoad: 'check-sso'}).then((authenticated) => {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {
@@ -147,7 +147,7 @@
 
 <div id="main_react_container" style="display:none;height:100%"></div>
 
-<div id="spinner_screen" style="display:block; height:100%">
+<div id="spinner_screen" role="progressbar" style="display:block; height:100%">
     <div style="width: 320px; height: 328px; text-align: center; position: absolute; top:0;	bottom: 0; left: 0;	right: 0; margin: auto;">
         <#if properties.logo?has_content>
         <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">

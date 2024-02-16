@@ -16,10 +16,7 @@
  */
 package org.keycloak.testsuite.model.client;
 
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -28,23 +25,17 @@ import static org.hamcrest.Matchers.notNullValue;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
-import org.keycloak.models.map.client.MapClientProvider;
-import org.keycloak.models.map.client.MapClientProviderFactory;
 
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -152,23 +143,6 @@ public class ClientModelTest extends KeycloakModelTest {
             String browser = withRealm(realmId, (session, realm) -> session.clients().getClientById(realm, originalModel.getId()).getAuthenticationFlowBindingOverride("browser"));
             assertThat(browser, is(equalTo("customFlowId")));
         }
-    }
-
-    @Test
-    @RequireProvider(value = ClientProvider.class, only = MapClientProviderFactory.PROVIDER_ID)
-    public void testDeleteClientUsingQueryParameters() {
-        final String CLIENT_ID = "createDeleteClientId";
-        // Create client
-        withRealm(realmId, (session, realm) -> session.clients().addClient(realm, CLIENT_ID));
-
-        // Check if exists
-        assertThat(withRealm(realmId, (session, realm) -> session.clients().getClientByClientId(realm, CLIENT_ID)), notNullValue());
-
-        // Remove
-        withRealm(realmId, (session, realm) -> {((MapClientProvider)session.clients()).preRemove(realm); return null;});
-
-        // Check is null
-        assertThat(withRealm(realmId, (session, realm) -> session.clients().getClientByClientId(realm, CLIENT_ID)), nullValue());
     }
 
     @Test

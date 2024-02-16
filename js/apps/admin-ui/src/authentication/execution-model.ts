@@ -29,44 +29,44 @@ export class LevelChange extends IndexChange {
 }
 
 export class ExecutionList {
-  private list: ExpandableExecution[];
+  #list: ExpandableExecution[];
   expandableList: ExpandableExecution[];
 
   constructor(list: AuthenticationExecutionInfoRepresentation[]) {
-    this.list = list as ExpandableExecution[];
+    this.#list = list as ExpandableExecution[];
 
     const exList = {
       executionList: [],
       isCollapsed: false,
     };
-    this.transformToExpandableList(0, -1, exList);
+    this.#transformToExpandableList(0, -1, exList);
     this.expandableList = exList.executionList;
   }
 
-  private transformToExpandableList(
+  #transformToExpandableList(
     currentIndex: number,
     currentLevel: number,
     execution: ExpandableExecution,
   ) {
-    for (let index = currentIndex; index < this.list.length; index++) {
-      const ex = this.list[index];
+    for (let index = currentIndex; index < this.#list.length; index++) {
+      const ex = this.#list[index];
       const level = ex.level || 0;
       if (level <= currentLevel) {
         return index - 1;
       }
 
-      const nextRowLevel = this.list[index + 1]?.level || 0;
+      const nextRowLevel = this.#list[index + 1]?.level || 0;
       const hasChild = level < nextRowLevel;
 
       if (hasChild) {
         const subLevel = { ...ex, executionList: [], isCollapsed: false };
-        index = this.transformToExpandableList(index + 1, level, subLevel);
+        index = this.#transformToExpandableList(index + 1, level, subLevel);
         execution.executionList?.push(subLevel);
       } else {
         execution.executionList?.push(ex);
       }
     }
-    return this.list.length;
+    return this.#list.length;
   }
 
   order(list?: ExpandableExecution[]) {
@@ -98,12 +98,12 @@ export class ExecutionList {
     return found;
   }
 
-  private getParentNodes(level?: number) {
-    for (let index = 0; index < this.list.length; index++) {
-      const ex = this.list[index];
+  #getParentNodes(level?: number) {
+    for (let index = 0; index < this.#list.length; index++) {
+      const ex = this.#list[index];
       if (
-        index + 1 < this.list.length &&
-        this.list[index + 1].level! > ex.level! &&
+        index + 1 < this.#list.length &&
+        this.#list[index + 1].level! > ex.level! &&
         ex.level! + 1 === level
       ) {
         return ex;
@@ -123,7 +123,7 @@ export class ExecutionList {
 
     if (newLocation.level !== oldLocation.level) {
       if (newLocation.level! > 0) {
-        const parent = this.getParentNodes(newLocation.level);
+        const parent = this.#getParentNodes(newLocation.level);
         return new LevelChange(
           parent?.executionList?.length || 0,
           newLocation.index!,
@@ -138,7 +138,7 @@ export class ExecutionList {
 
   clone() {
     const newList = new ExecutionList([]);
-    newList.list = this.list;
+    newList.#list = this.#list;
     newList.expandableList = this.expandableList;
     return newList;
   }

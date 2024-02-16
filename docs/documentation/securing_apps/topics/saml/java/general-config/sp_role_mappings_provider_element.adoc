@@ -92,7 +92,11 @@ Note: to use spaces in role names for mappings, use unicode replacements for spa
 role\u0020A=roleX,roleY
 ----
 
+ifeval::[{project_community}==true]
 ====== Adding your own role mappings provider
 
 To add a custom role mappings provider one simply needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider` SPI.
 For more details see the `SAML Role Mappings SPI` section in link:{developerguide_link}[{developerguide_name}].
+endif::[]
+
+

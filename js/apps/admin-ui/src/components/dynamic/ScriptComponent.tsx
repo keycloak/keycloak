@@ -12,9 +12,10 @@ export const ScriptComponent = ({
   label,
   helpText,
   defaultValue,
+  required,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (
@@ -23,10 +24,11 @@ export const ScriptComponent = ({
       labelIcon={
         <HelpItem
           helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
-          fieldLabelId={`dynamic:${label}`}
+          fieldLabelId={`${label}`}
         />
       }
       fieldId={name!}
+      isRequired={required}
     >
       <Controller
         name={convertToName(name!)}

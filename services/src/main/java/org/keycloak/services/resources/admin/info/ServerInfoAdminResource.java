@@ -20,7 +20,7 @@ package org.keycloak.services.resources.admin.info;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.representations.info.ClientInstallationRepresentation;
 import org.keycloak.representations.info.CryptoInfoRepresentation;
+import org.keycloak.representations.info.FeatureRepresentation;
 import org.keycloak.representations.info.MemoryInfoRepresentation;
 import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
@@ -104,6 +105,7 @@ public class ServerInfoAdminResource {
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
+        info.setFeatures(FeatureRepresentation.create());
 
         // True - asymmetric algorithms, false - symmetric algorithms
         Map<Boolean, List<String>> algorithms = session.getAllProviders(ClientSignatureVerifierProvider.class).stream()
@@ -111,10 +113,12 @@ public class ServerInfoAdminResource {
                                 Collectors.toMap(
                                         ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
                                         clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
-                                        (l1, l2) -> listCombiner(l1, l2)
-                                                .stream()
-                                                .sorted()
-                                                .collect(Collectors.toList()),
+                                        (l1, l2) -> {
+                                            List<String> result = listCombiner(l1, l2);
+                                            return result.stream()
+                                                    .sorted()
+                                                    .collect(Collectors.toList());
+                                        },
                                         HashMap::new
                                 )
                         );
@@ -228,8 +232,10 @@ public class ServerInfoAdminResource {
                 !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
                 !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
-        
-        if (filterAccountV2 || filterAdminV2) {
+        boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN2);
+
+        if (filterAccountV2 || filterAdminV2 || filterLoginV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
         }

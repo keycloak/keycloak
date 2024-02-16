@@ -6,7 +6,7 @@ public interface ProfileConfigResolver {
 
     Profile.ProfileName getProfileName();
 
-    FeatureConfig getFeatureConfig(Profile.Feature feature);
+    FeatureConfig getFeatureConfig(String feature);
 
     public enum FeatureConfig {
         ENABLED,

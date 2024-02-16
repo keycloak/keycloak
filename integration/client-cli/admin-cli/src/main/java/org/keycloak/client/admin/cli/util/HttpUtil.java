@@ -462,21 +462,24 @@ public class HttpUtil {
         resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue);
         resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, defaultParams);
 
-        List<ObjectNode> users = doGetJSON(RoleOperations.LIST_OF_NODES.class, resourceUrl, auth);
+        List<ObjectNode> results = doGetJSON(RoleOperations.LIST_OF_NODES.class, resourceUrl, auth);
 
-        ObjectNode user;
+        ObjectNode match;
         try {
-            user = new LocalSearch(users).exactMatchOne(attrValue, inputAttrName);
+            match = new LocalSearch(results).exactMatchOne(attrValue, inputAttrName);
         } catch (Exception e) {
-            throw new RuntimeException("Multiple " + resourceEndpoint + " found for " + attrName + ": " + attrValue, e);
+            throw new RuntimeException("Multiple " + resourceEndpoint + " found for " + inputAttrName + ": " + attrValue, e);
         }
 
         String typeName = singularize(resourceEndpoint);
-        if (user == null) {
-            throw new RuntimeException(capitalize(typeName) + " not found for " + attrName + ": " + attrValue);
+        if (match == null) {
+            if (results.size() > 1) {
+                throw new RuntimeException("Some matches, but not an exact match, found for " + capitalize(typeName) + " with " + inputAttrName + ": " + attrValue + ". Try using a more unique search, such as an id.");
+            }
+            throw new RuntimeException(capitalize(typeName) + " not found for " + inputAttrName + ": " + attrValue);
         }
 
-        JsonNode attr = user.get(returnAttrName);
+        JsonNode attr = match.get(returnAttrName);
         if (attr == null) {
             throw new RuntimeException("Returned " + typeName + " info has no '" + returnAttrName + "' attribute");
         }

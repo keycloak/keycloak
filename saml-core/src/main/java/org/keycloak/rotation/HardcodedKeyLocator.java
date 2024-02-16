@@ -46,14 +46,14 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.emptyMap();
         this.byKey = Collections.unmodifiableMap(keys.stream().collect(
-                Collectors.toMap(k -> new KeyHash(k), k -> k)));
+                Collectors.toMap(k -> new KeyHash(k), k -> k, (k1, k2) -> k1)));
     }
 
     public HardcodedKeyLocator(Map<String, ? extends Key> keys) {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.unmodifiableMap(keys);
         this.byKey = Collections.unmodifiableMap(keys.values().stream().collect(
-                Collectors.toMap(k -> new KeyHash(k), k -> k)));
+                Collectors.toMap(k -> new KeyHash(k), k -> k, (k1, k2) -> k1)));
     }
 
     @Override

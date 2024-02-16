@@ -14,7 +14,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 
 export const ProviderInfo = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const serverInfo = useServerInfo();
   const [filter, setFilter] = useState("");
   const [open, setOpen] = useState<string[]>([]);
@@ -22,7 +22,7 @@ export const ProviderInfo = () => {
   const providerInfo = useMemo(
     () =>
       Object.entries(serverInfo.providers || []).filter(([key]) =>
-        key.includes(filter),
+        key.toLowerCase().includes(filter.toLowerCase()),
       ),
     [filter],
   );
@@ -39,7 +39,7 @@ export const ProviderInfo = () => {
     <PageSection variant="light">
       <TableToolbar
         inputGroupName="search"
-        inputGroupPlaceholder={t("common:search")}
+        inputGroupPlaceholder={t("search")}
         inputGroupOnEnter={setFilter}
       >
         <TableComposable variant="compact">

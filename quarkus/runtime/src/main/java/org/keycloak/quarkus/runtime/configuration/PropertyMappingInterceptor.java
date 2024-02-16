@@ -19,9 +19,17 @@ package org.keycloak.quarkus.runtime.configuration;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+
+import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import java.util.Iterator;
+import java.util.function.Function;
+
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -38,8 +46,43 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
+    private static ThreadLocal<Boolean> disable = new ThreadLocal<>();
+
+    public static void disable() {
+        disable.set(true);
+    }
+
+    public static void enable() {
+        disable.remove();
+    }
+    
+    <T> Iterator<T> filterRuntime(Iterator<T> iter, Function<T, String> nameFunc) {
+        if (!isRebuild() && !Environment.isRebuildCheck()) {
+            return iter;
+        }
+        return new FilterIterator<>(iter, item -> !isRuntime(nameFunc.apply(item)));
+    }
+    
+    static boolean isRuntime(String name) {
+        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+        return mapper != null && mapper.isRunTime();
+    }
+
+    @Override
+    public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
+        return filterRuntime(context.iterateNames(), Function.identity());
+    }
+
+    @Override
+    public Iterator<ConfigValue> iterateValues(ConfigSourceInterceptorContext context) {
+        return filterRuntime(context.iterateValues(), ConfigValue::getName);
+    }
+
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+        if (Boolean.TRUE.equals(disable.get())) {
+            return context.proceed(name);
+        }
         ConfigValue value = PropertyMappers.getValue(context, name);
 
         if (value == null || value.getValue() == null) {

@@ -126,6 +126,18 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("disableUserInfo", String.valueOf(disable));
     }
 
+    public boolean isDisableNonce() {
+        return Boolean.parseBoolean(getConfig().get("disableNonce"));
+    }
+
+    public void setDisableNonce(boolean disableNonce) {
+        if (disableNonce) {
+            getConfig().put("disableNonce", Boolean.TRUE.toString());
+        } else {
+            getConfig().remove("disableNonce");
+        }
+    }
+
     public int getAllowedClockSkew() {
         String allowedClockSkew = getConfig().get(ALLOWED_CLOCK_SKEW);
         if (allowedClockSkew == null || allowedClockSkew.isEmpty()) {

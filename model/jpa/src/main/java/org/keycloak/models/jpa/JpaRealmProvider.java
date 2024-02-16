@@ -21,6 +21,17 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.MapJoin;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,16 +41,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaDelete;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -71,8 +72,9 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -183,7 +185,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
-        adapter.getTopLevelGroupsStream().forEach(adapter::removeGroup);
+        session.groups().getTopLevelGroupsStream(adapter).forEach(adapter::removeGroup);
 
         num = em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();
@@ -326,6 +328,53 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return searchForClientRolesStream(realm, ids, search, first, max, false);
+    }
+    @Override
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, String search, Stream<String> excludedIds, Integer first, Integer max) {
+        return searchForClientRolesStream(realm, excludedIds, search, first, max, true);
+    }
+
+    private Stream<RoleModel> searchForClientRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max, boolean negateIds) {
+        List<String> idList = null;
+        if(ids != null) {
+            idList = ids.collect(Collectors.toList());
+            if(idList.isEmpty() && !negateIds)
+                return Stream.empty();
+        }
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<RoleEntity> query = cb.createQuery(RoleEntity.class);
+
+        Root<RoleEntity> roleRoot = query.from(RoleEntity.class);
+        Root<ClientEntity> clientRoot = query.from(ClientEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(roleRoot.get("realmId"), realm.getId()));
+        predicates.add(cb.isTrue(roleRoot.get("clientRole")));
+        predicates.add(cb.equal(roleRoot.get("clientId"),clientRoot.get("id")));
+        if(search != null && !search.isEmpty()) {
+            search = "%" + search.trim().toLowerCase() + "%";
+            predicates.add(cb.or(
+                    cb.like(cb.lower(roleRoot.get("name")), search),
+                    cb.like(cb.lower(clientRoot.get("clientId")), search)
+            ));
+        }
+        if(idList != null && !idList.isEmpty()) {
+            Predicate idFilter = roleRoot.get("id").in(idList);
+            if(negateIds) idFilter = cb.not(idFilter);
+            predicates.add(idFilter);
+        }
+        query.select(roleRoot).where(predicates.toArray(new Predicate[0]))
+                .orderBy(
+                        cb.asc(clientRoot.get("clientId")),
+                        cb.asc(roleRoot.get("name")));
+        return closing(paginateQuery(em.createQuery(query),first,max).getResultStream())
+                .map(roleEntity -> new RoleAdapter(session, realm, em, roleEntity));
+    }
+
+
+    @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
         TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
         query.setParameter("client", client.getId());
@@ -433,6 +482,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (!groupEntity.getRealm().equals(realm.getId())) return null;
         GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
         return adapter;
+    }
+
+    @Override
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
+        query.setParameter("search", name);
+        query.setParameter("realm", realm.getId());
+        query.setParameter("parent", parent != null ? parent.getId() : GroupEntity.TOP_PARENT_ID);
+        List<String> entities = query.getResultList();
+        if (entities.isEmpty()) return null;
+        if (entities.size() > 1) throw new IllegalStateException("Should not be more than one Group with same name");
+        String id = query.getResultList().get(0);
+
+        return session.groups().getGroupById(realm, id);
     }
 
     @Override
@@ -552,7 +615,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
-            return em.createNamedQuery("getTopLevelGroupCount", Long.class)
+            return em.createNamedQuery("getGroupCountByParent", Long.class)
                     .setParameter("realm", realm.getId())
                     .setParameter("parent", GroupEntity.TOP_PARENT_ID)
                     .getSingleResult();
@@ -589,21 +652,23 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        return getTopLevelGroupsStream(realm, null, null);
-    }
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        TypedQuery<String> groupsQuery;
+        if(Boolean.TRUE.equals(exact)) {
+            groupsQuery = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
+        } else {
+            groupsQuery = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
+        }
 
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer first, Integer max) {
-        TypedQuery<String> groupsQuery =  em.createNamedQuery("getTopLevelGroupIds", String.class)
-                .setParameter("realm", realm.getId())
-                .setParameter("parent", GroupEntity.TOP_PARENT_ID);
+        groupsQuery.setParameter("realm", realm.getId())
+            .setParameter("parent", GroupEntity.TOP_PARENT_ID)
+            .setParameter("search", search);
 
-        return closing(paginateQuery(groupsQuery, first, max).getResultStream()
-                .map(realm::getGroupById)
-                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
-                .filter(Objects::nonNull)
-                .sorted(GroupModel.COMPARE_BY_NAME)
+        return closing(paginateQuery(groupsQuery, firstResult, maxResults).getResultStream()
+            .map(realm::getGroupById)
+            // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+            .filter(Objects::nonNull)
+            .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -634,6 +699,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.users().preRemove(realm, group);
 
         realm.removeDefaultGroup(group);
+
         group.getSubGroupsStream().forEach(realm::removeGroup);
 
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
@@ -808,6 +874,51 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
             } else {
                 attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            }
+
+            predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+        }
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
+
+        TypedQuery<String> query = em.createQuery(queryBuilder);
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(id -> session.clients().getClientById(realm, id));
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+        queryBuilder.select(root.get("id"));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+
+        //noinspection resource
+        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+
+        for (Map.Entry<String, String> entry : overrides.entrySet()) {
+            String bindingName = entry.getKey();
+            String authenticationFlowId = entry.getValue();
+
+            MapJoin<ClientEntity, String, String> authFlowBindings = root.joinMap("authFlowBindings", JoinType.LEFT);
+
+            Predicate attrNamePredicate = builder.equal(authFlowBindings.key(), bindingName);
+
+            Predicate attrValuePredicate;
+            if (dbProductName.equals("Oracle")) {
+                // SELECT * FROM client_attributes WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+                // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+                attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, authFlowBindings.value(), builder.literal(authenticationFlowId)), 0);
+            } else {
+                attrValuePredicate = builder.equal(authFlowBindings.value(), authenticationFlowId);
             }
 
             predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
@@ -1001,14 +1112,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 .setParameter("search", search);
         Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
 
-        return closing(groups.map(id -> {
-            GroupModel groupById = session.groups().getGroupById(realm, id);
-            while (Objects.nonNull(groupById.getParentId())) {
-                groupById = session.groups().getGroupById(realm, groupById.getParentId());
-            }
-            return groupById;
-        }).sorted(GroupModel.COMPARE_BY_NAME).distinct());
+        return closing(groups.map(id -> session.groups().getGroupById(realm, id)).sorted(GroupModel.COMPARE_BY_NAME).distinct());
     }
+
     @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Map<String, String> filteredAttributes = groupSearchableAttributes == null || groupSearchableAttributes.isEmpty()
@@ -1043,7 +1149,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(g -> session.groups().getGroupById(realm, g.getId()));
+                .map(g -> new GroupAdapter(realm, em, g));
     }
 
     @Override

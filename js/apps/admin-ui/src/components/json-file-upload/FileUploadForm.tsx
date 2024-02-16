@@ -35,7 +35,7 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
 export const FileUploadForm = ({
   id,
   onChange,
-  helpText = "common-help:helpFileUpload",
+  helpText = "helpFileUpload",
   unWrap = false,
   language,
   extension,

@@ -1,67 +1,67 @@
 const expect = chai.expect;
 export default class RoleMappingTab {
-  private type = "client";
-  private serviceAccountTab = "serviceAccountTab";
-  private scopeTab = "scopeTab";
-  private assignEmptyRoleBtn = (type: string) =>
+  #type = "client";
+  #serviceAccountTab = "serviceAccountTab";
+  #scopeTab = "scopeTab";
+  #assignEmptyRoleBtn = (type: string) =>
     `no-roles-for-this-${type}-empty-action`;
-  private assignRoleBtn = "assignRole";
-  private unAssignBtn = "unAssignRole";
-  private unAssignDrpDwnBtn = '.pf-c-table__action li button[role="menuitem"]';
-  private assignBtn = "assign";
-  private hideInheritedRolesBtn = "#hideInheritedRoles";
-  private assignedRolesTable = "assigned-roles";
-  private namesColumn = 'td[data-label="Name"]:visible';
-  private roleMappingTab = "role-mapping-tab";
+  #assignRoleBtn = "assignRole";
+  #unAssignBtn = "unAssignRole";
+  #unAssignDrpDwnBtn = '.pf-c-table__action li button[role="menuitem"]';
+  #assignBtn = "assign";
+  #hideInheritedRolesBtn = "#hideInheritedRoles";
+  #assignedRolesTable = "assigned-roles";
+  #namesColumn = 'td[data-label="Name"]:visible';
+  #roleMappingTab = "role-mapping-tab";
 
   constructor(type: string) {
-    this.type = type;
+    this.#type = type;
   }
 
   goToServiceAccountTab() {
-    cy.findByTestId(this.serviceAccountTab).click();
+    cy.findByTestId(this.#serviceAccountTab).click();
     return this;
   }
 
   goToScopeTab() {
-    cy.findByTestId(this.scopeTab).click();
+    cy.findByTestId(this.#scopeTab).click();
     return this;
   }
 
   assignRole(notEmpty = true) {
     cy.findByTestId(
-      notEmpty ? this.assignEmptyRoleBtn(this.type) : this.assignRoleBtn,
+      notEmpty ? this.#assignEmptyRoleBtn(this.#type) : this.#assignRoleBtn,
     ).click();
     return this;
   }
 
   assign() {
-    cy.findByTestId(this.assignBtn).click();
+    cy.findByTestId(this.#assignBtn).click();
     return this;
   }
 
   unAssign() {
-    cy.findByTestId(this.unAssignBtn).click();
+    cy.findByTestId(this.#unAssignBtn).click();
     return this;
   }
 
   unAssignFromDropdown() {
-    cy.get(this.unAssignDrpDwnBtn).click();
+    cy.get(this.#unAssignDrpDwnBtn).click();
     return this;
   }
 
   hideInheritedRoles() {
-    cy.get(this.hideInheritedRolesBtn).check();
+    cy.get(this.#hideInheritedRolesBtn).check();
     return this;
   }
 
   unhideInheritedRoles() {
-    cy.get(this.hideInheritedRolesBtn).uncheck({ force: true });
+    cy.get(this.#hideInheritedRolesBtn).uncheck({ force: true });
     return this;
   }
 
   selectRow(name: string, modal = false) {
-    cy.get(modal ? ".pf-c-modal-box " : "" + this.namesColumn)
+    cy.get(modal ? ".pf-c-modal-box " : "" + this.#namesColumn)
       .contains(name)
       .parent()
       .within(() => {
@@ -72,8 +72,8 @@ export default class RoleMappingTab {
 
   checkRoles(roleNames: string[], exist = true) {
     if (roleNames.length) {
-      cy.findByTestId(this.assignedRolesTable)
-        .get(this.namesColumn)
+      cy.findByTestId(this.#assignedRolesTable)
+        .get(this.#namesColumn)
         .should((roles) => {
           for (let index = 0; index < roleNames.length; index++) {
             const roleName = roleNames[index];
@@ -86,13 +86,13 @@ export default class RoleMappingTab {
           }
         });
     } else {
-      cy.findByTestId(this.assignedRolesTable).should("not.exist");
+      cy.findByTestId(this.#assignedRolesTable).should("not.exist");
     }
     return this;
   }
 
   goToRoleMappingTab() {
-    cy.findByTestId(this.roleMappingTab).click();
+    cy.findByTestId(this.#roleMappingTab).click();
     return this;
   }
 }

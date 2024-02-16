@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientTab =
@@ -27,12 +27,12 @@ const ClientDetails = lazy(() => import("../ClientDetails"));
 export const ClientRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/:tab",
   element: <ClientDetails />,
-  breadcrumb: (t) => t("clients:clientSettings"),
+  breadcrumb: (t) => t("clientSettings"),
   handle: {
     access: "query-clients",
   },
 };
 
 export const toClient = (params: ClientParams): Partial<Path> => ({
-  pathname: generatePath(ClientRoute.path, params),
+  pathname: generateEncodedPath(ClientRoute.path, params),
 });

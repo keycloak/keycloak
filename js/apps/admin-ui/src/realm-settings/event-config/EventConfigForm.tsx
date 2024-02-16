@@ -27,7 +27,7 @@ export const EventConfigForm = ({
   reset,
   clear,
 }: EventConfigFormProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const {
     control,
     watch,
@@ -38,9 +38,9 @@ export const EventConfigForm = ({
   const eventsEnabled: boolean = watch(eventKey);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:events-disable-title",
-    messageKey: "realm-settings:events-disable-confirm",
-    continueButtonLabel: "realm-settings:confirm",
+    titleKey: "events-disable-title",
+    messageKey: "events-disable-confirm",
+    continueButtonLabel: "confirm",
     onConfirm: () => setValue(eventKey, false, { shouldDirty: true }),
   });
 
@@ -53,8 +53,8 @@ export const EventConfigForm = ({
         fieldId={eventKey}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:save-${type}-events`)}
-            fieldLabelId="realm-settings:saveEvents"
+            helpText={t(`save-${type}-eventsHelp`)}
+            fieldLabelId="saveEvents"
           />
         }
       >
@@ -66,8 +66,8 @@ export const EventConfigForm = ({
             <Switch
               data-testid={eventKey}
               id={`${eventKey}-switch`}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value}
               onChange={(value) => {
                 if (!value) {
@@ -90,8 +90,8 @@ export const EventConfigForm = ({
               fieldId="includeRepresentation"
               labelIcon={
                 <HelpItem
-                  helpText={t("realm-settings-help:includeRepresentation")}
-                  fieldLabelId="realm-settings:includeRepresentation"
+                  helpText={t("includeRepresentationHelp")}
+                  fieldLabelId="includeRepresentation"
                 />
               }
             >
@@ -103,8 +103,8 @@ export const EventConfigForm = ({
                   <Switch
                     data-testid="includeRepresentation"
                     id="includeRepresentation"
-                    label={t("common:on")}
-                    labelOff={t("common:off")}
+                    label={t("on")}
+                    labelOff={t("off")}
                     isChecked={field.value}
                     onChange={field.onChange}
                     aria-label={t("includeRepresentation")}
@@ -118,8 +118,8 @@ export const EventConfigForm = ({
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:expiration")}
-                fieldLabelId="realm-settings:expiration"
+                helpText={t("expirationHelp")}
+                fieldLabelId="expiration"
               />
             }
           >
@@ -148,10 +148,10 @@ export const EventConfigForm = ({
           data-testid={`save-${type}`}
           isDisabled={!isDirty}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button variant="link" onClick={reset}>
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
       <Divider />
@@ -160,8 +160,8 @@ export const EventConfigForm = ({
         fieldId={`clear-${type}-events`}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:${type}-clearEvents`)}
-            fieldLabelId={`realm-settings:clear-${type}-events`}
+            helpText={t(`${type}-clearEventsHelp`)}
+            fieldLabelId={`clear-${type}-events`}
           />
         }
       >

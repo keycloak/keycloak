@@ -61,4 +61,11 @@ public class StartDevCommandDistTest {
         cliResult.assertBuild();
     }
 
+    @Test
+    @Launch({ "start-dev", "--verbose" })
+    void testVerboseAfterCommand(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStartedDevMode();
+    }
+
 }

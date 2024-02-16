@@ -16,13 +16,12 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <jetty.version>${jetty94.version}</jetty.version>
+        <undertow.version>${undertow-legacy.version}</undertow.version>
 
-        <springboot-version>2.4</springboot-version>
+        <springboot-version>2.7</springboot-version>
 
         <spring-boot-adapter-jetty>false</spring-boot-adapter-jetty>
         <spring.boot.tomcat.adapter.artifactId>keycloak-tomcat-adapter</spring.boot.tomcat.adapter.artifactId>
-
-        <jetty.version/>
 
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
@@ -66,33 +65,18 @@
 
     <profiles>
         <profile>
-            <id>spring.boot.2.4</id>
+            <id>spring.boot.2.7</id>
 
             <activation>
                 <activeByDefault>true</activeByDefault>
                 <property>
                     <name>springboot-version</name>
-                    <value>2.4</value>
+                    <value>2.7</value>
                 </property>
             </activation>
 
             <properties>
-                <spring-boot.version>${spring-boot24.version}</spring-boot.version>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>spring.boot.2.6</id>
-
-            <activation>
-                <property>
-                    <name>springboot-version</name>
-                    <value>2.6</value>
-                </property>
-            </activation>
-
-            <properties>
-                <spring-boot.version>${spring-boot26.version}</spring-boot.version>
+                <spring-boot.version>${spring-boot27.version}</spring-boot.version>
             </properties>
         </profile>
 
@@ -191,7 +175,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
-                <version>${spring-boot.version}</version>
+                <version>${spring-boot27.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

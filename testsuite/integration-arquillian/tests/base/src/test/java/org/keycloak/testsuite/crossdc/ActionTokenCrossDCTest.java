@@ -17,9 +17,7 @@
 package org.keycloak.testsuite.crossdc;
 
 import org.junit.Ignore;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
@@ -38,7 +36,6 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

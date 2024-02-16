@@ -20,6 +20,9 @@ package org.keycloak.testsuite.pages;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -62,6 +65,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     public void update(String firstName, String lastName, String email) {
         prepareUpdate().firstName(firstName).lastName(lastName).email(email).submit();
+    }
+
+    public void update(Map<String, String> attributes) {
+        prepareUpdate().otherProfileAttribute(attributes).submit();
     }
 
     public Update prepareUpdate() {
@@ -111,6 +118,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getLabelForField(String fieldId) {
         return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
+
+    public WebElement getFieldById(String fieldId) {
+        try {
+            return driver.findElement(By.id(fieldId));
+        } catch (NoSuchElementException nsee) {
+            return null;
+        }
+    }
     
     public boolean isDepartmentPresent() {
         try {
@@ -140,6 +155,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
         private String lastName;
         private String department;
         private String email;
+        private final Map<String, String> other = new LinkedHashMap<>();
 
         protected Update(LoginUpdateProfilePage page) {
             this.page = page;
@@ -165,6 +181,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return this;
         }
 
+        public Update otherProfileAttribute(Map<String, String> attributes) {
+            other.putAll(attributes);
+            return this;
+        }
+
         public void submit() {
             if (firstName != null) {
                 page.firstNameInput.clear();
@@ -183,6 +204,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
             if (email != null) {
                 page.emailInput.clear();
                 page.emailInput.sendKeys(email);
+            }
+
+            for (Map.Entry<String, String> entry : other.entrySet()) {
+                WebElement el = page.driver.findElement(By.id(entry.getKey()));
+                if (el != null) {
+                    el.clear();
+                    el.sendKeys(entry.getValue());
+                }
             }
 
             clickLink(page.submitButton);

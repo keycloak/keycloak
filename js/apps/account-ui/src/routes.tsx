@@ -11,6 +11,7 @@ const Applications = lazy(() => import("./applications/Applications"));
 const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
+const ContentComponent = lazy(() => import("./content/ContentComponent"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
@@ -42,6 +43,15 @@ export const ResourcesRoute: RouteObject = {
   element: <Resources />,
 };
 
+export type ContentComponentParams = {
+  componentId: string;
+};
+
+export const ContentRoute: RouteObject = {
+  path: "/content/:componentId",
+  element: <ContentComponent />,
+};
+
 export const PersonalInfoRoute: IndexRouteObject = {
   index: true,
   element: <PersonalInfo />,
@@ -60,6 +70,7 @@ export const RootRoute: RouteObject = {
     GroupsRoute,
     PersonalInfoRoute,
     ResourcesRoute,
+    ContentRoute,
   ],
 };
 

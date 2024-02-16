@@ -26,12 +26,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.models.SingleUseObjectProviderFactory;
-import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
-import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -43,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 @RequireProvider(SingleUseObjectProvider.class)
 public class SingleUseObjectModelTest extends KeycloakModelTest {
@@ -171,12 +165,6 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
 
     @Test
     public void testCluster() throws InterruptedException {
-        // Skip the test if SingleUseObjectProvider == CHM
-        String suProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".provider");
-        String suMapStorageProvider = CONFIG.getConfig().get(SingleUseObjectSpi.NAME + ".map.storage.provider");
-        assumeFalse(MapSingleUseObjectProviderFactory.PROVIDER_ID.equals(suProvider) &&
-                (suMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(suMapStorageProvider)));
-
         AtomicInteger index = new AtomicInteger();
         CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
         CountDownLatch afterDeleteLatch = new CountDownLatch(1);

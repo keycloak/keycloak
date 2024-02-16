@@ -36,6 +36,7 @@ import { DetailDescriptionLink } from "./DetailDescription";
 
 type ScopesProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 export type PermissionScopeRepresentation = ScopeRepresentation & {
@@ -48,8 +49,11 @@ type ExpandableRow = {
   isExpanded: boolean;
 };
 
-export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
-  const { t } = useTranslation("clients");
+export const AuthorizationScopes = ({
+  clientId,
+  isDisabled = false,
+}: ScopesProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
 
@@ -184,7 +188,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("common:name")}</Th>
+                  <Th>{t("name")}</Th>
                   <Th>{t("displayName")}</Th>
                   <Th aria-hidden="true" />
                   <Th aria-hidden="true" />
@@ -241,7 +245,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("common:delete"),
+                            title: t("delete"),
                             onClick: () => {
                               setSelectedScope(scope);
                               toggleDeleteDialog();
@@ -305,6 +309,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         <ListEmptyState
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
+          isDisabled={isDisabled}
           onPrimaryAction={() => navigate(toNewScope({ id: clientId, realm }))}
           primaryActionText={t("createAuthorizationScope")}
         />
@@ -312,8 +317,9 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("common:noSearchResults")}
-          instructions={t("common:noSearchResultsInstructions")}
+          isDisabled={isDisabled}
+          message={t("noSearchResults")}
+          instructions={t("noSearchResultsInstructions")}
         />
       )}
     </PageSection>

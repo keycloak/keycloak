@@ -8,8 +8,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  workers: 1,
+  reporter: process.env.CI ? [["github"], ["html"]] : "list",
   use: {
     baseURL: process.env.CI
       ? "http://localhost:8080/realms/master/account/"
@@ -21,13 +21,13 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
-      name: "import test realm",
-      testMatch: /test-realm\.setup\.ts/,
-      teardown: "del test realm",
+      name: "import realms",
+      testMatch: /realm\.setup\.ts/,
+      teardown: "del realms",
     },
     {
-      name: "del test realm",
-      testMatch: /test-realm\.teardown\.ts/,
+      name: "del realms",
+      testMatch: /realm\.teardown\.ts/,
     },
     {
       name: "chromium",
@@ -35,25 +35,16 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: ".auth/user.json",
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
+      dependencies: ["setup", "import realms"],
+      testIgnore: ["**/personal-info.spec.ts"],
     },
-
     {
-      name: "firefox",
+      name: "personal-info",
       use: {
-        ...devices["Desktop Firefox"],
-        storageState: ".auth/user.json",
+        ...devices["Desktop Chrome"],
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
-    },
-
-    {
-      name: "resources",
-      use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import test realm"],
-      testMatch: ["**/*my-resources.spec.ts"],
+      dependencies: ["import realms"],
+      testMatch: ["**/personal-info.spec.ts"],
     },
   ],
 });

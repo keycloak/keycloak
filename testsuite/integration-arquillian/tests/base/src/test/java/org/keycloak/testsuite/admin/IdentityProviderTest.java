@@ -95,6 +95,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -138,15 +139,15 @@ public class IdentityProviderTest extends AbstractAdminTest {
     @Test
     public void testFind() {
         create(createRep("twitter", "twitter", true, Collections.singletonMap("key1", "value1")));
-        create(createRep("linkedin", "linkedin"));
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
         create(createRep("google", "google"));
         create(createRep("github", "github"));
         create(createRep("facebook", "facebook"));
 
-        Assert.assertNames(realm.identityProviders().findAll(), "facebook", "github", "google", "linkedin", "twitter");
+        Assert.assertNames(realm.identityProviders().findAll(), "facebook", "github", "google", "linkedin-openid-connect", "twitter");
 
         Assert.assertNames(realm.identityProviders().find(null, true, 0, 2), "facebook", "github");
-        Assert.assertNames(realm.identityProviders().find(null, true, 2, 2), "google", "linkedin");
+        Assert.assertNames(realm.identityProviders().find(null, true, 2, 2), "google", "linkedin-openid-connect");
         Assert.assertNames(realm.identityProviders().find(null, true, 4, 2), "twitter");
 
         Assert.assertNames(realm.identityProviders().find("g", true, 0, 5), "github", "google");
@@ -353,6 +354,39 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertNull(representation.getConfig().get("clientSecret"));
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertNull(representation.getConfig().get("jwtX509HeadersEnabled"));
+        assertTrue(representation.isEnabled());
+        assertFalse(representation.isStoreToken());
+        assertFalse(representation.isTrustEmail());
+    }
+
+    @Test
+    public void testCreateWithJWTAndX509Headers() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
+        newIdentityProvider.getConfig().put("jwtX509HeadersEnabled", "true");
+
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        assertNotNull(representation);
+
+        assertNotNull(representation.getInternalId());
+        assertEquals("new-identity-provider", representation.getAlias());
+        assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
+        assertEquals("clientId", representation.getConfig().get("clientId"));
+        assertNull(representation.getConfig().get("clientSecret"));
+        assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertEquals("true", representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
@@ -592,8 +626,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
-        create(createRep("linkedin", "linkedin"));
-        provider = realm.identityProviders().get("linkedin");
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
+        provider = realm.identityProviders().get("linkedin-openid-connect");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
 
@@ -621,6 +655,27 @@ public class IdentityProviderTest extends AbstractAdminTest {
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-advanced-group-idp-mapper", "saml-xpath-attribute-idp-mapper");
+    }
+
+    @Test
+    public void mapperTypesCanBeOverwritten() {
+        String kcOidcProviderId = "keycloak-oidc";
+        create(createRep(kcOidcProviderId, kcOidcProviderId));
+
+        String testProviderId = OverwrittenMappersTestIdentityProviderFactory.PROVIDER_ID;
+        create(createRep(testProviderId, testProviderId));
+
+        /*
+         * in the test provider, we have overwritten the mapper types to be the same as supported by "keycloak-oidc", so
+         * the "keycloak-oidc" mappers are the expected mappers for the test provider
+         */
+        IdentityProviderResource kcOidcProvider = realm.identityProviders().get(kcOidcProviderId);
+        Set<String> expectedMapperTypes = kcOidcProvider.getMapperTypes().keySet();
+
+        IdentityProviderResource testProvider = realm.identityProviders().get(testProviderId);
+        Set<String> actualMapperTypes = testProvider.getMapperTypes().keySet();
+
+        assertThat(actualMapperTypes, equalTo(expectedMapperTypes));
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
@@ -928,10 +983,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
         body = response.readEntity(Map.class);
         assertProviderInfo(body, "twitter", "Twitter");
 
-        response = realm.identityProviders().getIdentityProviders("linkedin");
+        response = realm.identityProviders().getIdentityProviders("linkedin-openid-connect");
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
-        assertProviderInfo(body, "linkedin", "LinkedIn");
+        assertProviderInfo(body, "linkedin-openid-connect", "LinkedIn");
 
         response = realm.identityProviders().getIdentityProviders("microsoft");
         Assert.assertEquals("Status", 200, response.getStatus());
@@ -1161,7 +1216,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         X509Certificate activeX509SigCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(activeSigCert);
         assertThat("KeyName matches subject DN",
-                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectDN().getName()));
+                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectX500Principal().getName()));
 
         assertThat("Signing cert matches active realm cert",
                 x509CertificateElement.getTextContent().trim(), equalTo(Base64.getEncoder().encodeToString(activeX509SigCert.getEncoded())));

@@ -85,6 +85,18 @@ public interface GroupResource {
     @DELETE
     void remove();
 
+    /**
+     * Get the paginated list of subgroups belonging to this group
+     *
+     * @param first
+     * @param max
+     * @param full
+     */
+    @GET
+    @Path("children")
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent

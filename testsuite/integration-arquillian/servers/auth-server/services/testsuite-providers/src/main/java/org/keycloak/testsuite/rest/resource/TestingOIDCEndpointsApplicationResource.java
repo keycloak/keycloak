@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,6 +39,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.MacSignatureSignerContext;
 import org.keycloak.crypto.ServerECDSASignatureSignerContext;
+import org.keycloak.crypto.ServerEdDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -88,9 +89,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
@@ -121,6 +119,7 @@ public class TestingOIDCEndpointsApplicationResource {
     @Path("/generate-keys")
     @NoCache
     public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
+                                            @QueryParam("crv") String curve,
                                             @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm,
                                             @QueryParam("keepExistingKeys") Boolean keepExistingKeys,
                                             @QueryParam("kid") String kid) {
@@ -152,6 +151,13 @@ public class TestingOIDCEndpointsApplicationResource {
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp521r1");
                     break;
+                case Algorithm.EdDSA:
+                    if (curve == null) {
+                        curve = Algorithm.Ed25519;
+                    }
+                    keyType = KeyType.OKP;
+                    keyPair = generateEddsaKey(curve);
+                    break;
                 case JWEConstants.RSA1_5:
                 case JWEConstants.RSA_OAEP:
                 case JWEConstants.RSA_OAEP_256:
@@ -168,6 +174,7 @@ public class TestingOIDCEndpointsApplicationResource {
             keyData.setKid(kid); // Can be null. It will be generated in that case
             keyData.setKeyPair(keyPair);
             keyData.setKeyType(keyType);
+            keyData.setCurve(curve);
             if (advertiseJWKAlgorithm == null || Boolean.TRUE.equals(advertiseJWKAlgorithm)) {
                 keyData.setKeyAlgorithm(jwaAlgorithm);
             } else {
@@ -186,6 +193,12 @@ public class TestingOIDCEndpointsApplicationResource {
         SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
         ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
         keyGen.initialize(ecSpec, randomGen);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        return keyPair;
+    }
+
+    private KeyPair generateEddsaKey(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(curveName);
         KeyPair keyPair = keyGen.generateKeyPair();
         return keyPair;
     }
@@ -238,6 +251,8 @@ public class TestingOIDCEndpointsApplicationResource {
                         return builder.rsa(keyPair.getPublic(), keyUse);
                     } else if (KeyType.EC.equals(keyType)) {
                         return builder.ec(keyPair.getPublic());
+                    } else if (KeyType.OKP.equals(keyType)) {
+                        return builder.okp(keyPair.getPublic());
                     } else {
                         throw new IllegalArgumentException("Unknown keyType: " + keyType);
                     }
@@ -326,6 +341,10 @@ public class TestingOIDCEndpointsApplicationResource {
                 case Algorithm.ES512:
                     signer = new ServerECDSASignatureSignerContext(keyWrapper);
                     break;
+                case Algorithm.EdDSA:
+                    keyWrapper.setCurve(keyData.getCurve());
+                    signer = new ServerEdDSASignatureSignerContext(keyWrapper);
+                    break;
                 default:
                     signer = new AsymmetricSignatureSignerContext(keyWrapper);
             }
@@ -374,6 +393,7 @@ public class TestingOIDCEndpointsApplicationResource {
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
+            case Algorithm.EdDSA:
             case Algorithm.HS256:
             case Algorithm.HS384:
             case Algorithm.HS512:

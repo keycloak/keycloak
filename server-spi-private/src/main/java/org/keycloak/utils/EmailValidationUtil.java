@@ -3,11 +3,18 @@ package org.keycloak.utils;
 import java.net.IDN;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.keycloak.Config;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
+/**
+ * Email Validator Utility to check email inputs based on
+ * <a href="https://github.com/hibernate/hibernate-validator/blob/8.0.1.Final/engine/src/main/java/org/hibernate/validator/internal/constraintvalidators/AbstractEmailValidator.java">
+ * hibernate-validator implementation</a>.
+ */
 public class EmailValidationUtil {
-    private static final int MAX_LOCAL_PART_LENGTH = 64;
+
+    public static final int MAX_LOCAL_PART_LENGTH = 64;
 
     private static final String LOCAL_PART_ATOM = "[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-\uFFFF-]";
     private static final String LOCAL_PART_INSIDE_QUOTES_ATOM = "(?:[a-z0-9!#$%&'*.(),<>\\[\\]:;  @+/=?^_`{|}~\u0080-\uFFFF-]|\\\\\\\\|\\\\\\\")";
@@ -29,8 +36,14 @@ public class EmailValidationUtil {
      */
     private static final Pattern EMAIL_DOMAIN_PATTERN = Pattern.compile(DOMAIN + "|\\[" + IP_DOMAIN + "\\]|" + "\\[IPv6:" + IP_V6_DOMAIN + "\\]", CASE_INSENSITIVE);
 
+    public static final String MAX_EMAIL_LOCAL_PART_LENGTH = "max-email-local-part-length";
+
 
     public static boolean isValidEmail(String value) {
+        return isValidEmail(value, Config.scope("user-profile-declarative-user-profile").getInt(MAX_EMAIL_LOCAL_PART_LENGTH, MAX_LOCAL_PART_LENGTH));
+    }
+
+    public static boolean isValidEmail(String value, int maxEmailLocalPartLength) {
         if ( value == null || value.length() == 0 ) {
             return false;
         }
@@ -48,15 +61,16 @@ public class EmailValidationUtil {
         String localPart = stringValue.substring( 0, splitPosition );
         String domainPart = stringValue.substring( splitPosition + 1 );
 
-        if ( !isValidEmailLocalPart( localPart ) ) {
+        if ( !isValidEmailLocalPart( localPart, maxEmailLocalPartLength ) ) {
             return false;
         }
 
         return isValidEmailDomainAddress( domainPart );
     }
 
-    private static boolean isValidEmailLocalPart(String localPart) {
-        if ( localPart.length() > MAX_LOCAL_PART_LENGTH ) {
+    private static boolean isValidEmailLocalPart(String localPart, int maxEmailLocalPartLength) {
+
+        if ( localPart.length() >  maxEmailLocalPartLength) {
             return false;
         }
         Matcher matcher = LOCAL_PART_PATTERN.matcher( localPart );

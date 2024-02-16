@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { IconMapper, useAlerts } from "ui-shared";
 import { linkAccount, unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
+import { useEnvironment } from "../root/KeycloakContext";
 
 type AccountRowProps = {
   account: LinkedAccountRepresentation;
@@ -23,11 +24,12 @@ type AccountRowProps = {
 
 export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const unLink = async (account: LinkedAccountRepresentation) => {
     try {
-      await unLinkAccount(account);
+      await unLinkAccount(context, account);
       addAlert(t("unLinkSuccess"));
     } catch (error) {
       addError(t("unLinkError", { error }).toString());
@@ -36,7 +38,7 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
 
   const link = async (account: LinkedAccountRepresentation) => {
     try {
-      const { accountLinkUri } = await linkAccount(account);
+      const { accountLinkUri } = await linkAccount(context, account);
       location.href = accountLinkUri;
     } catch (error) {
       addError(t("linkError", { error }).toString());

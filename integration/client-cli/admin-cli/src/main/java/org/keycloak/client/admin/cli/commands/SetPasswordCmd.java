@@ -163,7 +163,7 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
         out.println("    --userid ID               Identify target user by 'id'");
         out.println("    -p, --new-password        New password to set. If not specified you will be prompted for it.");
         out.println("    -t, --temporary           Make the new password temporary - user has to change it on next logon");
-        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
         out.println();
         out.println("Examples:");

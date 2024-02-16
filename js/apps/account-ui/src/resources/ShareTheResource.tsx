@@ -17,9 +17,10 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts, SelectControl, KeycloakTextInput } from "ui-shared";
+import { useEnvironment } from "../root/KeycloakContext";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -41,6 +42,7 @@ export const ShareTheResource = ({
   onClose,
 }: ShareTheResourceProps) => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
   const form = useForm<FormValues>();
   const {
@@ -79,7 +81,7 @@ export const ShareTheResource = ({
         usernames
           .filter(({ value }) => value !== "")
           .map(({ value: username }) =>
-            updateRequest(resource._id, username, permissions),
+            updateRequest(context, resource._id, username, permissions),
           ),
       );
       addAlert(t("shareSuccess"));
@@ -113,7 +115,7 @@ export const ShareTheResource = ({
 
   return (
     <Modal
-      title={t("shareTheResource", [resource.name])}
+      title={t("shareTheResource", { name: resource.name })}
       variant="medium"
       isOpen={open}
       onClose={onClose}
@@ -121,7 +123,7 @@ export const ShareTheResource = ({
         <Button
           key="confirm"
           variant="primary"
-          id="done"
+          data-testid="done"
           isDisabled={!isValid}
           type="submit"
           form="share-form"
@@ -147,6 +149,7 @@ export const ShareTheResource = ({
           <InputGroup>
             <KeycloakTextInput
               id="users"
+              data-testid="users"
               placeholder={t("usernamePlaceholder")}
               validated={
                 errors.usernames
@@ -160,7 +163,7 @@ export const ShareTheResource = ({
             <Button
               key="add-user"
               variant="primary"
-              id="add"
+              data-testid="add"
               onClick={() => append({ value: "" })}
               isDisabled={isDisabled}
             >
@@ -190,7 +193,6 @@ export const ShareTheResource = ({
                 key: name,
                 value: displayName || name,
               }))}
-              menuAppendTo="parent"
             />
           </FormGroup>
         </FormProvider>

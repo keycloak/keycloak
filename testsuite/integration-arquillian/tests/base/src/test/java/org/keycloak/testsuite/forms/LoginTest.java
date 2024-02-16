@@ -33,6 +33,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -41,6 +42,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -50,12 +52,10 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -461,7 +461,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         // Check identity cookie is signed with HS256
         String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-        assertEquals("HS256", algorithm);
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
@@ -474,7 +474,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // Check identity cookie is still signed with HS256
             algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
-            assertEquals("HS256", algorithm);
+            assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, algorithm);
 
             // Check identity cookie still works
             oauth.openLoginForm();
@@ -895,6 +895,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testAuthenticationSessionExpiresEarlyAfterAuthentication() throws Exception {
+        // Open login form and refresh right after. This simulates creating another "tab" in rootAuthenticationSession
+        oauth.openLoginForm();
+        driver.navigate().refresh();
+
+        // Assert authenticationSession in cache with 2 tabs
+        String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
+        Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        loginPage.login("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        // authentication session should still exists with remaining browser tab
+        Assert.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+
+        // authentication session should be expired after 1 minute
+        setTimeOffset(300);
+        Assert.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+    }
+
+
+    @Test
     public void loginRememberMeExpiredIdle() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionIdleTimeoutRememberMe(1)
@@ -995,7 +1017,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             // make sure the authentication session is no longer available
             for (Cookie cookie : driver.manage().getCookies()) {
-                if (cookie.getName().startsWith(AuthenticationSessionManager.AUTH_SESSION_ID)) {
+                if (cookie.getName().startsWith(CookieType.AUTH_SESSION_ID.getName())) {
                     driver.manage().deleteCookie(cookie);
                 }
             }

@@ -23,6 +23,7 @@
 
     <cache-container name="keycloak">
         <transport lock-timeout="60000"/>
+        <metrics names-as-tags="true" />
         <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>

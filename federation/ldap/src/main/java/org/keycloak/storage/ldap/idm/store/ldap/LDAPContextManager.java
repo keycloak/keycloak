@@ -192,7 +192,7 @@ public final class LDAPContextManager implements AutoCloseable {
 
         // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
         // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
-        if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
+        if (!ldapConfig.isStartTls() && LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
             env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
         }
 
@@ -233,6 +233,11 @@ public final class LDAPContextManager implements AutoCloseable {
         String binaryAttrs = binaryAttrsBuilder.toString().trim();
         if (!binaryAttrs.isEmpty()) {
             env.put("java.naming.ldap.attributes.binary", binaryAttrs);
+        }
+
+        String referral = ldapConfig.getReferral();
+        if (referral != null) {
+            env.put(Context.REFERRAL, referral);
         }
 
         return new Hashtable<>(env);

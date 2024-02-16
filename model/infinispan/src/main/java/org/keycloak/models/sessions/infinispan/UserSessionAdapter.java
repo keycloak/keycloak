@@ -315,6 +315,7 @@ public class UserSessionAdapter implements UserSessionModel {
         update(task);
     }
 
+    @Override
     public SessionPersistenceState getPersistenceState() {
         return persistenceState;
     }

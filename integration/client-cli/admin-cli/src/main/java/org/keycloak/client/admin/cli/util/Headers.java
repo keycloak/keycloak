@@ -16,8 +16,11 @@
  */
 package org.keycloak.client.admin.cli.util;
 
+import org.apache.http.entity.ContentType;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -51,5 +54,9 @@ public class Headers implements Iterable<Header> {
     @Override
     public Iterator<Header> iterator() {
         return headers.values().iterator();
+    }
+
+    public Optional<ContentType> getContentType() {
+        return Optional.ofNullable(headers.get("content-type")).map(Header::getValue).map(ContentType::parse);
     }
 }

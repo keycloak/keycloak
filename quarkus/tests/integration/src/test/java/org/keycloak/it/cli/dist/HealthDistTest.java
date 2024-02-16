@@ -23,15 +23,11 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 
 @DistributionTest(keepAlive =true)
 public class HealthDistTest {
@@ -51,6 +47,8 @@ public class HealthDistTest {
                 .statusCode(404);
         when().get("/q/health/ready").then()
                 .statusCode(404);
+        when().get("/lb-check").then()
+                .statusCode(404);
     }
 
     @Test
@@ -64,6 +62,21 @@ public class HealthDistTest {
                 .statusCode(200);
         // Metrics should not be enabled
         when().get("/metrics").then()
+                .statusCode(404);
+        when().get("/lb-check").then()
+                .statusCode(404);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true" })
+    void testNonBlockingProbes() {
+        when().get("/health/live").then()
+                .statusCode(200);
+        when().get("/health/ready").then()
+                .statusCode(200)
+                .body("checks[0].name", equalTo("Keycloak database connections async health check"))
+                .body("checks.size()", equalTo(1));
+        when().get("/lb-check").then()
                 .statusCode(404);
     }
 
@@ -106,5 +119,12 @@ public class HealthDistTest {
 
             distribution.stop();
         }
+    }
+
+    @Test
+    @Launch({ "start-dev", "--features=multi-site" })
+    void testLoadBalancerCheck() {
+        when().get("/lb-check").then()
+                .statusCode(200);
     }
 }

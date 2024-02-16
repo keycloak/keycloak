@@ -239,13 +239,13 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
               </SplitItem>
               <SplitItem>
               <KeycloakContext.Consumer>
-                { (keycloak: KeycloakService) => (
+                { (keycloak) => (
                     this.isShowSignOutAll(this.state.devices) &&
                       <ContinueCancelModal buttonTitle='signOutAllDevices'
                                     buttonId='sign-out-all'
                                     modalTitle='signOutAllDevices'
                                     modalMessage='signOutAllDevicesWarning'
-                                    onContinue={() => this.signOutAll(keycloak)}
+                                    onContinue={() => this.signOutAll(keycloak!)}
                       />
                 )}
               </KeycloakContext.Consumer>

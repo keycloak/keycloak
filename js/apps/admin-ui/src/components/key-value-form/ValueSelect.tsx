@@ -41,6 +41,10 @@ export const ValueSelect = ({
       ))}
     </Select>
   ) : (
-    <KeycloakTextInput id="customValue" data-testid={rest.name} {...field} />
+    <KeycloakTextInput
+      aria-label={t("customValue")}
+      data-testid={rest.name}
+      {...field}
+    />
   );
 };

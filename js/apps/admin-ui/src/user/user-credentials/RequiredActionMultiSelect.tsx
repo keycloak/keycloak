@@ -6,26 +6,39 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  FieldPathByValue,
+  FieldValues,
+  PathValue,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
 
-type RequiredActionMultiSelectProps = {
-  name: string;
+export type RequiredActionMultiSelectProps<
+  T extends FieldValues,
+  P extends FieldPathByValue<T, string[] | undefined>,
+> = {
+  control: Control<T>;
+  name: P;
   label: string;
   help: string;
 };
 
-export const RequiredActionMultiSelect = ({
+export const RequiredActionMultiSelect = <
+  T extends FieldValues,
+  P extends FieldPathByValue<T, string[] | undefined>,
+>({
+  control,
   name,
   label,
   help,
-}: RequiredActionMultiSelectProps) => {
-  const { t } = useTranslation("users");
-  const { control } = useFormContext();
+}: RequiredActionMultiSelectProps<T, P>) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [requiredActions, setRequiredActions] = useState<
     RequiredActionProviderRepresentation[]
@@ -45,12 +58,12 @@ export const RequiredActionMultiSelect = ({
   return (
     <FormGroup
       label={t(label)}
-      labelIcon={<HelpItem helpText={t(help)} fieldLabelId="resetActions" />}
+      labelIcon={<HelpItem helpText={t(help)} fieldLabelId="resetAction" />}
       fieldId="actions"
     >
       <Controller
         name={name}
-        defaultValue={[]}
+        defaultValue={[] as PathValue<T, P>}
         control={control}
         render={({ field }) => (
           <Select
@@ -64,19 +77,20 @@ export const RequiredActionMultiSelect = ({
             menuAppendTo="parent"
             onToggle={(open) => setOpen(open)}
             isOpen={open}
-            selections={field.value}
-            onSelect={(_, selectedValue) =>
+            selections={field.value as string[]}
+            onSelect={(_, selectedValue) => {
+              const value: string[] = field.value;
               field.onChange(
-                field.value.find((o: string) => o === selectedValue)
-                  ? field.value.filter((item: string) => item !== selectedValue)
-                  : [...field.value, selectedValue],
-              )
-            }
+                value.find((item) => item === selectedValue)
+                  ? value.filter((item) => item !== selectedValue)
+                  : [...value, selectedValue],
+              );
+            }}
             onClear={(event) => {
               event.stopPropagation();
               field.onChange([]);
             }}
-            typeAheadAriaLabel={t("resetActions")}
+            typeAheadAriaLabel={t("resetAction")}
           >
             {requiredActions.map(({ alias, name }) => (
               <SelectOption

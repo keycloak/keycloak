@@ -59,7 +59,6 @@ Users can log in with WebAuthn if they have a WebAuthn credential registered onl
 . Click *+* menu of the *WebAuthn Browser Forms* row.
 . Click *Add sub-flow*.
 . Enter "Conditional 2FA" for the _name_ field.
-. On the *WebAuthn Browser Forms* row, click the plus sign + and select *Add step*.
 . Select *Conditional* for the *Conditional 2FA* to set its requirement to conditional.
 . On the *Conditional 2FA* row, click the plus sign + and select *Add condition*.
 . Click *Add condition*.
@@ -75,7 +74,6 @@ The user can choose between using WebAuthn and OTP for the second factor:
 
 .Procedure
 . On the *Conditional 2FA* row, click the plus sign + and select *Add step*.
-. Click *Add step*.
 . Select *OTP Form* from the list.
 . Click *Add*.
 . Select *Alternative* for the *OTP Form* to set its requirement to alternative.

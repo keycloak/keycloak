@@ -88,8 +88,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
             response = client.execute(post);
 
-            assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
-
             Header setIdentityCookieHeader = null;
             Header setSessionCookieHeader = null;
             for (Header h : response.getAllHeaders()) {
@@ -123,7 +121,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             response = client.execute(get);
 
             assertEquals(200, response.getStatusLine().getStatusCode());
-            assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
             assertNull(response.getFirstHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
             assertEquals("frame-src 'self'; object-src 'none';", response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName()).getValue());
             assertEquals("none", response.getFirstHeader(BrowserSecurityHeaders.X_ROBOTS_TAG.getHeaderName()).getValue());

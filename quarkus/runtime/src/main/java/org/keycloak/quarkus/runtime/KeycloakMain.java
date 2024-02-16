@@ -23,15 +23,15 @@ import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import picocli.CommandLine.ExitCode;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
@@ -41,6 +41,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -63,7 +64,16 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION);
-        List<String> cliArgs = Picocli.parseArgs(args);
+        List<String> cliArgs = null;
+        try {
+            cliArgs = Picocli.parseArgs(args);
+        } catch (PropertyException e) {
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
+            errorHandler.error(errStream, e.getMessage(), null);
+            System.exit(ExitCode.USAGE);
+            return;
+        }
 
         if (cliArgs.isEmpty()) {
             cliArgs = new ArrayList<>(cliArgs);
@@ -74,8 +84,17 @@ public class KeycloakMain implements QuarkusApplication {
             ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
             PrintWriter errStream = new PrintWriter(System.err, true);
 
-            if (isDevProfileNotAllowed(Arrays.asList(args))) {
+            if (isDevProfileNotAllowed()) {
                 errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
+                System.exit(ExitCode.USAGE);
+                return;
+            }
+
+            try {
+                Picocli.validateConfig(cliArgs, new Start(), new PrintWriter(System.out, true));
+            } catch (PropertyException e) {
+                errorHandler.error(errStream, e.getMessage(), null);
+                System.exit(ExitCode.USAGE);
                 return;
             }
 

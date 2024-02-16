@@ -33,6 +33,11 @@
 
     <properties>
         <keycloak.provisioning.xml>server-provisioning.xml</keycloak.provisioning.xml>
+
+        <!-- Wildfly Community Related Properties -->
+
+        <!-- EAP8 Related Properties -->
+
     </properties>
 
     <modules>
@@ -42,7 +47,6 @@
         <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
-        <!--<module>server-overlay</module>-->
     </modules>
 
     <repositories>
@@ -73,18 +77,6 @@
     </repositories>
 
     <profiles>
-        <profile>
-            <id>wildfly-dist</id>
-            <activation>
-                <property>
-                    <name>includeWildFly</name>
-                </property>
-            </activation>
-            <modules>
-                <module>galleon-feature-packs</module>
-                <module>server-dist</module>
-            </modules>
-        </profile>
         <profile>
             <id>distribution-downloads</id>
             <modules>

@@ -13,13 +13,14 @@ public class DatabaseOptions {
     public static final Option<String> DB_DRIVER = new OptionBuilder<>("db-driver", String.class)
             .category(OptionCategory.DATABASE)
             .description("The fully qualified class name of the JDBC driver. If not set, a default driver is set accordingly to the chosen database.")
+            .buildTime(true)
             .build();
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
             .description("The database vendor.")
             .defaultValue("dev-file")
-            .expectedValues(Database::getLegacyStoreAliases)
+            .expectedValues(Database.getDatabaseAliases())
             .buildTime(true)
             .build();
 

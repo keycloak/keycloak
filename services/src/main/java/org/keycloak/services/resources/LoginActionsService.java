@@ -17,8 +17,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.MessageType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
@@ -53,6 +51,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -82,6 +81,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
@@ -220,7 +220,8 @@ public class LoginActionsService {
     @GET
     public Response restartSession(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                    @QueryParam(Constants.CLIENT_ID) String clientId,
-                                   @QueryParam(Constants.TAB_ID) String tabId) {
+                                   @QueryParam(Constants.TAB_ID) String tabId,
+                                   @QueryParam(Constants.SKIP_LOGOUT) String skipLogout) {
         event.event(EventType.RESTART_AUTHENTICATION);
         SessionCodeChecks checks = new SessionCodeChecks(realm, session.getContext().getUri(), request, clientConnection, session, event, authSessionId, null, null, clientId,  tabId, null);
 
@@ -234,12 +235,14 @@ public class LoginActionsService {
             flowPath = AUTHENTICATE_PATH;
         }
 
-        // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
-        // We logout userSession in this case
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (userSession != null) {
-            logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
-            AuthenticationManager.backchannelLogout(session, userSession, false);
+        if (!Boolean.parseBoolean(skipLogout)) {
+            // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
+            // We logout userSession in this case
+            UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+            if (userSession != null) {
+                logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
+                AuthenticationManager.backchannelLogout(session, userSession, false);
+            }
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);
@@ -307,25 +310,7 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-                @Override
-                public Response runInternal(KeycloakSession session) {
-                    // create another instance of the endpoint to isolate each run.
-                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
-                    LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                    // process the request in the created instance.
-                    return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
-                }
-            }, 10, 100);
-        } else {
-            return authenticateInternal(authSessionId, code, execution, clientId, tabId);
-        }
 
-    }
-
-    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
-                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
@@ -540,8 +525,10 @@ public class LoginActionsService {
             client = realm.getClientByClientId(clientId);
         }
         AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+        KeycloakContext sessionContext = session.getContext();
+
         if (client != null) {
-            session.getContext().setClient(client);
+            sessionContext.setClient(client);
             authSession = authenticationSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         }
 
@@ -576,7 +563,7 @@ public class LoginActionsService {
                     .withChecks(
                             // Token introspection checks
                             TokenVerifier.IS_ACTIVE,
-                            new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())),
+                            new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(sessionContext.getUri().getBaseUri(), realm.getName())),
                             ACTION_TOKEN_BASIC_CHECKS
                     );
 
@@ -612,22 +599,15 @@ public class LoginActionsService {
         }
 
         // Now proceed with the verification and handle the token
-        tokenContext = new ActionTokenContext(session, realm, session.getContext().getUri(), clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
+        tokenContext = new ActionTokenContext(session, realm, sessionContext.getUri(), clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
             String tokenAuthSessionCompoundId = handler.getAuthenticationSessionIdFromToken(token, tokenContext, authSession);
 
-            if (tokenAuthSessionCompoundId != null) {
-                // This can happen if the token contains ID but user opens the link in a new browser
-                String sessionId = AuthenticationSessionCompoundId.encoded(tokenAuthSessionCompoundId).getRootSessionId();
-                LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, authSession, sessionId);
-            }
-
             if (authSession == null) {
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
-            } else if (tokenAuthSessionCompoundId == null ||
-              ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
+            } else if (!LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, authSession, tokenAuthSessionCompoundId)) {
                 // There exists an authentication session but no auth session ID was received in the action token
                 logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
                 authenticationSessionManager.removeAuthenticationSession(realm, authSession, false);
@@ -638,13 +618,14 @@ public class LoginActionsService {
                 processLocaleParam(authSession);
             }
 
+            sessionContext.setAuthenticationSession(authSession);
             initLoginEvent(authSession);
             event.event(handler.eventType());
 
-            LoginActionsServiceChecks.checkIsUserValid(token, tokenContext);
+            LoginActionsServiceChecks.checkIsUserValid(token, tokenContext, event);
             LoginActionsServiceChecks.checkIsClientValid(token, tokenContext);
             
-            session.getContext().setClient(authSession.getClient());
+            sessionContext.setClient(authSession.getClient());
 
             TokenVerifier.createWithoutSignature(token)
               .withChecks(handler.getVerifiers(tokenContext))
@@ -773,7 +754,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+        AuthenticationManager.expireIdentityCookie(session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
@@ -959,10 +940,10 @@ public class LoginActionsService {
             return response;
         }
 
-        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.addConsent(session, realm, user, grantedConsent);
         }
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
@@ -981,7 +962,7 @@ public class LoginActionsService {
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.updateConsent(session, realm, user, grantedConsent);
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

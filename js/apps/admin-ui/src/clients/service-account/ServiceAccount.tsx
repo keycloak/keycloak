@@ -23,7 +23,7 @@ type ServiceAccountProps = {
 };
 
 export const ServiceAccount = ({ client }: ServiceAccountProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -64,7 +64,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:roleMappingUpdatedError", error);
+      addError("roleMappingUpdatedError", error);
     }
   };
   return serviceAccount ? (
@@ -72,7 +72,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
       <PageSection className="pf-u-pb-0">
         <InfoCircleIcon className="pf-c-alert__icon keycloak--service-account--info-text" />
         <span className="pf-u-pl-sm">
-          <Trans i18nKey="clients-help:manageServiceAccountUser">
+          <Trans i18nKey="manageServiceAccountUser">
             {""}
             <Link
               to={toUser({ realm, id: serviceAccount.id!, tab: "settings" })}

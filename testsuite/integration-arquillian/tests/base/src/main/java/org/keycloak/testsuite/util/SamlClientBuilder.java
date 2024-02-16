@@ -18,7 +18,6 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.DoNotFollowRedirectStep;
@@ -43,7 +42,6 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
-import org.junit.Assert;
 import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -8,7 +8,7 @@ import { HelpItem } from "ui-shared";
 import "../../realm-settings-section.css";
 
 const Permissions = ({ name }: { name: string }) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (
@@ -61,7 +61,7 @@ const Permissions = ({ name }: { name: string }) => {
 };
 
 export const AttributePermission = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   return (
     <FormAccess role="manage-realm" isHorizontal>
@@ -69,10 +69,7 @@ export const AttributePermission = () => {
         hasNoPaddingTop
         label={t("whoCanEdit")}
         labelIcon={
-          <HelpItem
-            helpText={t("realm-settings-help:whoCanEditHelp")}
-            fieldLabelId="realm-settings:whoCanEdit"
-          />
+          <HelpItem helpText={t("whoCanEditHelp")} fieldLabelId="whoCanEdit" />
         }
         fieldId="kc-who-can-edit"
       >
@@ -82,10 +79,7 @@ export const AttributePermission = () => {
         hasNoPaddingTop
         label={t("whoCanView")}
         labelIcon={
-          <HelpItem
-            helpText={t("realm-settings-help:whoCanViewHelp")}
-            fieldLabelId="realm-settings:whoCanView"
-          />
+          <HelpItem helpText={t("whoCanViewHelp")} fieldLabelId="whoCanView" />
         }
         fieldId="kc-who-can-view"
       >

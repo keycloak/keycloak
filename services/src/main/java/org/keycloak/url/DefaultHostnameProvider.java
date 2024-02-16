@@ -27,6 +27,8 @@ public class DefaultHostnameProvider implements HostnameProvider {
 
     private URI adminUri;
 
+    private URI localAdminUri = URI.create("http://localhost:8080/auth");
+
     private final boolean forceBackendUrlToFrontendUrl;
 
     public DefaultHostnameProvider(KeycloakSession session, URI frontendUri, URI adminUri, boolean forceBackendUrlToFrontendUrl) {
@@ -57,6 +59,10 @@ public class DefaultHostnameProvider implements HostnameProvider {
     }
 
     private URI resolveUri(UriInfo originalUriInfo, UrlType type) {
+        if (type.equals(UrlType.LOCAL_ADMIN)) {
+            return localAdminUri;
+        }
+
         URI realmUri = getRealmUri();
         URI frontendUri = realmUri != null ? realmUri : this.frontendUri;
 

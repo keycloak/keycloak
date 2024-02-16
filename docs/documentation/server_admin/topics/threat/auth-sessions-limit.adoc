@@ -31,9 +31,11 @@ The following example shows how to limit the number of active `AuthenticationSes
 bin/kc.[sh|bat] start --spi-authentication-sessions-infinispan-auth-sessions-limit=100
 ----
 
+ifeval::[{project_community}==true]
 The equivalent command for the new map storage:
 
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-authentication-sessions-map-auth-sessions-limit=100
 ----
+endif::[]

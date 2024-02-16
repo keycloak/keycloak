@@ -8,17 +8,13 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
-                       and a new server image must be built prior to starting the server. This
-                       option provides an alternative to manually running the 'build' prior to
-                       starting the server. Use this configuration carefully in production as it
-                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
 --optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
 
 Cache:
 
@@ -30,6 +26,20 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-embedded-mtls-enabled <true|false>
+                     Encrypts the network communication between Keycloak servers. Default: false.
+--cache-embedded-mtls-key-store-file <file>
+                     The Keystore file path. The Keystore must contain the certificate to use by
+                       the TLS protocol. By default, it lookup 'cache-mtls-keystore.p12' under
+                       conf/ directory.
+--cache-embedded-mtls-key-store-password <password>
+                     The password to access the Keystore.
+--cache-embedded-mtls-trust-store-file <file>
+                     The Truststore file path. It should contain the trusted certificates or the
+                       Certificate Authority that signed the certificates. By default, it lookup
+                       'cache-mtls-truststore.p12' under conf/ directory.
+--cache-embedded-mtls-trust-store-password <password>
+                     The password to access the Truststore.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
@@ -62,8 +72,10 @@ Database:
 --db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
                        option is set, this option is ignored.
 --db-url-properties <properties>
-                     Sets the properties of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
@@ -75,19 +87,25 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: account-api,
-                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
-                       authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+--features <feature> Enables a set of one or more features. Possible values are: account-api[:v1],
+                       account2[:v1], account3[:v1], admin-api[:v1], admin-fine-grained-authz[:v1],
+                       admin2[:v1], authorization[:v1], ciba[:v1], client-policies[:v1],
+                       client-secret-rotation[:v1], client-types[:v1], declarative-ui[:v1],
+                       device-flow[:v1], docker[:v1], dpop[:v1], dynamic-scopes[:v1], fips[:v1],
+                       hostname[:v1], impersonation[:v1], js-adapter[:v1], kerberos[:v1],
+                       linkedin-oauth[:v1], login2[:v1], multi-site[:v1], offline-session-preloading
+                       [:v1], oid4vc-vci[:v1], par[:v1], preview, recovery-codes[:v1], scripts[:
+                       v1], step-up-authentication[:v1], token-exchange[:v1], transient-users[:v1],
+                       update-email[:v1], web-authn[:v1].
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
-                       authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       authorization, ciba, client-policies, client-secret-rotation, client-types,
+                       declarative-ui, device-flow, docker, dpop, dynamic-scopes, fips,
+                       impersonation, js-adapter, kerberos, linkedin-oauth, login2, multi-site,
+                       offline-session-preloading, oid4vc-vci, par, preview, recovery-codes,
+                       scripts, step-up-authentication, token-exchange, transient-users,
+                       update-email, web-authn.
 
 Hostname:
 
@@ -100,6 +118,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -115,11 +136,14 @@ Hostname:
                        URL this option should be enabled. Default: false.
 --hostname-url <url> Set the base URL for frontend URLs, including scheme, host, port and path.
 
-HTTP/TLS:
+HTTP(S):
 
 --http-enabled <true|false>
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-max-queued-requests <requests>
+                     Maximum number of queued HTTP requests. Use this to shed load in an overload
+                       situation. Excess requests will return a "503 Server not Available" response.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. The path must start with a
@@ -146,14 +170,17 @@ HTTP/TLS:
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
-                     The trust store which holds the certificate information of the certificates to
-                       trust.
+                     DEPRECATED. The trust store which holds the certificate information of the
+                       certificates to trust. Use the System Truststore instead, see the docs for
+                       details.
 --https-trust-store-password <password>
-                     The password of the trust store file.
+                     DEPRECATED. The password of the trust store file. Use the System Truststore
+                       instead, see the docs for details.
 --https-trust-store-type <type>
-                     The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
-                       value is set, it defaults to 'BCFKS'.
+                     DEPRECATED. The type of the trust store file. If not given, the type is
+                       automatically detected based on the file name. If 'fips-mode' is set to
+                       'strict' and no value is set, it defaults to 'BCFKS'. Use the System
+                       Truststore instead, see the docs for details.
 
 Health:
 
@@ -161,6 +188,15 @@ Health:
                      If the server should expose health check endpoints. If enabled, health checks
                        are available at the '/health', '/health/ready' and '/health/live'
                        endpoints. Default: false.
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
 
 Metrics:
 
@@ -170,14 +206,22 @@ Metrics:
 
 Proxy:
 
---proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none, edge, reencrypt, passthrough. Default: none.
+--proxy <mode>       DEPRECATED. The proxy address forwarding mode if the server is behind a
+                       reverse proxy. Possible values are: none, edge, reencrypt, passthrough.
+                       Default: none. Use the following option instead: proxy-headers.
+--proxy-headers <headers>
+                     The proxy headers that should be accepted by the server. Misconfiguration
+                       might leave the server exposed to security vulnerabilities. Takes precedence
+                       over the deprecated proxy option. Possible values are: forwarded, xforwarded.
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file.
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 
@@ -228,6 +272,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
+                       containing those files that will be used as a system truststore.
 
 Security:
 

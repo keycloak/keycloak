@@ -18,7 +18,6 @@
 package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import java.net.URI;
 
@@ -40,7 +39,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
@@ -185,7 +183,7 @@ public class SessionCodeChecks {
 
         // if restart from cookie was not found check if the user is already authenticated
         if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
-            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
             if (authResult != null && authResult.getSession() != null) {
                 LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
@@ -387,7 +385,7 @@ public class SessionCodeChecks {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
-        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        String cook = RestartLoginCookie.getRestartCookie(session);
         if (cook == null) {
             event.error(Errors.COOKIE_NOT_FOUND);
             return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);

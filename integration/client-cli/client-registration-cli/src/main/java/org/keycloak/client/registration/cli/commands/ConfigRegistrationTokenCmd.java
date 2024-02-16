@@ -157,7 +157,7 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         out.println("    --config                Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println();
         out.println("  Command specific options:");
-        out.println("    --server SERVER         Server endpoint url (e.g. 'http://localhost:8080/auth')");
+        out.println("    --server SERVER         Server endpoint url (e.g. 'http://localhost:8080')");
         out.println("    --realm REALM           Realm name to use");
         out.println("    --client CLIENT         ClientId of client whose token to set");
         out.println("    -d, --delete            Indicates that registration access token should be removed");
@@ -167,10 +167,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         out.println("Examples:");
         out.println();
         out.println("Specify registration access token for server, and realm. Token is passed via env variable:");
-        out.println("  " + PROMPT + " " + CMD + " config registration-token --server http://localhost:9080/auth --realm master --client my_client " + OS_ARCH.envVar("TOKEN"));
+        out.println("  " + PROMPT + " " + CMD + " config registration-token --server http://localhost:9080 --realm master --client my_client " + OS_ARCH.envVar("TOKEN"));
         out.println();
         out.println("Remove registration access token:");
-        out.println("  " + PROMPT + " " + CMD + " config registration-token --server http://localhost:9080/auth --realm master --client my_client --delete");
+        out.println("  " + PROMPT + " " + CMD + " config registration-token --server http://localhost:9080 --realm master --client my_client --delete");
         out.println();
         out.println();
         out.println("Use '" + CMD + " help' for general information and a list of commands");

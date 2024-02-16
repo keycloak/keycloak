@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.common.util.reflections.Types;
@@ -26,6 +26,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -41,7 +42,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -165,7 +165,7 @@ public class AccountCredentialResource {
 
         boolean includeUserCredentials = userCredentials == null || userCredentials;
 
-        Set<String> enabledCredentialTypes = getEnabledCredentialTypes(getCredentialProviders());
+        Set<String> enabledCredentialTypes = getEnabledCredentialTypes();
 
         Stream<CredentialModel> modelsStream = includeUserCredentials ? user.credentialManager().getStoredCredentialsStream() : Stream.empty();
         List<CredentialModel> models = modelsStream.collect(Collectors.toList());
@@ -231,8 +231,8 @@ public class AccountCredentialResource {
 
     // Going through all authentication flows and their authentication executions to see if there is any authenticator of the corresponding
     // credential type.
-    private Set<String> getEnabledCredentialTypes(Stream<CredentialProvider> credentialProviders) {
-        Stream<String> enabledCredentialTypes = realm.getAuthenticationFlowsStream()
+    private Set<String> getEnabledCredentialTypes() {
+        return realm.getAuthenticationFlowsStream()
                 .filter(((Predicate<AuthenticationFlowModel>) this::isFlowEffectivelyDisabled).negate())
                 .flatMap(flow ->
                         realm.getAuthenticationExecutionsStream(flow.getId())
@@ -242,13 +242,7 @@ public class AccountCredentialResource {
                                 .filter(Objects::nonNull)
                                 .map(AuthenticatorFactory::getReferenceCategory)
                                 .filter(Objects::nonNull)
-                );
-
-        Set<String> credentialTypes = credentialProviders
-                .map(CredentialProvider::getType)
-                .collect(Collectors.toSet());
-
-        return enabledCredentialTypes.filter(credentialTypes::contains).collect(Collectors.toSet());
+                ).collect(Collectors.toSet());
     }
 
     // Returns true if flow is effectively disabled - either it's execution or some parent execution is disabled
@@ -267,6 +261,21 @@ public class AccountCredentialResource {
         return false;
     }
 
+    private void checkIfCanBeRemoved(String credentialType) {
+        Set<String> enabledCredentialTypes = getEnabledCredentialTypes();
+        CredentialProvider credentialProvider = getCredentialProviders()
+                .filter(p -> credentialType.equals(p.getType()) && enabledCredentialTypes.contains(p.getType()))
+                .findAny().orElse(null);
+        if (credentialProvider == null) {
+            throw new NotFoundException("Credential provider " + credentialType + " not found");
+        }
+        CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder().user(user).build(session);
+        CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
+        if (!metadata.isRemoveable()) {
+            throw new BadRequestException("Credential type " + credentialType + " cannot be removed");
+        }
+    }
+
     /**
      * Remove a credential of current user
      *
@@ -282,16 +291,16 @@ public class AccountCredentialResource {
             // Backwards compatibility with account console 1 - When stored credential is not found, it may be federated credential.
             // In this case, it's ID needs to be something like "otp-id", which is returned by account REST GET endpoint as a placeholder
             // for federated credentials (See CredentialHelper.createUserStorageCredentialRepresentation )
-            Optional<String> federatedCredentialType = getEnabledCredentialTypes(getCredentialProviders()).stream()
-                    .filter(credentialType -> (credentialType + "-id").equals(credentialId))
-                    .findFirst();
-            if (federatedCredentialType.isPresent()) {
-                user.credentialManager().disableCredentialType(federatedCredentialType.get());
+            if (credentialId.endsWith("-id")) {
+                String credentialType = credentialId.substring(0, credentialId.length() - 3);
+                checkIfCanBeRemoved(credentialType);
+                user.credentialManager().disableCredentialType(credentialType);
                 return;
             }
 
             throw new NotFoundException("Credential not found");
         }
+        checkIfCanBeRemoved(credential.getType());
         user.credentialManager().removeStoredCredentialById(credentialId);
     }
 

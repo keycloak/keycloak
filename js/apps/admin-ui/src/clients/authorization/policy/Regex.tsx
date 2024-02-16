@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
-import { FormGroup } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { Checkbox, FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 
 export const Regex = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
+    control,
     register,
     formState: { errors },
   } = useFormContext();
@@ -17,13 +18,13 @@ export const Regex = () => {
       <FormGroup
         label={t("targetClaim")}
         fieldId="targetClaim"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.targetClaim ? "error" : "default"}
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:targetClaim")}
-            fieldLabelId="clients:targetClaim"
+            helpText={t("targetClaimHelp")}
+            fieldLabelId="targetClaim"
           />
         }
       >
@@ -39,19 +40,42 @@ export const Regex = () => {
         fieldId="pattern"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:regexPattern")}
-            fieldLabelId="clients:regexPattern"
+            helpText={t("regexPatternHelp")}
+            fieldLabelId="regexPattern"
           />
         }
         isRequired
         validated={errors.pattern ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="pattern"
           data-testid="regexPattern"
           validated={errors.pattern ? "error" : "default"}
           {...register("pattern", { required: true })}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("targetContextAttributes")}
+        fieldId="targetContextAttributes"
+        labelIcon={
+          <HelpItem
+            helpText={t("targetContextAttributesHelp")}
+            fieldLabelId="targetContextAttributes"
+          />
+        }
+      >
+        <Controller
+          name="targetContextAttributes"
+          defaultValue={false}
+          control={control}
+          render={({ field }) => (
+            <Checkbox
+              id="targetContextAttributes"
+              isChecked={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
       </FormGroup>
     </>

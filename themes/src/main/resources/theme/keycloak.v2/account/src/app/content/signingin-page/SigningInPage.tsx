@@ -128,8 +128,8 @@ class SigningInPage extends React.Component<
     }
 
     private getCredentialContainers(): void {
-        this.context!.doGet("/credentials").then(
-            (response: HttpResponse<CredentialContainer[]>) => {
+        this.context!.doGet<CredentialContainer[]>("/credentials").then(
+            (response) => {
                 const allContainers: CredContainerMap = new Map();
                 const containers: CredentialContainer[] = response.data || [];
                 containers.forEach((container) => {

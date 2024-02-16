@@ -28,11 +28,13 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -45,6 +47,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint.TokenExchangeSamlProtocol;
@@ -57,11 +60,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -75,6 +78,8 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_CLIENT;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,7 +120,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     public Response exchange(TokenExchangeContext context) {
         this.formParams = context.getFormParams();
         this.session = context.getSession();
-        this.cors = (Cors)context.getCors();
+        this.cors = context.getCors();
         this.realm = context.getRealm();
         this.client = context.getClient();
         this.event = context.getEvent();
@@ -335,6 +340,30 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        if (token != null && token.getScope() != null && scope == null) {
+            scope = token.getScope();
+
+            Set<String> targetClientScopes = new HashSet<String>();
+            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
+            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            //from return scope remove scopes that are not default or optional scopes for targetClient
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+        } else if (token != null && token.getScope() != null) {
+            String subjectTokenScopes = token.getScope();
+            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).map(s -> s.split(":")[0]).collect(Collectors.toSet());
+                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc.split(":")[0])).collect(Collectors.joining(" "));
+            } else {
+                Set<String> subjectTokenScopesSet = Arrays.stream(subjectTokenScopes.split(" ")).collect(Collectors.toSet());
+                scope = Arrays.stream(scope.split(" ")).filter(sc -> subjectTokenScopesSet.contains(sc)).collect(Collectors.joining(" "));
+            }
+
+            Set<String> targetClientScopes = new HashSet<String>();
+            targetClientScopes.addAll(targetClient.getClientScopes(true).keySet());
+            targetClientScopes.addAll(targetClient.getClientScopes(false).keySet());
+            //from return scope remove scopes that are not default or optional scopes for targetClient
+            scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
+        }
 
         switch (requestedTokenType) {
             case OAuth2Constants.ACCESS_TOKEN_TYPE:
@@ -513,6 +542,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
+        context.addSessionNotesToUserSession(userSession);
+
         return exchangeClientToClient(user, userSession, null, false);
     }
 
@@ -520,11 +551,6 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
 
         String providerId = identityProviderConfig.getAlias();
-
-        // do we need this?
-        //AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
-        //context.setAuthenticationSession(authenticationSession);
-        //session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
         Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
@@ -535,12 +561,15 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
-        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
-                context.getUsername(), context.getToken());
+        UserModel user = null;
+        if (! context.getIdpConfig().isTransientUsers()) {
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                    context.getUsername(), context.getToken());
 
-        UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+        }
 
-        if (user == null) {
+        if (user == null || context.getIdpConfig().isTransientUsers()) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
@@ -570,17 +599,22 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
             }
 
-
-            user = session.users().addUser(realm, username);
+            if (context.getIdpConfig().isTransientUsers()) {
+                user = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
+            } else {
+                user = session.users().addUser(realm, username);
+            }
             user.setEnabled(true);
             user.setEmail(context.getEmail());
             user.setFirstName(context.getFirstName());
             user.setLastName(context.getLastName());
 
 
-            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            if (! context.getIdpConfig().isTransientUsers()) {
+                FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                        context.getModelUsername(), context.getToken());
+                session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+            }
 
             context.getIdp().importNewUser(session, realm, user, context);
 
@@ -593,6 +627,14 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
                 user.setEmailVerified(true);
             }
+
+            event.clone()
+                    .event(EventType.REGISTER)
+                    .user(user.getId())
+                    .detail(Details.REGISTER_METHOD, "token-exchange")
+                    .detail(Details.EMAIL, user.getEmail())
+                    .detail(Details.IDENTITY_PROVIDER, providerId)
+                    .success();
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);

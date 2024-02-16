@@ -25,17 +25,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.map.storage.ModelEntityUtil;
-import org.keycloak.models.map.storage.file.FileMapStorageProviderFactory;
-import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
-import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
-import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -43,11 +36,7 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assume.assumeFalse;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
-
 
 @RequireProvider(UserSessionProvider.class)
 public class UserSessionConcurrencyTest extends KeycloakModelTest {
@@ -56,7 +45,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
     private static final int CLIENTS_COUNT = 10;
 
     private static final ThreadLocal<Boolean> wasWriting = ThreadLocal.withInitial(() -> false);
-    private final boolean isHotRodStore = HotRodMapStorageProviderFactory.PROVIDER_ID.equals(CONFIG.getConfig().get("userSessions.map.storage.provider"));
 
     @Override
     public void createEnvironment(KeycloakSession s) {
@@ -87,13 +75,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
     @Test
     public void testConcurrentNotesChange() throws InterruptedException {
-        // Defer this one until file locking is available
-        // Skip the test if EventProvider == File
-        String evProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".provider");
-        String evMapStorageProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".map.storage.provider");
-        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(evProvider) &&
-                (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
-
         // Create user session
         String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT)).getId();
 
@@ -104,7 +85,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     RealmModel realm = session.realms().getRealm(realmId);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
 
-                    UserSessionModel uSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, uId));
+                    UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
                     AuthenticatedClientSessionModel cSession = uSession.getAuthenticatedClientSessionByClient(client.getId());
                     if (cSession == null) {
                         wasWriting.set(true);
@@ -134,13 +115,5 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
         });
 
         inComittedTransaction((Consumer<KeycloakSession>) session -> session.realms().removeRealm(realmId));
-        if (isHotRodStore) {
-            inComittedTransaction(session -> {
-                HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
-                Map<?,?> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
-
-                assertThat(remoteCache, anEmptyMap());
-            });
-        }
     }
 }

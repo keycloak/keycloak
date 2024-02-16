@@ -23,7 +23,6 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -57,13 +56,15 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.OnCreateComponent;
 import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.userprofile.UserProfileDecorator;
+import org.keycloak.userprofile.UserProfileMetadata;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent {
+public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent, UserProfileDecorator {
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -93,13 +94,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
-    private LegacyStoreManagers datastoreProvider;
+    private StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
+        this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 
@@ -377,7 +378,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
         ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
-        ((OnUserCache) session.getProvider(LegacySessionSupportProvider.class).userCredentialManager()).onCache(realm, adapter, delegate);
     }
 
     @Override
@@ -946,6 +946,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
         if (getDelegate() instanceof OnCreateComponent) {
             ((OnCreateComponent) getDelegate()).onCreate(session, realm, model);
+        }
+    }
+
+    @Override
+    public void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata) {
+        if (getDelegate() instanceof UserProfileDecorator) {
+            ((UserProfileDecorator) getDelegate()).decorateUserProfile(realm, metadata);
         }
     }
 }

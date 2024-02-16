@@ -21,11 +21,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -39,45 +36,38 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 /**
- * Configuration for the KeycloakDeployment
+ * Configuration for the Keycloak Statefulset
  */
+@ApplicationScoped
 public class KeycloakDistConfigurator {
-    private final Keycloak keycloakCR;
-    private final StatefulSet deployment;
-    private final KubernetesClient client;
-
-    public KeycloakDistConfigurator(Keycloak keycloakCR, StatefulSet deployment, KubernetesClient client) {
-        this.keycloakCR = keycloakCR;
-        this.deployment = deployment;
-        this.client = client;
-    }
 
     /**
      * Specify first-class citizens fields which should not be added as general server configuration property
      */
-    private final Set<String> firstClassConfigOptions = new HashSet<>();
+    @SuppressWarnings("rawtypes")
+    private final Map<String, org.keycloak.operator.controllers.KeycloakDistConfigurator.OptionMapper.Mapper> firstClassConfigOptions = new LinkedHashMap<>();
 
-    /**
-     * Configure configuration properties for the KeycloakDeployment
-     */
-    public void configureDistOptions() {
+    public KeycloakDistConfigurator() {
+        // register the configuration mappers for the various parts of the keycloak cr
         configureHostname();
         configureFeatures();
         configureTransactions();
         configureHttp();
         configureDatabase();
+        configureCache();
     }
 
     /**
@@ -85,14 +75,14 @@ public class KeycloakDistConfigurator {
      *
      * @param status Keycloak Status builder
      */
-    public void validateOptions(KeycloakStatusAggregator status) {
-        assumeFirstClassCitizens(status);
+    public void validateOptions(Keycloak keycloakCR, KeycloakStatusAggregator status) {
+        assumeFirstClassCitizens(keycloakCR, status);
     }
 
     /* ---------- Configuration of first-class citizen fields ---------- */
 
-    public void configureHostname() {
-        optionMapper(keycloakCR.getSpec().getHostnameSpec())
+    void configureHostname() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getHostnameSpec())
                 .mapOption("hostname", HostnameSpec::getHostname)
                 .mapOption("hostname-admin", HostnameSpec::getAdmin)
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
@@ -100,61 +90,33 @@ public class KeycloakDistConfigurator {
                 .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
     }
 
-    public void configureFeatures() {
-        optionMapper(keycloakCR.getSpec().getFeatureSpec())
+    void configureFeatures() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getFeatureSpec())
                 .mapOptionFromCollection("features", FeatureSpec::getEnabledFeatures)
                 .mapOptionFromCollection("features-disabled", FeatureSpec::getDisabledFeatures);
     }
 
-    public void configureTransactions() {
-        optionMapper(keycloakCR.getSpec().getTransactionsSpec())
+    void configureTransactions() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getTransactionsSpec())
                 .mapOption("transaction-xa-enabled", TransactionsSpec::isXaEnabled);
     }
 
-    public void configureHttp() {
-        var optionMapper = optionMapper(keycloakCR.getSpec().getHttpSpec())
+    void configureHttp() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getHttpSpec())
                 .mapOption("http-enabled", HttpSpec::getHttpEnabled)
                 .mapOption("http-port", HttpSpec::getHttpPort)
-                .mapOption("https-port", HttpSpec::getHttpsPort);
-
-        configureTLS(optionMapper);
+                .mapOption("https-port", HttpSpec::getHttpsPort)
+                .mapOption("https-certificate-file", http -> (http.getTlsSecret() != null && !http.getTlsSecret().isEmpty()) ? Constants.CERTIFICATES_FOLDER + "/tls.crt" : null)
+                .mapOption("https-certificate-key-file", http -> (http.getTlsSecret() != null && !http.getTlsSecret().isEmpty()) ? Constants.CERTIFICATES_FOLDER + "/tls.key" : null);
     }
 
-    public void configureTLS(OptionMapper<HttpSpec> optionMapper) {
-        final String certFileOptionName = "https-certificate-file";
-        final String keyFileOptionName = "https-certificate-key-file";
-
-        if (!isTlsConfigured(keycloakCR)) {
-            // for mapping and triggering warning in status if someone uses the fields directly
-            optionMapper.mapOption(certFileOptionName);
-            optionMapper.mapOption(keyFileOptionName);
-            return;
-        }
-
-        optionMapper.mapOption(certFileOptionName, Constants.CERTIFICATES_FOLDER + "/tls.crt");
-        optionMapper.mapOption(keyFileOptionName, Constants.CERTIFICATES_FOLDER + "/tls.key");
-
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-
-        var volume = new VolumeBuilder()
-                .withName("keycloak-tls-certificates")
-                .withNewSecret()
-                .withSecretName(keycloakCR.getSpec().getHttpSpec().getTlsSecret())
-                .withOptional(false)
-                .endSecret()
-                .build();
-
-        var volumeMount = new VolumeMountBuilder()
-                .withName(volume.getName())
-                .withMountPath(Constants.CERTIFICATES_FOLDER)
-                .build();
-
-        deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
-        kcContainer.getVolumeMounts().add(0, volumeMount);
+    void configureCache() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getCacheSpec())
+                .mapOption("cache-config-file", cache -> Optional.ofNullable(cache.getConfigMapFile()).map(c -> Constants.CACHE_CONFIG_SUBFOLDER + "/" + c.getKey()).orElse(null));
     }
 
-    public void configureDatabase() {
-        optionMapper(keycloakCR.getSpec().getDatabaseSpec())
+    void configureDatabase() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getDatabaseSpec())
                 .mapOption("db", DatabaseSpec::getVendor)
                 .mapOption("db-username", DatabaseSpec::getUsernameSecret)
                 .mapOption("db-password", DatabaseSpec::getPasswordSecret)
@@ -175,7 +137,7 @@ public class KeycloakDistConfigurator {
      *
      * @param status                    Status of the deployment
      */
-    protected void assumeFirstClassCitizens(KeycloakStatusAggregator status) {
+    protected void assumeFirstClassCitizens(Keycloak keycloakCR, KeycloakStatusAggregator status) {
         final var serverConfigNames = keycloakCR
                 .getSpec()
                 .getAdditionalOptions()
@@ -183,7 +145,7 @@ public class KeycloakDistConfigurator {
                 .map(ValueOrSecret::getName)
                 .collect(Collectors.toSet());
 
-        final var sameItems = CollectionUtil.intersection(serverConfigNames, firstClassConfigOptions);
+        final var sameItems = CollectionUtil.intersection(serverConfigNames, firstClassConfigOptions.keySet());
         if (CollectionUtil.isNotEmpty(sameItems)) {
             status.addWarningMessage("You need to specify these fields as the first-class citizen of the CR: "
                     + CollectionUtil.join(sameItems, ","));
@@ -195,77 +157,56 @@ public class KeycloakDistConfigurator {
         return "KC_" + replaceNonAlphanumericByUnderscores(kcConfigName).toUpperCase();
     }
 
-    private <T> OptionMapper<T> optionMapper(T optionSpec) {
+    private <T> OptionMapper<T> optionMapper(Function<Keycloak, T> optionSpec) {
         return new OptionMapper<>(optionSpec);
     }
 
-    public Collection<String> getSecretNames() {
-        Set<String> names = new HashSet<>();
+    private class OptionMapper<T> {
 
-        if (isTlsConfigured(keycloakCR)) {
-            names.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
+        private class Mapper<R> {
+            Function<T, R> optionValueSupplier;
+
+            public Mapper(Function<T, R> optionValueSupplier) {
+                this.optionValueSupplier = optionValueSupplier;
+            }
+
+            void map(String optionName, Keycloak keycloak, List<EnvVar> variables) {
+                var categorySpec = optionSpec.apply(keycloak);
+
+                if (categorySpec == null) {
+                    Log.debugf("No category spec provided for %s", optionName);
+                    return;
+                }
+
+                R value = optionValueSupplier.apply(categorySpec);
+
+                if (value == null || value.toString().trim().isEmpty()) {
+                    Log.debugf("No value provided for %s", optionName);
+                    return;
+                }
+
+                EnvVarBuilder envVarBuilder = new EnvVarBuilder()
+                        .withName(getKeycloakOptionEnvVarName(optionName));
+
+                if (value instanceof SecretKeySelector) {
+                    envVarBuilder.withValueFrom(new EnvVarSourceBuilder().withSecretKeyRef((SecretKeySelector) value).build());
+                } else {
+                    envVarBuilder.withValue(String.valueOf(value));
+                }
+
+                variables.add(envVarBuilder.build());
+            }
         }
 
-        Optional.ofNullable(keycloakCR.getSpec().getDatabaseSpec()).map(DatabaseSpec::getUsernameSecret).map(SecretKeySelector::getName).ifPresent(names::add);
-        Optional.ofNullable(keycloakCR.getSpec().getDatabaseSpec()).map(DatabaseSpec::getPasswordSecret).map(SecretKeySelector::getName).ifPresent(names::add);
+        private final Function<Keycloak, T> optionSpec;
 
-        return names;
-    }
-
-    private class OptionMapper<T> {
-        private final T categorySpec;
-        private final List<EnvVar> envVars;
-
-        public OptionMapper(T optionSpec) {
-            this.categorySpec = optionSpec;
-
-            var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-            var envVars = kcContainer.getEnv();
-            if (envVars == null) {
-                envVars = new ArrayList<>();
-                kcContainer.setEnv(envVars);
-            }
-            this.envVars = envVars;
+        public OptionMapper(Function<Keycloak, T> optionSpec) {
+            this.optionSpec = optionSpec;
         }
 
         public <R> OptionMapper<T> mapOption(String optionName, Function<T, R> optionValueSupplier) {
-            firstClassConfigOptions.add(optionName);
-
-            if (categorySpec == null) {
-                Log.debugf("No category spec provided for %s", optionName);
-                return this;
-            }
-
-            R value = optionValueSupplier.apply(categorySpec);
-
-            if (value == null || value.toString().trim().isEmpty()) {
-                Log.debugf("No value provided for %s", optionName);
-                return this;
-            }
-
-            EnvVarBuilder envVarBuilder = new EnvVarBuilder()
-                    .withName(getKeycloakOptionEnvVarName(optionName));
-
-            if (value instanceof SecretKeySelector) {
-                envVarBuilder.withValueFrom(new EnvVarSourceBuilder().withSecretKeyRef((SecretKeySelector) value).build());
-            } else {
-                envVarBuilder.withValue(String.valueOf(value));
-            }
-
-            var toAdd = envVarBuilder.build();
-            if (!envVars.stream().anyMatch(envVar -> envVar.getName().equals(toAdd.getName()))) {
-                envVars.add(toAdd);
-            }
-
+            firstClassConfigOptions.put(optionName, new Mapper<>(optionValueSupplier));
             return this;
-        }
-
-        public <R> OptionMapper<T> mapOption(String optionName) {
-            return mapOption(optionName, s -> null);
-        }
-
-        public <R> OptionMapper<T> mapOption(String optionName, R optionValue) {
-            return mapOption(optionName, s -> optionValue);
         }
 
         protected <R extends Collection<?>> OptionMapper<T> mapOptionFromCollection(String optionName, Function<T, R> optionValueSupplier) {
@@ -275,5 +216,12 @@ public class KeycloakDistConfigurator {
                 return value.stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.joining(","));
             });
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<EnvVar> configureDistOptions(Keycloak keycloakCR) {
+        List<EnvVar> result = new ArrayList<>();
+        firstClassConfigOptions.entrySet().forEach(e -> e.getValue().map(e.getKey(), keycloakCR, result));
+        return result;
     }
 }

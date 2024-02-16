@@ -296,4 +296,5 @@ public interface UserProvider extends Provider,
      * @param component the component model
      */
     void preRemove(RealmModel realm, ComponentModel component);
+
 }

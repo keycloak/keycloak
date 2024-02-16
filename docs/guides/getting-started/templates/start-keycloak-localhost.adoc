@@ -1,7 +1,8 @@
-== Start Keycloak
+== Start {project_name}
 
-. From a terminal, open the keycloak-{version} directory.
+. From a terminal, open the `{archivebasename}-{version}` directory.
 . Enter the following command:
+
 * On Linux, run:
 +
 [source,bash,subs="attributes+"]
@@ -13,5 +14,8 @@ bin/kc.sh start-dev
 +
 [source,bash,subs="attributes+"]
 ----
-bin/kc.bat start-dev
+bin\kc.bat start-dev
 ----
+
+Using the `start-dev` option, you are starting {project_name} in development mode. In this mode, you can try out {project_name} for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new {project_name} theme.
+

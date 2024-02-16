@@ -2,7 +2,7 @@
 
 {project_name} comes with a fully functional Admin REST API with all features provided by the Admin Console.
 
-To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the Server Administration Guide.
+To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the link:{adminguide_link}[{adminguide_name}].
 
 You can obtain a token by enabling authentication for your application using {project_name}; see the Securing Applications and Services Guide. You can also use direct access grant to obtain an access token.
 

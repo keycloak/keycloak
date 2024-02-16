@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -19,7 +18,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -40,6 +38,7 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)

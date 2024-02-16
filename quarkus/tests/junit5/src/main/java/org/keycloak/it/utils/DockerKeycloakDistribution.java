@@ -17,7 +17,9 @@ import org.testcontainers.utility.LazyFuture;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -38,10 +40,16 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String containerId = null;
 
     private Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
+    private Map<String, String> envVars = new HashMap<>();
 
     public DockerKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
         this.debug = debug;
         this.manualStop = manualStop;
+    }
+
+    @Override
+    public void setEnvVar(String name, String value) {
+        this.envVars.put(name, value);
     }
 
     private GenericContainer getKeycloakContainer() {
@@ -70,6 +78,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         return new GenericContainer(image)
+                .withEnv(envVars)
                 .withExposedPorts(8080)
                 .withStartupAttempts(1)
                 .withStartupTimeout(Duration.ofSeconds(120))
@@ -102,6 +111,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             cleanupContainer();
             keycloakContainer = null;
             LOGGER.warn("Failed to start Keycloak container", cause);
+        } finally {
+            if (!manualStop) {
+                envVars.clear();
+            }
         }
 
         trySetRestAssuredPort();
@@ -244,5 +257,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void assertStopped() {
+        // not implemented
     }
 }

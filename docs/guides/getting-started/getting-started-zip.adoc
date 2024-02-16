@@ -1,23 +1,24 @@
 <#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="OpenJDK"
-summary="Get started with Keycloak on bare metal">
+summary="Get started with {project_name} on bare metal">
 
 :links-local: true
-:links-admin-console: http://localhost:8080/admin[Keycloak Admin Console]
-:links-account-console: http://localhost:8080/realms/myrealm/account[Keycloak Account Console]
+:links-admin-console: http://localhost:8080/admin[{project_name} Admin Console]
+:links-account-console: http://localhost:8080/realms/myrealm/account[{project_name} Account Console]
 
 == Before you start
 
-Make sure you have https://openjdk.java.net/[OpenJDK 17] or a higher version installed.
+Make sure you have https://openjdk.java.net/[OpenJDK 17] installed. 
 
-== Download Keycloak
+== Download {project_name}
 
-Download and extract https://github.com/keycloak/keycloak/releases/download/{version}/keycloak-{version}.zip[keycloak-{version}.zip]
-from the Keycloak website.
+Download and extract {archivedownloadurl}[{archivebasename}-{version}.zip]
+from the {project_name} website.
 
-After extracting this file, you should have a directory named keycloak-{version}.
+After extracting this file, you should have a directory that is named `{archivebasename}-{version}`.
 
 include::templates/start-keycloak-localhost.adoc[]
 

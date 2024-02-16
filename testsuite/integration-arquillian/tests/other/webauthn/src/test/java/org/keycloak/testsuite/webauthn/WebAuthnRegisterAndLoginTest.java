@@ -151,6 +151,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             events.expectLogout(sessionId)
                     .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
+                    .client("account")
                     .assertEvent();
 
             // login by user
@@ -183,6 +184,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             // confirm logout event
             events.expectLogout(sessionId)
                     .removeDetail(Details.REDIRECT_URI)
+                    .client("account")
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -257,6 +259,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             events.expectLogout(sessionID)
                     .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
+                    .client("account")
                     .assertEvent();
 
             // Password + WebAuthn security key

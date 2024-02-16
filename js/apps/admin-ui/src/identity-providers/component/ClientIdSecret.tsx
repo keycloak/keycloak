@@ -14,7 +14,7 @@ export const ClientIdSecret = ({
   secretRequired?: boolean;
   create?: boolean;
 }) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const {
     register,
@@ -26,10 +26,7 @@ export const ClientIdSecret = ({
       <FormGroup
         label={t("clientId")}
         labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:clientId")}
-            fieldLabelId="identity-providers:clientId"
-          />
+          <HelpItem helpText={t("clientIdHelp")} fieldLabelId="clientId" />
         }
         fieldId="kc-client-id"
         isRequired
@@ -38,7 +35,7 @@ export const ClientIdSecret = ({
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isRequired
@@ -51,8 +48,8 @@ export const ClientIdSecret = ({
         label={t("clientSecret")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:clientSecret")}
-            fieldLabelId="identity-providers:clientSecret"
+            helpText={t("clientSecretHelp")}
+            fieldLabelId="clientSecret"
           />
         }
         fieldId="kc-client-secret"
@@ -62,7 +59,7 @@ export const ClientIdSecret = ({
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         {create ? (
           <PasswordInput

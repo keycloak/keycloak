@@ -47,6 +47,20 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <goals>
+                            <goal>install-node-and-pnpm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>pnpm-install</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>${pnpm.args.install}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>run-build</id>
                         <goals>
                             <goal>pnpm</goal>
@@ -67,9 +81,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <installDirectory>../..</installDirectory>
-                </configuration>
             </plugin>
         </plugins>
     </build>

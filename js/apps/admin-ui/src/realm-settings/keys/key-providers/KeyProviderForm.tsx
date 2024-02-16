@@ -36,7 +36,7 @@ export const KeyProviderForm = ({
   providerType,
   onClose,
 }: KeyProviderFormProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 
@@ -81,7 +81,7 @@ export const KeyProviderForm = ({
         onClose?.();
       }
     } catch (error) {
-      addError("realm-settings:saveProviderError", error);
+      addError("saveProviderError", error);
     }
   };
 
@@ -104,7 +104,7 @@ export const KeyProviderForm = ({
           label={t("providerId")}
           labelIcon={
             <HelpItem
-              helpText={t("client-scopes-help:mapperName")}
+              helpText={t("mapperNameHelp")}
               fieldLabelId="providerId"
             />
           }
@@ -120,19 +120,16 @@ export const KeyProviderForm = ({
         </FormGroup>
       )}
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         labelIcon={
-          <HelpItem
-            helpText={t("client-scopes-help:mapperName")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
         }
         fieldId="name"
         isRequired
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="name"
@@ -163,10 +160,10 @@ export const KeyProviderForm = ({
           variant="primary"
           type="submit"
         >
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button onClick={() => onClose?.()} variant="link">
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>
@@ -174,7 +171,7 @@ export const KeyProviderForm = ({
 };
 
 export default function KeyProviderFormPage() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const params = useParams<KeyProviderParams>();
   const navigate = useNavigate();
 

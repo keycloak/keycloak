@@ -17,13 +17,11 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { FormPanel, HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import { FormAccess } from "../components/form/FormAccess";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -38,7 +36,7 @@ type ConfigProperty = ConfigPropertyRepresentation & {
 };
 
 export default function NewClientPolicyCondition() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -160,12 +158,12 @@ export default function NewClientPolicyCondition() {
       navigate(toEditClientPolicy({ realm, policyName: policyName! }));
       addAlert(
         conditionName
-          ? t("realm-settings:updateClientConditionSuccess")
-          : t("realm-settings:createClientConditionSuccess"),
+          ? t("updateClientConditionSuccess")
+          : t("createClientConditionSuccess"),
         AlertVariant.success,
       );
     } catch (error) {
-      addError("realm-settings:createClientConditionError", error);
+      addError("createClientConditionError", error);
     }
   };
 
@@ -188,12 +186,10 @@ export default function NewClientPolicyCondition() {
               <HelpItem
                 helpText={
                   conditionType
-                    ? `realm-settings-help:${camelCase(
-                        conditionType.replace(/-/g, " "),
-                      )}`
-                    : "realm-settings-help:conditions"
+                    ? `${camelCase(conditionType.replace(/-/g, " "))}Help`
+                    : "conditionsHelp"
                 }
-                fieldLabelId="realm-settings:conditionType"
+                fieldLabelId="conditionType"
               />
             }
           >
@@ -231,9 +227,7 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       selected={condition.id === field.value}
                       description={t(
-                        `realm-settings-help:${camelCase(
-                          condition.id.replace(/-/g, " "),
-                        )}`,
+                        camelCase(condition.id.replace(/-/g, " ")),
                       )}
                       key={condition.id}
                       value={condition}
@@ -256,7 +250,7 @@ export default function NewClientPolicyCondition() {
               data-testid="addCondition-saveBtn"
               isDisabled={conditionType === "" && !conditionName}
             >
-              {conditionName ? t("common:save") : t("common:add")}
+              {conditionName ? t("save") : t("add")}
             </Button>
             <Button
               variant="link"
@@ -265,7 +259,7 @@ export default function NewClientPolicyCondition() {
                 navigate(toEditClientPolicy({ realm, policyName: policyName! }))
               }
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

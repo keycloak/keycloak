@@ -122,7 +122,7 @@ public class GetCmd extends  AbstractRequestCmd {
         out.println("    -c, --compressed          Don't pretty print the output");
         out.println("    --format FORMAT           Set output format to comma-separated-values by using 'csv'. Default format is 'json'");
         out.println("    --noquotes                Don't quote strings when output format is 'csv'");
-        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println();
         out.println("Output results can be filtered by using '--fields' and a filter pattern. Filtering is performed by processing each item in a result set");
         out.println("and applying filter on it. A pattern is defined as a comma separated list of attribute specifiers. Use '*' in a specifier to include all ");

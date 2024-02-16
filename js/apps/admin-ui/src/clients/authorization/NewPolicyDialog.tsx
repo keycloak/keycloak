@@ -31,7 +31,7 @@ export const NewPolicyDialog = ({
   onSelect,
   toggleDialog,
 }: NewPolicyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const localeSort = useLocaleSort();
 
   const sortedPolicies = useMemo(
@@ -42,7 +42,7 @@ export const NewPolicyDialog = ({
 
   return (
     <Modal
-      aria-labelledby={t("addPredefinedMappers")}
+      aria-label={t("createPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
@@ -56,8 +56,8 @@ export const NewPolicyDialog = ({
       <TableComposable aria-label={t("policies")} variant="compact">
         <Thead>
           <Tr>
-            <Th>{t("common:name")}</Th>
-            <Th>{t("common:description")}</Th>
+            <Th>{t("name")}</Th>
+            <Th>{t("description")}</Th>
           </Tr>
         </Thead>
         <Tbody>

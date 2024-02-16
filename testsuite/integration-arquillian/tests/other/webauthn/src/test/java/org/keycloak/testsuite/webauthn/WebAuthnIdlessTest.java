@@ -248,6 +248,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         events.expectLogout(sessionId)
                 .removeDetail(Details.REDIRECT_URI)
                 .user(userId)
+                .client("account")
                 .assertEvent();
         return credentialId;
     }
@@ -304,6 +305,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         events.expectLogout(sessionId)
                 .removeDetail(Details.REDIRECT_URI)
                 .user(userId)
+                .client("account")
                 .assertEvent();
     }
 
@@ -334,6 +336,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         events.expectLogout(sessionId)
                 .removeDetail(Details.REDIRECT_URI)
                 .user(userId)
+                .client("account")
                 .assertEvent();
     }
 
@@ -367,6 +370,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
             events.expectLogout(sessionId)
                     .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
+                    .client("account")
                     .assertEvent();
         }
         else {

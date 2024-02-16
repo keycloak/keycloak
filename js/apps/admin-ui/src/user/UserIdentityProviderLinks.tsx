@@ -14,11 +14,10 @@ import { capitalize } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
+import { FormPanel } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -39,7 +38,7 @@ export const UserIdentityProviderLinks = ({
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
 
   const refresh = () => setKey(new Date().getTime());
 
@@ -83,13 +82,13 @@ export const UserIdentityProviderLinks = ({
   };
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
-    titleKey: t("users:unlinkAccountTitle", {
+    titleKey: t("unlinkAccountTitle", {
       provider: capitalize(federatedId),
     }),
-    messageKey: t("users:unlinkAccountConfirm", {
+    messageKey: t("unlinkAccountConfirm", {
       provider: capitalize(federatedId),
     }),
-    continueButtonLabel: "users:unlink",
+    continueButtonLabel: "unlink",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: async () => {
       try {
@@ -97,10 +96,10 @@ export const UserIdentityProviderLinks = ({
           id: userId,
           federatedIdentityId: federatedId,
         });
-        addAlert(t("users:idpUnlinkSuccess"), AlertVariant.success);
+        addAlert(t("idpUnlinkSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("common:mappingDeletedError", error);
+        addError("mappingDeletedError", error);
       }
     },
   });
@@ -126,9 +125,7 @@ export const UserIdentityProviderLinks = ({
     )?.groupName!;
     return (
       <Label color={groupName === "Social" ? "blue" : "orange"}>
-        {groupName === "Social"
-          ? t("users:idpType.social")
-          : t("users:idpType.custom")}
+        {groupName === "Social" ? t("idpType.social") : t("idpType.custom")}
       </Label>
     );
   };
@@ -142,8 +139,8 @@ export const UserIdentityProviderLinks = ({
         {groupName === "User-defined"
           ? "Custom"
           : groupName! === "Social"
-          ? t("users:idpType.social")
-          : groupName!}
+            ? t("idpType.social")
+            : groupName!}
       </Label>
     );
   };
@@ -198,32 +195,32 @@ export const UserIdentityProviderLinks = ({
             loader={linkedIdPsLoader}
             key={key}
             isPaginated={false}
-            ariaLabelKey="users:LinkedIdPs"
+            ariaLabelKey="LinkedIdPs"
             className="kc-linked-IdPs-table"
             columns={[
               {
                 name: "identityProvider",
-                displayKey: "common:name",
+                displayKey: "name",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: idpLinkRenderer,
                 transforms: [cellWidth(20)],
               },
               {
                 name: "type",
-                displayKey: "common:type",
+                displayKey: "type",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: badgeRenderer1,
                 transforms: [cellWidth(10)],
               },
               {
                 name: "userId",
-                displayKey: "users:userID",
+                displayKey: "userID",
                 cellFormatters: [emptyFormatter()],
                 transforms: [cellWidth(30)],
               },
               {
                 name: "userName",
-                displayKey: "users:username",
+                displayKey: "username",
                 cellFormatters: [emptyFormatter()],
                 transforms: [cellWidth(20)],
               },
@@ -236,7 +233,7 @@ export const UserIdentityProviderLinks = ({
             ]}
             emptyState={
               <TextContent className="kc-no-providers-text">
-                <Text>{t("users:noProvidersLinked")}</Text>
+                <Text>{t("noProvidersLinked")}</Text>
               </TextContent>
             }
           />
@@ -251,18 +248,18 @@ export const UserIdentityProviderLinks = ({
             loader={availableIdPsLoader}
             key={key}
             isPaginated={false}
-            ariaLabelKey="users:LinkedIdPs"
+            ariaLabelKey="LinkedIdPs"
             className="kc-linked-IdPs-table"
             columns={[
               {
                 name: "alias",
-                displayKey: "common:name",
+                displayKey: "name",
                 cellFormatters: [emptyFormatter(), upperCaseFormatter()],
                 transforms: [cellWidth(20)],
               },
               {
                 name: "type",
-                displayKey: "common:type",
+                displayKey: "type",
                 cellFormatters: [emptyFormatter()],
                 cellRenderer: badgeRenderer2,
                 transforms: [cellWidth(60)],
@@ -275,7 +272,7 @@ export const UserIdentityProviderLinks = ({
             ]}
             emptyState={
               <TextContent className="kc-no-providers-text">
-                <Text>{t("users:noAvailableIdentityProviders")}</Text>
+                <Text>{t("noAvailableIdentityProviders")}</Text>
               </TextContent>
             }
           />

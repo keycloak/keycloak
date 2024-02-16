@@ -124,7 +124,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         UpdateEmailActionToken actionToken = new UpdateEmailActionToken(user.getId(), Time.currentTime() + validityInSecs,
-                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions);
+                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions, authenticationSession.getRedirectUri());
 
         String link = Urls
                 .actionTokenBuilder(uriInfo.getBaseUri(), actionToken.serialize(session, realm, uriInfo),
@@ -168,7 +168,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     public static void updateEmailNow(EventBuilder event, UserModel user, UserProfile emailUpdateValidationResult) {
 
         String oldEmail = user.getEmail();
-        String newEmail = emailUpdateValidationResult.getAttributes().getFirstValue(UserModel.EMAIL);
+        String newEmail = emailUpdateValidationResult.getAttributes().getFirst(UserModel.EMAIL);
         event.event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
         emailUpdateValidationResult.update(false, new EventAuditingAttributeChangeListener(emailUpdateValidationResult, event));
     }

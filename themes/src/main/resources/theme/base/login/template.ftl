@@ -34,6 +34,17 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <#if authenticationSession??>
+        <script type="module">
+            import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+
+            checkCookiesAndSetTimer(
+              "${authenticationSession.authSessionId}",
+              "${authenticationSession.tabId}",
+              "${url.ssoLoginInOtherTabsUrl?no_esc}"
+            );
+        </script>
+    </#if>
 </head>
 
 <body class="${properties.kcBodyClass!}">

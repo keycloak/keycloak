@@ -23,7 +23,7 @@
 ifeval::[{project_community}==true]
 * Service Provider Interfaces (SPI) - A number of SPIs to enable customizing various aspects of the server. Authentication flows, user federation providers,
 protocol mappers and many more.
-* Client adapters for JavaScript applications, WildFly, JBoss EAP, Tomcat, Jetty, Spring, etc.
+* Client adapters for JavaScript applications, WildFly, JBoss EAP, Tomcat, Spring, etc.
 endif::[]
 ifeval::[{project_product}==true]
 * Client adapters for JavaScript applications, JBoss EAP, etc.

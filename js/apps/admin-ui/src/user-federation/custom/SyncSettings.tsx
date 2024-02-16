@@ -6,7 +6,7 @@ import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const SyncSettings = () => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { control, register, watch } = useFormContext();
   const watchPeriodicSync = watch("config.fullSyncPeriod", "-1");
   const watchChangedSync = watch("config.changedSyncPeriod", "-1");
@@ -17,8 +17,8 @@ export const SyncSettings = () => {
         label={t("periodicFullSync")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:periodicFullSyncHelp")}
-            fieldLabelId="user-federation:periodicFullSync"
+            helpText={t("periodicFullSyncHelp")}
+            fieldLabelId="periodicFullSync"
           />
         }
         fieldId="kc-periodic-full-sync"
@@ -36,8 +36,8 @@ export const SyncSettings = () => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               aria-label={t("periodicFullSync")}
             />
           )}
@@ -49,8 +49,8 @@ export const SyncSettings = () => {
           label={t("fullSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:fullSyncPeriodHelp")}
-              fieldLabelId="user-federation:fullSyncPeriod"
+              helpText={t("fullSyncPeriodHelp")}
+              fieldLabelId="fullSyncPeriod"
             />
           }
           fieldId="kc-full-sync-period"
@@ -69,8 +69,8 @@ export const SyncSettings = () => {
         label={t("periodicChangedUsersSync")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:periodicChangedUsersSyncHelp")}
-            fieldLabelId="user-federation:periodicChangedUsersSync"
+            helpText={t("periodicChangedUsersSyncHelp")}
+            fieldLabelId="periodicChangedUsersSync"
           />
         }
         fieldId="kc-periodic-changed-users-sync"
@@ -88,8 +88,8 @@ export const SyncSettings = () => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               aria-label={t("periodicChangedUsersSync")}
             />
           )}
@@ -100,8 +100,8 @@ export const SyncSettings = () => {
           label={t("changedUsersSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:changedUsersSyncHelp")}
-              fieldLabelId="user-federation:changedUsersSyncPeriod"
+              helpText={t("changedUsersSyncHelp")}
+              fieldLabelId="changedUsersSyncPeriod"
             />
           }
           fieldId="kc-changed-users-sync-period"

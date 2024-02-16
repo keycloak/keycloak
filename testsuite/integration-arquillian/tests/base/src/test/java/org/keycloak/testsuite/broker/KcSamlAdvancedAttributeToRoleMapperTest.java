@@ -26,6 +26,10 @@ public class KcSamlAdvancedAttributeToRoleMapperTest extends AbstractAdvancedRol
             "    \"value\": \"value 1\"\n" +
             "  },\n" +
             "  {\n" +
+            "    \"key\": \"" + ATTRIBUTE_TO_MAP_FRIENDLY_NAME + "\",\n" +
+            "    \"value\": \"value 2\"\n" +
+            "  },\n" +
+            "  {\n" +
             "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2 + "\",\n" +
             "    \"value\": \"value 2\"\n" +
             "  }\n" +
@@ -58,7 +62,7 @@ public class KcSamlAdvancedAttributeToRoleMapperTest extends AbstractAdvancedRol
     public void attributeFriendlyNameGetsConsideredAndMatchedToRole() {
         createAdvancedRoleMapper(ATTRIBUTES, false);
         createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
-                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String> builder().add("value 1").build())
+                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String> builder().add("value 1").add("value 2").build())
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
                         ImmutableList.<String> builder().add("value 2").build())
                 .build());

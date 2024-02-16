@@ -27,6 +27,7 @@ import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
+import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
@@ -34,8 +35,9 @@ type Application = ClientRepresentation & {
   open: boolean;
 };
 
-const Applications = () => {
+export const Applications = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [applications, setApplications] = useState<Application[]>();
@@ -43,7 +45,7 @@ const Applications = () => {
   const refresh = () => setKey(key + 1);
 
   usePromise(
-    (signal) => getApplications({ signal }),
+    (signal) => getApplications({ signal, context }),
     (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
     [key],
   );
@@ -58,7 +60,7 @@ const Applications = () => {
 
   const removeConsent = async (id: string) => {
     try {
-      await deleteConsent(id);
+      await deleteConsent(context, id);
       refresh();
       addAlert(t("removeConsentSuccess"));
     } catch (error) {
@@ -128,15 +130,22 @@ const Applications = () => {
                 className="pf-u-align-items-center"
                 dataListCells={[
                   <DataListCell width={2} key={`client${application.clientId}`}>
-                    <Button
-                      className="pf-u-pl-0 title-case"
-                      component="a"
-                      variant="link"
-                      onClick={() => window.open(application.effectiveUrl)}
-                    >
-                      {application.clientName || application.clientId}{" "}
-                      <ExternalLinkAltIcon />
-                    </Button>
+                    {application.effectiveUrl && (
+                      <Button
+                        className="pf-u-pl-0 title-case"
+                        component="a"
+                        variant="link"
+                        onClick={() => window.open(application.effectiveUrl)}
+                      >
+                        {application.clientName || application.clientId}{" "}
+                        <ExternalLinkAltIcon />
+                      </Button>
+                    )}
+                    {!application.effectiveUrl && (
+                      <span>
+                        {application.clientName || application.clientId}
+                      </span>
+                    )}
                   </DataListCell>,
                   <DataListCell
                     width={2}
@@ -250,7 +259,7 @@ const Applications = () => {
                       buttonVariant="secondary"
                       onContinue={() => removeConsent(application.clientId)}
                     >
-                      {t("removeModalMessage", [application.clientId])}
+                      {t("removeModalMessage", { name: application.clientId })}
                     </ContinueCancelModal>
                   </GridItem>
                   <GridItem>

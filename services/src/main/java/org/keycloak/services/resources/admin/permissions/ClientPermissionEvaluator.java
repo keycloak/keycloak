@@ -20,6 +20,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -81,4 +82,6 @@ public interface ClientPermissionEvaluator {
     boolean canMapClientScopeRoles(ClientModel client);
 
     Map<String, Boolean> getAccess(ClientModel client);
+
+    Set<String> getClientsWithPermission(String scope);
 }

@@ -7,7 +7,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
-import java.io.File;
 import java.util.List;
 
 /**

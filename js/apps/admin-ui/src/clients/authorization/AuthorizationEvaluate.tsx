@@ -101,7 +101,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     trigger,
     formState: { isValid, errors },
   } = form;
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const realm = useRealm();
 
@@ -180,7 +180,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
 
       setEvaluateResult(evaluation);
     } catch (error) {
-      addError("clients:evaluateError", error);
+      addError("evaluateError", error);
     }
   };
 
@@ -202,21 +202,20 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
       <FormProvider {...form}>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+            <Title headingLevel="h2">{t("identityInformation")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
               <ClientSelect
                 name="client"
                 label="client"
-                namespace="clients"
-                helpText={"clients-help:client"}
+                helpText={"clientHelp"}
                 defaultValue={client.clientId}
               />
               <UserSelect
                 name="user"
                 label="users"
-                helpText={t("clients-help:selectUser")}
+                helpText={t("selectUser")}
                 defaultValue={[]}
                 variant={SelectVariant.typeahead}
                 isRequired={roles?.length === 0}
@@ -224,14 +223,11 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
               <FormGroup
                 label={t("roles")}
                 labelIcon={
-                  <HelpItem
-                    helpText={t("clients-help:roles")}
-                    fieldLabelId="clients:roles"
-                  />
+                  <HelpItem helpText={t("rolesHelp")} fieldLabelId="roles" />
                 }
                 fieldId="realmRole"
                 validated={errors.roleIds ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
                 isRequired={user.length === 0}
               >
                 <Controller
@@ -285,7 +281,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
         </Panel>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+            <Title headingLevel="h2">{t("identityInformation")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
@@ -294,15 +290,15 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 fieldId="applyToResourceType"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:applyToResourceType")}
-                    fieldLabelId="clients:applyToResourceType"
+                    helpText={t("applyToResourceTypeHelp")}
+                    fieldLabelId="applyToResourceType"
                   />
                 }
               >
                 <Switch
                   id="applyToResource-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={applyToResourceType}
                   onChange={setApplyToResourceType}
                   aria-label={t("applyToResourceType")}
@@ -315,7 +311,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   id="resourcesAndScopes"
                   labelIcon={
                     <HelpItem
-                      helpText={t("clients-help:contextualAttributes")}
+                      helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`resourcesAndScopes`}
                     />
                   }
@@ -337,13 +333,13 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     isRequired
                     labelIcon={
                       <HelpItem
-                        helpText={t("clients-help:resourceType")}
-                        fieldLabelId="clients:resourceType"
+                        helpText={t("resourceTypeHelp")}
+                        fieldLabelId="resourceType"
                       />
                     }
                     fieldId="client"
                     validated={errors.alias ? "error" : "default"}
-                    helperTextInvalid={t("common:required")}
+                    helperTextInvalid={t("required")}
                   >
                     <KeycloakTextInput
                       id="alias"
@@ -356,8 +352,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     label={t("authScopes")}
                     labelIcon={
                       <HelpItem
-                        helpText={t("clients-help:scopesSelect")}
-                        fieldLabelId="clients:client"
+                        helpText={t("scopesSelect")}
+                        fieldLabelId="client"
                       />
                     }
                     fieldId="authScopes"
@@ -385,8 +381,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                           }}
                           selections={field.value}
                           variant={SelectVariant.typeaheadMulti}
-                          typeAheadAriaLabel={t("authScopes")}
+                          typeAheadAriaLabel={t("selectAuthScopes")}
                           isOpen={scopesDropdownOpen}
+                          aria-label={t("selectAuthScopes")}
                         >
                           {scopes.map((scope) => (
                             <SelectOption
@@ -411,11 +408,11 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   id="contextualAttributes"
                   labelIcon={
                     <HelpItem
-                      helpText={t("clients-help:contextualAttributes")}
+                      helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`contextualAttributes`}
                     />
                   }
-                  helperTextInvalid={t("common:required")}
+                  helperTextInvalid={t("required")}
                   fieldId="contextualAttributes"
                 >
                   <KeyBasedAttributeInput
@@ -444,7 +441,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
             variant="link"
             onClick={() => reset()}
           >
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       </FormProvider>

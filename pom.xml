@@ -35,6 +35,8 @@
     <packaging>pom</packaging>
 
     <properties>
+        <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>
+
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
@@ -43,19 +45,36 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.5.Final</quarkus.version>
-        <quarkus.build.version>3.2.5.Final</quarkus.build.version>
+        <quarkus.version>3.7.3</quarkus.version>
+        <quarkus.build.version>3.7.3</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
-        <wildfly.version>27.0.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.1.Final</wildfly.core.version>
+        <!-- Following properties are used for downstream build to alter final distribution archive file name and internal base directory of the archive. -->
+        <dist.archive.file.prefix>keycloak</dist.archive.file.prefix>
+        <dist.archive.dir.prefix>${dist.archive.file.prefix}</dist.archive.dir.prefix>
+        <dist.archive.file.version>${project.version}</dist.archive.file.version>
+        <dist.archive.dir.version>${project.version}</dist.archive.dir.version>
+        <dist.archive.file>${dist.archive.file.prefix}-${dist.archive.file.version}</dist.archive.file>
+        <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
+
+        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
+        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+
+        <!-- Upstream WildFly Versions -->
+        <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
+        <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
+        <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
+
+        <!-- Downstream Builds WildFly Versions Override -->
+        <eap8.version>8.0.0.GA-redhat-00007</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
+        <eap8.wildfly.version>${eap8.version}</eap8.wildfly.version>
+        <eap8.wildfly.core.version>21.1.0.Final</eap8.wildfly.core.version>
+        <eap8.wildfly.build-tools.version>1.2.13.Final</eap8.wildfly.build-tools.version>
+
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
         <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
         <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
-        <ee.maven.groupId>org.wildfly</ee.maven.groupId>
-        <ee.maven.version>${wildfly.version}</ee.maven.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -67,17 +86,18 @@
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
+        <!-- 1.0.2.4 exhibits class loading issues -->
+        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
         <cxf.jaxrs.version>3.3.10</cxf.jaxrs.version>
         <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <h2.version>2.2.220</h2.version>
-        <hibernate-orm.plugin.version>6.2.7.Final</hibernate-orm.plugin.version>
-        <hibernate.c3p0.version>6.2.7.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.14.Final</infinispan.version>
-        <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
+        <h2.version>2.2.224</h2.version>
+        <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
+        <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
+        <infinispan.version>14.0.24.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -88,13 +108,11 @@
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
-        <jboss.logmanager>2.1.19.Final</jboss.logmanager>
-        <jboss.marshalling.version>2.0.11.Final</jboss.marshalling.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.4.Final</resteasy.version>
+        <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -104,16 +122,19 @@
         <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.2.24.Final</undertow.version>
+        <undertow.version>${undertow-legacy.version}</undertow.version>
+        <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.2.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.2.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <wildfly.common.version>1.6.0.Final</wildfly.common.version>
-        <xmlsec.version>2.2.3</xmlsec.version>
+        <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
+        <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
+        <xmlsec.version>2.2.6</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
+        <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <xstream.version>1.4.20</xstream.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
@@ -126,29 +147,31 @@
         <freemarker.version>2.3.32</freemarker.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
-        <liquibase.version>4.20.0</liquibase.version>
-        <osgi.version>4.2.0</osgi.version>
-        <pax.web.version>7.1.0</pax.web.version>
+        <liquibase.version>4.25.1</liquibase.version>
+        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
+        <osgi.version>6.0.0</osgi.version>
+        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
+        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
-        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
+        <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
-        <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.1</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.3.2</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
-        <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
-        <!-- this is the oracle driver version also used in the Quarkus BOM -->
+        <!-- this is the mssql driver version also used in the Quarkus BOM -->
+        <mssql-jdbc.version>12.4.2.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
-        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
+        <!-- this is the oracle driver version also used in the Quarkus BOM -->
+        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
-        <hamcrest.version>2.2</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -157,25 +180,25 @@
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
-        <awaitility.version>4.1.1</awaitility.version>
         <assertj-core.version>3.22.0</assertj-core.version>
-        <testcontainers.version>1.17.5</testcontainers.version>
-
+        
         <!-- Maven Plugins -->
-        <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
+        <maven.version>3.9.6</maven.version>
+        <maven.plugins.version>3.11.0</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
-        <osgi.bundle.plugin.version>2.4.0</osgi.bundle.plugin.version>
+        <osgi.bundle.plugin.version>5.1.8</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.12.1</frontend.plugin.version>
+        <frontend.plugin.version>1.14.2</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
-        <smallrye.openapi.generator.plugin.version>3.1.2</smallrye.openapi.generator.plugin.version>
+        <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
+        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -190,16 +213,19 @@
         <tomcat9.version>9.0.16</tomcat9.version>
 
         <!-- Spring Boot versions, used for tests -->
-        <spring-boot24.version>2.4.13</spring-boot24.version>
-        <spring-boot26.version>2.6.1</spring-boot26.version>
+        <spring-boot27.version>2.7.14</spring-boot27.version>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>5.2.7.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>4.2.8.Final</org.jboss.galleon.version>
+        <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
+        <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
+        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
+
+        <!-- Used to test SAML Galleon feature-pack layers discovery -->
+        <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -212,8 +238,9 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.17.1</node.version>
-        <pnpm.version>8.6.12</pnpm.version>
+        <node.version>v18.18.2</node.version>
+        <pnpm.version>8.10.0</pnpm.version>
+        <pnpm.args.install>install --prefer-offline --frozen-lockfile --ignore-scripts</pnpm.args.install>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -282,6 +309,49 @@
     <dependencyManagement>
 
         <dependencies>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-bom</artifactId>
+                <version>${infinispan.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-jboss-marshalling</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <!-- this conflicts with infinispan-*-jakarta -->
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-cachestore-remote</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <!-- this conflicts with infinispan-*-jakarta -->
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-commons</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-client-hotrod</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-bom</artifactId>
@@ -357,10 +427,28 @@
                 <artifactId>bcpkix-fips</artifactId>
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
+            
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bc-fips</artifactId>
+            <version>${bouncycastle.bcfips.version}</version>
+          </dependency>
+            
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
                 <artifactId>uap-java</artifactId>
                 <version>${ua-parser.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${org.yaml.snakeyaml.version}</version>
             </dependency>
 
             <!--JAKARTA-->
@@ -404,6 +492,11 @@
                         <artifactId>slf4j-simple</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-core-spi</artifactId>
+                <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
@@ -477,11 +570,6 @@
                 <version>${log4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.logmanager</groupId>
-                <artifactId>jboss-logmanager</artifactId>
-                <version>${jboss.logmanager}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
                 <version>${owasp.html.sanitizer.version}</version>
@@ -490,12 +578,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest</artifactId>
-                <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -543,6 +625,12 @@
                 <groupId>org.twitter4j</groupId>
                 <artifactId>twitter4j-core</artifactId>
                 <version>${twitter4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jetbrains</groupId>
+                        <artifactId>annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- QR Code Generator -->
@@ -648,7 +736,7 @@
             </dependency>
             <!-- Needed for picketlink perf test -->
             <dependency>
-                <groupId>mysql</groupId>
+                <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
@@ -657,6 +745,11 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${apache.httpcomponents.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.quarkus.aligned.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
@@ -717,7 +810,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>
                 <scope>test</scope>
@@ -788,12 +881,12 @@
                 <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
@@ -803,133 +896,9 @@
                 <version>${elytron.undertow-server.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core-jakarta</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons-jakarta</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-remote</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-jboss-marshalling</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-server-core</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-server-router</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-server-runtime</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-server-rest</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-api</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-client-hotrod-jakarta</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-query-dsl</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-remote-query-client</artifactId>
-                <version>${infinispan.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-commons</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-component-annotations</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan.protostream</groupId>
-                <artifactId>protostream-processor</artifactId>
-                <scope>provided</scope>
-                <version>${infinispan.protostream.processor.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling</artifactId>
-                <version>${jboss.marshalling.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling-river</artifactId>
-                <version>${jboss.marshalling.version}</version>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-oidc</artifactId>
+                <version>${wildfly-elytron.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -948,13 +917,13 @@
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
+                <artifactId>osgi.core</artifactId>
                 <version>${osgi.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.version}</version>
+                <version>${osgi.enterprise.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.web</groupId>
@@ -1249,47 +1218,22 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-legacy</artifactId>
+                <artifactId>keycloak-model-storage</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-legacy-private</artifactId>
+                <artifactId>keycloak-model-storage-private</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-legacy-services</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-map</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-map-jpa</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-map-ldap</artifactId>
+                <artifactId>keycloak-model-storage-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-infinispan</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-map-hot-rod</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-map-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1316,6 +1260,17 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-core</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-core-jakarta</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1499,12 +1454,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty94-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1699,6 +1648,20 @@
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${jboss-servlet-api_4.0_spec}</version>
             </dependency>
+
+            <!-- Galleon layer testing with WildFly Glow -->
+            <dependency>
+                <groupId>org.wildfly.glow</groupId>
+                <artifactId>wildfly-glow-core</artifactId>
+                <scope>test</scope>
+                <version>${version.org.wildfly.glow}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.glow</groupId>
+                <artifactId>wildfly-glow-maven-resolver</artifactId>
+                <scope>test</scope>
+                <version>${version.org.wildfly.glow}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1758,7 +1721,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${maven.plugin.plugin.version}</version>
+                    <version>${maven.plugins.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -1838,7 +1801,7 @@
                         <dependency>
                             <groupId>org.wildfly.common</groupId>
                             <artifactId>wildfly-common</artifactId>
-                            <version>${wildfly.common.version}</version>
+                            <version>${wildfly.common.wildfly.aligned.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -1868,6 +1831,12 @@
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                        <!-- Warning, this is an undocumented property https://issues.apache.org/jira/browse/MNG-6589. But there is nothing better. -->
+                        <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.keycloak</groupId>
@@ -1887,6 +1856,11 @@
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
                     <version>${asciidoctor.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1928,6 +1902,39 @@
             <modules>
                 <module>examples</module>
             </modules>
+        </profile>
+
+        <!-- Profile to activate EAP8 Adapters Build -->
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
+                <ee.maven.version>${eap8.version}</ee.maven.version>
+                <wildfly.version>${eap8.version}</wildfly.version>
+                <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>upstream-adapters</id>
+            <activation>
+                <property>
+                    <name>!eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+                <ee.maven.version>${upstream.wildfly.version}</ee.maven.version>
+                <wildfly.version>${upstream.wildfly.version}</wildfly.version>
+                <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+            </properties>
+
         </profile>
 
         <profile>

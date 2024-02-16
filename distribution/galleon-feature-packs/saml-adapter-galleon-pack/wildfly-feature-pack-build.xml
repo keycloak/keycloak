@@ -26,7 +26,6 @@
     </dependencies>
     <default-packages>
         <package name="modules.all"/>
-        <package name="licenses"/>
     </default-packages>
     <generate-feature-specs>
         <extensions>

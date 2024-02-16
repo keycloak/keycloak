@@ -1,9 +1,15 @@
 
 === One Time Password (OTP) policies
 
-{project_name} has several policies for setting up a FreeOTP or Google Authenticator One-Time Password generator. Click the *Authentication* menu and click the *OTP Policy* tab.
+{project_name} has several policies for setting up a FreeOTP or Google Authenticator One-Time Password generator.
 
-.Otp policy
+.Procedure
+
+. Click *Authentication* in the menu.
+. Click the *Policy* tab.
+. Click the *OTP Policy* tab.
+
+.Otp Policy
 image:images/otp-policy.png[OTP Policy]
 
 {project_name} generates a QR code on the OTP set-up page, based on information configured in the *OTP Policy* tab. FreeOTP and Google Authenticator scan the QR code when configuring OTP.

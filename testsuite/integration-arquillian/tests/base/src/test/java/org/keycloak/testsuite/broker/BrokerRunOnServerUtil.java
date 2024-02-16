@@ -18,8 +18,6 @@ package org.keycloak.testsuite.broker;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.List;
-
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;

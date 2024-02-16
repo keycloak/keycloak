@@ -7,7 +7,7 @@ import { KeyValueInput } from "../../../components/key-value-form/KeyValueInput"
 import "../../realm-settings-section.css";
 
 export const AttributeAnnotations = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   return (
     <FormAccess role="manage-realm" isHorizontal>
@@ -21,6 +21,7 @@ export const AttributeAnnotations = () => {
           <GridItem>
             <KeyValueInput
               name="annotations"
+              label={t("annotations")}
               defaultKeyValue={[
                 {
                   key: "inputType",
@@ -75,6 +76,14 @@ export const AttributeAnnotations = () => {
                 {
                   key: "inputTypeStep",
                   label: t("inputTypeStep"),
+                },
+                {
+                  key: "kcNumberFormat",
+                  label: t("kcNumberFormat"),
+                },
+                {
+                  key: "kcNumberUnFormat",
+                  label: t("kcNumberUnFormat"),
                 },
               ]}
             />

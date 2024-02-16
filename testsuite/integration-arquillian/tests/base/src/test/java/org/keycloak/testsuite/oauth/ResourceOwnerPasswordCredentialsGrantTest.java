@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -53,7 +54,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -350,12 +350,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantRequest_ClientES256_RealmPS256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void grantRequest_ClientPS256_RealmES256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.ES256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.ES256);
     }
 
     private void conductGrantRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
@@ -747,11 +747,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
-        if (ProfileAssume.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            // Currently, no access to the authentication sessions is available for map storage.
-            // By return a constant, all tests in this test class can still pass.
-            return 0;
-        }
         return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
     }
 }

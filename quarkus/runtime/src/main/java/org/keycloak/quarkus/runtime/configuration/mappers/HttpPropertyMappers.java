@@ -13,6 +13,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -21,10 +22,12 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class HttpPropertyMappers {
+    private static final String QUARKUS_HTTPS_CERT_FILES = "quarkus.http.ssl.certificate.files";
+    private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
 
     private HttpPropertyMappers(){}
 
-    public static PropertyMapper[] getHttpPropertyMappers() {
+    public static PropertyMapper<?>[] getHttpPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
@@ -64,15 +67,17 @@ final class HttpPropertyMappers {
                         .paramLabel("protocols")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
-                        .to("quarkus.http.ssl.certificate.files")
+                        .to(QUARKUS_HTTPS_CERT_FILES)
+                        .transformer(HttpPropertyMappers.validatePath(QUARKUS_HTTPS_CERT_FILES))
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE)
-                        .to("quarkus.http.ssl.certificate.key-files")
+                        .to(QUARKUS_HTTPS_CERT_KEY_FILES)
+                        .transformer(HttpPropertyMappers.validatePath(QUARKUS_HTTPS_CERT_KEY_FILES))
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_FILE
-                            .withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                        .withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                         .to("quarkus.http.ssl.certificate.key-store-file")
                         .paramLabel("file")
                         .build(),
@@ -101,8 +106,20 @@ final class HttpPropertyMappers {
                         .mapFrom(SecurityOptions.FIPS_MODE.getKey())
                         .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
+                        .build(),
+                fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
+                        .to("quarkus.thread-pool.queue-size")
+                        .paramLabel("requests")
+                        .build(),
+                fromOption(HttpOptions.HTTP_POOL_MAX_THREADS)
+                        .to("quarkus.thread-pool.max-threads")
+                        .paramLabel("threads")
                         .build()
         };
+    }
+
+    private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> validatePath(String key) {
+        return (value, context) -> Environment.isWindows() ? value.filter(v -> v.equals(context.proceed(key).getValue())).map(p -> p.replace("\\", "/")) : value;
     }
 
     private static Optional<String> getHttpEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
@@ -129,14 +146,14 @@ final class HttpPropertyMappers {
         return of(enabled ? "enabled" : "disabled");
     }
 
-    private static String getDefaultKeystorePathValue() {
+    private static File getDefaultKeystorePathValue() {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
             File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
 
             if (file.exists()) {
-                return file.getAbsolutePath();
+                return file;
             }
         }
 

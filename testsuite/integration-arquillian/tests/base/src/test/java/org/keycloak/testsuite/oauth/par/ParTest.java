@@ -212,6 +212,85 @@ public class ParTest extends AbstractClientPoliciesTest {
         }
     }
 
+    // success with one public client conducting one authz request
+    @Test
+    public void testSuccessfulSingleParPublicClient() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setTokenEndpointAuthMethod("none"); // Public Client
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals("none", oidcCRep.getTokenEndpointAuthMethod()); // Public Client
+
+            // Pushed Authorization Request
+            oauth.clientId(clientId);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            oauth.requestUri(requestUri);
+            String state = oauth.stateParamRandom().getState();
+            oauth.stateParamHardcoded(state);
+            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            assertEquals(state, loginResponse.getState());
+            String code = loginResponse.getCode();
+            String sessionId =loginResponse.getSessionState();
+
+            // Token Request
+            oauth.redirectUri(CLIENT_REDIRECT_URI); // get tokens, it needed. https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+            OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+            assertEquals(200, res.getStatusCode());
+
+            AccessToken token = oauth.verifyToken(res.getAccessToken());
+            String userId = findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId();
+            assertEquals(userId, token.getSubject());
+            assertEquals(sessionId, token.getSessionState());
+            // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+            // Assert.assertNotEquals(TEST_USER_NAME, token.getSubject());
+            assertEquals(clientId, token.getIssuedFor());
+
+            // Token Refresh
+            String refreshTokenString = res.getRefreshToken();
+            RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
+            assertEquals(sessionId, refreshToken.getSessionState());
+            assertEquals(clientId, refreshToken.getIssuedFor());
+
+            OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+            assertEquals(200, refreshResponse.getStatusCode());
+
+            AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
+            RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+            assertEquals(sessionId, refreshedToken.getSessionState());
+            assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+            assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedToken.getSubject());
+
+            // Logout
+            oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
+            refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
+            assertEquals(400, refreshResponse.getStatusCode());
+
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
     @Test
     public void testWrongSigningAlgorithmForRequestObject() throws Exception {
         try {

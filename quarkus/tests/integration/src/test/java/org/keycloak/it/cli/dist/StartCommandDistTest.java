@@ -31,6 +31,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
@@ -41,6 +42,13 @@ public class StartCommandDistTest {
     void failNoTls(LaunchResult result) {
         assertTrue(result.getOutput().contains("Key material not provided to setup HTTPS"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @Launch({ "start", "--spi-events-listener-jboss-logging-success-level" })
+    void failSpiArgMissingValue(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("spi argument --spi-events-listener-jboss-logging-success-level requires a value"),
+                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @Test
@@ -61,7 +69,7 @@ public class StartCommandDistTest {
     @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
     void failBuildPropertyNotAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--db'");
+        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @Test
@@ -88,7 +96,7 @@ public class StartCommandDistTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         cliResult.assertStarted();
     }
@@ -97,7 +105,15 @@ public class StartCommandDistTest {
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--cache'");
+        cliResult.assertError("Build time option: '--cache' not usable with pre-built image and --optimized");
+    }
+
+    @Test
+    @WithEnvVars({"KC_LOG", "invalid"})
+    @Launch({ "start", "--optimized" })
+    void testStartUsingOptimizedInvalidEnvOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Invalid value for option 'kc.log': invalid. Expected values are: console, file, gelf. From ConfigSource KcEnvVarConfigSource");
     }
 
     @Test

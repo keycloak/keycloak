@@ -284,6 +284,14 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
+    public void testUserLoginWithAngleBrackets() {
+        KcAdmExec exe = KcAdmExec.execute("config credentials --server " + serverUrl + " --realm test --user 'special>>character' --password '<password>'");
+
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user special>>character of realm test", exe.stderrLines().get(0));
+    }
+
+    @Test
     public void testUserLoginWithDefaultConfigInteractive() throws IOException {
         /*
          *  Test user login with interaction - provide user password after prompted for it
@@ -505,13 +513,13 @@ public class KcAdmTest extends AbstractAdmCliTest {
     @Test
     public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
-        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getFileExtension());
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getPrimaryExtension());
     }
 
     @Test
     public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
-        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getFileExtension());
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getPrimaryExtension());
     }
 
     private void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(String keystoreFileExtension) throws IOException {
@@ -609,5 +617,53 @@ public class KcAdmTest extends AbstractAdmCliTest {
         KcAdmExec.execute("create users -r demorealm -s username=onemoretestuser");
         KcAdmExec exec = execute("add-roles --uusername=testuser --rolename offline_access --target-realm=demorealm");
         Assert.assertEquals(0, exec.exitCode());
+        exec = execute("add-roles --uusername=anothertestuser --rolename offline_access --target-realm=demorealm");
+        Assert.assertEquals(0, exec.exitCode());
+        exec = execute("add-roles --uusername=onemoretestuser --rolename offline_access --target-realm=demorealm");
+        Assert.assertEquals(0, exec.exitCode());
     }
+
+    @Test
+    public void testGetGroupNameExact() {
+        KcAdmExec.execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec.execute("create realms -s realm=demorealm -s enabled=true");
+        KcAdmExec.execute("create role -r demorealm -s name=testrole");
+        KcAdmExec.execute("create groups -r demorealm -s name=test");
+        KcAdmExec.execute("create groups -r demorealm -s name=anothertest");
+        KcAdmExec.execute("create groups -r demorealm -s name=onemoretest");
+        KcAdmExec exec = execute("get-roles -r demorealm --gname test");
+        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        exec = execute("get-roles -r demorealm --gname anothertest");
+        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        exec = execute("get-roles -r demorealm --gname onemoretest");
+        Assert.assertEquals(exec.stderrString(), 0, exec.exitCode());
+        exec = execute("get-roles -r demorealm --gname not_there");
+        Assert.assertEquals(1, exec.exitCode());
+    }
+
+    @Test
+    public void testCsvFormat() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv");
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().startsWith("\""));
+    }
+
+    @Test
+    public void testCsvFormatWithMissingFields() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --fields foo");
+        // nothing valid was selected, should be blank
+        assertExitCodeAndStreamSizes(exec, 0, 1, 0);
+        Assert.assertTrue(exec.stdoutString().isBlank());
+    }
+
+    @Test
+    public void testCompressedCsv() {
+        execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
+        KcAdmExec exec = execute("get realms/master --format csv --compressed");
+        // should contain an error message
+        assertExitCodeAndStreamSizes(exec, 0, 0, 1);
+    }
+
 }

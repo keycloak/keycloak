@@ -42,7 +42,7 @@ import { toImportClient } from "./routes/ImportClient";
 import { getProtocolName, isRealmClient } from "./utils";
 
 const ClientDetailLink = (client: ClientRepresentation) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   return (
     <Link
@@ -52,7 +52,7 @@ const ClientDetailLink = (client: ClientRepresentation) => {
       {client.clientId}
       {!client.enabled && (
         <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-          {t("common:disabled")}
+          {t("disabled")}
         </Badge>
       )}
     </Link>
@@ -82,7 +82,7 @@ const ClientHomeLink = (client: ClientRepresentation) => {
 };
 
 const ToolbarItems = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const { hasAccess } = useAccess();
@@ -115,7 +115,7 @@ const ToolbarItems = () => {
 };
 
 export default function ClientsSection() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -146,8 +146,8 @@ export default function ClientsSection() {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
-    messageKey: "clients:clientDeleteConfirm",
-    continueButtonLabel: "common:delete",
+    messageKey: "clientDeleteConfirm",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -157,7 +157,7 @@ export default function ClientsSection() {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:clientDeleteError", error);
+        addError("clientDeleteError", error);
       }
     },
   });
@@ -165,8 +165,8 @@ export default function ClientsSection() {
   return (
     <>
       <ViewHeader
-        titleKey="clients:clientList"
-        subKey="clients:clientsExplain"
+        titleKey="clientList"
+        subKey="clientsExplain"
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
@@ -189,14 +189,14 @@ export default function ClientsSection() {
               key={key}
               loader={loader}
               isPaginated
-              ariaLabelKey="clients:clientList"
-              searchPlaceholderKey="clients:searchForClient"
+              ariaLabelKey="clientList"
+              searchPlaceholderKey="searchForClient"
               toolbarItem={<ToolbarItems />}
               actionResolver={(rowData: IRowData) => {
                 const client: ClientRepresentation = rowData.data;
                 const actions: Action<ClientRepresentation>[] = [
                   {
-                    title: t("common:export"),
+                    title: t("export"),
                     onClick() {
                       exportClient(client);
                     },
@@ -208,7 +208,7 @@ export default function ClientsSection() {
                   (isManager || client.access?.configure)
                 ) {
                   actions.push({
-                    title: t("common:delete"),
+                    title: t("delete"),
                     onClick() {
                       setSelectedClient(client);
                       toggleDeleteDialog();
@@ -221,32 +221,32 @@ export default function ClientsSection() {
               columns={[
                 {
                   name: "clientId",
-                  displayKey: "common:clientId",
+                  displayKey: "clientId",
                   transforms: [cellWidth(20)],
                   cellRenderer: ClientDetailLink,
                 },
                 {
                   name: "clientName",
-                  displayKey: "common:clientName",
+                  displayKey: "clientName",
                   transforms: [cellWidth(20)],
                   cellRenderer: ClientName,
                 },
                 {
                   name: "protocol",
-                  displayKey: "common:type",
+                  displayKey: "type",
                   transforms: [cellWidth(10)],
                   cellRenderer: (client) =>
                     getProtocolName(t, client.protocol ?? "openid-connect"),
                 },
                 {
                   name: "description",
-                  displayKey: "common:description",
+                  displayKey: "description",
                   transforms: [cellWidth(30)],
                   cellRenderer: ClientDescription,
                 },
                 {
                   name: "baseUrl",
-                  displayKey: "clients:homeURL",
+                  displayKey: "homeURL",
                   transforms: [cellWidth(20)],
                   cellRenderer: ClientHomeLink,
                 },

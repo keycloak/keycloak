@@ -38,9 +38,12 @@ public class HardcodedLDAPGroupStorageMapperFactory extends AbstractLDAPStorageM
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty groupAttr = createConfigProperty(HardcodedLDAPGroupStorageMapper.GROUP, "Group",
+        ProviderConfigProperty groupAttr = createConfigProperty(HardcodedLDAPGroupStorageMapper.GROUP,
+                "Group",
                 "Group to add the user in. Fill the full path of the group including path. For example '/root-group/child-group'",
-                ProviderConfigProperty.STRING_TYPE, null);
+                ProviderConfigProperty.STRING_TYPE,
+                null,
+                true);
 
         configProperties.add(groupAttr);
     }
@@ -66,7 +69,7 @@ public class HardcodedLDAPGroupStorageMapperFactory extends AbstractLDAPStorageM
         if (groupName == null) {
             throw new ComponentValidationException("Group can't be null");
         }
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupName);
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupName);
         if (group == null) {
             throw new ComponentValidationException("There is no group corresponding to configured value");
         }

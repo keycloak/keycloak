@@ -17,8 +17,11 @@
 package org.keycloak.testsuite.model.events;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventStoreProvider;
@@ -38,6 +41,7 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequireProvider(EventStoreProvider.class)
@@ -109,6 +113,30 @@ public class AdminEventQueryTest extends KeycloakModelTest {
             assertThat(adminEventsDesc.size(), is(2));
             assertThat(adminEventsDesc.get(0).getOperationType(), is(OperationType.DELETE));
             assertThat(adminEventsDesc.get(1).getOperationType(), is(OperationType.CREATE));
+            return null;
+        });
+    }
+
+        @Test
+    public void testAdminEventRepresentationLongValue() {
+        String longValue = RandomStringUtils.random(30000, true, true);
+
+        withRealm(realmId, (session, realm) -> {
+            
+            AdminEvent event = createClientEvent(realm, OperationType.CREATE);
+            event.setRepresentation(longValue);
+
+            session.getProvider(EventStoreProvider.class).onEvent(event, true);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            List<AdminEvent> events = session.getProvider(EventStoreProvider.class).createAdminQuery().realm(realmId).getResultStream().collect(Collectors.toList());
+            assertThat(events, hasSize(1));
+
+            assertThat(events.get(0).getRepresentation(), equalTo(longValue));
+
             return null;
         });
     }

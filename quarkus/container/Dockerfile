@@ -17,10 +17,13 @@ RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 RUN chmod -R g+rwX /opt/keycloak
 
 ADD ubi-null.sh /tmp/
-RUN bash /tmp/ubi-null.sh java-17-openjdk-headless glibc-langpack-en
+RUN bash /tmp/ubi-null.sh java-17-openjdk-headless glibc-langpack-en findutils
 
 FROM registry.access.redhat.com/ubi9-micro
 ENV LANG en_US.UTF-8
+
+# Flag for determining app is running in container
+ENV KC_RUN_IN_CONTAINER true
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
 COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
