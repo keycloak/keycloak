@@ -409,6 +409,15 @@ The property keys used by the operator for advanced configuration have changed f
 When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
 The default `requests` memory for Keycloak deployment and the realm import Job is set to `768MiB`, and the `limits` memory is set to `4GiB`.
 
+= Deprecated GET endpoint '/login-actions/reset-credentials'
+
+It is deprecated to directly call endpoint '/realms/{realm_name}/login-actions/reset-credentials' from your client applications for directly request reset-credentials.
+This endpoint was never documented and supported. Instead it is recommended to use endpoint like '/realms/{realm_name}/protocol/openid-connect/forgot-credentials' for directly reset credentials.
+Any OAuth/OIDC supported parameters can be added similarly like to regular OIDC authorization endpoint. It is recommended to use OIDC parameters like `state`, `nonce` and
+others, but if you prefer static nature of this endpoint, it is possible to omit the parameters and use some minimal URL
+such as https://keycloak.example.com/realms/myrealm/protocol/openid-connect/forgot-credentials?client_id=myclient&redirect_uri=https%3A%2F%2Fhost%2Fsomepath&response_type=code&scope=openid .
+See the link:{adminguide_link}#_registration-rc-client-flows[{adminguide_name}] for the details
+
 = Updates to cookies
 
 As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:

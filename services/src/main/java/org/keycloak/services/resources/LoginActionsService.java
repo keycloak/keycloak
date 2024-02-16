@@ -73,7 +73,6 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
@@ -87,7 +86,6 @@ import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
-import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -412,17 +410,20 @@ public class LoginActionsService {
      * Endpoint for executing reset credentials flow.  If token is null, a authentication session is created with the account
      * service as the client.  Successful reset sends you to the account page.  Note, account service must be enabled.
      *
+     * @deprecated Please use endpoint '/realms/{realm_name}/protocol/openid-connect/forgot-credentials' for directly reset credentials from your client application
      * @param code
      * @param execution
      * @return
      */
     @Path(RESET_CREDENTIALS_PATH)
     @GET
+    @Deprecated
     public Response resetCredentialsGET(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                         @QueryParam(SESSION_CODE) String code,
                                         @QueryParam(Constants.EXECUTION) String execution,
                                         @QueryParam(Constants.CLIENT_ID) String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
+        logger.warn("This endpoint is deprecated. Please use endpoint '/realms/{realm_name}/protocol/openid-connect/forgot-credentials' with parameters like OIDC for directly reset credentials from your client application");
         ClientModel client = realm.getClientByClientId(clientId);
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
@@ -448,26 +449,27 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession;
 
         ClientModel client = session.clients().getClientByClientId(realm, clientID);
-        String redirectUri;
+        String redirectUri = null;
 
         if (client == null) {
             client = SystemClientUtil.getSystemClient(realm);
             redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
-        } else {
-            redirectUri = RedirectUtils.getFirstValidRedirectUri(session, client.getRootUrl(), client.getRedirectUris());
         }
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
         authSession = rootAuthSession.createAuthenticationSession(client);
 
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
-        authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
+        if (redirectUri != null) {
+            authSession.setRedirectUri(redirectUri);
+            authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
+        } else {
+            authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        }
         return authSession;
     }
 

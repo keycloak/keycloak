@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.admin.client.resource.UserResource;
@@ -80,6 +81,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.*;
 
 /**
@@ -198,6 +200,37 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void resetPasswordLinkTestApp() throws IOException, MessagingException {
+        String username = "login-test";
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app";
+        driver.navigate().to(resetUri);
+
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(username);
+
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        // Link "Back to application" with the baseUrl of client "test-app"
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        infoPage.clickBackToApplicationLink();
+        WaitUtils.waitForPageToLoad();
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
     }
 
 
