@@ -54,7 +54,7 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const { handleSubmit, control, setValue } = useForm<{
+  const { control, getValues, handleSubmit, setValue } = useForm<{
     key: string;
     translations: Translations[];
   }>({
@@ -102,8 +102,15 @@ export const AddTranslationsDialog = ({
         locale,
         value: defaultValue,
       });
+      setValue("key", translationKey);
     });
-  }, [combinedLocales, defaultLocales, defaultTranslationValue, setValue]);
+  }, [
+    combinedLocales,
+    defaultLocales,
+    defaultTranslationValue,
+    translationKey,
+    setValue,
+  ]);
 
   const removeAllTranslations = async () => {
     try {
@@ -135,11 +142,13 @@ export const AddTranslationsDialog = ({
     }
   };
 
-  const save = async (formData: {
-    key: string;
-    translations: Translations[];
-  }) => {
-    console.log("formData >>> ", formData);
+  const save = async () => {
+    try {
+      const formData = getValues();
+      console.log("formData >>> ", formData);
+    } catch (error) {
+      console.error(`Error saving translations: ${error}`);
+    }
   };
 
   return (
@@ -194,11 +203,10 @@ export const AddTranslationsDialog = ({
               <Controller
                 name="key"
                 control={control}
-                defaultValue={translationKey}
-                render={() => (
+                render={({ field }) => (
                   <KeycloakTextInput
                     id="kc-translation-key"
-                    defaultValue={translationKey}
+                    {...field}
                     aria-label={t("translationKey")}
                     data-testid="translation-key"
                   />
@@ -313,11 +321,12 @@ export const AddTranslationsDialog = ({
                                   name={`translations.${rowIndex}`}
                                   control={control}
                                   rules={{ required: true }}
-                                  render={() => (
+                                  render={({ field }) => (
                                     <KeycloakTextInput
                                       id="translationValue"
-                                      defaultValue={defaultTranslationValue}
+                                      {...field.value}
                                       aria-label={t("translationValue")}
+                                      data-testid="translation-value"
                                       onChange={(e) => {
                                         const updatedTranslation = {
                                           locale,
@@ -347,10 +356,12 @@ export const AddTranslationsDialog = ({
                                   name={`translations.${rowIndex}`}
                                   control={control}
                                   rules={{ required: true }}
-                                  render={() => (
+                                  render={({ field }) => (
                                     <KeycloakTextInput
                                       id="translationValue"
+                                      {...field.value}
                                       aria-label={t("translationValue")}
+                                      data-testid="translation-value"
                                       onChange={(e) => {
                                         const updatedTranslation = {
                                           locale,
