@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Concepts for sizing CPU and memory resources"
 summary="Understand these concepts to avoid resource exhaustion and congestion"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 Use this as a starting point to size a product environment. 

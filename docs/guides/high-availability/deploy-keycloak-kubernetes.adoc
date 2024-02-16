@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Deploy {project_name} for HA with the {project_name} Operator"
 summary="Building block for a {project_name} deployment"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.

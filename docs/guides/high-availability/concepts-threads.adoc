@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Concepts for configuring thread pools"
 summary="Understand these concepts to avoid resource exhaustion and congestion"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 

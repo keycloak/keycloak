@@ -3,9 +3,7 @@
 
 <@tmpl.guide
 title="Concepts for active-passive deployments"
-summary="Understanding an active-passive deployment with synchronous replication"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
+summary="Understanding an active-passive deployment with synchronous replication" >
 
 This topic describes a highly available active/passive setup and the behavior to expect. It outlines the requirements of the high availability active/passive architecture and describes the benefits and tradeoffs.
 

@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Concepts to automate {jdgserver_name} CLI commands"
 summary="{jdgserver_name} CLI commands can be automated by creating a `Batch` CR instance."
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 include::partials/infinispan/infinispan-attributes.adoc[]

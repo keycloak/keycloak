@@ -26,7 +26,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz:v1, client-secret-rotation:v1, dpop:v1, multi-site:v1, recovery-codes:v1, scripts:v1, token-exchange:v1, update-email:v1";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz:v1, client-secret-rotation:v1, dpop:v1, recovery-codes:v1, scripts:v1, token-exchange:v1, update-email:v1";
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
