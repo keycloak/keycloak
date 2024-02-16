@@ -217,6 +217,13 @@ When enabling metrics for {project_name}'s embedded caches, the metrics now use 
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
 
+= User attribute value length extension
+
+As of this release, {project_name} supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Authorization Policy
 
 In previous versions of Keycloak when the last member of a User, Group or Client policy was deleted then that policy would also be deleted. Unfortunately this could lead to an escalation of privileges if the policy was used in an aggregate policy. To avoid privilege escalation the effect policies are no longer deleted and an administrator will need to update those policies.

@@ -38,7 +38,7 @@ public interface UserAttributeFederatedStorage {
      * @param realm a reference to the realm.
      * @param name the attribute name.
      * @param value the attribute value.
-     * @return a non-null {@link Stream} of users that match the search criteria.
+     * @return a non-null {@link Stream} of user IDs that match the search criteria.
      */
     Stream<String> getUsersByUserAttributeStream(RealmModel realm, String name, String value);
 

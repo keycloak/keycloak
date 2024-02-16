@@ -102,7 +102,7 @@ You can choose to completely disable or only support unmanaged attributes when m
 When unmanaged attributes are enabled (even if partially) you can manage them from the administration console at the `Attributes` tab in the User Details UI.
 If the policy is set to `Disabled` this tab is not available.
 
-As a recommendation, try to adhere to the most strict policy as much as possible (e.g.: `Disabled` or `Admin can edit`) to prevent unexpected
+As a security recommendation, try to adhere to the most strict policy as much as possible (e.g.: `Disabled` or `Admin can edit`) to prevent unexpected
 attributes (and values) set to your users when they are managing their profile through end-user contexts.
 Avoid setting the `Enabled` policy and prefer defining all the attributes that end-users can manage in your user profile configuration, under your control.
 
@@ -113,6 +113,9 @@ behavior when using custom themes and extending the server with their own custom
 ====
 
 As you will see in the following sections, you can also restrict the audience for an attribute by choosing if it should be visible or writable by users and/or administrators.
+
+For unmanaged attributes, the maximum length is 2048 characters.
+To specify a different minimum or maximum length, change the unmanaged attribute to a managed attribute and add a `length` validator.
 
 == Managing the User Profile
 
@@ -197,6 +200,9 @@ image:images/user-profile-validation.png[]
 
 Validation happens at any time when writing to an attribute, and they can throw errors that will be shown in UIs when the value
 fails a validation.
+
+For security reasons, every attribute that is editable by users should have a validation to restrict the size of the values users enter.
+If no `length` validator has been specified, {project_name} defaults to a maximum length of 2048 characters.
 
 === Built-in Validators
 

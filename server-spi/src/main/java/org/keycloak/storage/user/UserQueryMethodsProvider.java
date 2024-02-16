@@ -94,6 +94,8 @@ public interface UserQueryMethodsProvider {
      *     the given userId (case sensitive string)</li>
      * </ul>
      * <p>
+     * Any other parameters will be treated as custom user attributes.
+     * <p>
      * This method is used by the REST API when querying users.
      *
      * @param realm  a reference to the realm.

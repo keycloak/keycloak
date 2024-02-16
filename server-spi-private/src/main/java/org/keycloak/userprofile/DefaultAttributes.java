@@ -45,6 +45,8 @@ import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttribu
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.validators.LengthValidator;
 
 /**
  * <p>The default implementation for {@link Attributes}. Should be reused as much as possible by the different implementations
@@ -67,6 +69,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
      * We should probably remove that once we remove the legacy provider, because this will come from the configuration.
      */
     public static final String READ_ONLY_ATTRIBUTE_KEY = "kc.read.only";
+    public static final String DEFAULT_MAX_LENGTH_ATTRIBUTES = "2048";
 
     protected final UserProfileContext context;
     protected final KeycloakSession session;
@@ -164,6 +167,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 .map(Collections::singletonList).orElse(emptyList()));
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
                 .map(Collections::singletonList).orElse(emptyList()));
+        limitLengthOnAttributesWithNoLengthRestriction(name, metadatas);
 
         Boolean result = null;
 
@@ -203,6 +207,27 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return result == null;
+    }
+
+    /**
+     * In case there are unmanaged attributes or attributes that don't have a length restrictions,
+     * add a default length restriction to avoid a denial of service by a caller.
+     */
+    private static void limitLengthOnAttributesWithNoLengthRestriction(String name, List<AttributeMetadata> metadatas) {
+        for (AttributeMetadata metadata : metadatas) {
+            for (AttributeValidatorMetadata validator : metadata.getValidators()) {
+                if (validator.getValidatorId().equals(LengthValidator.ID)) {
+                    return;
+                }
+            }
+        }
+
+        AttributeMetadata am = new AttributeMetadata(name, -1);
+        Map<String, Object> vc = new HashMap<>();
+        vc.put(LengthValidator.KEY_MIN, "0");
+        vc.put(LengthValidator.KEY_MAX, DEFAULT_MAX_LENGTH_ATTRIBUTES);
+        am.addValidators(Collections.singletonList(new AttributeValidatorMetadata(LengthValidator.ID, new ValidatorConfig(vc))));
+        metadatas.add(am);
     }
 
     @Override
