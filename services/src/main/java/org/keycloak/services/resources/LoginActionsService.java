@@ -73,8 +73,11 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -410,20 +413,18 @@ public class LoginActionsService {
      * Endpoint for executing reset credentials flow.  If token is null, a authentication session is created with the account
      * service as the client.  Successful reset sends you to the account page.  Note, account service must be enabled.
      *
-     * @deprecated Please use endpoint '/realms/{realm_name}/protocol/openid-connect/forgot-credentials' for directly reset credentials from your client application
      * @param code
      * @param execution
      * @return
      */
     @Path(RESET_CREDENTIALS_PATH)
     @GET
-    @Deprecated
     public Response resetCredentialsGET(@QueryParam(AUTH_SESSION_ID) String authSessionId, // optional, can get from cookie instead
                                         @QueryParam(SESSION_CODE) String code,
                                         @QueryParam(Constants.EXECUTION) String execution,
                                         @QueryParam(Constants.CLIENT_ID) String clientId,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
-        logger.warn("This endpoint is deprecated. Please use endpoint '/realms/{realm_name}/protocol/openid-connect/forgot-credentials' with parameters like OIDC for directly reset credentials from your client application");
         ClientModel client = realm.getClientByClientId(clientId);
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         processLocaleParam(authSession);
@@ -436,7 +437,7 @@ public class LoginActionsService {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
-            authSession = createAuthenticationSessionForClient(clientId);
+            authSession = createAuthenticationSessionForClient(clientId, redirectUri);
             return processResetCredentials(false, null, authSession, null);
         }
 
@@ -444,16 +445,34 @@ public class LoginActionsService {
         return resetCredentials(authSessionId, code, execution, clientId, tabId);
     }
 
-    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID)
+    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID, String redirectUriParam)
             throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
-        ClientModel client = session.clients().getClientByClientId(realm, clientID);
+        ClientModel client;
         String redirectUri = null;
 
-        if (client == null) {
+        if (clientID == null) {
+            if (redirectUriParam != null) {
+                logger.warn("Unsupported to send 'redirect_uri' parameter without providing 'client_id' parameter.");
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+            }
             client = SystemClientUtil.getSystemClient(realm);
             redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
+        } else {
+            client = session.clients().getClientByClientId(realm, clientID);
+            if (client == null) {
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            }
+            if (!client.isEnabled()) {
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
+            }
+            if (redirectUriParam != null) {
+                redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client);
+                if (redirectUri == null) {
+                    throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+                }
+            }
         }
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
