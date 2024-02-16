@@ -107,40 +107,40 @@ The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. T
 
 == Lightweight access tokens support
 
-This release contains support for Lightweight access tokens. This allows to use smaller access tokens for specified clients. Such tokens will not contain much
+This release contains support for Lightweight access tokens. As a result, you can have smaller access tokens for specified clients. These tokens have only a few 
 claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
 
-From this release, there is a flag *Add to lightweight access token* available on some OIDC protocol mappers. This flag allows to specify if particular claim will be added to lightweight
-access token. It is *OFF* by default, so most of the claims are not added by default. There is also client policy executor, which allows to specify if particular client request
-should use lightweight access tokens or regular access tokens. Note that in previous release, there was already added switch *Add to token introspection*, so it is possible to add
-claims, which are not present in the access token, into introspection endpoint response. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
+This release introduces an *Add to lightweight access token*  flag that is available on some OIDC protocol mappers. Use this flag to specify if a particular claim should be added to a lightweight
+access token. It is *OFF* by default, which means that most claims are not added. Also, a client policy executor exists. Use it to specify if a particular client request
+should use lightweight access tokens or regular access tokens. A previous release added an *Add to token introspection* switch. You use it to add
+claims that are not present in the access token into the introspection endpoint response. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
 
 == Scope parameter supported in the refresh token flow
 
-Since this release, we support `scope` parameter in the OAuth2/OIDC endpoint for token refresh. Note that it is possible to use it to request access tokens with smaller amount
-of scopes than originally granted (so it is not possible to increase access token scope) and it does not affect scope of the refreshed refresh token. This works as
+Starting with this release, we support  the`scope` parameter in the OAuth2/OIDC endpoint for token refresh. You can use this parameter to request access tokens with a smaller amount
+of scopes than originally granted, which means you cannot increase access token scope. This scope limitation does not affect the scope of the refreshed refresh token. This function works as
 described in the OAuth2 specification. Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
 
 == Client policy executor for enforcing DPoP
 
-There is new client policy executor `dpop-bind-enforcer`, which can be used to enforce DPoP is used for particular client. This is available just if `dpop` preview
-feature is enabled. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+A new client policy executor `dpop-bind-enforcer` is introduced. You can use it to enforce DPoP for a particular client if `dpop` preview
+ is enabled. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
 
 == Supporting EdDSA
 
-It is possible to create EdDSA realm keys and use them as signature algorithms for various clients. For instance to sign tokens or for client authentication with signed JWT.
-This includes also identity brokering where Keycloak itself signs client assertion used for `private_key_jwt` authentication to 3rd party identity provider. Thanks to
+You can create EdDSA realm keys and use them as signature algorithms for various clients. For instance, you can use these keys to sign tokens or for client authentication with signed JWT.
+This feature includes identity brokering where {project_name} itself signs client assertions that are used for `private_key_jwt` authentication to third party identity providers. Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
 
 == Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
 
-OIDC identity providers now have the option *Add X.509 Headers to the JWT* for the case when client authentication with JWT signed by private key is used. This can be useful
-for interoperability with some identity providers like Azure AD, which require the thumbprint to be present on the JWT. Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+OIDC identity providers now have the option *Add X.509 Headers to the JWT* for the case when client authentication with JWT signed by private key is used. This option can be useful
+for interoperability with some identity providers such as Azure AD, which require the thumbprint to be present on the JWT. Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
 
 = Cors improvements
 
-The CORS related Keycloak functionality was extracted into the SPI, which can allow additional flexibility. Just a note that `CorsSPI` is internal and may change in the
+The CORS related Keycloak functionality was extracted into the SPI, which can allow additional flexibility. Note that `CorsSPI` is internal and may change in the
 future. Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
 
 = Truststore Improvements
