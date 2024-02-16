@@ -124,7 +124,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         UpdateEmailActionToken actionToken = new UpdateEmailActionToken(user.getId(), Time.currentTime() + validityInSecs,
-                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions);
+                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions, authenticationSession.getRedirectUri());
 
         String link = Urls
                 .actionTokenBuilder(uriInfo.getBaseUri(), actionToken.serialize(session, realm, uriInfo),

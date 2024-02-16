@@ -1,0 +1,12 @@
+- debug: var=cluster_identifier
+- debug: var=region
+- debug: var=cluster_name
+
+- include_tasks: create-resources.yml
+  when: operation == "create"
+
+- include_tasks: manage-instances.yml
+  when: operation == "start" or operation == "stop"
+
+- include_tasks: delete-resources.yml
+  when: operation == "delete"

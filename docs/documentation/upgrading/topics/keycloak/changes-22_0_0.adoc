@@ -334,6 +334,8 @@ If you are extending the server's REST APIs through the following SPIs:
 You need to add an empty `META-INF/beans.xml` to the JAR file where your custom providers are packaged. Otherwise, they are not recognized by the server
 at runtime.
 
+If you are using `RealmResourceSPI` or `AdminRealmResourceSpi`, you have the choice between adding an empty file named `beans.xml` under `META-INF` or annotating the JAX-RS resource classes with the `jakarta.ws.rs.ext.Provider` annotation.
+
 You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
 
 = Deprecated methods from data providers and models

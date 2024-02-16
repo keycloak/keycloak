@@ -60,6 +60,8 @@ export const TimeSelector = ({
 }: TimeSelectorProps) => {
   const { t } = useTranslation();
 
+  const [lastMultiplier, setLastMultiplier] = useState<number>();
+
   const defaultMultiplier = useMemo(
     () => allTimes.find((time) => time.unit === units[0])?.multiplier,
     [units],
@@ -88,9 +90,11 @@ export const TimeSelector = ({
     if (value) {
       setMultiplier(multiplier);
       setTimeValue(value / multiplier);
+      setLastMultiplier(multiplier);
     } else {
       setTimeValue(value || "");
-      setMultiplier(defaultMultiplier);
+      setMultiplier(lastMultiplier ?? defaultMultiplier);
+      setLastMultiplier(lastMultiplier ?? defaultMultiplier);
     }
   }, [value, defaultMultiplier]);
 

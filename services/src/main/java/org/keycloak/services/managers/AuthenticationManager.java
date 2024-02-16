@@ -1007,7 +1007,7 @@ public class AuthenticationManager {
                 }
 
             } else {
-                infoPage.setAttribute(Constants.SKIP_LINK, true);
+                SystemClientUtil.checkSkipLink(session, authSession);
             }
             Response response = infoPage
                     .setDetachedAuthSession()

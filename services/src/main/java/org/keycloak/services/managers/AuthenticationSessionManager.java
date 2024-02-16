@@ -17,9 +17,7 @@
 
 package org.keycloak.services.managers;
 
-import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;

@@ -19,7 +19,6 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
@@ -65,6 +64,32 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testSessionCookieValue() {
+        // Set cookie value with '/' that results in cookies value being quoted
+        final String sessionValue = "my-realm/5256327f-049f-4d01-acb9-68c7936bdeb3/c6cd1f10-40ab-44c0-b77b-6028350d8564";
+        Response response = testing.server("master").runWithResponse(session -> {
+            CookieProvider cookies = session.getProvider(CookieProvider.class);
+            cookies.set(CookieType.SESSION, sessionValue, 444);
+        });
+
+        // Cookie values from response.getCookies() removes quotes
+        Assert.assertEquals(sessionValue, response.getCookies().get(CookieType.SESSION.getName()).getValue());
+
+        // Cookie values from the Set-Cookie header includes quotes
+        String setHeader = getSetHeader(response, CookieType.SESSION.getName());
+        Assert.assertTrue(setHeader.startsWith(CookieType.SESSION.getName() + "=\"" + sessionValue + "\";"));
+
+        // Send Cookie header with quoted value for cookie
+        filter.setHeader("Cookie", "KEYCLOAK_SESSION=\"" + sessionValue + "\";");
+
+        // Check cookie value matches original value without quotes
+        testing.server().run(session -> {
+            String cookieValue = session.getProvider(CookieProvider.class).get(CookieType.SESSION);
+            Assert.assertEquals(sessionValue, cookieValue);
+        });
+    }
+
+    @Test
     public void testExpire() {
         filter.setHeader("Cookie", "AUTH_SESSION_ID=new;KC_RESTART=new;");
 
@@ -106,7 +131,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testSameSiteLegacyExpire() {
-        filter.setHeader("Cookie", "AUTH_SESSION_ID=new;AUTH_SESSION_ID_LEGACY=legacy;KC_RESTART_LEGACY=ignore;KEYCLOAK_LOCALE=foobar");
+        filter.setHeader("Cookie", "AUTH_SESSION_ID=new; AUTH_SESSION_ID_LEGACY=legacy; KC_RESTART_LEGACY=ignore; KEYCLOAK_LOCALE=foobar");
 
         Response response = testing.server().runWithResponse(session -> {
             session.getProvider(CookieProvider.class).expire(CookieType.AUTH_SESSION_ID);
@@ -115,10 +140,27 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
         Map<String, NewCookie> cookies = response.getCookies();
         Assert.assertEquals(2, cookies.size());
-        assertCookie(response, "AUTH_SESSION_ID", "", "/auth/realms/master/", 0, false, false, null, true);
+        assertCookie(response, "AUTH_SESSION_ID", "", "/auth/realms/master/", 0, false, false, null, false);
+        assertCookie(response, "AUTH_SESSION_ID_LEGACY", "", "/auth/realms/master/", 0, false, false, null, false);
+    }
+    
+    @Test
+    public void testCustomCookie() {
+        Response response = testing.server().runWithResponse(session -> {
+            NewCookie newCookie = new NewCookie.Builder("mycookie")
+                    .maxAge(1232)
+                    .value("myvalue")
+                    .path(session.getContext().getUri().getRequestUri().getRawPath())
+                    .build();
+            session.getContext().getHttpResponse().setCookieIfAbsent(newCookie);
+        });
+
+        Map<String, NewCookie> cookies = response.getCookies();
+        Assert.assertEquals(1, cookies.size());
+        assertCookie(response, "mycookie", "myvalue", "/auth/realms/master/testing/run-on-server", 1232, false, false, null, false);
     }
 
-    private void assertCookie(Response response, String name, String value, String path, int maxAge, boolean secure, boolean httpOnly, String sameSite, boolean hasLegacy) {
+    private void assertCookie(Response response, String name, String value, String path, int maxAge, boolean secure, boolean httpOnly, String sameSite, boolean verifyLegacy) {
         Map<String, NewCookie> cookies = response.getCookies();
         NewCookie cookie = cookies.get(name);
         Assert.assertNotNull(cookie);
@@ -128,16 +170,20 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         Assert.assertEquals(secure || "None".equals(sameSite), cookie.isSecure());
         Assert.assertEquals(httpOnly, cookie.isHttpOnly());
 
-        String setHeader = (String) response.getHeaders().get("Set-Cookie").stream().filter(v -> ((String) v).startsWith(name)).findFirst().get();
+        String setHeader = getSetHeader(response, name);
         if (sameSite == null) {
             Assert.assertFalse(setHeader.contains("SameSite"));
         } else {
-            Assert.assertTrue(setHeader.contains("SameSite=" + sameSite));
+            Assert.assertTrue("Expected SameSite=" + sameSite + ", header was: " + setHeader, setHeader.contains("SameSite=" + sameSite));
         }
 
-        if (hasLegacy) {
+        if (verifyLegacy) {
             assertCookie(response, name + "_LEGACY", value, path, maxAge, secure, httpOnly, null, false);
         }
+    }
+
+    private String getSetHeader(Response response, String name) {
+        return (String) response.getHeaders().get("Set-Cookie").stream().filter(v -> ((String) v).startsWith(name)).findFirst().get();
     }
 
     private KeycloakTestingClient createTestingClient(String serverUrl) {

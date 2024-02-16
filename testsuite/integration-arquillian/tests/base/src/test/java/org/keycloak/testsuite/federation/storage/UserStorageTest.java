@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -55,6 +56,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.userprofile.DefaultAttributes;
 import org.openqa.selenium.Cookie;
 
 import jakarta.mail.internet.MimeMessage;
@@ -69,6 +71,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,12 +81,14 @@ import java.util.stream.Stream;
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MINUTE;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
@@ -512,6 +517,40 @@ public class UserStorageTest extends AbstractAuthTest {
                     .peek(System.out::println).collect(Collectors.toList());
             Assert.assertEquals(1, userModels.size());
             Assert.assertEquals("thor", userModels.get(0).getUsername());
+        });
+    }
+
+    @Test
+    public void storeAndReadUserWithLongAttributeValue() {
+        testingClient.server().run(session -> {
+            String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            List<UserModel> userModels = session.users().searchForUserStream(realm, Map.of(UserModel.USERNAME, "thor"))
+                    .collect(Collectors.toList());
+            assertThat(userModels, hasSize(1));
+            assertThat(userModels.get(0).getAttributes().get("weapon").get(0), equalTo(longValue));
+        });
+    }
+
+    @Test
+    public void searchByLongAttributeValue() {
+        testingClient.server().run(session -> {
+            // random string with suffix that makes it case-sensitive
+            String longValue = RandomStringUtils.random(2999, true, true) + "v";
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername(realm, "thor");
+            userModel.setSingleAttribute("weapon", longValue);
+
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue).map(UserModel::getUsername).collect(Collectors.toList()), 
+                    containsInAnyOrder("thor"));
+
+            // searching here is always case sensitive
+            assertThat(session.users().searchForUserByUserAttributeStream(realm, "weapon", longValue.toUpperCase(Locale.ENGLISH)).map(UserModel::getUsername).collect(Collectors.toList()),
+                    empty());
+
         });
     }
 

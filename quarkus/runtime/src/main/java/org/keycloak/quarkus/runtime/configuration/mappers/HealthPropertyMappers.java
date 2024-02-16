@@ -14,8 +14,6 @@ final class HealthPropertyMappers {
                 fromOption(HealthOptions.HEALTH_ENABLED)
                         .to("quarkus.health.extensions.enabled")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .build(),
-                fromOption(HealthOptions.HEALTH_CLASSIC_PROBES_ENABLED)
                         .build()
         };
     }

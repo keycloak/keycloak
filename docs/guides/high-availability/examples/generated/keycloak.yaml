@@ -432,6 +432,7 @@ spec:
       - multi-site # <2>
   # tag::keycloak-ispn[]
   additionalOptions:
+    # end::keycloak-ispn[]
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
@@ -440,28 +441,21 @@ spec:
       value: json
     - name: metrics-enabled # <3>
       value: 'true'
+    - name: http-pool-max-threads # <4>
+      value: "66"
   http:
     tlsSecret: keycloak-tls-secret
   instances: 3
-  # tag::keycloak-ispn[]
   unsupported:
     podTemplate:
       # end::keycloak[]
-      # end::keycloak-ispn[]
       metadata:
         annotations:
           checksum/config: c73adcb155290b2da36c94852649862ca6c5ceab4be2f51bde509cd07276ca3d-34c125a6d541ad11d915b6d4f128a9281329070f67d06de917c9c3201e9326c1--01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
       # tag::keycloak[]
-      # tag::keycloak-ispn[]
       spec:
-        # end::keycloak-ispn[]
-
-        # tag::keycloak-ispn[]
         containers:
           - env:
-              # end::keycloak-ispn[]
-              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <4>
-                value: "66"
               # end::keycloak[]
               # We want to have an externally provided username and password, therefore, we override those two environment variables
               - name: KEYCLOAK_ADMIN
@@ -477,13 +471,10 @@ spec:
                     key: password
                     optional: false
                 # tag::keycloak[]
-              # tag::keycloak-ispn[]
               - name: JAVA_OPTS_APPEND # <5>
                 value: >
                   -Xms512m -Xmx1524m
-
                 # end::keycloak[]
-                # end::keycloak-ispn[]
             ports:
             # tag::keycloak[]
             resources:
@@ -502,12 +493,10 @@ spec:
             #   exec:
             #     command:
             #       - 'true'
-            # tag::keycloak-ispn[]
             volumeMounts:
               - name: keycloak-providers
                 mountPath: /opt/keycloak/providers
                 readOnly: true
-        # tag::keycloak-ispn[]
         volumes:
           - name: keycloak-providers
             configMap:

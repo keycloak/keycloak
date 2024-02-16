@@ -16,11 +16,13 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 
 === Quarkus executor pool
 
-{project_name} requests, as well as all probes, are handled by the Quarkus executor pool.
+{project_name} requests, as well as blocking probes, are handled by the Quarkus executor pool.
 
 The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-config#quarkus-core_quarkus.thread-pool.max-threads[`quarkus.thread-pool.max-threads`] and has a maximum size of at least 200 threads.
 Depending on the available CPU cores, it can grow even larger.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
+
+{project_name} allows configuring the maximum thread pool size by the `http-pool-max-threads` configuration option. See <@links.ha id="deploy-keycloak-kubernetes" /> for an example.
 
 When running on Kubernetes, adjust the number of worker threads to avoid creating more load than what the CPU limit allows for the Pod to avoid throttling, which would lead to congestion.
 When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
@@ -63,9 +65,11 @@ When this setting is active, requests that exceed the number of queued requests 
 [#probes]
 === Probes
 
-All health probes are handled in the Quarkus executor worker pool by default.
-Only the liveness probe is non-blocking.
-Future version of {project_name} and Quarkus plan to have other probes also being non-blocking.
+{project_name}'s liveness probe is non-blocking to avoid a restart of a Pod under a high load.
+
+// Developer's note: See KeycloakReadyHealthCheck for the details of the blocking/non-blocking behavior
+The overall health probe and the readiness can probe in some cases block to check the connection to the database, so they might fail under a high load.
+Due to this, a Pod can become non-ready under a high load.
 
 === OS Resources
 

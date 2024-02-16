@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.datastore;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.migration.MigrationModelManager;
@@ -35,11 +36,17 @@ import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
 import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
+import java.util.Arrays;
+import java.util.List;
 
 public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 
     private static final String PROVIDER_ID = "legacy";
+
+    private static final Logger logger = Logger.getLogger(DefaultDatastoreProviderFactory.class);
+
     private long clientStorageProviderTimeout;
     private long roleStorageProviderTimeout;
     private Runnable onClose;
@@ -94,18 +101,32 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         }
     }    
 
-    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
+    public void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
 
         try (KeycloakSession session = sessionFactory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
             if (timer != null) {
-                timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
-                timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredAdminEvents(), interval), interval, "ClearExpiredAdminEvents");
-                timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredClientInitialAccessTokens(), interval), interval, "ClearExpiredClientInitialAccessTokens");
-                timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions(), interval), interval, ClearExpiredUserSessions.TASK_NAME);
-                UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
+                scheduleTasks(sessionFactory, timer, interval);
             }
         }
     }
+
+    protected void scheduleTasks(KeycloakSessionFactory sessionFactory, TimerProvider timer, long interval) {
+        for (ScheduledTask task : getScheduledTasks()) {
+            scheduleTask(timer, sessionFactory, task, interval);
+        }
+
+        UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
+    }
+
+    protected List<ScheduledTask> getScheduledTasks() {
+        return Arrays.asList(new ClearExpiredEvents(), new ClearExpiredAdminEvents(), new ClearExpiredClientInitialAccessTokens(), new ClearExpiredUserSessions());
+    }
+
+    protected void scheduleTask(TimerProvider timer, KeycloakSessionFactory sessionFactory, ScheduledTask task, long interval) {
+        timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, task, interval), interval);
+        logger.debugf("Scheduled cluster task %s with interval %s ms", task.getTaskName(), interval);
+    }
+
 }

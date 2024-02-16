@@ -1,0 +1,13 @@
+cluster_identifier: "{{ lookup('env', 'USER') }}"
+cluster_name: "keycloak_{{ cluster_identifier }}"
+cluster_size: 1
+
+cidr_ip: "{{ control_host_ip.stdout }}/32"
+
+ami_name: RHEL-8.8.0_HVM-20230503-x86_64-54-Hourly2-GP2
+
+instance_type: t3.large
+instance_volume_size: 20
+instance_device: /dev/sda1
+
+no_log_sensitive: true

@@ -79,5 +79,6 @@
     <include file="META-INF/jpa-changelog-21.1.0.xml"/>
     <include file="META-INF/jpa-changelog-22.0.0.xml"/>
     <include file="META-INF/jpa-changelog-23.0.0.xml"/>
+    <include file="META-INF/jpa-changelog-24.0.0.xml"/>
 
 </databaseChangeLog>

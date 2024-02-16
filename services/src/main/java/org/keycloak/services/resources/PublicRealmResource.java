@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.Urls;
 
 import jakarta.ws.rs.GET;

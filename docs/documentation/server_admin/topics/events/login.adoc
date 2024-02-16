@@ -64,6 +64,19 @@ image:images/search-user-event.png[Search user event]
 
 |===
 
+*Brute force protection:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|User disabled by permanent lockout
+|Brute force protection disabled the user account permanently due to too many login failures.
+
+|User disabled by temporary lockout
+|Brute force protection disabled the user account temporarily due to too many login failures.
+
+|===
+
 *Account events:*
 
 [cols="2",options="header"]
@@ -103,6 +116,7 @@ image:images/search-user-event.png[Search user event]
 
 Each event has a corresponding error event.
 
+[[event-listener]]
 ==== Event listener
 
 Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.

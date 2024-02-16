@@ -19,12 +19,10 @@ package org.keycloak.services.scheduled;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventStoreProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 import org.keycloak.timer.ScheduledTask;
+
 public class ClearExpiredAdminEvents implements ScheduledTask {
 
     protected static final Logger logger = Logger.getLogger(ClearExpiredAdminEvents.class);
@@ -34,7 +32,7 @@ public class ClearExpiredAdminEvents implements ScheduledTask {
         long currentTimeMillis = Time.currentTimeMillis();
         session.invalidate(PeriodicEventInvalidation.JPA_EVENT_STORE);
         long took = Time.currentTimeMillis() - currentTimeMillis;
-        logger.debugf("ClearExpiredEvents finished in %d ms", took);
+        logger.debugf("%s finished in %d ms", getTaskName(), took);
     }
 
 }

@@ -34,9 +34,10 @@ import { useEnvironment } from "../root/KeycloakContext";
 type MobileLinkProps = {
   title: string;
   onClick: () => void;
+  testid?: string;
 };
 
-const MobileLink = ({ title, onClick }: MobileLinkProps) => {
+const MobileLink = ({ title, onClick, testid }: MobileLinkProps) => {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -56,6 +57,7 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
         variant="link"
         onClick={onClick}
         className="pf-u-display-none pf-u-display-inline-flex-on-lg"
+        data-testid={testid}
       >
         {title}
       </Button>
@@ -145,13 +147,18 @@ export const SigningIn = () => {
                     title={t("setUpNew", {
                       name: t(container.displayName as TFuncKey),
                     })}
+                    testid={`${container.category}/create`}
                   />
                 </div>
               </SplitItem>
             )}
           </Split>
 
-          <DataList aria-label="credential list" className="pf-u-mb-xl">
+          <DataList
+            aria-label="credential list"
+            className="pf-u-mb-xl"
+            data-testid={`${container.category}/credential-list`}
+          >
             {container.userCredentialMetadatas.length === 0 && (
               <EmptyRow
                 message={t("notSetUp", {

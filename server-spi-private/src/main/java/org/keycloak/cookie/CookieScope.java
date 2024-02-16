@@ -1,17 +1,17 @@
 package org.keycloak.cookie;
 
-import org.keycloak.common.util.ServerCookie;
+import jakarta.ws.rs.core.NewCookie;
 
 public enum CookieScope {
     // Internal cookies are only available for direct requests to Keycloak
-    INTERNAL(ServerCookie.SameSiteAttributeValue.STRICT, true),
+    INTERNAL(NewCookie.SameSite.STRICT, true),
 
     // Federation cookies are available after redirect from applications, and are also available in an iframe context
     // unless the browser blocks third-party cookies
-    FEDERATION(ServerCookie.SameSiteAttributeValue.NONE, true),
+    FEDERATION(NewCookie.SameSite.NONE, true),
 
     // Federation cookies that are also available from JavaScript
-    FEDERATION_JS(ServerCookie.SameSiteAttributeValue.NONE, false),
+    FEDERATION_JS(NewCookie.SameSite.NONE, false),
 
     // Legacy cookies do not set the SameSite attribute and will default to SameSite=Lax in modern browsers
     @Deprecated
@@ -21,15 +21,15 @@ public enum CookieScope {
     @Deprecated
     LEGACY_JS(null, false);
 
-    private final ServerCookie.SameSiteAttributeValue sameSite;
+    private final NewCookie.SameSite sameSite;
     private final boolean httpOnly;
 
-    CookieScope(ServerCookie.SameSiteAttributeValue sameSite, boolean httpOnly) {
+    CookieScope(NewCookie.SameSite sameSite, boolean httpOnly) {
         this.sameSite = sameSite;
         this.httpOnly = httpOnly;
     }
 
-    public ServerCookie.SameSiteAttributeValue getSameSite() {
+    public NewCookie.SameSite getSameSite() {
         return sameSite;
     }
 

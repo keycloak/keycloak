@@ -49,6 +49,9 @@ export const fieldName = (name?: string) =>
     "🍺",
   )}` as FieldPath<UserFormFields>;
 
+export const debeerify = <T extends string>(name: T) =>
+  name.replaceAll("🍺", ".");
+
 export function setUserProfileServerError<T>(
   error: UserProfileError,
   setError: (field: keyof T, params: object) => void,

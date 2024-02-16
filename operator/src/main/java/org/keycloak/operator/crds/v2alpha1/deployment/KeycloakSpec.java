@@ -17,6 +17,7 @@
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
@@ -94,6 +95,10 @@ public class KeycloakSpec {
     @JsonProperty("cache")
     @JsonPropertyDescription("In this section you can configure Keycloak's cache")
     private CacheSpec cacheSpec;
+
+    @JsonProperty("resources")
+    @JsonPropertyDescription("Compute Resources required by Keycloak container")
+    private ResourceRequirements resourceRequirements;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -211,6 +216,14 @@ public class KeycloakSpec {
 
     public void setCacheSpec(CacheSpec cache) {
         this.cacheSpec = cache;
+    }
+
+    public ResourceRequirements getResourceRequirements() {
+        return resourceRequirements;
+    }
+
+    public void setResourceRequirements(ResourceRequirements resourceRequirements) {
+        this.resourceRequirements = resourceRequirements;
     }
 
 }

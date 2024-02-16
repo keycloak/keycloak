@@ -118,6 +118,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected final boolean loadOfflineSessionsFromDatabase;
 
+    protected final SessionFunction offlineSessionCacheEntryLifespanAdjuster;
+
+    protected final SessionFunction offlineClientSessionCacheEntryLifespanAdjuster;
+
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
                                          CrossDCLastSessionRefreshStore lastSessionRefreshStore,
@@ -128,7 +132,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
-                                         boolean loadOfflineSessionsFromDatabase) {
+                                         boolean loadOfflineSessionsFromDatabase,
+                                         SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster,
+                                         SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster) {
         this.session = session;
 
         this.sessionCache = sessionCache;
@@ -137,9 +143,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.offlineClientSessionCache = offlineClientSessionCache;
 
         this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCache, remoteCacheInvoker, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
-        this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, remoteCacheInvoker, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+        this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, remoteCacheInvoker, offlineSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineSessionMaxIdleMs);
         this.clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, remoteCacheInvoker, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
-        this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, remoteCacheInvoker, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+        this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, remoteCacheInvoker, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
@@ -149,6 +155,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
         this.loadOfflineSessionsFromDatabase = loadOfflineSessionsFromDatabase;
+        this.offlineSessionCacheEntryLifespanAdjuster = offlineSessionCacheEntryLifespanAdjuster;
+        this.offlineClientSessionCacheEntryLifespanAdjuster = offlineClientSessionCacheEntryLifespanAdjuster;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
@@ -917,7 +925,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         boolean importWithExpiration = sessionsById.size() == 1;
         if (importWithExpiration) {
             importSessionsWithExpiration(sessionsById, cache,
-                    offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
+                    offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
                     offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
         } else {
             Retry.executeWithBackoff((int iteration) -> {
@@ -934,7 +942,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
             if (importWithExpiration) {
                 importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
-                        offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
+                        offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
                         offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
             } else {
                 Retry.executeWithBackoff((int iteration) -> {
@@ -961,7 +969,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,
-                    offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
+                    offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
                     offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
         } else {
             Retry.executeWithBackoff((int iteration) -> {
@@ -978,7 +986,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
             if (importWithExpiration) {
                 importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
-                        offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
+                        offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
                         offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
             } else {
                 Retry.executeWithBackoff((int iteration) -> {
@@ -1096,7 +1104,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         if (checkExpiration) {
             SessionFunction<AuthenticatedClientSessionEntity> lifespanChecker = offline
-                    ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
+                    ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs;
             SessionFunction<AuthenticatedClientSessionEntity> idleTimeoutChecker = offline
                     ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
             if (idleTimeoutChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG

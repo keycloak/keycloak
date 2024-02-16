@@ -5,7 +5,6 @@ import {
   ButtonVariant,
   Dropdown,
   DropdownItem,
-  DropdownToggle,
   InputGroup,
   KebabToggle,
   SearchInput,
@@ -19,6 +18,7 @@ import { useAccess } from "../../context/access/Access";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
 import { UserAttribute } from "./UserDataTable";
 import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
+import DropdownPanel from "../dropdown-panel/DropdownPanel";
 
 type UserDataTableToolbarItemsProps = {
   realm: RealmRepresentation;
@@ -119,21 +119,11 @@ export function UserDataTableToolbarItems({
   const attributeSearchInput = () => {
     return (
       <>
-        <Dropdown
-          id="user-attribute-search-select"
-          data-testid="UserAttributeSearchSelector"
-          toggle={
-            <DropdownToggle
-              data-testid="userAttributeSearchSelectorToggle"
-              onToggle={(isOpen) => {
-                setSearchDropdownOpen(isOpen);
-              }}
-              className="keycloak__user_attribute_search_selector_dropdown__toggle"
-            >
-              {t("selectAttributes")}
-            </DropdownToggle>
-          }
-          isOpen={searchDropdownOpen}
+        <DropdownPanel
+          buttonText={t("selectAttributes")}
+          setSearchDropdownOpen={setSearchDropdownOpen}
+          searchDropdownOpen={searchDropdownOpen}
+          width="15vw"
         >
           <UserDataTableAttributeSearchForm
             activeFilters={activeFilters}
@@ -142,7 +132,7 @@ export function UserDataTableToolbarItems({
             createAttributeSearchChips={createAttributeSearchChips}
             searchUserWithAttributes={searchUserWithAttributes}
           />
-        </Dropdown>
+        </DropdownPanel>
         <Button
           icon={<ArrowRightIcon />}
           variant="control"

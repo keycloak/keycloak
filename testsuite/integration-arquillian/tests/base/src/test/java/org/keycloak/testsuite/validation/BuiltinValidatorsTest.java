@@ -22,6 +22,7 @@ package org.keycloak.testsuite.validation;
 import static org.keycloak.validate.ValidatorConfig.configFromMap;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -500,10 +501,18 @@ public class BuiltinValidatorsTest extends AbstractKeycloakTest {
         Assert.assertTrue(validator.validate("http://localhost:3000/", "baseUrl").isValid());
         Assert.assertTrue(validator.validate("https://localhost:3000/", "baseUrl").isValid());
         Assert.assertTrue(validator.validate("https://localhost:3000/#someFragment", "baseUrl").isValid());
+        Assert.assertTrue(validator.validate(new URL("https://localhost:3000/#someFragment"), "baseUrl").isValid());
+
+        // Collections
+        Assert.assertTrue(validator.validate(Arrays.asList("https://localhost:3000/#someFragment", "https://localhost:3000"), "baseUrl").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList("https://localhost:3000/#someFragment"), "baseUrl").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList(new URL("https://localhost:3000/#someFragment")), "baseUrl").isValid());
+        Assert.assertTrue(validator.validate(Arrays.asList(""), "baseUrl").isValid());
 
         Assert.assertFalse(validator.validate(" ", "baseUrl").isValid());
         Assert.assertFalse(validator.validate("file:///somefile.txt", "baseUrl").isValid());
         Assert.assertFalse(validator.validate("invalidUrl++@23", "invalidUri").isValid());
+        Assert.assertFalse(validator.validate(Arrays.asList("https://localhost:3000/#someFragment", "file:///somefile.txt"), "baseUrl").isValid());
 
         ValidatorConfig config = configFromMap(ImmutableMap.of(UriValidator.KEY_ALLOW_FRAGMENT, false));
         Assert.assertFalse(validator.validate("https://localhost:3000/#someFragment", "baseUrl", config).isValid());

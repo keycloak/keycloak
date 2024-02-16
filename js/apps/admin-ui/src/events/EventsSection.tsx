@@ -11,8 +11,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -42,6 +40,7 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -221,10 +220,6 @@ export default function EventsSection() {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const userEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -232,20 +227,12 @@ export default function EventsSection() {
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Dropdown
-            id="user-events-search-select"
-            data-testid="UserEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="userEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForUserEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            buttonText={t("searchForUserEvent")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            marginRight="2.5rem"
+            width="15vw"
           >
             <Form
               data-testid="searchForm"
@@ -403,14 +390,7 @@ export default function EventsSection() {
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
+          </DropdownPanel>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (

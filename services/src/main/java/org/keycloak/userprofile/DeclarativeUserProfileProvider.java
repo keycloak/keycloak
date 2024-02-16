@@ -105,7 +105,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
 
-        if (user != null && user.getServiceAccountClientLink() != null) {
+        if (isServiceAccountUser(user)) {
             return new LegacyAttributes(context, attributes, user, metadata, session);
         }
         return new DefaultAttributes(context, attributes, user, metadata, session);
@@ -285,13 +285,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
             if (rc != null) {
                 if (rc.isAlways() || context.isRoleForContext(rc.getRoles())) {
-                    required = AttributeMetadata.ALWAYS_TRUE;
+                    // service accounts does not require common attributes
+                    required = c -> !isServiceAccountUser(c.getUser());
 
                     // If scopes are configured, we will use scope-based selector and require the attribute just if scope is
                     // in current authenticationSession (either default scope or by 'scope' parameter)
                     if (rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                         if (context.canBeAuthFlowContext()) {
-                            required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                            required = (c) -> !isServiceAccountUser(c.getUser()) && requestedScopePredicate(c, rc.getScopes());
                         } else {
                             // Scopes not available for admin and account contexts
                             required = AttributeMetadata.ALWAYS_FALSE;
@@ -300,7 +301,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 } else if (context.canBeAuthFlowContext() && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
-                    required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                    required = (c) -> !isServiceAccountUser(c.getUser()) && requestedScopePredicate(c, rc.getScopes());
                 }
             }
 
@@ -364,7 +365,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         public boolean test(AttributeContext context) {
                             UserModel user = context.getUser();
 
-                            if (user != null && user.getServiceAccountClientLink() != null) {
+                            if (isServiceAccountUser(user)) {
                                 return false;
                             }
 
@@ -439,6 +440,10 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     private Predicate<AttributeContext> createViewAllowedPredicate(Predicate<AttributeContext> canEdit,
             Set<String> viewRoles) {
         return ac -> ac.getContext().isRoleForContext(viewRoles) || canEdit.test(ac);
+    }
+
+    private boolean isServiceAccountUser(UserModel user) {
+        return user != null && user.getServiceAccountClientLink() != null;
     }
 
     /**

@@ -61,18 +61,22 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.keycloak.storage.jpa.JpaHashUtils;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 
@@ -668,7 +672,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Expression<Long> count = qb.count(from);
 
         userQuery = userQuery.select(count);
-        List<Predicate> restrictions = predicates(params, from);
+        List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
 
         userQuery = userQuery.where(restrictions.toArray(new Predicate[0]));
@@ -691,7 +695,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Root<UserEntity> root = countQuery.from(UserEntity.class);
         countQuery.select(cb.count(root));
 
-        List<Predicate> restrictions = predicates(params, root);
+        List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
         
         groupsWithPermissionsSubquery(countQuery, groupIds, root, restrictions);
@@ -735,7 +739,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        List<Predicate> predicates = predicates(attributes, root);
+        Map<String, String> customLongValueSearchAttributes = new HashMap<>();
+        List<Predicate> predicates = predicates(attributes, root, customLongValueSearchAttributes);
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
@@ -745,24 +750,35 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             groupsWithPermissionsSubquery(queryBuilder, userGroups, root, predicates);
         }
 
-        queryBuilder.where(predicates.toArray(new Predicate[0])).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
         UserProvider users = session.users();
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                // following check verifies that there are no collisions with hashes
+                .filter(predicateForFilteringUsersByAttributes(customLongValueSearchAttributes, JpaHashUtils::compareSourceValueLowerCase))
                 .map(userEntity -> users.getUserById(realm, userEntity.getId()))
                 .filter(Objects::nonNull);
     }
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class);
-        query.setParameter("name", attrName);
-        query.setParameter("value", attrValue);
-        query.setParameter("realmId", realm.getId());
+        boolean longAttribute = attrValue != null && attrValue.length() > 255;
+        TypedQuery<UserEntity> query = longAttribute ?
+                em.createNamedQuery("getRealmUsersByAttributeNameAndLongValue", UserEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(attrValue)):
+                em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("name", attrName)
+                        .setParameter("value", attrValue);
 
-        return closing(query.getResultStream().map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
+        return closing(query.getResultStream()
+                // following check verifies that there are no collisions with hashes
+                .filter(longAttribute ? predicateForFilteringUsersByAttributes(Map.of(attrName, attrValue), JpaHashUtils::compareSourceValue) : u -> true)
+                .map(userEntity -> new UserAdapter(session, realm, em, userEntity)));
     }
 
     private FederatedIdentityEntity findFederatedIdentity(UserModel user, String identityProvider, LockModeType lockMode) {
@@ -929,7 +945,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return em.contains(user) ? user : null;
     }
 
-    private List<Predicate> predicates(Map<String, String> attributes, Root<UserEntity> root) {
+    private List<Predicate> predicates(Map<String, String> attributes, Root<UserEntity> root, Map<String, String> customLongValueSearchAttributes) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
 
         List<Predicate> predicates = new ArrayList<>();
@@ -991,10 +1007,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 default:
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
 
-                    attributePredicates.add(builder.and(
-                            builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
-                            builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
-
+                    if (value.length() > 255) {
+                        customLongValueSearchAttributes.put(key, value);
+                        attributePredicates.add(builder.and(
+                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
+                    } else {
+                        attributePredicates.add(builder.and(
+                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
+                    }
                     break;
                 case UserModel.INCLUDE_SERVICE_ACCOUNT: {
                     if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)

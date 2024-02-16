@@ -46,10 +46,9 @@ public class TruststoreBuilderTest {
         assertTrue(storeWithDefaultsAliases.containsAll(storeWithoutDefaultsAliases));
 
         // saving / loading should provide the certs even without a password
-        char[] password = null;
-        File saved = TruststoreBuilder.saveTruststore(storeWithDefaults, "target", password);
+        File saved = TruststoreBuilder.saveTruststore(storeWithDefaults, "target", null);
 
-        KeyStore savedLoaded = TruststoreBuilder.loadStore(saved.getAbsolutePath(), TruststoreBuilder.PKCS12, password);
+        KeyStore savedLoaded = TruststoreBuilder.loadStore(saved.getAbsolutePath(), TruststoreBuilder.PKCS12, null);
         assertEquals(certs, Collections.list(savedLoaded.aliases()).size());
     }
 

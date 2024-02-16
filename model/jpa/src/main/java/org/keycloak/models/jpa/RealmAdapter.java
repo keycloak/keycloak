@@ -589,6 +589,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         getAttributes().entrySet().stream()
                 .filter(Objects::nonNull)
                 .filter(entry -> nonNull(entry.getValue()))
+                .filter(entry -> !entry.getValue().isEmpty())
                 .filter(entry -> entry.getKey().startsWith(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "."))
                 .forEach(entry -> userActionTokens.put(entry.getKey().substring(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN.length() + 1), Integer.valueOf(entry.getValue())));
 

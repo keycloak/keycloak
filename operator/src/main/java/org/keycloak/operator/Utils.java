@@ -17,12 +17,14 @@
 
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-
+import io.quarkus.logging.Log;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -75,6 +78,37 @@ public final class Utils {
                 .eventSourceRetriever().getResourceEventSourceFor(clazz);
     
         return ies.get(new ResourceID(nameFunction.apply(primary), primary.getMetadata().getNamespace()));
+    }
+
+    /**
+     * Set resources requests/limits for Keycloak container
+     * </p>
+     * If not specified in the Keycloak CR, set default values from operator config
+     */
+    public static void addResources(ResourceRequirements resource, Config config, Container kcContainer) {
+        final ResourceRequirements resourcesSpec = Optional.ofNullable(resource).orElseGet(ResourceRequirements::new);
+
+        // sets the min boundary when the spec is not present
+        final var requests = Optional.ofNullable(resourcesSpec.getRequests()).orElseGet(HashMap::new);
+
+        final var requestsMemory = requests.get("memory");
+        final var defaultRequestsMemory = config.keycloak().resources().requests().memory();
+
+        // Validate 'requests' memory
+        if (requestsMemory != null) {
+            var specifiedMemoryIsLessThanDefault = requestsMemory.getNumericalAmount().intValue() < defaultRequestsMemory.getNumericalAmount().intValue();
+            if (specifiedMemoryIsLessThanDefault) {
+                Log.debugf("Provided 'requests' memory ('%s') is less than used default value ('%s'). Use it in your risk, as Keycloak performance might be degraded.", requestsMemory, defaultRequestsMemory);
+            }
+        } else {
+            requests.put("memory", defaultRequestsMemory);
+        }
+
+        // sets the max boundary when the spec is not present
+        final var limits = Optional.ofNullable(resourcesSpec.getLimits()).orElseGet(HashMap::new);
+        limits.putIfAbsent("memory", config.keycloak().resources().limits().memory());
+
+        kcContainer.setResources(resourcesSpec);
     }
 
 }

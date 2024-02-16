@@ -59,6 +59,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -714,6 +715,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(realm.getAttributes().keySet());
             attrsToRemove.removeAll(rep.getAttributes().keySet());
+            attrsToRemove.removeAll(ModelToRepresentation.REALM_EXCLUDED_ATTRIBUTES);
 
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 realm.setAttribute(entry.getKey(), entry.getValue());
@@ -813,11 +815,15 @@ public class DefaultExportImportManager implements ExportImportManager {
             realm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
-        WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyTwoFactor(rep);
-        realm.setWebAuthnPolicy(webAuthnPolicy);
+        if (rep.getWebAuthnPolicyRpEntityName() != null && !rep.getWebAuthnPolicyRpEntityName().isEmpty()) {
+            WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyTwoFactor(rep);
+            realm.setWebAuthnPolicy(webAuthnPolicy);
+        }
 
-        webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
-        realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+        if (rep.getWebAuthnPolicyPasswordlessRpEntityName() != null && !rep.getWebAuthnPolicyPasswordlessRpEntityName().isEmpty()) {
+            WebAuthnPolicy webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
+            realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+        }
 
         updateCibaSettings(rep, realm);
         updateParSettings(rep, realm);

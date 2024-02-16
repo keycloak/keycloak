@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Encode;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
@@ -69,7 +70,7 @@ public class AuthenticationStateCookie {
         cookie.setRemainingTabs(rootAuthSession.getAuthenticationSessions().keySet());
 
         try {
-            String encoded = JsonSerialization.writeValueAsString(cookie);
+            String encoded = Encode.urlEncode(JsonSerialization.writeValueAsString(cookie));
             session.getProvider(CookieProvider.class).set(CookieType.AUTH_STATE, encoded, cookieMaxAge);
         } catch (IOException ioe) {
             throw new IllegalStateException("Exception thrown when encoding cookie", ioe);

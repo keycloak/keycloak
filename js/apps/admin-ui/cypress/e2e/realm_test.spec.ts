@@ -81,6 +81,8 @@ describe("Realm tests", () => {
   });
 
   it("Should delete Test Disabled realm", () => {
+    cy.reload();
+    sidebarPage.waitForPageLoad();
     sidebarPage.goToRealm(testDisabledName).goToRealmSettings();
     realmSettings.clickActionMenu();
     cy.findByText("Delete").click();

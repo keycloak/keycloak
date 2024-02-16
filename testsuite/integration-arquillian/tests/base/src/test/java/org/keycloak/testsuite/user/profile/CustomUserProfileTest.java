@@ -25,7 +25,6 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
@@ -54,7 +53,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
         UserProfileProvider provider = getUserProfileProvider(session);
         assertEquals(CustomUserProfileProvider.class.getName(), provider.getClass().getName());
         assertTrue(provider instanceof  CustomUserProfileProvider);
-        provider.setConfiguration(UPConfigUtils.parseDefaultConfig());
+        provider.setConfiguration(UPConfigUtils.parseSystemDefaultConfig());
         Optional<ComponentModel> component = getComponentModel(session);
         assertTrue(component.isPresent());
         assertEquals("custom-user-profile", component.get().getProviderId());

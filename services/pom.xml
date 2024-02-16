@@ -263,6 +263,26 @@
                                     </resources>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-raw-openapi-definition</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
+                                            <includes>
+                                                <include>**/openapi.yaml</include>
+                                                <include>**/openapi.json</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                     <plugin>
@@ -348,31 +368,6 @@
                                         <project_community>true</project_community>
                                         <project_product>false</project_product>
                                     </attributes>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-raw-openapi-definition</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
-                                            <includes>
-                                                <include>**/openapi.yaml</include>
-                                                <include>**/openapi.json</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>

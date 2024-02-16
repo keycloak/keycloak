@@ -23,10 +23,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 public class MigrateTo24_0_0 implements Migration {
@@ -55,6 +58,8 @@ public class MigrateTo24_0_0 implements Migration {
         try {
             context.setRealm(realm);
             updateUserProfileSettings(session);
+            updateLdapProviderConfig(session);
+            createHS512ComponentModelKey(session);
         } finally {
             context.setRealm(null);
         }
@@ -81,5 +86,21 @@ public class MigrateTo24_0_0 implements Migration {
         provider.setConfiguration(upConfig);
 
         LOG.debugf("Enabled the declarative user profile to realm %s with support for unmanaged attributes", realm.getName());
+    }
+
+    private void updateLdapProviderConfig(final KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        // ensure `ldapsOnly` value for `useTruststoreSpi` in LDAP providers is migrated to `always`.
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(c -> LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY.equals(c.getConfig().getFirst(LDAPConstants.USE_TRUSTSTORE_SPI)))
+                .forEach(c -> {
+                    c.getConfig().putSingle(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
+                    realm.updateComponent(c);
+                });
+    }
+
+    private void createHS512ComponentModelKey(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        DefaultKeyProviders.createSecretProvider(realm);
     }
 }

@@ -169,4 +169,39 @@ spec:
     strictBackchannel: false
 ----
 
+=== Resource requirements
+
+The Keycloak CR allows specifying the `resources` options for managing compute resources for the {project_name} container.
+It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+These values were chosen based on a deeper analysis of {project_name} memory management.
+
+If no values are specified in the Realm Import CR, it falls back to the values specified in the Keycloak CR, or to the defaults as defined above.
+
+You can specify your custom values based on your requirements as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  resources:
+    requests:
+      cpu: 1200m
+      memory: 896Mi
+    limits:
+      cpu: 6
+      memory: 3Gi
+----
+
+Moreover, the {project_name} container manages the heap size more effectively by providing relative values for the heap size.
+It is achieved by providing certain JVM options.
+
+For more details, check the
+https://www.keycloak.org/server/containers[Running Keycloak in a container].
+
 </@tmpl.guide>

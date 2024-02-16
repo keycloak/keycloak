@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.7.0.CR1</quarkus.version>
-        <quarkus.build.version>3.7.0.CR1</quarkus.build.version>
+        <quarkus.version>3.7.3</quarkus.version>
+        <quarkus.build.version>3.7.3</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -97,7 +97,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.21.Final</infinispan.version>
+        <infinispan.version>14.0.24.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -112,7 +112,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.4.Final</resteasy.version>
+        <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -125,7 +125,7 @@
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.2.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.2.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -147,30 +147,31 @@
         <freemarker.version>2.3.32</freemarker.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
-        <liquibase.version>4.23.2</liquibase.version>
-        <osgi.version>4.2.0</osgi.version>
-        <pax.web.version>7.1.0</pax.web.version>
+        <liquibase.version>4.25.1</liquibase.version>
+        <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
+        <osgi.version>6.0.0</osgi.version>
+        <osgi.enterprise.version>5.0.0</osgi.enterprise.version>
+        <pax.web.version>7.4.6</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
-        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
+        <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
-        <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.1</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
-        <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.3.2</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>12.2.0.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>12.4.2.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
+        <oracle-jdbc.version>23.3.0.23.09</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
-        <hamcrest.version>2.2</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -179,10 +180,8 @@
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
-        <awaitility.version>4.1.1</awaitility.version>
         <assertj-core.version>3.22.0</assertj-core.version>
-        <testcontainers.version>1.17.5</testcontainers.version>
-
+        
         <!-- Maven Plugins -->
         <maven.version>3.9.6</maven.version>
         <maven.plugins.version>3.11.0</maven.plugins.version>
@@ -496,6 +495,11 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-core-spi</artifactId>
+                <version>${resteasy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-multipart-provider</artifactId>
                 <version>${resteasy.version}</version>
             </dependency>
@@ -574,12 +578,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest</artifactId>
-                <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -738,7 +736,7 @@
             </dependency>
             <!-- Needed for picketlink perf test -->
             <dependency>
-                <groupId>mysql</groupId>
+                <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
@@ -898,6 +896,11 @@
                 <version>${elytron.undertow-server.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-oidc</artifactId>
+                <version>${wildfly-elytron.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
                 <version>${liquibase.version}</version>
@@ -914,13 +917,13 @@
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
+                <artifactId>osgi.core</artifactId>
                 <version>${osgi.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.enterprise</artifactId>
-                <version>${osgi.version}</version>
+                <version>${osgi.enterprise.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ops4j.pax.web</groupId>

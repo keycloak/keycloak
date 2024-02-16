@@ -74,6 +74,13 @@ body:
       description: What version of Keycloak are you running?
     validations:
       required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression
+      description: Was the issue introduced only after upgrading Keycloak, and it worked as expected in the past?
+      options:
+        - label: The issue is a regressions
   - type: textarea
     id: behaviorExpected
     attributes:

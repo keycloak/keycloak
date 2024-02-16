@@ -6,8 +6,6 @@ import {
   Chip,
   ChipGroup,
   DatePicker,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
@@ -37,6 +35,7 @@ import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -188,10 +187,6 @@ export const AdminEvents = () => {
     setKey(key + 1);
   }
 
-  function refresh() {
-    commitFilters();
-  }
-
   const adminEventSearchFormDisplay = () => {
     return (
       <Flex
@@ -199,20 +194,12 @@ export const AdminEvents = () => {
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Dropdown
-            id="admin-events-search-select"
-            data-testid="AdminEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="adminEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForAdminEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
+          <DropdownPanel
+            buttonText={t("searchForAdminEvent")}
+            setSearchDropdownOpen={setSearchDropdownOpen}
+            searchDropdownOpen={searchDropdownOpen}
+            marginRight="2.5rem"
+            width="15vw"
           >
             <Form
               isHorizontal
@@ -450,14 +437,7 @@ export const AdminEvents = () => {
                 </Button>
               </ActionGroup>
             </Form>
-          </Dropdown>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
+          </DropdownPanel>
         </FlexItem>
         <FlexItem>
           {Object.entries(activeFilters).length > 0 && (

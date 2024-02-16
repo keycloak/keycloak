@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.PodResourceClaim;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -49,6 +50,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -64,10 +67,14 @@ import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
 
+import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+
+    private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
+    private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
     public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
@@ -86,8 +93,15 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     @Inject
     KeycloakDistConfigurator distConfigurator;
 
+    private boolean useServiceCaCrt;
+
     public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
+        useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
+    }
+
+    public void setUseServiceCaCrt(boolean useServiceCaCrt) {
+        this.useServiceCaCrt = useServiceCaCrt;
     }
 
     @Override
@@ -100,6 +114,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         addTruststores(primary, baseDeployment, kcContainer, allSecrets);
         addEnvVars(baseDeployment, primary, allSecrets);
+        addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
                 .ifPresent(c -> configureCache(primary, baseDeployment, kcContainer, c, context.getClient()));
 
@@ -344,8 +359,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
+        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
+
+        if (useServiceCaCrt) {
+            truststores += "," + SERVICE_CA_CRT;
+        }
+
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").build());
+        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);

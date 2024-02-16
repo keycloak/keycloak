@@ -35,6 +35,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.timer.TimerProvider.TimerTaskContext;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -66,7 +67,7 @@ public class UserStorageSyncManager {
                     providers.forEachOrdered(provider -> {
                         UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
                         if (factory instanceof ImportSynchronization && provider.isImportEnabled()) {
-                            refreshPeriodicSyncForProvider(sessionFactory, timer, provider, realm.getId());
+                            refreshPeriodicSyncForProvider(sessionFactory, timer, provider, realm);
                         }
                     });
                 });
@@ -198,56 +199,81 @@ public class UserStorageSyncManager {
 
 
     // Executed once it receives notification that some UserFederationProvider was created or updated
-    protected static void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserStorageProviderModel provider, final String realmId) {
-        logger.debugf("Going to refresh periodic sync for provider '%s' . Full sync period: %d , changed users sync period: %d",
-                provider.getName(), provider.getFullSyncPeriod(), provider.getChangedSyncPeriod());
+    protected static void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserStorageProviderModel provider, final RealmModel realm) {
+        logger.debugf("Going to refresh periodic sync settings for provider '%s' in realm '%s' with realmId '%s'. Full sync period: %d , changed users sync period: %d",
+                provider.getName(), realm.getName(), realm.getId(), provider.getFullSyncPeriod(), provider.getChangedSyncPeriod());
 
+        String fullSyncTaskName = createSyncTaskName(provider, UserStorageSyncTask.SyncMode.FULL);
         if (provider.getFullSyncPeriod() > 0) {
-            // We want periodic full sync for this provider
-            timer.schedule(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        boolean shouldPerformSync = shouldPerformNewPeriodicSync(provider.getLastSync(), provider.getChangedSyncPeriod());
-                        if (shouldPerformSync) {
-                            syncAllUsers(sessionFactory, realmId, provider);
-                        } else {
-                            logger.debugf("Ignored periodic full sync with storage provider %s due small time since last sync", provider.getName());
-                        }
-                    } catch (Throwable t) {
-                        logger.error("Error occurred during full sync of users", t);
-                    }
-                }
-
-            }, provider.getFullSyncPeriod() * 1000, provider.getId() + "-FULL");
+            // schedule periodic full sync for this provider
+            UserStorageSyncTask task = new UserStorageSyncTask(provider, realm, sessionFactory, UserStorageSyncTask.SyncMode.FULL);
+            timer.schedule(task, provider.getFullSyncPeriod() * 1000, fullSyncTaskName);
         } else {
-            timer.cancelTask(provider.getId() + "-FULL");
+            // cancel potentially dangling task
+            timer.cancelTask(fullSyncTaskName);
         }
 
+        String changedSyncTaskName = createSyncTaskName(provider, UserStorageSyncTask.SyncMode.CHANGED);
         if (provider.getChangedSyncPeriod() > 0) {
-            // We want periodic sync of just changed users for this provider
-            timer.schedule(new Runnable() {
+            // schedule periodic changed user sync for this provider
+            UserStorageSyncTask task = new UserStorageSyncTask(provider, realm, sessionFactory, UserStorageSyncTask.SyncMode.CHANGED);
+            timer.schedule(task, provider.getChangedSyncPeriod() * 1000, changedSyncTaskName);
+        } else {
+            // cancel potentially dangling task
+            timer.cancelTask(changedSyncTaskName);
+        }
+    }
 
-                @Override
-                public void run() {
-                    try {
-                        boolean shouldPerformSync = shouldPerformNewPeriodicSync(provider.getLastSync(), provider.getChangedSyncPeriod());
-                        if (shouldPerformSync) {
-                            syncChangedUsers(sessionFactory, realmId, provider);
-                        } else {
-                            logger.debugf("Ignored periodic changed-users sync with storage provider %s due small time since last sync", provider.getName());
-                        }
-                    } catch (Throwable t) {
-                        logger.error("Error occurred during sync of changed users", t);
-                    }
+    public static class UserStorageSyncTask implements Runnable {
+
+        private final UserStorageProviderModel provider;
+
+        private final RealmModel realm;
+
+        private final KeycloakSessionFactory sessionFactory;
+
+        private final SyncMode syncMode;
+
+        public static enum SyncMode {
+            FULL, CHANGED
+        }
+
+        public UserStorageSyncTask(UserStorageProviderModel provider, RealmModel realm, KeycloakSessionFactory sessionFactory, SyncMode syncMode) {
+            this.provider = provider;
+            this.realm = realm;
+            this.sessionFactory = sessionFactory;
+            this.syncMode = syncMode;
+        }
+
+        @Override
+        public void run() {
+
+            try {
+                boolean shouldPerformSync = shouldPerformNewPeriodicSync(provider.getLastSync(), provider.getChangedSyncPeriod());
+
+                if (!shouldPerformSync) {
+                    logger.debugf("Ignored periodic %s users-sync with storage provider %s due small time since last sync in realm %s", //
+                            syncMode, provider.getName(), realm.getName());
+                    return;
                 }
 
-            }, provider.getChangedSyncPeriod() * 1000, provider.getId() + "-CHANGED");
-
-        } else {
-            timer.cancelTask(provider.getId() + "-CHANGED");
+                switch (syncMode) {
+                    case FULL:
+                        syncAllUsers(sessionFactory, realm.getId(), provider);
+                        break;
+                    case CHANGED:
+                        syncChangedUsers(sessionFactory, realm.getId(), provider);
+                        break;
+                }
+            } catch (Throwable t) {
+                logger.errorf(t,"Error occurred during %s users-sync in realm %s", //
+                        syncMode, realm.getName());
+            }
         }
+    }
+
+    public static String createSyncTaskName(UserStorageProviderModel model, UserStorageSyncTask.SyncMode syncMode) {
+        return UserStorageSyncTask.class.getSimpleName() + "-" + model.getId() + "-" + syncMode;
     }
 
     // Skip syncing if there is short time since last sync time.
@@ -264,9 +290,17 @@ public class UserStorageSyncManager {
 
     // Executed once it receives notification that some UserFederationProvider was removed
     protected static void removePeriodicSyncForProvider(TimerProvider timer, UserStorageProviderModel fedProvider) {
-        logger.debugf("Removing periodic sync for provider %s", fedProvider.getName());
-        timer.cancelTask(fedProvider.getId() + "-FULL");
-        timer.cancelTask(fedProvider.getId() + "-CHANGED");
+        cancelPeriodicSyncForProviderIfPresent(timer, fedProvider, UserStorageSyncTask.SyncMode.FULL);
+        cancelPeriodicSyncForProviderIfPresent(timer, fedProvider, UserStorageSyncTask.SyncMode.CHANGED);
+    }
+
+    protected static void cancelPeriodicSyncForProviderIfPresent(TimerProvider timer, UserStorageProviderModel providerModel, UserStorageSyncTask.SyncMode syncMode) {
+        String taskName = createSyncTaskName(providerModel, syncMode);
+        TimerTaskContext existingTask = timer.cancelTask(taskName);
+        if (existingTask != null) {
+            logger.debugf("Cancelled periodic sync task with task-name '%s' for provider with id '%s' and name '%s'",
+                    taskName, providerModel.getId(), providerModel.getName());
+        }
     }
 
     // Update interval of last sync for given UserFederationProviderModel. Do it in separate transaction
@@ -310,7 +344,8 @@ public class UserStorageSyncManager {
                     if (fedEvent.isRemoved()) {
                         removePeriodicSyncForProvider(timer, fedEvent.getStorageProvider());
                     } else {
-                        refreshPeriodicSyncForProvider(sessionFactory, timer, fedEvent.getStorageProvider(), fedEvent.getRealmId());
+                        RealmModel realm = session.realms().getRealm(fedEvent.getRealmId());
+                        refreshPeriodicSyncForProvider(sessionFactory, timer, fedEvent.getStorageProvider(), realm);
                     }
                 }
 

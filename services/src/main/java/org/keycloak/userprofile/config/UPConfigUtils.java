@@ -19,9 +19,11 @@ package org.keycloak.userprofile.config;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -293,19 +295,39 @@ public class UPConfigUtils {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    public static String readDefaultConfig() {
-        try (InputStream is = UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
+    public static String readSystemDefaultConfig() {
+        try (InputStream is = getSystemDefaultConfig()) {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
         }
     }
 
-    public static UPConfig parseDefaultConfig() {
-        try {
-            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse default user profile configuration", e);
+    public static UPConfig parseSystemDefaultConfig() {
+        return parseConfig(getSystemDefaultConfig());
+    }
+
+    public static UPConfig parseConfig(Path configPath) {
+        if (configPath == null) {
+            throw new IllegalArgumentException("Null configPath");
         }
+
+        try (InputStream is = new FileInputStream(configPath.toFile())) {
+            return parseConfig(is);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+        }
+    }
+
+    private static UPConfig parseConfig(InputStream is) {
+        try {
+            return JsonSerialization.readValue(is, UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration stream", e);
+        }
+    }
+
+    private static InputStream getSystemDefaultConfig() {
+        return UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE);
     }
 }

@@ -1,3 +1,69 @@
+= Supported user profile and progressive profiling
+
+The user profile preview feature is promoted to be fully supported and user profile is enabled by default!
+
+In the past months, Keycloak team spent a huge amount of effort in polishing the user
+profile feature to make it fully supported. In this release, we continued the effort. Lots of improvements, fixes and
+polishing were done based on the thorough testing and feedback from our awesome community.
+
+Few highlights of the user profile feature:
+* Fine-grained control over the attributes that users and administrators can manage so that you can prevent unexpected attributes, and values, from being set. 
+* Ability to specify what user attributes are managed and should be displayed on the forms to regular users or administrators
+
+* Dynamic forms - Previously, the forms where users created or updated their profiles, contain four basic attributes like username, email, first name and last name. Any additional
+attributes (or removing some of the default attributes) required to create custom theme. Now custom themes may no longer be needed because users see exactly the requested attributes based on the requirement
+of the particular deployment
+
+* Validations - Ability to specify validators for the user attributes including built-in validators that you can use to specify a maximum or minimum length, a specific regex, or limiting a  
+particular attribute to be a URL or number.
+
+* Annotations - Ability to specify that particular attribute should be rendered for instance as text area or HTML select with specified options or calendar and lots of other options. You can also bind JavaScript code to a specific field to change how an attribute is rendered and customize its behavior.
+
+* Progressive profiling - Ability to specify that some fields are required or available on the forms just for particular values of `scope` parameter. This effectively allow progressive
+profiling. You no longer need to ask the user for twenty attributes during registration; you can instead ask the user to fill in attributes incrementally according to the requirements of the individual client
+applications that are used by the user.
+
+* Migration from previous versions - User profile is now always enabled, but it operates as before for those who did not use this feature previously. You can
+benefit from the user profile capabilities, but you are not strictly forced to use them. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
+
+This first release of the user profile as a supported feature is just the starting point and the baseline for delivering many more capabilities around identity management.
+
+We would like to huge Thanks to awesome Keycloak community as lots of ideas, requirements and contributions came from the community! Special thanks to:
+
+* https://github.com/velias[Vlastimil Eliáš]
+* https://github.com/alechenninger[Alec Henninger]
+* https://github.com/thomasdarimont[Thomas Darimont]
+* https://github.com/bs-matil[Markus Till]
+* https://github.com/sschu[Sebastian Schuster]
+* https://github.com/antikalk[Oliver]
+* https://github.com/patrickjennings[Patrick Jennings]
+* https://github.com/adrhine[Andrew]
+
+For more details about user profile capabilities, check link:{adminguide_link}#user-profile[{adminguide_name}].
+
+== Breaking changes to the User Profile SPI
+
+In this release, changes to the User Profile SPI might impact existing implementations based on this SPI. For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+== Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+== The update profile page when logging in for the first time through a broker now has its own Freemarker templates
+
+In this release, the server renders the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Java adapter deprecation and removal
 
 Back in 2022 we announced the https://www.keycloak.org/2022/02/adapter-deprecation.html[deprecation of Keycloak adapters in Keycloak 19].
@@ -36,6 +102,46 @@ The Keycloak JS adapter now uses the https://webpack.js.org/guides/package-expor
 == PKCE enabled by default
 
 The Keycloak JS adapter now sets the `pkceMethod` option to `S256` by default. This enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you are using the adapter on a system that doesn't support PKCE, you can set the `pkceMethod` option to `false` to disable it.
+
+= OAuth/OIDC related improvements
+
+== Lightweight access tokens support
+
+This release contains support for Lightweight access tokens. As a result, you can have smaller access tokens for specified clients. These tokens have only a few 
+claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
+
+This release introduces an *Add to lightweight access token*  flag that is available on some OIDC protocol mappers. Use this flag to specify if a particular claim should be added to a lightweight
+access token. It is *OFF* by default, which means that most claims are not added. Also, a client policy executor exists. Use it to specify if a particular client request
+should use lightweight access tokens or regular access tokens. A previous release added an *Add to token introspection* switch. You use it to add
+claims that are not present in the access token into the introspection endpoint response. Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
+
+== Scope parameter supported in the refresh token flow
+
+Starting with this release, we support  the`scope` parameter in the OAuth2/OIDC endpoint for token refresh. You can use this parameter to request access tokens with a smaller amount
+of scopes than originally granted, which means you cannot increase access token scope. This scope limitation does not affect the scope of the refreshed refresh token. This function works as
+described in the OAuth2 specification. Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
+
+== Client policy executor for enforcing DPoP
+
+A new client policy executor `dpop-bind-enforcer` is introduced. You can use it to enforce DPoP for a particular client if `dpop` preview
+ is enabled. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+
+== Supporting EdDSA
+
+You can create EdDSA realm keys and use them as signature algorithms for various clients. For instance, you can use these keys to sign tokens or for client authentication with signed JWT.
+This feature includes identity brokering where {project_name} itself signs client assertions that are used for `private_key_jwt` authentication to third party identity providers. Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
+
+== Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
+
+OIDC identity providers now have the option *Add X.509 Headers to the JWT* for the case when client authentication with JWT signed by private key is used. This option can be useful
+for interoperability with some identity providers such as Azure AD, which require the thumbprint to be present on the JWT. Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+
+= Cors improvements
+
+The CORS related Keycloak functionality was extracted into the SPI, which can allow additional flexibility. Note that `CorsSPI` is internal and may change in the
+future. Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
 
 = Truststore Improvements
 
@@ -98,11 +204,6 @@ It is now possible to separately enable parsing of either `Forwarded` or `X-Forw
 For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
 The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
 
-= Breaking changes to the User Profile SPI
-
-In this release, there are changes to the User Profile SPI that might impact existing implementations based on this SPI. For more details, check the
-link:{upgradingguide_link}[{upgradingguide_name}].
-
 = Changes to the user representation in both Admin API and Account contexts
 
 In this release, we are encapsulating the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) by moving them to a base/abstract class in order to align how these attributes
@@ -110,24 +211,6 @@ are marshalled and unmarshalled when using both Admin and Account REST APIs.
 
 This strategy provides consistency in how attributes are managed by clients and makes sure they conform to the user profile
 configuration set to a realm.
-
-For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
-
-= Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
-
-In this release, the following templates were updated to make it possible to dynamically render attributes based
-on the user profile configuration set to a realm:
-
-* `login-update-profile.ftl`
-* `register.ftl`
-* `update-email.ftl`
-
-For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
-
-= The update profile page when logging in for the first time through a broker now have its own Freemarker templates
-
-In this release, the server will render the update profile page when the user is authenticating through a broker for the
-first time using the `idp-review-user-profile.ftl` template.
 
 For more details, see link:{upgradingguide_link}[{upgradingguide_name}].
 
@@ -160,9 +243,23 @@ The old behavior to preload them at startup is now deprecated, as pre-loading th
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
 
+= Configuration option for offline session lifespan override in memory
+
+To reduce memory requirements, we introduced a configuration option to shorten lifespan for offline sessions imported into the Infinispan caches. Currently, the offline session lifespan override is disabled by default.
+
+For more details, check the
+link:{adminguide_link}#_offline-access[{adminguide_name}].
+
 = Infinispan metrics use labels for cache manager and cache names
 
 When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
+= User attribute value length extension
+
+As of this release, {project_name} supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
 
 For more details, check the
 link:{upgradingguide_link}[{upgradingguide_name}].
@@ -175,6 +272,7 @@ In previous versions of Keycloak when the last member of a User, Group or Client
 
 The Keycloak CR now allows for specifying the `cache-config-file` option via the `cache` spec `configMapFile` field, for example:
 
+[source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
@@ -188,7 +286,69 @@ spec:
       key: config.xml
 ----
 
+= Keycloak CR resources options
+
+The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
+It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+
+You can specify your custom values based on your requirements as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  resources:
+    requests:
+      cpu: 1200m
+      memory: 896Mi
+    limits:
+      cpu: 6
+      memory: 3Gi
+----
+
+For more details, check the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+= Temporary lockout log replaced with event
+
+There is now a new event `USER_DISABLED_BY_TEMPORARY_LOCKOUT` when a user is temporarily locked out by the brute force protector.
+The log with ID `KC-SERVICES0053` has been removed as the new event offers the information in a structured form.
+
+For more details, check the
+link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Updates to cookies
 
 Cookie handling code has been refactored and improved, including a new Cookie Provider. This provides better consistency
 for cookies handled by Keycloak, and the ability to introduce configuration options around cookies if needed.
+
+= SAML User Attribute Mapper For NameID now suggests only valid NameID formats
+
+User Attribute Mapper For NameID allowed setting `Name ID Format` option to the following values:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:entity`
+
+However, Keycloak does not support receiving `AuthnRequest` document with one of these `NameIDPolicy`, therefore these
+mappers would never be used. The supported options were updated to only include the following Name ID Formats:
+
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`
+- `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
+
+= Different JVM memory settings when running in container
+
+Instead of specifying hardcoded values for the initial and maximum heap size, Keycloak uses relative values to the total memory of a container.
+The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, and `-XX:MaxRAMPercentage`.
+
+For more details, check the
+https://www.keycloak.org/server/containers[Running Keycloak in a container].

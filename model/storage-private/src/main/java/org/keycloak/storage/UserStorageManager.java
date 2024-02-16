@@ -39,6 +39,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
@@ -789,7 +790,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
+        UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
 
     }
 
@@ -813,8 +814,19 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
         ComponentFactory factory = ComponentUtil.getComponentFactory(session, model);
         if (!(factory instanceof UserStorageProviderFactory)) return;
-        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
 
+        // enlistAfterCompletion(..) as we need to ensure that the realm is available in the system
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                // NOOP
+            }
+        });
     }
 
     @Override
@@ -825,7 +837,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
         if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
                 || old.isImportEnabled() != newP.isImportEnabled()) {
-            new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
+            UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
         }
 
     }

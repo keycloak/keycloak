@@ -737,19 +737,24 @@ spec:
     enabled:
       - multi-site # <2>
   # tag::keycloak-ispn[]
+  cache:
+    configMapFile:
+      name: kcb-infinispan-cache-config # <1>
+      key: kcb-infinispan-cache-remote-store-config.xml # <1>
+  # end::keycloak-ispn[]
+  # tag::keycloak-ispn[]
   additionalOptions:
-    - name: cache-config-file # <1>
-      value: kcb-infinispan-cache-remote-store-config.xml
+    # end::keycloak-ispn[]
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
-      # end::keycloak-ispn[]
-
       value: "1000"
     # end::keycloak-queue-size[]
     - name: log-console-output
       value: json
     - name: metrics-enabled # <3>
       value: 'true'
+    - name: http-pool-max-threads # <4>
+      value: "200"
     # tag::keycloak-ispn[]
     - name: remote-store-host # <2>
       value: "infinispan.keycloak.svc"
@@ -763,29 +768,22 @@ spec:
       secret:
         name: remote-store-secret
         key: password
-        # end::keycloak-ispn[]
+    - name: spi-connections-infinispan-quarkus-site-name # <4>
+      value: keycloak
+      # end::keycloak-ispn[]
   http:
     tlsSecret: keycloak-tls-secret
   instances: 1
-  # tag::keycloak-ispn[]
   unsupported:
     podTemplate:
       # end::keycloak[]
-      # end::keycloak-ispn[]
       metadata:
         annotations:
-          checksum/config: c73adcb155290b2da36c94852649862ca6c5ceab4be2f51bde509cd07276ca3d-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3--56f92cd9012613402e2a7a61aded0f218d077b8c6345b22922ca7bf1a5c64984-v1.27.0
+          checksum/config: 4ea7d5f76d813828d0306098e48de65564756d4629233b2f7125709bcac6b4dc-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3--56f92cd9012613402e2a7a61aded0f218d077b8c6345b22922ca7bf1a5c64984-v1.27.0
       # tag::keycloak[]
-      # tag::keycloak-ispn[]
       spec:
-        # end::keycloak-ispn[]
-
-        # tag::keycloak-ispn[]
         containers:
           - env:
-              # end::keycloak-ispn[]
-              - name: 'QUARKUS_THREAD_POOL_MAX_THREADS' # <4>
-                value: "200"
               # end::keycloak[]
               # We want to have an externally provided username and password, therefore, we override those two environment variables
               - name: KEYCLOAK_ADMIN
@@ -801,13 +799,9 @@ spec:
                     key: password
                     optional: false
                 # tag::keycloak[]
-              # tag::keycloak-ispn[]
               - name: JAVA_OPTS_APPEND # <5>
-                value: >
-                  -Djboss.site.name=keycloak
-
+                value: ""
                 # end::keycloak[]
-                # end::keycloak-ispn[]
             ports:
             # tag::keycloak[]
             resources:
@@ -824,25 +818,11 @@ spec:
             #   exec:
             #     command:
             #       - 'true'
-            # tag::keycloak-ispn[]
             volumeMounts:
-              - name: kcb-infinispan-cache-config # <4>
-                mountPath: /opt/keycloak/conf/kcb-infinispan-cache-remote-store-config.xml
-                subPath: kcb-infinispan-cache-remote-store-config.xml
-                readOnly: true
-                # end::keycloak-ispn[]
               - name: keycloak-providers
                 mountPath: /opt/keycloak/providers
                 readOnly: true
-        # tag::keycloak-ispn[]
         volumes:
-          - name: kcb-infinispan-cache-config # <6>
-            configMap:
-              name: kcb-infinispan-cache-config
-              items:
-                - key: kcb-infinispan-cache-remote-store-config.xml
-                  path: kcb-infinispan-cache-remote-store-config.xml
-            # end::keycloak-ispn[]
           - name: keycloak-providers
             configMap:
               name: keycloak-providers

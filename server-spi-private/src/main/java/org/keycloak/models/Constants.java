@@ -63,6 +63,7 @@ public final class Constants {
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
+    public static final String INTERNAL_SIGNATURE_ALGORITHM = Algorithm.HS512;
 
     public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
     public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
