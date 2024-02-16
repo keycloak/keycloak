@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   Button,
   Flex,
@@ -11,22 +12,22 @@ import {
   Text,
   TextContent,
   TextVariants,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
-import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { useRealm } from "../../../context/realm-context/RealmContext";
+import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { adminClient } from "../../../admin-client";
-import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
-import { useWhoAmI } from "../../../context/whoami/WhoAmI";
+import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { HelpItem } from "ui-shared";
 
 type Translations = {
@@ -54,6 +55,7 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
+  const [isWarning, setIsWarning] = useState(false);
   const { control, getValues, handleSubmit, setValue } = useForm<{
     key: string;
     translations: Translations[];
@@ -269,9 +271,7 @@ export const AddTranslationsDialog = ({
                     icon={SearchIcon}
                     isSearchVariant
                     message={t("noSearchResults")}
-                    instructions={t(
-                      "noRealmOverridesSearchResultsInstructions",
-                    )}
+                    instructions={t("noLanguagesSearchResultsInstructions")}
                   />
                 )}
                 {filteredLocales.length !== 0 && (
@@ -314,8 +314,8 @@ export const AddTranslationsDialog = ({
                                   locale === defaultLocales.toString() &&
                                   t("addTranslationDialogHelperText")
                                 }
-                                isRequired
                                 helperTextInvalid={t("required")}
+                                isRequired
                               >
                                 <Controller
                                   name={`translations.${rowIndex}`}
@@ -327,6 +327,11 @@ export const AddTranslationsDialog = ({
                                       {...field.value}
                                       aria-label={t("translationValue")}
                                       data-testid="translation-value"
+                                      validated={
+                                        isWarning
+                                          ? ValidatedOptions.warning
+                                          : "default"
+                                      }
                                       onChange={(e) => {
                                         const updatedTranslation = {
                                           locale,
@@ -337,6 +342,9 @@ export const AddTranslationsDialog = ({
                                           `translations.${rowIndex}`,
                                           updatedTranslation,
                                         );
+                                        setIsWarning(
+                                          updatedTranslation.value === "",
+                                        );
                                       }}
                                     />
                                   )}
@@ -344,18 +352,10 @@ export const AddTranslationsDialog = ({
                               </FormGroup>
                             )}
                             {locale !== defaultLocales.toString() && (
-                              <FormGroup
-                                fieldId="kc-translationValue"
-                                helperText={
-                                  locale === defaultLocales.toString() &&
-                                  t("addTranslationDialogHelperText")
-                                }
-                                helperTextInvalid={t("required")}
-                              >
+                              <FormGroup fieldId="kc-translationValue">
                                 <Controller
                                   name={`translations.${rowIndex}`}
                                   control={control}
-                                  rules={{ required: true }}
                                   render={({ field }) => (
                                     <KeycloakTextInput
                                       id="translationValue"
