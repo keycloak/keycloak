@@ -78,7 +78,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             try {
                 data = JsonSerialization.readValue(model.getData(), PersistentClientSessionData.class);
             } catch (IOException ioe) {
-                throw new ModelException(ioe);
+                throw new ModelException("Error restoring session", ioe);
             }
         }
 
@@ -91,7 +91,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             String updatedData = JsonSerialization.writeValueAsString(getData());
             this.model.setData(updatedData);
         } catch (IOException ioe) {
-            throw new ModelException(ioe);
+            throw new ModelException("Error persisting session", ioe);
         }
 
         return this.model;
