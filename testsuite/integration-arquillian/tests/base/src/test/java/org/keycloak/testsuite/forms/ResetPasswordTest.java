@@ -221,7 +221,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordLinkTestAppWithourRedirectUriParam() throws IOException {
+    public void resetPasswordLinkTestAppWithoutRedirectUriParam() throws IOException {
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app";
 
         openResetPasswordUrlAndDoFlow(resetUri, "test-app", null);
