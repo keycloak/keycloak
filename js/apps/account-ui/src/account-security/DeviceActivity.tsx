@@ -145,8 +145,8 @@ export const DeviceActivity = () => {
       >
         <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
-            device.sessions.map((session) => (
-              <DataListItemRow key={device.id}>
+            device.sessions.map((session, index) => (
+              <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
                   className="pf-u-flex-grow-1"
