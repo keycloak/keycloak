@@ -15,7 +15,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { adminClient } from "../../../admin-client";
@@ -54,7 +54,7 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const { handleSubmit, control } = useForm<{
+  const { handleSubmit, control, setValue } = useForm<{
     key: string;
     translations: Translations[];
   }>({
@@ -93,6 +93,17 @@ export const AddTranslationsDialog = ({
         .includes(filter.toLowerCase()),
     );
   }, [combinedLocales, filter, whoAmI]);
+
+  useEffect(() => {
+    combinedLocales.forEach((locale, rowIndex) => {
+      const defaultValue =
+        locale === defaultLocales.toString() ? defaultTranslationValue : "";
+      setValue(`translations.${rowIndex}`, {
+        locale,
+        value: defaultValue,
+      });
+    });
+  }, [combinedLocales, defaultLocales, defaultTranslationValue, setValue]);
 
   const removeAllTranslations = async () => {
     try {
@@ -302,7 +313,7 @@ export const AddTranslationsDialog = ({
                                   name={`translations.${rowIndex}`}
                                   control={control}
                                   rules={{ required: true }}
-                                  render={({ field }) => (
+                                  render={() => (
                                     <KeycloakTextInput
                                       id="translationValue"
                                       defaultValue={defaultTranslationValue}
@@ -313,7 +324,10 @@ export const AddTranslationsDialog = ({
                                           value: (e.target as HTMLInputElement)
                                             .value,
                                         };
-                                        field.onChange(updatedTranslation);
+                                        setValue(
+                                          `translations.${rowIndex}`,
+                                          updatedTranslation,
+                                        );
                                       }}
                                     />
                                   )}
@@ -327,14 +341,13 @@ export const AddTranslationsDialog = ({
                                   locale === defaultLocales.toString() &&
                                   t("addTranslationDialogHelperText")
                                 }
-                                isRequired
                                 helperTextInvalid={t("required")}
                               >
                                 <Controller
                                   name={`translations.${rowIndex}`}
                                   control={control}
                                   rules={{ required: true }}
-                                  render={({ field }) => (
+                                  render={() => (
                                     <KeycloakTextInput
                                       id="translationValue"
                                       aria-label={t("translationValue")}
@@ -344,7 +357,10 @@ export const AddTranslationsDialog = ({
                                           value: (e.target as HTMLInputElement)
                                             .value,
                                         };
-                                        field.onChange(updatedTranslation);
+                                        setValue(
+                                          `translations.${rowIndex}`,
+                                          updatedTranslation,
+                                        );
                                       }}
                                     />
                                   )}
