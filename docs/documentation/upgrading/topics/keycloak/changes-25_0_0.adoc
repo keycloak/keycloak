@@ -1,0 +1,5 @@
+= Nonce claim is only added to the ID token
+
+The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
+
+A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.

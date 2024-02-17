@@ -106,6 +106,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
+        rep.setImplicitFlowEnabled(implicitFlowEnabled);
+        return this;
+    }
+
     public ClientAttributeUpdater setDefaultClientScopes(List<String> defaultClientScopes) {
         rep.setDefaultClientScopes(defaultClientScopes);
         return this;

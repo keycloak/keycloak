@@ -458,16 +458,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         Assert.assertNotNull(token.getOtherClaims().get("token_type"));
     }
 
-    private void assertNonce(AccessToken token, boolean isAuthCodeFlow, boolean exchangeToken) {
-        if (isAuthCodeFlow && !exchangeToken) {
-            Assert.assertNotNull(token.getNonce());
-        } else {
-            Assert.assertNull(token.getNonce());
-        }
-    }
-
     private void assertAccessToken(AccessToken token, boolean isAuthCodeFlow, boolean isAddToAccessToken) {
-        assertNonce(token, isAuthCodeFlow, false);
+        Assert.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToAccessToken, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
     }
@@ -477,7 +469,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void assertTokenIntrospectionResponse(AccessToken token, boolean isAuthCodeFlow, boolean isAddToIntrospect, boolean exchangeToken) {
-        assertNonce(token, isAuthCodeFlow, exchangeToken);
+        Assert.assertNull(token.getNonce());
         assertMapperClaims(token, isAddToIntrospect, isAuthCodeFlow);
         assertInitClaims(token, isAuthCodeFlow);
         assertIntrospectClaims(token);

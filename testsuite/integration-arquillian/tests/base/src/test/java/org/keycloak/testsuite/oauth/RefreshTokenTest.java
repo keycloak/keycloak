@@ -204,7 +204,10 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        assertEquals("123456", token.getNonce());
+        assertNull(token.getNonce());
+
+        IDToken idToken = oauth.verifyToken(tokenResponse.getIdToken());
+        assertEquals("123456", idToken.getNonce());
 
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
@@ -213,7 +216,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertNotNull(refreshTokenString);
 
-        assertEquals("123456", refreshToken.getNonce());
+        assertNull(refreshToken.getNonce());
         assertNull("RealmAccess should be null for RefreshTokens", refreshToken.getRealmAccess());
         assertTrue("ResourceAccess should be null for RefreshTokens", refreshToken.getResourceAccess().isEmpty());
     }
@@ -232,14 +235,15 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        assertEquals("123456", token.getNonce());
+        assertNull(token.getNonce());
 
-        String refreshTokenString = tokenResponse.getRefreshToken();
-        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
+        IDToken idToken = oauth.verifyToken(tokenResponse.getIdToken(), IDToken.class);
+        assertEquals("123456", idToken.getNonce());
+
+        assertNotNull(tokenResponse.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
-
-        assertNotNull(refreshTokenString);
 
         assertEquals("Bearer", tokenResponse.getTokenType());
 
@@ -248,8 +252,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
 
         assertEquals(sessionId, refreshToken.getSessionState());
+        assertNull(refreshToken.getNonce());
 
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
@@ -286,7 +291,15 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        assertEquals("123456", refreshedToken.getNonce());
+        assertNull(refreshedToken.getNonce());
+
+        idToken =  oauth.verifyToken(response.getIdToken(), IDToken.class);
+        assertNull(idToken.getNonce()); // null after refresh as recommended by spec
+
+        assertNotNull(response.getRefreshToken());
+        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertEquals(sessionId, refreshToken.getSessionState());
+        assertNull(refreshToken.getNonce());
     }
 
     @Test
