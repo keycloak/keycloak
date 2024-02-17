@@ -71,6 +71,11 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
+  const newAttributeName = useWatch({
+    control: form.control,
+    name: "name",
+  });
+
   const attributeDisplayName = useWatch({
     control: form.control,
     name: "displayName",
@@ -158,7 +163,7 @@ export const AttributeGeneralSettings = () => {
                 className="pf-m-plain kc-attribute-display-name-iconBtn"
                 data-testid="addAttributeTranslationBtn"
                 aria-label={t("addAttributeTranslationBtn")}
-                isDisabled={!attributeName || !attributeDisplayName}
+                isDisabled={!newAttributeName || !attributeDisplayName}
                 onClick={() => {
                   toggleModal();
                 }}
