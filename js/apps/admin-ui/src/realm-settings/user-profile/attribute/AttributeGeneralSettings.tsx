@@ -158,7 +158,7 @@ export const AttributeGeneralSettings = () => {
                 className="pf-m-plain kc-attribute-display-name-iconBtn"
                 data-testid="addAttributeTranslationBtn"
                 aria-label={t("addAttributeTranslationBtn")}
-                isDisabled={!attributeDisplayName}
+                isDisabled={!attributeName || !attributeDisplayName}
                 onClick={() => {
                   toggleModal();
                 }}

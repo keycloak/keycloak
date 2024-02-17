@@ -56,7 +56,13 @@ export const AddTranslationsDialog = ({
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
   const [isWarning, setIsWarning] = useState(false);
-  const { control, getValues, handleSubmit, setValue } = useForm<{
+  const {
+    control,
+    getValues,
+    handleSubmit,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm<{
     key: string;
     translations: TranslationsForm[];
   }>({
@@ -188,7 +194,7 @@ export const AddTranslationsDialog = ({
           variant="primary"
           type="submit"
           form="add-translation"
-          isDisabled={isWarning}
+          isDisabled={!isValid || isWarning}
         >
           {t("save")}
         </Button>,
@@ -224,10 +230,18 @@ export const AddTranslationsDialog = ({
               className="pf-u-mt-md"
               label={t("translationKey")}
               fieldId="kc-translation-key"
+              isRequired
+              validated={
+                errors.key ? ValidatedOptions.error : ValidatedOptions.default
+              }
+              helperTextInvalid={t("required")}
             >
               <Controller
                 name="key"
                 control={control}
+                rules={{
+                  validate: (value) => (value || "").length > 0,
+                }}
                 render={({ field }) => (
                   <KeycloakTextInput
                     id="kc-translation-key"
