@@ -19,7 +19,7 @@ package org.keycloak.sdjwt;
 /**
  * Strong typing salt to avoid parameter mismatch.
  * 
- * Comparable to allow sorting in SD JWT VC.
+ * Comparable to allow sorting in SD-JWT VC.
  * 
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */

@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class SdJWTSamplesTests {
+public class SdJWTSamplesTest {
     @Test
     public void testS7_1_FlatSdJwt() {
         // Read claims provided by the holder

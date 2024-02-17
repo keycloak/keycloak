@@ -135,7 +135,7 @@ public class IssuerSignedJWT extends SdJws {
         return payload;
     }
 
-    // SD JWT Claims
+    // SD-JWT Claims
     public static final String CLAIM_NAME_SELECTIVE_DISCLOSURE = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
 

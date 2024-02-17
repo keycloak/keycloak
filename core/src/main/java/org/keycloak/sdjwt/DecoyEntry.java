@@ -30,7 +30,7 @@ public abstract class DecoyEntry {
     private final SdJwtSalt salt;
 
     protected DecoyEntry(SdJwtSalt salt) {
-        this.salt = Objects.requireNonNull(salt, "DecoyEntry allways requires a non null salt");
+        this.salt = Objects.requireNonNull(salt, "DecoyEntry always requires a non null salt");
     }
 
     public SdJwtSalt getSalt() {
