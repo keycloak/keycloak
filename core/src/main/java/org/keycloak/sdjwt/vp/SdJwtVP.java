@@ -175,7 +175,7 @@ public class SdJwtVP {
     }
 
     public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
-            SignatureSignerContext holdSignatureSignerContext) {
+            SignatureSignerContext holdSignatureSignerContext, String jwsType) {
         StringBuilder sb = new StringBuilder();
         if (disclosureDigests == null || disclosureDigests.isEmpty()) {
             // disclose everything
@@ -194,7 +194,7 @@ public class SdJwtVP {
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
         keyBindingClaims = ((ObjectNode) keyBindingClaims).put("sd_hash", sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
         sb.append(keyBindingJWT.getJwsString());
         return sb.toString();
     }

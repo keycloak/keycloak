@@ -44,8 +44,8 @@ public class IssuerSignedJWT extends SdJws {
         return new IssuerSignedJWT(jwsString);
     }
 
-    public IssuerSignedJWT toSignedJWT(SignatureSignerContext signer) {
-        JWSInput jwsInput = sign(getPayload(), signer);
+    public IssuerSignedJWT toSignedJWT(SignatureSignerContext signer, String jwsType) {
+        JWSInput jwsInput = sign(getPayload(), signer, jwsType);
         return new IssuerSignedJWT(getPayload(), jwsInput);
     }
 
@@ -63,8 +63,8 @@ public class IssuerSignedJWT extends SdJws {
     }
 
     private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-            boolean nestedDisclosures, SignatureSignerContext signer) {
-        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer);
+            boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
+        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer, jwsType);
     }
 
     /*
@@ -150,6 +150,7 @@ public class IssuerSignedJWT extends SdJws {
         private SignatureSignerContext signer;
         private List<DecoyClaim> decoyClaims;
         private boolean nestedDisclosures;
+        private String jwsType = "vc+sd-jwt";
 
         public Builder withClaims(List<SdJwtClaim> claims) {
             this.claims = claims;
@@ -176,6 +177,11 @@ public class IssuerSignedJWT extends SdJws {
             return this;
         }
 
+        public Builder withJwsType(String jwsType) {
+            this.jwsType = jwsType;
+            return this;
+        }
+
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? "sha-256" : hashAlg;
@@ -183,7 +189,7 @@ public class IssuerSignedJWT extends SdJws {
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;
             if (signer != null) {
-                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures, signer);
+                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures, signer, jwsType);
             } else {
                 return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures);
             }

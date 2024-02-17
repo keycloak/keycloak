@@ -71,13 +71,13 @@ public class SdJws {
         this.jwsInput = jwsInput;
     }
 
-    protected SdJws(JsonNode payload, SignatureSignerContext signer) {
+    protected SdJws(JsonNode payload, SignatureSignerContext signer, String jwsType) {
         this.payload = payload;
-        this.jwsInput = sign(payload, signer);
+        this.jwsInput = sign(payload, signer, jwsType);
     }
 
-    protected static JWSInput sign(JsonNode payload, SignatureSignerContext signer) {
-        String jwsString = new JWSBuilder().type("vc+sd-jwt").jsonContent(payload).sign(signer);
+    protected static JWSInput sign(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+        String jwsString = new JWSBuilder().type(jwsType).jsonContent(payload).sign(signer);
         return parse(jwsString);
     }
 

@@ -138,11 +138,12 @@ public class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPositive() throws VerificationException {
+        String jwsType = "vc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext());
+                TestSettings.getInstance().getHolderSignerContext(), jwsType);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
@@ -157,11 +158,12 @@ public class SdJwtVPTest {
 
     @Test(expected = VerificationException.class)
     public void testS6_2_PresentationNegative() throws VerificationException {
+        String jwsType = "vc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext());
+                TestSettings.getInstance().getHolderSignerContext(), jwsType);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
@@ -175,12 +177,13 @@ public class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPartialDisclosure() throws VerificationException {
+        String jwsType = "vc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         // disclose only the given_name
         String presentation = sdJwtVP.present(Arrays.asList("jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"),
-                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
+                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext(), jwsType);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());

@@ -33,8 +33,8 @@ public class KeyBindingJWT extends SdJws {
         return new KeyBindingJWT(jwsString);
     }
 
-    public static KeyBindingJWT from(JsonNode payload, SignatureSignerContext signer) {
-        JWSInput jwsInput = sign(payload, signer);
+    public static KeyBindingJWT from(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+        JWSInput jwsInput = sign(payload, signer, jwsType);
         return new KeyBindingJWT(payload, jwsInput);
     }
 
