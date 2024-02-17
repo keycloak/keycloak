@@ -30,7 +30,7 @@ import { localeToDisplayName } from "../../../util";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { HelpItem } from "ui-shared";
 
-type Translations = {
+type TranslationsForm = {
   locale: string;
   value: string;
 };
@@ -58,7 +58,7 @@ export const AddTranslationsDialog = ({
   const [isWarning, setIsWarning] = useState(false);
   const { control, getValues, handleSubmit, setValue } = useForm<{
     key: string;
-    translations: Translations[];
+    translations: TranslationsForm[];
   }>({
     mode: "onChange",
   });
@@ -115,6 +115,8 @@ export const AddTranslationsDialog = ({
   ]);
 
   const removeAllTranslations = async () => {
+    const formData = getValues();
+
     try {
       await Promise.all(
         combinedLocales.map(async (locale) => {
@@ -130,7 +132,7 @@ export const AddTranslationsDialog = ({
               await adminClient.realms.deleteRealmLocalizationTexts({
                 realm: realmName,
                 selectedLocale: locale,
-                key: translationKey,
+                key: formData.key,
               });
             }
           } catch (error) {
@@ -145,9 +147,29 @@ export const AddTranslationsDialog = ({
   };
 
   const save = async () => {
+    const formData = getValues();
+
     try {
-      const formData = getValues();
-      console.log("formData >>> ", formData);
+      const nonEmptyTranslations = formData.translations
+        .filter((translation) => translation.value.trim() !== "")
+        .map(async (translation) => {
+          try {
+            await adminClient.realms.addLocalization(
+              {
+                realm: realmName,
+                selectedLocale: translation.locale,
+                key: formData.key,
+              },
+              translation.value,
+            );
+          } catch (error) {
+            console.error(`Error saving translation for ${translation.locale}`);
+          }
+        });
+
+      await Promise.all(nonEmptyTranslations);
+
+      toggleDialog();
     } catch (error) {
       console.error(`Error saving translations: ${error}`);
     }
@@ -166,6 +188,7 @@ export const AddTranslationsDialog = ({
           variant="primary"
           type="submit"
           form="add-translation"
+          isDisabled={isWarning}
         >
           {t("save")}
         </Button>,
