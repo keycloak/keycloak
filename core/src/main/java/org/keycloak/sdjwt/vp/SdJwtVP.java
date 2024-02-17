@@ -130,22 +130,7 @@ public class SdJwtVP {
         allDigests.stream()
                 .forEach(disclosureDigest -> {
                     JsonNode node = findNode(issuerPayload, disclosureDigest);
-                    if (node == null) {// digest is nested in another disclosure
-                        Set<Entry<String, ArrayNode>> entrySet = claims.entrySet();
-                        for (Entry<String, ArrayNode> entry : entrySet) {
-                            if (entry.getKey().equals(disclosureDigest)) {
-                                continue;
-                            }
-                            node = findNode(entry.getValue(), disclosureDigest);
-                            if (node != null) {
-                                recursiveDigests.put(disclosureDigest, entry.getKey());
-                                break;
-                            }
-                        }
-                    }
-                    if (node == null) {// No digest found for disclosure.
-                        ghostDigests.add(disclosureDigest);
-                    }
+                    node = processDisclosureDigest(node, disclosureDigest, claims, recursiveDigests, ghostDigests);
                 });
 
         Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
@@ -160,6 +145,29 @@ public class SdJwtVP {
         return new SdJwtVP(sdJWtVPString, hashAlgorithm, issuerSignedJWT, claims, disclosures, recursiveDigests,
                 ghostDigests, keyBindingJWT);
 
+    }
+
+    private static JsonNode processDisclosureDigest(JsonNode node, String disclosureDigest,
+            Map<String, ArrayNode> claims,
+            Map<String, String> recursiveDigests,
+            List<String> ghostDigests) {
+        if (node == null) { // digest is nested in another disclosure
+            Set<Entry<String, ArrayNode>> entrySet = claims.entrySet();
+            for (Entry<String, ArrayNode> entry : entrySet) {
+                if (entry.getKey().equals(disclosureDigest)) {
+                    continue;
+                }
+                node = findNode(entry.getValue(), disclosureDigest);
+                if (node != null) {
+                    recursiveDigests.put(disclosureDigest, entry.getKey());
+                    break;
+                }
+            }
+        }
+        if (node == null) { // No digest found for disclosure.
+            ghostDigests.add(disclosureDigest);
+        }
+        return node;
     }
 
     public JsonNode getCnfClaim() {
