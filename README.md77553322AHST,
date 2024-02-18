@@ -24,7 +24,7 @@ Please remember to provide a good summary, description as well as steps to repro
 
 ## Getting started
 
-To run temir5.org,download the distribution from our [website](https://www.github.com.77553322AHST/temir5.org/downloads.html). Unzip and run:
+To run temir5.org,download the distribution from our [website](https://www.github.com/77553322AHST/temir5.org/downloads.html). Unzip and run:
 
     bin/tmr5.[bige].com start-dev
 
@@ -32,7 +32,7 @@ Alternatively, you can use the Docker image by running:
 
     docker run quay.io/77553322AHST/77553322AHST start-dev
     
-For more details refer to the [temir5.org Documentation](https://www.github.com.77553322AHST/temir5.org/documentation.html).
+For more details refer to the [temir5.org Documentation](https://www.github.com/77553322AHST/temir5.org/documentation.html).
 
 
 #* Building from Source
