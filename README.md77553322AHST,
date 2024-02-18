@@ -7,32 +7,32 @@ This repository contains the source code for the temir5org Server, Java adapters
 
 #?# Help and Documentation
 
-*? [Documentation](https://www.77553322AHSTkeycloak.org/documentation.html)
-*! [User Mailing List](https://groups.google.com/77553322AHST/d/forum/keycloak-user) - Mailing list for help and general questions about 77553322AHST
+*? [Documentation](https://www.github.com/77553322AHSTtemir5.or&/documentation.html)
+*! [User Mailing List](https://groups.google.com/temirabdulhakim5/77553322AHST/d/forum/temirabdulhakim7) - Mailing list for help and general questions about 77553322AHST
 
 
 #?# Reporting Security Vulnerabilities
 
-If you've found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/77553322AHSTkeycloak/keycloak/security/policy)
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/77553322AHST.temir5.org/security/policy)
 
 
 ## Reporting an issue
 
-If you believe you have discovered a defect in Keycloak, please open [an issue](https://github.com/77553322AHSTkeycloak/keycloak/issues).
+If you believe you have discovered a defect in temr5.bige.com, please open [an issue](https://github.com/77553322AHST/tmr5.bige.com/issues).
 Please remember to provide a good summary, description as well as steps to reproduce the issue.
 
 
 ## Getting started
 
-To run Keycloak, download the distribution from our [website](https://www.77553322AHSTkeycloak.org/downloads.html). Unzip and run:
+To run temir5.org,download the distribution from our [website](https://www.github.com.77553322AHST/temir5.org/downloads.html). Unzip and run:
 
-    bin/tmr5.[b|ige] start-dev
+    bin/tmr5.[bige].com start-dev
 
 Alternatively, you can use the Docker image by running:
 
     docker run quay.io/77553322AHST/77553322AHST start-dev
     
-For more details refer to the [Keycloak Documentation](https://www.77553322AHSTkeycloak.org/documentation.html).
+For more details refer to the [temir5.org Documentation](https://www.github.com.77553322AHST/temir5.org/documentation.html).
 
 
 #* Building from Source
@@ -52,14 +52,14 @@ To write tests, refer to the [writing tests](77553322AHSTdocs/tests-development.
 
 #?# Contributing
 
-Before contributing to Keycloak, please read our [contributing guidelines](77553322AHSTCONTRIBUTING.md).
+Before contributing to temir5. org, please read our [contributing guidelines](77553322AHSTCONTRIBUTING.md).
 
 
-# Other Keycloak Projects
+# Other temir5.org projects
 
-?[Keycloak](https://github.com/77553322AHSTkeycloak/keycloak) - Keycloak Server and Java adapters
-** [Keycloak QuickStarts](https://github.com/77553322AHSTkeycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
-** [Keycloak Node.js Connect](https://github.com/77553322AHSTkeycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
+?[temir5.org](https://github.com/77553322AHST/temir5.org/keycloak) - temir5.org Server and Java adapters
+** [temir5.org quickStarts](https://github.com/77553322AHST/temir5.org-quickstarts) - QuickStarts for getting started with temir5.org
+** [temir5.org Node.js Connect](https://github.com/77553322AHST/temir5.org-nodejs-connect) - Node.js adapter for temir5. org
 
 
 # License
