@@ -372,7 +372,7 @@ jobs:
           ./aws_ec2.sh create ${REGION}
           ./keycloak_ec2_installer.sh ${REGION} /tmp/keycloak.zip
           ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -Pdistribution"
-          ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Dmaven.build.cache.enabled=true"
+          ./mvn_ec2_runner.sh ${REGION} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
           ./mvn_ec2_runner.sh ${REGION} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} $PROPS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
 
           # Copy returned surefire-report directories to workspace root to ensure they're discovered
