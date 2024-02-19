@@ -47,6 +47,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -148,14 +149,19 @@ public class ClientScopeResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
     @Operation(summary = "Delete the client scope")
     public Response deleteClientScope() {
-        auth.clients().requireManage(clientScope);
 
-        try {
-            realm.removeClientScope(clientScope.getId());
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
-            return Response.noContent().build();
-        } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        auth.clients().requireManage(clientScope);
+        long ClientScopesCount =  Arrays.stream(realm.getClientScopesStream().toArray()).count();
+        if(ClientScopesCount>1) {
+            try {
+                realm.removeClientScope(clientScope.getId());
+                adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+                return Response.noContent().build();
+            } catch (ModelException me) {
+                throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            }
+        }else{
+            throw ErrorResponse.error("You are not allowed to delete all the client scopes.", Response.Status.FORBIDDEN);
         }
     }
 

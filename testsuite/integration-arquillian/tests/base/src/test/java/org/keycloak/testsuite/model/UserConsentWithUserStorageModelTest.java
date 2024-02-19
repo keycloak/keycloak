@@ -330,6 +330,10 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             ClientScopeModel fooScope = KeycloakModelUtils.getClientScopeByName(realm, "foo");
             realm.removeClientScope(fooScope.getId());
+            ClientScopeModel barScope = KeycloakModelUtils.getClientScopeByName(realm, "bar");
+            try {
+                realm.removeClientScope(barScope.getId());
+            }catch (Exception expected){}
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesDelClScope2) -> {
