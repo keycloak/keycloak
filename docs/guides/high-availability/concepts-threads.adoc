@@ -16,13 +16,9 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 
 === Quarkus executor pool
 
-{project_name} requests, as well as blocking probes, are handled by the Quarkus executor pool.
-
-The Quarkus executor thread pool is configured in https://quarkus.io/guides/all-config#quarkus-core_quarkus.thread-pool.max-threads[`quarkus.thread-pool.max-threads`] and has a maximum size of at least 200 threads.
-Depending on the available CPU cores, it can grow even larger.
+{project_name} requests, as well as blocking probes, are handled by an executor pool. Depending on the available CPU cores, it has a maximum size of 200 or more threads.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
-
-{project_name} allows configuring the maximum thread pool size by the `http-pool-max-threads` configuration option. See <@links.ha id="deploy-keycloak-kubernetes" /> for an example.
+{project_name} allows configuring the maximum thread pool size by the link:{links_server_all-config_url}?q=http-pool-max-threads[`http-pool-max-threads`] configuration option. See <@links.ha id="deploy-keycloak-kubernetes" /> for an example.
 
 When running on Kubernetes, adjust the number of worker threads to avoid creating more load than what the CPU limit allows for the Pod to avoid throttling, which would lead to congestion.
 When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
@@ -34,7 +30,7 @@ Once a request cannot acquire a database connection within 5 seconds, it will fa
 The caller will receive a response with a 5xx HTTP status code indicating a server side error.
 
 If you increase the number of database connections and the number of threads too much, the system will be congested under a high load with requests queueing up, which leads to a bad performance.
-The number of database connections is configured via the https://www.keycloak.org/server/all-config#category-database[`Database`] settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size` respectively.
+The number of database connections is configured via the link:{links_server_all-config_url}?q=db-pool[`Database` settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size`] respectively.
 Low numbers ensure fast response times for all clients, even if there is an occasionally failing request when there is a load spike.
 
 === JGroups connection pool
