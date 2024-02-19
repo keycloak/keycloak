@@ -185,6 +185,13 @@ export default function ClientScopesSection() {
         subKey="clientScopeExplain"
         helpUrl={helpUrls.clientScopesUrl}
       />
+      <Button
+        component={(props) => (
+          <Link {...props} to={toNewClientScope({ realm })} />
+        )}
+      >
+        {t("createClientScope")}
+      </Button>
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
           key={key}
@@ -227,16 +234,6 @@ export default function ClientScopesSection() {
                   refresh();
                 }}
               />
-
-              <ToolbarItem>
-                <Button
-                  component={(props) => (
-                    <Link {...props} to={toNewClientScope({ realm })} />
-                  )}
-                >
-                  {t("createClientScope")}
-                </Button>
-              </ToolbarItem>
               <ToolbarItem>
                 <ChangeTypeDropdown
                   selectedRows={selectedScopes}
