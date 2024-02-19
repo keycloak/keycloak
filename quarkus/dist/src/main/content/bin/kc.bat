@@ -19,7 +19,7 @@ if "%OS%" == "Windows_NT" (
   set DIRNAME=.\
 )
 
-set SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000
+set SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000 -Dpicocli.disable.closures=true
 
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787

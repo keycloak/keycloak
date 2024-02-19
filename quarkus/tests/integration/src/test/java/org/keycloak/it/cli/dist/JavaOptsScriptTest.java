@@ -105,4 +105,11 @@ public class JavaOptsScriptTest {
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + " -Dfoo=bar.*"));
     }
 
+    @Test
+    @Launch({ "start-dev", "-Dpicocli.trace=info" })
+    void testPicocliClosuresDisabled(LaunchResult result) {
+        String output = result.getErrorOutput(); // not sure why picocli logs are printed to err
+        assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
+    }
+
 }
