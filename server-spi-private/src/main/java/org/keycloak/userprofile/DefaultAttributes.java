@@ -167,7 +167,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 .map(Collections::singletonList).orElse(emptyList()));
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
                 .map(Collections::singletonList).orElse(emptyList()));
-        limitLengthOnAttributesWithNoLengthRestriction(name, metadatas);
+        addDefaultValidators(name, metadatas);
 
         Boolean result = null;
 
@@ -209,11 +209,15 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return result == null;
     }
 
+    protected void addDefaultValidators(String name, List<AttributeMetadata> metadatas) {
+        addLengthValidatorIfNotSet(name, metadatas);
+    }
+
     /**
      * In case there are unmanaged attributes or attributes that don't have a length restrictions,
      * add a default length restriction to avoid a denial of service by a caller.
      */
-    private static void limitLengthOnAttributesWithNoLengthRestriction(String name, List<AttributeMetadata> metadatas) {
+    private void addLengthValidatorIfNotSet(String name, List<AttributeMetadata> metadatas) {
         for (AttributeMetadata metadata : metadatas) {
             for (AttributeValidatorMetadata validator : metadata.getValidators()) {
                 if (validator.getValidatorId().equals(LengthValidator.ID)) {
