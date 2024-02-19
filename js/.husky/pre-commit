@@ -1,2 +1,3 @@
+#!/bin/sh
 cd js
 pnpm exec lint-staged
