@@ -243,6 +243,7 @@ export default function NewAttributeSettings() {
       ] as UserProfileAttribute);
 
     const updatedAttributes = editMode ? patchAttributes() : addAttribute();
+    console.log(updatedAttributes);
 
     try {
       await adminClient.users.updateProfile({

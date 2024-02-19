@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
@@ -26,12 +26,11 @@ import { KeycloakTextInput } from "../../../components/keycloak-text-input/Keycl
 import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
-import type { AttributeParams } from "../../routes/Attribute";
-
 import "../../realm-settings-section.css";
 import { GlobeRouteIcon } from "@patternfly/react-icons";
 import { AddTranslationsDialog } from "./AddTranslationsDialog";
 import useToggle from "../../../utils/useToggle";
+import { AttributeParams } from "../../routes/Attribute";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -50,9 +49,10 @@ export const AttributeGeneralSettings = () => {
   const [selectRequiredForOpen, setSelectRequiredForOpen] = useState(false);
   const [isAttributeGroupDropdownOpen, setIsAttributeGroupDropdownOpen] =
     useState(false);
+  const [addTranslationsModalOpen, toggleModal] = useToggle();
+  const [isExtractedDisplayName, setIsExtractedDisplayName] = useState("");
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
-  const [addTranslationsModalOpen, toggleModal] = useToggle();
   const displayNamePattern = /\$\{([^}]+)\}/;
 
   const hasSelector = useWatch({
@@ -86,6 +86,12 @@ export const AttributeGeneralSettings = () => {
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
+  useEffect(() => {
+    const extractedDisplayName =
+      attributeDisplayName?.match(displayNamePattern)?.[1];
+    setIsExtractedDisplayName(extractedDisplayName ?? "");
+  }, [attributeDisplayName, displayNamePattern]);
+
   if (!clientScopes) {
     return <KeycloakSpinner />;
   }
@@ -98,14 +104,23 @@ export const AttributeGeneralSettings = () => {
     form.setValue("hasRequiredScopes", hasRequiredScopes);
   }
 
+  const capitalizeDefaultTranslationValue = (translationValue: string) => {
+    return translationValue.charAt(0).toUpperCase() + translationValue.slice(1);
+  };
+
+  const defaultTranslationValue =
+    capitalizeDefaultTranslationValue(isExtractedDisplayName) ||
+    capitalizeDefaultTranslationValue(attributeDisplayName);
+
   return (
     <>
       {addTranslationsModalOpen && attributeName && (
         <AddTranslationsDialog
           translationKey={attributeName}
-          defaultTranslationValue={attributeDisplayName}
+          defaultTranslationValue={defaultTranslationValue}
           toggleDialog={() => {
             toggleModal();
+            form.setValue("displayName", "");
           }}
           onCancel={() => {
             toggleModal();
@@ -163,7 +178,9 @@ export const AttributeGeneralSettings = () => {
                 className="pf-m-plain kc-attribute-display-name-iconBtn"
                 data-testid="addAttributeTranslationBtn"
                 aria-label={t("addAttributeTranslationBtn")}
-                isDisabled={!newAttributeName || !attributeDisplayName}
+                isDisabled={
+                  !attributeName || !newAttributeName || !attributeDisplayName
+                }
                 onClick={() => {
                   toggleModal();
                 }}

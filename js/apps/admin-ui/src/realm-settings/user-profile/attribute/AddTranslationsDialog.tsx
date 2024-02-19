@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   Flex,
@@ -29,8 +30,9 @@ import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
 import { HelpItem } from "ui-shared";
+import { useUserProfile } from "../UserProfileContext";
 
-type TranslationsForm = {
+type TranslationForm = {
   locale: string;
   value: string;
 };
@@ -52,10 +54,12 @@ export const AddTranslationsDialog = ({
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { whoAmI } = useWhoAmI();
+  const { config } = useUserProfile();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
   const [isWarning, setIsWarning] = useState(false);
+
   const {
     control,
     getValues,
@@ -64,7 +68,7 @@ export const AddTranslationsDialog = ({
     formState: { errors, isValid },
   } = useForm<{
     key: string;
-    translations: TranslationsForm[];
+    translations: TranslationForm[];
   }>({
     mode: "onChange",
   });
@@ -101,6 +105,10 @@ export const AddTranslationsDialog = ({
         .includes(filter.toLowerCase()),
     );
   }, [combinedLocales, filter, whoAmI]);
+
+  const attributes = useMemo(() => {
+    return config?.attributes || [];
+  }, [config]);
 
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
@@ -146,6 +154,31 @@ export const AddTranslationsDialog = ({
           }
         }),
       );
+
+      const foundAttribute = attributes?.find(
+        (attribute: any) => attribute.name === formData.key,
+      );
+
+      if (foundAttribute) {
+        const attributeToUpdate = { ...foundAttribute, displayName: "" };
+
+        const updatedAttributes = attributes?.map((attribute: any) =>
+          attribute.name === formData.key ? attributeToUpdate : attribute,
+        );
+
+        try {
+          await adminClient.users.updateProfile({
+            ...config,
+            attributes: updatedAttributes as UserProfileAttribute[],
+            realm: realmName,
+          });
+        } catch (error) {
+          console.error("Error updating user profile:", error);
+        }
+      } else {
+        console.error("Attribute not found");
+      }
+
       toggleDialog();
     } catch (error) {
       console.error(`Error removing translations: ${error}`);
