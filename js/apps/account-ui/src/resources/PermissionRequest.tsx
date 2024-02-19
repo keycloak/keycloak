@@ -48,7 +48,7 @@ export const PermissionRequest = ({
       const permissions = await fetchPermission({ context }, resource._id);
       const { scopes, username } = permissions.find(
         (p) => p.username === shareRequest.username,
-      )!;
+      ) || { scopes: [], username: shareRequest.username };
 
       await updateRequest(
         context,
