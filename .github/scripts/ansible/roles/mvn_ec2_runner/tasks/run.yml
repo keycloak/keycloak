@@ -17,7 +17,8 @@
     set -o pipefail
     cd {{ kc_home }}
     ./mvnw {{ mvn_params }}
-  executable: /usr/bin/bash
+  args:
+    executable: /usr/bin/bash
   # Tests can run for hours. To prevent the test from failing when the SSH connection breaks, use asynchronous polling.
   async: 86400
   poll: 10
