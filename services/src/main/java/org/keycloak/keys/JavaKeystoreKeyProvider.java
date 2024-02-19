@@ -93,7 +93,7 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
             String keyAlias = model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY);
 
             return switch (algorithm) {
-                case Algorithm.PS256, Algorithm.PS256, Algorithm.PS256, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512 ->
+                case Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512 ->
                         loadRSAKey(realm, model, keyStore, keyAlias);
                 case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 -> loadECKey(realm, model, keyStore, keyAlias);
                 default ->
