@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
@@ -50,7 +50,6 @@ export const AttributeGeneralSettings = () => {
   const [isAttributeGroupDropdownOpen, setIsAttributeGroupDropdownOpen] =
     useState(false);
   const [addTranslationsModalOpen, toggleModal] = useToggle();
-  const [isExtractedDisplayName, setIsExtractedDisplayName] = useState("");
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
   const displayNamePattern = /\$\{([^}]+)\}/;
@@ -86,12 +85,6 @@ export const AttributeGeneralSettings = () => {
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
-  useEffect(() => {
-    const extractedDisplayName =
-      attributeDisplayName?.match(displayNamePattern)?.[1];
-    setIsExtractedDisplayName(extractedDisplayName ?? "");
-  }, [attributeDisplayName, displayNamePattern]);
-
   if (!clientScopes) {
     return <KeycloakSpinner />;
   }
@@ -108,16 +101,14 @@ export const AttributeGeneralSettings = () => {
     return translationValue.charAt(0).toUpperCase() + translationValue.slice(1);
   };
 
-  const defaultTranslationValue =
-    capitalizeDefaultTranslationValue(isExtractedDisplayName) ||
-    capitalizeDefaultTranslationValue(attributeDisplayName);
-
   return (
     <>
       {addTranslationsModalOpen && attributeName && (
         <AddTranslationsDialog
           translationKey={attributeName}
-          defaultTranslationValue={defaultTranslationValue}
+          defaultTranslationValue={capitalizeDefaultTranslationValue(
+            attributeDisplayName,
+          )}
           toggleDialog={() => {
             toggleModal();
             form.setValue("displayName", "");
