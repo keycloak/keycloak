@@ -19,7 +19,6 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
       name: "import realms",
       testMatch: /realm\.setup\.ts/,
@@ -33,18 +32,8 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      dependencies: ["setup", "import realms"],
-      testIgnore: ["**/personal-info.spec.ts"],
-    },
-    {
-      name: "personal-info",
-      use: {
-        ...devices["Desktop Chrome"],
       },
       dependencies: ["import realms"],
-      testMatch: ["**/personal-info.spec.ts"],
     },
   ],
 });
