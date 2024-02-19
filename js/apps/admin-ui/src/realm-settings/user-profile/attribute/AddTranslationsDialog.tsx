@@ -155,12 +155,12 @@ export const AddTranslationsDialog = ({
         }),
       );
 
-      const foundAttribute = attributes?.find(
+      const findAttribute = attributes?.find(
         (attribute: any) => attribute.name === formData.key,
       );
 
-      if (foundAttribute) {
-        const attributeToUpdate = { ...foundAttribute, displayName: "" };
+      if (findAttribute) {
+        const attributeToUpdate = { ...findAttribute, displayName: "" };
 
         const updatedAttributes = attributes?.map((attribute: any) =>
           attribute.name === formData.key ? attributeToUpdate : attribute,
