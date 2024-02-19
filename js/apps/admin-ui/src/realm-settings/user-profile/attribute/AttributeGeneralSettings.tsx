@@ -52,7 +52,7 @@ export const AttributeGeneralSettings = () => {
   const [addTranslationsModalOpen, toggleModal] = useToggle();
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
-  const displayNamePattern = /\$\{([^}]+)\}/;
+  const displayNameRegex = /\$\{([^}]+)\}/;
 
   const hasSelector = useWatch({
     control: form.control,
@@ -80,7 +80,7 @@ export const AttributeGeneralSettings = () => {
     name: "displayName",
   });
 
-  const displayNamePatternMatch = displayNamePattern.test(attributeDisplayName);
+  const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
 
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
