@@ -1,16 +1,25 @@
 package org.keycloak.crypto.def;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.math.ec.ECPoint;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
 
 public class BCECDSACryptoProvider implements ECDSACryptoProvider {
 
@@ -60,5 +69,22 @@ public class BCECDSACryptoProvider implements ECDSACryptoProvider {
         return concatenatedSignatureValue;
     }
 
-    
+    @Override
+    public ECPublicKey getPublicFromPrivate(ECPrivateKey ecPrivateKey) {
+        try {
+            BCECPrivateKey bcecPrivateKey = new BCECPrivateKey(ecPrivateKey, BouncyCastleProvider.CONFIGURATION);
+
+            ECPoint q = bcecPrivateKey.getParameters().getG().multiply(bcecPrivateKey.getD());
+
+            ECPublicKeySpec publicKeySpec = new ECPublicKeySpec(q, bcecPrivateKey.getParameters());
+            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            return (ECPublicKey) keyFactory.generatePublic(publicKeySpec);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Key algorithm not supported.", e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("Received an invalid key spec.", e);
+        }
+    }
+
 }
