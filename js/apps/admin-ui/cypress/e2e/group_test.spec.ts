@@ -454,6 +454,7 @@ describe("Group test", () => {
 
   describe("Role mappings", () => {
     const roleMappingTab = new RoleMappingTab("group");
+
     beforeEach(() => {
       groupPage.goToGroupChildGroupsTab(predefinedGroups[0]);
       groupDetailPage.goToRoleMappingTab();
