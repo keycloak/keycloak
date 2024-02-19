@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Set;
 
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 
 /**
@@ -26,6 +27,25 @@ import org.keycloak.models.cache.infinispan.RealmCacheManager;
  */
 public interface RealmCacheInvalidationEvent {
 
-    void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations);
+    /**
+     * The default implementation of this method is left as a no-op in order to allow for piecemeal conversion from
+     * this method to the invalidation manager based approach
+     * @param realmCache the cache manager for the realm
+     * @param invalidations the invalidation manager for the session
+     */
+    @Deprecated
+    default void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
+
+    }
+
+    /**
+     * The default implementation of this method is left as a no-op in order to allow for piecemeal implementation over
+     * time from the old deprecated method.
+     * @param realmCache the cache manager for the realm
+     * @param invalidationManager the invalidation manager for the session
+     */
+    default void addInvalidations(RealmCacheManager realmCache, InvalidationManager invalidationManager) {
+
+    }
 
 }

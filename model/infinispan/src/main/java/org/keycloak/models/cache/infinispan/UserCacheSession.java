@@ -149,7 +149,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             cache.invalidateObject(invalidation);
         }
 
-        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanUserCacheProviderFactory.USER_INVALIDATION_EVENTS);
+        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanUserCacheProviderFactory.USER_INVALIDATION_EVENTS, null);
     }
 
     private KeycloakTransaction getTransaction() {

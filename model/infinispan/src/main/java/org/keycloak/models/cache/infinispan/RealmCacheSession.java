@@ -30,7 +30,9 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.utils.StringUtil;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -98,6 +100,13 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
+    private static final String GROUPS_QUERY_KEY = "groups";
+    private static final String TOP_LEVEL_KEY = "top";
+    private static final String SEARCH_KEY = "search:{0}";
+    private static final String PAGE_FIRST_KEY = "first:{0}";
+    private static final String PAGE_MAX_KEY = "max:{0}";
+    private static final String CHILDREN_SEARCH_KEY = "children";
+
     private static final String SCOPE_KEY_DEFAULT = "default";
     private static final String SCOPE_KEY_OPTIONAL = "optional";
     protected RealmCacheManager cache;
@@ -118,6 +127,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected Set<String> listInvalidations = new HashSet<>();
     protected Set<String> invalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
+    protected InvalidationManager invalidationManager = new InvalidationManager();
 
     protected boolean clearAll;
     protected final long startupRevision;
@@ -270,21 +280,24 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public void registerGroupInvalidation(String id) {
-        invalidateGroup(id, null, false);
-        addGroupEventIfAbsent(GroupUpdatedEvent.create(id));
+    public void registerGroupInvalidation(String realmId, String groupId, String parentId, String groupName) {
+        invalidateGroup(groupId);
+        addGroupEventIfAbsent(GroupUpdatedEvent.create(realmId, groupId, parentId, groupName));
     }
 
-    private void invalidateGroup(String id, String realmId, boolean invalidateQueries) {
-        invalidateGroup(id);
-        cache.groupNameInvalidations(id, invalidations);
+    private void invalidateGroup(GroupModel group, String realmId, boolean invalidateQueries) {
+        // we've added the ID invalidation to match, so we just need add the prefix invalidation
+        // to remove the stale entries in the cache
+        invalidateGroup(group.getId());
+        cache.groupNameInvalidations(realmId, group.getParentId(), group.getName(), invalidationManager);
         if (invalidateQueries) {
-            cache.groupQueriesInvalidations(realmId, invalidations);
+            // add the base "groups" cache prefix invalidation, invalidates every group in the realm in the cache
+            cache.groupQueriesInvalidations(realmId, invalidationManager);
         }
     }
 
     private void invalidateGroup(String id) {
-        invalidations.add(id);
+        invalidationManager.addModelInvalidation(id);
         GroupAdapter adapter = managedGroups.get(id);
         if (adapter != null) adapter.invalidate();
     }
@@ -293,8 +306,8 @@ public class RealmCacheSession implements CacheRealmProvider {
         for (String id : invalidations) {
             cache.invalidateObject(id);
         }
-
-        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS);
+        cache.runInvalidations(invalidationManager);
+        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS, invalidationManager);
     }
 
     private KeycloakTransaction getPrepareTransaction() {
@@ -557,7 +570,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     static String getGroupsQueryCacheKey(String realm) {
-        return realm + ".groups";
+        return String.join(".", realm, GROUPS_QUERY_KEY);
+    }
+
+    static String getGroupQueryCacheKey(String realm, String groupId) {
+        return String.join(".", getGroupsQueryCacheKey(realm), groupId);
     }
 
     static String getClientScopesCacheKey(String realm) {
@@ -569,15 +586,32 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     static String getTopGroupsQueryCacheKey(String realm) {
-        return realm + ".top.groups";
+        return String.join(".", getGroupsQueryCacheKey(realm), TOP_LEVEL_KEY);
     }
 
     static String getGroupByNameCacheKey(String realm, String parentId, String name) {
         if (parentId != null) {
-            return realm + ".group." + parentId + "." + name;
+            return String.join(".", getGroupsQueryCacheKey(realm), parentId, name);
         } else {
-            return realm + ".group.top." + name;
+            return String.join(".", getTopGroupsQueryCacheKey(realm), name);
         }
+    }
+
+    static String paginateCacheKey(String key, Integer first, Integer max) {
+        if (first != null && first >= 0) {
+            key = String.join(".", key, MessageFormat.format(PAGE_FIRST_KEY, first));
+        }
+        if (max != null && max >= 0) {
+            key = String.join(".", key, MessageFormat.format(PAGE_MAX_KEY, max));
+        }
+        return key;
+    }
+
+    static String searchOnCacheKey(String key, String search) {
+        if (StringUtil.isNotBlank(search)) {
+            key = String.join(".", key, MessageFormat.format(SEARCH_KEY, search));
+        }
+        return key;
     }
 
     static String getRolesCacheKey(String container) {
@@ -923,15 +957,15 @@ public class RealmCacheSession implements CacheRealmProvider {
             Long loaded = cache.getCurrentRevision(cacheKey);
             GroupModel model = getGroupDelegate().getGroupByName(realm, parent, name);
             if (model == null) return null;
-            if (invalidations.contains(model.getId())) return model;
+            if (cache.isModelInvalidated(model.getId(), invalidationManager) || cache.isPrefixInvalidated(cacheKey, invalidationManager)) return model;
             query = new GroupNameQuery(loaded, cacheKey, model.getId(), realm);
             cache.addRevisioned(query, startupRevision);
             return model;
-        } else if (invalidations.contains(cacheKey)) {
+        } else if (cache.isPrefixInvalidated(cacheKey, invalidationManager)) {
             return getGroupDelegate().getGroupByName(realm, parent, name);
         } else {
             String groupId = query.getGroupId();
-            if (invalidations.contains(groupId)) {
+            if (cache.isModelInvalidated(groupId, invalidationManager) || cache.isPrefixInvalidated(cacheKey, invalidationManager)) {
                 return getGroupDelegate().getGroupByName(realm, parent, name);
             }
             return getGroupById(realm, groupId);
@@ -941,11 +975,10 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
-        invalidateGroup(group.getId(), realm.getId(), true);
-        if (toParent != null) invalidateGroup(toParent.getId(), realm.getId(), false); // Queries already invalidated
+        invalidateGroup(group, realm.getId(), true);
+        if (toParent != null) invalidateGroup(toParent, realm.getId(), false); // Queries already invalidated
         listInvalidations.add(realm.getId());
-
-        invalidationEvents.add(GroupMovedEvent.create(group, toParent, realm.getId()));
+        invalidationManager.addInvalidationEvent(GroupMovedEvent.create(group, toParent, realm.getId()));
         getGroupDelegate().moveGroup(realm, group, toParent);
     }
 
@@ -1016,7 +1049,14 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + search + first + max);
+        String cacheKey = paginateCacheKey(
+                searchOnCacheKey(
+                        getTopGroupsQueryCacheKey(realm.getId()),
+                        search
+                ),
+                first,
+                max
+        );
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
             || listInvalidations.contains(realm.getId());
         if (queryDB) {
@@ -1069,24 +1109,24 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public boolean removeGroup(RealmModel realm, GroupModel group) {
-        invalidateGroup(group.getId(), realm.getId(), true);
+        invalidateGroup(group, realm.getId(), true);
         listInvalidations.add(realm.getId());
-        cache.groupQueriesInvalidations(realm.getId(), invalidations);
+        cache.groupQueriesInvalidations(realm.getId(), invalidationManager);
         if (group.getParentId() != null) {
-            invalidateGroup(group.getParentId(), realm.getId(), false); // Queries already invalidated
+            invalidateGroup(group.getParent(), realm.getId(), false); // Queries already invalidated
         }
 
-        invalidationEvents.add(GroupRemovedEvent.create(group, realm.getId()));
+        invalidationManager.addInvalidationEvent(GroupRemovedEvent.create(group, realm.getId()));
 
         return getGroupDelegate().removeGroup(realm, group);
     }
 
     private GroupModel groupAdded(RealmModel realm, GroupModel group, GroupModel toParent) {
         listInvalidations.add(realm.getId());
-        invalidateGroup(group.getId(), realm.getId(), true);
-        if (toParent != null) invalidateGroup(toParent.getId(), realm.getId(), false); // Queries already invalidated
+        invalidateGroup(group, realm.getId(), true);
+        if (toParent != null) invalidateGroup(toParent, realm.getId(), false); // Queries already invalidated
         String parentId = toParent == null ? null : toParent.getId();
-        invalidationEvents.add(GroupAddedEvent.create(group.getId(), parentId, realm.getId()));
+        invalidationManager.addInvalidationEvent(GroupAddedEvent.create(group.getId(), parentId, realm.getId()));
         return group;
     }
 
@@ -1098,9 +1138,9 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
-        invalidateGroup(subGroup.getId(), realm.getId(), true);
+        invalidateGroup(subGroup, realm.getId(), true);
         if (subGroup.getParentId() != null) {
-            invalidateGroup(subGroup.getParentId(), realm.getId(), false); // Queries already invalidated
+            invalidateGroup(subGroup.getParent(), realm.getId(), false); // Queries already invalidated
         }
 
         addGroupEventIfAbsent(GroupMovedEvent.create(subGroup, null, realm.getId()));
@@ -1110,16 +1150,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     private void addGroupEventIfAbsent(InvalidationEvent eventToAdd) {
-        String groupId = eventToAdd.getId();
-
-        // Check if we have existing event with bigger priority
-        boolean eventAlreadyExists = invalidationEvents.stream()
-                .anyMatch((InvalidationEvent event) -> (event.getId().equals(groupId)) &&
-                        (event instanceof GroupAddedEvent || event instanceof GroupMovedEvent || event instanceof GroupRemovedEvent));
-
-        if (!eventAlreadyExists) {
-            invalidationEvents.add(eventToAdd);
-        }
+        invalidationManager.addInvalidationEvent(eventToAdd);
     }
 
     @Override

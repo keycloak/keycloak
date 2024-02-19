@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -39,12 +40,14 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
     private String newParentId; // null if moving to top-level
     private String oldParentId; // null if moving from top-level
     private String realmId;
+    private String groupName;
 
     public static GroupMovedEvent create(GroupModel group, GroupModel toParent, String realmId) {
         GroupMovedEvent event = new GroupMovedEvent();
         event.realmId = realmId;
         event.groupId = group.getId();
         event.oldParentId = group.getParentId();
+        event.groupName = group.getName();
         event.newParentId = toParent==null ? null : toParent.getId();
         return event;
     }
@@ -60,14 +63,16 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
     }
 
     @Override
-    public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.groupQueriesInvalidations(realmId, invalidations);
-        realmCache.groupNameInvalidations(groupId, invalidations);
+    public void addInvalidations(RealmCacheManager realmCache, InvalidationManager invalidationManager) {
+        realmCache.groupQueriesInvalidations(realmId, invalidationManager);
+        realmCache.groupNameInvalidations(realmId, null, groupName, invalidationManager);
         if (newParentId != null) {
-            invalidations.add(newParentId);
+            invalidationManager.addModelInvalidation(newParentId);
+            realmCache.groupNameInvalidations(realmId, newParentId, groupName, invalidationManager);
         }
         if (oldParentId != null) {
-            invalidations.add(oldParentId);
+            invalidationManager.addModelInvalidation(oldParentId);
+            realmCache.groupNameInvalidations(realmId, oldParentId, groupName, invalidationManager);
         }
     }
 
@@ -93,6 +98,7 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
         public void writeObject(ObjectOutput output, GroupMovedEvent obj) throws IOException {
             output.writeByte(VERSION_1);
 
+            MarshallUtil.marshallString(obj.groupName, output);
             MarshallUtil.marshallString(obj.groupId, output);
             MarshallUtil.marshallString(obj.newParentId, output);
             MarshallUtil.marshallString(obj.oldParentId, output);
@@ -111,6 +117,7 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
 
         public GroupMovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             GroupMovedEvent res = new GroupMovedEvent();
+            res.groupName = MarshallUtil.unmarshallString(input);
             res.groupId = MarshallUtil.unmarshallString(input);
             res.newParentId = MarshallUtil.unmarshallString(input);
             res.oldParentId = MarshallUtil.unmarshallString(input);

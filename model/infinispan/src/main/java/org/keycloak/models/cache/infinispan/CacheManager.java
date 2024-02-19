@@ -3,17 +3,15 @@ package org.keycloak.models.cache.infinispan;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -132,6 +130,55 @@ public abstract class CacheManager {
         return removed;
     }
 
+    /**
+     * This method is intended to allow for the invalidation of entire sets of keys within the cache that match
+     * the given prefix. Rather than iterating through each object in the cache and dropping based on ID lookups,
+     * find all the keys that match a composable prefix and drop everything after it.
+     * @param prefix The prefix that should be used for matching
+     * @return A set of objects representing all removed items from the cache
+     */
+    public Set<Object> invalidatePrefix(String prefix) {
+        Set<String> keys = cache.keySet().stream().filter(key -> key.startsWith(prefix)).collect(Collectors.toSet());
+        Set<Object> removedObjects = new HashSet<>();
+        for(String key : keys) {
+            Revisioned removed = cache.remove(key);
+            removedObjects.add(removed);
+            if (getLogger().isTraceEnabled()) {
+                getLogger().tracef("Removed key='%s', value='%s' from cache", key, removed);
+            }
+            bumpVersion(key);
+        }
+        return removedObjects;
+    }
+
+    /**
+     * Executes the stored invalidations in the {@link InvalidationManager} for this session
+     */
+    public void runInvalidations(InvalidationManager invalidationManager) {
+        if(invalidationManager != null) {
+            for (String model : invalidationManager.getModelInvalidations()) {
+                invalidateObject(model);
+            }
+            for (String prefix : invalidationManager.getPrefixInvalidations()) {
+                invalidatePrefix(prefix);
+            }
+        }
+    }
+
+    public boolean isPrefixInvalidated(String prefix, InvalidationManager invalidationManager) {
+        if (invalidationManager != null) {
+            return invalidationManager.isPrefixInvalidated(prefix);
+        }
+        return false;
+    }
+
+    public boolean isModelInvalidated(String modelId, InvalidationManager invalidationManager) {
+        if (invalidationManager != null) {
+            return invalidationManager.isModelInvalidated(modelId);
+        }
+        return false;
+    }
+
     protected void bumpVersion(String id) {
         long next = counter.next();
         Object rev = revisions.put(id, next);
@@ -206,28 +253,31 @@ public abstract class CacheManager {
     }
 
 
-    public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
+    public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey, InvalidationManager invalidationManager) {
         ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
 
         // Maybe add InvalidationEvent, which will be collection of all invalidationEvents? That will reduce cluster traffic even more.
         for (InvalidationEvent event : invalidationEvents) {
             clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
         }
+        if (invalidationManager != null) {
+            for (InvalidationEvent event : invalidationManager.getInvalidationEvents()) {
+                clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
+            }
+        }
     }
 
 
     public void invalidationEventReceived(InvalidationEvent event) {
-        Set<String> invalidations = new HashSet<>();
+        InvalidationManager invalidationManager = new InvalidationManager();
 
-        addInvalidationsFromEvent(event, invalidations);
+        addInvalidationsFromEvent(event, invalidationManager.getModelInvalidations(), invalidationManager);
 
-        getLogger().debugf("[%s] Invalidating %d cache items after received event %s", cache.getCacheManager().getAddress(), invalidations.size(), event);
+        getLogger().debugf("[%s] Invalidating %d cache items after received event %s", cache.getCacheManager().getAddress(), invalidationManager.getModelInvalidations().size(), event);
 
-        for (String invalidation : invalidations) {
-            invalidateObject(invalidation);
-        }
+        runInvalidations(invalidationManager);
     }
 
-    protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations);
+    protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations, InvalidationManager invalidationManager);
 
 }

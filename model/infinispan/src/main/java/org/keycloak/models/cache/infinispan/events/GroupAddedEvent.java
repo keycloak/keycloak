@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -58,10 +59,10 @@ public class GroupAddedEvent extends InvalidationEvent implements RealmCacheInva
     }
 
     @Override
-    public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.groupQueriesInvalidations(realmId, invalidations);
+    public void addInvalidations(RealmCacheManager realmCache, InvalidationManager invalidationManager) {
+        realmCache.groupQueriesInvalidations(realmId, invalidationManager);
         if (parentId != null) {
-            invalidations.add(parentId);
+            invalidationManager.addModelInvalidation(parentId);
         }
     }
 

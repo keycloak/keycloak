@@ -19,14 +19,13 @@ package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
-import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
-import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
 import java.util.Set;
@@ -91,14 +90,12 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InRealmPredicate.create().realm(realmId), invalidations);
     }
 
-    public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
-        invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
-        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
-        addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
+    public void groupQueriesInvalidations(String realmId, InvalidationManager invalidationManager) {
+        invalidationManager.addPrefixInvalidation(RealmCacheSession.getGroupsQueryCacheKey(realmId));
     }
 
-    public void groupNameInvalidations(String groupId, Set<String> invalidations) {
-        addInvalidations(InGroupPredicate.create().group(groupId), invalidations);
+    public void groupNameInvalidations(String realmId, String parentId, String groupName, InvalidationManager invalidationManager) {
+        invalidationManager.addPrefixInvalidation(RealmCacheSession.getGroupByNameCacheKey(realmId, parentId, groupName));
     }
 
     public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {
@@ -120,10 +117,11 @@ public class RealmCacheManager extends CacheManager {
     }
 
     @Override
-    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
+    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations, InvalidationManager invalidationManager) {
         invalidations.add(event.getId());
 
         ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
+        ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidationManager);
     }
 
     /**

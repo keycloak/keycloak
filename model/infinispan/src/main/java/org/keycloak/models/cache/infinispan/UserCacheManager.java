@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.UserCacheInvalidationEvent;
@@ -94,7 +95,7 @@ public class UserCacheManager extends CacheManager {
 
 
     @Override
-    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
+    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations, InvalidationManager invalidationManager) {
         ((UserCacheInvalidationEvent) event).addInvalidations(this, invalidations);
     }
 

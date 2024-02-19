@@ -18,6 +18,7 @@ package org.keycloak.models.cache.infinispan.authorization;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.CacheManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import org.keycloak.models.cache.infinispan.authorization.events.AuthorizationCacheInvalidationEvent;
@@ -46,7 +47,7 @@ public class StoreFactoryCacheManager extends CacheManager {
     }
 
     @Override
-    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
+    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations, InvalidationManager invalidationManager) {
         if (event instanceof AuthorizationCacheInvalidationEvent) {
             invalidations.add(event.getId());
 

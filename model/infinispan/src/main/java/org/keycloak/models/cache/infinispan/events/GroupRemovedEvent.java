@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -38,12 +39,14 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
     private String groupId;
     private String parentId;
     private String realmId;
+    private String groupName;
 
     public static GroupRemovedEvent create(GroupModel group, String realmId) {
         GroupRemovedEvent event = new GroupRemovedEvent();
         event.realmId = realmId;
         event.groupId = group.getId();
         event.parentId = group.getParentId();
+        event.groupName = group.getName();
         return event;
     }
 
@@ -58,11 +61,12 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
     }
 
     @Override
-    public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
-        realmCache.groupQueriesInvalidations(realmId, invalidations);
-        realmCache.groupNameInvalidations(groupId, invalidations);
+    public void addInvalidations(RealmCacheManager realmCache, InvalidationManager invalidationManager) {
+        realmCache.groupQueriesInvalidations(realmId, invalidationManager);
+        realmCache.groupNameInvalidations(realmId, null, groupName, invalidationManager);
         if (parentId != null) {
-            invalidations.add(parentId);
+            invalidationManager.addModelInvalidation(parentId);
+            realmCache.groupNameInvalidations(realmId, parentId, groupName, invalidationManager);
         }
     }
 
@@ -88,6 +92,7 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
         public void writeObject(ObjectOutput output, GroupRemovedEvent obj) throws IOException {
             output.writeByte(VERSION_1);
 
+            MarshallUtil.marshallString(obj.groupName, output);
             MarshallUtil.marshallString(obj.realmId, output);
             MarshallUtil.marshallString(obj.groupId, output);
             MarshallUtil.marshallString(obj.parentId, output);
@@ -105,6 +110,7 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
 
         public GroupRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             GroupRemovedEvent res = new GroupRemovedEvent();
+            res.groupName = MarshallUtil.unmarshallString(input);
             res.realmId = MarshallUtil.unmarshallString(input);
             res.groupId = MarshallUtil.unmarshallString(input);
             res.parentId = MarshallUtil.unmarshallString(input);
