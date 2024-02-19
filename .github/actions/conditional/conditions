@@ -4,6 +4,8 @@
 
 .github/actions/                            ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
 .github/scripts/                            ci ci-sssd
+.github/scripts/ansible/                    ci-store
+.github/scripts/aws/                        ci-store
 
 .github/workflows/ci.yml                    ci ci-store ci-sssd
 .github/workflows/operator-ci.yml           operator

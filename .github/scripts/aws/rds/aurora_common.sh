@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+if [[ "$RUNNER_DEBUG" == "1" ]]; then
+  set -x
+fi
+
 function requiredEnv() {
   for ENV in $@; do
       if [ -z "${!ENV}" ]; then
@@ -12,8 +16,9 @@ function requiredEnv() {
 
 requiredEnv AURORA_CLUSTER AURORA_REGION
 
+SCRIPT_DIR=${SCRIPT_DIR:-$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )}
 export AURORA_ENGINE=${AURORA_ENGINE:-"aurora-postgresql"}
-export AURORA_ENGINE_VERSION=${AURORA_ENGINE_VERSION:-"15.3"}
+export AURORA_ENGINE_VERSION=${AURORA_ENGINE_VERSION:-"$(${SCRIPT_DIR}/../../../../mvnw help:evaluate -f ${SCRIPT_DIR}/../../../../pom.xml -Dexpression=aurora-postgresql.version -q -DforceStdout)"}
 export AURORA_INSTANCES=${AURORA_INSTANCES:-"2"}
 export AURORA_INSTANCE_CLASS=${AURORA_INSTANCE_CLASS:-"db.t4g.large"}
 export AURORA_PASSWORD=${AURORA_PASSWORD:-"secret99"}
