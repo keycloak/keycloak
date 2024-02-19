@@ -168,6 +168,7 @@ describe("Authentication test", () => {
   });
 
   const flowName = "Empty Flow";
+
   it("should create flow from scratch", () => {
     listingPage.goToCreateItem();
     detailPage.fillCreateForm(
@@ -288,6 +289,7 @@ describe("Accessibility tests for authentication", () => {
   const detailPage = new FlowDetails();
 
   before(() => adminClient.createRealm(realmName));
+
   after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {

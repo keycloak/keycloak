@@ -138,6 +138,7 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Realm header settings- update all inputs", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
@@ -152,6 +153,7 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Brute force detection- update values", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();

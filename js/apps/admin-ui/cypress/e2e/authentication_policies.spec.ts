@@ -12,6 +12,7 @@ describe("Policies", () => {
 
   describe("OTP policies tab", () => {
     const otpPoliciesPage = new OTPPolicies();
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -33,6 +34,7 @@ describe("Policies", () => {
 
   describe("Webauthn policies tabs", () => {
     const webauthnPage = new WebAuthnPolicies();
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();

@@ -517,6 +517,7 @@ describe("Clients test", () => {
     });
 
     const identicalClientId = "identical";
+
     it("Should fail to create client with same ID", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().createClient();
@@ -1000,6 +1001,7 @@ describe("Clients test", () => {
 
   describe("Mapping tab", () => {
     const mappingClient = "mapping-client";
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
