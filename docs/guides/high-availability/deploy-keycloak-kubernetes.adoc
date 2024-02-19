@@ -42,8 +42,6 @@ Use a reverse proxy in front of {project_name} to filter out those URLs.
 The number of all {project_name} threads in the StatefulSet should not exceed the number of JGroup threads to avoid a JGroup thread pool exhaustion which could stall {project_name} request processing.
 You might consider limiting the number of {project_name} threads further because multiple concurrent threads will lead to throttling by Kubernetes once the requested CPU limit is reached.
 See the <@links.ha id="concepts-threads" /> {section} for details.
-<5> The JVM options set additional parameters:
-* Adjust the memory settings for the heap.
 
 == Verifying the deployment
 

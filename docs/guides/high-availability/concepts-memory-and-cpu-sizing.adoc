@@ -31,14 +31,15 @@ Summary:
 
 Recommendations:
 
-* The base memory usage for an inactive Pod is 1 GB of RAM.
-
-* Leave 1 GB extra head-room for spikes of RAM.
+* The base memory usage for an inactive Pod is 1000 MB of RAM.
 
 * For each 100,000 active user sessions, add 500 MB per Pod in a three-node cluster (tested with up to 200,000 sessions).
 +
 This assumes that each user connects to only one client.
 Memory requirements increase with the number of client sessions per user session (not tested yet).
+
+* In containers, Keycloak allocates 70% of the memory limit for heap based memory. It will also use approximately 300 MB of non-heap-based memory.
+To calculate the requested memory, use the calculation above. As memory limit, subtract the non-heap memory from the value above and divide the result by 0.7.
 
 * For each 30 user logins per second, 1 vCPU per Pod in a three-node cluster (tested with up to 300 per second).
 +
@@ -48,7 +49,7 @@ Memory requirements increase with the number of client sessions per user session
 +
 Most CPU time goes into creating new TLS connections, as each client runs only a single request.
 
-* For each 350 refresh token requests per second, 1 vCPU per Pod in a three node cluster (tested with up to 435 refresh token requests per second).
+* For each 350 refresh token requests per second, 1 vCPU per Pod in a three-node cluster (tested with up to 435 refresh token requests per second).
 
 * Leave 200% extra head-room for CPU usage to handle spikes in the load.
 This ensures a fast startup of the node, and sufficient capacity to handle failover tasks like, for example, re-balancing Infinispan caches, when one node fails.
@@ -73,19 +74,19 @@ Limits calculated:
 +
 (Allow for three times the CPU requested to handle peaks, startups and failover tasks, and also refresh token handling which we don't have numbers on, yet)
 
-* Memory requested: 1.25 GB
+* Memory requested: 1250 MB
 +
-(1 GB base memory plus 250 MB RAM for 50,000 active sessions)
+(1000 MB base memory plus 250 MB RAM for 50,000 active sessions)
 
-* Memory limit: 2.25 GB
+* Memory limit: 1360 GB
 +
-(adding 1 GB to the memory requested)
+(1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
 
 == Reference architecture
 
 The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
 
-* OpenShift 4.13.x deployed on AWS via ROSA.
+* OpenShift 4.14.x deployed on AWS via ROSA.
 * Machinepool with `m5.4xlarge` instances.
 * {project_name} deployed with the Operator and 3 pods.
 * Default user password hashing with PBKDF2(SHA512) 210,000 hash iterations (which is the default).
