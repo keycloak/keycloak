@@ -380,6 +380,10 @@ public class RealmAdminResource {
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
+            rep.setDefaultLocale(realm.getDefaultLocale());
+            rep.setDisplayName(realm.getDisplayName());
+            rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+            rep.setSupportedLocales(realm.getSupportedLocales());
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
