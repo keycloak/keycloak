@@ -291,7 +291,7 @@ spec:
 The Keycloak CR now allows for specifying the `resources` options for managing compute resources for the Keycloak container.
 It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
 
-When no values are specified, the default `requests` memory is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+When no values are specified, the default `requests` memory is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
 
 You can specify your custom values based on your requirements as follows:
 
