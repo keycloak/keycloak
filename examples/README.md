@@ -9,13 +9,6 @@ Admin Client
 
 Example using the Admin Client. For more information look at `admin-client/README.md`.
 
-
-Cordova
--------
-
-Example Cordova application. For more information look at `cordova/README.md`.
-
-
 CORS
 ----
 
