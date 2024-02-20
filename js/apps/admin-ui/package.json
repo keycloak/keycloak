@@ -104,6 +104,7 @@
     "@vitejs/plugin-react-swc": "^3.3.2",
     "cypress": "^12.17.0",
     "cypress-axe": "^1.4.0",
+    "cypress-split": "^1.20.1",
     "jsdom": "^22.1.0",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
