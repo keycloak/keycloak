@@ -24,6 +24,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -52,7 +53,6 @@ import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.RealmsResource;
@@ -74,8 +74,6 @@ import java.util.Map;
  * @author <a href="mailto:michito.okai.zn@hitachi.com">Michito Okai</a>
  */
 public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
-
-    private static final String PROVIDER_ID = "device_code";
 
     // OAuth 2.0 Device Authorization Grant
     public static final String OAUTH2_DEVICE_VERIFIED_USER_CODE = "OAUTH2_DEVICE_VERIFIED_USER_CODE";
@@ -341,11 +339,6 @@ public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentD
     }
 
     @Override
-    public String getGrantType() {
-        return OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
-    }
-
-    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new DeviceGrantType();
     }
@@ -356,8 +349,13 @@ public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentD
     }
 
     @Override
+    public EventType getEventType() {
+        return EventType.OAUTH2_DEVICE_CODE_TO_TOKEN;
+    }
+
+    @Override
     public String getId() {
-        return PROVIDER_ID;
+        return OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
     }
 
 }

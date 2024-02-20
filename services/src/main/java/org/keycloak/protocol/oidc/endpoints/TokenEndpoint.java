@@ -32,7 +32,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.grants.OAuth2GrantManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -92,7 +91,6 @@ public class TokenEndpoint {
     private final EventBuilder event;
 
     private String grantType;
-    private List<OAuth2GrantType> grants;
     private OAuth2GrantType grant;
     private OAuth2GrantType.Context context;
 
@@ -140,7 +138,6 @@ public class TokenEndpoint {
 
         context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes, formParams, event, cors, tokenManager, dPoP);
 
-        resolveGrantType();
         grant.setContext(context);
         return grant.process();
     }
@@ -190,17 +187,13 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
 
-        grants = OAuth2GrantManager.resolve(grantType);
-        if (grants.isEmpty()) {
+        grant = session.getProvider(OAuth2GrantType.class, grantType);
+        if (grant == null) {
             throw newUnsupportedGrantTypeException();
         }
 
-        event.event(OAuth2GrantManager.grantToEvent(grantType));
+        event.event(grant.getEventType());
         event.detail(Details.GRANT_TYPE, grantType);
-    }
-
-    private void resolveGrantType() {
-        grant = OAuth2GrantManager.resolve(grants, context).orElseThrow(() -> newUnsupportedGrantTypeException());
     }
 
     private CorsErrorResponseException newUnsupportedGrantTypeException() {

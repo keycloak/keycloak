@@ -29,6 +29,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -56,7 +57,6 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(AuthorizationCodeGrantType.class);
-    private static final String PROVIDER_ID = "authorization_code";
 
     @Override
     public Response process() {
@@ -198,12 +198,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public EventType getEventType() {
+        return EventType.CODE_TO_TOKEN;
     }
 
     @Override
-    public String getGrantType() {
+    public String getId() {
         return OAuth2Constants.AUTHORIZATION_CODE;
     }
 

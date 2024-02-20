@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
@@ -44,12 +45,11 @@ import org.keycloak.services.cors.Cors;
 public interface OAuth2GrantType extends Provider, ProviderFactory<OAuth2GrantType> {
 
     /**
-     * Returns the name of the OAuth 2.0 grant type implemented by this provider.
-     * This value will be matched against the "grant_type" token request parameter.
+     * Returns the event type associated with this OAuth 2.0 grant type.
      *
-     * @return grant type name
+     * @return event type
      */
-    String getGrantType();
+    EventType getEventType();
 
     /**
      * Checks if the grant implementation supports the request.

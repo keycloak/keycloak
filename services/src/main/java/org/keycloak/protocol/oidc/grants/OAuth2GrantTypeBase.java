@@ -273,7 +273,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        OAuth2GrantManager.register(this);
     }
 
     @Override
