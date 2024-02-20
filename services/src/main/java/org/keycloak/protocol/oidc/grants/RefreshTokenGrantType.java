@@ -26,6 +26,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -45,7 +46,6 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
  */
 public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
 
-    private static final String PROVIDER_ID = "refresh_token";
     private static final Logger logger = Logger.getLogger(RefreshTokenGrantType.class);
 
     @Override
@@ -106,18 +106,18 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public String getGrantType() {
-        return OAuth2Constants.REFRESH_TOKEN;
-    }
-
-    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new RefreshTokenGrantType();
     }
 
     @Override
+    public EventType getEventType() {
+        return EventType.REFRESH_TOKEN;
+    }
+
+    @Override
     public String getId() {
-        return PROVIDER_ID;
+        return OAuth2Constants.REFRESH_TOKEN;
     }
 
 }

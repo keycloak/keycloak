@@ -31,6 +31,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -70,7 +71,6 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  */
 public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
 
-    private static final String PROVIDER_ID = "ciba";
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
 
     public static final String IS_CONSENT_REQUIRED = "is_consent_required";
@@ -291,11 +291,6 @@ public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDep
     }
 
     @Override
-    public String getGrantType() {
-        return OAuth2Constants.CIBA_GRANT_TYPE;
-    }
-
-    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new CibaGrantType();
     }
@@ -306,8 +301,13 @@ public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDep
     }
 
     @Override
+    public EventType getEventType() {
+        return EventType.AUTHREQID_TO_TOKEN;
+    }
+
+    @Override
     public String getId() {
-        return PROVIDER_ID;
+        return OAuth2Constants.CIBA_GRANT_TYPE;
     }
 
 }

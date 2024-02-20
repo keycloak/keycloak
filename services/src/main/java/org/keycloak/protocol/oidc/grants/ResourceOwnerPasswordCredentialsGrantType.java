@@ -27,6 +27,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionContext;
@@ -56,7 +57,6 @@ import org.keycloak.util.TokenUtil;
  */
 public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBase {
 
-    private static final String PROVIDER_ID = "password";
     private static final Logger logger = Logger.getLogger(ResourceOwnerPasswordCredentialsGrantType.class);
 
     @Override
@@ -155,18 +155,18 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     }
 
     @Override
-    public String getGrantType() {
-        return OAuth2Constants.PASSWORD;
-    }
-
-    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new ResourceOwnerPasswordCredentialsGrantType();
     }
 
     @Override
+    public EventType getEventType() {
+        return EventType.LOGIN;
+    }
+
+    @Override
     public String getId() {
-        return PROVIDER_ID;
+        return OAuth2Constants.PASSWORD;
     }
 
 }

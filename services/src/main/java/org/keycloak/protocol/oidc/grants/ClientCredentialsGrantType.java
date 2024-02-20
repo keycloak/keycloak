@@ -27,6 +27,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -56,7 +57,6 @@ import org.keycloak.util.TokenUtil;
  */
 public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
-    private static final String PROVIDER_ID = "client_credentials";
     private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
 
     @Override
@@ -180,12 +180,12 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public EventType getEventType() {
+        return EventType.CLIENT_LOGIN;
     }
 
     @Override
-    public String getGrantType() {
+    public String getId() {
         return OAuth2Constants.CLIENT_CREDENTIALS;
     }
 
