@@ -67,7 +67,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
         if (!isRegisterAlertPresent(ALERT_DEFAULT_TIMEOUT)) {
-            throw new TimeoutException("Cannot register Security Key due to missing prompt for registration");
+            throw new TimeoutException("Cannot register Passkey due to missing prompt for registration");
         }
 
         Alert promptDialog = driver.switchTo().alert();
@@ -114,7 +114,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
     @Override
     public boolean isCurrent() {
         final String formTitle = getFormTitle();
-        return formTitle != null && formTitle.equals("Security Key Registration") &&
+        return formTitle != null && formTitle.equals("Passkey Registration") &&
                 driver.getPageSource().contains("navigator.credentials.create");
     }
 

@@ -409,11 +409,11 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
         if (passwordless) {
             credentialType = webAuthnPwdlessCredentialType;
-            expectedHelpText = "Use your security key for passwordless sign in.";
+            expectedHelpText = "Use your Passkey for passwordless sign in.";
             providerId = WebAuthnPasswordlessRegisterFactory.PROVIDER_ID;
         } else {
             credentialType = webAuthnCredentialType;
-            expectedHelpText = "Use your security key to sign in.";
+            expectedHelpText = "Use your Passkey to sign in.";
             providerId = WebAuthnRegisterFactory.PROVIDER_ID;
         }
 
@@ -421,7 +421,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         // no way to simulate registration cancellation
 
         assertThat("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible(), is(true));
-        assertThat(credentialType.getTitle(), is("Security key"));
+        assertThat(credentialType.getTitle(), is("Passkey"));
         assertThat(credentialType.getHelpText(), is(expectedHelpText));
 
         final String label1 = "WebAuthn is convenient";

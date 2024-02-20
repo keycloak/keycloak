@@ -251,7 +251,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     }
 
     /**
-     * Helper method for registering Security Key
+     * Helper method for registering Passkey
      * Sometimes, it's not possible to register the key, when the Resident Key is required
      * It seems it's related to Virtual authenticators provided by Selenium framework
      * Manual testing with Google Chrome authenticators works as expected
