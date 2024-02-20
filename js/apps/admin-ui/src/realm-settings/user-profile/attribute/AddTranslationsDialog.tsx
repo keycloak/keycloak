@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
   Flex,
@@ -16,7 +14,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { SearchIcon } from "@patternfly/react-icons";
+import { InfoCircleIcon, SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
@@ -29,8 +27,6 @@ import { ListEmptyState } from "../../../components/list-empty-state/ListEmptySt
 import { useFetch } from "../../../utils/useFetch";
 import { localeToDisplayName } from "../../../util";
 import { DEFAULT_LOCALE } from "../../../i18n/i18n";
-import { HelpItem } from "ui-shared";
-import { useUserProfile } from "../UserProfileContext";
 
 type TranslationForm = {
   locale: string;
@@ -54,18 +50,17 @@ export const AddTranslationsDialog = ({
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { whoAmI } = useWhoAmI();
-  const { config } = useUserProfile();
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const [isWarning, setIsWarning] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const {
     control,
     getValues,
     handleSubmit,
     setValue,
-    formState: { errors, isValid },
+    formState: { isValid },
   } = useForm<{
     key: string;
     translations: TranslationForm[];
@@ -106,10 +101,6 @@ export const AddTranslationsDialog = ({
     );
   }, [combinedLocales, filter, whoAmI]);
 
-  const attributes = useMemo(() => {
-    return config?.attributes || [];
-  }, [config]);
-
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
       const defaultValue =
@@ -127,63 +118,6 @@ export const AddTranslationsDialog = ({
     translationKey,
     setValue,
   ]);
-
-  const removeAllTranslations = async () => {
-    const formData = getValues();
-
-    try {
-      await Promise.all(
-        combinedLocales.map(async (locale) => {
-          try {
-            const response = await adminClient.realms.getRealmLocalizationTexts(
-              {
-                realm: realmName,
-                selectedLocale: locale,
-              },
-            );
-
-            if (response) {
-              await adminClient.realms.deleteRealmLocalizationTexts({
-                realm: realmName,
-                selectedLocale: locale,
-                key: formData.key,
-              });
-            }
-          } catch (error) {
-            console.error(`Error removing translations for ${locale}`);
-          }
-        }),
-      );
-
-      const attributeSearched = attributes?.find(
-        (attribute: any) => attribute.name === formData.key,
-      );
-
-      if (attributeSearched) {
-        const attributeToUpdate = { ...attributeSearched, displayName: "" };
-
-        const updatedAttributes = attributes?.map((attribute: any) =>
-          attribute.name === formData.key ? attributeToUpdate : attribute,
-        );
-
-        try {
-          await adminClient.users.updateProfile({
-            ...config,
-            attributes: updatedAttributes as UserProfileAttribute[],
-            realm: realmName,
-          });
-        } catch (error) {
-          console.error("Error updating user profile:", error);
-        }
-      } else {
-        console.error("Attribute not found");
-      }
-
-      toggleDialog();
-    } catch (error) {
-      console.error(`Error removing translations: ${error}`);
-    }
-  };
 
   const save = async () => {
     const formData = getValues();
@@ -222,14 +156,14 @@ export const AddTranslationsDialog = ({
       onClose={toggleDialog}
       actions={[
         <Button
-          key="save"
-          data-testid="saveTranslationBtn"
+          key="ok"
+          data-testid="okTranslationBtn"
           variant="primary"
           type="submit"
           form="add-translation"
-          isDisabled={!isValid || isWarning}
+          isDisabled={!isValid || isError}
         >
-          {t("save")}
+          {t("addTranslationDialogOkBtn")}
         </Button>,
         <Button
           key="cancel"
@@ -263,24 +197,17 @@ export const AddTranslationsDialog = ({
               className="pf-u-mt-md"
               label={t("translationKey")}
               fieldId="kc-translation-key"
-              isRequired
-              validated={
-                errors.key ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              helperTextInvalid={t("required")}
             >
               <Controller
                 name="key"
                 control={control}
-                rules={{
-                  validate: (value) => (value || "").length > 0,
-                }}
                 render={({ field }) => (
                   <KeycloakTextInput
                     id="kc-translation-key"
                     {...field}
                     aria-label={t("translationKey")}
                     data-testid="translation-key"
+                    isDisabled
                   />
                 )}
               />
@@ -311,22 +238,6 @@ export const AddTranslationsDialog = ({
                   setMax(10);
                 }}
                 inputGroupPlaceholder={t("searchForLanguage")}
-                toolbarItem={
-                  <>
-                    <Button
-                      data-testid="remove-allTranslations"
-                      variant="secondary"
-                      isDanger
-                      onClick={() => removeAllTranslations()}
-                    >
-                      {t("removeAllTranslations")}
-                    </Button>
-                    <HelpItem
-                      helpText={t("removeAllTranslationsHelp")}
-                      fieldLabelId="removeAllTranslationsHelpBtn"
-                    />
-                  </>
-                }
               >
                 {filteredLocales.length === 0 && !filter && (
                   <ListEmptyState
@@ -370,9 +281,14 @@ export const AddTranslationsDialog = ({
                             <FormGroup fieldId="kc-supportedLanguage">
                               {localeToDisplayName(locale, whoAmI.getLocale())}
                               {locale === defaultLocales.toString() && (
-                                <Label className="pf-u-ml-xs" color="blue">
-                                  {t("defaultLanguage")}
-                                </Label>
+                                <>
+                                  <Label className="pf-u-ml-xs" color="blue">
+                                    {t("defaultLanguage")}
+                                  </Label>
+                                  <Label color="red" icon={<InfoCircleIcon />}>
+                                    {t("requiredLanguage")}
+                                  </Label>
+                                </>
                               )}
                             </FormGroup>
                           </Td>
@@ -384,8 +300,6 @@ export const AddTranslationsDialog = ({
                                   locale === defaultLocales.toString() &&
                                   t("addTranslationDialogHelperText")
                                 }
-                                helperTextInvalid={t("required")}
-                                isRequired
                               >
                                 <Controller
                                   name={`translations.${rowIndex}`}
@@ -398,8 +312,8 @@ export const AddTranslationsDialog = ({
                                       aria-label={t("translationValue")}
                                       data-testid="translation-value"
                                       validated={
-                                        isWarning
-                                          ? ValidatedOptions.warning
+                                        isError
+                                          ? ValidatedOptions.error
                                           : "default"
                                       }
                                       onChange={(e) => {
@@ -412,7 +326,7 @@ export const AddTranslationsDialog = ({
                                           `translations.${rowIndex}`,
                                           updatedTranslation,
                                         );
-                                        setIsWarning(
+                                        setIsError(
                                           updatedTranslation.value === "",
                                         );
                                       }}
