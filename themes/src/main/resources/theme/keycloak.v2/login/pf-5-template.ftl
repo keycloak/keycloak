@@ -77,6 +77,7 @@
     x-on:focusin.window="! $refs.panel?.contains($event.target) && close()"
     x-id="['language-select']"
 >
+  <div class="pf-v5-c-login__container">
     <main class="pf-v5-c-login__main">
       <header class="pf-v5-c-login__main-header">
         <h1 class="pf-v5-c-title pf-m-3xl"><#nested "header"></h1>
@@ -213,6 +214,7 @@
         <#nested "socialProviders">
       </footer>
     </main>
+  </div>
 </div>
 </body>
 </html>

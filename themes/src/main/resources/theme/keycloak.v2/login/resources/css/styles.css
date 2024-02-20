@@ -1,8 +1,9 @@
-/* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
-   This clashes with the "keycloak-bg.png' background defined on the body below.
-   Therefore the Patternfly background must be set to none. */
-.login-pf {
-    background: none;
+:root {
+    --pf-v5-c-login__container--xl--GridTemplateColumns: 34rem;
+}
+
+#kc-header-wrapper {
+    padding: 62px 10px 20px;
 }
 
 .login-pf body {
