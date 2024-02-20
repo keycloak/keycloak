@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.dpop.DPoP;
+import org.keycloak.services.cors.Cors;
 
 /**
  * Provider interface for OAuth 2.0 grant types
@@ -85,14 +86,14 @@ public interface OAuth2GrantType extends Provider, ProviderFactory<OAuth2GrantTy
         protected HttpHeaders headers;
         protected MultivaluedMap<String, String> formParams;
         protected EventBuilder event;
-        protected Object cors;
+        protected Cors cors;
         protected Object tokenManager;
         protected DPoP dPoP;
 
         public Context(KeycloakSession session, RealmModel realm,
                 ClientModel client, Object clientConfig, ClientConnection clientConnection, Map<String, String> clientAuthAttributes,
                 HttpRequest request, HttpResponse response, HttpHeaders headers, MultivaluedMap<String, String> formParams,
-                EventBuilder event, Object cors, Object tokenManager, DPoP dPoP) {
+                EventBuilder event, Cors cors, Object tokenManager, DPoP dPoP) {
             this.session = session;
             this.realm = realm;
             this.client = client;

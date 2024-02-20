@@ -95,6 +95,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         AuthenticationProcessor processor = new AuthenticationProcessor();
         processor.setAuthenticationSession(authSession)
                 .setFlowId(flowId)
+                .setFlowPath("token")
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setRealm(realm)
