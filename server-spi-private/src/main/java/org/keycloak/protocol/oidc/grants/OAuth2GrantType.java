@@ -90,19 +90,17 @@ public interface OAuth2GrantType extends Provider, ProviderFactory<OAuth2GrantTy
         protected Object tokenManager;
         protected DPoP dPoP;
 
-        public Context(KeycloakSession session, RealmModel realm,
-                ClientModel client, Object clientConfig, ClientConnection clientConnection, Map<String, String> clientAuthAttributes,
-                HttpRequest request, HttpResponse response, HttpHeaders headers, MultivaluedMap<String, String> formParams,
-                EventBuilder event, Cors cors, Object tokenManager, DPoP dPoP) {
+        public Context(KeycloakSession session, Object clientConfig, Map<String, String> clientAuthAttributes,
+                MultivaluedMap<String, String> formParams, EventBuilder event, Cors cors, Object tokenManager, DPoP dPoP) {
             this.session = session;
-            this.realm = realm;
-            this.client = client;
+            this.realm = session.getContext().getRealm();
+            this.client = session.getContext().getClient();
             this.clientConfig = clientConfig;
-            this.clientConnection = clientConnection;
+            this.clientConnection = session.getContext().getConnection();
             this.clientAuthAttributes = clientAuthAttributes;
-            this.request = request;
-            this.response = response;
-            this.headers = headers;
+            this.request = session.getContext().getHttpRequest();
+            this.response = session.getContext().getHttpResponse();
+            this.headers = session.getContext().getRequestHeaders();
             this.formParams = formParams;
             this.event = event;
             this.cors = cors;

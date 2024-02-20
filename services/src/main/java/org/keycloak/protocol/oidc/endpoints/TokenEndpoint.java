@@ -138,9 +138,7 @@ public class TokenEndpoint {
             checkParameterDuplicated();
         }
 
-        context = new OAuth2GrantType.Context(session, realm,
-                client, clientConfig, clientConnection, clientAuthAttributes,
-                request, httpResponse, headers, formParams, event, cors, tokenManager, dPoP);
+        context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes, formParams, event, cors, tokenManager, dPoP);
 
         resolveGrantType();
         grant.setContext(context);
