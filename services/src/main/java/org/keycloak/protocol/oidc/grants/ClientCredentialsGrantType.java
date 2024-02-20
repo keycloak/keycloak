@@ -175,18 +175,8 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new ClientCredentialsGrantType();
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.CLIENT_LOGIN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.CLIENT_CREDENTIALS;
     }
 
 }

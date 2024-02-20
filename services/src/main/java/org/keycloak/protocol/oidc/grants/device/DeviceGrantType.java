@@ -73,7 +73,7 @@ import java.util.Map;
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  * @author <a href="mailto:michito.okai.zn@hitachi.com">Michito Okai</a>
  */
-public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
+public class DeviceGrantType extends OAuth2GrantTypeBase {
 
     // OAuth 2.0 Device Authorization Grant
     public static final String OAUTH2_DEVICE_VERIFIED_USER_CODE = "OAUTH2_DEVICE_VERIFIED_USER_CODE";
@@ -339,23 +339,8 @@ public class DeviceGrantType extends OAuth2GrantTypeBase implements EnvironmentD
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new DeviceGrantType();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW);
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.OAUTH2_DEVICE_CODE_TO_TOKEN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
     }
 
 }

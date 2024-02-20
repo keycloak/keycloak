@@ -33,7 +33,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.cors.Cors;
 
@@ -42,7 +41,7 @@ import org.keycloak.services.cors.Cors;
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
-public interface OAuth2GrantType extends Provider, ProviderFactory<OAuth2GrantType> {
+public interface OAuth2GrantType extends Provider {
 
     /**
      * Returns the event type associated with this OAuth 2.0 grant type.

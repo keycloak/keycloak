@@ -28,7 +28,6 @@ import java.util.function.Function;
 
 import org.jboss.logging.Logger;
 
-import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -43,7 +42,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -269,14 +267,6 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void init(Config.Scope config) {
     }
 
 }
