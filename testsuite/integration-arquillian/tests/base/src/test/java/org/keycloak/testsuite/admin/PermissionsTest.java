@@ -2057,7 +2057,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
     }
 
     private void assertGettersEmpty(RealmRepresentation rep) {
-        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty");
+        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty", "getRealmName", "getDisplayNameHtml", 
+            "getDisplayName", "getDefaultLocale", "getSupportedLocales");
     }
 
     private void assertGettersEmpty(ClientRepresentation rep) {
