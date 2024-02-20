@@ -58,7 +58,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
@@ -104,7 +104,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         this.headers = context.headers;
         this.formParams = context.formParams;
         this.event = context.event;
-        this.cors = (Cors) context.cors;
+        this.cors = context.cors;
         this.tokenManager = (TokenManager) context.tokenManager;
         this.dPoP = context.dPoP;
     }
