@@ -20,14 +20,10 @@ package org.keycloak.protocol.oidc.grants;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * OAuth 2.0 Authorization Code Grant
@@ -35,7 +31,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a> (et al.)
  */
-public class TokenExchangeGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
+public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public Response process() {
@@ -65,23 +61,8 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase implements Envir
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new TokenExchangeGrantType();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.TOKEN_EXCHANGE;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE;
     }
 
 }

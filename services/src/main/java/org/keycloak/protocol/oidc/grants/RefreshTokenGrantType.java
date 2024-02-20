@@ -106,18 +106,8 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new RefreshTokenGrantType();
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.REFRESH_TOKEN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.REFRESH_TOKEN;
     }
 
 }

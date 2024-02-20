@@ -17,37 +17,13 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 
 /**
- * <p>A {@link Spi} to support pluggable OAuth 2.0 grant types in Token Endpoint.
+ * Provider interface for OAuth 2.0 grant types
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
-public class OAuth2GrantTypeSpi implements Spi {
-
-    private static final String SPI_NAME = "oauth2-grant-type";
-
-    @Override
-    public boolean isInternal() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return SPI_NAME;
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return OAuth2GrantType.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return OAuth2GrantTypeFactory.class;
-    }
+public interface OAuth2GrantTypeFactory extends ProviderFactory<OAuth2GrantType> {
 
 }

@@ -186,18 +186,8 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new PermissionGrantType();
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.PERMISSION_TOKEN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.UMA_GRANT_TYPE;
     }
 
 }

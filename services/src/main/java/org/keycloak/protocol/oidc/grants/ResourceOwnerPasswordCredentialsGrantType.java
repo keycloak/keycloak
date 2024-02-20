@@ -155,18 +155,8 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new ResourceOwnerPasswordCredentialsGrantType();
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.LOGIN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.PASSWORD;
     }
 
 }

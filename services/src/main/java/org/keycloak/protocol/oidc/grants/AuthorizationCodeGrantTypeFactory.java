@@ -17,37 +17,38 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import org.keycloak.Config;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
- * <p>A {@link Spi} to support pluggable OAuth 2.0 grant types in Token Endpoint.
+ * Factory for OAuth 2.0 Authorization Code Grant
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
-public class OAuth2GrantTypeSpi implements Spi {
-
-    private static final String SPI_NAME = "oauth2-grant-type";
+public class AuthorizationCodeGrantTypeFactory implements OAuth2GrantTypeFactory {
 
     @Override
-    public boolean isInternal() {
-        return true;
+    public String getId() {
+        return OAuth2Constants.AUTHORIZATION_CODE;
     }
 
     @Override
-    public String getName() {
-        return SPI_NAME;
+    public OAuth2GrantType create(KeycloakSession session) {
+        return new AuthorizationCodeGrantType();
     }
 
     @Override
-    public Class<? extends Provider> getProviderClass() {
-        return OAuth2GrantType.class;
+    public void init(Config.Scope config) {
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return OAuth2GrantTypeFactory.class;
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
     }
 
 }

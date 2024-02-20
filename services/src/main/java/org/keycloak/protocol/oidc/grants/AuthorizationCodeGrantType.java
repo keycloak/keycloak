@@ -193,18 +193,8 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new AuthorizationCodeGrantType();
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.CODE_TO_TOKEN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.AUTHORIZATION_CODE;
     }
 
 }

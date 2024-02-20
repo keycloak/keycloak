@@ -56,7 +56,6 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -69,7 +68,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
+public class CibaGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(CibaGrantType.class);
 
@@ -291,23 +290,8 @@ public class CibaGrantType extends OAuth2GrantTypeBase implements EnvironmentDep
     }
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new CibaGrantType();
-    }
-
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
-    }
-
-    @Override
     public EventType getEventType() {
         return EventType.AUTHREQID_TO_TOKEN;
-    }
-
-    @Override
-    public String getId() {
-        return OAuth2Constants.CIBA_GRANT_TYPE;
     }
 
 }
