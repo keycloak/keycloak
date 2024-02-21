@@ -105,7 +105,7 @@ public class JwtSigningService extends SigningService<String> {
     }
 
     // retrieve the credential id from the given VC or generate one.
-    private String createCredentialId(VerifiableCredential verifiableCredential) {
+    static String createCredentialId(VerifiableCredential verifiableCredential) {
         return Optional.ofNullable(
                         verifiableCredential.getId())
                 .orElse(URI.create(String.format(ID_TEMPLATE, UUID.randomUUID())))

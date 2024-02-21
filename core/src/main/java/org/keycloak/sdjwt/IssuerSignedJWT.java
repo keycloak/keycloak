@@ -34,9 +34,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * of existing VCs as well as the creation and signing of new ones.
  * It integrates with Keycloak's SignatureSignerContext to facilitate
  * the generation of issuer signature.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
  */
 public class IssuerSignedJWT extends SdJws {
 
@@ -54,7 +53,7 @@ public class IssuerSignedJWT extends SdJws {
     }
 
     private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-            boolean nestedDisclosures) {
+                            boolean nestedDisclosures) {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures));
     }
 
@@ -63,7 +62,7 @@ public class IssuerSignedJWT extends SdJws {
     }
 
     private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-            boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
+                            boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer, jwsType);
     }
 
@@ -72,7 +71,7 @@ public class IssuerSignedJWT extends SdJws {
      * of claims.
      */
     private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-            boolean nestedDisclosures) {
+                                                  boolean nestedDisclosures) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
         final List<SdJwtClaim> claimsInternal = claims == null ? Collections.emptyList()
@@ -150,7 +149,7 @@ public class IssuerSignedJWT extends SdJws {
         private SignatureSignerContext signer;
         private List<DecoyClaim> decoyClaims;
         private boolean nestedDisclosures;
-        private String jwsType = "vc+sd-jwt";
+        private String jwsType;
 
         public Builder withClaims(List<SdJwtClaim> claims) {
             this.claims = claims;
@@ -185,6 +184,7 @@ public class IssuerSignedJWT extends SdJws {
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? "sha-256" : hashAlg;
+            jwsType = jwsType == null ? "vc+sd-jwt" : jwsType;
             // send an empty lise if claims not set.
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;

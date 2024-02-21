@@ -17,8 +17,35 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.sdjwt.ArrayDisclosure;
+import org.keycloak.sdjwt.DisclosureSpec;
+import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.SdJwt;
+import org.keycloak.sdjwt.SdJwtClaim;
+import org.keycloak.sdjwt.SdJwtSalt;
+import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.sdjwt.UndisclosedClaim;
+import org.keycloak.sdjwt.VisibleSdJwtClaim;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.stream.IntStream;
 
 /**
  * {@link VerifiableCredentialsSigningService} implementing the SD_JWT_VC format. It returns a String, containing
@@ -31,12 +58,99 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
  */
 public class SdJwtSigningService extends SigningService<String> {
 
-    public SdJwtSigningService(KeycloakSession keycloakSession, String keyId, String algorithmType) {
+    private static final Logger LOGGER = Logger.getLogger(SdJwtSigningService.class);
+
+    private final ObjectMapper objectMapper;
+    private final SignatureSignerContext signatureSignerContext;
+    private final TimeProvider timeProvider;
+    private final String tokenType;
+    private final String hashAlgorithm;
+    private final int decoys;
+    private final List<String> visibleClaims;
+    protected final String issuerDid;
+
+    public SdJwtSigningService(KeycloakSession keycloakSession, ObjectMapper objectMapper, String keyId, String algorithmType, String tokenType, String hashAlgorithm, String issuerDid, int decoys, List<String> visibleClaims, TimeProvider timeProvider, Optional<String> kid) {
         super(keycloakSession, keyId, algorithmType);
+        this.objectMapper = objectMapper;
+        this.issuerDid = issuerDid;
+        this.timeProvider = timeProvider;
+        this.tokenType = tokenType;
+        this.hashAlgorithm = hashAlgorithm;
+        this.decoys = decoys;
+        this.visibleClaims = visibleClaims;
+        KeyWrapper signingKey = getKey(keyId, algorithmType);
+        if (signingKey == null) {
+            throw new SigningServiceException(String.format("No key for id %s and algorithm %s available.", keyId, algorithmType));
+        }
+        // set the configured kid if present.
+        if (kid.isPresent()) {
+            // we need to clone the key first, to not change the kid of the original key so that the next request still can find it.
+            signingKey = signingKey.cloneKey();
+            signingKey.setKid(keyId);
+        }
+        kid.ifPresent(signingKey::setKid);
+        SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
+        signatureSignerContext = signatureProvider.signer(signingKey);
+
+        LOGGER.debugf("Successfully initiated the JWT Signing Service with algorithm %s.", algorithmType);
     }
 
     @Override
     public String signCredential(VerifiableCredential verifiableCredential) {
-        throw new UnsupportedOperationException("SD-JWT Signing is not yet supported.");
+
+        DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
+        CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
+        JsonNode claimSet = objectMapper.valueToTree(credentialSubject);
+        // put all claims into the disclosure spec, except the one to be kept visible
+        credentialSubject.getClaims()
+                .entrySet()
+                .stream()
+                .filter(entry -> !visibleClaims.contains(entry.getKey()))
+                .forEach(entry -> {
+                    if (entry instanceof List<?> listValue) {
+                        IntStream.range(0, listValue.size())
+                                .forEach(i -> disclosureSpecBuilder.withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt()));
+                    } else {
+                        disclosureSpecBuilder.withUndisclosedClaim(entry.getKey(), SdJwtUtils.randomSalt());
+                    }
+                });
+
+        // add the configured number of decoys
+        if (decoys != 0) {
+            IntStream.range(0, decoys)
+                    .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
+        }
+
+        ObjectNode rootNode = claimSet.withObject("");
+        rootNode.put("iss", issuerDid);
+
+        // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
+        // provided
+        long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
+                .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
+                .orElse((long) timeProvider.currentTimeSeconds());
+        rootNode.put("nbf", iat);
+        if (verifiableCredential.getType() == null || verifiableCredential.getType().size() != 1) {
+            throw new SigningServiceException("SD-JWT only supports single type credentials.");
+        }
+        rootNode.put("vct", verifiableCredential.getType().get(0));
+        rootNode.put("_sd_alg", hashAlgorithm);
+        rootNode.put("jti", JwtSigningService.createCredentialId(verifiableCredential));
+
+        SdJwt sdJwt = SdJwt.builder()
+                .withDisclosureSpec(disclosureSpecBuilder.build())
+                .withClaimSet(claimSet)
+                .withSigner(signatureSignerContext)
+                .withHashAlgorithm(hashAlgorithm)
+                .withJwsType(tokenType)
+                .build();
+
+        StringJoiner tokenJoiner = new StringJoiner("~");
+        // start with the actual credential
+        tokenJoiner.add(sdJwt.getIssuerSignedJWT().getJwsString());
+        // append the disclosures
+        sdJwt.getDisclosures().forEach(tokenJoiner::add);
+        return tokenJoiner.toString();
     }
+
 }

@@ -25,6 +25,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -159,6 +160,17 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
                 )
         ));
         return componentExportRepresentation;
+    }
+
+    protected static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
+        // we only set one key to the realm, thus can just take the first one
+        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
+        // the key from the `configureTestRealm` method.
+        return keycloakSession
+                .keys()
+                .getKeysStream(keycloakSession.getContext().getRealm())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No key was configured"));
     }
 
     static class StaticTimeProvider implements TimeProvider {
