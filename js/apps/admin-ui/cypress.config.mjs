@@ -1,4 +1,5 @@
 import { defineConfig } from "cypress";
+import cypressSplit from "cypress-split";
 
 export default defineConfig({
   projectId: "j4yhox",
@@ -21,5 +22,9 @@ export default defineConfig({
     baseUrl: "http://localhost:8080",
     slowTestThreshold: 30000,
     specPattern: "cypress/e2e/**/*.{js,jsx,ts,tsx}",
+    setupNodeEvents(on, config) {
+      cypressSplit(on, config);
+      return config;
+    },
   },
 });
