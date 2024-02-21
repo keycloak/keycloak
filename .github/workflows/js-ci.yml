@@ -327,6 +327,15 @@ jobs:
           name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        if: github.repository != 'keycloak/keycloak-private'
+        with:
+          name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
+          path: js/apps/admin-ui/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 10
+
   check:
     name: Status Check - Keycloak JavaScript CI
     if: always()
