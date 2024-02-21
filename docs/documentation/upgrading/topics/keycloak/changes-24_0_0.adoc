@@ -268,6 +268,11 @@ Ensure that no unmanaged attributes are allowed and all editable attributes have
 For unmanaged attributes, the maximum length is 2048 characters.
 For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
 
+WARNING: {project_name} caches user-related objects in its internal caches.
+The longer the attributes are, the more memory the cache consumes.
+Therefore, limiting the size of the length attributes is recommended.
+Consider storing large objects outside Keycloak and reference them by ID or URL.
+
 This change adds new indexes on the tables `USER_ATTRIBUTE` and `FED_USER_ATTRIBUTE`.
 If those tables contain more than 300000 entries, Keycloak will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
