@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
@@ -118,6 +119,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             context.challenge(challenge);
             return;
         }
+        context.getAuthenticationSession().removeAuthNote(Constants.TOTP_SECRET_KEY);
         context.success();
     }
 

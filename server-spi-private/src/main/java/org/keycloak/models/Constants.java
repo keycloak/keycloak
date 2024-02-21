@@ -165,4 +165,6 @@ public final class Constants {
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
+
+    public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
 }
