@@ -14,7 +14,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : String(i); }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-let MenuButtonLinks = /*#__PURE__*/function () {
+var MenuButtonLinks = /*#__PURE__*/function () {
   function MenuButtonLinks(domNode) {
     _classCallCheck(this, MenuButtonLinks);
     this.domNode = domNode;
@@ -302,7 +302,7 @@ let MenuButtonLinks = /*#__PURE__*/function () {
 }(); // Initialize menu buttons
 window.addEventListener('DOMContentLoaded', function () {
   var menuButtons = document.querySelectorAll('.menu-button-links');
-  for (let i = 0; i < menuButtons.length; i++) {
+  for (var i = 0; i < menuButtons.length; i++) {
     new MenuButtonLinks(menuButtons[i]);
   }
 });
