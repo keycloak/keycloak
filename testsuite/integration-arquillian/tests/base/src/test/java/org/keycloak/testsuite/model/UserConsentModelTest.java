@@ -321,11 +321,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientScopeModel fooScope = KeycloakModelUtils.getClientScopeByName(realm, "foo");
             realm.removeClientScope(fooScope.getId());
             ClientScopeModel barScope = KeycloakModelUtils.getClientScopeByName(realm, "bar");
-            try {
-                realm.removeClientScope(barScope.getId());
-                Assert.fail("You are not allowed to delete all the client scopes.");
-            } catch (Exception expected) {
-            }
+            Assert.assertFalse(realm.removeClientScope(barScope.getId()));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionST2) -> {
