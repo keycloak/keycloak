@@ -60,8 +60,8 @@
                 <div class="${properties.kcLocaleMainClass!}" id="kc-locale">
                     <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
                         <div id="kc-locale-dropdown" class="menu-button-links ${properties.kcLocaleDropDownClass!}">
-                            <button tabindex="1" id="kc-current-locale-button" aria-label="${msg("languages")}" aria-haspopup="true" aria-expanded="false" aria-controls="language-switch1">${locale.current} &#709;</button>
-                            <ul role="menu" tabindex="-1" aria-labelledby="kc-current-locale-button" aria-activedescendant="" id="language-switch1" class="${properties.kcLocaleListClass!}">
+                            <button tabindex="1" id="kc-current-locale-link" aria-label="${msg("languages")}" aria-haspopup="true" aria-expanded="false" aria-controls="language-switch1">${locale.current}</button>
+                            <ul role="menu" tabindex="-1" aria-labelledby="kc-current-locale-link" aria-activedescendant="" id="language-switch1" class="${properties.kcLocaleListClass!}">
                                 <#assign i = 1>
                                 <#list locale.supported as l>
                                     <li class="${properties.kcLocaleListItemClass!}" role="none">

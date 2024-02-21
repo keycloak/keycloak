@@ -144,7 +144,7 @@ var MenuButtonLinks = /*#__PURE__*/function () {
     value: function closePopup() {
       if (this.isOpen()) {
         this.buttonNode.setAttribute('aria-expanded', 'false');
-        this.menuNode.style.display = 'none';
+        this.menuNode.style.removeProperty('display');
       }
     }
   }, {
