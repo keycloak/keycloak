@@ -80,7 +80,7 @@ body:
       label: Regression
       description: Was the issue introduced only after upgrading Keycloak, and it worked as expected in the past?
       options:
-        - label: The issue is a regressions
+        - label: The issue is a regression
   - type: textarea
     id: behaviorExpected
     attributes:

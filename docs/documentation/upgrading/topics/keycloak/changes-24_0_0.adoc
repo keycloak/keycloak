@@ -174,6 +174,25 @@ The `--proxy` option has been deprecated and will be removed in a future release
 NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
 the case before for `--proxy edge` and `--proxy reencrypt`).
 
+WARNING: When using the proxy headers option, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively.
+To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+You can also set the proxy headers when using the Operator:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to the previous behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
 = Changes to the user representation in both Admin API and Account contexts
 
 Both `org.keycloak.representations.idm.UserRepresentation` and `org.keycloak.representations.account.UserRepresentation` representation classes have changed
@@ -407,7 +426,7 @@ The property keys used by the operator for advanced configuration have changed f
 = Keycloak CR resources options
 
 When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
-The default `requests` memory for Keycloak deployment and the realm import Job is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+The default `requests` memory for Keycloak deployment and the realm import Job is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
 
 = Updates to cookies
 
