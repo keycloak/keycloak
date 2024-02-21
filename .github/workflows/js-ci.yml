@@ -323,6 +323,13 @@ jobs:
           name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          if-no-files-found: ignore
+
   check:
     name: Status Check - Keycloak JavaScript CI
     if: always()
