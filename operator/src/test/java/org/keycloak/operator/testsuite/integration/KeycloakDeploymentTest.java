@@ -158,20 +158,13 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var defaultKCDeploy = getTestKeycloakDeployment(true);
 
         var valueSecretHealthProp = new ValueOrSecret("health-enabled", "false");
-        var valueSecretProxyProp = new ValueOrSecret("proxy", "reencrypt");
 
         var healthEnvVar = new EnvVarBuilder()
                 .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretHealthProp.getName()))
                 .withValue(valueSecretHealthProp.getValue())
                 .build();
 
-        var proxyEnvVar = new EnvVarBuilder()
-                .withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(valueSecretProxyProp.getName()))
-                .withValue(valueSecretProxyProp.getValue())
-                .build();
-
         defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretHealthProp);
-        defaultKCDeploy.getSpec().getAdditionalOptions().add(valueSecretProxyProp);
 
         deployKeycloak(k8sclient, defaultKCDeploy, false);
 
@@ -182,14 +175,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                                                   .get()
                                                   .getValue()
         ).isEqualTo("true"); // just a sanity check default values did not change
-
-        assertThat(
-                Constants.DEFAULT_DIST_CONFIG_LIST.stream()
-                                                  .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretProxyProp.getName()))
-                                                  .findFirst()
-                                                  .get()
-                                                  .getValue()
-        ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -212,10 +197,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     assertThat(firstKCContainer.getEnv().stream()
                             .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(healthEnvVar.getName())))
                             .containsExactly(healthEnvVar);
-
-                    assertThat(firstKCContainer.getEnv().stream()
-                            .filter(oneEnvVar -> oneEnvVar.getName().equalsIgnoreCase(proxyEnvVar.getName())))
-                            .containsExactly(proxyEnvVar);
 
                 });
     }

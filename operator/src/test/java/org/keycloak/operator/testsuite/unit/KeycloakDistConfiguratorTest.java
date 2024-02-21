@@ -135,6 +135,15 @@ public class KeycloakDistConfiguratorTest {
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT_BACKCHANNEL");
     }
 
+    @Test
+    public void proxy() {
+        final Map<String, String> expectedValues = Map.of(
+                "proxy-headers", "forwarded"
+        );
+
+        testFirstClassCitizen(expectedValues);
+    }
+
     /* UTILS */
 
     private void testFirstClassCitizen(Map<String, String> expectedValues) {

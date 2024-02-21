@@ -68,6 +68,7 @@ import java.util.stream.Stream;
 import jakarta.inject.Inject;
 
 import static org.keycloak.operator.Utils.addResources;
+import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
@@ -368,6 +369,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
         varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
+        // TODO remove this once the --proxy option is finally removed from Keycloak
+        // not strictly necessary as --proxy-headers take precedence over --proxy but at least removes the warning
+        // about deprecated --proxy option in use
+        if (varMap.containsKey(getKeycloakOptionEnvVarName("proxy-headers"))) {
+            varMap.remove(getKeycloakOptionEnvVarName("proxy"));
+        }
+
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
@@ -395,7 +403,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
                 .map(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(v.getName()));
+                    var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
                         envBuilder.withValueFrom(

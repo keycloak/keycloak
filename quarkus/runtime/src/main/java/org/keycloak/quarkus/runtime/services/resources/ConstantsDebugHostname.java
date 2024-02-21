@@ -37,6 +37,7 @@ public class ConstantsDebugHostname {
             "hostname-path",
             "hostname-port",
             "proxy",
+            "proxy-headers",
             "http-enabled",
             "http-relative-path",
             "http-port",
