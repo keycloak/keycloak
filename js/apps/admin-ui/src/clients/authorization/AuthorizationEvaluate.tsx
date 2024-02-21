@@ -281,7 +281,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
         </Panel>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("identityInformation")}</Title>
+            <Title headingLevel="h2">{t("permissions")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">

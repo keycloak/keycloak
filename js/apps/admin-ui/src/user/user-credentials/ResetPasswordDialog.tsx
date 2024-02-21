@@ -88,6 +88,7 @@ export const ResetPasswordDialog = ({
           value: password,
         },
       });
+      user.requiredActions = ["UPDATE_PASSWORD"];
       const credentials = await adminClient.users.getCredentials({
         id: user.id!,
       });

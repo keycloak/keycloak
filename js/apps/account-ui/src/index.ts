@@ -40,3 +40,19 @@ export { ResourcesTab } from "./resources/ResourcesTab";
 export { ResourceToolbar } from "./resources/ResourceToolbar";
 export { SharedWith } from "./resources/SharedWith";
 export { ShareTheResource } from "./resources/ShareTheResource";
+export {
+  deleteConsent,
+  deleteCredentials,
+  deleteSession,
+  getApplications,
+  getCredentials,
+  getDevices,
+  getGroups,
+  getLinkedAccounts,
+  getPermissionRequests,
+  getPersonalInfo,
+  getSupportedLocales,
+  linkAccount,
+  savePersonalInfo,
+  unLinkAccount,
+} from "./api/methods";
