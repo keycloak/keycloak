@@ -407,7 +407,7 @@ The property keys used by the operator for advanced configuration have changed f
 = Keycloak CR resources options
 
 When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
-The default `requests` memory for Keycloak deployment and the realm import Job is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+The default `requests` memory for Keycloak deployment and the realm import Job is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
 
 = Updates to cookies
 
