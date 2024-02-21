@@ -84,7 +84,7 @@ export const UserForm = ({
 
   useEffect(() => {
     setValue("requiredActions", user?.requiredActions || []);
-  }, [user?.requiredActions, setValue]);
+  }, [user, setValue]);
 
   const unLockUser = async () => {
     try {
