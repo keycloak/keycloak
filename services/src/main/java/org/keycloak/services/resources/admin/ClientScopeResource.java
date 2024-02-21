@@ -151,8 +151,8 @@ public class ClientScopeResource {
     public Response deleteClientScope() {
 
         auth.clients().requireManage(clientScope);
-        long ClientScopesCount =  Arrays.stream(realm.getClientScopesStream().toArray()).count();
-        if(ClientScopesCount>1) {
+        long clientScopesCount =  Arrays.stream(realm.getClientScopesStream().toArray()).count();
+        if (clientScopesCount > 1) {
             try {
                 realm.removeClientScope(clientScope.getId());
                 adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
@@ -160,7 +160,7 @@ public class ClientScopeResource {
             } catch (ModelException me) {
                 throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
             }
-        }else{
+        } else {
             throw ErrorResponse.error("You are not allowed to delete all the client scopes.", Response.Status.FORBIDDEN);
         }
     }

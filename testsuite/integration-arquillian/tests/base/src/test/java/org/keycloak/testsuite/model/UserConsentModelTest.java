@@ -323,7 +323,9 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientScopeModel barScope = KeycloakModelUtils.getClientScopeByName(realm, "bar");
             try {
                 realm.removeClientScope(barScope.getId());
-            }catch (Exception expected){}
+                Assert.fail("It is not expected to successfully remove client scope bar");
+            } catch (Exception expected) {
+            }
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionST2) -> {
