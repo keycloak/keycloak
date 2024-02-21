@@ -126,7 +126,7 @@
                         </replacement>
                         <replacement>
                             <token><![CDATA[<meta name="description" content="Web site to manage keycloak" />]]></token>
-                            <value xml:space="preserve"><![CDATA[<meta name="${properties.description!"Web site to manage keycloak"}" />]]></value>
+                            <value xml:space="preserve"><![CDATA[<meta name="description" content="${properties.description!"Web site to manage keycloak"}" />]]></value>
                         </replacement>
                         <replacement>
                             <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
