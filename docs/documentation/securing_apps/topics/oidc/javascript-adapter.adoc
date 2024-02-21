@@ -438,11 +438,11 @@ Options are same as for the createLoginUrl method but 'action' is set to 'regist
 
 *accountManagement()*
 
-Redirects to the Account Management Console.
+Redirects to the Account Console.
 
 *createAccountUrl(options)*
 
-Returns the URL to the Account Management Console.
+Returns the URL to the Account Console.
 
 Options is an Object, where:
 

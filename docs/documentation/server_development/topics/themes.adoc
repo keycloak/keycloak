@@ -11,7 +11,7 @@ image::images/login-sunrise.png[caption="",title="Login page with sunrise exampl
 
 A theme can provide one or more types to customize different aspects of {project_name}. The types available are:
 
-* Account - Account management
+* Account - Account Console
 * Admin - Admin Console
 * Email - Emails
 * Login - Login forms
@@ -105,7 +105,7 @@ You have now created a theme with support for the login type.
 . For *Login Theme* select *mytheme* and click *Save*.
 . Open the login page for the realm.
 +
-You can do this either by logging in through your application or by opening the Account Management console (`/realms/{realm name}/account`).
+You can do this either by logging in through your application or by opening the Account Console (`/realms/{realm name}/account`).
 
 . To see the effect of changing the parent theme, set `parent=keycloak` in `theme.properties` and refresh the login page.
 

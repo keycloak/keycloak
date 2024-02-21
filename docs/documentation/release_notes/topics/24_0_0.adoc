@@ -91,7 +91,17 @@ The 'welcome' page that is shown when a user starts Keycloak for the first time,
 
 image::images/new-welcome-screen.png["A screenshot of the new welcome page, showing a simplified layout with a user registration form."]
 
-If you are using a custom theme, you may need to update it to support the new welcome page. For more details consult the link:{upgradingguide_link}[{upgradingguide_name}].
+If you are using a custom theme, you may need to update it to support the new welcome page. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= New Account Console now the default
+
+We introduced version 3 of the Account Console in Keycloak 22 as a preview feature. In this release, we are making it the default version, and deprecating version 2 in the process, which will be removed in a subsequent release.
+
+This new version has built-in support for the user profile feature, which allows administrators to configure which attributes are available to users in the Account Console, and lands a user directly on their personal account page after logging in:
+.New Account Console with custom attributes
+image::images/new-account-console.png["New Account Console with custom attributes"]
+
+If you are using or extending the customization features of this theme,  you may need to perform additional migrations. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Keycloak JS
 
@@ -201,8 +211,8 @@ As a result, you can use the CR to configure build time options also when a cust
 = Enhanced reverse proxy settings
 
 It is now possible to separately enable parsing of either `Forwarded` or `X-Forwarded-*` headers via the new `--proxy-headers` option.
-For details consult the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
-The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions consult the link:{upgradingguide_link}[{upgradingguide_name}].
+For details, see the https://www.keycloak.org/server/reverseproxy[Reverse Proxy Guide].
+The original `--proxy` option is now deprecated and will be removed in a future release. For migration instructions, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Changes to the user representation in both Admin API and Account contexts
 
