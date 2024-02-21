@@ -34,7 +34,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Map;
@@ -57,22 +56,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .withStrictBackchannel(false);
         if (isOpenShift) {
             kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
-
-            // see https://github.com/keycloak/keycloak/issues/14400#issuecomment-1659900081
-            kc.getSpec().setUnsupported(new UnsupportedSpecBuilder()
-                    .withNewPodTemplate()
-                        .withNewSpec()
-                            .addNewContainer()
-                                .addNewEnv()
-                                    .withName("KC_PROXY")
-                                    .withValue("edge")
-                                .endEnv()
-                            .endContainer()
-                        .endSpec()
-                    .endPodTemplate()
-                    .build());
         }
-
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
@@ -91,7 +75,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testIngressOnHTTPS() {
+    public void testIngressOnHTTPSAndProxySettings() {
         var kc = getTestKeycloakDeployment(false);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
@@ -111,6 +95,45 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         }
 
         testIngressURLs("https://" + testHostname + ":443");
+
+        // just check we really have proxy set correctly
+        var envVars = k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).get().getSpec()
+                .getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertThat(envVars)
+                .noneMatch(e -> "KC_PROXY".equals(e.getName()))
+                .anyMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()) && "xforwarded".equals(e.getValue()));
+    }
+
+    // TODO remove this test once the --proxy option is finally removed from Keycloak
+    @Test
+    public void testFallbackToDefaultProxySettings() {
+        var kc = getTestKeycloakDeployment(false);
+        var hostnameSpecBuilder = new HostnameSpecBuilder()
+                .withStrict(false)
+                .withStrictBackchannel(false);
+        if (isOpenShift) {
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+        }
+        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
+        kc.getSpec().setProxySpec(null);
+
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String testHostname;
+        if (isOpenShift) {
+            testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
+        } else {
+            testHostname = kubernetesIp;
+        }
+
+        testIngressURLs("https://" + testHostname + ":443");
+
+        // just check we really have proxy set correctly
+        var envVars = k8sclient.apps().statefulSets().withName(kc.getMetadata().getName()).get().getSpec()
+                .getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertThat(envVars)
+                .anyMatch(e -> "KC_PROXY".equals(e.getName()) && "passthrough".equals(e.getValue()))
+                .noneMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()));
     }
 
     private void testIngressURLs(String baseUrl) {
@@ -125,9 +148,10 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                             .get(url)
                             .body()
                             .jsonPath()
-                            .getString("realm");
+                            .getString("token-service");
 
-                    assertEquals("master", output);
+                    // the Keycloak URL must be without port, otherwise proxy resolution doesn't work correctly
+                    assertEquals(url.replaceAll(":\\d+", "") + "/protocol/openid-connect", output);
                 });
 
         Awaitility.await()
