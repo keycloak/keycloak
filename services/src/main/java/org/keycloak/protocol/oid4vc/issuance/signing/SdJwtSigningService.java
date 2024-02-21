@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -29,20 +28,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.sdjwt.ArrayDisclosure;
 import org.keycloak.sdjwt.DisclosureSpec;
-import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
-import org.keycloak.sdjwt.SdJwtClaim;
-import org.keycloak.sdjwt.SdJwtSalt;
 import org.keycloak.sdjwt.SdJwtUtils;
-import org.keycloak.sdjwt.UndisclosedClaim;
-import org.keycloak.sdjwt.VisibleSdJwtClaim;
 
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.IntStream;
@@ -92,7 +82,7 @@ public class SdJwtSigningService extends SigningService<String> {
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
         signatureSignerContext = signatureProvider.signer(signingKey);
 
-        LOGGER.debugf("Successfully initiated the JWT Signing Service with algorithm %s.", algorithmType);
+        LOGGER.debugf("Successfully initiated the SD-JWT Signing Service with algorithm %s.", algorithmType);
     }
 
     @Override
