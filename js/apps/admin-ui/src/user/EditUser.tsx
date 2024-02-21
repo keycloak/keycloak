@@ -291,7 +291,7 @@ export default function EditUser() {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
-                <UserCredentials user={user} />
+                <UserCredentials user={user} setUser={setUser} />
               </Tab>
               <Tab
                 data-testid="role-mapping-tab"
