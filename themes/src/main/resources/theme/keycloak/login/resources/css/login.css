@@ -274,6 +274,10 @@ ul#kc-totp-supported-apps {
     color: var(--pf-global--Color--200);
 }
 
+.kc-social-gray h2 {
+    font-size: 1em;
+}
+
 .kc-social-item {
     margin-bottom: var(--pf-global--spacer--sm);
     font-size: 15px;
