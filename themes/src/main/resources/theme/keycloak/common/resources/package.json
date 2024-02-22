@@ -13,7 +13,8 @@
     "jquery": "^3.7.1",
     "patternfly": "^3.59.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "rfc4648": "^1.5.3"
   },
   "packageManager": "pnpm@8.10.0",
   "devDependencies": {
