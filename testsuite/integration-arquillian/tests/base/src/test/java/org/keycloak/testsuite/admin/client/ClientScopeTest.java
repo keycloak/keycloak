@@ -839,8 +839,13 @@ public class ClientScopeTest extends AbstractClientTest {
     @Test
     public void deleteAllClientScopes() {
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
-        for (ClientScopeRepresentation clientScope : clientScopes) {
-            removeClientScope(clientScope.getId());
+        for (int i = 0; i < clientScopes.size(); i++) {
+            ClientScopeRepresentation clientScope = clientScopes.get(i);
+            if (i != clientScopes.size() - 1) {
+                removeClientScope(clientScope.getId());
+            } else {
+                removeClientScopeMustFail(clientScope.getId());
+            }
         }
     }
 
@@ -877,6 +882,14 @@ public class ClientScopeTest extends AbstractClientTest {
     private void removeClientScope(String clientScopeId) {
         clientScopes().get(clientScopeId).remove();
         assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeResourcePath(clientScopeId), ResourceType.CLIENT_SCOPE);
+    }
+
+    private void removeClientScopeMustFail(String clientScopeId) {
+        try {
+            clientScopes().get(clientScopeId).remove();
+        } catch (Exception expected) {
+
+        }
     }
 
 }
