@@ -688,6 +688,9 @@ The JSON schema is defined as follows:
   "attributes": [
     {
       "name": "myattribute",
+      "multivalued": false,
+      "displayName": "My Attribute",
+      "group": "personalInfo",
       "required": {
         "roles": [ "user", "admin" ],
         "scopes": [ "foo", "bar" ]
