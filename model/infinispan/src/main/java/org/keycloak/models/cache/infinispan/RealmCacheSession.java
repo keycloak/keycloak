@@ -934,7 +934,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             cached = new CachedGroup(loaded, realm, model);
-            cache.addRevisioned(cached, startupRevision);
+            long lifespan = cache.getConfiguredLifespan(model.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(cached, startupRevision, lifespan, idleTime);
 
         } else if (invalidations.contains(id)) {
             return getGroupDelegate().getGroupById(realm, id);
@@ -959,7 +961,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (model == null) return null;
             if (cache.isModelInvalidated(model.getId(), invalidationManager) || cache.isPrefixInvalidated(cacheKey, invalidationManager)) return model;
             query = new GroupNameQuery(loaded, cacheKey, model.getId(), realm);
-            cache.addRevisioned(query, startupRevision);
+            long lifespan = cache.getConfiguredLifespan(model.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(query, startupRevision, lifespan, idleTime);
             return model;
         } else if (cache.isPrefixInvalidated(cacheKey, invalidationManager)) {
             return getGroupDelegate().getGroupByName(realm, parent, name);
@@ -1003,7 +1007,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             for (GroupModel client : model) ids.add(client.getId());
             query = new GroupListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm getGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
+            long lifespan = cache.getConfiguredLifespan(model.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(query, startupRevision, lifespan, idleTime);
             return model.stream();
         }
         List<GroupModel> list = new LinkedList<>();
@@ -1076,7 +1082,10 @@ public class RealmCacheSession implements CacheRealmProvider {
             for (GroupModel client : model) ids.add(client.getId());
             query = new GroupListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
+            // TODO, further optimization would allow us to timoue not just on the model but on the type of query
+            long lifespan = cache.getConfiguredLifespan(model.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(query, startupRevision, lifespan, idleTime);
             return model.stream();
         }
         List<GroupModel> list = new LinkedList<>();
@@ -1218,16 +1227,15 @@ public class RealmCacheSession implements CacheRealmProvider {
             cached = new CachedClient(revision, realm, delegate);
             adapter = new ClientAdapter(realm, cached, this);
 
-            long lifespan = model.getLifespan();
-            if (lifespan > 0) {
-                cache.addRevisioned(cached, startupRevision, lifespan);
-            } else {
-                cache.addRevisioned(cached, startupRevision);
-            }
+            long lifespan = model.getLifespan() < 0 ? cache.getConfiguredLifespan(model.getClass().getName()) : model.getLifespan();
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(cached, startupRevision, lifespan, idleTime);
         } else {
             cached = new CachedClient(revision, realm, delegate);
             adapter = new ClientAdapter(realm, cached, this);
-            cache.addRevisioned(cached, startupRevision);
+            long lifespan = cache.getConfiguredLifespan(delegate.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(delegate.getClass().getName());
+            cache.addRevisioned(cached, startupRevision, lifespan, idleTime);
         }
 
         return adapter;

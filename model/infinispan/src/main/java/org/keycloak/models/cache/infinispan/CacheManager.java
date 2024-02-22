@@ -59,8 +59,7 @@ public abstract class CacheManager {
     protected final UpdateCounter counter = new UpdateCounter();
 
     // fall back onto a global cache timeout and idle time when a model doesn't have a policy configured
-    private final Integer cacheTimeout = Config.scope(CacheManager.class.getName()).getInt("cacheTimeout", -1);
-    private final Integer cacheIdleTime = Config.scope(CacheManager.class.getName()).getInt("cacheIdleTime", -1);
+    private final Config.Scope cacheConfig = Config.scope(CacheManager.class.getName());
 
     public CacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         this.cache = cache;
@@ -190,10 +189,10 @@ public abstract class CacheManager {
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {
-        addRevisioned(object, startupRevision, -1);
+        addRevisioned(object, startupRevision, -1, -1);
     }
 
-    public void addRevisioned(Revisioned object, long startupRevision, long lifespan) {
+    public void addRevisioned(Revisioned object, long startupRevision, long lifespan, long idleTime) {
         //startRevisionBatch();
         String id = object.getId();
         try {
@@ -230,8 +229,7 @@ public abstract class CacheManager {
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             revisions.put(id, object.getRevision());
-            if (lifespan < 0) cache.putForExternalRead(id, object, cacheTimeout, TimeUnit.MILLISECONDS, cacheIdleTime, TimeUnit.MILLISECONDS);
-            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS, cacheIdleTime, TimeUnit.MILLISECONDS);
+            cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS, idleTime, TimeUnit.MILLISECONDS);
         } finally {
             endRevisionBatch();
         }
@@ -284,5 +282,13 @@ public abstract class CacheManager {
     }
 
     protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations, InvalidationManager invalidationManager);
+
+    public Long getConfiguredIdleTime(String modelName) {
+        return cacheConfig.getLong(modelName + ".idle", -1L);
+    }
+
+    public Long getConfiguredLifespan(String modelName) {
+        return cacheConfig.getLong(modelName + ".lifespan", -1L);
+    }
 
 }

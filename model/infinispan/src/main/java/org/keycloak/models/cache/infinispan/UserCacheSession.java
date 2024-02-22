@@ -360,17 +360,16 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             adapter = new UserAdapter(cached, this, session, realm);
             onCache(realm, adapter, delegate);
 
-            long lifespan = model.getLifespan();
-            if (lifespan > 0) {
-                cache.addRevisioned(cached, startupRevision, lifespan);
-            } else {
-                cache.addRevisioned(cached, startupRevision);
-            }
+            long lifespan = model.getLifespan() < 0 ? cache.getConfiguredLifespan(model.getClass().getName()) : model.getLifespan();
+            long idleTime = cache.getConfiguredIdleTime(model.getClass().getName());
+            cache.addRevisioned(cached, startupRevision, lifespan, idleTime);
         } else {
             cached = new CachedUser(revision, realm, delegate, notBefore);
             adapter = new UserAdapter(cached, this, session, realm);
+            long lifespan = cache.getConfiguredLifespan(delegate.getClass().getName());
+            long idleTime = cache.getConfiguredIdleTime(delegate.getClass().getName());
             onCache(realm, adapter, delegate);
-            cache.addRevisioned(cached, startupRevision);
+            cache.addRevisioned(cached, startupRevision, lifespan, idleTime);
         }
 
         return adapter;
