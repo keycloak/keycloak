@@ -95,9 +95,9 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void checkFeatureDisabled() {
-        // Required feature should return Status code 501 - Feature doesn't work
+        // Required feature should return Status code 400 - Feature doesn't work
         testingClient.server().run(ClientTokenExchangeTest::addDirectExchanger);
-        Assert.assertEquals(501, checkTokenExchange().getStatus());
+        Assert.assertEquals(400, checkTokenExchange().getStatus());
         testingClient.server().run(ClientTokenExchangeTest::removeDirectExchanger);
     }
 
