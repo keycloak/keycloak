@@ -114,6 +114,9 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                 // Clients need to authenticate in order to obtain a RPT from the server.
                 // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
                 OAuth2GrantType clientCredentialsGrant = session.getProvider(OAuth2GrantType.class, OAuth2Constants.CLIENT_CREDENTIALS);
+                context.setClient(client);
+                context.setClientConfig(clientConfig);
+                context.setClientAuthAttributes(clientAuthAttributes);
                 clientCredentialsGrant.setContext(context);
                 accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process().getEntity()).getToken();
             }
