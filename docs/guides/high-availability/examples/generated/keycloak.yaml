@@ -414,7 +414,7 @@ metadata:
 spec:
   # end::keycloak-ispn[]
   hostname:
-    hostname: keycloak-keycloak.minikube.nip.io
+    hostname: <KEYCLOAK_URL_HERE>
   resources:
     requests:
       cpu: "2"
@@ -424,7 +424,7 @@ spec:
       memory: "2250M"
   db:
     vendor: postgres
-    url: jdbc:postgresql://postgres:5432/keycloak
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak
     poolMinSize: 30 # <1>
     poolInitialSize: 30
     poolMaxSize: 30
@@ -434,23 +434,28 @@ spec:
     passwordSecret:
       name: keycloak-db-secret
       key: password
+  image: <KEYCLOAK_IMAGE_HERE> # <2>
+  startOptimized: false # <2>
   features:
     enabled:
-      - multi-site # <2>
+      - multi-site # <3>
+  transaction:
+    xaEnabled: false # <4>
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
-
     # tag::keycloak-queue-size[]
     - name: http-max-queued-requests
       value: "1000"
     # end::keycloak-queue-size[]
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <3>
+    - name: metrics-enabled # <5>
       value: 'true'
-    - name: http-pool-max-threads # <4>
+    - name: http-pool-max-threads # <6>
       value: "66"
+    - name: db-driver
+      value: software.amazon.jdbc.Driver
   http:
     tlsSecret: keycloak-tls-secret
   instances: 3
@@ -459,7 +464,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: 299939d6a4cb95660bea957f7baeade00c9a27c83d97497645393afe991b752c-34c125a6d541ad11d915b6d4f128a9281329070f67d06de917c9c3201e9326c1--01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
+          checksum/config: 2cae63c85a3485c135aebe1472971dd056b1dda42fb54ef2f891bc521e31fc1a-34c125a6d541ad11d915b6d4f128a9281329070f67d06de917c9c3201e9326c1-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-v1.27.0
       spec:
         containers:
           - env:
@@ -479,9 +484,19 @@ spec:
               - name: JAVA_OPTS_APPEND # <5>
                 value: ""
             ports:
+            # end::keycloak[]
+            # readinessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
+            # livenessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
             volumeMounts:
               - name: keycloak-providers
-                mountPath: /opt/keycloak/providers
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-0.12-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-0.12-SNAPSHOT.jar
                 readOnly: true
         volumes:
           - name: keycloak-providers

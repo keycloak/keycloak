@@ -228,6 +228,7 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+[[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
 
 When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
@@ -244,7 +245,7 @@ A minimal Dockerfile to build an image which can be used with the {project_name}
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/download/${properties["aws-jdbc-wrapper.version"]}/aws-advanced-jdbc-wrapper-${properties["aws-jdbc-wrapper.version"]}.jar /opt/keycloak/providers/aws-advanced-jdbc-wrapper.jar
+ADD --chmod=0666 https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/download/${properties["aws-jdbc-wrapper.version"]}/aws-advanced-jdbc-wrapper-${properties["aws-jdbc-wrapper.version"]}.jar /opt/keycloak/providers/aws-advanced-jdbc-wrapper.jar
 ----
 +
 See the <@links.server id="containers" /> {section} for details on how to build optimized images, and the <@links.operator id="customizing-keycloak" /> {section} on how to run optimized and non-optimized images with the {project_name} Operator.
