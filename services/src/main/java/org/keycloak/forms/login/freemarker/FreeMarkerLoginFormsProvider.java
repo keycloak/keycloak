@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
@@ -70,6 +71,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
@@ -367,6 +369,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         if (authenticationSession != null) {
             uriBuilder.queryParam(Constants.TAB_ID, authenticationSession.getTabId());
+            String authSessionAction = authenticationSession.getAction();
+            if (!AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSessionAction) && !AuthenticationSessionModel.Action.LOGGED_OUT.name().equals(authSessionAction)) {
+                uriBuilder.queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession));
+            }
         }
         return uriBuilder;
     }

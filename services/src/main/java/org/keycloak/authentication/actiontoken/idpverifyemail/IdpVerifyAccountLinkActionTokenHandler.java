@@ -97,7 +97,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
             UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                    authSession.getClient().getClientId(), authSession.getTabId());
+                    authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)

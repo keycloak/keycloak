@@ -1,10 +1,13 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.Collections;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
@@ -28,7 +31,15 @@ public class KcSamlBrokerDestinationTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
-        return KcSamlBrokerConfiguration.INSTANCE;
+        return new KcSamlBrokerConfiguration() {
+
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                RealmRepresentation realm = super.createProviderRealm();
+                realm.setEventsListeners(Collections.singletonList("jboss-logging"));
+                return realm;
+            }
+        };
     }
 
     @Test

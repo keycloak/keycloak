@@ -67,6 +67,7 @@ public interface Errors {
     String EXPIRED_CODE = "expired_code";
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
+    String ALREADY_LOGGED_IN = "already_logged_in";
 
     String TOKEN_INTROSPECTION_FAILED = "token_introspection_failed";
 

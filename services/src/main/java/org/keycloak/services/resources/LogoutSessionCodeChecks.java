@@ -18,8 +18,6 @@
 
 package org.keycloak.services.resources;
 
-import java.net.URI;
-
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -42,7 +40,7 @@ public class LogoutSessionCodeChecks extends SessionCodeChecks {
 
     public LogoutSessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
                                    String code, String clientId, String tabId) {
-        super(realm, uriInfo, request, clientConnection, session, event, null, code, null, clientId, tabId, null);
+        super(realm, uriInfo, request, clientConnection, session, event, null, code, null, clientId, tabId, null, null);
     }
 
 

@@ -63,6 +63,8 @@ public interface Details {
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
+    String REDIRECTED_TO_CLIENT = "redirected_to_client";
+    String LOGIN_RETRY = "login_retry";
 
     String CONSENT = "consent";
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client

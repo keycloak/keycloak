@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.docker.mapper.DockerAuthV2AttributeMapper;
@@ -145,6 +146,16 @@ public class DockerAuthV2Protocol implements LoginProtocol {
 
     @Override
     public Response sendError(final AuthenticationSessionModel clientSession, final LoginProtocol.Error error) {
+        return new ResponseBuilderImpl().status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    }
+
+    @Override
+    public ClientData getClientData(AuthenticationSessionModel authSession) {
+        return new ClientData();
+    }
+
+    @Override
+    public Response sendError(ClientModel client, ClientData clientData, Error error) {
         return new ResponseBuilderImpl().status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
 
