@@ -22,7 +22,7 @@
     "@patternfly/react-icons": "^4.93.7",
     "@patternfly/react-table": "^4.113.6",
     "i18next": "^23.9.0",
-    "i18next-http-backend": "^2.4.3",
+    "i18next-http-backend": "^2.5.0",
     "keycloak-js": "workspace:*",
     "keycloak-masthead": "workspace:*",
     "lodash-es": "^4.17.21",
