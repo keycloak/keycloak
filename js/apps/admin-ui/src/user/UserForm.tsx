@@ -387,7 +387,7 @@ export const UserForm = ({
           isDisabled={
             !user?.id &&
             !watchUsernameInput &&
-            !realm.registrationEmailAsUsername
+            realm.registrationEmailAsUsername === false
           }
           variant="primary"
           type="submit"
