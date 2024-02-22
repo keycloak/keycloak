@@ -132,6 +132,18 @@ public interface OAuth2GrantType extends Provider {
             this.formParams = formParams;
         }
 
+        public void setClient(ClientModel client) {
+            this.client = client;
+        }
+
+        public void setClientConfig(Object clientConfig) {
+            this.clientConfig = clientConfig;
+        }
+
+        public void setClientAuthAttributes(Map<String, String> clientAuthAttributes) {
+            this.clientAuthAttributes = clientAuthAttributes;
+        }
+
     }
 
 }
