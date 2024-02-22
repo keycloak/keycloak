@@ -2,6 +2,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.InvalidationManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
@@ -56,6 +57,10 @@ public abstract class CacheManager {
     protected final Cache<String, Long> revisions;
     protected final Cache<String, Revisioned> cache;
     protected final UpdateCounter counter = new UpdateCounter();
+
+    // fall back onto a global cache timeout and idle time when a model doesn't have a policy configured
+    private final Integer cacheTimeout = Config.scope(CacheManager.class.getName()).getInt("cacheTimeout", -1);
+    private final Integer cacheIdleTime = Config.scope(CacheManager.class.getName()).getInt("cacheIdleTime", -1);
 
     public CacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         this.cache = cache;
@@ -225,8 +230,8 @@ public abstract class CacheManager {
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             revisions.put(id, object.getRevision());
-            if (lifespan < 0) cache.putForExternalRead(id, object);
-            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
+            if (lifespan < 0) cache.putForExternalRead(id, object, cacheTimeout, TimeUnit.MILLISECONDS, cacheIdleTime, TimeUnit.MILLISECONDS);
+            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS, cacheIdleTime, TimeUnit.MILLISECONDS);
         } finally {
             endRevisionBatch();
         }
