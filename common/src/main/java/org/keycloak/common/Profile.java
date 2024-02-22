@@ -89,7 +89,7 @@ public class Profile {
 
         RECOVERY_CODES("Recovery codes", Type.PREVIEW),
 
-        UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.DEFAULT),
 
         JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak server", Type.DEFAULT),
 

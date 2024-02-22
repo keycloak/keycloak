@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultKeyProviders;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -60,6 +61,7 @@ public class MigrateTo24_0_0 implements Migration {
             updateUserProfileSettings(session);
             updateLdapProviderConfig(session);
             createHS512ComponentModelKey(session);
+            enableUpdateEmailRequiredAction(session);
         } finally {
             context.setRealm(null);
         }
@@ -102,5 +104,10 @@ public class MigrateTo24_0_0 implements Migration {
     private void createHS512ComponentModelKey(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         DefaultKeyProviders.createSecretProvider(realm);
+    }
+
+    private void enableUpdateEmailRequiredAction(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        DefaultRequiredActions.addUpdateEmailAction(realm);
     }
 }
