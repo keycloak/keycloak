@@ -837,7 +837,7 @@ public class ClientScopeTest extends AbstractClientTest {
     }
 
     @Test
-    public void deleteAllClientScopes() {
+    public void deleteAllClientScopesMustFail() {
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
         for (int i = 0; i < clientScopes.size(); i++) {
             ClientScopeRepresentation clientScope = clientScopes.get(i);
