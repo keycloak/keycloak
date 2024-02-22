@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
