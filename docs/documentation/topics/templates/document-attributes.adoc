@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: DEV
-:project_versionMvn: 999.0.0-SNAPSHOT
-:project_versionNpm: 999.0.0-SNAPSHOT
-:project_versionDoc: DEV
+:project_version: 23.0.7
+:project_versionMvn: 23.0.7
+:project_versionNpm: 23.0.7
+:project_versionDoc: 23.0.7
 
 :standalone:
 :api-management!:
