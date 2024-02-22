@@ -370,3 +370,13 @@ The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, 
 
 For more details, check the
 https://www.keycloak.org/server/containers[Running Keycloak in a container].
+
+= Admin API
+
+== Support for searching users based on search filter, enabled attribute, first result position and maximum number
+
+The User API now supports querying users based on a search filter (matching either username or first or last name or email),
+the `enabled` attribute along with the position of the first result the maximum number of results to retrieve.
+For that, a new `enabled` parameter was added to the `/{realm}/users/search` endpoint.
+
+If the `enabled` flag is set to true, only users that are enabled and that match the filter string are retrieved.
