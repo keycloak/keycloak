@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.broker;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionToken;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -133,7 +134,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
           brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
         );
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                authSession.getClient().getClientId(), authSession.getTabId());
+                authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         String link = builder
                 .queryParam(Constants.EXECUTION, context.getExecution().getId())
                 .build(realm.getName()).toString();

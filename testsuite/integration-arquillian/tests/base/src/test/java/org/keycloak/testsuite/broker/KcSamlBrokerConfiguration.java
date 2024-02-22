@@ -54,6 +54,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         realm.setEnabled(true);
         realm.setRealm(REALM_PROV_NAME);
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
 
         return realm;
     }

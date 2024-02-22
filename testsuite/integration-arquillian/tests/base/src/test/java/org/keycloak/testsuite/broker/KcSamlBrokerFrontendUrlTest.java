@@ -29,6 +29,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,14 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 return realm;
             }
 
-            @Override 
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                RealmRepresentation realm = super.createProviderRealm();
+                realm.setEventsListeners(Collections.singletonList("jboss-logging"));
+                return realm;
+            }
+
+            @Override
             public List<ClientRepresentation> createProviderClients() {
                 List<ClientRepresentation> clients = super.createProviderClients();
 

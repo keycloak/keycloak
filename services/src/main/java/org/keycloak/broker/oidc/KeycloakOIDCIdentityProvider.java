@@ -134,6 +134,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 
         }
+
     }
 
     @Override

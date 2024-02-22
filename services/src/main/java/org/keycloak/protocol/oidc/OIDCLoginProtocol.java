@@ -31,8 +31,6 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -40,26 +38,26 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
-import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -321,13 +319,23 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String redirect = authSession.getRedirectUri();
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
 
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(redirect, state, error);
+
+        // Remove authenticationSession from current tab
+        new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+
+        return redirectUri.build();
+    }
+
+    private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error) {
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode, session, null);
 
-        if (error != Error.CANCELLED_AIA_SILENT) {
-            redirectUri.addParam(OAuth2Constants.ERROR, translateError(error));
+        OAuth2ErrorRepresentation oauthError = translateError(error);
+        if (oauthError.getError() != null) {
+            redirectUri.addParam(OAuth2Constants.ERROR, oauthError.getError());
         }
-        if (error == Error.CANCELLED_AIA) {
-            redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, "User cancelled aplication-initiated action.");
+        if (oauthError.getErrorDescription() != null) {
+            redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, oauthError.getErrorDescription());
         }
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
@@ -339,25 +347,59 @@ public class OIDCLoginProtocol implements LoginProtocol {
             redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         }
 
-        // Remove authenticationSession from current tab
-        new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+        return redirectUri;
+    }
 
+    @Override
+    public ClientData getClientData(AuthenticationSessionModel authSession) {
+        return new ClientData(authSession.getRedirectUri(),
+                authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM));
+    }
+
+    @Override
+    public Response sendError(ClientModel client, ClientData clientData, Error error) {
+        logger.tracef("Calling sendError with clientData when authenticating with client '%s' in realm '%s'. Error: %s", client.getClientId(), realm.getName(), error);
+
+        // Should check if clientData are valid for current client
+        AuthorizationEndpointRequest req = AuthorizationEndpointRequest.fromClientData(clientData);
+        AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
+                .event(event)
+                .client(client)
+                .realm(realm)
+                .request(req)
+                .session(session);
+        try {
+            checker.checkResponseType();
+            checker.checkRedirectUri();
+        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+            ex.throwAsErrorPageException(null);
+        }
+
+        setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
+        OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error);
         return redirectUri.build();
     }
 
-    private String translateError(Error error) {
+    private OAuth2ErrorRepresentation translateError(Error error) {
         switch (error) {
-            case CANCELLED_BY_USER:
+            case CANCELLED_AIA_SILENT:
+                return new OAuth2ErrorRepresentation(null, null);
             case CANCELLED_AIA:
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled aplication-initiated action.");
+            case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-                return OAuthErrorException.ACCESS_DENIED;
+                return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, null);
             case PASSIVE_INTERACTION_REQUIRED:
-                return OAuthErrorException.INTERACTION_REQUIRED;
+                return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);
             case PASSIVE_LOGIN_REQUIRED:
-                return OAuthErrorException.LOGIN_REQUIRED;
+                return new OAuth2ErrorRepresentation(OAuthErrorException.LOGIN_REQUIRED, null);
+            case ALREADY_LOGGED_IN:
+                return new OAuth2ErrorRepresentation(OAuthErrorException.TEMPORARILY_UNAVAILABLE, Constants.AUTHENTICATION_EXPIRED_MESSAGE);
             default:
                 ServicesLogger.LOGGER.untranslatedProtocol(error.name());
-                return OAuthErrorException.SERVER_ERROR;
+                return new OAuth2ErrorRepresentation(OAuthErrorException.SERVER_ERROR, null);
         }
     }
 
