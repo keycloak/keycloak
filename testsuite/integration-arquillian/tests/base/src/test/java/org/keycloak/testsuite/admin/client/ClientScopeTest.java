@@ -33,12 +33,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -839,6 +834,14 @@ public class ClientScopeTest extends AbstractClientTest {
             assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
         }
 
+    }
+
+    @Test
+    public void deleteAllClientScopes() {
+        List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
+        for (ClientScopeRepresentation clientScope : clientScopes) {
+            removeClientScope(clientScope.getId());
+        }
     }
 
     private void handleExpectedCreateFailure(ClientScopeRepresentation scopeRep, int expectedErrorCode, String expectedErrorMessage) {
