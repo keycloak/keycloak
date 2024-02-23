@@ -483,8 +483,8 @@ importers:
         specifier: ^3.7.3
         version: 3.7.3(@types/node@20.11.20)(rollup@4.12.0)(typescript@5.3.3)(vite@5.1.4)
       vite-plugin-lib-inject-css:
-        specifier: ^1.3.0
-        version: 1.3.0(vite@5.1.4)
+        specifier: ^2.0.0
+        version: 2.0.0(vite@5.1.4)
       vitest:
         specifier: ^1.3.0
         version: 1.3.1(@types/node@20.11.20)(jsdom@24.0.0)(lightningcss@1.23.0)
@@ -2537,7 +2537,7 @@ packages:
   /@vitest/snapshot@1.3.1:
     resolution: {integrity: sha512-EF++BZbt6RZmOlE3SuTPu/NfwBF6q4ABS37HHXzs2LUVPBLx2QoY/K0fKpRChSo8eLiuxcbCVfqKgx/dplCDuQ==}
     dependencies:
-      magic-string: 0.30.5
+      magic-string: 0.30.7
       pathe: 1.1.1
       pretty-format: 29.7.0
     dev: true
@@ -6002,6 +6002,13 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
+  /magic-string@0.30.7:
+    resolution: {integrity: sha512-8vBuFF/I/+OSLRmdf2wwFCJCz+nSn0m6DPvGH1fS/KiQoSaR+sETbov0eIk9KhEKy8CYqIkIAnbohxT/4H0kuA==}
+    engines: {node: '>=12'}
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.4.15
+    dev: true
+
   /make-error@1.3.6:
     resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
     dev: true
@@ -8022,12 +8029,12 @@ packages:
       - supports-color
     dev: true
 
-  /vite-plugin-lib-inject-css@1.3.0(vite@5.1.4):
-    resolution: {integrity: sha512-Rldq36U9TDlpDom3yoLybfJtzn897+oMKdX0+fxbVYnYjRGnTtaFfnMmfOckH8GQ3cvGAKv9Ai1PWyE0amIbjg==}
+  /vite-plugin-lib-inject-css@2.0.0(vite@5.1.4):
+    resolution: {integrity: sha512-5RK9eP2biW340FEbpI8eHZQfeqIz0+Glbkk4U1fZ1QKOvyaYy5K6TmW43KuhmGLizk2Vd4Nv7OwGpxq2wXclyQ==}
     peerDependencies:
       vite: '*'
     dependencies:
-      magic-string: 0.30.5
+      magic-string: 0.30.7
       picocolors: 1.0.0
       vite: 5.1.4(@types/node@20.11.20)(lightningcss@1.23.0)
     dev: true
