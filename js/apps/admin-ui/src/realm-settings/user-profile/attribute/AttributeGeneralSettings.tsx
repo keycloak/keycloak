@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
@@ -40,7 +40,25 @@ const REQUIRED_FOR = [
   { label: "requiredForLabel.admins", value: ["admin"] },
 ] as const;
 
-export const AttributeGeneralSettings = () => {
+type TranslationForm = {
+  locale: string;
+  value: string;
+};
+
+type Translations = {
+  key: string;
+  translations: TranslationForm[];
+};
+
+export type AttributeGeneralSettingsProps = {
+  onHandlingTranslationData: (data: any) => void;
+  onHandlingGeneratedDisplayName: (displayName: string) => void;
+};
+
+export const AttributeGeneralSettings = ({
+  onHandlingTranslationData,
+  onHandlingGeneratedDisplayName,
+}: AttributeGeneralSettingsProps) => {
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useFormContext();
@@ -58,7 +76,11 @@ export const AttributeGeneralSettings = () => {
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [newAttributeName, setNewAttributeName] = useState("");
   const [generatedDisplayName, setGeneratedDisplayName] = useState("");
-  // const displayNameRegex = /\$\{([^}]+)\}/;
+  const [translationsData, setTranslationsData] = useState<Translations>({
+    key: "",
+    translations: [],
+  });
+  const displayNameRegex = /\$\{([^}]+)\}/;
 
   const handleAttributeNameChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -92,12 +114,12 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
-  // const attributeDisplayName = useWatch({
-  //   control: form.control,
-  //   name: "displayName",
-  // });
+  const attributeDisplayName = useWatch({
+    control: form.control,
+    name: "displayName",
+  });
 
-  // const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
+  const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
@@ -113,6 +135,19 @@ export const AttributeGeneralSettings = () => {
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
+  const handleTranslationsData = (translationsData: Translations) => {
+    onHandlingTranslationData(translationsData);
+  };
+
+  const handleGeneratedDisplayName = (displayName: string) => {
+    onHandlingGeneratedDisplayName(displayName);
+  };
+
+  useEffect(() => {
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  }, [translationsData, generatedDisplayName]);
+
   if (!clientScopes) {
     return <KeycloakSpinner />;
   }
@@ -125,18 +160,28 @@ export const AttributeGeneralSettings = () => {
     form.setValue("hasRequiredScopes", hasRequiredScopes);
   }
 
-  console.log(">>> editMode", editMode);
+  const handleTranslationsAdded = (translationsData: Translations) => {
+    setTranslationsData(translationsData);
+  };
+
+  const handleToggleDialog = () => {
+    toggleModal();
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  };
 
   return (
     <>
       {addTranslationsModalOpen && (
         <AddTranslationsDialog
-          translationKey={"${profile.attributes." + `${newAttributeName}}`}
+          translationKey={
+            editMode
+              ? attributeDisplayName
+              : "${profile.attributes." + `${newAttributeName}}`
+          }
           defaultTranslationValue={""}
-          toggleDialog={() => {
-            toggleModal();
-            form.setValue("displayName", "");
-          }}
+          onTranslationsAdded={handleTranslationsAdded}
+          toggleDialog={handleToggleDialog}
           onCancel={() => {
             toggleModal();
           }}
@@ -183,12 +228,16 @@ export const AttributeGeneralSettings = () => {
                 id="kc-attribute-display-name"
                 data-testid="attribute-display-name"
                 isDisabled={
-                  realm?.internationalizationEnabled && newAttributeName !== ""
+                  (realm?.internationalizationEnabled &&
+                    newAttributeName !== "") ||
+                  (editMode && displayNamePatternMatch)
                 }
                 value={
-                  realm?.internationalizationEnabled
-                    ? generatedDisplayName
-                    : undefined
+                  editMode
+                    ? attributeDisplayName
+                    : realm?.internationalizationEnabled
+                      ? generatedDisplayName
+                      : undefined
                 }
                 {...form.register("displayName")}
               />
@@ -201,7 +250,7 @@ export const AttributeGeneralSettings = () => {
                   className="pf-m-plain kc-attribute-display-name-iconBtn"
                   data-testid="addAttributeTranslationBtn"
                   aria-label={t("addAttributeTranslationBtn")}
-                  isDisabled={!newAttributeName}
+                  isDisabled={!newAttributeName && !editMode}
                   onClick={() => {
                     toggleModal();
                   }}

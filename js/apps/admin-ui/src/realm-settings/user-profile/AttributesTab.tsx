@@ -80,20 +80,10 @@ export const AttributesTab = () => {
     onConfirm: async () => {
       if (!config?.attributes) return;
 
-      const updatedAttributes = config.attributes.filter(
-        (attribute) => attribute.name !== attributeToDelete,
-      );
+      const translationsToDelete = config?.attributes.find(
+        (attribute) => attribute.name === attributeToDelete,
+      )?.displayName;
 
-      save(
-        { ...config, attributes: updatedAttributes!, groups: config.groups },
-        {
-          successMessageKey: "deleteAttributeSuccess",
-          errorMessageKey: "deleteAttributeError",
-        },
-      );
-      setAttributeToDelete("");
-
-      //Delete associated translations
       try {
         await Promise.all(
           combinedLocales.map(async (locale) => {
@@ -108,7 +98,7 @@ export const AttributesTab = () => {
                 await adminClient.realms.deleteRealmLocalizationTexts({
                   realm: realmName,
                   selectedLocale: locale,
-                  key: attributeToDelete,
+                  key: translationsToDelete,
                 });
               }
             } catch (error) {
@@ -117,33 +107,23 @@ export const AttributesTab = () => {
           }),
         );
 
-        const attributeSearched = attributes.find(
-          (attribute: any) => attribute.name === attributeToDelete,
+        const updatedAttributes = config.attributes.filter(
+          (attribute) => attribute.name !== attributeToDelete,
         );
 
-        if (attributeSearched) {
-          const attributeToUpdate = { ...attributeSearched, displayName: "" };
+        save(
+          { ...config, attributes: updatedAttributes, groups: config.groups },
+          {
+            successMessageKey: "deleteAttributeSuccess",
+            errorMessageKey: "deleteAttributeError",
+          },
+        );
 
-          const updatedAttributes = attributes.map((attribute: any) =>
-            attribute.name === attributeToDelete
-              ? attributeToUpdate
-              : attribute,
-          );
-
-          try {
-            await adminClient.users.updateProfile({
-              ...config,
-              attributes: updatedAttributes as UserProfileAttribute[],
-              realm: realmName,
-            });
-          } catch (error) {
-            console.error("Error updating user profile:", error);
-          }
-        } else {
-          console.error("Attribute not found");
-        }
+        setAttributeToDelete("");
       } catch (error) {
-        console.error(`Error removing translations: ${error}`);
+        console.error(
+          `Error removing translations or updating attributes: ${error}`,
+        );
       }
     },
   });

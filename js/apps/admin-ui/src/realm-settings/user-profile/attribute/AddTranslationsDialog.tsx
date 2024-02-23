@@ -33,11 +33,17 @@ type TranslationForm = {
   value: string;
 };
 
+type Translations = {
+  key: string;
+  translations: TranslationForm[];
+};
+
 export type AddTranslationsDialogProps = {
   translationKey: string;
   defaultTranslationValue: string;
   onCancel: () => void;
   toggleDialog: () => void;
+  onTranslationsAdded: (translations: Translations) => void;
 };
 
 export const AddTranslationsDialog = ({
@@ -45,6 +51,7 @@ export const AddTranslationsDialog = ({
   defaultTranslationValue,
   onCancel,
   toggleDialog,
+  onTranslationsAdded,
 }: AddTranslationsDialogProps) => {
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
@@ -119,33 +126,10 @@ export const AddTranslationsDialog = ({
     setValue,
   ]);
 
-  const save = async () => {
+  const handleOk = () => {
     const formData = getValues();
-
-    try {
-      const nonEmptyTranslations = formData.translations
-        .filter((translation) => translation.value.trim() !== "")
-        .map(async (translation) => {
-          try {
-            await adminClient.realms.addLocalization(
-              {
-                realm: realmName,
-                selectedLocale: translation.locale,
-                key: formData.key,
-              },
-              translation.value,
-            );
-          } catch (error) {
-            console.error(`Error saving translation for ${translation.locale}`);
-          }
-        });
-
-      await Promise.all(nonEmptyTranslations);
-
-      toggleDialog();
-    } catch (error) {
-      console.error(`Error saving translations: ${error}`);
-    }
+    onTranslationsAdded(formData);
+    toggleDialog();
   };
 
   return (
@@ -191,7 +175,7 @@ export const AddTranslationsDialog = ({
           <Form
             id="add-translation"
             data-testid="addTranslationForm"
-            onSubmit={handleSubmit(save)}
+            onSubmit={handleSubmit(handleOk)}
           >
             <FormGroup
               className="pf-u-mt-md"
