@@ -1,11 +1,12 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
+import { createNamedContext, useRequiredContext, label } from "ui-shared";
 
 import { keycloak } from "../keycloak";
 import { useFetch } from "../utils/useFetch";
 import { fetchAdminUI } from "./auth/admin-ui-endpoint";
-import { sortBy } from "lodash-es";
+import useLocaleSort from "../utils/useLocaleSort";
+import { useTranslation } from "react-i18next";
 
 type RealmsContextProps = {
   /** A list of all the realms. */
@@ -16,7 +17,7 @@ type RealmsContextProps = {
 
 export interface RealmNameRepresentation {
   name: string;
-  displayName: string | undefined;
+  displayName?: string;
 }
 
 export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
@@ -27,9 +28,11 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);
+  const localeSort = useLocaleSort();
+  const { t } = useTranslation();
 
   function updateRealms(realms: RealmNameRepresentation[]) {
-    setRealms(sortBy(realms, "displayName", "name"));
+    setRealms(localeSort(realms, (r) => label(t, r.displayName, r.name)));
   }
 
   useFetch(
