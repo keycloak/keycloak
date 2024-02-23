@@ -70,6 +70,8 @@ export const AttributesTab = () => {
     return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
   }, [defaultLocales, defaultSupportedLocales]);
 
+  console.log("realm", realm);
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
     messageKey: t("deleteAttributeConfirm", {

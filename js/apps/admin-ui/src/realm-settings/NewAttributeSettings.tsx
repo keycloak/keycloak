@@ -1,3 +1,4 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type {
   UserProfileAttribute,
   UserProfileConfig,
@@ -154,7 +155,7 @@ const CreateAttributeFormContent = ({
 };
 
 export default function NewAttributeSettings() {
-  const { realm, attributeName } = useParams<AttributeParams>();
+  const { realm: realmName, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeFormFields>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -166,6 +167,18 @@ export default function NewAttributeSettings() {
     translations: [],
   });
   const [generatedDisplayName, setGeneratedDisplayName] = useState<string>("");
+  const [realm, setRealm] = useState<RealmRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      if (!realm) {
+        throw new Error(t("notFound"));
+      }
+      setRealm(realm);
+    },
+    [],
+  );
 
   useFetch(
     () => adminClient.users.getProfile(),
@@ -219,7 +232,7 @@ export default function NewAttributeSettings() {
           try {
             await adminClient.realms.addLocalization(
               {
-                realm,
+                realm: realmName,
                 selectedLocale: translation.locale,
                 key: translationsData.key,
               },
@@ -301,13 +314,15 @@ export default function NewAttributeSettings() {
         ),
       ] as UserProfileAttribute);
 
-    const hasNonEmptyTranslations = translationsData.translations.some(
-      (translation) => translation.value.trim() !== "",
-    );
+    if (realm?.internationalizationEnabled) {
+      const hasNonEmptyTranslations = translationsData.translations.some(
+        (translation) => translation.value.trim() !== "",
+      );
 
-    if (!hasNonEmptyTranslations) {
-      addError("createAttributeError", t("translationError"));
-      return;
+      if (!hasNonEmptyTranslations) {
+        addError("createAttributeError", t("translationError"));
+        return;
+      }
     }
 
     try {
@@ -316,11 +331,11 @@ export default function NewAttributeSettings() {
       await adminClient.users.updateProfile({
         ...config,
         attributes: updatedAttributes as UserProfileAttribute[],
-        realm,
+        realm: realmName,
       });
 
       await saveTranslations();
-      navigate(toUserProfile({ realm, tab: "attributes" }));
+      navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
 
       addAlert(t("createAttributeSuccess"), AlertVariant.success);
     } catch (error) {
