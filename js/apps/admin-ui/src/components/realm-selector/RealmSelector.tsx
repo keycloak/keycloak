@@ -60,7 +60,7 @@ const RealmText = ({ name, displayName }: RealmTextProps) => {
     <Split className="keycloak__realm_selector__list-item-split">
       <SplitItem isFilled>
         <Stack>
-          <StackItem className="pf-u-font-weight-bold">{displayName}</StackItem>
+          <StackItem className="pf-u-font-weight-bold" isFilled>{displayName}</StackItem>
           <StackItem isFilled>{name}</StackItem>
         </Stack>
       </SplitItem>
