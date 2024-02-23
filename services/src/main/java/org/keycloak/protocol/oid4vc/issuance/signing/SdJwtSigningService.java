@@ -50,6 +50,12 @@ public class SdJwtSigningService extends SigningService<String> {
 
     private static final Logger LOGGER = Logger.getLogger(SdJwtSigningService.class);
 
+    private static final String ISSUER_CLAIM ="iss";
+    private static final String NOT_BEFORE_CLAIM ="nbf";
+    private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
+    private static final String SELECTIVE_DISCLOSURE_ALGORITHM_CLAIM = "_sd_jwt";
+    private static final String CREDENTIAL_ID_CLAIM = "jti";
+
     private final ObjectMapper objectMapper;
     private final SignatureSignerContext signatureSignerContext;
     private final TimeProvider timeProvider;
@@ -112,20 +118,20 @@ public class SdJwtSigningService extends SigningService<String> {
         }
 
         ObjectNode rootNode = claimSet.withObject("");
-        rootNode.put("iss", issuerDid);
+        rootNode.put(ISSUER_CLAIM, issuerDid);
 
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
         // provided
         long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
                 .map(issuanceDate -> issuanceDate.toInstant().getEpochSecond())
                 .orElse((long) timeProvider.currentTimeSeconds());
-        rootNode.put("nbf", iat);
+        rootNode.put(NOT_BEFORE_CLAIM, iat);
         if (verifiableCredential.getType() == null || verifiableCredential.getType().size() != 1) {
             throw new SigningServiceException("SD-JWT only supports single type credentials.");
         }
-        rootNode.put("vct", verifiableCredential.getType().get(0));
-        rootNode.put("_sd_alg", hashAlgorithm);
-        rootNode.put("jti", JwtSigningService.createCredentialId(verifiableCredential));
+        rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, verifiableCredential.getType().get(0));
+        rootNode.put(SELECTIVE_DISCLOSURE_ALGORITHM_CLAIM, hashAlgorithm);
+        rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
 
         SdJwt sdJwt = SdJwt.builder()
                 .withDisclosureSpec(disclosureSpecBuilder.build())
