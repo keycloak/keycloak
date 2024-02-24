@@ -37,11 +37,6 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
 
   useFetch(
     async () => {
-      // We don't want to fetch until the user has requested it, so let's ignore the initial mount.
-      if (refreshCount === 0) {
-        return [];
-      }
-
       try {
         return await fetchAdminUI<RealmNameRepresentation[]>(
           "ui-ext/realms/names",

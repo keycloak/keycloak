@@ -52,9 +52,10 @@ const AddRealm = ({ onClick }: AddRealmProps) => {
 type RealmTextProps = {
   name: string;
   displayName?: string;
+  showIsRecent?: boolean;
 };
 
-const RealmText = ({ name, displayName }: RealmTextProps) => {
+const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
 
@@ -64,13 +65,18 @@ const RealmText = ({ name, displayName }: RealmTextProps) => {
         <Stack>
           {displayName ? (
             <StackItem className="pf-u-font-weight-bold" isFilled>
-              {label(t, displayName, displayName)}
+              {label(t, displayName)}
             </StackItem>
           ) : null}
           <StackItem isFilled>{name}</StackItem>
         </Stack>
       </SplitItem>
       <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
+      {showIsRecent ? (
+        <SplitItem>
+          <Label>{t("recent")}</Label>
+        </SplitItem>
+      ) : null}
     </Split>
   );
 };
@@ -94,7 +100,7 @@ const ContextSelectorItemLink = ({
 
 export const RealmSelector = () => {
   const { realm } = useRealm();
-  const { realms, refresh } = useRealms();
+  const { realms } = useRealms();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -130,7 +136,7 @@ export const RealmSelector = () => {
       : all.filter(
           (r) =>
             r.realm.name.toLowerCase().includes(normalizedSearch) ||
-            label(t, r.realm.displayName, undefined)
+            label(t, r.realm.displayName)
               ?.toLowerCase()
               .includes(normalizedSearch),
         );
@@ -140,10 +146,6 @@ export const RealmSelector = () => {
     () => realms.find((r) => r.name === realm)?.displayName,
     [realm, realms],
   );
-
-  if (realms.length === 0) {
-    refresh();
-  }
 
   return realms.length > 5 ? (
     <ContextSelector
@@ -169,8 +171,7 @@ export const RealmSelector = () => {
           to={toDashboard({ realm: item.realm.name })}
           onClick={() => setOpen(false)}
         >
-          <RealmText {...item.realm} />{" "}
-          {item.used && <Label>{t("recent")}</Label>}
+          <RealmText {...item.realm} showIsRecent={item.used} />{" "}
         </ContextSelectorItemLink>
       ))}
     </ContextSelector>
