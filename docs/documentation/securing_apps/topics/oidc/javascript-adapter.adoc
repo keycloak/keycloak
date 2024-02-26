@@ -119,6 +119,11 @@ try {
 const users = await fetchUsers();
 ----
 
+[NOTE]
+====
+Both access and refresh token are stored in memory and are not persisted in any kind of storage. Therefore, these tokens should never be persisted to prevent hijacking attacks.
+====
+
 ==== Session Status iframe
 
 By default, the adapter creates a hidden iframe that is used to detect if a Single-Sign Out has occurred. This iframe does not require any network traffic. Instead the status is retrieved by looking at a special status cookie. This feature can be disabled by setting `checkLoginIframe: false` in the options passed to the `init()` method.
