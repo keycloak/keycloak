@@ -61,6 +61,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         this.tokenManager = new TokenManager();
     }
 
+    @Override
     public Response introspect(String token, EventBuilder eventBuilder) {
         AccessToken accessToken = null;
         try {
@@ -123,7 +124,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         }
     }
 
-    private AccessToken transformAccessToken(AccessToken token) {
+    public AccessToken transformAccessToken(AccessToken token) {
         if (token == null) {
             return null;
         }
