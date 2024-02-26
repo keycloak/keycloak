@@ -30,6 +30,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -83,7 +84,7 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled) {
-        assertEquals(5, status.size());
+        assertEquals(6, status.size());
         assertEquals(expectedNumFailures, status.get("numFailures"));
         assertEquals(expectedNumTemporaryLockouts, status.get("numTemporaryLockouts"));
         assertEquals(expectedDisabled, status.get("disabled"));
@@ -91,9 +92,11 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
             assertEquals("127.0.0.1", status.get("lastIPFailure"));
             Long lastFailure = (Long) status.get("lastFailure");
             assertTrue(lastFailure < (System.currentTimeMillis() + 1) && lastFailure > (System.currentTimeMillis() - 10000));
+            assertNotEquals("0", status.get("failedLoginNotBefore").toString());
         } else {
             assertEquals("n/a", status.get("lastIPFailure"));
             assertEquals("0", status.get("lastFailure").toString());
+            assertEquals("0", status.get("failedLoginNotBefore").toString());
         }
     }
 

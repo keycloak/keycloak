@@ -25,9 +25,9 @@ import { AuthWall } from "./root/AuthWall";
 const AppContexts = ({ children }: PropsWithChildren) => (
   <ErrorBoundaryProvider>
     <ServerInfoProvider>
-      <RealmsProvider>
-        <RealmContextProvider>
-          <WhoAmIContextProvider>
+      <RealmContextProvider>
+        <WhoAmIContextProvider>
+          <RealmsProvider>
             <RecentRealmsProvider>
               <AccessContextProvider>
                 <Help>
@@ -37,9 +37,9 @@ const AppContexts = ({ children }: PropsWithChildren) => (
                 </Help>
               </AccessContextProvider>
             </RecentRealmsProvider>
-          </WhoAmIContextProvider>
-        </RealmContextProvider>
-      </RealmsProvider>
+          </RealmsProvider>
+        </WhoAmIContextProvider>
+      </RealmContextProvider>
     </ServerInfoProvider>
   </ErrorBoundaryProvider>
 );

@@ -117,6 +117,7 @@ export const Applications = () => {
           <DataListItem
             key={application.clientId}
             aria-labelledby="applications-list"
+            data-testid="applications-list-item"
             isExpanded={application.open}
           >
             <DataListItemRow className="pf-u-align-items-center">

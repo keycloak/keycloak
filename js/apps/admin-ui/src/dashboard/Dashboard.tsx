@@ -34,7 +34,7 @@ import FeatureRepresentation, {
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { HelpItem } from "ui-shared";
+import { HelpItem, label } from "ui-shared";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
@@ -57,7 +57,7 @@ const EmptyDashboard = () => {
   const [realmInfo, setRealmInfo] = useState<RealmRepresentation>();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
   useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
-  const realmDisplayInfo = realmInfo?.displayName || realm;
+  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
   return (
     <PageSection variant="light">
@@ -133,7 +133,7 @@ const Dashboard = () => {
 
   useFetch(() => adminClient.realms.findOne({ realm }), setRealmInfo, []);
 
-  const realmDisplayInfo = realmInfo?.displayName || realm;
+  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");

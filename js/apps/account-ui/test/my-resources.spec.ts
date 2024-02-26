@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import { login } from "./login";
 
 test.describe("My resources page", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("List my resources", async ({ page }) => {
     await login(page, "jdoe", "jdoe", "photoz");
     await page.getByTestId("resources").click();
