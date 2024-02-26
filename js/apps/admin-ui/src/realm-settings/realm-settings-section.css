@@ -293,3 +293,7 @@ input#kc-scopes {
 .kc--attributes-validations--action-cell {
   text-align: right;
 }
+
+.kc-attribute-display-name-iconBtn:hover {
+  color: var(--pf-c-button--m-primary--active--BackgroundColor);
+}

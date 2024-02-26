@@ -1,3 +1,4 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   Button,
@@ -12,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
@@ -23,6 +24,9 @@ import useToggle from "../../utils/useToggle";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { toAttribute } from "../routes/Attribute";
 import { useUserProfile } from "./UserProfileContext";
+import { useFetch } from "../../utils/useFetch";
+import { adminClient } from "../../admin-client";
+import { DEFAULT_LOCALE } from "../../i18n/i18n";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
@@ -38,6 +42,32 @@ export const AttributesTab = () => {
     useToggle();
   const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] = useState("");
+  const [realm, setRealm] = useState<RealmRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      if (!realm) {
+        throw new Error(t("notFound"));
+      }
+      setRealm(realm);
+    },
+    [],
+  );
+
+  const defaultSupportedLocales = useMemo(() => {
+    return realm?.supportedLocales!.length
+      ? realm.supportedLocales
+      : [DEFAULT_LOCALE];
+  }, [realm]);
+
+  const defaultLocales = useMemo(() => {
+    return realm?.defaultLocale!.length ? [realm.defaultLocale] : [];
+  }, [realm]);
+
+  const combinedLocales = useMemo(() => {
+    return Array.from(new Set([...defaultLocales, ...defaultSupportedLocales]));
+  }, [defaultLocales, defaultSupportedLocales]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
@@ -49,18 +79,51 @@ export const AttributesTab = () => {
     onConfirm: async () => {
       if (!config?.attributes) return;
 
-      const updatedAttributes = config.attributes.filter(
-        (attribute) => attribute.name !== attributeToDelete,
-      );
+      const translationsToDelete = config.attributes.find(
+        (attribute) => attribute.name === attributeToDelete,
+      )?.displayName;
 
-      save(
-        { ...config, attributes: updatedAttributes!, groups: config.groups },
-        {
-          successMessageKey: "deleteAttributeSuccess",
-          errorMessageKey: "deleteAttributeError",
-        },
-      );
-      setAttributeToDelete("");
+      try {
+        await Promise.all(
+          combinedLocales.map(async (locale) => {
+            try {
+              const response =
+                await adminClient.realms.getRealmLocalizationTexts({
+                  realm: realmName,
+                  selectedLocale: locale,
+                });
+
+              if (response) {
+                await adminClient.realms.deleteRealmLocalizationTexts({
+                  realm: realmName,
+                  selectedLocale: locale,
+                  key: translationsToDelete,
+                });
+              }
+            } catch (error) {
+              console.error(`Error removing translations for ${locale}`);
+            }
+          }),
+        );
+
+        const updatedAttributes = config.attributes.filter(
+          (attribute) => attribute.name !== attributeToDelete,
+        );
+
+        save(
+          { ...config, attributes: updatedAttributes, groups: config.groups },
+          {
+            successMessageKey: "deleteAttributeSuccess",
+            errorMessageKey: "deleteAttributeError",
+          },
+        );
+
+        setAttributeToDelete("");
+      } catch (error) {
+        console.error(
+          `Error removing translations or updating attributes: ${error}`,
+        );
+      }
     },
   });
 

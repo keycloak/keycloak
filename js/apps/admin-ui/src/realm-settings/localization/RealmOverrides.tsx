@@ -34,7 +34,7 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
