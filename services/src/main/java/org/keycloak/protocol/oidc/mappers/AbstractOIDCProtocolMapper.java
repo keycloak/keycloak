@@ -83,7 +83,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
     boolean getShouldUseLightweightToken(KeycloakSession session) {
         Object attributeValue = session.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
-        return (attributeValue != null) ? (boolean) attributeValue : false;
+        return Boolean.parseBoolean(session.getContext().getClient().getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED)) || (attributeValue != null && (boolean) attributeValue);
     }
 
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
