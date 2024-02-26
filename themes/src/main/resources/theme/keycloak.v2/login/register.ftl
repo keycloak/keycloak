@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
@@ -84,17 +84,29 @@
                 </div>
             </#if>
 
+<<<<<<< HEAD
             <div class="${properties.kcFormGroupClass!}">
+=======
+            <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
+            </div>
+            <div class="${properties.kcFormGroupClass!} pf-v5-c-login__main-footer-band">
+>>>>>>> 7b8bde272ac (use list instead of count)
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
                     <div class="${properties.kcFormOptionsWrapperClass!}">
                         <span><a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
                     </div>
                 </div>
+<<<<<<< HEAD
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
                 </div>
             </div>
+=======
+            </div>
+            
+>>>>>>> 7b8bde272ac (use list instead of count)
         </form>
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     </#if>
