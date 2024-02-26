@@ -324,6 +324,68 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         }
     }
 
+    @Test
+    public void testAlwaysUseLightWeightFalseTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, true);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            assertAccessToken(oauth.verifyToken(accessToken), true, false);
+            logger.debug("lightweight access token:" + accessToken);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+            logger.debug("tokenResponse:" + introspectResponse);
+
+            oauth.clientId(TEST_CLIENT);
+            alwaysUseLightWeightAccessToken(false);
+            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+
+            authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+        }
+    }
+
+    @Test
+    public void testAlwaysUseLightWeightTrueTest() throws Exception {
+        alwaysUseLightWeightAccessToken(true);
+        ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, true);
+        try {
+            oauth.nonce("123456");
+            oauth.scope("address");
+
+            oauth.clientId(TEST_CLIENT);
+
+            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            String accessToken = tokenResponse.getAccessToken();
+            logger.debug("access token:" + accessToken);
+            assertAccessToken(oauth.verifyToken(accessToken), true, true);
+
+            oauth.clientId(RESOURCE_SERVER_CLIENT_ID);
+            String introspectResponse = oauth.introspectAccessTokenWithClientCredential(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD, accessToken);
+            logger.debug("tokenResponse:" + introspectResponse);
+            assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
+
+        } finally {
+            deleteProtocolMappers(protocolMappers);
+            alwaysUseLightWeightAccessToken(false);
+        }
+    }
+
     private void removeSession(final String sessionId) {
         testingClient.testing().removeExpired(REALM_NAME);
         try {
@@ -592,5 +654,9 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                         .toRepresentation()
         ).toString();
         updatePolicies(json);
+    }
+
+    private void alwaysUseLightWeightAccessToken(boolean enable){
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(TEST_CLIENT).alwaysUseLightweightAccessToken(enable);
     }
 }
