@@ -163,6 +163,19 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         data-testid="backchannelLogout"
         isReadOnly={readOnly}
       />
+      <SwitchField
+        field="config.sendIdTokenOnLogout"
+        label="sendIdTokenOnLogout"
+        data-testid="sendIdTokenOnLogout"
+        defaultValue={"true"}
+        isReadOnly={readOnly}
+      />
+      <SwitchField
+        field="config.sendClientIdOnLogout"
+        label="sendClientIdOnLogout"
+        data-testid="sendClientIdOnLogout"
+        isReadOnly={readOnly}
+      />
       <FormGroup
         label={t("nameIdPolicyFormat")}
         labelIcon={

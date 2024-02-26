@@ -142,7 +142,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String sessionId = userSession.getId();
         UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
                 .queryParam("state", sessionId);
-        logoutUri.queryParam("id_token_hint", idToken);
+        if (getConfig().isSendIdTokenOnLogout() && idToken != null) {
+            logoutUri.queryParam("id_token_hint", idToken);
+        }
+        if (getConfig().isSendClientIdOnLogout()) {
+            logoutUri.queryParam("client_id", getConfig().getClientId());
+        }
         String url = logoutUri.build().toString();
         try {
             int status = SimpleHttp.doGet(url, session).asStatus();
@@ -160,14 +165,19 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
         String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
-        if (idToken != null && getConfig().isBackchannelSupported()) {
+        if (getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
         } else {
             String sessionId = userSession.getId();
             UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
                     .queryParam("state", sessionId);
-            if (idToken != null) logoutUri.queryParam("id_token_hint", idToken);
+            if (getConfig().isSendIdTokenOnLogout() && idToken != null) {
+                logoutUri.queryParam("id_token_hint", idToken);
+            }
+            if (getConfig().isSendClientIdOnLogout()) {
+                logoutUri.queryParam("client_id", getConfig().getClientId());
+            }
             String redirect = RealmsResource.brokerUrl(uriInfo)
                     .path(IdentityBrokerService.class, "getEndpoint")
                     .path(OIDCEndpoint.class, "logoutResponse")
