@@ -30,7 +30,7 @@ export const unWrap = (key: string) => key.substring(2, key.length - 1);
 export const label = (
   t: TFunction,
   text: string | undefined,
-  fallback: string | undefined,
+  fallback?: string,
 ) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
 
 export const labelAttribute = (
