@@ -105,7 +105,7 @@
     "cypress-split": "^1.20.1",
     "jsdom": "^24.0.0",
     "ldap-server-mock": "^6.0.1",
-    "lightningcss": "^1.23.0",
+    "lightningcss": "^1.24.0",
     "ts-node": "^10.9.2",
     "uuid": "^9.0.1",
     "vite": "^5.1.4",

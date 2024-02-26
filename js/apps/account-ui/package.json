@@ -40,7 +40,7 @@
     "@types/react": "^18.2.57",
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react-swc": "^3.6.0",
-    "lightningcss": "^1.23.0",
+    "lightningcss": "^1.24.0",
     "vite": "^5.1.4",
     "vite-plugin-checker": "^0.6.4",
     "vite-plugin-dts": "^3.7.3"
