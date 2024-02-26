@@ -841,6 +841,36 @@ public class ClientScopeTest extends AbstractClientTest {
 
     }
 
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void dynamicClientScopeCannotBeAssignedAsDefaultDefaultClientScope() {
+        ClientScopeRepresentation dynamicClientScope = new ClientScopeRepresentation();
+        dynamicClientScope.setName("dynamic-client-scope");
+        dynamicClientScope.setProtocol("openid-connect");
+        dynamicClientScope.setAttributes(new HashMap<>() {{
+			put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+			put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
+		}});
+        String clientScopeId = createClientScope(dynamicClientScope);
+        getCleanup().addClientScopeId(clientScopeId);
+
+        try {
+            testRealmResource().addDefaultDefaultClientScope(clientScopeId);
+			Assert.fail("A Dynamic Scope shouldn't not be used as a default default client scope");
+        } catch (ClientErrorException ex) {
+			Response response = ex.getResponse();
+			assertThat(response, Matchers.statusCodeIs(Status.BAD_REQUEST));
+
+			String respBody = response.readEntity(String.class);
+			try {
+				Map<String, String> responseJson = JsonSerialization.readValue(respBody, Map.class);
+				Assert.assertEquals("Can't assign a Dynamic Scope to a Client as a Default Scope", responseJson.get("error_description"));
+			} catch (IOException e) {
+				fail("Failed to extract the errorMessage from a CreateScope Response");
+			}
+        }
+    }
+
     private void handleExpectedCreateFailure(ClientScopeRepresentation scopeRep, int expectedErrorCode, String expectedErrorMessage) {
         try(Response resp = clientScopes().create(scopeRep)) {
             Assert.assertEquals(expectedErrorCode, resp.getStatus());

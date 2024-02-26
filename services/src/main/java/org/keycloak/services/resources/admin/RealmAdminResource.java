@@ -268,6 +268,9 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
+        if (defaultScope && clientScope.isDynamicScope()) {
+            throw new org.keycloak.services.ErrorResponseException("invalid_request", "Can't assign a Dynamic Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
+        }
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
