@@ -22,6 +22,8 @@ Use it together with the other building blocks outlined in the <@links.ha id="bb
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
+. Deploy Aurora AWS as described in the <@links.ha id="deploy-aurora-multi-az" /> {section}.
+
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 
 . Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
