@@ -109,15 +109,15 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
-=== Building the docker image
-To build the actual docker image, run the following command from the directory containing your Dockerfile:
+=== Building the container image
+To build the actual container image, run the following command from the directory containing your Dockerfile:
 
 [source,bash]
 ----
 podman|docker build . -t mykeycloak
 ----
 
-=== Starting the optimized {project_name} docker image
+=== Starting the optimized {project_name} container image
 To start the image, run:
 
 [source, bash]
