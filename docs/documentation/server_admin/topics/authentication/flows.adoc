@@ -401,7 +401,7 @@ in the authentication flow), then {project_name} will throw an error.
 ==== Registration or Reset credentials requested by client
 
 Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
-that realm registration is enabled and the user clicks `Register`on the login screen. Also, if  <<enabling-forgot-password, Forget password>> is enabled for the realm, the user can
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
 click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
 
 Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the 
