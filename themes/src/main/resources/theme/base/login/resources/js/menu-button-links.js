@@ -1,3 +1,4 @@
+// @ts-check
 /*
  *   This content is licensed according to the W3C Software License at
  *   https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document
@@ -5,39 +6,36 @@
  *   File:   menu-button-links.js
  *
  *   Desc:   Creates a menu button that opens a menu of links
+ *
+ *   Modified by Peter Keuter to adhere to the coding standards of Keycloak
+ *   Original file: https://www.w3.org/WAI/content-assets/wai-aria-practices/patterns/menu-button/examples/js/menu-button-links.js
+ *   Source: https://www.w3.org/TR/wai-aria-practices/examples/menu-button/menu-button-links.html
  */
-
-'use strict';
 
 class MenuButtonLinks {
   constructor(domNode) {
     this.domNode = domNode;
-    this.buttonNode = domNode.querySelector('button');
+    this.buttonNode = domNode.querySelector("button");
     this.menuNode = domNode.querySelector('[role="menu"]');
     this.menuitemNodes = [];
     this.firstMenuitem = false;
     this.lastMenuitem = false;
     this.firstChars = [];
 
-    this.buttonNode.addEventListener(
-      'keydown',
-      this.onButtonKeydown.bind(this)
-    );
-    this.buttonNode.addEventListener('click', this.onButtonClick.bind(this));
+    this.buttonNode.addEventListener("keydown", (e) => this.onButtonKeydown(e));
+    this.buttonNode.addEventListener("click", (e) => this.onButtonClick(e));
 
-    var nodes = domNode.querySelectorAll('[role="menuitem"]');
+    const nodes = domNode.querySelectorAll('[role="menuitem"]');
 
-    for (var i = 0; i < nodes.length; i++) {
-      var menuitem = nodes[i];
+    for (const menuitem of nodes) {
       this.menuitemNodes.push(menuitem);
       menuitem.tabIndex = -1;
       this.firstChars.push(menuitem.textContent.trim()[0].toLowerCase());
 
-      menuitem.addEventListener('keydown', this.onMenuitemKeydown.bind(this));
+      menuitem.addEventListener("keydown", (e) => this.onMenuitemKeydown(e));
 
-      menuitem.addEventListener(
-        'mouseover',
-        this.onMenuitemMouseover.bind(this)
+      menuitem.addEventListener("mouseover", (e) =>
+        this.onMenuitemMouseover(e)
       );
 
       if (!this.firstMenuitem) {
@@ -46,18 +44,18 @@ class MenuButtonLinks {
       this.lastMenuitem = menuitem;
     }
 
-    domNode.addEventListener('focusin', this.onFocusin.bind(this));
-    domNode.addEventListener('focusout', this.onFocusout.bind(this));
+    domNode.addEventListener("focusin", () => this.onFocusin());
+    domNode.addEventListener("focusout", () => this.onFocusout());
 
     window.addEventListener(
-      'mousedown',
-      this.onBackgroundMousedown.bind(this),
+      "mousedown",
+      (e) => this.onBackgroundMousedown(e),
       true
     );
   }
 
-  setFocusToMenuitem(newMenuitem) {
-    this.menuitemNodes.forEach(function (item) {
+  setFocusToMenuitem = (newMenuitem) =>
+    this.menuitemNodes.forEach((item) => {
       if (item === newMenuitem) {
         item.tabIndex = 0;
         newMenuitem.focus();
@@ -65,18 +63,13 @@ class MenuButtonLinks {
         item.tabIndex = -1;
       }
     });
-  }
 
-  setFocusToFirstMenuitem() {
-    this.setFocusToMenuitem(this.firstMenuitem);
-  }
+  setFocusToFirstMenuitem = () => this.setFocusToMenuitem(this.firstMenuitem);
 
-  setFocusToLastMenuitem() {
-    this.setFocusToMenuitem(this.lastMenuitem);
-  }
+  setFocusToLastMenuitem = () => this.setFocusToMenuitem(this.lastMenuitem);
 
-  setFocusToPreviousMenuitem(currentMenuitem) {
-    var newMenuitem, index;
+  setFocusToPreviousMenuitem = (currentMenuitem) => {
+    let newMenuitem, index;
 
     if (currentMenuitem === this.firstMenuitem) {
       newMenuitem = this.lastMenuitem;
@@ -88,10 +81,10 @@ class MenuButtonLinks {
     this.setFocusToMenuitem(newMenuitem);
 
     return newMenuitem;
-  }
+  };
 
-  setFocusToNextMenuitem(currentMenuitem) {
-    var newMenuitem, index;
+  setFocusToNextMenuitem = (currentMenuitem) => {
+    let newMenuitem, index;
 
     if (currentMenuitem === this.lastMenuitem) {
       newMenuitem = this.firstMenuitem;
@@ -102,10 +95,10 @@ class MenuButtonLinks {
     this.setFocusToMenuitem(newMenuitem);
 
     return newMenuitem;
-  }
+  };
 
-  setFocusByFirstCharacter(currentMenuitem, char) {
-    var start, index;
+  setFocusByFirstCharacter = (currentMenuitem, char) => {
+    let start, index;
 
     if (char.length > 1) {
       return;
@@ -131,70 +124,70 @@ class MenuButtonLinks {
     if (index > -1) {
       this.setFocusToMenuitem(this.menuitemNodes[index]);
     }
-  }
+  };
 
   // Utilities
 
-  getIndexFirstChars(startIndex, char) {
-    for (var i = startIndex; i < this.firstChars.length; i++) {
+  getIndexFirstChars = (startIndex, char) => {
+    for (let i = startIndex; i < this.firstChars.length; i++) {
       if (char === this.firstChars[i]) {
         return i;
       }
     }
     return -1;
-  }
+  };
 
   // Popup menu methods
 
-  openPopup() {
-    this.menuNode.style.display = 'block';
-    this.buttonNode.setAttribute('aria-expanded', 'true');
-  }
+  openPopup = () => {
+    this.menuNode.style.display = "block";
+    this.buttonNode.setAttribute("aria-expanded", "true");
+  };
 
-  closePopup() {
+  closePopup = () => {
     if (this.isOpen()) {
-      this.buttonNode.setAttribute('aria-expanded', 'false');
-      this.menuNode.style.display = 'none';
+      this.buttonNode.setAttribute("aria-expanded", "false");
+      this.menuNode.style.removeProperty("display");
     }
-  }
+  };
 
-  isOpen() {
-    return this.buttonNode.getAttribute('aria-expanded') === 'true';
-  }
+  isOpen = () => {
+    return this.buttonNode.getAttribute("aria-expanded") === "true";
+  };
 
   // Menu event handlers
 
-  onFocusin() {
-    this.domNode.classList.add('focus');
-  }
+  onFocusin = () => {
+    this.domNode.classList.add("focus");
+  };
 
-  onFocusout() {
-    this.domNode.classList.remove('focus');
-  }
+  onFocusout = () => {
+    this.domNode.classList.remove("focus");
+  };
 
-  onButtonKeydown(event) {
-    var key = event.key,
-      flag = false;
+  onButtonKeydown = (event) => {
+    const key = event.key;
+    let flag = false;
 
     switch (key) {
-      case ' ':
-      case 'Enter':
-      case 'ArrowDown':
-      case 'Down':
+      case " ":
+      case "Enter":
+      case "ArrowDown":
+      case "Down":
         this.openPopup();
         this.setFocusToFirstMenuitem();
         flag = true;
         break;
 
-      case 'Esc':
-      case 'Escape':
+      case "Esc":
+      case "Escape":
         this.closePopup();
         this.buttonNode.focus();
         flag = true;
         break;
 
-      case 'Up':
-      case 'ArrowUp':
+      case "Up":
+      case "ArrowUp":
         this.openPopup();
         this.setFocusToLastMenuitem();
         flag = true;
@@ -208,7 +201,7 @@ class MenuButtonLinks {
       event.stopPropagation();
       event.preventDefault();
     }
-  }
+  };
 
   onButtonClick(event) {
     if (this.isOpen()) {
@@ -224,13 +217,11 @@ class MenuButtonLinks {
   }
 
   onMenuitemKeydown(event) {
-    var tgt = event.currentTarget,
-      key = event.key,
-      flag = false;
+    const tgt = event.currentTarget;
+    const key = event.key;
+    let flag = false;
 
-    function isPrintableCharacter(str) {
-      return str.length === 1 && str.match(/\S/);
-    }
+    const isPrintableCharacter = (str) => str.length === 1 && str.match(/\S/);
 
     if (event.ctrlKey || event.altKey || event.metaKey) {
       return;
@@ -242,49 +233,49 @@ class MenuButtonLinks {
         flag = true;
       }
 
-      if (event.key === 'Tab') {
+      if (event.key === "Tab") {
         this.buttonNode.focus();
         this.closePopup();
         flag = true;
       }
     } else {
       switch (key) {
-        case ' ':
+        case " ":
           window.location.href = tgt.href;
           break;
 
-        case 'Esc':
-        case 'Escape':
+        case "Esc":
+        case "Escape":
           this.closePopup();
           this.buttonNode.focus();
           flag = true;
           break;
 
-        case 'Up':
-        case 'ArrowUp':
+        case "Up":
+        case "ArrowUp":
           this.setFocusToPreviousMenuitem(tgt);
           flag = true;
           break;
 
-        case 'ArrowDown':
-        case 'Down':
+        case "ArrowDown":
+        case "Down":
           this.setFocusToNextMenuitem(tgt);
           flag = true;
           break;
 
-        case 'Home':
-        case 'PageUp':
+        case "Home":
+        case "PageUp":
           this.setFocusToFirstMenuitem();
           flag = true;
           break;
 
-        case 'End':
-        case 'PageDown':
+        case "End":
+        case "PageDown":
           this.setFocusToLastMenuitem();
           flag = true;
           break;
 
-        case 'Tab':
+        case "Tab":
           this.closePopup();
           break;
 
@@ -304,7 +295,7 @@ class MenuButtonLinks {
   }
 
   onMenuitemMouseover(event) {
-    var tgt = event.currentTarget;
+    const tgt = event.currentTarget;
     tgt.focus();
   }
 
@@ -320,9 +311,9 @@ class MenuButtonLinks {
 
 // Initialize menu buttons
 
-window.addEventListener('load', function () {
-  var menuButtons = document.querySelectorAll('.menu-button-links');
-  for (let i = 0; i < menuButtons.length; i++) {
-    new MenuButtonLinks(menuButtons[i]);
+window.addEventListener("load", () => {
+  const menuButtons = document.querySelectorAll(".menu-button-links");
+  for (const button of menuButtons) {
+    new MenuButtonLinks(button);
   }
 });
