@@ -45,6 +45,15 @@ export const ExtendedNonDiscoverySettings = () => {
           field="config.backchannelSupported"
           label="backchannelLogout"
         />
+        <SwitchField
+          field="config.sendIdTokenOnLogout"
+          label="sendIdTokenOnLogout"
+          defaultValue={"true"}
+        />
+        <SwitchField
+          field="config.sendClientIdOnLogout"
+          label="sendClientIdOnLogout"
+        />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         <SwitchField field="config.disableNonce" label="disableNonce" />
         <TextField field="config.defaultScope" label="scopes" />

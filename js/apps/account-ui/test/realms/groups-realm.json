@@ -152,5 +152,35 @@
           "manage": true
       }
     }
+  ],
+  "identityProviders": [
+    {
+      "alias": "oidc",
+      "displayName": "",
+      "providerId": "oidc",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "groups-idp",
+        "clientSecret": "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
+        "userInfoUrl": "http://localhost:8180/realms/master/protocol/openid-connect/userinfo",
+        "validateSignature": "true",
+        "tokenUrl": "http://localhost:8180/realms/master/protocol/openid-connect/token",
+        "jwksUrl": "http://localhost:8180/realms/master/protocol/openid-connect/certs",
+        "issuer": "http://localhost:8180/realms/master",
+        "useJwksUrl": "true",
+        "pkceEnabled": "false",
+        "metadataDescriptorUrl": "http://localhost:8180/realms/master/.well-known/openid-configuration",
+        "authorizationUrl": "http://localhost:8180/realms/master/protocol/openid-connect/auth",
+        "clientAuthMethod": "client_secret_post",
+        "logoutUrl": "http://localhost:8180/realms/master/protocol/openid-connect/logout"
+      }
+    }
   ]
 }

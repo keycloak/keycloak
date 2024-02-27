@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Connect {project_name} with an external {jdgserver_name}"
 summary="Building block for an Infinispan deployment on Kubernetes"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This topic describes advanced {jdgserver_name} configurations for {project_name} on Kubernetes.

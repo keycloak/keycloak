@@ -25,17 +25,17 @@ import {
 } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { TextControl } from "ui-shared";
 import { adminClient } from "../admin-client";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -124,16 +124,16 @@ export const AdminEvents = () => {
     authIpAddress: t("ipAddress"),
   };
 
-  const {
-    getValues,
-    register,
-    reset,
-    formState: { isDirty },
-    control,
-  } = useForm<AdminEventSearchForm>({
+  const form = useForm<AdminEventSearchForm>({
     mode: "onChange",
     defaultValues,
   });
+  const {
+    getValues,
+    reset,
+    formState: { isDirty },
+    control,
+  } = form;
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
@@ -187,304 +187,6 @@ export const AdminEvents = () => {
     setKey(key + 1);
   }
 
-  const adminEventSearchFormDisplay = () => {
-    return (
-      <Flex
-        direction={{ default: "column" }}
-        spaceItems={{ default: "spaceItemsNone" }}
-      >
-        <FlexItem>
-          <DropdownPanel
-            buttonText={t("searchForAdminEvent")}
-            setSearchDropdownOpen={setSearchDropdownOpen}
-            searchDropdownOpen={searchDropdownOpen}
-            marginRight="2.5rem"
-            width="15vw"
-          >
-            <Form
-              isHorizontal
-              className="keycloak__events_search__form"
-              data-testid="searchForm"
-            >
-              <FormGroup
-                label={t("resourceTypes")}
-                fieldId="kc-resourceTypes"
-                className="keycloak__events_search__form_label"
-              >
-                <Controller
-                  name="resourceTypes"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      className="keycloak__events_search__type_select"
-                      name="resourceTypes"
-                      data-testid="resource-types-searchField"
-                      chipGroupProps={{
-                        numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      variant={SelectVariant.typeaheadMulti}
-                      typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectResourceTypesOpen(isOpen)}
-                      selections={field.value}
-                      onSelect={(_, selectedValue) => {
-                        const option = selectedValue.toString();
-                        const changedValue = field.value.includes(option)
-                          ? field.value.filter((item) => item !== option)
-                          : [...field.value, option];
-
-                        field.onChange(changedValue);
-                      }}
-                      onClear={(resource) => {
-                        resource.stopPropagation();
-                        field.onChange([]);
-                      }}
-                      isOpen={selectResourceTypesOpen}
-                      aria-labelledby={"resourceTypes"}
-                      chipGroupComponent={
-                        <ChipGroup>
-                          {field.value.map((chip) => (
-                            <Chip
-                              key={chip}
-                              onClick={(resource) => {
-                                resource.stopPropagation();
-                                field.onChange(
-                                  field.value.filter((val) => val !== chip),
-                                );
-                              }}
-                            >
-                              {chip}
-                            </Chip>
-                          ))}
-                        </ChipGroup>
-                      }
-                    >
-                      {resourceTypes?.map((option) => (
-                        <SelectOption key={option} value={option} />
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("operationTypes")}
-                fieldId="kc-operationTypes"
-                className="keycloak__events_search__form_label"
-              >
-                <Controller
-                  name="operationTypes"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      className="keycloak__events_search__type_select"
-                      name="operationTypes"
-                      data-testid="operation-types-searchField"
-                      chipGroupProps={{
-                        numChips: 1,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      variant={SelectVariant.typeaheadMulti}
-                      typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectOperationTypesOpen(isOpen)}
-                      selections={field.value}
-                      onSelect={(_, selectedValue) => {
-                        const option = selectedValue.toString();
-                        const changedValue = field.value.includes(option)
-                          ? field.value.filter((item) => item !== option)
-                          : [...field.value, option];
-
-                        field.onChange(changedValue);
-                      }}
-                      onClear={(operation) => {
-                        operation.stopPropagation();
-                        field.onChange([]);
-                      }}
-                      isOpen={selectOperationTypesOpen}
-                      aria-labelledby={"operationTypes"}
-                      chipGroupComponent={
-                        <ChipGroup>
-                          {field.value.map((chip) => (
-                            <Chip
-                              key={chip}
-                              onClick={(operation) => {
-                                operation.stopPropagation();
-                                field.onChange(
-                                  field.value.filter((val) => val !== chip),
-                                );
-                              }}
-                            >
-                              {chip}
-                            </Chip>
-                          ))}
-                        </ChipGroup>
-                      }
-                    >
-                      {operationTypes?.map((option) => (
-                        <SelectOption key={option} value={option} />
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("resourcePath")}
-                fieldId="kc-resourcePath"
-                className="keycloak__events_search__form_label"
-              >
-                <KeycloakTextInput
-                  id="kc-resourcePath"
-                  data-testid="resourcePath-searchField"
-                  {...register("resourcePath")}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("realm")}
-                fieldId="kc-realm"
-                className="keycloak__events_search__form_label"
-              >
-                <KeycloakTextInput
-                  id="kc-realm"
-                  data-testid="realm-searchField"
-                  {...register("authRealm")}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("client")}
-                fieldId="kc-client"
-                className="keycloak__events_search__form_label"
-              >
-                <KeycloakTextInput
-                  id="kc-client"
-                  data-testid="client-searchField"
-                  {...register("authClient")}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("user")}
-                fieldId="kc-user"
-                className="keycloak__events_search__form_label"
-              >
-                <KeycloakTextInput
-                  id="kc-user"
-                  data-testid="user-searchField"
-                  {...register("authUser")}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("ipAddress")}
-                fieldId="kc-ipAddress"
-                className="keycloak__events_search__form_label"
-              >
-                <KeycloakTextInput
-                  id="kc-ipAddress"
-                  data-testid="ipAddress-searchField"
-                  {...register("authIpAddress")}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("dateFrom")}
-                fieldId="kc-dateFrom"
-                className="keycloak__events_search__form_label"
-              >
-                <Controller
-                  name="dateFrom"
-                  control={control}
-                  render={({ field }) => (
-                    <DatePicker
-                      className="pf-u-w-100"
-                      value={field.value}
-                      onChange={(_, value) => field.onChange(value)}
-                      inputProps={{ id: "kc-dateFrom" }}
-                    />
-                  )}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("dateTo")}
-                fieldId="kc-dateTo"
-                className="keycloak__events_search__form_label"
-              >
-                <Controller
-                  name="dateTo"
-                  control={control}
-                  render={({ field }) => (
-                    <DatePicker
-                      className="pf-u-w-100"
-                      value={field.value}
-                      onChange={(_, value) => field.onChange(value)}
-                      inputProps={{ id: "kc-dateTo" }}
-                    />
-                  )}
-                />
-              </FormGroup>
-              <ActionGroup>
-                <Button
-                  variant={"primary"}
-                  onClick={submitSearch}
-                  data-testid="search-events-btn"
-                  isDisabled={!isDirty}
-                >
-                  {t("searchAdminEventsBtn")}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={resetSearch}
-                  isDisabled={!isDirty}
-                >
-                  {t("resetBtn")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </DropdownPanel>
-        </FlexItem>
-        <FlexItem>
-          {Object.entries(activeFilters).length > 0 && (
-            <div className="keycloak__searchChips pf-u-ml-md">
-              {Object.entries(activeFilters).map((filter) => {
-                const [key, value] = filter as [
-                  keyof AdminEventSearchForm,
-                  string | string[],
-                ];
-
-                return (
-                  <ChipGroup
-                    className="pf-u-mt-md pf-u-mr-md"
-                    key={key}
-                    categoryName={filterLabels[key]}
-                    isClosable
-                    onClick={() => removeFilter(key)}
-                  >
-                    {typeof value === "string" ? (
-                      <Chip isReadOnly>{value}</Chip>
-                    ) : (
-                      value.map((entry) => (
-                        <Chip
-                          key={entry}
-                          onClick={() => removeFilterValue(key, entry)}
-                        >
-                          {entry}
-                        </Chip>
-                      ))
-                    )}
-                  </ChipGroup>
-                );
-              })}
-            </div>
-          )}
-        </FlexItem>
-      </Flex>
-    );
-  };
-
-  const rows = [
-    [t("realm"), authEvent?.authDetails?.realmId],
-    [t("client"), authEvent?.authDetails?.clientId],
-    [t("user"), authEvent?.authDetails?.userId],
-    [t("ipAddress"), authEvent?.authDetails?.ipAddress],
-  ];
-
   const code = useMemo(
     () =>
       representationEvent?.representation
@@ -502,7 +204,12 @@ export const AdminEvents = () => {
             data-testid="auth-dialog"
             variant={TableVariant.compact}
             cells={[t("attribute"), t("value")]}
-            rows={rows}
+            rows={[
+              [t("realm"), authEvent.authDetails?.realmId],
+              [t("client"), authEvent.authDetails?.clientId],
+              [t("user"), authEvent.authDetails?.userId],
+              [t("ipAddress"), authEvent.authDetails?.ipAddress],
+            ]}
           >
             <TableHeader />
             <TableBody />
@@ -529,7 +236,257 @@ export const AdminEvents = () => {
         loader={loader}
         isPaginated
         ariaLabelKey="adminEvents"
-        toolbarItem={adminEventSearchFormDisplay()}
+        toolbarItem={
+          <FormProvider {...form}>
+            <Flex
+              direction={{ default: "column" }}
+              spaceItems={{ default: "spaceItemsNone" }}
+            >
+              <FlexItem>
+                <DropdownPanel
+                  buttonText={t("searchForAdminEvent")}
+                  setSearchDropdownOpen={setSearchDropdownOpen}
+                  searchDropdownOpen={searchDropdownOpen}
+                  marginRight="2.5rem"
+                  width="15vw"
+                >
+                  <Form
+                    isHorizontal
+                    className="keycloak__events_search__form"
+                    data-testid="searchForm"
+                  >
+                    <FormGroup
+                      label={t("resourceTypes")}
+                      fieldId="kc-resourceTypes"
+                      className="keycloak__events_search__form_label"
+                    >
+                      <Controller
+                        name="resourceTypes"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            className="keycloak__events_search__type_select"
+                            name="resourceTypes"
+                            data-testid="resource-types-searchField"
+                            chipGroupProps={{
+                              numChips: 1,
+                              expandedText: t("hide"),
+                              collapsedText: t("showRemaining"),
+                            }}
+                            variant={SelectVariant.typeaheadMulti}
+                            typeAheadAriaLabel="Select"
+                            onToggle={(isOpen) =>
+                              setSelectResourceTypesOpen(isOpen)
+                            }
+                            selections={field.value}
+                            onSelect={(_, selectedValue) => {
+                              const option = selectedValue.toString();
+                              const changedValue = field.value.includes(option)
+                                ? field.value.filter((item) => item !== option)
+                                : [...field.value, option];
+
+                              field.onChange(changedValue);
+                            }}
+                            onClear={(resource) => {
+                              resource.stopPropagation();
+                              field.onChange([]);
+                            }}
+                            isOpen={selectResourceTypesOpen}
+                            aria-labelledby={"resourceTypes"}
+                            chipGroupComponent={
+                              <ChipGroup>
+                                {field.value.map((chip) => (
+                                  <Chip
+                                    key={chip}
+                                    onClick={(resource) => {
+                                      resource.stopPropagation();
+                                      field.onChange(
+                                        field.value.filter(
+                                          (val) => val !== chip,
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    {chip}
+                                  </Chip>
+                                ))}
+                              </ChipGroup>
+                            }
+                          >
+                            {resourceTypes?.map((option) => (
+                              <SelectOption key={option} value={option} />
+                            ))}
+                          </Select>
+                        )}
+                      />
+                    </FormGroup>
+                    <FormGroup
+                      label={t("operationTypes")}
+                      fieldId="kc-operationTypes"
+                      className="keycloak__events_search__form_label"
+                    >
+                      <Controller
+                        name="operationTypes"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            className="keycloak__events_search__type_select"
+                            name="operationTypes"
+                            data-testid="operation-types-searchField"
+                            chipGroupProps={{
+                              numChips: 1,
+                              expandedText: t("hide"),
+                              collapsedText: t("showRemaining"),
+                            }}
+                            variant={SelectVariant.typeaheadMulti}
+                            typeAheadAriaLabel="Select"
+                            onToggle={(isOpen) =>
+                              setSelectOperationTypesOpen(isOpen)
+                            }
+                            selections={field.value}
+                            onSelect={(_, selectedValue) => {
+                              const option = selectedValue.toString();
+                              const changedValue = field.value.includes(option)
+                                ? field.value.filter((item) => item !== option)
+                                : [...field.value, option];
+
+                              field.onChange(changedValue);
+                            }}
+                            onClear={(operation) => {
+                              operation.stopPropagation();
+                              field.onChange([]);
+                            }}
+                            isOpen={selectOperationTypesOpen}
+                            aria-labelledby={"operationTypes"}
+                            chipGroupComponent={
+                              <ChipGroup>
+                                {field.value.map((chip) => (
+                                  <Chip
+                                    key={chip}
+                                    onClick={(operation) => {
+                                      operation.stopPropagation();
+                                      field.onChange(
+                                        field.value.filter(
+                                          (val) => val !== chip,
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    {chip}
+                                  </Chip>
+                                ))}
+                              </ChipGroup>
+                            }
+                          >
+                            {operationTypes?.map((option) => (
+                              <SelectOption key={option} value={option} />
+                            ))}
+                          </Select>
+                        )}
+                      />
+                    </FormGroup>
+                    <TextControl
+                      name="resourcePath"
+                      label={t("resourcePath")}
+                    />
+                    <TextControl name="authRealm" label={t("realm")} />
+                    <TextControl name="authClient" label={t("client")} />
+                    <TextControl name="authUser" label={t("user")} />
+                    <TextControl name="authIpAddress" label={t("ipAddress")} />
+                    <FormGroup
+                      label={t("dateFrom")}
+                      fieldId="kc-dateFrom"
+                      className="keycloak__events_search__form_label"
+                    >
+                      <Controller
+                        name="dateFrom"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            className="pf-u-w-100"
+                            value={field.value}
+                            onChange={(_, value) => field.onChange(value)}
+                            inputProps={{ id: "kc-dateFrom" }}
+                          />
+                        )}
+                      />
+                    </FormGroup>
+                    <FormGroup
+                      label={t("dateTo")}
+                      fieldId="kc-dateTo"
+                      className="keycloak__events_search__form_label"
+                    >
+                      <Controller
+                        name="dateTo"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            className="pf-u-w-100"
+                            value={field.value}
+                            onChange={(_, value) => field.onChange(value)}
+                            inputProps={{ id: "kc-dateTo" }}
+                          />
+                        )}
+                      />
+                    </FormGroup>
+                    <ActionGroup>
+                      <Button
+                        variant={"primary"}
+                        onClick={submitSearch}
+                        data-testid="search-events-btn"
+                        isDisabled={!isDirty}
+                      >
+                        {t("searchAdminEventsBtn")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={resetSearch}
+                        isDisabled={!isDirty}
+                      >
+                        {t("resetBtn")}
+                      </Button>
+                    </ActionGroup>
+                  </Form>
+                </DropdownPanel>
+              </FlexItem>
+              <FlexItem>
+                {Object.entries(activeFilters).length > 0 && (
+                  <div className="keycloak__searchChips pf-u-ml-md">
+                    {Object.entries(activeFilters).map((filter) => {
+                      const [key, value] = filter as [
+                        keyof AdminEventSearchForm,
+                        string | string[],
+                      ];
+
+                      return (
+                        <ChipGroup
+                          className="pf-u-mt-md pf-u-mr-md"
+                          key={key}
+                          categoryName={filterLabels[key]}
+                          isClosable
+                          onClick={() => removeFilter(key)}
+                        >
+                          {typeof value === "string" ? (
+                            <Chip isReadOnly>{value}</Chip>
+                          ) : (
+                            value.map((entry) => (
+                              <Chip
+                                key={entry}
+                                onClick={() => removeFilterValue(key, entry)}
+                              >
+                                {entry}
+                              </Chip>
+                            ))
+                          )}
+                        </ChipGroup>
+                      );
+                    })}
+                  </div>
+                )}
+              </FlexItem>
+            </Flex>
+          </FormProvider>
+        }
         actions={
           [
             {

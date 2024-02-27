@@ -35,6 +35,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -576,5 +577,43 @@ public class BuiltinValidatorsTest extends AbstractKeycloakTest {
         result = BuiltinValidators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, Arrays.asList("opt1")).build(), OptionsValidator.ID, new ValidationContext(session)).toResult();
         Assert.assertTrue(result.isValid());
 
+    }
+
+    @Test
+    @ModelTest
+    public void testMultivaluedValidatorConfiguration(KeycloakSession session) {
+        // invalid min and max config values
+        ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MIN, new Object(), MultiValueValidator.KEY_MAX, "invalid"));
+        ValidationResult result = BuiltinValidators.validatorConfigValidator().validate(config, MultiValueValidator.ID, new ValidationContext(session)).toResult();
+
+        Assert.assertFalse(result.isValid());
+        ValidationError[] errors = result.getErrors().toArray(new ValidationError[0]);
+
+        ValidationError error0 = errors[0];
+        Assert.assertNotNull(error0);
+        Assert.assertEquals(MultiValueValidator.ID, error0.getValidatorId());
+        Assert.assertEquals(MultiValueValidator.KEY_MAX, error0.getInputHint());
+
+        ValidationError error1 = errors[1];
+        Assert.assertNotNull(error1);
+        Assert.assertEquals(MultiValueValidator.ID, error1.getValidatorId());
+        Assert.assertEquals(MultiValueValidator.KEY_MIN, error1.getInputHint());
+
+        // empty config
+        result = BuiltinValidators.validatorConfigValidator().validate(null, MultiValueValidator.ID, new ValidationContext(session)).toResult();
+        Assert.assertEquals(1, result.getErrors().size());
+        result = BuiltinValidators.validatorConfigValidator().validate(ValidatorConfig.EMPTY, MultiValueValidator.ID, new ValidationContext(session)).toResult();
+        Assert.assertEquals(1, result.getErrors().size());
+
+        // correct config
+        Assert.assertTrue(BuiltinValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MAX, "10")), MultiValueValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(BuiltinValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MIN, "10", MultiValueValidator.KEY_MAX, "10")), MultiValueValidator.ID, new ValidationContext(session)).toResult().isValid());
+        Assert.assertTrue(BuiltinValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MIN, "10", MultiValueValidator.KEY_MAX, "11")), MultiValueValidator.ID, new ValidationContext(session)).toResult().isValid());
+
+        // max is smaller than min
+        Assert.assertFalse(BuiltinValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MIN, "10", MultiValueValidator.KEY_MAX, "9")), MultiValueValidator.ID, new ValidationContext(session)).toResult().isValid());
+
+        // max not set
+        Assert.assertFalse(BuiltinValidators.validatorConfigValidator().validate(new ValidatorConfig(ImmutableMap.of(MultiValueValidator.KEY_MIN, "10")), MultiValueValidator.ID, new ValidationContext(session)).toResult().isValid());
     }
 }

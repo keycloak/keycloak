@@ -89,7 +89,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         k8sclient.resource(dbSecret).update();
 
         // dynamically check pod 0 to avoid race conditions
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).ignoreExceptions().until(() ->
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).ignoreExceptions().until(() ->
                 k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog().contains("password authentication failed for user \"" + username + "\""));
     }
 

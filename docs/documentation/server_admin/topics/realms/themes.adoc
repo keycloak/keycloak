@@ -17,7 +17,7 @@ Login theme::
   Username password entry, OTP entry, new user registration, and other similar screens related to login.
 
 Account theme::
-  Each user has a User Account Management UI.
+  The console used by the user to manage his or her account.
 
 Admin console theme::
   The skin of the {project_name} Admin Console.

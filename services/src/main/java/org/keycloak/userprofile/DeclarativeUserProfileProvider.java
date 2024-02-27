@@ -52,6 +52,7 @@ import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
+import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
@@ -341,6 +342,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
 
+            // make sure managed attributes single-valued are constrained to a single value
+            if (!attrConfig.isMultivalued() && validators.stream().map(AttributeValidatorMetadata::getValidatorId).noneMatch(MultiValueValidator.ID::equals)) {
+                validators.add(new AttributeValidatorMetadata(MultiValueValidator.ID, ValidatorConfig.builder()
+                        .config("max", "1")
+                        .build()));
+            }
+
             if (isBuiltInAttribute(attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
@@ -391,13 +399,15 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addReadCondition(readAllowed)
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
-                            .setRequired(required);
+                            .setRequired(required)
+                            .setMultivalued(attrConfig.isMultivalued());
                 }
             } else {
                 decoratedMetadata.addAttribute(attributeName, guiOrder, validators, selector, writeAllowed, required, readAllowed)
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
-                        .setAttributeGroupMetadata(groupMetadata);
+                        .setAttributeGroupMetadata(groupMetadata)
+                        .setMultivalued(attrConfig.isMultivalued());
             }
         }
 

@@ -25,8 +25,10 @@ import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -119,10 +121,12 @@ public class LoginUpdateProfilePage extends AbstractPage {
         return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
 
-    public WebElement getFieldById(String fieldId) {
+    public WebElement getElementById(String fieldId) {
         try {
-            return driver.findElement(By.id(fieldId));
-        } catch (NoSuchElementException nsee) {
+            By id = By.id(fieldId);
+            WaitUtils.waitUntilElement(id);
+            return driver.findElement(id);
+        } catch (NoSuchElementException | TimeoutException ignore) {
             return null;
         }
     }
@@ -147,6 +151,41 @@ public class LoginUpdateProfilePage extends AbstractPage {
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public void setAttribute(String elementId, String value) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            element.clear();
+            element.sendKeys(value);
+        }
+    }
+
+    public void clickAddAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-add-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public void clickRemoveAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-remove-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public String getAttribute(String elementId) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            return element.getAttribute("value");
+        }
+
+        return null;
     }
 
     public static class Update {

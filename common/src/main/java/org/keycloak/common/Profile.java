@@ -51,8 +51,8 @@ public class Profile {
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
         @Deprecated
-        ACCOUNT2("Account Management Console 2", Type.DEPRECATED, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console 3", Type.DEFAULT, Feature.ACCOUNT_API),
+        ACCOUNT2("Account Console version 2", Type.DEPRECATED, Feature.ACCOUNT_API),
+        ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
@@ -104,7 +104,7 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multi-site support", Type.PREVIEW),
+        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
 

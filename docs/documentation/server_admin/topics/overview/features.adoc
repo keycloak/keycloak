@@ -12,7 +12,7 @@
 * User Federation - Sync users from LDAP and Active Directory servers.
 * Kerberos bridge - Automatically authenticate users that are logged-in to a Kerberos server.
 * Admin Console for central management of users, roles, role mappings, clients and configuration.
-* Account Management console that allows users to centrally manage their account.
+* Account Console that allows users to centrally manage their account.
 * Theme support - Customize all user facing pages to integrate with your applications and branding.
 * Two-factor Authentication - Support for TOTP/HOTP via Google Authenticator or FreeOTP.
 * Login flows - optional user self-registration, recover password, verify email, require password update, etc.

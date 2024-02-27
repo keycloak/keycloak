@@ -69,6 +69,7 @@ export const UserForm = ({
   const {
     handleSubmit,
     register,
+    setValue,
     watch,
     control,
     reset,
@@ -80,6 +81,8 @@ export const UserForm = ({
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
+
+  setValue("requiredActions", user?.requiredActions || []);
 
   const unLockUser = async () => {
     try {
@@ -384,7 +387,7 @@ export const UserForm = ({
           isDisabled={
             !user?.id &&
             !watchUsernameInput &&
-            !realm.registrationEmailAsUsername
+            realm.registrationEmailAsUsername === false
           }
           variant="primary"
           type="submit"

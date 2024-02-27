@@ -43,6 +43,7 @@ public class UPAttribute implements Cloneable {
     /** null means it is always selected */
     private UPAttributeSelector selector;
     private String group;
+    private boolean multivalued;
 
     public UPAttribute() {
     }
@@ -69,6 +70,11 @@ public class UPAttribute implements Cloneable {
 
     public UPAttribute(String name, UPAttributePermissions permissions) {
         this(name, permissions, null);
+    }
+
+    public UPAttribute(String name, boolean multivalued, UPAttributePermissions permissions) {
+        this(name, permissions, null);
+        setMultivalued(multivalued);
     }
 
     public String getName() {
@@ -142,9 +148,17 @@ public class UPAttribute implements Cloneable {
         this.group = group != null ? group.trim() : null;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + "]";
     }
 
     @Override
@@ -169,6 +183,7 @@ public class UPAttribute implements Cloneable {
         attr.setPermissions(this.permissions == null ? null : this.permissions.clone());
         attr.setSelector(this.selector == null ? null : this.selector.clone());
         attr.setGroup(this.group);
+        attr.setMultivalued(this.multivalued);
         return attr;
     }
 
@@ -193,6 +208,7 @@ public class UPAttribute implements Cloneable {
                 && Objects.equals(this.annotations, other.annotations)
                 && Objects.equals(this.required, other.required)
                 && Objects.equals(this.permissions, other.permissions)
-                && Objects.equals(this.selector, other.selector);
+                && Objects.equals(this.selector, other.selector)
+                && Objects.equals(this.multivalued, other.multivalued);
     }
 }

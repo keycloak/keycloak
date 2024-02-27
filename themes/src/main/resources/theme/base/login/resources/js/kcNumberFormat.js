@@ -1,14 +1,21 @@
-import {formatNumber} from "./common.js";
+// @ts-check
+import { formatNumber } from "./common.js";
+import { registerElementAnnotatedBy } from "./userProfile.js";
 
-const DATA_KC_NUMBER_FORMAT = 'data-kcNumberFormat';
+const KC_NUMBER_FORMAT = "kcNumberFormat";
 
-document.querySelectorAll(`[${DATA_KC_NUMBER_FORMAT}]`)
-    .forEach(input => {
-        const format = input.getAttribute(DATA_KC_NUMBER_FORMAT);
+registerElementAnnotatedBy({
+  name: KC_NUMBER_FORMAT,
+  onAdd(element) {
+    const formatValue = () => {
+      const format = element.getAttribute(`data-${KC_NUMBER_FORMAT}`);
+      element.value = formatNumber(element.value, format);
+    };
 
-        input.addEventListener('keyup', (event) => {
-            input.value = formatNumber(input.value, format);
-        });
+    element.addEventListener("keyup", formatValue);
 
-        input.value = formatNumber(input.value, format);
-    });
+    formatValue();
+
+    return () => element.removeEventListener("keyup", formatValue);
+  },
+});

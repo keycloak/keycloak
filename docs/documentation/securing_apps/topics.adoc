@@ -29,6 +29,8 @@ endif::[]
 
 include::topics/oidc/fapi-support.adoc[]
 
+include::topics/oidc/oauth21-support.adoc[]
+
 include::topics/oidc/recommendations.adoc[]
 
 include::topics/saml/saml-overview.adoc[]

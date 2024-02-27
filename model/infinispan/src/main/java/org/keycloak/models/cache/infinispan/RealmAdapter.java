@@ -244,6 +244,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getMaxTemporaryLockouts() {
+        if(isUpdated()) return updated.getMaxTemporaryLockouts();
+        return cached.getMaxTemporaryLockouts();
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        getDelegateForUpdate();
+        updated.setMaxTemporaryLockouts(val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         if (isUpdated()) return updated.getMaxFailureWaitSeconds();
         return cached.getMaxFailureWaitSeconds();

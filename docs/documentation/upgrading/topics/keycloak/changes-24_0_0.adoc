@@ -26,6 +26,38 @@ Images such as the background, logo and favicon are now loaded from the 'common'
 import=common/your-theme-name
 ----
 
+= Changes to the Account Console theme customization
+
+If you were previously extending the now deprecated version 2 of the Account Console theme, you will need to update your theme to use the new version 3 of the Account Console theme. The new version of the Account Console theme comes with some changes in regards to how it is customized. To start with a clean slate, you can follow the new https://github.com/keycloak/keycloak-quickstarts/tree/release/24.0/extension/extend-account-console[customization quickstart].
+
+To move your custom theme start by changing the `parent` to the new theme:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If you have any custom React components, you will import React directly, rather than using a relative path:
+
+[source,js]
+----
+// Before
+import * as React from "../../../../common/keycloak/web_modules/react.js";
+
+// After
+import React from "react";
+----
+
+
+If you are using `content.json` to customize the theme there are some changes to the structure of the file, specifically:
+
+* The `content` property has been renamed to `children`.
+* The `id`, `icon` and `componentName` properties have been removed, as `modulePath` provides the same functionality.
+
 = Keycloak JS imports might need to be updated
 
 If you are loading Keycloak JS directly from the Keycloak server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
@@ -174,6 +206,25 @@ The `--proxy` option has been deprecated and will be removed in a future release
 NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
 the case before for `--proxy edge` and `--proxy reencrypt`).
 
+WARNING: When using the proxy headers option, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively.
+To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+You can also set the proxy headers when using the Operator:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to the previous behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
 = Changes to the user representation in both Admin API and Account contexts
 
 Both `org.keycloak.representations.idm.UserRepresentation` and `org.keycloak.representations.account.UserRepresentation` representation classes have changed
@@ -248,6 +299,11 @@ Ensure that no unmanaged attributes are allowed and all editable attributes have
 
 For unmanaged attributes, the maximum length is 2048 characters.
 For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
+
+WARNING: {project_name} caches user-related objects in its internal caches.
+The longer the attributes are, the more memory the cache consumes.
+Therefore, limiting the size of the length attributes is recommended.
+Consider storing large objects outside Keycloak and reference them by ID or URL.
 
 This change adds new indexes on the tables `USER_ATTRIBUTE` and `FED_USER_ATTRIBUTE`.
 If those tables contain more than 300000 entries, Keycloak will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
@@ -407,7 +463,7 @@ The property keys used by the operator for advanced configuration have changed f
 = Keycloak CR resources options
 
 When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
-The default `requests` memory for Keycloak deployment and the realm import Job is set to `768MiB`, and the `limits` memory is set to `4GiB`.
+The default `requests` memory for Keycloak deployment and the realm import Job is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
 
 = Updates to cookies
 

@@ -51,6 +51,7 @@ public class AttributeMetadata {
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
     private int guiOrder;
+    private boolean multivalued;
     
 
     AttributeMetadata(String attributeName, int guiOrder) {
@@ -199,6 +200,14 @@ public class AttributeMetadata {
         return this;
     }
 
+    public void setMultivalued(boolean multivalued) {
+        this.multivalued = multivalued;
+    }
+
+    public boolean isMultivalued() {
+        return multivalued;
+    }
+
     @Override
     public AttributeMetadata clone() {
         AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, writeAllowed, required, readAllowed);
@@ -215,6 +224,7 @@ public class AttributeMetadata {
         if (attributeGroupMetadata != null) {
             cloned.setAttributeGroupMetadata(attributeGroupMetadata.clone());
         }
+        cloned.setMultivalued(multivalued);
         return cloned;
     }
     

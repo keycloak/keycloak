@@ -416,7 +416,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + ", \"multivalued\": true}"
                 + "]}";
         setUserProfileConfiguration(userProfileCfg);
 

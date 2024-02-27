@@ -251,7 +251,10 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("brute-force-tab-save").should("be.disabled");
 
-    cy.get("#bruteForceProtected").click({ force: true });
+    cy.get("#kc-brute-force-mode").click();
+    cy.findByTestId("select-brute-force-mode")
+      .contains("Lockout temporarily")
+      .click();
     cy.findByTestId("waitIncrementSeconds").type("1");
     cy.findByTestId("maxFailureWaitSeconds").type("1");
     cy.findByTestId("maxDeltaTimeSeconds").type("1");

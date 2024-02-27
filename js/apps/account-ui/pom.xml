@@ -124,6 +124,10 @@
                             <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
                         </replacement>
                         <replacement>
+                            <token><![CDATA[<meta name="description" content="Web site to manage keycloak" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<meta name="description" content="${properties.description!"Web site to manage keycloak"}" />]]></value>
+                        </replacement>
+                        <replacement>
                             <token><![CDATA[<title>Account Management</title>]]></token>
                             <value xml:space="preserve">
 <![CDATA[

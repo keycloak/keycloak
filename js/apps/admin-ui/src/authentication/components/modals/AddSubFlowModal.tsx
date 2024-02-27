@@ -94,12 +94,13 @@ export const AddSubFlowModal = ({
           />
           <SelectControl
             name="type"
+            menuAppendTo="parent"
             label={t("flowType")}
             options={types.map((type) => ({
               key: type,
               value: t(`flow-type.${type}`),
             }))}
-            controller={{ defaultValue: "" }}
+            controller={{ defaultValue: types[0] }}
           />
           {formProviders && formProviders.length > 1 && (
             <SelectControl

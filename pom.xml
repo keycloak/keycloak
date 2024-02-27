@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.7.3</quarkus.version>
-        <quarkus.build.version>3.7.3</quarkus.build.version>
+        <quarkus.version>3.7.4</quarkus.version>
+        <quarkus.build.version>3.7.4</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -97,7 +97,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.24.Final</infinispan.version>
+        <infinispan.version>14.0.25.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -161,7 +161,7 @@
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
         <aurora-postgresql.version>15.3</aurora-postgresql.version>
-        <aws-jdbc-wrapper.version>2.3.3</aws-jdbc-wrapper.version>
+        <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.1</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
         <mariadb-jdbc.version>3.3.2</mariadb-jdbc.version>

@@ -311,17 +311,14 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           install: false
-          record: true
-          parallel: true
-          group: ${{ matrix.browser }} 
           browser: ${{ matrix.browser }} 
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
           CYPRESS_BASE_URL: http://localhost:8080/admin/
           CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
-          CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SPLIT: ${{ strategy.job-total }}
+          SPLIT_INDEX: ${{ strategy.job-index }}
 
       - name: Upload server logs
         if: always()
@@ -329,6 +326,15 @@ jobs:
         with:
           name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        if: github.repository != 'keycloak/keycloak-private'
+        with:
+          name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
+          path: js/apps/admin-ui/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 10
 
   check:
     name: Status Check - Keycloak JavaScript CI
