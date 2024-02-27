@@ -64,25 +64,21 @@
 					<button
 						class="pf-v5-c-button pf-m-control"
 						type="button"
-						:id="$id('name-${attribute.name}')"
+						:id="$id('add-name-${attribute.name}')"
 						x-bind:disabled="index == 0 && values.length == 1"
-						x-on:click="values.splice(index, 1)"
+						x-on:click="values.splice(index, 1); $dispatch('bind')"
 					>
 						<svg fill="currentColor" height="1em" width="1em" viewBox="0 0 512 512" aria-hidden="true" role="img" style="vertical-align: -0.125em;"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zM124 296c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h264c6.6 0 12 5.4 12 12v56c0 6.6-5.4 12-12 12H124z"></path></svg>
 					</button>
 				</div>
 			</div>
 			</template>
-			<button type="button" class="pf-v5-c-button pf-m-link" x-show="kcMultivalued" x-on:click="values.push({ value: '' })">
+			<button type="button" class="pf-v5-c-button pf-m-link" x-show="kcMultivalued" x-on:click="values.push({ value: '' }); $dispatch('bind')">
 				<svg fill="currentColor" height="1em" width="1em" viewBox="0 0 512 512" aria-hidden="true" role="img" style="vertical-align: -0.125em;"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"></path></svg>
 				Add ${advancedMsg(attribute.displayName!'')}
 			</button>
 		</div>
 		<#nested "afterField" attribute>
-	</#list>
-
-	<#list profile.html5DataAnnotations?keys as key>
-		<script type="module" src="${url.resourcesPath}/js/${key}.js"></script>
 	</#list>
 </#macro>
 
@@ -105,7 +101,8 @@
 </#macro>
 
 <#macro inputTag attribute>
-	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(attribute.value!'')}" class="${properties.kcInputClass!}" x-model="item.value"
+	<input type="<@inputTagType attribute=attribute/>" :id="$id('name-${attribute.name}')" name="${attribute.name}" class="${properties.kcInputClass!}"
+		x-model="item.value" @input.debounce.500ms="item.value = $store.format.formatElement($event)"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
@@ -169,7 +166,7 @@
 		<#list options as option>
 		<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
 		</#list>
-	</#if>	
+	</#if>
 	</select>
 </#macro>
 
