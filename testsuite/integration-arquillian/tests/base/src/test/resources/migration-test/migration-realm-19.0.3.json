@@ -600,7 +600,7 @@
       "saml.encrypt" : "false",
       "saml_assertion_consumer_url_post" : "http://localhost:8080/sales-post/saml",
       "saml.server.signature" : "true",
-      "saml_idp_initiated_sso_url_name" : "sales-post",
+      "saml_idp_initiated_sso_url_name" : "sales-post-very-long-name-greater-than-255-characters-0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
       "exclude.session.state.from.auth.response" : "false",
       "saml.artifact.binding.identifier" : "ZDisLXkadz6IlDoL8l343V44KP0=",
       "saml.artifact.binding" : "false",

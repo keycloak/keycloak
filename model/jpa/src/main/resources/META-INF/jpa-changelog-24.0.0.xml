@@ -50,4 +50,40 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.FederatedUserAttributeTextColumnMigration" />
     </changeSet>
 
+    <changeSet author="keycloak" id="24.0.0-26618-drop-index-if-present">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                    <dbms type="postgresql"/>
+                    <dbms type="oracle"/>
+                </or>
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.0-26618-reindex">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+                <dbms type="oracle"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="substr(VALUE,1,255)" />
+        </modifySql>
+        <modifySql dbms="oracle">
+            <replace replace="VALUE(255)" with="dbms_lob.substr(VALUE,255,1)" />
+        </modifySql>
+    </changeSet>
+
 </databaseChangeLog>
