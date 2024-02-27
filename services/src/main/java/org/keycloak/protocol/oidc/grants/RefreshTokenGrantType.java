@@ -49,7 +49,9 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(RefreshTokenGrantType.class);
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);

@@ -60,7 +60,9 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
     private static final Logger logger = Logger.getLogger(ResourceOwnerPasswordCredentialsGrantType.class);
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         if (!client.isDirectAccessGrantsEnabled()) {

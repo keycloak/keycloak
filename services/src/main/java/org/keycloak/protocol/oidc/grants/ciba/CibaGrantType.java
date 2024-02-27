@@ -109,7 +109,9 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,

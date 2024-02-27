@@ -34,7 +34,9 @@ import org.keycloak.protocol.oidc.TokenExchangeProvider;
 public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         event.detail(Details.AUTH_METHOD, "token_exchange");
         event.client(client);
 
