@@ -41,6 +41,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
+import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.X500;
 import org.wildfly.security.x500.cert.AuthorityKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
@@ -52,6 +53,7 @@ import org.wildfly.security.x500.cert.KeyUsageExtension;
 import org.wildfly.security.x500.cert.SubjectKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import org.wildfly.security.x500.cert.X509CertificateExtension;
+import org.wildfly.security.x500.cert.util.KeyUtil;
 
 /**
  * The Class CertificateUtils provides utility functions for generation
@@ -103,6 +105,22 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
             ekuList.add(X500.OID_KP_EMAIL_PROTECTION);
             ekuList.add(X500.OID_KP_SERVER_AUTH);
 
+            // Authority Key Identifier
+            AuthorityKeyIdentifierExtension authorityKeyIdentifierExtension;
+            if (caCert != null) {
+                authorityKeyIdentifierExtension = new AuthorityKeyIdentifierExtension(
+                    KeyUtil.getKeyIdentifier(caCert.getPublicKey()),
+                    Collections.singletonList(new GeneralName.DirectoryName(caCert.getIssuerX500Principal().getName())),
+                    caCert.getSerialNumber()
+                );
+            } else {
+                authorityKeyIdentifierExtension = new AuthorityKeyIdentifierExtension(
+                    KeyUtil.getKeyIdentifier(keyPair.getPublic()),
+                    Collections.singletonList(new GeneralName.DirectoryName(issuerdn.getName())),
+                    serialNumber
+                );
+            }
+
             X509CertificateBuilder cbuilder = new X509CertificateBuilder()
                     .setSubjectDn(subjectdn)
                     .setIssuerDn(issuerdn)
@@ -110,7 +128,6 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                     .setNotValidBefore(notBefore)
                     .setNotValidAfter(notAfter)
 
-                    .setSigningKey(keyPair.getPrivate())
                     .setPublicKey(keyPair.getPublic())
 
                     .setSerialNumber(serialNumber)
@@ -120,10 +137,10 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                     .setSigningKey(caPrivateKey)
 
                     // Subject Key Identifier Extension
-                    .addExtension(new SubjectKeyIdentifierExtension(keyPair.getPublic().getEncoded()))
+                    .addExtension(new SubjectKeyIdentifierExtension(KeyUtil.getKeyIdentifier(keyPair.getPublic())))
 
                     // Authority Key Identifier
-                    .addExtension(new AuthorityKeyIdentifierExtension(keyPair.getPublic().getEncoded(), null, null))
+                    .addExtension(authorityKeyIdentifierExtension)
 
                     // Key Usage
                     .addExtension(
