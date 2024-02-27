@@ -298,9 +298,6 @@ importers:
 
   js/apps/keycloak-server:
     dependencies:
-      '@keycloak/keycloak-admin-client':
-        specifier: workspace:*
-        version: link:../../libs/keycloak-admin-client
       '@octokit/rest':
         specifier: ^20.1.1
         version: 20.1.1

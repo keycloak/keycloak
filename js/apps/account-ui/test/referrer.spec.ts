@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
+
+import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants";
 import { login } from "./login";
 import { getAdminUrl } from "./utils";
-import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "../src/constants";
-
-// NOTE: This test suite will only pass when running a production build, as the referrer is extracted on the server side.
-// This will change once https://github.com/keycloak/keycloak/pull/27311 has been merged.
 
 test.describe("Signing in with referrer link", () => {
   test("shows a referrer link when a matching client exists", async ({
