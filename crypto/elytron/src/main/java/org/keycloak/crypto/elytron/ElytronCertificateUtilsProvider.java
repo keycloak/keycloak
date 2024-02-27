@@ -29,7 +29,6 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -61,7 +60,7 @@ import org.wildfly.security.x500.cert.util.KeyUtil;
  *
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  */
-public class ElytronCertificateUtils  implements CertificateUtilsProvider {
+public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider {
 
     Logger log = Logger.getLogger(getClass());
 
@@ -84,10 +83,7 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
         try {
 
             X500Principal subjectdn = subjectToX500Principle(subject);
-            X500Principal issuerdn = subjectdn;
-            if (caCert != null) {
-                issuerdn = caCert.getSubjectX500Principal();
-            }
+            X500Principal issuerdn = caCert.getSubjectX500Principal();
 
             // Validity
             ZonedDateTime notBefore = ZonedDateTime.ofInstant(new Date(System.currentTimeMillis()).toInstant(),
@@ -104,22 +100,6 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
             ArrayList<String> ekuList = new ArrayList<String>();
             ekuList.add(X500.OID_KP_EMAIL_PROTECTION);
             ekuList.add(X500.OID_KP_SERVER_AUTH);
-
-            // Authority Key Identifier
-            AuthorityKeyIdentifierExtension authorityKeyIdentifierExtension;
-            if (caCert != null) {
-                authorityKeyIdentifierExtension = new AuthorityKeyIdentifierExtension(
-                    KeyUtil.getKeyIdentifier(caCert.getPublicKey()),
-                    Collections.singletonList(new GeneralName.DirectoryName(caCert.getIssuerX500Principal().getName())),
-                    caCert.getSerialNumber()
-                );
-            } else {
-                authorityKeyIdentifierExtension = new AuthorityKeyIdentifierExtension(
-                    KeyUtil.getKeyIdentifier(keyPair.getPublic()),
-                    Collections.singletonList(new GeneralName.DirectoryName(issuerdn.getName())),
-                    serialNumber
-                );
-            }
 
             X509CertificateBuilder cbuilder = new X509CertificateBuilder()
                     .setSubjectDn(subjectdn)
@@ -140,7 +120,11 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                     .addExtension(new SubjectKeyIdentifierExtension(KeyUtil.getKeyIdentifier(keyPair.getPublic())))
 
                     // Authority Key Identifier
-                    .addExtension(authorityKeyIdentifierExtension)
+                    .addExtension(new AuthorityKeyIdentifierExtension(
+                            KeyUtil.getKeyIdentifier(caCert.getPublicKey()),
+                            Collections.singletonList(new GeneralName.DirectoryName(caCert.getIssuerX500Principal().getName())),
+                            caCert.getSerialNumber()
+                    ))
 
                     // Key Usage
                     .addExtension(
