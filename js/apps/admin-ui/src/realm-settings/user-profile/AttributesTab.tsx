@@ -32,7 +32,13 @@ const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
 type movedAttributeType = UserProfileAttribute;
 
-export const AttributesTab = () => {
+type AttributesTabProps = {
+  setTableData: React.Dispatch<
+    React.SetStateAction<Record<string, string>[] | undefined>
+  >;
+};
+
+export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const { config, save } = useUserProfile();
   const { realm: realmName } = useRealm();
   const { t } = useTranslation();
@@ -56,13 +62,13 @@ export const AttributesTab = () => {
   );
 
   const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales!.length
+    return realm?.supportedLocales?.length
       ? realm.supportedLocales
       : [DEFAULT_LOCALE];
   }, [realm]);
 
   const defaultLocales = useMemo(() => {
-    return realm?.defaultLocale!.length ? [realm.defaultLocale] : [];
+    return realm?.defaultLocale?.length ? [realm.defaultLocale] : [];
   }, [realm]);
 
   const combinedLocales = useMemo(() => {
@@ -99,6 +105,13 @@ export const AttributesTab = () => {
                   selectedLocale: locale,
                   key: translationsToDelete,
                 });
+
+                const updatedData =
+                  await adminClient.realms.getRealmLocalizationTexts({
+                    realm: realmName,
+                    selectedLocale: locale,
+                  });
+                setTableData([updatedData]);
               }
             } catch (error) {
               console.error(`Error removing translations for ${locale}`);

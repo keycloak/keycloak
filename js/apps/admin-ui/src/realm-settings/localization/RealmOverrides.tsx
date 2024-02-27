@@ -56,6 +56,7 @@ type RealmOverridesProps = {
   internationalizationEnabled: boolean;
   watchSupportedLocales: string[];
   realm: RealmRepresentation;
+  tableData: Record<string, string>[] | undefined;
 };
 
 type EditStatesType = { [key: number]: boolean };
@@ -77,6 +78,7 @@ export const RealmOverrides = ({
   internationalizationEnabled,
   watchSupportedLocales,
   realm,
+  tableData,
 }: RealmOverridesProps) => {
   const { t } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
@@ -173,7 +175,7 @@ export const RealmOverrides = ({
 
       setTableRows(updatedRows);
     });
-  }, [tableKey, first, max, filter]);
+  }, [tableKey, tableData, first, max, filter]);
 
   const handleModalToggle = () => {
     setAddTranslationModalOpen(!addTranslationModalOpen);
