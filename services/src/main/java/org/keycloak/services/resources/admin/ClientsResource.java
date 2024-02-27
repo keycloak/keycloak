@@ -223,7 +223,12 @@ public class ClientsResource {
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+            String errorMessage = e.getMessage();
+            if (errorMessage != null) {
+                throw ErrorResponse.exists(errorMessage);
+            } else {
+                throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+            }
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
