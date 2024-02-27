@@ -51,27 +51,12 @@ public interface OAuth2GrantType extends Provider {
     EventType getEventType();
 
     /**
-     * Checks if the grant implementation supports the request.
-     * The check will be performed after the initial matching against the "grant_type" parameter.
-     * @param context grant request context
-     * @return request supported
-     */
-    default boolean supports(Context context) {
-        return true;
-    }
-
-    /**
-     * Sets grant request context.
-     * @param context grant request context
-     */
-    void setContext(Context context);
-
-    /**
      * Processes grant request.
+     * @param context grant request context
      *
      * @return token response
      */
-    Response process();
+    Response process(Context context);
 
     public static class Context {
         protected KeycloakSession session;
@@ -122,10 +107,6 @@ public interface OAuth2GrantType extends Provider {
             this.cors = context.cors;
             this.tokenManager = context.tokenManager;
             this.dPoP = context.dPoP;
-        }
-
-        public KeycloakSession getSession() {
-            return session;
         }
 
         public void setFormParams(MultivaluedHashMap<String, String> formParams) {

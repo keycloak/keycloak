@@ -59,7 +59,9 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(AuthorizationCodeGrantType.class);
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String code = formParams.getFirst(OAuth2Constants.CODE);

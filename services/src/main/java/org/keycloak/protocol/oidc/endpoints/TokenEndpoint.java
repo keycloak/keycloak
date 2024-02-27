@@ -92,7 +92,6 @@ public class TokenEndpoint {
 
     private String grantType;
     private OAuth2GrantType grant;
-    private OAuth2GrantType.Context context;
 
     private Cors cors;
 
@@ -136,10 +135,8 @@ public class TokenEndpoint {
             checkParameterDuplicated();
         }
 
-        context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes, formParams, event, cors, tokenManager, dPoP);
-
-        grant.setContext(context);
-        return grant.process();
+        OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes, formParams, event, cors, tokenManager, dPoP);
+        return grant.process(context);
     }
 
     @Path("introspect")

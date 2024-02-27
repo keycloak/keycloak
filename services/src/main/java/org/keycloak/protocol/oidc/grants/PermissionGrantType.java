@@ -49,7 +49,9 @@ import org.keycloak.services.managers.AppAuthManager;
 public class PermissionGrantType extends OAuth2GrantTypeBase {
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         String accessTokenString = null;
@@ -117,8 +119,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                 context.setClient(client);
                 context.setClientConfig(clientConfig);
                 context.setClientAuthAttributes(clientAuthAttributes);
-                clientCredentialsGrant.setContext(context);
-                accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process().getEntity()).getToken();
+                accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process(context).getEntity()).getToken();
             }
         }
 

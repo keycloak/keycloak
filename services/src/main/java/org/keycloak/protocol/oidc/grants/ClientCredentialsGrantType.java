@@ -60,7 +60,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
 
     @Override
-    public Response process() {
+    public Response process(Context context) {
+        setContext(context);
+        
         if (client.isBearerOnly()) {
             event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Bearer-only client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);

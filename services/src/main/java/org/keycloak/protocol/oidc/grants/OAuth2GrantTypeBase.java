@@ -88,8 +88,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected HttpResponse response;
     protected HttpHeaders headers;
 
-    @Override
-    public void setContext(Context context) {
+    protected void setContext(Context context) {
         this.context = context;
         this.session = context.session;
         this.realm = context.realm;
