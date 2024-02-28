@@ -338,7 +338,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String pageSource = driver.getPageSource();
 
             assertTrue(pageSource.contains("FreeOTP"));
-            assertFalse(pageSource.contains("Google Authenticator"));
+            assertTrue(pageSource.contains("Google Authenticator"));
             assertFalse(pageSource.contains("Microsoft Authenticator"));
 
             totpPage.clickManual();
