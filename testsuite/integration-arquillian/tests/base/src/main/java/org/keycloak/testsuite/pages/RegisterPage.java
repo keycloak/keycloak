@@ -67,7 +67,7 @@ public class RegisterPage extends AbstractPage {
     @FindBy(id = "termsAccepted")
     private WebElement termsAcceptedInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(className = "alert-error")
