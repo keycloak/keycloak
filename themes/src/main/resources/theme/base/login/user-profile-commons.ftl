@@ -146,13 +146,14 @@
 		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
 	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
 		<#assign options=attribute.validators.options.options>
+	<#else>
+		<#assign options=[]>
 	</#if>
 
-	<#if options??>
-		<#list options as option>
+	<#list options as option>
 		<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
-		</#list>
-	</#if>	
+	</#list>
+
 	</select>
 </#macro>
 
@@ -162,21 +163,22 @@
 		<#assign classDiv=properties.kcInputClassRadio!>
 		<#assign classInput=properties.kcInputClassRadioInput!>
 		<#assign classLabel=properties.kcInputClassRadioLabel!>
-	<#else>	
+	<#else>
 		<#assign inputType='checkbox'>
 		<#assign classDiv=properties.kcInputClassCheckbox!>
 		<#assign classInput=properties.kcInputClassCheckboxInput!>
 		<#assign classLabel=properties.kcInputClassCheckboxLabel!>
 	</#if>
-	
+
 	<#if attribute.annotations.inputOptionsFromValidation?? && attribute.validators[attribute.annotations.inputOptionsFromValidation]?? && attribute.validators[attribute.annotations.inputOptionsFromValidation].options??>
 		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
 	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
 		<#assign options=attribute.validators.options.options>
+	<#else>
+		<#assign options=[]>
 	</#if>
 
-	<#if options??>
-		<#list options as option>
+	<#list options as option>
 		<div class="${classDiv}">
 			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
 				aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
@@ -185,8 +187,7 @@
 			/>
 			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
 		</div>
-		</#list>
-	</#if>	
+	</#list>
 </#macro>
 
 <#macro selectOptionLabelText attribute option>
