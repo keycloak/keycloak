@@ -8,7 +8,7 @@ import { beerify, debeerify } from "../util";
 
 export type UserFormFields = Omit<
   UIUserRepresentation,
-  "attributes" | "userProfileMetadata | unmanagedAttributes"
+  "attributes" | "userProfileMetadata" | "unmanagedAttributes"
 > & {
   attributes?: KeyValueType[] | Record<string, string | string[]>;
   unmanagedAttributes?: KeyValueType[] | Record<string, string | string[]>;
