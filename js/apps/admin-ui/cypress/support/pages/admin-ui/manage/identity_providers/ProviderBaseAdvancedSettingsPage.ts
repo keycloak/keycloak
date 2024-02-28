@@ -4,6 +4,7 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export enum LoginFlowOption {
+  empty = "",
   none = "None",
   browser = "browser",
   directGrant = "direct grant",
@@ -68,7 +69,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #doNotStoreUsers = "#doNotStoreUsers";
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
-  #firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
+  #firstLoginFlowSelect = "#firstBrokerLoginFlowAliasOverride";
   #postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   #syncModeSelect = "#syncMode";
   #essentialClaimSwitch = "#filteredByClaim";
@@ -496,9 +497,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertAccountLinkingOnlySwitchTurnedOn(false);
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
-    this.assertFirstLoginFlowSelectOptionEqual(
-      LoginFlowOption.firstBrokerLogin,
-    );
+    this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
     this.assertClientAssertSigAlgSelectOptionEqual(

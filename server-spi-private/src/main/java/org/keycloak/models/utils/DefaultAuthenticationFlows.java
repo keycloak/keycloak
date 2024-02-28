@@ -469,6 +469,7 @@ public class DefaultAuthenticationFlows {
         firstBrokerLogin.setTopLevel(true);
         firstBrokerLogin.setBuiltIn(true);
         firstBrokerLogin = realm.addAuthenticationFlow(firstBrokerLogin);
+        realm.setFirstBrokerLoginFlow(firstBrokerLogin);
 
         AuthenticatorConfigModel reviewProfileConfig = new AuthenticatorConfigModel();
         reviewProfileConfig.setAlias(IDP_REVIEW_PROFILE_CONFIG_ALIAS);
