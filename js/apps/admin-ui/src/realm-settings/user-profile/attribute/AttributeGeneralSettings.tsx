@@ -89,10 +89,8 @@ export const AttributeGeneralSettings = ({
     setNewAttributeName(newAttributeName);
 
     const newDisplayName =
-      newAttributeName !== ""
-        ? realm?.internationalizationEnabled
-          ? "${profile.attributes." + `${newAttributeName}}`
-          : ""
+      newAttributeName !== "" && realm?.internationalizationEnabled
+        ? "${profile.attributes." + `${newAttributeName}}`
         : "";
 
     setGeneratedDisplayName(newDisplayName);

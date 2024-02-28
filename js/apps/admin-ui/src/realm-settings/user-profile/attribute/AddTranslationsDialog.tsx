@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { InfoCircleIcon, SearchIcon } from "@patternfly/react-icons";
-import { useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useRealm } from "../../../context/realm-context/RealmContext";
@@ -41,7 +41,6 @@ type Translations = {
 
 export type AddTranslationsDialogProps = {
   translationKey: string;
-  defaultTranslationValue: string;
   onCancel: () => void;
   toggleDialog: () => void;
   onTranslationsAdded: (translations: Translations) => void;
@@ -49,7 +48,6 @@ export type AddTranslationsDialogProps = {
 
 export const AddTranslationsDialog = ({
   translationKey,
-  defaultTranslationValue,
   onCancel,
   toggleDialog,
   onTranslationsAdded,
@@ -113,21 +111,13 @@ export const AddTranslationsDialog = ({
 
   useEffect(() => {
     combinedLocales.forEach((locale, rowIndex) => {
-      const defaultValue =
-        locale === defaultLocales.toString() ? defaultTranslationValue : "";
       setValue(`translations.${rowIndex}`, {
         locale,
-        value: defaultValue,
+        value: "",
       });
       setValue("key", translationKey);
     });
-  }, [
-    combinedLocales,
-    defaultLocales,
-    defaultTranslationValue,
-    translationKey,
-    setValue,
-  ]);
+  }, [combinedLocales, translationKey, setValue]);
 
   const handleOk = () => {
     const formData = getValues();
@@ -298,7 +288,9 @@ export const AddTranslationsDialog = ({
                                             ? ValidatedOptions.error
                                             : "default"
                                         }
-                                        onChange={(e) => {
+                                        onChange={(
+                                          e: ChangeEvent<HTMLInputElement>,
+                                        ) => {
                                           const updatedTranslation = {
                                             locale,
                                             value: (
@@ -329,7 +321,9 @@ export const AddTranslationsDialog = ({
                                         {...field.value}
                                         aria-label={t("translationValue")}
                                         data-testid="translation-value"
-                                        onChange={(e) => {
+                                        onChange={(
+                                          e: ChangeEvent<HTMLInputElement>,
+                                        ) => {
                                           const updatedTranslation = {
                                             locale,
                                             value: (
