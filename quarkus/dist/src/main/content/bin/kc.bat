@@ -14,7 +14,7 @@ if "%OS%" == "Windows_NT" (
 )
 
 if "%OS%" == "Windows_NT" (
-  set DIRNAME=%~dp0%
+  set "DIRNAME=%~dp0"
 ) else (
   set DIRNAME=.\
 )
