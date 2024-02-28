@@ -53,20 +53,23 @@
                               raw-values="true"
                               shared="true"
                               segmented="false">
+                    <!-- This is a workaround for the following issue https://github.com/keycloak/keycloak/issues/27117 and should be removed when the issue is fixed -->
+                    <write-behind modification-queue-size="1024"/> <!--2-->
+                    <!-- End of the workaround -->
                     <remote-server host="${env.KC_REMOTE_STORE_HOST}"
-                                   port="${env.KC_REMOTE_STORE_PORT}"/> <!--2-->
+                                   port="${env.KC_REMOTE_STORE_PORT}"/> <!--3-->
                     <connection-pool max-active="16"
                                      exhausted-action="CREATE_NEW"/>
                     <security>
                         <authentication server-name="infinispan">
                             <digest username="${env.KC_REMOTE_STORE_USERNAME}"
                                     password="${env.KC_REMOTE_STORE_PASSWORD}"
-                                    realm="default"/> <!--3-->
+                                    realm="default"/> <!--4-->
                         </authentication>
                         <encryption protocol="TLSv1.3"
                                     sni-hostname="${env.KC_REMOTE_STORE_HOST}">
                             <truststore filename="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-                                        type="pem"/> <!--4-->
+                                        type="pem"/> <!--5-->
                         </encryption>
                     </security>
                 </remote-store>
