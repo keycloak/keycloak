@@ -398,3 +398,11 @@ The JVM options `-Xms`, and `-Xmx` were replaced by `-XX:InitialRAMPercentage`, 
 
 For more details, see the 
 https://www.keycloak.org/server/containers[Running Keycloak in a container] guide.
+
+ifeval::[{project_community}==true]
+= GELF log handler has been deprecated
+
+With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying library] providing integration
+with GELF, Keycloak will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
+release. If you require an external log management, consider using file log parsing.
+endif::[]
