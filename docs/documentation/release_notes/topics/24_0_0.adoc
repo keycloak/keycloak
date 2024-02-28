@@ -30,7 +30,7 @@ benefit from the user profile capabilities, but you are not required to use them
 The first release of the user profile as a supported feature is just the starting point and the baseline for delivering many more capabilities around identity management.
 
 ifeval::[{project_community}==true]
-We would like to give huge thanks to theawesome Keycloak community as lots of ideas, requirements and contributions came from the community! Special thanks to:
+We would like to give huge thanks to the awesome Keycloak community as lots of ideas, requirements and contributions came from the community! Special thanks to:
 
 * https://github.com/velias[Vlastimil Eliáš]
 * https://github.com/alechenninger[Alec Henninger]
@@ -130,21 +130,44 @@ This release contains support for Lightweight access tokens. As a result, you ca
 claims, which is why they are smaller. Note that lightweight access token is still JWT signed by the realm key by default and still contains some very basic claims.
 
 This release introduces an *Add to lightweight access token* flag that is available on some OIDC protocol mappers. Use this flag to specify if a particular claim should be added to a lightweight
-access token. It is *OFF* by default, which means that most claims are not added. Also, a client policy executor exists. Use it to specify if a particular client request
-should use lightweight access tokens or regular access tokens. A previous release added an *Add to token introspection* switch. You use it to add
+access token. It is *OFF* by default, which means that most claims are not added.
+
+Also, a client policy executor exists. Use it to specify if a particular client request
+should use lightweight access tokens or regular access tokens. Alternative to the executor is to use a flag *Always use lightweight access token* on client advanced
+settings, which allows to specify that particular client should always use lightweight access tokens. Executor can be an alternative if you need
+more flexibility. For instance when you want to use lightweight access tokens by default, but regular tokens just for the specified *scope* parameter etc.
+
+A previous release added an *Add to token introspection* switch. You use it to add
 claims that are not present in the access token into the introspection endpoint response.
+
 ifeval::[{project_community}==true]
 Thanks to https://github.com/skabano[Shigeyuki Kabano] for the contribution and Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] for a help and review of this feature.
 endif::[]
 
+== OAuth 2.1 support
+
+This release contains optional OAuth 2.1 support. New client policy profiles were introduced in this release, which administrator can use to make sure that his clients and particular client requests
+will be compliant with OAuth 2.1 specification. There is dedicated client profile for confidential clients and dedicated profile for public clients.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/skabano[Shigeyuki Kabano] for the contribution.
+endif::[]
+
 == Scope parameter supported in the refresh token flow
 
-Starting with this release, the`scope` parameter in the OAuth2/OIDC endpoint for token refresh is supported. Use this parameter to request access tokens with a smaller amount
+Starting with this release, the *scope* parameter in the OAuth2/OIDC endpoint for token refresh is supported. Use this parameter to request access tokens with a smaller amount
 of scopes than originally granted, which means you cannot increase access token scope. This scope limitation does not affect the scope of the refreshed refresh token. This function works as
 described in the OAuth2 specification.
 ifeval::[{project_community}==true]
 Thanks to https://github.com/cgeorgilakis[Konstantinos Georgilakis] for the contribution.
+endif::[]
+
+== Client policy executor for secure redirect URIs
+
+A new client policy executor `secure-redirect-uris-enforcer` is introduced. Use it to restrict what are the redirect URIs, which can be used by the clients. For instance
+ it is possible to specify that client redirect URIs cannot have wildcards, should be just from specific domain, must be OAuth 2.1 compliant etc.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/lexcao[Lex Cao] and https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
 endif::[]
 
 == Client policy executor for enforcing DPoP
@@ -164,12 +187,27 @@ Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/MuhammadZakwan[Muhammad Zakwan Bin Mohd Zahid] for the contribution.
 endif::[]
 
+== EC Keys supported by JavaKeystore provider
+
+The provider `JavaKeystoreProvider` for providing realm keys now supports EC keys in addition to previously supported RSA keys.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/wistefan[Stefan Wiedemann] for the contribution.
+endif::[]
+
 == Option to add X509 thumbprint to JWT when using private_key_jwt authentication for identity providers
 
 OIDC identity providers now have the *Add X.509 Headers to the JWT* option for the situation when client authentication with JWT signed by private key is used. This option can be useful
 for interoperability with some identity providers such as Azure AD, which require the thumbprint to be present on the JWT.
 ifeval::[{project_community}==true]
 Thanks to https://github.com/MikeTangoEcho[MT] for the contribution.
+endif::[]
+
+== OAuth Grant Type SPI
+
+Internal update in the {project_name} codebase was done to introduce OAuth Grant Type SPI. This allows additional flexibility when introducing custom grant types
+supported by {project_name} OAuth 2 token endpoint.
+ifeval::[{project_community}==true]
+Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
 endif::[]
 
 = CORS improvements

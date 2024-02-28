@@ -79,6 +79,10 @@ Client Role::
     Applies for clients with the client role of the specified name. Typically you can create a client role of specified name to requested clients and use it as a "marker role" to make
     sure that specified client policy will be applied for requested clients.
 
+NOTE: There is often a use-case for require that particular client policy is applied for the specified clients like `my-client-1` and `my-client-2`. The best way to achieve this
+is to use *Client Role* condition in your policy and then create client role of specified name to requested clients. This client role can be used as a "marker role" used solely
+for marking that particular client policy should be used for particular clients.
+
 Client Domain Name, Host or IP Address::
     Applied for specific domain names of client. Or for the cases when the administrator registers/updates client from particular Host or IP Address.
 
