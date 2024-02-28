@@ -25,6 +25,7 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -276,7 +277,7 @@ public class OIDCLoginProtocolService {
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
                 && realm.getSslRequired().isRequired(clientConnection)) {
-            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);
         }

@@ -38,6 +38,8 @@ import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.util.DPoPUtil;
 
+import static org.keycloak.constants.CorsHeaders.*;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -46,12 +48,12 @@ public class DefaultCors implements Cors {
     private static final Logger logger = Logger.getLogger(DefaultCors.class);
 
     private static final Set<String> DEFAULT_ALLOW_HEADERS = new TreeSet<>(Arrays.asList(
-        Cors.ORIGIN_HEADER,
+        ORIGIN,
         HttpHeaders.ACCEPT,
         Cors.X_REQUESTED_WITH,
         HttpHeaders.CONTENT_TYPE,
-        Cors.ACCESS_CONTROL_REQUEST_METHOD,
-        Cors.ACCESS_CONTROL_REQUEST_HEADERS,
+        ACCESS_CONTROL_REQUEST_METHOD,
+        ACCESS_CONTROL_REQUEST_HEADERS,
         DPoPUtil.DPOP_HTTP_HEADER
     ));
     private static String defaultAllowHeaders;
@@ -183,7 +185,7 @@ public class DefaultCors implements Cors {
             throw new IllegalStateException("request is not set");
         }
 
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN);
         if (origin == null) {
             logger.trace("No Origin header, ignoring");
             return false;
@@ -218,7 +220,7 @@ public class DefaultCors implements Cors {
                 sb.append(", ").append(CollectionUtil.join(allowedHeaders, ", "));
             }
             if (auth) {
-                sb.append(", ").append(AUTHORIZATION_HEADER);
+                sb.append(", ").append(HttpHeaders.AUTHORIZATION);
             }
             addHeader.accept(ACCESS_CONTROL_ALLOW_HEADERS, sb.toString());
         }

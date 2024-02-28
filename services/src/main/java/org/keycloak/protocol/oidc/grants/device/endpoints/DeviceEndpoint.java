@@ -22,6 +22,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -101,7 +102,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response handleDeviceRequest() {
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
 
         logger.trace("Processing @POST request");
         event.event(EventType.OAUTH2_DEVICE_AUTH);

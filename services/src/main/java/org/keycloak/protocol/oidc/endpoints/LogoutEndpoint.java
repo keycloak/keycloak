@@ -31,6 +31,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -494,7 +495,7 @@ public class LogoutEndpoint {
      * @return
      */
     private Response logoutToken() {
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         checkSsl();

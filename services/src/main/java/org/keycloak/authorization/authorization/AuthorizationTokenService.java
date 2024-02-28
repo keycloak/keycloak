@@ -62,6 +62,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.PathMatcher;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -276,7 +277,7 @@ public class AuthorizationTokenService {
         return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
                 .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+                .exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private boolean isPublicClientRequestingEntitlementWithClaims(KeycloakAuthorizationRequest request) {

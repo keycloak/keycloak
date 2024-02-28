@@ -18,12 +18,12 @@ package org.keycloak.quarkus.runtime.services.resources;
 
 import io.quarkus.resteasy.reactive.server.EndpointDisabled;
 import jakarta.ws.rs.NotFoundException;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.services.Urls;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -114,9 +114,9 @@ public class DebugHostnameSettingsResource {
     @Produces(MediaType.TEXT_PLAIN)
     public Response test(final @PathParam("realmName") String realmName) {
         Response.ResponseBuilder builder = Response.ok(PATH_FOR_TEST_CORS_IN_HEADERS + "-OK");
-        String origin = keycloakSession.getContext().getRequestHeaders().getHeaderString(Cors.ORIGIN_HEADER);
-        builder.header(Cors.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-        builder.header(Cors.ACCESS_CONTROL_ALLOW_METHODS, "GET");
+        String origin = keycloakSession.getContext().getRequestHeaders().getHeaderString(CorsHeaders.ORIGIN);
+        builder.header(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        builder.header(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET");
         return builder.build();
     }
 

@@ -27,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -41,7 +42,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -271,17 +271,17 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
 
         Invocation.Builder request = oidcDiscoveryTarget.request();
-        request.header(Cors.ORIGIN_HEADER, "http://somehost");
+        request.header(CorsHeaders.ORIGIN, "http://somehost");
         Response response = request.get();
 
-        assertEquals("http://somehost", response.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertEquals("http://somehost", response.getHeaders().getFirst(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
 
 
         Invocation.Builder nullRequest = oidcDiscoveryTarget.request();
-        nullRequest.header(Cors.ORIGIN_HEADER, "null");
+        nullRequest.header(CorsHeaders.ORIGIN, "null");
         Response nullResponse = nullRequest.get();
 
-        assertEquals("null", nullResponse.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertEquals("null", nullResponse.getHeaders().getFirst(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test

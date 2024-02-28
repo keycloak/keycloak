@@ -33,6 +33,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -91,7 +92,7 @@ public class TokenRevocationEndpoint {
     public Response revoke() {
         event.event(EventType.REVOKE_GRANT);
 
-        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
 
         checkSsl();
         checkRealm();

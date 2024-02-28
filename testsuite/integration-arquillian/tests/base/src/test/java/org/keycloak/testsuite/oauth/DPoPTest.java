@@ -56,6 +56,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.ECPublicJWK;
@@ -77,7 +78,6 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -332,7 +332,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testDPoPProofCorsPreflight() throws Exception {
         CloseableHttpResponse response = oauth.doPreflightRequest();
 
-        String[] headers = response.getHeaders(Cors.ACCESS_CONTROL_ALLOW_HEADERS)[0].getValue().split(", ");
+        String[] headers = response.getHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS)[0].getValue().split(", ");
         Set<String> allowedHeaders = new HashSet<String>(Arrays.asList(headers));
 
         assertTrue(allowedHeaders.contains(TokenUtil.TOKEN_TYPE_DPOP));

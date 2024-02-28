@@ -39,17 +39,6 @@ public interface Cors extends Provider {
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
 
-    public static final String ORIGIN_HEADER = "Origin";
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-
-    public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
-    public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
-    public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
-    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
-    public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-    public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
-    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
     public static final String X_REQUESTED_WITH = "X-Requested-With";
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD = "*";

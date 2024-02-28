@@ -24,6 +24,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.KeyWrapper;
@@ -353,7 +354,7 @@ public class UserInfoEndpoint {
     }
 
     private void setupCors() {
-        cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
         error.cors(cors);
     }
 

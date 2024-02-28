@@ -23,6 +23,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.constants.CorsHeaders;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -276,7 +277,7 @@ public class RealmsResource {
         if (!"https".equals(session.getContext().getUri().getBaseUri().getScheme())
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {
             HttpRequest request = session.getContext().getHttpRequest();
-            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS);
             throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
                     Response.Status.FORBIDDEN);
         }
