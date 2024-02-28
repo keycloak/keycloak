@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class DefaultCorsFactory implements CorsFactory {
 
     private static final String PROVIDER_ID = "default";
+    private static final String HEADERS = "headers";
 
     @Override
     public Cors create(KeycloakSession session) {
@@ -35,6 +36,10 @@ public class DefaultCorsFactory implements CorsFactory {
 
     @Override
     public void init(Config.Scope config) {
+        String[] headers = config.getArray(HEADERS);
+        if (headers != null) {
+            DefaultCors.addDefaultAllowHeaders(headers);
+        }
     }
 
     @Override
