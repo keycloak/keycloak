@@ -309,11 +309,7 @@ class MenuButtonLinks {
   }
 }
 
-// Initialize menu buttons
-
-window.addEventListener("load", () => {
-  const menuButtons = document.querySelectorAll(".menu-button-links");
-  for (const button of menuButtons) {
-    new MenuButtonLinks(button);
-  }
-});
+const menuButtons = document.querySelectorAll(".menu-button-links");
+for (const button of menuButtons) {
+  new MenuButtonLinks(button);
+}
