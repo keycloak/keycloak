@@ -111,6 +111,9 @@ data:
                                   raw-values="true"
                                   shared="true"
                                   segmented="false">
+                        <!-- This is a workaround for the following issue https://github.com/keycloak/keycloak/issues/27117 and should be removed when the issue is fixed -->
+                        <write-behind modification-queue-size="1024"/>
+                        <!-- End of the workaround -->
                         <remote-server host="${env.KC_REMOTE_STORE_HOST}"
                                        port="${env.KC_REMOTE_STORE_PORT}"/> <!--2-->
                         <connection-pool max-active="16"
@@ -790,7 +793,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: 2cae63c85a3485c135aebe1472971dd056b1dda42fb54ef2f891bc521e31fc1a-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3-<KEYCLOAK_IMAGE_HERE>-56f92cd9012613402e2a7a61aded0f218d077b8c6345b22922ca7bf1a5c64984-v1.27.0
+          checksum/config: ebe9b8c121995f449a1a4e339af244b2bb67769af84b3cbdff61159948447e20-4832924b47210161956e3b1718daf07ff52d801545186a76c391485eaf1897d3-<KEYCLOAK_IMAGE_HERE>-dbc855dd9b7f7c0b828760ea8cd7427e8a2f5a5be303fba7dee0c6bbb68258d4-v1.27.0
       spec:
         containers:
           - env:

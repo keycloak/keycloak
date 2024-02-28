@@ -23,9 +23,10 @@ This topic describes advanced {jdgserver_name} configurations for {project_name}
 include::examples/src/kcb-infinispan-cache-remote-store-config.xml[tag=keycloak-ispn-remotestore]
 ----
 <1> New tag `<persistence />` to connect it to the remote store.
-<2> For the address to the remote store, reference two environment variables for host name and port number.
-<3> For authentication, reference two environment variables for username and password.
-<4> To secure the remote store connection, use the Kubernetes mechanisms of the pre-configured truststore.
+<2> This is a workaround for issue https://github.com/keycloak/keycloak/issues/27117[keycloak#27117] and will be removed in the following versions.
+<3> For the address to the remote store, reference two environment variables for host name and port number.
+<4> For authentication, reference two environment variables for username and password.
+<5> To secure the remote store connection, use the Kubernetes mechanisms of the pre-configured truststore.
 
 .. Prepare an {jdgserver_name} Cache configuration XML from the file `cache-ispn.xml`, which is part of the {project_name} distribution. 
 For each `replicated-cache` entry, add the tag `<persistence />` as shown below.
