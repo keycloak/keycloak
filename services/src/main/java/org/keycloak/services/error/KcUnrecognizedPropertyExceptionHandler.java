@@ -24,6 +24,8 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -31,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
  *
  * <code>org.jboss.resteasy.plugins.providers.jackson.UnrecognizedPropertyExceptionHandler</code>
  */
+@Provider
 public class KcUnrecognizedPropertyExceptionHandler implements ExceptionMapper<UnrecognizedPropertyException> {
 
     @Context

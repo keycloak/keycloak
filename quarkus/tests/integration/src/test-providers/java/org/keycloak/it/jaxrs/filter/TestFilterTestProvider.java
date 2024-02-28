@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,25 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.resources;
+package org.keycloak.it.jaxrs.filter;
 
-import org.keycloak.utils.MediaType;
+import org.keycloak.it.TestProvider;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ext.Provider;
+public class TestFilterTestProvider implements TestProvider {
 
-@Provider
-@Path("/robots.txt")
-public class RobotsResource {
-
-    private static final String robots = "User-agent: *\n" + "Disallow: /";
-
-    @GET
-    @Produces(MediaType.TEXT_PLAIN_UTF_8)
-    public String getRobots() {
-        return robots;
+    @Override
+    public Class<?>[] getClasses() {
+        return new Class[] {TestFilter.class};
     }
 
 }

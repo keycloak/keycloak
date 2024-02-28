@@ -26,10 +26,12 @@ import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @PreMatching
 @Priority(10)
 public class KeycloakSecurityHeadersFilter implements ContainerResponseFilter {
