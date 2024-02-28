@@ -69,7 +69,7 @@ export function setUserProfileServerError<T>(
     setError(fieldName(e.field) as keyof T, {
       message: t(e.errorMessage, {
         ...params,
-        defaultValue: e.field,
+        defaultValue: e.errorMessage || e.field,
       }),
       type: "server",
     });
