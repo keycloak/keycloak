@@ -227,6 +227,15 @@ public class KcAdmTest extends AbstractAdmCliTest {
     }
 
     @Test
+    public void testBadOverlappingOption() {
+        KcAdmExec exe = KcAdmExec.execute("config credentials --server http://localhost:8080 --realm master --username admin --password admin");
+
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("stderr first line", "Please double check your command options, one or more of them are not specified correctly. "
+                + "It is possible to have unintentional overlap with other options. e.g. using --clientid will get mistaken for --client, however --cclientid is needed.", exe.stderrLines().get(0));
+    }
+
+    @Test
     public void testCredentialsServerAndRealmWithDefaultConfig() {
         /*
          *  Test without --server specified
