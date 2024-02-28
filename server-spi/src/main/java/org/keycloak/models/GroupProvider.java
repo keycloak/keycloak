@@ -20,8 +20,6 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
