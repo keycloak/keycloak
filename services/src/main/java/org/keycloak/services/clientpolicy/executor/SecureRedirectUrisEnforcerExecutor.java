@@ -22,12 +22,12 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.google.common.net.InetAddresses;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -313,8 +313,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
 
             InetAddress addr;
             try {
-                addr = InetAddresses.forUriString(uri.getHost());
-            } catch (IllegalArgumentException e) {
+                addr = InetAddress.getByName(uri.getHost());
+            } catch (UnknownHostException e) {
                 return false;
             }
 

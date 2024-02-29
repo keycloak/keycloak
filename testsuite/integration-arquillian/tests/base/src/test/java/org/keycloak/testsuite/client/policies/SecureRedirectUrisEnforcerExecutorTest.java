@@ -184,6 +184,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         // IPv4 loopback address not allowed
         testSecureRedirectUrisEnforcerExecutor_failRegisterDynamically(Arrays.asList("https://[::1]/", "https://127.0.0.1/auth/admin"));
 
+        // register - fail
+        // IPv4 loopback address not allowed (even when "localhost" is used)
+        testSecureRedirectUrisEnforcerExecutor_failRegisterDynamically(Arrays.asList("https://[::1]/", "https://localhost/auth/admin"));
+
         // register - success
         List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
                 Arrays.asList("https://[::1]/oauth2redirect/example-provider", "https://[::1]/"));
