@@ -147,8 +147,7 @@ endif::[]
 
 == OAuth 2.1 support
 
-This release contains optional OAuth 2.1 support. New client policy profiles were introduced in this release, which administrator can use to make sure that his clients and particular client requests
-will be compliant with OAuth 2.1 specification. There is dedicated client profile for confidential clients and dedicated profile for public clients.
+This release contains optional OAuth 2.1 support. New client policy profiles were introduced in this release, which administrators can use to make sure that clients and particular client requests comply with the OAuth 2.1 specification. A dedicated client profile exists for confidential clients and a dedicated profile for public clients.
 ifeval::[{project_community}==true]
 Thanks to https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/skabano[Shigeyuki Kabano] for the contribution.
 endif::[]
