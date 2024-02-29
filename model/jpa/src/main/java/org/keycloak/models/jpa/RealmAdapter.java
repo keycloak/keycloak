@@ -1581,6 +1581,18 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public AuthenticationFlowModel getPostBrokerLoginFlow() {
+        String flowId = getAttribute(RealmAttributes.POST_BROKER_LOGIN_FLOW_ID);
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setPostBrokerLoginFlow(AuthenticationFlowModel flow) {
+        setAttribute(RealmAttributes.POST_BROKER_LOGIN_FLOW_ID, flow.getId());
+    }
+
+    @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         return realm.getAuthenticationFlows().stream().map(this::entityToModel);
     }

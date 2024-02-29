@@ -51,6 +51,8 @@ public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
                 .followOneRedirect()
 
                 // Obtain the response sent to the app
+                .followOneRedirect()
+                .followOneRedirect()
                 .getSamlResponse(SamlClient.Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));

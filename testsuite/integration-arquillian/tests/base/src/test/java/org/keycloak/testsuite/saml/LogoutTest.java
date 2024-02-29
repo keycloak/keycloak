@@ -132,6 +132,8 @@ public class LogoutTest extends AbstractSamlTest {
           .followOneRedirect()
 
           // Now returning back to the app
+          .followOneRedirect()
+          .followOneRedirect()
           .processSamlResponse(POST)
             .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
             .build();

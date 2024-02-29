@@ -874,6 +874,9 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getFirstBrokerLoginFlow() != null) {
             realm.setFirstBrokerLoginFlow(realm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
         }
+        if (rep.getPostBrokerLoginFlow() != null) {
+            realm.setPostBrokerLoginFlow(realm.getFlowByAlias(rep.getPostBrokerLoginFlow()));
+        }
     }
 
     @Override
@@ -1375,6 +1378,16 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         } else {
             newRealm.setFirstBrokerLoginFlow(newRealm.getFlowByAlias(rep.getFirstBrokerLoginFlow()));
+        }
+        if (rep.getPostBrokerLoginFlow() == null) {
+            AuthenticationFlowModel postBrokerLoginFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.POST_BROKER_LOGIN_FLOW);
+            if (postBrokerLoginFlow == null) {
+                DefaultAuthenticationFlows.postBrokerLoginFlow(newRealm);
+            } else {
+                newRealm.setPostBrokerLoginFlow(postBrokerLoginFlow);
+            }
+        } else {
+            newRealm.setPostBrokerLoginFlow(newRealm.getFlowByAlias(rep.getPostBrokerLoginFlow()));
         }
 
         // Added in 2.2

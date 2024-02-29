@@ -192,6 +192,13 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 5, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
+        flow = newFlow("post broker login", "Actions taken after each broker login",
+                "basic-flow", true, true);
+        addExecExport(flow, null, false, "allow-access-authenticator", false, null, REQUIRED, 10);
+        execs = new LinkedList<>();
+        addExecInfo(execs, "Allow access", "allow-access-authenticator", false, 0, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED});
+        expected.add(new FlowExecutions(flow, execs));
+
          flow = newFlow("registration", "registration flow", "basic-flow", true, true);
         addExecExport(flow, "registration form", false, "registration-page-form", true, null, REQUIRED, 10);
 

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.MessageType;
@@ -857,6 +858,9 @@ public class LoginActionsService {
             }
         } else {
             flowId = brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
+            if (flowId == null) {
+                flowId = realm.getPostBrokerLoginFlow().getId();
+            }
         }
         if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);

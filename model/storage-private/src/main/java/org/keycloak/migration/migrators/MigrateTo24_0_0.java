@@ -63,6 +63,7 @@ public class MigrateTo24_0_0 implements Migration {
             updateLdapProviderConfig(session);
             createHS512ComponentModelKey(session);
             bindFirstBrokerLoginFlow(session);
+            bindPostBrokerLoginFlow(session);
         } finally {
             context.setRealm(null);
         }
@@ -117,5 +118,22 @@ public class MigrateTo24_0_0 implements Migration {
         }
         realm.setFirstBrokerLoginFlow(flow);
         LOG.debugf("Flow '%s' has been bound to realm %s as 'First broker login' flow", realm.getName());
+    }
+
+    private void bindPostBrokerLoginFlow(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        final String defaultFlowAlias = DefaultAuthenticationFlows.POST_BROKER_LOGIN_FLOW;
+        AuthenticationFlowModel preExistingCustomFlow = realm.getFlowByAlias(defaultFlowAlias);
+        if (preExistingCustomFlow != null) {
+            int renameIteration = 0;
+            String preExistingCustomFlowNewAlias = defaultFlowAlias + " custom";
+            while (realm.getFlowByAlias(preExistingCustomFlowNewAlias) != null) {
+                renameIteration++;
+                preExistingCustomFlowNewAlias = defaultFlowAlias + " custom " + renameIteration;
+            }
+            preExistingCustomFlow.setAlias(preExistingCustomFlowNewAlias);
+        }
+        DefaultAuthenticationFlows.postBrokerLoginFlow(realm, defaultFlowAlias);
+        LOG.debugf("Flow '%s' has been bound to realm %s as 'Post broker login' flow", defaultFlowAlias, realm.getName());
     }
 }

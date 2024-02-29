@@ -270,6 +270,8 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         }
 
         builder
+          .followOneRedirect()
+          .followOneRedirect()
           // Do not truly process SAML POST response for a virtual IdP-initiated client, just check that no error was reported
           .processSamlResponse(Binding.POST)
             .transformObject(so -> {

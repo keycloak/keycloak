@@ -178,6 +178,8 @@ public class BrokerTest extends AbstractSamlTest {
                 .build()
               .followOneRedirect()  // first-broker-login
               .followOneRedirect()  // after-first-broker-login
+              .followOneRedirect()
+              .followOneRedirect()
               .getSamlResponse(POST);
 
             assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(
@@ -215,6 +217,8 @@ public class BrokerTest extends AbstractSamlTest {
               .followOneRedirect()  // first-broker-login
               .updateProfile().username("userInResponseTo").email("f@g.h").firstName("a").lastName("b").build()
               .followOneRedirect()  // after-first-broker-login
+              .followOneRedirect()
+              .followOneRedirect()
               .getSamlResponse(POST);
 
             assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));

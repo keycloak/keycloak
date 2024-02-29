@@ -1279,6 +1279,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getPostBrokerLoginFlow() {
+        if (isUpdated()) return updated.getPostBrokerLoginFlow();
+        return cached.getPostBrokerLoginFlow();
+    }
+
+    @Override
+    public void setPostBrokerLoginFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setPostBrokerLoginFlow(flow);
+    }
+
+    @Override
     public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         if (isUpdated()) return updated.getAuthenticationFlowsStream();
         return cached.getAuthenticationFlowList().stream();

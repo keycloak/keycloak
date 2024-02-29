@@ -96,6 +96,10 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
 
+        events.expectAccount(EventType.IDENTITY_PROVIDER_POST_LOGIN).client("broker-app")
+                .realm(consumerRealm.toRepresentation().getId()).user((String)null)
+                .assertEvent();
+
         events.expect(EventType.LOGIN)
                 .realm(consumerRealm.toRepresentation().getId())
                 .client("broker-app")
@@ -130,6 +134,10 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .realm(providerRealm.toRepresentation().getId())
                 .user(providerUserId)
                 .client(bc.getIDPClientIdInProviderRealm())
+                .assertEvent();
+
+        events.expectAccount(EventType.IDENTITY_PROVIDER_POST_LOGIN).client("broker-app")
+                .realm(consumerRealm.toRepresentation().getId()).user((String)null)
                 .assertEvent();
 
         events.expect(EventType.LOGIN)

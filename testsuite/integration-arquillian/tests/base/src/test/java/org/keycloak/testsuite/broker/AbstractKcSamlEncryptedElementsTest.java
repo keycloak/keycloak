@@ -136,6 +136,8 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
                 SAMLDocumentHolder samlResponse =
                         samlClientBuilder.updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).build()
                                 .followOneRedirect()
+                                .followOneRedirect()
+                                .followOneRedirect()
                                 .getSamlResponse(SamlClient.Binding.POST);       // Response from consumer IdP
 
                 assertThat(samlResponse, Matchers.notNullValue());

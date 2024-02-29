@@ -229,6 +229,8 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
           .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
           .followOneRedirect()
 
+          .followOneRedirect()
+          .followOneRedirect()
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
         assertThat(samlResponse, Matchers.notNullValue());

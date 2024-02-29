@@ -55,5 +55,6 @@ public interface RealmAttributes {
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 
     String FIRST_BROKER_LOGIN_FLOW_ID = "firstBrokerLoginFlowId";
+    String POST_BROKER_LOGIN_FLOW_ID = "postBrokerLoginFlowId";
 
 }

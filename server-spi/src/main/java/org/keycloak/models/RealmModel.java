@@ -378,6 +378,9 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getFirstBrokerLoginFlow();
     void setFirstBrokerLoginFlow(AuthenticationFlowModel flow);
 
+    AuthenticationFlowModel getPostBrokerLoginFlow();
+    void setPostBrokerLoginFlow(AuthenticationFlowModel flow);
+
     /**
      * Returns authentications flows as a stream.
      * @return Stream of {@link AuthenticationFlowModel}. Never returns {@code null}.

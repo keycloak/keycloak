@@ -145,6 +145,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected AuthenticationFlowModel clientAuthenticationFlow;
     protected AuthenticationFlowModel dockerAuthenticationFlow;
     protected AuthenticationFlowModel firstBrokerLoginFlow;
+    protected AuthenticationFlowModel postBrokerLoginFlow;
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
@@ -304,6 +305,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
         firstBrokerLoginFlow = model.getFirstBrokerLoginFlow();
+        postBrokerLoginFlow = model.getPostBrokerLoginFlow();
 
         model.getComponentsStream().forEach(component ->
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component)
@@ -691,6 +693,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public AuthenticationFlowModel getFirstBrokerLoginFlow() {
         return firstBrokerLoginFlow;
+    }
+
+    public AuthenticationFlowModel getPostBrokerLoginFlow() {
+        return postBrokerLoginFlow;
     }
 
     public List<String> getDefaultGroups() {

@@ -207,6 +207,7 @@ public class RealmRepresentation {
     protected String clientAuthenticationFlow;
     protected String dockerAuthenticationFlow;
     protected String firstBrokerLoginFlow;
+    protected String postBrokerLoginFlow;
 
     protected Map<String, String> attributes;
 
@@ -1335,6 +1336,15 @@ public class RealmRepresentation {
 
     public RealmRepresentation setFirstBrokerLoginFlow(String firstBrokerLoginFlow) {
         this.firstBrokerLoginFlow = firstBrokerLoginFlow;
+        return this;
+    }
+
+    public String getPostBrokerLoginFlow() {
+        return postBrokerLoginFlow;
+    }
+
+    public RealmRepresentation setPostBrokerLoginFlow(String postBrokerLoginFlow) {
+        this.postBrokerLoginFlow = postBrokerLoginFlow;
         return this;
     }
 

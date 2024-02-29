@@ -205,6 +205,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
         assertNull(representation.getFirstBrokerLoginFlowAlias());
+        assertNull(representation.getPostBrokerLoginFlowAlias());
 
         assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("new-identity-provider").get("clientSecret"));
 
@@ -1024,6 +1025,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("providerId", "saml", idp.getProviderId());
         Assert.assertEquals("enabled",enabled, idp.isEnabled());
         Assert.assertNull("firstBrokerLoginFlowAlias", idp.getFirstBrokerLoginFlowAlias());
+        Assert.assertNull("postBrokerLoginFlowAlias", idp.getPostBrokerLoginFlowAlias());
         assertSamlConfig(idp.getConfig());
     }
 
