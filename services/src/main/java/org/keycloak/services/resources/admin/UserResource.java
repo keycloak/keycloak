@@ -78,6 +78,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -241,6 +242,12 @@ public class UserResource {
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
             for (ValidationException.Error error : pve.getErrors()) {
+                // some messages are managed directly as before
+                switch (error.getMessage()) {
+                    case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+                    case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
+                    case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
+                }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
 

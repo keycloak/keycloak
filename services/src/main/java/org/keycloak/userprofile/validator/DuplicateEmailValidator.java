@@ -70,6 +70,13 @@ public class DuplicateEmailValidator implements SimpleValidator {
             if (userByEmail != null && (user == null || !userByEmail.getId().equals(user.getId()))) {
                 context.addError(new ValidationError(ID, inputHint, Messages.EMAIL_EXISTS)
                     .setStatusCode(Response.Status.CONFLICT));
+            } else if (realm.isLoginWithEmailAllowed()) {
+                // check for duplicated username
+                userByEmail = session.users().getUserByUsername(realm, value);
+                if (userByEmail != null && (user == null || !userByEmail.getId().equals(user.getId()))) {
+                    context.addError(new ValidationError(ID, inputHint, Messages.EMAIL_EXISTS)
+                            .setStatusCode(Response.Status.CONFLICT));
+                }
             }
         }
 
