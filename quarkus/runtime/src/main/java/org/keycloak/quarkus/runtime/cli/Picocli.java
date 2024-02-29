@@ -39,6 +39,7 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -271,7 +272,7 @@ public final class Picocli {
      * @param cliArgs
      * @param abstractCommand
      */
-    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand, PrintWriter out) {
+    public static void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
         if (!options.includeBuildTime && !options.includeRuntime) {
@@ -289,9 +290,10 @@ public final class Picocli {
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
                 for (PropertyMapper<?> mapper : mappers) {
                     ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
+                    String configValueStr = configValue.getValue();
 
                     // don't consider missing or anything below standard env properties
-                    if (configValue.getValue() == null || configValue.getConfigSourceOrdinal() < 300) {
+                    if (configValueStr == null || configValue.getConfigSourceOrdinal() < 300) {
                         continue;
                     }
 
@@ -307,7 +309,7 @@ public final class Picocli {
                     mapper.validate(configValue);
 
                     mapper.getDeprecatedMetadata().ifPresent(metadata -> {
-                        handleDeprecated(deprecatedInUse, mapper, metadata);
+                        handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata);
                     });
                 }
             }
@@ -321,15 +323,25 @@ public final class Picocli {
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                logger.warn("The following used options are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse));
+                logger.warn("The following used options or option values are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse));
             }
         } finally {
             PropertyMappingInterceptor.enable();
         }
     }
 
-    private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper,
+    private static void handleDeprecated(Set<String> deprecatedInUse, PropertyMapper<?> mapper, String configValue,
             DeprecatedMetadata metadata) {
+        Set<String> deprecatedValuesInUse = new HashSet<>();
+        if (!metadata.getDeprecatedValues().isEmpty()) {
+            deprecatedValuesInUse.addAll(Arrays.asList(configValue.split(",")));
+            deprecatedValuesInUse.retainAll(metadata.getDeprecatedValues());
+
+            if (deprecatedValuesInUse.isEmpty()) {
+                return; // no deprecated values are used, don't emit any warning
+            }
+        }
+
         String optionName = mapper.getFrom();
         if (optionName.startsWith(NS_KEYCLOAK_PREFIX)) {
             optionName = optionName.substring(NS_KEYCLOAK_PREFIX.length());
@@ -337,6 +349,11 @@ public final class Picocli {
 
         StringBuilder sb = new StringBuilder("\t- ");
         sb.append(optionName);
+
+        if (!deprecatedValuesInUse.isEmpty()) {
+            sb.append("=").append(String.join(",", deprecatedValuesInUse));
+        }
+
         if (metadata.getNote() != null || !metadata.getNewOptionsKeys().isEmpty()) {
             sb.append(":");
         }
@@ -636,7 +653,13 @@ public final class Picocli {
         StringBuilder transformedDesc = new StringBuilder(mapper.getDescription());
 
         if (mapper.getType() != Boolean.class && !mapper.getExpectedValues().isEmpty()) {
-            transformedDesc.append(" Possible values are: " + String.join(", ", mapper.getExpectedValues()) + ".");
+            List<String> decoratedExpectedValues = mapper.getExpectedValues().stream().map(value -> {
+                if (mapper.getDeprecatedMetadata().isPresent() && mapper.getDeprecatedMetadata().get().getDeprecatedValues().contains(value)) {
+                    return value + " (deprecated)";
+                }
+                return value;
+            }).toList();
+            transformedDesc.append(" Possible values are: " + String.join(", ", decoratedExpectedValues) + ".");
         }
 
         mapper.getDefaultValue()
@@ -644,7 +667,10 @@ public final class Picocli {
                 .map(d -> " Default: " + d + ".")
                 .ifPresent(transformedDesc::append);
 
-        mapper.getDeprecatedMetadata().ifPresent(deprecatedMetadata -> {
+        // only fully deprecated options, not just deprecated values
+        mapper.getDeprecatedMetadata()
+                .filter(deprecatedMetadata -> deprecatedMetadata.getDeprecatedValues().isEmpty())
+                .ifPresent(deprecatedMetadata -> {
             List<String> deprecatedDetails = new ArrayList<>();
             String note = deprecatedMetadata.getNote();
             if (note != null) {
