@@ -13,7 +13,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { InfoCircleIcon, SearchIcon } from "@patternfly/react-icons";
+import { SearchIcon } from "@patternfly/react-icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
@@ -246,17 +246,9 @@ export const AddTranslationsDialog = ({
                                   whoAmI.getLocale(),
                                 )}
                                 {locale === defaultLocales.toString() && (
-                                  <>
-                                    <Label className="pf-u-ml-xs" color="blue">
-                                      {t("defaultLanguage")}
-                                    </Label>
-                                    <Label
-                                      color="red"
-                                      icon={<InfoCircleIcon />}
-                                    >
-                                      {t("requiredLanguage")}
-                                    </Label>
-                                  </>
+                                  <Label className="pf-u-ml-xs" color="blue">
+                                    {t("defaultLanguage")}
+                                  </Label>
                                 )}
                               </FormGroup>
                             </Td>
