@@ -51,6 +51,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -77,6 +78,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
     protected int maxTemporaryLockouts;
+    protected RealmRepresentation.BruteForceStrategy bruteForceStrategy;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -198,6 +200,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
         maxTemporaryLockouts = model.getMaxTemporaryLockouts();
+        bruteForceStrategy = model.getBruteForceStrategy();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -382,6 +385,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getMaxTemporaryLockouts() {
         return maxTemporaryLockouts;
+    }
+
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        return bruteForceStrategy;
     }
 
     public int getMaxFailureWaitSeconds() {

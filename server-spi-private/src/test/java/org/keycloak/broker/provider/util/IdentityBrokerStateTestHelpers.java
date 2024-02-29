@@ -3,6 +3,8 @@ package org.keycloak.broker.provider.util;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation.BruteForceStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -685,6 +687,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setMaxTemporaryLockouts(int val) {
+
+        }
+
+        @Override
+        public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+            return RealmRepresentation.BruteForceStrategy.MULTIPLE;
+        }
+
+        @Override
+        public void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy val) {
 
         }
 

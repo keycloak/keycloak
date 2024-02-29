@@ -189,6 +189,7 @@ describe("Realm settings tabs tests", () => {
       cy.findByTestId("select-brute-force-mode")
         .contains("Lockout temporarily")
         .click();
+      cy.get('[name="bruteForceStrategy"]').contains("MULTIPLE").click();
       cy.findByTestId("waitIncrementSeconds").type("1");
       cy.findByTestId("maxFailureWaitSeconds").type("1");
       cy.findByTestId("maxDeltaTimeSeconds").type("1");
