@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, NumberControl } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, NumberControl, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";
@@ -46,6 +46,8 @@ export const BruteForceDetection = ({
     BruteForceMode.TemporaryLockout,
     BruteForceMode.PermanentAfterTemporaryLockout,
   ];
+
+  const bruteForceStrategyTypes = ["MULTIPLE", "LINEAR"];
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -150,6 +152,14 @@ export const BruteForceDetection = ({
               bruteForceMode ===
                 BruteForceMode.PermanentAfterTemporaryLockout) && (
               <>
+                <SelectControl
+                  name="bruteForceStrategy"
+                  label={t("bruteForceStrategy")}
+                  labelIcon={t("bruteForceStrategyHelp")}
+                  controller={{ defaultValue: bruteForceStrategyTypes[0] }}
+                  options={bruteForceStrategyTypes}
+                />
+
                 <Time name="waitIncrementSeconds" />
                 <Time name="maxFailureWaitSeconds" />
                 <Time name="maxDeltaTimeSeconds" />

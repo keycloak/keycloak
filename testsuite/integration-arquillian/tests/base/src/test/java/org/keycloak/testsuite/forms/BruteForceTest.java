@@ -108,6 +108,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         UserBuilder.edit(user).totpSecret("totpSecret");
 
         testRealm.setBruteForceProtected(true);
+        testRealm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         testRealm.setFailureFactor(failureFactor);
         testRealm.setMaxDeltaTimeSeconds(20);
         testRealm.setMaxFailureWaitSeconds(100);
@@ -127,6 +128,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             clearUserFailures();
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
             realm.setFailureFactor(failureFactor);
             realm.setMaxDeltaTimeSeconds(20);
             realm.setMaxFailureWaitSeconds(100);
@@ -494,6 +496,57 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         clearAllUserFailures();
         loginSuccess();
         testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
+    }
+
+    @Test
+    public void testByMultipleStrategy() throws Exception {
+
+
+        try {
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            loginSuccess();
+            loginInvalidPassword();
+            loginInvalidPassword();
+            expectTemporarilyDisabled();
+            assertUserNumberOfFailures(user.getId(), 2);
+            this.setTimeOffset(5);
+
+            loginInvalidPassword();
+            assertUserNumberOfFailures(user.getId(), 3);
+            this.setTimeOffset(10);
+            loginSuccess();
+        } finally {
+            this.resetTimeOffset();
+        }
+    }
+
+    @Test
+    public void testLinearStrategy() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+        try {
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.LINEAR);
+            testRealm().update(realm);
+
+            loginSuccess();
+
+            loginInvalidPassword();
+            loginInvalidPassword();
+            expectTemporarilyDisabled();
+            assertUserNumberOfFailures(user.getId(), 2);
+            this.setTimeOffset(5);
+
+            loginInvalidPassword();
+            assertUserNumberOfFailures(user.getId(), 3);
+            this.setTimeOffset(10);
+            expectTemporarilyDisabled();
+
+        } finally {
+            realm.setPermanentLockout(false);
+            realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
+            testRealm().update(realm);
+            this.resetTimeOffset();
+        }
     }
 
     @Test

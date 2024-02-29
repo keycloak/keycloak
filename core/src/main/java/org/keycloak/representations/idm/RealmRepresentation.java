@@ -92,6 +92,7 @@ public class RealmRepresentation {
     protected Boolean bruteForceProtected;
     protected Boolean permanentLockout;
     protected Integer maxTemporaryLockouts;
+    protected BruteForceStrategy bruteForceStrategy;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -776,6 +777,14 @@ public class RealmRepresentation {
         this.maxTemporaryLockouts = maxTemporaryLockouts;
     }
 
+    public BruteForceStrategy getBruteForceStrategy() {
+        return this.bruteForceStrategy;
+    }
+
+    public void setBruteForceStrategy(BruteForceStrategy bruteForceStrategy) {
+        this.bruteForceStrategy = bruteForceStrategy;
+    }
+
     public Integer getMaxFailureWaitSeconds() {
         return maxFailureWaitSeconds;
     }
@@ -1433,5 +1442,9 @@ public class RealmRepresentation {
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
         return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
+    }
+
+    public enum BruteForceStrategy {
+        LINEAR, MULTIPLE;
     }
 }
