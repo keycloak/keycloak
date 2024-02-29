@@ -46,7 +46,6 @@ import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.resteasy.reactive.spi.IgnoreStackMixingBuildItem;
 import io.smallrye.config.ConfigValue;
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
@@ -61,7 +60,6 @@ import org.jboss.jandex.MethodInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
-import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -206,11 +204,6 @@ class KeycloakProcessor {
 
     private static ProviderFactory registerSAMLScriptMapper(ScriptProviderMetadata metadata) {
         return new DeployedScriptSAMLProtocolMapper(metadata);
-    }
-
-    @BuildStep
-    IgnoreStackMixingBuildItem getIgnoreStackMixing() {
-        return new IgnoreStackMixingBuildItem();
     }
 
     @BuildStep
@@ -585,8 +578,8 @@ class KeycloakProcessor {
     }
 
     /**
-     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
-     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
+     * This will cause quarkus to include specified modules in the jandex index. For example keycloak-services is needed as it includes
+     * most of the JAX-RS resources, which are required to register Resteasy builtin providers.
      * Similar reason is liquibase
      *
      * @param indexDependencyBuildItemBuildProducer
