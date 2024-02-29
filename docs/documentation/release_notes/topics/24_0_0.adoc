@@ -133,9 +133,9 @@ This release introduces an *Add to lightweight access token* flag that is availa
 access token. It is *OFF* by default, which means that most claims are not added.
 
 Also, a client policy executor exists. Use it to specify if a particular client request
-should use lightweight access tokens or regular access tokens. Alternative to the executor is to use a flag *Always use lightweight access token* on client advanced
-settings, which allows to specify that particular client should always use lightweight access tokens. Executor can be an alternative if you need
-more flexibility. For instance when you want to use lightweight access tokens by default, but regular tokens just for the specified *scope* parameter etc.
+should use lightweight access tokens or regular access tokens. An alternative to the executor is to use an *Always use lightweight access token* flag on client advanced
+settings, which causes that client to always use lightweight access tokens. An executor can be an alternative if you need
+more flexibility. For instance, you may choose to use lightweight access tokens by default but use regular tokens only for the specified *scope* parameter.
 
 A previous release added an *Add to token introspection* switch. You use it to add
 claims that are not present in the access token into the introspection endpoint response.
