@@ -204,7 +204,7 @@ endif::[]
 == OAuth Grant Type SPI
 
 The {project_name} codebase includes an internal update  to introduce the OAuth Grant Type SPI. This update allows additional flexibility when introducing custom grant types
-supported by {project_name} OAuth 2 token endpoint.
+supported by the {project_name} OAuth 2 token endpoint.
 ifeval::[{project_community}==true]
 Thanks to https://github.com/dteleguin[Dmitry Telegin] for the contribution.
 endif::[]
