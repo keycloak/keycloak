@@ -164,7 +164,7 @@ endif::[]
 
 == Client policy executor for secure redirect URIs
 
-A new client policy executor `secure-redirect-uris-enforcer` is introduced. Use it to restrict what are the redirect URIs, which can be used by the clients. For instance
+A new client policy executor `secure-redirect-uris-enforcer` is introduced. Use it to restrict which redirect URIs can be used by the clients. For instance, 
  it is possible to specify that client redirect URIs cannot have wildcards, should be just from specific domain, must be OAuth 2.1 compliant etc.
 ifeval::[{project_community}==true]
 Thanks to https://github.com/lexcao[Lex Cao] and https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
