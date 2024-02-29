@@ -51,7 +51,7 @@ type Translations = {
 };
 
 export type AttributeGeneralSettingsProps = {
-  onHandlingTranslationData: (data: any) => void;
+  onHandlingTranslationData: (data: Translations) => void;
   onHandlingGeneratedDisplayName: (displayName: string) => void;
 };
 
