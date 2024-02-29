@@ -8,7 +8,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem, NumberControl } from "ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -27,6 +27,7 @@ export const BruteForceDetection = ({
   const { t } = useTranslation();
   const form = useForm();
   const {
+    control,
     setValue,
     handleSubmit,
     formState: { isDirty },
@@ -48,6 +49,9 @@ export const BruteForceDetection = ({
     BruteForceMode.TemporaryLockout,
     BruteForceMode.PermanentAfterTemporaryLockout,
   ];
+
+  const [bruteForceStrategyOpen, setBruteForceStrategyOpen] = useState(false);
+  const bruteForceStrategyTypes = ["MULTIPLE", "LINEAR"];
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -152,6 +156,50 @@ export const BruteForceDetection = ({
               bruteForceMode ===
                 BruteForceMode.PermanentAfterTemporaryLockout) && (
               <>
+                <FormGroup
+                  label={t("bruteForceStrategy")}
+                  fieldId="kc-brute-force-strategy"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("bruteForceStrategyHelp")}
+                      fieldLabelId="bruteForceStrategy"
+                    />
+                  }
+                >
+                  <Controller
+                    name="bruteForceStrategy"
+                    defaultValue="MULTIPLE"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        toggleId="kc-brute-force-strategy"
+                        onToggle={() =>
+                          setBruteForceStrategyOpen(!bruteForceStrategyOpen)
+                        }
+                        onSelect={(_, value) => {
+                          field.onChange(value as string);
+                          setBruteForceStrategyOpen(false);
+                        }}
+                        selections={field.value}
+                        variant={SelectVariant.single}
+                        data-testid="select-brute-force-strategy"
+                        aria-label={t("bruteForceStrategy")}
+                        isOpen={bruteForceStrategyOpen}
+                      >
+                        {bruteForceStrategyTypes.map((strategy) => (
+                          <SelectOption
+                            selected={strategy === field.value}
+                            key={strategy}
+                            value={strategy}
+                          >
+                            {t(`${strategy}`)}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                </FormGroup>
+
                 <Time name="waitIncrementSeconds" />
                 <Time name="maxFailureWaitSeconds" />
                 <Time name="maxDeltaTimeSeconds" />

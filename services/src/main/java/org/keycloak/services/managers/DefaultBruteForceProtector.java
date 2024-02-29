@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
 
 import java.time.Instant;
@@ -177,12 +178,18 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         userLoginFailure.incrementFailures();
         logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-        int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        int waitSeconds;
+        if(RealmRepresentation.BruteForceStrategy.MULTIPLE.equals(realm.getBruteForceStrategy())) {
+            waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        } else {
+            waitSeconds = realm.getWaitIncrementSeconds() * (1 + userLoginFailure.getNumFailures() - realm.getFailureFactor());
+        }
+        
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
         boolean quickLoginFailure = false;
-        if (waitSeconds == 0) {
+        if (waitSeconds <= 0) {
             if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
                 logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();

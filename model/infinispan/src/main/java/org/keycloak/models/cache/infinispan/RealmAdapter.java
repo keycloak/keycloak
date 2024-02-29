@@ -24,6 +24,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -253,6 +254,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setMaxTemporaryLockouts(final int val) {
         getDelegateForUpdate();
         updated.setMaxTemporaryLockouts(val);
+    }
+
+    @Override
+    public RealmRepresentation.BruteForceStrategy getBruteForceStrategy() {
+        if(isUpdated()) return updated.getBruteForceStrategy();
+        return cached.getBruteForceStrategy();
+    }
+
+    @Override
+    public void setBruteForceStrategy(final RealmRepresentation.BruteForceStrategy val) {
+        getDelegateForUpdate();
+        updated.setBruteForceStrategy(val);
     }
 
     @Override
