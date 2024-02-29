@@ -19,9 +19,11 @@ package org.keycloak.authentication.authenticators.resetcred;
 
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.Config;
+import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.*;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.*;
 import org.keycloak.email.EmailException;
@@ -34,6 +36,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -43,6 +46,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -67,13 +72,36 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             return;
         }
 
-        String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
-        if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
-            logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
-            context.success();
-            return;
-        }
+        // Retrieve the serialized token from the authentication session
+        String actionTokenSerialized = authenticationSession.getAuthNote(Constants.KEY);
 
+        if (actionTokenSerialized != null) {
+            try {
+                // Initialize token verification with necessary checks for realm and activity
+                TokenVerifier<DefaultActionTokenKey> verifier = TokenVerifier.create(actionTokenSerialized, DefaultActionTokenKey.class)
+                    .withChecks(
+                        TokenVerifier.IS_ACTIVE,
+                        new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getSession().getContext().getUri().getBaseUri(), context.getRealm().getName())),
+                        ACTION_TOKEN_BASIC_CHECKS
+                    );
+
+                // Parse and verify the token
+                DefaultActionTokenKey actionToken = verifier.getToken();
+
+                // Verify that the token corresponds to the current user and is of the expected type
+                if (Objects.equals(user.getId(), actionToken.getUserId()) && ResetCredentialsActionToken.TOKEN_TYPE.equals(actionToken.getType())) {
+                    logger.debugf("Reset-credentials action confirmed for user %s, proceeding with context success.", user.getUsername());
+                    context.success();
+                    return;
+                }
+
+                logger.debugf("Token verification failed or token type mismatch for user %s.", user.getUsername());
+            } catch (VerificationException e) {
+                logger.errorf("Error verifying action token for user %s: %s", user.getUsername(), e.getMessage());
+                context.failure(AuthenticationFlowError.INTERNAL_ERROR);
+                return;
+            }
+        }
 
         EventBuilder event = context.getEvent();
         // we don't want people guessing usernames, so if there is a problem, just continuously challenge
