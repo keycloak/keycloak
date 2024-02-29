@@ -11,17 +11,15 @@ import {
   Text,
   TextContent,
   TextVariants,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { InfoCircleIcon, SearchIcon } from "@patternfly/react-icons";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 import { adminClient } from "../../../admin-client";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import { useFetch } from "../../../utils/useFetch";
@@ -59,7 +57,6 @@ export const AddTranslationsDialog = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
-  const [isError, setIsError] = useState(false);
 
   const form = useForm<{
     key: string;
@@ -69,7 +66,6 @@ export const AddTranslationsDialog = ({
   });
 
   const {
-    control,
     getValues,
     handleSubmit,
     setValue,
@@ -138,7 +134,7 @@ export const AddTranslationsDialog = ({
           variant="primary"
           type="submit"
           form="add-translation"
-          isDisabled={!isValid || isError}
+          isDisabled={!isValid}
         >
           {t("addTranslationDialogOkBtn")}
         </Button>,
@@ -266,79 +262,40 @@ export const AddTranslationsDialog = ({
                             </Td>
                             <Td>
                               {locale === defaultLocales.toString() && (
-                                <FormGroup
-                                  fieldId="kc-translationValue"
-                                  helperText={
-                                    locale === defaultLocales.toString() &&
-                                    t("addTranslationDialogHelperText")
-                                  }
-                                >
-                                  <Controller
-                                    name={`translations.${rowIndex}`}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field }) => (
-                                      <KeycloakTextInput
-                                        id="translationValue"
-                                        {...field.value}
-                                        aria-label={t("translationValue")}
-                                        data-testid="translation-value"
-                                        validated={
-                                          isError
-                                            ? ValidatedOptions.error
-                                            : "default"
-                                        }
-                                        onChange={(
-                                          e: ChangeEvent<HTMLInputElement>,
-                                        ) => {
-                                          const updatedTranslation = {
-                                            locale,
-                                            value: (
-                                              e.target as HTMLInputElement
-                                            ).value,
-                                          };
-                                          setValue(
-                                            `translations.${rowIndex}`,
-                                            updatedTranslation,
-                                          );
-                                          setIsError(
-                                            updatedTranslation.value === "",
-                                          );
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </FormGroup>
+                                <TextControl
+                                  name={`translations.${rowIndex}.value`}
+                                  onChange={(value: string) => {
+                                    const updatedTranslation = {
+                                      locale,
+                                      value,
+                                    };
+                                    setValue(
+                                      `translations.${rowIndex}`,
+                                      updatedTranslation,
+                                    );
+                                  }}
+                                  rules={{
+                                    required: {
+                                      value: true,
+                                      message: t("required"),
+                                    },
+                                  }}
+                                />
                               )}
                               {locale !== defaultLocales.toString() && (
-                                <FormGroup fieldId="kc-translationValue">
-                                  <Controller
-                                    name={`translations.${rowIndex}`}
-                                    control={control}
-                                    render={({ field }) => (
-                                      <KeycloakTextInput
-                                        id="translationValue"
-                                        {...field.value}
-                                        aria-label={t("translationValue")}
-                                        data-testid="translation-value"
-                                        onChange={(
-                                          e: ChangeEvent<HTMLInputElement>,
-                                        ) => {
-                                          const updatedTranslation = {
-                                            locale,
-                                            value: (
-                                              e.target as HTMLInputElement
-                                            ).value,
-                                          };
-                                          setValue(
-                                            `translations.${rowIndex}`,
-                                            updatedTranslation,
-                                          );
-                                        }}
-                                      />
-                                    )}
-                                  />
-                                </FormGroup>
+                                <TextControl
+                                  name={`translations.${rowIndex}.value`}
+                                  onChange={(value: string) => {
+                                    const updatedTranslation = {
+                                      locale,
+                                      value,
+                                    };
+                                    setValue(
+                                      `translations.${rowIndex}`,
+                                      updatedTranslation,
+                                    );
+                                  }}
+                                />
                               )}
                             </Td>
                           </Tr>

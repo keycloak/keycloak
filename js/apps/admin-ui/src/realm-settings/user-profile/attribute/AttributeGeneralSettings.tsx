@@ -177,7 +177,6 @@ export const AttributeGeneralSettings = ({
               ? attributeDisplayName
               : "${profile.attributes." + `${newAttributeName}}`
           }
-          defaultTranslationValue={""}
           onTranslationsAdded={handleTranslationsAdded}
           toggleDialog={handleToggleDialog}
           onCancel={() => {
