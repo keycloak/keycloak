@@ -440,9 +440,14 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
 
 
-        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(UsernameHasValueValidator.ID))
+        metadata.addAttribute(UserModel.USERNAME, -2,
+                        new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
+                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID))
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editUsernameCondition);
-        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
+        metadata.addAttribute(UserModel.EMAIL, -1,
+                        new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
+                        new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID),
+                        new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editEmailCondition);
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
