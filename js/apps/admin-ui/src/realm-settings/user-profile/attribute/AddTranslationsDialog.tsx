@@ -264,16 +264,8 @@ export const AddTranslationsDialog = ({
                               {locale === defaultLocales.toString() && (
                                 <TextControl
                                   name={`translations.${rowIndex}.value`}
-                                  onChange={(value: string) => {
-                                    const updatedTranslation = {
-                                      locale,
-                                      value,
-                                    };
-                                    setValue(
-                                      `translations.${rowIndex}`,
-                                      updatedTranslation,
-                                    );
-                                  }}
+                                  label={t("translationValue")}
+                                  data-testid="translation-value"
                                   rules={{
                                     required: {
                                       value: true,
@@ -285,16 +277,8 @@ export const AddTranslationsDialog = ({
                               {locale !== defaultLocales.toString() && (
                                 <TextControl
                                   name={`translations.${rowIndex}.value`}
-                                  onChange={(value: string) => {
-                                    const updatedTranslation = {
-                                      locale,
-                                      value,
-                                    };
-                                    setValue(
-                                      `translations.${rowIndex}`,
-                                      updatedTranslation,
-                                    );
-                                  }}
+                                  label={t("translationValue")}
+                                  data-testid="translation-value"
                                 />
                               )}
                             </Td>
