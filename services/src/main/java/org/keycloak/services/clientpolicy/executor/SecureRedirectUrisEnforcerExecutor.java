@@ -17,20 +17,26 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.google.common.net.InetAddresses;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
@@ -167,22 +173,26 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    List<String> redirectUris = ((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris();
-                    if (redirectUris == null || redirectUris.isEmpty() || ((ClientCRUDContext)context).getAuthenticatedClient() == null) {
+                    ClientRepresentation client = ((ClientCRUDContext)context).getProposedClientRepresentation();
+                    List<String> redirectUris = client.getRedirectUris();
+                    if (redirectUris == null || redirectUris.isEmpty()) {
                         throw invalidRedirectUri(ERR_GENERAL);
                     }
-                    verifyRedirectUris(((ClientCRUDContext)context).getAuthenticatedClient().getRootUrl(), redirectUris);
+                    verifyRedirectUris(client.getRootUrl(), redirectUris);
+                    verifyPostLogoutRedirectUriUpdate(client);
                 } else {
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    List<String> redirectUris = ((ClientCRUDContext)context).getProposedClientRepresentation().getRedirectUris();
-                    if (redirectUris == null || redirectUris.isEmpty() || ((ClientCRUDContext)context).getAuthenticatedClient() == null) {
+                    ClientRepresentation client = ((ClientCRUDContext)context).getProposedClientRepresentation();
+                    List<String> redirectUris = client.getRedirectUris();
+                    if (redirectUris == null || redirectUris.isEmpty()) {
                         return;
                     }
-                    verifyRedirectUris(((ClientCRUDContext)context).getAuthenticatedClient().getRootUrl(), redirectUris);
+                    verifyRedirectUris(client.getRootUrl(), redirectUris);
+                    verifyPostLogoutRedirectUriUpdate(client);
                 } else {
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
@@ -199,6 +209,15 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 return;
             default:
         }
+    }
+
+    private void verifyPostLogoutRedirectUriUpdate(ClientRepresentation client) throws ClientPolicyException {
+        List<String> postLogoutRedirectUris = OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPostLogoutRedirectUris();
+        if (postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+            return;
+        }
+        logger.tracef("Verifying post-logout redirect uris. Target client: %s, Effective post-logout uris: %s", client.getClientId(), postLogoutRedirectUris);
+        verifyRedirectUris(client.getRootUrl(), postLogoutRedirectUris);
     }
 
     void verifyRedirectUris(String rootUri, List<String> redirectUris) throws ClientPolicyException {
@@ -294,8 +313,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
 
             InetAddress addr;
             try {
-                addr = InetAddresses.forUriString(uri.getHost());
-            } catch (IllegalArgumentException e) {
+                addr = InetAddress.getByName(uri.getHost());
+            } catch (UnknownHostException e) {
                 return false;
             }
 
