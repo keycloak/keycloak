@@ -87,10 +87,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={t("serverPrincipalHelp")}
               isRequired
               rules={{
-                required: {
-                  value: true,
-                  message: `${t("validateServerPrincipal")}`,
-                },
+                required: t("validateServerPrincipal").toString(),
               }}
             />
             <TextControl
@@ -99,10 +96,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={t("keyTabHelp")}
               isRequired
               rules={{
-                required: {
-                  value: true,
-                  message: `${t("validateKeyTab")}`,
-                },
+                required: t("validateKeyTab").toString(),
               }}
             />
             <TextControl

@@ -114,12 +114,8 @@ export const LdapSettingsSearching = ({
           label={t("usersDN")}
           labelIcon={t("usersDNHelp")}
           isRequired
-          defaultValue=""
           rules={{
-            required: {
-              value: true,
-              message: t("validateUsersDn").toString(),
-            },
+            required: t("validateUsersDn").toString(),
           }}
         />
         <TextControl
@@ -129,10 +125,7 @@ export const LdapSettingsSearching = ({
           isRequired
           defaultValue="cn"
           rules={{
-            required: {
-              value: true,
-              message: `${t("validateUsernameLDAPAttribute")}`,
-            },
+            required: t("validateUsernameLDAPAttribute").toString(),
           }}
         />
         <TextControl
@@ -142,10 +135,7 @@ export const LdapSettingsSearching = ({
           isRequired
           defaultValue="cn"
           rules={{
-            required: {
-              value: true,
-              message: `${t("validateRdnLdapAttribute")}`,
-            },
+            required: t("validateRdnLdapAttribute").toString(),
           }}
         />
         <TextControl
@@ -155,10 +145,7 @@ export const LdapSettingsSearching = ({
           isRequired
           defaultValue="objectGUID"
           rules={{
-            required: {
-              value: true,
-              message: `${t("validateUuidLDAPAttribute")}`,
-            },
+            required: t("validateUuidLDAPAttribute").toString(),
           }}
         />
         <TextControl
