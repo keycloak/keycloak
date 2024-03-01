@@ -237,7 +237,7 @@ export default function LdapMapperDetails() {
               <TextControl
                 name="providerId"
                 label={t("mapperType")}
-                labelIcon={t("mapperTypeHelp")}
+                labelIcon={mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")}
                 isRequired
                 isDisabled={!isNew}
               />
