@@ -168,10 +168,7 @@ export const LdapSettingsSearching = ({
           isRequired
           defaultValue="person, organizationalPerson, user"
           rules={{
-            required: {
-              value: true,
-              message: t("validateUserObjectClasses").toString(),
-            },
+            required: t("validateUserObjectClasses").toString(),
           }}
         />
         <TextControl
