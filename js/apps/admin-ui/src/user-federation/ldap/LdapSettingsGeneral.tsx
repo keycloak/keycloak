@@ -133,10 +133,7 @@ export const LdapSettingsGeneral = ({
           isRequired
           defaultValue="ldap"
           rules={{
-            required: {
-              value: true,
-              message: `${t("validateName")}`,
-            },
+            required: t("validateName").toString(),
           }}
         />
         <FormGroup
