@@ -979,14 +979,6 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @return true if implementation of realmProvider is "jpa" . Which is always the case in standard Keycloak installations.
-     */
-    public static boolean isRealmProviderJpa(KeycloakSession session) {
-        Set<String> providerIds = session.listProviderIds(RealmProvider.class);
-        return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
-    }
-
-    /**
      * @param clientAuthenticatorType
      * @return secret size based on authentication type
      */
