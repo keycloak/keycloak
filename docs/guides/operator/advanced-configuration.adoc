@@ -98,6 +98,8 @@ spec:
     - name: spi-email-template-mycustomprovider-enabled
       value: true # plain text value
 ----
+NOTE:  The key format of options defined in this way is identical to the key format of options specified in the configuration file.
+       For details on various configuration formats, see <@links.server id="configuration"/>.
 
 === Secret References
 
