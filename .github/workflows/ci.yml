@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - backport/**
   pull_request:
   workflow_dispatch:
 
