@@ -70,7 +70,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
   #firstLoginFlowSelect = "#firstBrokerLoginFlowAliasOverride";
-  #postLoginFlowSelect = "#postBrokerLoginFlowAlias";
+  #postLoginFlowSelect = "#postBrokerLoginFlowAliasOverride";
   #syncModeSelect = "#syncMode";
   #essentialClaimSwitch = "#filteredByClaim";
   #claimNameInput = "#kc-claim-filter-name";
@@ -498,7 +498,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
     this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
-    this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
+    this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
     this.assertClientAssertSigAlgSelectOptionEqual(
       ClientAssertionSigningAlg.algorithmNotSpecified,

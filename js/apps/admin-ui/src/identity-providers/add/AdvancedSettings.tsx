@@ -239,8 +239,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       />
       <LoginFlow
         field="postBrokerLoginFlowAlias"
-        label="postBrokerLoginFlowAlias"
+        label="postBrokerLoginFlowAliasOverride"
         defaultValue=""
+        labelForEmpty=""
       />
 
       {isTransientUsersEnabled && (

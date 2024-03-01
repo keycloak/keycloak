@@ -1192,6 +1192,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 .detail(Details.REGISTER_METHOD, "broker")
                 .assertEvent(getFirstConsumerEvent());
 
+        events.expectAccount(EventType.IDENTITY_PROVIDER_POST_LOGIN).client("broker-app")
+                .realm(consumerRealmRep).user((String)null)
+                .assertEvent(getFirstConsumerEvent());
+
         events.expectAccount(EventType.LOGIN).client("broker-app")
                 .realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
@@ -1254,6 +1258,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
             .detail(Details.REGISTER_METHOD, "broker")
             .assertEvent(events.poll());
+
+        events.expectAccount(EventType.IDENTITY_PROVIDER_POST_LOGIN).client("broker-app")
+            .realm(consumerRealmRep).user((String)null)
+            .assertEvent(getFirstConsumerEvent());
 
         events.expectAccount(EventType.LOGIN).client("broker-app")
                 .realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))

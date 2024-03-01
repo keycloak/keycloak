@@ -165,6 +165,8 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 // Create account in comsumer realm
                 .updateProfile().username(USER_LOGIN).email(USER_EMAIL).firstName("Firstname").lastName("Lastname").build()
                 .followOneRedirect()
+                .followOneRedirect()
+                .followOneRedirect()
 
                 // Obtain the response sent to the app
                 .getSamlResponse(SamlClient.Binding.POST);

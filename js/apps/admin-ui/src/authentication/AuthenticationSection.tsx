@@ -58,6 +58,7 @@ export const REALM_FLOWS = new Map<string, string>([
   ["clientAuthenticationFlow", "clients"],
   ["dockerAuthenticationFlow", "docker auth"],
   ["firstBrokerLoginFlow", "firstBrokerLogin"],
+  ["postBrokerLoginFlow", "postBrokerLogin"],
 ]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {

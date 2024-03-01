@@ -109,6 +109,8 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
                     .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
                     .followOneRedirect()
 
+                    .followOneRedirect()
+                    .followOneRedirect()
                     .processSamlResponse(SamlClient.Binding.POST)
                         .transformObject(saml2Object -> {
                             assertThat(saml2Object, Matchers.notNullValue());

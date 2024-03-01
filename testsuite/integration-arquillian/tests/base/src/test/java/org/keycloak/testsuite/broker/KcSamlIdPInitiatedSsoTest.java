@@ -231,6 +231,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .followOneRedirect()
 
           // Obtain the response sent to the app
+          .followOneRedirect()
+          .followOneRedirect()
           .getSamlResponse(Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -268,6 +270,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .followOneRedirect()
 
           // Obtain the response sent to the app
+          .followOneRedirect()
+          .followOneRedirect()
           .getSamlResponse(Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -298,6 +302,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .followOneRedirect()
 
           // Obtain the response sent to the app and ignore result
+          .followOneRedirect()
+          .followOneRedirect()
           .processSamlResponse(Binding.POST)
             .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -325,6 +331,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
             })
             .build()
 
+          .followOneRedirect()
+          .followOneRedirect()
           .getSamlResponse(Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -385,6 +393,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .followOneRedirect()
 
           // Obtain the response sent to the app
+          .followOneRedirect()
+          .followOneRedirect()
           .getSamlResponse(Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -479,6 +489,8 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         .updateProfile().username(CONSUMER_CHOSEN_USERNAME).email("test@localhost").firstName("Firstname").lastName("Lastname").build()
         .followOneRedirect()
 
+        .followOneRedirect()
+        .followOneRedirect()
           // Obtain the response sent to the app
           .getSamlResponse(Binding.POST);
 

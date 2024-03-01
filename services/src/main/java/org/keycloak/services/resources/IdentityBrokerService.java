@@ -117,7 +117,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -616,7 +615,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
             authenticationSession.setAuthenticatedUser(federatedUser);
 
-            return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
+            return redirectToPostBrokerLogin(authenticationSession, context, false);
         }
     }
 
@@ -728,7 +727,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 updateFederatedIdentity(context, federatedUser);
             }
 
-            return finishOrRedirectToPostBrokerLogin(authSession, context, true);
+            return redirectToPostBrokerLogin(authSession, context, true);
 
         }  catch (Exception e) {
             return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
@@ -736,29 +735,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
 
-    private Response finishOrRedirectToPostBrokerLogin(AuthenticationSessionModel authSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
-        String postBrokerLoginFlowId = context.getIdpConfig().getPostBrokerLoginFlowId();
-        if (postBrokerLoginFlowId == null) {
+    private Response redirectToPostBrokerLogin(AuthenticationSessionModel authSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
+        logger.debugf("Redirect to postBrokerLogin flow after authentication with identityProvider '%s'.", context.getIdpConfig().getAlias());
 
-            logger.debugf("Skip redirect to postBrokerLogin flow. PostBrokerLogin flow not set for identityProvider '%s'.", context.getIdpConfig().getAlias());
-            return afterPostBrokerLoginFlowSuccess(authSession, context, wasFirstBrokerLogin);
-        } else {
+        authSession.getParentSession().setTimestamp(Time.currentTime());
 
-            logger.debugf("Redirect to postBrokerLogin flow after authentication with identityProvider '%s'.", context.getIdpConfig().getAlias());
+        SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
+        ctx.saveToAuthenticationSession(authSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
 
-            authSession.getParentSession().setTimestamp(Time.currentTime());
+        authSession.setAuthNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, String.valueOf(wasFirstBrokerLogin));
 
-            SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
-            ctx.saveToAuthenticationSession(authSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
-
-            authSession.setAuthNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, String.valueOf(wasFirstBrokerLogin));
-
-            URI redirect = LoginActionsService.postBrokerLoginProcessor(session.getContext().getUri())
-                    .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, authSession.getTabId())
-                    .build(realmModel.getName());
-            return Response.status(302).location(redirect).build();
-        }
+        URI redirect = LoginActionsService.postBrokerLoginProcessor(session.getContext().getUri())
+                .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
+                .queryParam(Constants.TAB_ID, authSession.getTabId())
+                .build(realmModel.getName());
+        return Response.status(302).location(redirect).build();
     }
 
 

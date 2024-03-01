@@ -49,6 +49,7 @@ public class DefaultAuthenticationFlows {
     public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
     public static final String FIRST_BROKER_LOGIN_FLOW = "first broker login";
     public static final String FIRST_BROKER_LOGIN_HANDLE_EXISTING_SUBFLOW = "Handle Existing Account";
+    public static final String POST_BROKER_LOGIN_FLOW = "post broker login";
 
     public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
     public static final String IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS = "create unique user config";
@@ -60,6 +61,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, false);
+        if (realm.getFlowByAlias(POST_BROKER_LOGIN_FLOW) == null) postBrokerLoginFlow(realm);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
     }
@@ -71,6 +73,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
+        if (realm.getFlowByAlias(POST_BROKER_LOGIN_FLOW) == null) postBrokerLoginFlow(realm);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
     }
@@ -678,6 +681,29 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(10);
         execution.setAuthenticatorFlow(false);
 
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    public static void postBrokerLoginFlow(final RealmModel realm) {
+        postBrokerLoginFlow(realm, POST_BROKER_LOGIN_FLOW);
+    }
+
+    public static void postBrokerLoginFlow(final RealmModel realm, String alias) {
+        AuthenticationFlowModel postBrokerLogin = new AuthenticationFlowModel();
+        postBrokerLogin.setAlias(alias);
+        postBrokerLogin.setDescription("Actions taken after each broker login");
+        postBrokerLogin.setProviderId("basic-flow");
+        postBrokerLogin.setTopLevel(true);
+        postBrokerLogin.setBuiltIn(true);
+        postBrokerLogin = realm.addAuthenticationFlow(postBrokerLogin);
+        realm.setPostBrokerLoginFlow(postBrokerLogin);
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(postBrokerLogin.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("allow-access-authenticator");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }
 }

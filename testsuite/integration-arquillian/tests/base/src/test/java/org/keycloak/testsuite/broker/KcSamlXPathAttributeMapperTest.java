@@ -112,6 +112,8 @@ public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBroke
                 .followOneRedirect()
                 .followOneRedirect()
 
+                .followOneRedirect()
+                .followOneRedirect()
                 .getSamlResponse(SamlClient.Binding.POST);
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
