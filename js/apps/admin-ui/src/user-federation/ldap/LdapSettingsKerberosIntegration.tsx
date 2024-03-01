@@ -78,10 +78,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={t("kerberosRealmHelp")}
               isRequired
               rules={{
-                required: {
-                  value: true,
-                  message: t("validateRealm").toString(),
-                },
+                required: t("validateRealm").toString(),
               }}
             />
             <TextControl
