@@ -251,17 +251,8 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                                 startGlobalStats(session, globalStatsInterval);
                             }
 
-                            /*
-                             * Migrate model is executed just in case following providers are "jpa".
-                             * In Map Storage, there is an assumption that migrateModel is not needed.
-                             */
-                            if ((Config.getProvider("realm") == null || "jpa".equals(Config.getProvider("realm"))) &&
-                                (Config.getProvider("client") == null || "jpa".equals(Config.getProvider("client"))) &&
-                                (Config.getProvider("clientScope") == null || "jpa".equals(Config.getProvider("clientScope")))) {
-
-                                logger.debug("Calling migrateModel");
-                                migrateModel(session);
-                            }
+                            logger.debug("Calling migrateModel");
+                            migrateModel(session);
                         } finally {
                             // Close after creating EntityManagerFactory to prevent in-mem databases from closing
                             if (connection != null) {
