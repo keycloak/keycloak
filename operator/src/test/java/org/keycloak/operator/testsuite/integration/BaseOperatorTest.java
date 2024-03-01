@@ -321,7 +321,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           // provide some helpful entries in the main log as well
           logFailedKeycloaks();
           if (operatorDeployment == OperatorDeployment.remote) {
-              logFailed(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus);
+              log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }
           logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
           k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems().stream()
@@ -331,16 +331,20 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       }
   }
 
-  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void log(R resource, Function<T, Object> statusExtractor, boolean failedOnly) {
       var instance = resource.get();
-      if (resource.isReady()) {
-          return;
+      if (failedOnly) {
+          if (resource.isReady()) {
+              return;
+          }
+          Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
+      } else {
+          Log.infof("%s is ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
       }
-      Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
       try {
           String log = resource.getLog();
           log = log.substring(Math.max(0, log.length() - 5000));
-          Log.warnf("%s not ready log: %s", instance.getMetadata().getName(), log);
+          Log.warnf("%s log: %s", instance.getMetadata().getName(), log);
       } catch (KubernetesClientException e) {
           Log.warnf("No %s log: %s", instance.getMetadata().getName(), e.getMessage());
           if (instance instanceof Pod) {
@@ -355,6 +359,10 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               }
           }
       }
+  }
+
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+      log(resource, statusExtractor, true);
   }
 
   private void logFailedKeycloaks() {
