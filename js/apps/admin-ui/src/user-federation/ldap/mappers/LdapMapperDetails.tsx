@@ -238,7 +238,7 @@ export default function LdapMapperDetails() {
                 name="providerId"
                 label={t("mapperType")}
                 labelIcon={mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")}
-                isRequired
+                rules={{ required: t("required").toString() }}
                 isDisabled={!isNew}
               />
             ) : (
