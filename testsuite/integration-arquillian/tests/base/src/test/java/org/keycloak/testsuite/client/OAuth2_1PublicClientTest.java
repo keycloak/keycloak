@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
@@ -43,12 +44,15 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.security.KeyPair;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,6 +75,13 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     private KeyPair ecKeyPair;
 
     private JWK jwkEc;
+
+    private String validRedirectUri;;
+
+    @Before
+    public void setupValidateRedirectUri() {
+        validRedirectUri = AssertEvents.DEFAULT_REDIRECT_URI.replace("localhost", "127.0.0.1");
+    }
 
     @Before
     public void beforeDPoPTest() throws Exception {
@@ -97,6 +108,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
             clientRep.setStandardFlowEnabled(Boolean.TRUE);
             clientRep.setImplicitFlowEnabled(Boolean.TRUE);
             clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setRedirectUris(Collections.singletonList(validRedirectUri));
         });
 
         // setup profiles and policies
@@ -143,16 +155,19 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
     @Test
     public void testOAuth2_1ProofKeyForCodeExchange() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+            setupValidClientExceptForRedirectUri(clientRep, OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep))
+        );
+        assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(getClientByAdmin(cId)).getPkceCodeChallengeMethod());
+
         // setup profiles and policies
         setupPolicyOAuth2_1PublicClientForAllClient();
 
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setPublicClient(Boolean.TRUE);
-            clientRep.setRedirectUris(List.of(AssertEvents.DEFAULT_REDIRECT_URI));
-        });
-        assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(getClientByAdmin(cId)).getPkceCodeChallengeMethod());
-
+        oauth.redirectUri(validRedirectUri);
+        oauth.codeChallenge(null);
+        oauth.codeChallengeMethod(null);
+        oauth.codeVerifier(null);
         failLoginByNotFollowingPKCE(clientId);
     }
 
@@ -173,9 +188,9 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
             clientRep.setPublicClient(Boolean.TRUE);
-            clientRep.setRedirectUris(List.of(AssertEvents.DEFAULT_REDIRECT_URI));
+            clientRep.setRedirectUris(List.of(validRedirectUri.replace(":8543/", "/")));
         });
-        assertEquals(AssertEvents.DEFAULT_REDIRECT_URI, getClientByAdmin(cId).getRedirectUris().get(0));
+        assertEquals(validRedirectUri.replace(":8543/", "/"), getClientByAdmin(cId).getRedirectUris().get(0));
 
         // update with valid redirect_uri - fail
         try {
@@ -194,20 +209,20 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
     @Test
     public void testOAuth2_1DPoPSenderConstrainedToken() throws Exception {
-        // setup profiles and policies
-        setupPolicyOAuth2_1PublicClientForAllClient();
-
         // registration (auto-config) - success
         String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setPublicClient(Boolean.TRUE);
-            clientRep.setRedirectUris(List.of(AssertEvents.DEFAULT_REDIRECT_URI));
-        });
+        String cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) ->
+            setupValidClientExceptForRedirectUri(clientRep, OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep))
+        );
         assertTrue(OIDCAdvancedConfigWrapper.fromClientRepresentation(getClientByAdmin(cId)).isUseDPoP());
+
+        // setup profiles and policies
+        setupPolicyOAuth2_1PublicClientForAllClient();
 
         // authorization request - success
         setValidPkce(clientId);
         oauth.clientId(clientId);
+        oauth.redirectUri(validRedirectUri);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // token request with DPoP Proof - success
@@ -256,10 +271,21 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         updatePolicies(json);
     }
 
+    private void setupValidClientExceptForRedirectUri(ClientRepresentation clientRep, OIDCAdvancedConfigWrapper clientConfig ) {
+        clientRep.setPublicClient(Boolean.TRUE);
+        clientRep.setRedirectUris(Collections.singletonList(validRedirectUri));
+        clientRep.setImplicitFlowEnabled(false);
+        clientRep.setDirectAccessGrantsEnabled(false);
+        clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
+        clientConfig.setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        clientConfig.setUseDPoP(true);
+    };
+
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce) {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
         oauth.nonce(nonce);
+        oauth.redirectUri(validRedirectUri);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
         assertEquals("Implicit/Hybrid flow is prohibited.", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));

@@ -308,7 +308,8 @@
           "configuration": {
             "allow-ipv4-loopback-address": "true",
             "allow-ipv6-loopback-address": "true",
-            "allow-private-use-uri-scheme": "true"
+            "allow-private-use-uri-scheme": "true",
+            "oauth-2-1-compliant": "true"
           }
         },
         {
@@ -346,7 +347,8 @@
           "configuration": {
             "allow-ipv4-loopback-address": "true",
             "allow-ipv6-loopback-address": "true",
-            "allow-private-use-uri-scheme": "true"
+            "allow-private-use-uri-scheme": "true",
+            "oauth-2-1-compliant": "true"
           }
         },
         {
