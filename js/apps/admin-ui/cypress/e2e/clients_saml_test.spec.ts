@@ -167,18 +167,18 @@ describe("Clients SAML tests", () => {
       const homeUrlError =
         "Client could not be updated: Base URL is not a valid URL";
 
-      cy.get("#kc-root-url").type("Invalid URL");
+      cy.findByTestId("rootUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage(rootUrlError);
-      cy.get("#kc-root-url").clear();
+      cy.findByTestId("rootUrl").clear();
 
-      cy.get("#kc-home-url").type("Invalid URL");
+      cy.findByTestId("baseUrl").type("Invalid URL");
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage(homeUrlError);
-      cy.get("#kc-home-url").clear();
+      cy.findByTestId("baseUrl").clear();
 
-      cy.get("#kc-root-url").type(validUrl);
-      cy.get("#kc-home-url").type(validUrl);
+      cy.findByTestId("rootUrl").type(validUrl);
+      cy.findByTestId("baseUrl").type(validUrl);
       settingsTab.clickSaveBtn();
       masthead.checkNotificationMessage("Client successfully updated");
 
