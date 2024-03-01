@@ -122,7 +122,6 @@ export const LdapSettingsGeneral = ({
         />
         <KeycloakTextInput
           hidden
-          id="kc-ui-parentId"
           defaultValue={realm}
           {...form.register("parentId")}
         />
