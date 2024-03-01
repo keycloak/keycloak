@@ -217,7 +217,7 @@ export default function LdapMapperDetails() {
               label={t("name")}
               labelIcon={t("nameHelp")}
               isDisabled={!isNew}
-              isRequired
+              rules={{ required: t("required").toString() }}
             />
             <KeycloakTextInput
               hidden
