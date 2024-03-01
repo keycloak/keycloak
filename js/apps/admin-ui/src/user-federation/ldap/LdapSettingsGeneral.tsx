@@ -116,7 +116,6 @@ export const LdapSettingsGeneral = ({
         />
         <KeycloakTextInput
           hidden
-          id="kc-ui-provider-type"
           defaultValue="org.keycloak.storage.UserStorageProvider"
           {...form.register("providerType")}
         />
