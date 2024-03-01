@@ -217,19 +217,17 @@ export default function LdapMapperDetails() {
               label={t("name")}
               labelIcon={t("nameHelp")}
               isDisabled={!isNew}
-              rules={{ required: t("required").toString() }}
+              rules={{ required: t("required") }}
             />
             <KeycloakTextInput
               hidden
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
-              id="kc-ldap-parentId"
               data-testid="ldap-mapper-parentId"
               {...form.register("parentId")}
             />
             <KeycloakTextInput
               hidden
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
-              id="kc-ldap-provider-type"
               data-testid="ldap-mapper-provider-type"
               {...form.register("providerType")}
             />
@@ -237,8 +235,10 @@ export default function LdapMapperDetails() {
               <TextControl
                 name="providerId"
                 label={t("mapperType")}
-                labelIcon={mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")}
-                rules={{ required: t("required").toString() }}
+                labelIcon={
+                  mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")
+                }
+                rules={{ required: t("required") }}
                 isDisabled={!isNew}
               />
             ) : (

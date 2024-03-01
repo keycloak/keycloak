@@ -110,7 +110,6 @@ export const LdapSettingsGeneral = ({
         {/* These hidden fields are required so data object written back matches data retrieved */}
         <KeycloakTextInput
           hidden
-          id="kc-ui-provider-id"
           defaultValue="ldap"
           {...form.register("providerId")}
         />
@@ -128,10 +127,9 @@ export const LdapSettingsGeneral = ({
           name="name"
           label={t("uiDisplayName")}
           labelIcon={t("uiDisplayNameHelp")}
-          isRequired
           defaultValue="ldap"
           rules={{
-            required: t("validateName").toString(),
+            required: t("validateName"),
           }}
         />
         <FormGroup

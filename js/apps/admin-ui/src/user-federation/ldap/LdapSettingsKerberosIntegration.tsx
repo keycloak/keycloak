@@ -76,27 +76,24 @@ export const LdapSettingsKerberosIntegration = ({
               name="config.kerberosRealm.0"
               label={t("kerberosRealm")}
               labelIcon={t("kerberosRealmHelp")}
-              isRequired
               rules={{
-                required: t("validateRealm").toString(),
+                required: t("validateRealm"),
               }}
             />
             <TextControl
               name="config.serverPrincipal.0"
               label={t("serverPrincipal")}
               labelIcon={t("serverPrincipalHelp")}
-              isRequired
               rules={{
-                required: t("validateServerPrincipal").toString(),
+                required: t("validateServerPrincipal"),
               }}
             />
             <TextControl
               name="config.keyTab.0"
               label={t("keyTab")}
               labelIcon={t("keyTabHelp")}
-              isRequired
               rules={{
-                required: t("validateKeyTab").toString(),
+                required: t("validateKeyTab"),
               }}
             />
             <TextControl

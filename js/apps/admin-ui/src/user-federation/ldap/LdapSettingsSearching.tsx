@@ -113,49 +113,44 @@ export const LdapSettingsSearching = ({
           name="config.usersDn.0"
           label={t("usersDN")}
           labelIcon={t("usersDNHelp")}
-          isRequired
           rules={{
-            required: t("validateUsersDn").toString(),
+            required: t("validateUsersDn"),
           }}
         />
         <TextControl
           name="config.usernameLDAPAttribute.0"
           label={t("usernameLdapAttribute")}
           labelIcon={t("usernameLdapAttributeHelp")}
-          isRequired
           defaultValue="cn"
           rules={{
-            required: t("validateUsernameLDAPAttribute").toString(),
+            required: t("validateUsernameLDAPAttribute"),
           }}
         />
         <TextControl
           name="config.rdnLDAPAttribute.0"
           label={t("rdnLdapAttribute")}
           labelIcon={t("rdnLdapAttributeHelp")}
-          isRequired
           defaultValue="cn"
           rules={{
-            required: t("validateRdnLdapAttribute").toString(),
+            required: t("validateRdnLdapAttribute"),
           }}
         />
         <TextControl
           name="config.uuidLDAPAttribute.0"
           label={t("uuidLdapAttribute")}
           labelIcon={t("uuidLdapAttributeHelp")}
-          isRequired
           defaultValue="objectGUID"
           rules={{
-            required: t("validateUuidLDAPAttribute").toString(),
+            required: t("validateUuidLDAPAttribute"),
           }}
         />
         <TextControl
           name="config.userObjectClasses.0"
           label={t("userObjectClasses")}
           labelIcon={t("userObjectClassesHelp")}
-          isRequired
           defaultValue="person, organizationalPerson, user"
           rules={{
-            required: t("validateUserObjectClasses").toString(),
+            required: t("validateUserObjectClasses"),
           }}
         />
         <TextControl
@@ -165,7 +160,7 @@ export const LdapSettingsSearching = ({
           rules={{
             pattern: {
               value: /(\(.*\))$/,
-              message: t("validateCustomUserSearchFilter").toString(),
+              message: t("validateCustomUserSearchFilter"),
             },
           }}
         />
