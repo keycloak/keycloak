@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload Cypress videos
         uses: actions/upload-artifact@v3
-        if: github.repository != 'keycloak/keycloak-private'
+        if: always() && github.repository != 'keycloak/keycloak-private'
         with:
           name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
           path: js/apps/admin-ui/cypress/videos
