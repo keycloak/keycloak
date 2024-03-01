@@ -244,7 +244,11 @@ public class CacheManagerFactory {
                                 .saslMechanism(SCRAM_SHA_512)
                         .addServer()
                             .host(cacheRemoteHost)
-                            .port(cacheRemotePort);
+                            .port(cacheRemotePort)
+                        // This is a workaround for the following issue https://github.com/keycloak/keycloak/issues/27117 and should be removed when the issue is fixed
+                        .async().enable().modificationQueueSize(1024)
+                        // end of workaround
+                ;
             });
         }
     }
