@@ -9,7 +9,10 @@ Therefore, the offline sessions are lazily fetched from the database by default.
 
 However, {project_name} can be configured to preload the offline sessions from the database into the Infinispan caches during the server startup.
 It can be achieved by setting `preloadOfflineSessionsFromDatabase` property in the `userSessions` SPI to `true`.
-This functionality is currently deprecated and will be removed in a future release.
+
+:tech_feature_name: Offline session preloading
+:tech_feature_id: offline-session-preloading
+include::../templates/deprecated.adoc[]
 
 The following example shows how to configure offline sessions preloading.
 

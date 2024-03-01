@@ -3,7 +3,6 @@
 === Fine grain admin permissions
 
 :tech_feature_name: Fine Grain Admin Permissions
-:tech_feature_setting: -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled
 :tech_feature_id: admin-fine-grained-authz
 include::../templates/techpreview.adoc[]
 

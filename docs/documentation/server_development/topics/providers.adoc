@@ -235,6 +235,10 @@ bin/kc.[sh|bat] build --spi-user-cache-infinispan-enabled=false
 [[_script_providers]]
 === JavaScript providers
 
+:tech_feature_name: Scripts
+:tech_feature_id: scripts
+include::./templates/techpreview.adoc[]
+
 {project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
 
 * Authenticator
@@ -359,7 +363,8 @@ my-script-mapper.js
 
 The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata information about the scripts you want to deploy. It is a JSON file with the following structure:
 
-```json
+[source,json]
+----
 {
     "authenticators": [
         {
@@ -390,7 +395,7 @@ The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata
         }
     ]
 }
-```
+----
 
 This file should reference the different types of script providers that you want to deploy:
 
@@ -428,7 +433,6 @@ The name of the script file. This property is *mandatory* and should map to a fi
 ==== Deploy the script JAR
 
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
-Note that you also need to enable the `scripts` feature.
 
 === Available SPIs
 

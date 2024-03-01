@@ -4,7 +4,7 @@
 == Using token exchange
 
 :tech_feature_name: Token Exchange
-:tech_feature_setting: -Dkeycloak.profile.feature.token_exchange=enabled
+:tech_feature_id: token-exchange
 include::../templates/techpreview.adoc[]
 
 [NOTE]
