@@ -159,9 +159,6 @@ public final class Constants {
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 
-    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
-    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
-
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
     public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
