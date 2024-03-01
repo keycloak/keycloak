@@ -73,7 +73,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
     }
 
     @Override
-	public void close() {
+    public void close() {
     }
 }
 ----
@@ -216,11 +216,25 @@ need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recom
 
 === Registering provider implementations
 
-Providers are registered with the server by simply copying them to the `providers` directory.
+Providers are registered with the server by simply copying the JAR file to the `providers` directory.
 
 If your provider needs additional dependencies not already provided by Keycloak copy these to the `providers` directory.
 
-After registering new providers or dependencies Keycloak needs to be re-built with the `kc.[sh|bat] build` command.
+[NOTE]
+====
+Provider JARs are not loaded in isolated classloaders, so do not include resources or classes in your provider JARs that conflict with built-in resources or classes. 
+In particular the inclusion of an application.properties file will cause auto-build to fail if the provider JAR is removed. 
+If you have included conflicting classes, you will see a split package warning in the start log for the server. That should be resolved by removing or repackaging the offending classes. 
+However there is no warning if you have conflicting resource files. You should either ensure that your JAR's resource files have path names that contain something unique to that provider, 
+or you can check for the existence of `some.file` in the JAR contents under the `"install root"/lib/lib/main` directory with something like:
+ 
+[source,bash]
+----
+find . -type f -name "*.jar" -exec unzip -l {} \; | grep some.file
+----
+====    
+
+After registering new providers or dependencies Keycloak needs to be re-built with a non-optimized start or the `kc.[sh|bat] build` command.
 
 ==== Disabling a provider
 
