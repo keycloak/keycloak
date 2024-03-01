@@ -38,7 +38,6 @@ import jakarta.persistence.EntityManagerFactory;
 import io.quarkus.arc.Arc;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
@@ -195,17 +194,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     }
 
     private void initSchema(KeycloakSession session) {
-        /*
-         * Migrate model is executed just in case following providers are "jpa".
-         * In Map Storage, there is an assumption that migrateModel is not needed.
-         */
-        if ((Config.getProvider("realm") == null || "jpa".equals(Config.getProvider("realm"))) &&
-            (Config.getProvider("client") == null || "jpa".equals(Config.getProvider("client"))) &&
-            (Config.getProvider("clientScope") == null || "jpa".equals(Config.getProvider("clientScope")))) {
-
-            logger.debug("Calling migrateModel");
-            migrateModel(session);
-        }
+        logger.debug("Calling migrateModel");
+        migrateModel(session);
     }
 
     private void migrateModel(KeycloakSession session) {
