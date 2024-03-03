@@ -155,8 +155,6 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <bean id="keycloakAuthenticationProcessingFilter" class="org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcessingFilter">
         <constructor-arg name="authenticationManager" ref="authenticationManager" />
     </bean>
-    <bean id="keycloakSecurityContextRequestFilter"
-          class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
 
 <bean id="keycloakSecurityContextRequestFilter"
      class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
