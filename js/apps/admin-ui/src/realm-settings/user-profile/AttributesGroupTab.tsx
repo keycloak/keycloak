@@ -75,7 +75,11 @@ export const AttributesGroupTab = () => {
           <ToolbarItem>
             <Button
               component={(props) => (
-                <Link {...props} to={toNewAttributesGroup({ realm })} />
+                <Link
+                  data-testid="create-attributes-groups-action"
+                  {...props}
+                  to={toNewAttributesGroup({ realm })}
+                />
               )}
             >
               {t("createGroupText")}

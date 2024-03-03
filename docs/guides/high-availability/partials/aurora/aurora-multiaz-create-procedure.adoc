@@ -232,7 +232,7 @@ aws rds create-db-cluster \
     --db-cluster-identifier keycloak-aurora \
     --database-name keycloak \
     --engine aurora-postgresql \
-    --engine-version 15.3 \
+    --engine-version ${properties["aurora-postgresql.version"]} \
     --master-username keycloak \
     --master-user-password secret99 \
     --vpc-security-group-ids sg-0d746cc8ad8d2e63b \
@@ -241,7 +241,7 @@ aws rds create-db-cluster \
 ----
 +
 NOTE: You should replace the `--master-username` and `--master-user-password` values.
-The values specified here must be used when configuring the Keycloak DB credentials.
+The values specified here must be used when configuring the {project_name} database credentials.
 +
 .Output:
 [source,json]

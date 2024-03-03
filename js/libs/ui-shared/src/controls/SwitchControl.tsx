@@ -12,7 +12,7 @@ import { FormLabel } from "./FormLabel";
 export type SwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = SwitchProps &
+> = Omit<SwitchProps, "name"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
@@ -32,6 +32,7 @@ export const SwitchControl = <
   const { control } = useFormContext();
   return (
     <FormLabel
+      hasNoPaddingTop
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}

@@ -9,6 +9,7 @@ import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ModalUtils from "../support/util/ModalUtils";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
 import CreateUserPage from "../support/pages/admin-ui/manage/users/CreateUserPage";
+import { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
@@ -24,50 +25,58 @@ const getUserProfileTab = () => userProfileTab.goToTab();
 const getAttributesTab = () => userProfileTab.goToAttributesTab();
 const getAttributesGroupTab = () => userProfileTab.goToAttributesGroupTab();
 const getJsonEditorTab = () => userProfileTab.goToJsonEditorTab();
-const clickCreateAttributeButton = () =>
-  userProfileTab.createAttributeButtonClick();
+
+const usernameAttributeName = "username";
+const emailAttributeName = "email";
+
+let defaultUserProfile: UserProfileConfig;
 
 describe("User profile tabs", () => {
   const realmName = "Realm_" + uuid();
   const attributeName = "Test";
+  const attributeDisplayName = "Test display name";
 
-  before(() =>
-    adminClient.createRealm(realmName, {
-      attributes: { userProfileEnabled: "true" },
-    }),
+  before(() => {
+    cy.wrap(null).then(async () => {
+      await adminClient.createRealm(realmName);
+
+      defaultUserProfile = await adminClient.getUserProfile(realmName);
+    });
+  });
+
+  after(() =>
+    cy.wrap(null).then(async () => await adminClient.deleteRealm(realmName)),
   );
-
-  after(() => adminClient.deleteRealm(realmName));
 
   beforeEach(() => {
     loginPage.logIn();
     keycloakBefore();
+    cy.wrap(null).then(async () => {
+      await adminClient.updateUserProfile(realmName, defaultUserProfile);
+
+      await adminClient.updateRealm(realmName, {
+        registrationEmailAsUsername: false,
+        editUsernameAllowed: false,
+      });
+    });
+
     sidebarPage.goToRealm(realmName);
     sidebarPage.goToRealmSettings();
-  });
-
-  afterEach(() => {
-    sidebarPage.goToRealmSettings();
-    sidebarPage.waitForPageLoad();
-    realmSettingsPage.goToLoginTab();
-    cy.wait(1000);
-    cy.findByTestId("email-as-username-switch").uncheck({ force: true });
-    cy.findByTestId("edit-username-switch").uncheck({ force: true });
   });
 
   describe("Attributes sub tab tests", () => {
     it("Goes to create attribute page", () => {
       getUserProfileTab();
       getAttributesTab();
-      clickCreateAttributeButton();
+      userProfileTab.clickOnCreateAttributeButton();
     });
 
     it("Completes new attribute form and performs cancel", () => {
       getUserProfileTab();
       getAttributesTab();
-      clickCreateAttributeButton();
       userProfileTab
-        .createAttribute(attributeName, "Test display name")
+        .clickOnCreateAttributeButton()
+        .setAttributeNames(attributeName, attributeDisplayName)
         .cancelAttributeCreation()
         .checkElementNotInList(attributeName);
     });
@@ -75,33 +84,35 @@ describe("User profile tabs", () => {
     it("Completes new attribute form and performs submit", () => {
       getUserProfileTab();
       getAttributesTab();
-      clickCreateAttributeButton();
       userProfileTab
-        .createAttribute(attributeName, "Display name")
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
-      );
+        .clickOnCreateAttributeButton()
+        .setAttributeNames(attributeName, attributeDisplayName)
+        .saveAttributeCreation()
+        .assertNotificationSaved();
     });
 
     it("Modifies existing attribute and performs save", () => {
       getUserProfileTab();
-      getAttributesTab();
+      createAttributeDefinition(attributeName);
+
       userProfileTab
         .selectElementInList(attributeName)
         .editAttribute("Edited display name")
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
-      );
+        .saveAttributeCreation()
+        .assertNotificationSaved();
     });
 
     it("Adds and removes validator to/from existing attribute and performs save", () => {
       getUserProfileTab();
-      getAttributesTab();
-      userProfileTab.selectElementInList(attributeName).cancelAddingValidator();
-      userProfileTab.addValidator();
-      cy.get('tbody [data-label="Validator name"]').contains("email");
+      createAttributeDefinition(attributeName);
+
+      userProfileTab
+        .selectElementInList(attributeName)
+        .cancelAddingValidator(emailAttributeName);
+      userProfileTab.addValidator(emailAttributeName);
+      cy.get('tbody [data-label="Validator name"]').contains(
+        emailAttributeName,
+      );
 
       userProfileTab.cancelRemovingValidator();
       userProfileTab.removeValidator();
@@ -111,15 +122,16 @@ describe("User profile tabs", () => {
 
   describe("Attribute groups sub tab tests", () => {
     it("Deletes an attributes group", () => {
+      const group = "Test";
       cy.wrap(null).then(() =>
         adminClient.patchUserProfile(realmName, {
-          groups: [{ name: "Test" }],
+          groups: [{ name: group }],
         }),
       );
 
       getUserProfileTab();
       getAttributesGroupTab();
-      listingPage.deleteItem("Test");
+      listingPage.deleteItem(group);
       modalUtils.confirmModal();
       listingPage.checkEmptyList();
     });
@@ -131,9 +143,9 @@ describe("User profile tabs", () => {
   {
     "attributes": [
       {
-  "name": "email"{downArrow},
+  "name": "${emailAttributeName}"{downArrow},
       {
-  "name": "username",
+  "name": "${usernameAttributeName}",
   "validations": {
     "length": {
     "min": 3,
@@ -151,274 +163,281 @@ describe("User profile tabs", () => {
     });
   });
 
-  describe("Check attribute presence when creating a user based on email as username and edit username configs enabled/disabled", () => {
+  describe("Check attributes are displayed and editable on user create/edit", () => {
     it("Checks that not required attribute is not present when user is created with email as username and edit username set to disabled", () => {
+      const attrName = "newAttribute1";
+
       getUserProfileTab();
-      getAttributesTab();
-      clickCreateAttributeButton();
-      userProfileTab
-        .createAttributeNotRequiredWithoutPermissions(
-          "newAttribute1",
-          "newAttribute1",
-        )
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setNoAttributePermissions(),
       );
+
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
       cy.wait(1000);
-      cy.findByTestId("email-as-username-switch").should("have.value", "off");
-      cy.findByTestId("edit-username-switch").should("have.value", "off");
+      realmSettingsPage
+        .assertSwitch(realmSettingsPage.emailAsUsernameSwitch, false)
+        .assertSwitch(realmSettingsPage.editUsernameSwitch, false);
+
       // Create user
       sidebarPage.goToUsers();
       cy.wait(1000);
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser7");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute1")
-        .should("not.exist");
+      createUserPage
+        .goToCreateUser()
+        .assertAttributeFieldExists(attrName, false)
+        .setUsername("testuser7")
+        .create()
+        .assertNotificationCreated()
+        .assertAttributeFieldExists(attrName, false);
+
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
-      listingPage.deleteItem("newAttribute1");
+      listingPage.deleteItem(attrName);
       modalUtils.confirmModal();
       masthead.checkNotificationMessage("Attribute deleted");
     });
+
     it("Checks that not required attribute is not present when user is created/edited with email as username enabled", () => {
+      const attrName = "newAttribute2";
+
       getUserProfileTab();
-      getAttributesTab();
-      clickCreateAttributeButton();
-      userProfileTab
-        .createAttributeNotRequiredWithoutPermissions(
-          "newAttribute2",
-          "newAttribute2",
-        )
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setNoAttributePermissions(),
       );
+
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
       cy.wait(1000);
-      cy.findByTestId("email-as-username-switch").check({ force: true });
-      cy.findByTestId("email-as-username-switch").should("have.value", "on");
-      cy.findByTestId("edit-username-switch").should("have.value", "off");
+      realmSettingsPage
+        .setSwitch(realmSettingsPage.emailAsUsernameSwitch, true)
+        .assertSwitch(realmSettingsPage.emailAsUsernameSwitch, true)
+        .assertSwitch(realmSettingsPage.editUsernameSwitch, false);
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("email").type("testuser8@gmail.com");
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute2")
-        .should("not.exist");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
+      createUserPage
+        .goToCreateUser()
+        .setAttributeValue(emailAttributeName, "testuser8@gmail.com")
+        .assertAttributeFieldExists(attrName, false)
+        .create()
+        .assertNotificationCreated();
+
       // Edit user
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute2")
-        .should("not.exist");
-      cy.findByTestId("email").clear();
-      cy.findByTestId("email").type("testuser9@gmail.com");
-      cy.findByTestId("save-user").click();
-      masthead.checkNotificationMessage("The user has been saved");
-      sidebarPage.goToRealmSettings();
-      getUserProfileTab();
-      getAttributesTab();
-      listingPage.deleteItem("newAttribute2");
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("Attribute deleted");
+      createUserPage
+        .assertAttributeFieldExists(attrName, false)
+        .setAttributeValue(emailAttributeName, "testuser9@gmail.com")
+        .update()
+        .assertNotificationUpdated();
     });
+
     it("Checks that not required attribute with permissions to view/edit is present when user is created", () => {
+      const attrName = "newAttribute3";
+
       getUserProfileTab();
-      getAttributesTab();
-      clickCreateAttributeButton();
-      userProfileTab
-        .createAttributeNotRequiredWithPermissions(
-          "newAttribute3",
-          "newAttribute3",
-        )
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setAllAttributePermissions(),
       );
+
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToLoginTab();
       cy.wait(1000);
-      cy.findByTestId("email-as-username-switch").should("have.value", "off");
-      cy.findByTestId("edit-username-switch").should("have.value", "off");
+      realmSettingsPage
+        .assertSwitch(realmSettingsPage.emailAsUsernameSwitch, false)
+        .assertSwitch(realmSettingsPage.editUsernameSwitch, false);
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser10");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute3")
-        .should("exist");
-      sidebarPage.goToRealmSettings();
-      getUserProfileTab();
-      getAttributesTab();
-      listingPage.deleteItem("newAttribute3");
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("Attribute deleted");
+      createUserPage
+        .goToCreateUser()
+        .assertAttributeFieldExists(attrName, true)
+        .setUsername("testuser10")
+        .create()
+        .assertNotificationCreated()
+        .assertAttributeFieldExists(attrName, true);
     });
-    //TODO this test doesn't seem to pass on CI
-    it.skip("Checks that required attribute with permissions to view/edit is present and required when user is created", () => {
+
+    it("Checks that required attribute with permissions to view/edit is present and required when user is created", () => {
+      const attrName = "newAttribute4";
+
       getUserProfileTab();
-      getAttributesTab();
-      clickCreateAttributeButton();
-      userProfileTab
-        .createAttributeRequiredWithPermissions(
-          "newAttribute4",
-          "newAttribute4",
-        )
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setAllAttributePermissions().setAttributeRequired(),
       );
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser11");
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute4")
-        .should("exist");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage(
-        "Could not create user: Please specify attribute newAttribute4.",
-      );
-      sidebarPage.goToRealmSettings();
-      getUserProfileTab();
-      getAttributesTab();
-      listingPage.deleteItem("newAttribute4");
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("Attribute deleted");
+      createUserPage
+        .goToCreateUser()
+        .assertAttributeLabel(attrName, attrName)
+        .setUsername("testuser11")
+        .create()
+        .assertValidationErrorRequired(attrName);
+
+      createUserPage
+        .setAttributeValue(attrName, "MyAttribute")
+        .create()
+        .assertNotificationCreated();
     });
+
     it("Checks that required attribute with permissions to view/edit is accepted when user is created", () => {
+      const attrName = "newAttribute5";
+
       getUserProfileTab();
-      getAttributesTab();
-      clickCreateAttributeButton();
-      userProfileTab
-        .createAttributeRequiredWithPermissions(
-          "newAttribute5",
-          "newAttribute5",
-        )
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setAllAttributePermissions().setAttributeRequired(),
       );
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser12");
-      cy.get(".pf-c-form__label-text")
-        .contains("newAttribute5")
-        .should("exist");
-      cy.findByTestId("newAttribute5").type("MyAttribute");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
-      sidebarPage.goToRealmSettings();
-      getUserProfileTab();
-      getAttributesTab();
-      listingPage.deleteItem("newAttribute5");
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("Attribute deleted");
+      createUserPage
+        .goToCreateUser()
+        .assertAttributeLabel(attrName, attrName)
+        .setUsername("testuser12")
+        .setAttributeValue(attrName, "MyAttribute")
+        .create()
+        .assertNotificationCreated();
     });
+
     it("Checks that attribute group is visible when user with existing attribute is created", () => {
+      const group = "personalInfo";
+
       getUserProfileTab();
-      getAttributesGroupTab();
-      cy.findAllByTestId("no-attributes-groups-empty-action").click();
-      userProfileTab.createAttributeGroup("personalInfo", "personalInfo");
-      userProfileTab.saveAttributesGroupCreation();
+      getAttributesGroupTab()
+        .clickOnCreatesAttributesGroupButton()
+        .createAttributeGroup(group, group)
+        .saveAttributesGroupCreation();
 
       getAttributesTab();
-      userProfileTab.selectElementInList("username");
-      cy.get("#kc-attributeGroup").click();
-      cy.get("button.pf-c-select__menu-item").contains("personalInfo").click();
-      userProfileTab.saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
-      );
+      userProfileTab
+        .selectElementInList(usernameAttributeName)
+        .setAttributeGroup(group)
+        .saveAttributeCreation()
+        .assertNotificationSaved();
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser14");
-      cy.get("h1#personalinfo").should("have.text", "personalInfo");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
+      createUserPage
+        .goToCreateUser()
+        .assertGroupDisplayName(group, group)
+        .setUsername("testuser14")
+        .create()
+        .assertNotificationCreated();
 
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
-      userProfileTab.selectElementInList("username");
-      cy.get("#kc-attributeGroup").click();
-      cy.get("button.pf-c-select__menu-item").contains("None").click();
-      userProfileTab.saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      userProfileTab
+        .selectElementInList(usernameAttributeName)
+        .resetAttributeGroup()
+        .saveAttributeCreation()
+        .assertNotificationSaved();
+    });
+
+    it("Checks that attribute group is visible when user with a new attribute is created", () => {
+      const group = "contact";
+      const attrName = "address";
+
+      getUserProfileTab();
+      getAttributesGroupTab()
+        .clickOnCreatesAttributesGroupButton()
+        .createAttributeGroup(group, group)
+        .saveAttributesGroupCreation();
+
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer.setAllAttributePermissions(),
       );
 
-      getAttributesGroupTab();
-      listingPage.deleteItem("personalInfo");
-      modalUtils.confirmModal();
-      listingPage.checkEmptyList();
-    });
-    it("Checks that attribute group is visible when user with a new attribute is created", () => {
-      getUserProfileTab();
-      getAttributesGroupTab();
-      cy.findAllByTestId("no-attributes-groups-empty-action").click();
-      userProfileTab.createAttributeGroup("contact", "contact");
-      userProfileTab.saveAttributesGroupCreation();
-      getAttributesTab();
-      clickCreateAttributeButton();
       userProfileTab
-        .createAttributeNotRequiredWithPermissions("address", "address")
-        .saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
-      );
-      userProfileTab.selectElementInList("address");
-      cy.get("#kc-attributeGroup").click();
-      cy.get("button.pf-c-select__menu-item").contains("contact").click();
-      userProfileTab.saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
-      );
+        .selectElementInList(attrName)
+        .setAttributeGroup(group)
+        .saveAttributeCreation()
+        .assertNotificationSaved();
+
       // Create user
       sidebarPage.goToUsers();
-      createUserPage.goToCreateUser();
-      cy.findByTestId("username").type("testuser13");
-      cy.get("h1#contact").should("have.text", "contact");
-      cy.get(".pf-c-form__label-text").contains("address").should("exist");
-      cy.findByTestId("address").type("MyNewAddress1");
-      cy.findByTestId("create-user").click();
-      masthead.checkNotificationMessage("The user has been created");
-      cy.findByTestId("address").should("have.value", "MyNewAddress1");
+      const initialAttrValue = "MyNewAddress1";
+      createUserPage
+        .goToCreateUser()
+        .assertGroupDisplayName(group, group)
+        .assertAttributeLabel(attrName, attrName)
+        .setUsername("testuser13")
+        .setAttributeValue(attrName, initialAttrValue)
+        .create()
+        .assertNotificationCreated()
+        .assertAttributeValue(attrName, initialAttrValue);
 
       // Edit attribute
-      cy.findByTestId("address").clear();
-      cy.findByTestId("address").type("MyNewAddress2");
-      cy.findByTestId("save-user").click();
-      masthead.checkNotificationMessage("The user has been saved");
-      cy.findByTestId("address").should("have.value", "MyNewAddress2");
+      const newAttrValue = "MyNewAddress2";
+      createUserPage
+        .setAttributeValue(attrName, newAttrValue)
+        .update()
+        .assertNotificationUpdated()
+        .assertAttributeValue(attrName, newAttrValue);
 
       sidebarPage.goToRealmSettings();
       getUserProfileTab();
       getAttributesTab();
-      userProfileTab.selectElementInList("address");
-      cy.get("#kc-attributeGroup").click();
-      cy.get("button.pf-c-select__menu-item").contains("None").click();
-      userProfileTab.saveAttributeCreation();
-      masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved.",
+      userProfileTab
+        .selectElementInList(attrName)
+        .resetAttributeGroup()
+        .saveAttributeCreation()
+        .assertNotificationSaved();
+    });
+
+    it("Checks that attribute with select-annotation is displayed and editable when user is created/edited", () => {
+      const userName = `select-test-user-${uuid()}`;
+      const attrName = "select-test-attr";
+      const opt1 = "opt1";
+      const opt2 = "opt2";
+      const supportedOptions = [opt1, opt2];
+
+      getUserProfileTab();
+      createAttributeDefinition(attrName, (attrConfigurer) =>
+        attrConfigurer
+          .setAllAttributePermissions()
+          .clickAddValidator()
+          .selectValidatorType("options")
+          .setListFieldValues("options", supportedOptions)
+          .clickSave(),
       );
 
-      getAttributesGroupTab();
-      listingPage.deleteItem("contact");
-      modalUtils.confirmModal();
-      listingPage.checkEmptyList();
+      // Create user
+      sidebarPage.goToUsers();
+      createUserPage
+        .goToCreateUser()
+        .assertAttributeLabel(attrName, attrName)
+        .assertAttributeSelect(attrName, supportedOptions, "")
+        .setUsername(userName)
+        .setAttributeValueOnSelect(attrName, opt1)
+        .create()
+        .assertNotificationCreated()
+        .assertAttributeLabel(attrName, attrName)
+        .assertAttributeSelect(attrName, supportedOptions, opt1);
+
+      // Edit attribute
+      createUserPage
+        .setAttributeValueOnSelect(attrName, opt2)
+        .update()
+        .assertNotificationUpdated()
+        .assertAttributeLabel(attrName, attrName)
+        .assertAttributeSelect(attrName, supportedOptions, opt2);
     });
   });
+
+  function createAttributeDefinition(
+    attrName: string,
+    attrConfigurer?: (attrConfigurer: UserProfile) => void,
+  ) {
+    userProfileTab
+      .goToAttributesTab()
+      .clickOnCreateAttributeButton()
+      .setAttributeNames(attrName, attrName);
+
+    if (attrConfigurer) {
+      attrConfigurer(userProfileTab);
+    }
+
+    userProfileTab.saveAttributeCreation().assertNotificationSaved();
+  }
 });

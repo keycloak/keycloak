@@ -165,11 +165,20 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public Stream<String> getUsersByUserAttributeStream(RealmModel realm, String name, String value) {
-        TypedQuery<String> query = em.createNamedQuery("getFederatedAttributesByNameAndValue", String.class)
-                .setParameter("realmId", realm.getId())
-                .setParameter("name", name)
-                .setParameter("value", value);
-        return closing(query.getResultStream());
+        boolean longAttribute = value != null && value.length() > 2024;
+        if (longAttribute) {
+            TypedQuery<Object[]> query = em.createNamedQuery("getFederatedAttributesByNameAndLongValue", Object[].class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", name)
+                    .setParameter("longValueHash", JpaHashUtils.hashForAttributeValue(value));
+            return closing(query.getResultStream().filter(objects -> JpaHashUtils.compareSourceValue((String) objects[1], value)).map(objects -> (String) objects[0]));
+        } else {
+            TypedQuery<String> query = em.createNamedQuery("getFederatedAttributesByNameAndValue", String.class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", name)
+                    .setParameter("value", value);
+            return closing(query.getResultStream());
+        }
     }
 
     @Override

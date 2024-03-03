@@ -23,6 +23,7 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
           key={id}
           isLiveRegion
           variant={AlertVariant[variant]}
+          component="p"
           variantLabel=""
           title={message}
           actionClose={

@@ -27,8 +27,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -100,12 +98,12 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         }
         String type = KeystoreUtil.getKeystoreType(configuredType, storepath, KeyStore.getDefaultType());
         try {
-            truststore = loadStore(storepath, type, pass == null ? null :pass.toCharArray());
+            truststore = KeystoreUtil.loadKeyStore(storepath, pass, type);
         } catch (Exception e) {
             // in fips mode the default truststore type can be pkcs12, but the cacerts file will still be jks
             if (system && !"jks".equalsIgnoreCase(type)) {
                 try {
-                    truststore = loadStore(storepath, "jks", pass == null ? null :pass.toCharArray());
+                    truststore = KeystoreUtil.loadKeyStore(storepath, pass, "jks");
                 } catch (Exception e1) {
                 }
             }
@@ -128,14 +126,6 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 , Collections.unmodifiableMap(certsLoader.intermediateCerts));
         TruststoreProviderSingleton.set(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
-    }
-
-    private KeyStore loadStore(String path, String type, char[] password) throws Exception {
-        KeyStore ks = KeyStore.getInstance(type);
-        try (InputStream is = new FileInputStream(path)) {
-            ks.load(is, password);
-            return ks;
-        }
     }
 
     @Override

@@ -102,7 +102,7 @@ public class ResourceService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null));
+        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(resourceServer, filters, null, null));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
 
         if (!resources.isEmpty()) {
@@ -155,7 +155,6 @@ public class ResourceService extends AbstractResourceService {
         }
 
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
-        RealmModel realm = resourceServer.getRealm();
 
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
@@ -165,7 +164,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(realm, resourceServer, filters, null, null);
+            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, null, null);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {
@@ -201,7 +200,7 @@ public class ResourceService extends AbstractResourceService {
 
                 // remove all tickets that are not within the requested permissions
                 for (PermissionTicket ticket : tickets) {
-                    ticketStore.delete(realm, ticket.getId());
+                    ticketStore.delete(ticket.getId());
                 }
             }
         }
@@ -228,7 +227,7 @@ public class ResourceService extends AbstractResourceService {
 
         Map<String, Permission> requests = new HashMap<>();
 
-        for (PermissionTicket ticket : ticketStore.find(resourceServer.getRealm(), resourceServer, filters, null, null)) {
+        for (PermissionTicket ticket : ticketStore.find(resourceServer, filters, null, null)) {
             requests.computeIfAbsent(ticket.getRequester(), requester -> new Permission(ticket, provider)).addScope(ticket.getScope().getName());
         }
 
@@ -245,7 +244,7 @@ public class ResourceService extends AbstractResourceService {
         org.keycloak.authorization.model.Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
         if (scope == null) {
-            scope = scopeStore.findById(resourceServer.getRealm(), resourceServer, scopeId);
+            scope = scopeStore.findById(resourceServer, scopeId);
         }
 
         return scope;

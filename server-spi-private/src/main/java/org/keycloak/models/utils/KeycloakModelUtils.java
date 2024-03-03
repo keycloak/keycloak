@@ -81,9 +81,6 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE;
-import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT;
-
 /**
  * Set of helper methods, which are useful in various model implementations.
  *
@@ -854,6 +851,7 @@ public final class KeycloakModelUtils {
         if ((realmFlow = realm.getDirectGrantFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getDockerAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getFirstBrokerLoginFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
 
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
@@ -1001,19 +999,6 @@ public final class KeycloakModelUtils {
                 }
             }
         return SecretGenerator.SECRET_LENGTH_256_BITS;
-    }
-
-    /**
-     * Returns <code>true</code> if given realm has attribute {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE}
-     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting
-     * can be seen at {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT}.
-     *
-     * @param realm
-     * @return See the description
-     * @throws NullPointerException if <code>realm</code> is <code>null</code>
-     */
-    public static boolean isUsernameCaseSensitive(RealmModel realm) {
-        return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
     }
 
     /**

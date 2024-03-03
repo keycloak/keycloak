@@ -37,7 +37,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -79,7 +78,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -92,6 +90,8 @@ import java.util.function.Consumer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import org.keycloak.models.UserModel;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
@@ -283,9 +283,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
-        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/testing/blank");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -474,6 +472,10 @@ public abstract class AbstractKeycloakTest {
         assertThat(adminClient.realms().findAll().size(), is(equalTo(1)));
     }
 
+    protected boolean removeVerifyProfileAtImport() {
+        // remove verify profile by default because most tests are not prepared
+        return true;
+    }
 
     public void importRealm(RealmRepresentation realm) {
         if (modifyRealmForSSL()) {
@@ -512,6 +514,19 @@ public abstract class AbstractKeycloakTest {
             // expected when realm does not exist
         }
         adminClient.realms().create(realm);
+
+        if (removeVerifyProfileAtImport()) {
+            try {
+                RequiredActionProviderRepresentation vpModel = adminClient.realm(realm.getRealm()).flows()
+                        .getRequiredAction(UserModel.RequiredAction.VERIFY_PROFILE.name());
+                vpModel.setEnabled(false);
+                vpModel.setDefaultAction(false);
+                adminClient.realm(realm.getRealm()).flows().updateRequiredAction(
+                        UserModel.RequiredAction.VERIFY_PROFILE.name(), vpModel);
+                testingClient.testing().pollAdminEvent(); // remove the event
+            } catch (NotFoundException ignore) {
+            }
+        }
     }
 
     public void removeRealm(String realmName) {
@@ -740,4 +755,13 @@ public abstract class AbstractKeycloakTest {
         }
         return in;
     }
+
+    protected void assertResponseSuccessful(Response response) {
+        try {
+            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
+        } catch (AssertionError ex) {
+            throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
+        }
+    }
+
 }

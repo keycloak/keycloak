@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
+import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_ONLY;
@@ -34,7 +36,6 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -42,29 +43,22 @@ import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileContext;
 
 /**
- * 
+ * Test account rest service with custom user profile configurations
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTest {
+public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTest {
     
     @Override
     @Before
     public void before() {
         super.before();
-        enableDynamicUserProfile();
         setUserProfileConfiguration(null);
-    }
-
-    @Override
-    protected boolean isDeclarativeUserProfile() {
-        return true;
     }
 
     private final static String UP_CONFIG_FOR_METADATA = "{\"attributes\": ["
@@ -101,9 +95,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
 
     @Test
-    @Override
     public void testEditUsernameAllowed() throws IOException {
-        super.testEditUsernameAllowed();
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
         UserRepresentation user = getUser();
@@ -221,7 +213,6 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
 
     @Test
-    @Override
     public void testEditUsernameDisallowed() throws IOException {
         
         try {
@@ -339,40 +330,6 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             assertEquals(204, response.getStatus());
         }
     }
-    
-    @Test
-    public void testUpdateProfileEvent() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
-                + "]}");
-        super.testUpdateProfileEvent();
-    }
-    
-    @Test
-    @Override
-    public void testUpdateProfile() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
-                + "]}");
-        super.testUpdateProfile();
-    }
-    
-    @Test
-    @Override
-    public void testUpdateSingleField() throws IOException {
-        setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}}"
-                + "]}");
-         super.testUpdateSingleField();
-    }
 
     @Test
     public void testManageUserLocaleAttribute() throws IOException {
@@ -412,17 +369,29 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
             updateAndGet(user);
         }
     }
-    
+
     protected void setUserProfileConfiguration(String configuration) {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
     }
-   
-    protected void enableDynamicUserProfile() {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
-        
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
 
-        testRealm().update(testRealm);
+    protected UserRepresentation getUser() throws IOException {
+        return getUser(true);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        return AccountRestServiceTest.getUser(accountUrl, httpClient, tokenUtil);
+    }
+
+    protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
+        SimpleHttp a = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
+        try {
+            assertEquals(204, a.asStatus());
+        } catch (AssertionError e) {
+            System.err.println("Error during user update: " + a.asString());
+            throw e;
+        }
+        return getUser();
     }
 
 }

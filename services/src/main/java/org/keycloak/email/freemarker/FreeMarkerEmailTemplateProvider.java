@@ -217,7 +217,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
             attributes.put("properties", theme.getProperties());
             attributes.put("realmName", getRealmName());
-            attributes.put("user", new ProfileBean(user));
+            attributes.put("user", new ProfileBean(user, session));
             KeycloakUriInfo uriInfo = session.getContext().getUri();
             attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
 

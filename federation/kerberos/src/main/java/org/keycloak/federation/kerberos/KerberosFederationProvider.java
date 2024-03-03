@@ -24,7 +24,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
@@ -168,7 +168,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((LegacyUserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((UserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
             return validPassword(user.getFirstAttribute(KERBEROS_PRINCIPAL), input.getChallengeResponse());
         } else {
             return false; // invalid cred type

@@ -63,11 +63,11 @@ import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.JsonSerialization;
@@ -85,6 +85,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
@@ -268,6 +269,15 @@ public final class ClientPoliciesUtil {
     public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure) {
         DPoPBindEnforcerExecutor.Configuration config = new DPoPBindEnforcerExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static SecureRedirectUrisEnforcerExecutor.Configuration createSecureRedirectUrisEnforcerExecutorConfig(
+            Consumer<SecureRedirectUrisEnforcerExecutor.Configuration> apply) {
+        SecureRedirectUrisEnforcerExecutor.Configuration config = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
         return config;
     }
 

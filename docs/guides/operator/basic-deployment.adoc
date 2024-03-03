@@ -152,6 +152,8 @@ spec:
     tlsSecret: example-tls-secret
   hostname:
     hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
 ----
 
 Apply the changes:
@@ -232,6 +234,34 @@ For debugging and development purposes, consider directly connecting to the {pro
 ----
 kubectl port-forward service/example-kc-service 8443:8443
 ----
+
+==== Configuring the reverse proxy settings matching your Ingress Controller
+
+The Operator supports configuring which of the reverse proxy headers should be accepted by server, which includes
+`Forwarded` and `X-Forwarded-*` headers.
+
+If you Ingress implementation sets and overwrites either `Forwarded` or `X-Forwarded-*` headers, you can reflect that
+in the Keycloak CR as follows:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
+WARNING: When using the `proxy.headers` field, make sure your Ingress properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your Ingress Controller. Consider configuring it for
+either reencrypt or edge TLS termination as passthrough TLS doesn't allow the Ingress to modify the requests headers.
+Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+For more details refer to the <@links.server id="reverseproxy"/> guide.
 
 === Accessing the Admin Console
 

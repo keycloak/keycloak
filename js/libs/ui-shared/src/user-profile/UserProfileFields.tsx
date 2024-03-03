@@ -182,11 +182,12 @@ const FormField = ({
   const value = form.watch(
     fieldName(attribute.name) as FieldPath<UserFormFields>,
   );
-  const inputType = useMemo(
-    () => determineInputType(attribute, value),
-    [attribute],
-  );
-  const Component = FIELDS[inputType];
+  const inputType = useMemo(() => determineInputType(attribute), [attribute]);
+
+  const Component =
+    attribute.multivalued || isMultiValue(value)
+      ? FIELDS["multi-input"]
+      : FIELDS[inputType];
 
   if (attribute.name === "locale")
     return (
@@ -212,7 +213,6 @@ const DEFAULT_INPUT_TYPE = "text" satisfies InputType;
 
 function determineInputType(
   attribute: UserProfileAttributeMetadata,
-  value: string | string[],
 ): InputType {
   // Always treat the root attributes as a text field.
   if (isRootAttribute(attribute.name)) {
@@ -224,11 +224,6 @@ function determineInputType(
   // if we have an valid input type use that to render
   if (isValidInputType(inputType)) {
     return inputType;
-  }
-
-  // If the attribute has no valid input type and it's multi value use "multi-input"
-  if (isMultiValue(value)) {
-    return "multi-input";
   }
 
   // In all other cases use the default

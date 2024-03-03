@@ -9,12 +9,11 @@ summary="Understand how to configure and start {project_name}">
 This {section} explains the configuration methods for {project_name} and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing {project_name} for faster startup and low memory footprint.
 
 == Configuring sources for {project_name}
-{project_name} loads the configuration from five sources, which are listed here in order of application.
+{project_name} loads the configuration from four sources, which are listed here in order of application.
 
 . Command-line parameters
 . Environment variables
-. Options defined in a user-created configuration file.
-. Options defined in the `conf/keycloak.conf` file.
+. Options defined in the `conf/keycloak.conf` file, or in a user-created configuration file.
 . Sensitive options defined in a user-created Java KeyStore file.
 
 When an option is set in more than one source, the one that comes first in the list determines the value for that option. For example, the value for an option set by a command-line parameter has a higher priority than an environment variable for the same option.
@@ -42,10 +41,10 @@ The following example shows how the `db-url` value is set in four configuration 
 
 Based on the priority of application, the value that is used at startup is `cliValue`, because the command line is the highest priority.
 
-If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. However, if this value had been set in a user defined configuration file, that value would take precedence over the `conf/keycloak.conf` file. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
+If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
 
 == Formats for configuration
-The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another.
+The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another. Note that these formats apply to spi options as well.
 
 Command-line parameter format:: Values for the command-line use the `--_<key-with-dashes>_=_<value>_` format. For some values, an `-_<abbreviation>_=_<value>_` shorthand also exists.
 
@@ -107,6 +106,8 @@ By default, the server always fetches configuration options from the `conf/keycl
 You can also specify an explicit configuration file location using the `[-cf|--config-file]` option by entering the following command:
 
 <@kc.start rootParameters="--config-file=/path/to/myconfig.conf"/>
+
+Setting that option makes {project_name} read configuration from the specified file instead of `conf/keycloak.conf`.
 
 === Setting sensitive options using a Java KeyStore file
 

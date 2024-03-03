@@ -19,8 +19,6 @@
 
 package org.keycloak.testsuite.user.profile;
 
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,9 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.junit.Before;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -40,8 +36,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -51,7 +45,6 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     protected static void configureAuthenticationSession(KeycloakSession session) {
@@ -79,7 +72,7 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
     }
 
     protected static void setDefaultConfiguration(KeycloakSession session) {
-        setConfiguration(session, UPConfigUtils.readDefaultConfig());
+        setConfiguration(session, UPConfigUtils.readSystemDefaultConfig());
     }
 
     protected static void setConfiguration(KeycloakSession session, String config) {
@@ -296,17 +289,5 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-    }
-
-    @Before
-    public void resetConfigBeforeTest() {
-        VerifyProfileTest.disableDynamicUserProfile(testRealm());
-        RealmRepresentation realm = testRealm().toRepresentation();
-        VerifyProfileTest.enableDynamicUserProfile(realm);
-        testRealm().update(realm);
     }
 }

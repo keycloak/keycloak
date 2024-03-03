@@ -151,6 +151,7 @@ export default function DetailProvider() {
             <KeycloakTextInput
               id="providerId"
               data-testid="providerId"
+              aria-label={t("providerId")}
               {...register("providerId")}
               readOnly
             />

@@ -26,7 +26,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -38,10 +37,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.ws.rs.core.Response;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -95,7 +97,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
             assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-            assertNull(error.getErrorDescription());
+            assertNotNull(error.getErrorDescription());
         }
     }
 
@@ -115,7 +117,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
             assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-            assertNull(error.getErrorDescription());
+            assertNotNull(error.getErrorDescription());
         }
     }
 

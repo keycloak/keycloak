@@ -30,6 +30,10 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -164,37 +168,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
         userLoginFailure.setLastFailure(currentTime);
 
-        if(realm.isPermanentLockout()) {
-            userLoginFailure.incrementFailures();
-            logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
-
-            if(userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
-                UserModel user = session.users().getUserById(realm, userId);
-                if (user == null) {
-                    return;
-                }
-                logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
-                user.setEnabled(false);
-                user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
-                // Send event
-                new EventBuilder(realm, session, event.clientConnection)
-                        .event(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)
-                        .detail(Details.REASON, "brute_force_attack detected")
-                        .user(user)
-                        .success();
-                return;
-            }
-
-            if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
-                logger.debugv("quick login, set min wait seconds");
-                int waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
-                int notBefore = (int) (currentTime / 1000) + waitSeconds;
-                logger.debugv("set notBefore: {0}", notBefore);
-                userLoginFailure.setFailedLoginNotBefore(notBefore);
-            }
-            return;
-        }
-
         if (deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
             if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
@@ -208,17 +181,43 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
+        boolean quickLoginFailure = false;
         if (waitSeconds == 0) {
             if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
                 logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
+                quickLoginFailure = true;
             }
         }
         if (waitSeconds > 0) {
-            waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
-            int notBefore = (int) (currentTime / 1000) + waitSeconds;
-            logger.debugv("set notBefore: {0}", notBefore);
-            userLoginFailure.setFailedLoginNotBefore(notBefore);
+            if(!realm.isPermanentLockout() || realm.getMaxTemporaryLockouts() > 0) {
+                waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
+            }
+            if (!quickLoginFailure) {
+                userLoginFailure.incrementTemporaryLockouts();
+            }
+            if(quickLoginFailure || !realm.isPermanentLockout() || userLoginFailure.getNumTemporaryLockouts() <= realm.getMaxTemporaryLockouts()) {
+                int notBefore = (int) (currentTime / 1000) + waitSeconds;
+                logger.debugv("set notBefore: {0}", notBefore);
+                userLoginFailure.setFailedLoginNotBefore(notBefore);
+                sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
+            }
+        }
+
+        if(!realm.isPermanentLockout()) {
+            return;
+        }
+
+        if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts()) {
+            UserModel user = session.users().getUserById(realm, userId);
+            if (user == null) {
+                return;
+            }
+            logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
+            user.setEnabled(false);
+            user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
+            // Send event
+            sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
         }
     }
 
@@ -235,6 +234,26 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         RealmModel realm = session.realms().getRealm(event.realmId);
         if (realm == null) return null;
         return realm;
+    }
+
+    protected void sendEvent(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure, EventType type) {
+        EventBuilder builder = new EventBuilder(realm, session)
+                .ipAddress(userLoginFailure.getLastIPFailure())
+                .event(type)
+                .detail(Details.REASON, "brute_force_attack detected")
+                .detail(Details.NUM_FAILURES, String.valueOf(userLoginFailure.getNumFailures()))
+                .user(userLoginFailure.getUserId());
+
+        if (type == EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT) {
+            long secondsSinceEpoch = userLoginFailure.getFailedLoginNotBefore();
+            Instant instant = Instant.ofEpochSecond(secondsSinceEpoch);
+            LocalDateTime timestamp = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+
+            builder.detail(Details.NOT_BEFORE, timestamp.toString());
+        }
+
+        // Send event.
+        builder.success();
     }
 
     public void start() {
@@ -315,7 +334,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        ServicesLogger.LOGGER.loginFailure(event.userId, event.clientConnection.getRemoteAddr());
         failures++;
         long delta = 0;
         if (lastFailure > 0) {

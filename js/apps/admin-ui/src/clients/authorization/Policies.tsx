@@ -202,6 +202,7 @@ export const AuthorizationPolicies = ({
                     types={policyProviders}
                     search={search}
                     onSearch={setSearch}
+                    type="policy"
                   />
                 </ToolbarItem>
                 <ToolbarItem>

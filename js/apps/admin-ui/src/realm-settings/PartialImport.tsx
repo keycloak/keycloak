@@ -338,6 +338,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                   <Select
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
+                    typeAheadAriaLabel={t("realmSelector")}
+                    aria-label={"realmSelector"}
                     onToggle={() => setIsRealmSelectOpen(!isRealmSelectOpen)}
                     onSelect={(_, value) => handleRealmSelect(value)}
                     placeholderText={targetRealm.realm || targetRealm.id}
@@ -466,7 +468,12 @@ export const PartialImportDialog = (props: PartialImportProps) => {
           </Button>,
         ]}
       >
-        <Alert variant="success" isInline title={importCompleteMessage()} />
+        <Alert
+          variant="success"
+          component="p"
+          isInline
+          title={importCompleteMessage()}
+        />
         <KeycloakDataTable
           loader={loader}
           isPaginated

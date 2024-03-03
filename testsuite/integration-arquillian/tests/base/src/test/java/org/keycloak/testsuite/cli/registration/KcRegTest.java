@@ -506,13 +506,13 @@ public class KcRegTest extends AbstractRegCliTest {
     @Test
     public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_JKSKeystore() throws IOException {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.JKS);
-        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getFileExtension());
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.JKS.getPrimaryExtension());
     }
 
     @Test
     public void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient_PKCS12Keystore() throws IOException {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreUtil.KeystoreFormat.PKCS12);
-        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getFileExtension());
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(KeystoreUtil.KeystoreFormat.PKCS12.getPrimaryExtension());
     }
 
     private void testCRUDWithOnTheFlyUserAuthWithSignedJwtClient(String keystoreFileExtension) throws IOException {

@@ -127,7 +127,7 @@
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256', promiseType: 'native'}).then((authenticated) => {
+            keycloak.init({onLoad: 'check-sso'}).then((authenticated) => {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {
@@ -147,7 +147,7 @@
 
 <div id="main_react_container" style="display:none;height:100%"></div>
 
-<div id="spinner_screen" style="display:block; height:100%">
+<div id="spinner_screen" role="progressbar" style="display:block; height:100%">
     <div style="width: 320px; height: 328px; text-align: center; position: absolute; top:0;	bottom: 0; left: 0;	right: 0; margin: auto;">
         <#if properties.logo?has_content>
         <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">

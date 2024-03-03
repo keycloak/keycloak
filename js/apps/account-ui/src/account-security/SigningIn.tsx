@@ -27,16 +27,17 @@ import {
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
+import { useEnvironment } from "../root/KeycloakContext";
 
 type MobileLinkProps = {
   title: string;
   onClick: () => void;
+  testid?: string;
 };
 
-const MobileLink = ({ title, onClick }: MobileLinkProps) => {
+const MobileLink = ({ title, onClick, testid }: MobileLinkProps) => {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -56,6 +57,7 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
         variant="link"
         onClick={onClick}
         className="pf-u-display-none pf-u-display-inline-flex-on-lg"
+        data-testid={testid}
       >
         {title}
       </Button>
@@ -63,16 +65,19 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
   );
 };
 
-const SigningIn = () => {
+export const SigningIn = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
-  const { login } = keycloak;
+  const { login } = context.keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
   const [key, setKey] = useState(1);
   const refresh = () => setKey(key + 1);
 
-  usePromise((signal) => getCredentials({ signal }), setCredentials, [key]);
+  usePromise((signal) => getCredentials({ signal, context }), setCredentials, [
+    key,
+  ]);
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
@@ -114,7 +119,7 @@ const SigningIn = () => {
     <Page title={t("signingIn")} description={t("signingInDescription")}>
       {credentials.map((container) => (
         <PageSection
-          key={container.category}
+          key={container.category + container.type}
           variant="light"
           className="pf-u-px-0"
         >
@@ -142,13 +147,18 @@ const SigningIn = () => {
                     title={t("setUpNew", {
                       name: t(container.displayName as TFuncKey),
                     })}
+                    testid={`${container.category}/create`}
                   />
                 </div>
               </SplitItem>
             )}
           </Split>
 
-          <DataList aria-label="credential list" className="pf-u-mb-xl">
+          <DataList
+            aria-label="credential list"
+            className="pf-u-mb-xl"
+            data-testid={`${container.category}/credential-list`}
+          >
             {container.userCredentialMetadatas.length === 0 && (
               <EmptyRow
                 message={t("notSetUp", {
@@ -181,7 +191,10 @@ const SigningIn = () => {
                             buttonVariant="danger"
                             onContinue={async () => {
                               try {
-                                await deleteCredentials(meta.credential);
+                                await deleteCredentials(
+                                  context,
+                                  meta.credential,
+                                );
                                 addAlert(
                                   t("successRemovedMessage", {
                                     userLabel: label(meta.credential),

@@ -29,11 +29,11 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
 
     // Corresponds to the WebAuthn authenticators
-    public static final String SECURITY_KEY = "Security Key";
+    public static final String SECURITY_KEY = "Passkey";
 
     public static final String RECOVERY_AUTHN_CODES = "Recovery Authentication Code";
     /**
-     * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]
+     * Return list of names like for example [ "Password", "Authenticator Application", "Passkey" ]
      */
     public List<String> getAvailableLoginMethods() {
         List<WebElement> rows = getLoginMethodsRows();

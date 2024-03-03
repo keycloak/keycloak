@@ -69,14 +69,13 @@
     "@rollup/plugin-inject": "^5.0.5",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.5",
+    "@rollup/plugin-typescript": "^11.1.6",
     "es6-promise": "^4.2.8",
-    "rollup": "^4.9.2",
+    "rollup": "^4.12.0",
     "shx": "^0.3.4"
   },
   "dependencies": {
-    "base64-js": "^1.5.1",
-    "js-sha256": "^0.10.1",
+    "js-sha256": "^0.11.0",
     "jwt-decode": "^4.0.0"
   }
 }

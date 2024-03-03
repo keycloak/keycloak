@@ -238,7 +238,11 @@ public final class StringPropertyReplacer
             buffer.append(string.substring(start, chars.length));
 
         if (buffer.indexOf("${") != -1) {
-            return replaceProperties(buffer.toString(), resolver);
+            try {
+                return replaceProperties(buffer.toString(), resolver);
+            } catch (StackOverflowError ex) {
+                throw new IllegalStateException("Infinite recursion happening when replacing properties on '" + buffer + "'");
+            }
         }
         
         // Done

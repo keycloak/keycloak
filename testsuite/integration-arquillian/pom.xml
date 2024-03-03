@@ -37,13 +37,13 @@
         <containers.home>${project.build.directory}/containers</containers.home>
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server>wildfly</app.server>
+        <app.server>disabled</app.server>
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.7.1.Final</arquillian-core.version>
+        <arquillian-core.version>1.8.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
-        <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
+        <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
         <arquillian-drone.version>2.5.5</arquillian-drone.version>
         <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
@@ -462,8 +462,8 @@
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
@@ -500,6 +500,24 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-aurora-postgres</id>
+            <properties>
+                <keycloak.storage.connections.vendor>aurora-postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>software.amazon.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>secret99</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.jdbcParameters/>
+                <keycloak.connectionsJpa.url>jdbc:aws-wrapper:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}${keycloak.connectionsJpa.jdbcParameters}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>software.amazon.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>aws-advanced-jdbc-wrapper</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${aws-jdbc-wrapper.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
@@ -638,20 +656,5 @@
             </build>
         </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <name>Sonatype Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
 </project>

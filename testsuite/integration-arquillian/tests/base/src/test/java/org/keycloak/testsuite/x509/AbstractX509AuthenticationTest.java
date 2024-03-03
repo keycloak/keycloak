@@ -29,6 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
@@ -45,6 +46,9 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -61,6 +65,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.UserProfileConstants;
 import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.core.Response;
@@ -68,9 +73,11 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
@@ -207,7 +214,30 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     }
 
     @Before
-    public void configureFlows() {
+    public void onBefore() {
+        configureUserProfile();
+        configureFlows();
+    }
+
+    private void configureUserProfile() {
+        UserProfileResource userProfileResource = testRealm().users().userProfile();
+        UPConfig config = userProfileResource.getConfiguration();
+        config.addOrReplaceAttribute(createUpAttribute("x509_certificate_identity"));
+        config.addOrReplaceAttribute(createUpAttribute("alternative_email"));
+        config.addOrReplaceAttribute(createUpAttribute("upn"));
+        config.addOrReplaceAttribute(createUpAttribute("x509_certificate_serialnumber"));
+        config.addOrReplaceAttribute(createUpAttribute("x509_issuer_dn"));
+        config.addOrReplaceAttribute(createUpAttribute("x509_cert_sha256thumbprint"));
+        config.addOrReplaceAttribute(createUpAttribute("x509_serial_number"));
+        userProfileResource.update(config);
+        assertAdminEvents.clear();
+    }
+
+    private UPAttribute createUpAttribute(String name) {
+        return new UPAttribute(name, new UPAttributePermissions(Collections.emptySet(), Set.of(UserProfileConstants.ROLE_USER, UserProfileConstants.ROLE_ADMIN)));
+    }
+
+    private void configureFlows() {
         authMgmtResource = adminClient.realms().realm(REALM_NAME).flows();
         this.realmId = adminClient.realm(REALM_NAME).toRepresentation().getId();
 

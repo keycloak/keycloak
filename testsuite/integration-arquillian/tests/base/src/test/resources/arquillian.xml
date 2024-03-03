@@ -419,7 +419,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:false}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -446,7 +446,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:false}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -474,7 +474,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:false}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -501,7 +501,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
-                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:false}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -519,7 +519,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
-                    -Djboss.site.name=dc0
+                    -Dkeycloak.connectionsInfinispan.siteName=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -551,7 +551,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
-                    -Djboss.site.name=dc0
+                    -Dkeycloak.connectionsInfinispan.siteName=dc0
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -584,7 +584,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
-                    -Djboss.site.name=dc1
+                    -Dkeycloak.connectionsInfinispan.siteName=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
@@ -616,7 +616,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
-                    -Djboss.site.name=dc1
+                    -Dkeycloak.connectionsInfinispan.siteName=dc1
                     -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}

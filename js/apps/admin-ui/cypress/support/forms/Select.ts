@@ -3,7 +3,7 @@ export default class Select {
     chain: Cypress.Chainable<JQuery<HTMLElement>>,
     itemName: string,
   ) {
-    chain.should("have.text", itemName);
+    chain.parent().should("have.text", itemName);
   }
 
   static selectItem(

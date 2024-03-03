@@ -32,14 +32,14 @@ type SearchDropdownProps = {
   types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  isResource?: boolean;
+  type: "resource" | "policy" | "permission";
 };
 
 export const SearchDropdown = ({
   types,
   search,
   onSearch,
-  isResource = false,
+  type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
   const {
@@ -84,7 +84,9 @@ export const SearchDropdown = ({
           onToggle={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForPermission")}
+          {type === "resource" && t("searchClientAuthorizationResource")}
+          {type === "policy" && t("searchClientAuthorizationPolicy")}
+          {type === "permission" && t("searchClientAuthorizationPermission")}
         </DropdownToggle>
       }
       isOpen={open}
@@ -101,7 +103,7 @@ export const SearchDropdown = ({
             {...register("name")}
           />
         </FormGroup>
-        {isResource && (
+        {type === "resource" && (
           <>
             <FormGroup label={t("type")} fieldId="type">
               <KeycloakTextInput
@@ -126,7 +128,7 @@ export const SearchDropdown = ({
             </FormGroup>
           </>
         )}
-        {!isResource && (
+        {type !== "resource" && type !== "policy" && (
           <FormGroup label={t("resource")} fieldId="resource">
             <KeycloakTextInput
               id="resource"
@@ -135,14 +137,16 @@ export const SearchDropdown = ({
             />
           </FormGroup>
         )}
-        <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
-            id="scope"
-            data-testid="searchdropdown_scope"
-            {...register("scope")}
-          />
-        </FormGroup>
-        {!isResource && (
+        {type !== "policy" && (
+          <FormGroup label={t("scope")} fieldId="scope">
+            <KeycloakTextInput
+              id="scope"
+              data-testid="searchdropdown_scope"
+              {...register("scope")}
+            />
+          </FormGroup>
+        )}
+        {type !== "resource" && (
           <FormGroup label={t("type")} fieldId="type">
             <Controller
               name="type"

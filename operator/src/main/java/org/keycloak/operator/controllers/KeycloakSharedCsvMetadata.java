@@ -77,6 +77,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
         capabilities = "Deep Insights",
         categories = "Security",
         certified = false,
+        // language=JSON
         almExamples =
             "[\n" +
             "  {\n" +
@@ -90,8 +91,12 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
             "    },\n" +
             "    \"spec\": {\n" +
             "      \"instances\": 1,\n" +
-            "      \"hostname\": \"example.org\",\n" +
-            "      \"tlsSecret\": \"my-tls-secret\"\n" +
+            "      \"hostname\": {\n" +
+            "        \"hostname\": \"example.org\"\n" +
+            "      },\n" +
+            "      \"http\": {\n" +
+            "        \"tlsSecret\": \"my-tls-secret\"\n" +
+            "      }\n" +
             "    }\n" +
             "  },\n" +
             "  {\n" +

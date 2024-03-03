@@ -258,7 +258,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return modelSupplier.get().getSubGroupsCount();
+        return cached.getSubGroupsCount(modelSupplier);
     }
 
     @Override

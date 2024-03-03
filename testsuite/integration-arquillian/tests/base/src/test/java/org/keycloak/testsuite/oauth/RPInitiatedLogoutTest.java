@@ -594,6 +594,40 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Logout failed", errorPage.getError());
 
         events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
+
+        // Link not present
+        try {
+            errorPage.clickBackToApplication();
+            fail();
+        } catch (NoSuchElementException ex) {
+            // expected
+        }
+    }
+
+    // Test for the scenario when "authenticationSession" itself is expired without system client
+    @Test
+    public void logoutExpiredConfirmationAuthSessionWithClient() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+        driver.navigate().to(oauth.getLogoutUrl().clientId("test-app").build());
+
+        // Assert logout confirmation page. Session still exists
+        logoutConfirmPage.assertCurrent();
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        events.assertEmpty();
+
+        // Set time offset to expire "action" inside logoutSession
+        setTimeOffset(1810);
+        logoutConfirmPage.confirmLogout();
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Logout failed", errorPage.getError());
+
+        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
+
+        // Link "Back to application" present
+        errorPage.clickBackToApplication();
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
     }
 
     // Test logout with "consentRequired" . All of "post_logout_redirect_uri", "id_token_hint" and "state" parameters are present in the logout request

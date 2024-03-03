@@ -4,6 +4,7 @@ export type { SelectControlOption } from "./controls/SelectControl";
 export { SwitchControl } from "./controls/SwitchControl";
 export { TextControl } from "./controls/TextControl";
 export { TextAreaControl } from "./controls/TextAreaControl";
+export { NumberControl } from "./controls/NumberControl";
 export { HelpItem } from "./controls/HelpItem";
 export { useHelp, Help } from "./context/HelpContext";
 export { KeycloakTextInput } from "./keycloak-text-input/KeycloakTextInput";
@@ -19,6 +20,7 @@ export {
   setUserProfileServerError,
   isUserProfileError,
   label,
+  debeerify,
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";

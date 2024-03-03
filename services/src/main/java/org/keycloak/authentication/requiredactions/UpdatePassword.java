@@ -71,6 +71,9 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
+        if(!AuthenticatorUtil.isPasswordValidated(context.getAuthenticationSession())) {
+            return;
+        }
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
         if(daysToExpirePassword != -1) {
             PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider)context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);

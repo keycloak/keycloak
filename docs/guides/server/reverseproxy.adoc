@@ -27,6 +27,8 @@ WARNING: If either `forwarded` or `xforwarded` is selected, make sure your rever
 Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
 If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
+NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
+
 == Proxy modes
 NOTE: The support for setting proxy modes is deprecated and will be removed in a future {project_name} release. Consider configuring accepted reverse proxy headers instead as described in the chapter above. For migration instructions consult the https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[Upgrading Guide].
 

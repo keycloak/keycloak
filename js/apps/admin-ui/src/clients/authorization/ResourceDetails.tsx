@@ -114,6 +114,7 @@ export default function ResourceDetails() {
           { id },
           resource,
         );
+        setResource(resource);
         navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
       }
       addAlert(
@@ -250,7 +251,10 @@ export default function ResourceDetails() {
               label={t("type")}
               fieldId="type"
               labelIcon={
-                <HelpItem helpText={t("clientTypeHelp")} fieldLabelId="type" />
+                <HelpItem
+                  helpText={t("resourceDetailsTypeHelp")}
+                  fieldLabelId="type"
+                />
               }
             >
               <KeycloakTextInput id="type" {...register("type")} />

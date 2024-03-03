@@ -6,3 +6,4 @@
 :jdgserver_name: Infinispan
 :infinispan-operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
 :infinispan-xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
+:containerlabel: latest

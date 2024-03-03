@@ -87,4 +87,7 @@ public interface Details {
     String CREDENTIAL_TYPE = "credential_type";
     String SELECTED_CREDENTIAL_ID = "selected_credential_id";
     String AUTHENTICATION_ERROR_DETAIL = "authentication_error_detail";
+
+    String NOT_BEFORE = "not_before";
+    String NUM_FAILURES = "num_failures";
 }

@@ -15,7 +15,6 @@ import {
   Split,
   SplitItem,
   Title,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   DesktopIcon,
@@ -33,12 +32,13 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
+import { useEnvironment } from "../root/KeycloakContext";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
-const DeviceActivity = () => {
+export const DeviceActivity = () => {
   const { t } = useTranslation();
+  const context = useEnvironment();
   const { addAlert, addError } = useAlerts();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
@@ -59,11 +59,13 @@ const DeviceActivity = () => {
     setDevices(devices);
   };
 
-  usePromise((signal) => getDevices({ signal }), moveCurrentToTop, [key]);
+  usePromise((signal) => getDevices({ signal, context }), moveCurrentToTop, [
+    key,
+  ]);
 
   const signOutAll = async () => {
-    await deleteSession();
-    keycloak.logout();
+    await deleteSession(context);
+    context.keycloak.logout();
   };
 
   const signOutSession = async (
@@ -71,7 +73,7 @@ const DeviceActivity = () => {
     device: DeviceRepresentation,
   ) => {
     try {
-      await deleteSession(session.id);
+      await deleteSession(context, session.id);
       addAlert(
         t("signedOutSession", { browser: session.browser, os: device.os }),
       );
@@ -115,17 +117,14 @@ const DeviceActivity = () => {
           </Title>
         </SplitItem>
         <SplitItem>
-          <Tooltip content={t("refreshPage")}>
-            <Button
-              aria-describedby="refresh page"
-              id="refresh-page"
-              variant="link"
-              onClick={() => refresh()}
-              icon={<SyncAltIcon />}
-            >
-              {t("refreshPage")}
-            </Button>
-          </Tooltip>
+          <Button
+            id="refresh-page"
+            variant="link"
+            onClick={() => refresh()}
+            icon={<SyncAltIcon />}
+          >
+            {t("refreshPage")}
+          </Button>
 
           {(devices.length > 1 || devices[0].sessions.length > 1) && (
             <ContinueCancelModal
@@ -146,8 +145,8 @@ const DeviceActivity = () => {
       >
         <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
-            device.sessions.map((session) => (
-              <DataListItemRow key={device.id}>
+            device.sessions.map((session, index) => (
+              <DataListItemRow key={device.id} data-testid={`row-${index}`}>
                 <DataListContent
                   aria-label="device-sessions-content"
                   className="pf-u-flex-grow-1"

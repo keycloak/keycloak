@@ -19,7 +19,6 @@ package org.keycloak.userprofile;
 
 import java.util.Map;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -88,12 +87,4 @@ public interface UserProfileProvider extends Provider {
      * @see #getConfiguration()
      */
     void setConfiguration(UPConfig configuration);
-
-    /**
-     * Returns whether the declarative provider is enabled to a realm
-     *
-     * @deprecated should be removed once {@link DeclarativeUserProfileProvider} becomes the default.
-     * @return {@code true} if the declarative provider is enabled. Otherwise, {@code false}.
-     */
-    boolean isEnabled(RealmModel realm);
 }

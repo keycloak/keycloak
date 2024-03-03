@@ -22,6 +22,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.services.clientregistration.ClientRegistrationService;
+import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProvider;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
@@ -209,5 +211,9 @@ public class Urls {
 
     public static URI samlRequestEndpoint(final URI baseUri, final String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getProtocol").build(realmName, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
+    public static URI clientRegistration(URI baseUri, String realm, String protocol, String clientId) {
+        return realmBase(baseUri).path(RealmsResource.class, "getClientsService").path(ClientRegistrationService.class, "provider").path(OIDCClientRegistrationProvider.class, "getOIDC").build(realm, protocol, clientId);
     }
 }

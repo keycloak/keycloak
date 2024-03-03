@@ -24,7 +24,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliForm
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -32,7 +31,6 @@ import java.util.function.BiFunction;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
-import org.jboss.logging.Logger;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
@@ -45,8 +43,8 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper<T> {
 
-    static PropertyMapper IDENTITY = new PropertyMapper(
-            new OptionBuilder<String>(null, String.class).build(),
+    static PropertyMapper<?> IDENTITY = new PropertyMapper<>(
+            new OptionBuilder<>(null, String.class).build(),
             null,
             null,
             null,
@@ -68,8 +66,6 @@ public class PropertyMapper<T> {
     private final String envVarFormat;
     private String cliFormat;
     private BiConsumer<PropertyMapper<T>, ConfigValue> validator;
-
-    private static final Logger logger = Logger.getLogger(PropertyMapper.class);
 
     PropertyMapper(Option<T> option, String to, BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> mapper,
                    String mapFrom, String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator) {
@@ -116,17 +112,17 @@ public class PropertyMapper<T> {
 
                 if (parentValue == null) {
                     // parent value not explicitly set, try to resolve the default value set to the parent property
-                    PropertyMapper parentMapper = PropertyMappers.getMapper(parentKey);
+                    PropertyMapper<?> parentMapper = PropertyMappers.getMapper(parentKey);
 
                     if (parentMapper != null && parentMapper.getDefaultValue().isPresent()) {
-                        parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue().get().toString()).build();
+                        parentValue = ConfigValue.builder().withValue(Option.getDefaultValueString(parentMapper.getDefaultValue().get())).build();
                     }
                 }
 
                 return transformValue(name, ofNullable(parentValue == null ? null : parentValue.getValue()), context, null);
             }
 
-            ConfigValue defaultValue = transformValue(name, this.option.getDefaultValue().map(Objects::toString), context, null);
+            ConfigValue defaultValue = transformValue(name, this.option.getDefaultValue().map(Option::getDefaultValueString), context, null);
 
             if (defaultValue != null) {
                 return defaultValue;
@@ -242,7 +238,7 @@ public class PropertyMapper<T> {
         private String mapFrom = null;
         private boolean isMasked = false;
         private String paramLabel;
-        private BiConsumer<PropertyMapper<T>, ConfigValue> validator = (mapper, value) -> mapper.validateExpectedValues(value);
+        private BiConsumer<PropertyMapper<T>, ConfigValue> validator = (mapper, value) -> mapper.validateExpectedValues(value, (c, v) -> mapper.validateSingleValue(c, v));
 
         public Builder(Option<T> option) {
             this.option = option;
@@ -296,15 +292,39 @@ public class PropertyMapper<T> {
         }
     }
 
-    public void validateExpectedValues(ConfigValue value) {
-        if (PropertyMapperParameterConsumer.isExpectedValue(getExpectedValues(), value.getValue())) {
-            return;
+    public void validateExpectedValues(ConfigValue configValue, BiConsumer<ConfigValue, String> singleValidator) {
+        String value = configValue.getValue();
+
+        boolean multiValued = getOption().getType() == java.util.List.class;
+
+        String[] values = multiValued ? value.split(",") : new String[] { value };
+        for (String v : values) {
+            boolean cli = isCliOption(configValue);
+            if (multiValued && !v.trim().equals(v)) {
+                throw new PropertyException("Invalid value for multivalued option '" + (cli ? this.getCliFormat() : getFrom())
+                        + "': list value '" + v + "' should not have leading nor trailing whitespace"
+                        + getConfigSourceMessage(configValue, cli));
+            }
+            singleValidator.accept(configValue, v);
         }
-        boolean cli = Optional.ofNullable(value.getConfigSourceName()).filter(name -> name.contains(ConfigArgsConfigSource.NAME)).isPresent();
-        throw new PropertyException(
-                PropertyMapperParameterConsumer.getErrorMessage(cli ? this.getCliFormat() : getFrom(),
-                        value.getValue(), getExpectedValues(), getExpectedValues())
-                        + (cli ? "" : ". From ConfigSource " + value.getConfigSourceName()));
+    }
+
+    private boolean isCliOption(ConfigValue configValue) {
+        return Optional.ofNullable(configValue.getConfigSourceName()).filter(name -> name.contains(ConfigArgsConfigSource.NAME)).isPresent();
+    }
+
+    void validateSingleValue(ConfigValue configValue, String v) {
+        List<String> expectedValues = getExpectedValues();
+        if (!expectedValues.isEmpty() && !expectedValues.contains(v)) {
+            boolean cli = isCliOption(configValue);
+            throw new PropertyException(
+                    PropertyMapperParameterConsumer.getErrorMessage(cli ? this.getCliFormat() : getFrom(), v,
+                            expectedValues) + getConfigSourceMessage(configValue, cli));
+        }
+    }
+
+    String getConfigSourceMessage(ConfigValue configValue, boolean cli) {
+        return cli ? "" : ". From ConfigSource " + configValue.getConfigSourceName();
     }
 
 }

@@ -19,7 +19,8 @@ package org.keycloak.models;
 import static org.keycloak.common.util.UriUtils.parseQueryParameters;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
-import org.jboss.resteasy.spi.ResteasyUriBuilder;
+
+import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
 
@@ -117,7 +118,7 @@ public class KeycloakUriInfo implements UriInfo {
             to = this.getBaseUriBuilder().replaceQuery(null).path(uri.getPath()).replaceQuery(uri.getQuery()).fragment(uri.getFragment()).build(new Object[0]);
         }
 
-        return ResteasyUriBuilder.relativize(from, to);
+        return UriBuilderImpl.relativize(from, to);
     }
 
     @Override

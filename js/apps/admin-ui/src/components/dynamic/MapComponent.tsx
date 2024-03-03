@@ -142,7 +142,7 @@ export const MapComponent = ({
             icon={<PlusCircleIcon />}
             onClick={() => appendNew()}
           >
-            {t("addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
@@ -153,7 +153,7 @@ export const MapComponent = ({
       className="pf-u-p-0"
       variant="xs"
     >
-      <EmptyStateBody>{t("missingAttributes", { name })}</EmptyStateBody>
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
       <Button
         data-testid={`${name}-add-row`}
         variant="link"
@@ -162,7 +162,7 @@ export const MapComponent = ({
         onClick={appendNew}
         isDisabled={isDisabled}
       >
-        {t("addAttribute")}
+        {t("addAttribute", { label })}
       </Button>
     </EmptyState>
   );

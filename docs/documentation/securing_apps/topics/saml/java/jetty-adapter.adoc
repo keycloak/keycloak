@@ -1,9 +1,0 @@
-[[_jetty_saml_adapter]]
-
-==== Jetty SAML adapters
-
-WARNING: The {project_name} Jetty SAML adapter is deprecated. We recommend that you use another client adapter if possible.
-
-To be able to secure WAR apps deployed on Jetty you must install the {project_name} Jetty 9.4 SAML adapter into your Jetty installation. You then provide some extra configuration in each WAR you deploy to Jetty.
-
-Use the following installation and configuration procedures.

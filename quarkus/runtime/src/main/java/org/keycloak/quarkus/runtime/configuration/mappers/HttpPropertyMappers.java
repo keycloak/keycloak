@@ -27,7 +27,7 @@ final class HttpPropertyMappers {
 
     private HttpPropertyMappers(){}
 
-    public static PropertyMapper[] getHttpPropertyMappers() {
+    public static PropertyMapper<?>[] getHttpPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
@@ -110,6 +110,10 @@ final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
                         .to("quarkus.thread-pool.queue-size")
                         .paramLabel("requests")
+                        .build(),
+                fromOption(HttpOptions.HTTP_POOL_MAX_THREADS)
+                        .to("quarkus.thread-pool.max-threads")
+                        .paramLabel("threads")
                         .build()
         };
     }
@@ -142,14 +146,14 @@ final class HttpPropertyMappers {
         return of(enabled ? "enabled" : "disabled");
     }
 
-    private static String getDefaultKeystorePathValue() {
+    private static File getDefaultKeystorePathValue() {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
             File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
 
             if (file.exists()) {
-                return file.getAbsolutePath();
+                return file;
             }
         }
 

@@ -18,19 +18,20 @@
 package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeystoreUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Optional;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -85,20 +86,30 @@ public class TruststoreBuilder {
             includeDefaultTruststore(truststore);
         }
 
-        mergeFiles(truststores, truststore, true);
+        List<String> discoveredFiles = new ArrayList<>();
+        mergeFiles(truststores, truststore, true, discoveredFiles);
+        if (!discoveredFiles.isEmpty()) {
+            LOGGER.infof("Found the following truststore files under directories specified in the truststore paths %s",
+                    discoveredFiles);
+        }
         return truststore;
     }
 
-    private static void mergeFiles(String[] truststores, KeyStore truststore, boolean topLevel) {
+    private static void mergeFiles(String[] truststores, KeyStore truststore, boolean topLevel, List<String> discoveredFiles) {
         for (String file : truststores) {
             File f = new File(file);
             if (f.isDirectory()) {
-                mergeFiles(Stream.of(f.listFiles()).map(File::getAbsolutePath).toArray(String[]::new), truststore, false);
+                mergeFiles(Stream.of(f.listFiles()).map(File::getAbsolutePath).toArray(String[]::new), truststore, false, discoveredFiles);
             } else {
                 if (file.endsWith(".p12") || file.endsWith(".pfx")) {
                     mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
+                    if (!topLevel) {
+                        discoveredFiles.add(f.getAbsolutePath());
+                    }
                 } else {
-                    mergePemFile(truststore, file, topLevel);
+                    if (mergePemFile(truststore, file, topLevel) && !topLevel) {
+                        discoveredFiles.add(f.getAbsolutePath());
+                    }
                 }
             }
         }
@@ -155,8 +166,7 @@ public class TruststoreBuilder {
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path,
-                    loadStore(path, type, Optional.ofNullable(password).map(String::toCharArray).orElse(null)));
+            mergeTrustStore(truststore, path, loadStore(path, type, password));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
@@ -173,18 +183,16 @@ public class TruststoreBuilder {
         return new File(securityDirectory, "cacerts");
     }
 
-    static KeyStore loadStore(String path, String type, char[] password) {
-        try (InputStream is = new FileInputStream(path)) {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(is, password);
-            return ks;
+    static KeyStore loadStore(String path, String type, String password) {
+        try {
+            return KeystoreUtil.loadKeyStore(path, password, type);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);
         }
     }
 
-    private static void mergePemFile(KeyStore truststore, String file, boolean isPem) {
+    private static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
         try (FileInputStream pemInputStream = new FileInputStream(file)) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
             boolean loadedAny = false;
@@ -197,10 +205,10 @@ public class TruststoreBuilder {
                     if (pemInputStream.available() > 0 || !loadedAny) {
                         // any remaining input means there is an actual problem with the key contents or
                         // file format
-                        if (isPem) {
+                        if (isPem || loadedAny) {
                             throw e;
                         }
-                        LOGGER.infof(e,
+                        LOGGER.debugf(e,
                                 "The file %s may not be in PEM format, it will not be used to create the merged truststore",
                                 new File(file).getAbsolutePath());
                         continue;
@@ -212,6 +220,7 @@ public class TruststoreBuilder {
                 }
                 setCertificateEntry(truststore, cert);
             }
+            return loadedAny;
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to initialize truststore, could not merge: " + new File(file).getAbsolutePath(), e);

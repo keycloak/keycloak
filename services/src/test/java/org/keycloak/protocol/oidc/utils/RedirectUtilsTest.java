@@ -194,4 +194,28 @@ public class RedirectUtilsTest {
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com@other.com", set, false));
     }
+
+    @Test
+    public void testEncodedRedirectUri() {
+        Set<String> set = Stream.of(
+                "https://keycloak.org/test/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/test/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/index.html", set, false));
+        Assert.assertEquals("https://keycloak.org/test?encodeTest=a%3Cb", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test?encodeTest=a%3Cb", set, false));
+        Assert.assertEquals("https://keycloak.org/test?encodeTest=a%3Cb#encode2=a%3Cb", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test?encodeTest=a%3Cb#encode2=a%3Cb", set, false));
+        Assert.assertEquals("https://keycloak.org/test/#encode2=a%3Cb", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/#encode2=a%3Cb", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/../", set, false));  // direct
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%2E%2E/", set, false));  // encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%2F%2E%2E%2F", set, false)); // encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/", set, false)); // double-encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/?some_query_param=some_value", set, false)); // double-encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/#encodeTest=a%3Cb", set, false)); // double-encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%25252E%25252E/", set, false)); // triple-encoded
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%2525252525252E%2525252525252E/", set, false)); // seventh-encoded
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak%2Eorg/test/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2Ftest%2F%40sample.com", set, false));
+    }
 }

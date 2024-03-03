@@ -26,23 +26,20 @@ import org.keycloak.testsuite.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.KerberosRule;
 
 import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
@@ -52,7 +49,6 @@ import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-standalone-connection.properties";
@@ -182,45 +178,39 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         UserRepresentation john = new UserRepresentation();
         john.setUsername("john");
         Response response = testRealmResource().users().create(john);
-        Assert.assertEquals(500, response.getStatus());
+        Assert.assertEquals(400, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Could not create user", error.getErrorMessage());
         response.close();
     }
 
     @Test
     public void testUserProfile() throws Exception {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        VerifyProfileTest.enableDynamicUserProfile(realm);
-        testRealmResource().update(realm);
+        assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
-        try {
-            assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+        // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
+        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserRepresentation john = johnResource.toRepresentation(true);
+        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
 
-            // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
-            UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
-            UserRepresentation john = johnResource.toRepresentation(true);
-            Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
+        // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
+        UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
+        Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
+        Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
 
-            // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
-            UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
-            Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
-            Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
+        // Test Update profile
+        john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
 
-            // Test Update profile
-            john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
-            johnResource.update(john);
+        Response spnegoResponse = spnegoLogin("hnelson", "secret");
+        Assert.assertEquals(200, spnegoResponse.getStatus());
+        String responseText = spnegoResponse.readEntity(String.class);
+        Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
+        spnegoResponse.close();
 
-            Response spnegoResponse = spnegoLogin("hnelson", "secret");
-            Assert.assertEquals(200, spnegoResponse.getStatus());
-            String responseText = spnegoResponse.readEntity(String.class);
-            Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-            Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
-            spnegoResponse.close();
-
-            john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
-            johnResource.update(john);
-        } finally {
-            VerifyProfileTest.disableDynamicUserProfile(testRealmResource());
-        }
+        john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
+        johnResource.update(john);
     }
 
 }

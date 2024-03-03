@@ -39,7 +39,6 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons-jakarta</artifactId>
-            <version>${infinispan.version}</version>
         </dependency>
     </dependencies>
 

@@ -10,12 +10,12 @@ USER=keycloak # <1>
 PASSWORD=secret99 # <2>
 DATABASE=keycloak # <3>
 HOST=$(aws rds describe-db-clusters \
-  --db-cluster-identifier keycloak-aurora \ # <4>
+  --db-cluster-identifier keycloak-aurora \#<4>
   --query 'DBClusters[*].Endpoint' \
   --region eu-west-1 \
   --output text
 )
-kubectl run -i --tty --rm debug --image=postgres:13 --restart=Never -- psql postgresql://${USER}:${PASSWORD}@${HOST}/${DATABASE}
+kubectl run -i --tty --rm debug --image=postgres:15 --restart=Never -- psql postgresql://${USER}:${PASSWORD}@${HOST}/${DATABASE}
 ----
 <1> Aurora DB user, this can be the same as `--master-username` used when creating the DB.
 <2> Aurora DB user-password, this can be the same as `--master--user-password` used when creating the DB.

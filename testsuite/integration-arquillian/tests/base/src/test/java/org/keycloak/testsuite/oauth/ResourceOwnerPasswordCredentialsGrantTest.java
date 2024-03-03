@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -349,12 +350,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantRequest_ClientES256_RealmPS256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
     public void grantRequest_ClientPS256_RealmES256() throws Exception {
-    	conductGrantRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.ES256);
+        conductGrantRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS256, Algorithm.ES256);
     }
 
     private void conductGrantRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {

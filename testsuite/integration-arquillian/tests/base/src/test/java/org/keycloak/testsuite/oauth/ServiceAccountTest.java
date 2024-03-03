@@ -35,6 +35,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
@@ -334,7 +335,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Test
     public void clientCredentialsAuthRequest_ClientES256_RealmPS256() throws Exception {
-    	conductClientCredentialsAuthRequestWithRefreshToken(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+        conductClientCredentialsAuthRequestWithRefreshToken(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.ES256, Algorithm.PS256);
     }
 
     @Test
@@ -379,10 +380,11 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         // Check that it is not possible to introspect token anymore
         Assert.assertFalse(getIntrospectionResponse("service-account-cl", "secret1", tokenString));
         // TODO: This would be better to be "INTROSPECT_TOKEN_ERROR"
-        events.expect(EventType.INTROSPECT_TOKEN)
+        events.expect(EventType.INTROSPECT_TOKEN_ERROR)
                 .client("service-account-cl")
                 .user(is(emptyOrNullString()))
                 .session(is(emptyOrNullString()))
+                .error(Errors.TOKEN_INTROSPECTION_FAILED)
                 .assertEvent();
     }
 

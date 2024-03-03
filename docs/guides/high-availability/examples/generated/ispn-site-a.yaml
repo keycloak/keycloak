@@ -138,12 +138,14 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-actionTokens[]
@@ -163,6 +165,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -170,6 +173,7 @@ spec:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-authenticationSessions[]
@@ -189,6 +193,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -196,6 +201,7 @@ spec:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-clientSessions[]
@@ -215,12 +221,14 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-loginFailures[]
@@ -240,6 +248,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -247,6 +256,7 @@ spec:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-offlineClientSessions[]
@@ -266,6 +276,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -273,6 +284,7 @@ spec:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-offlineSessions[]
@@ -292,6 +304,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
@@ -299,6 +312,7 @@ spec:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-sessions[]
@@ -318,12 +332,14 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       backups:
         site-b: # <2>
           backup:
             strategy: "SYNC" # <3>
+            timeout: 13000
             stateTransfer:
               chunkSize: 16
 # end::infinispan-cache-work[]
@@ -347,11 +363,11 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:14.0.16.Final
+  image: quay.io/infinispan/server:14.0.25.Final
   configListener:
     enabled: false
   container:
-    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000'
+    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=15000'
   logging:
     categories:
       org.infinispan: info
@@ -369,6 +385,9 @@ spec:
         # end::infinispan-crossdc[]
         discovery:
           launchGossipRouter: true
+          heartbeats:
+            interval: 2000
+            timeout: 8000
         # tag::infinispan-crossdc[]
         expose:
           type: Route # <5>

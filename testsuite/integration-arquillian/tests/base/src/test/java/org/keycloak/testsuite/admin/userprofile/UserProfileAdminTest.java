@@ -23,23 +23,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
-import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
+import static org.keycloak.userprofile.config.UPConfigUtils.readSystemDefaultConfig;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
@@ -49,25 +45,20 @@ import org.keycloak.userprofile.config.UPConfigUtils;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class UserProfileAdminTest extends AbstractAdminTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 
     @Test
     public void testDefaultConfigIfNoneSet() {
-        JsonTestUtils.assertJsonEquals(readDefaultConfig(), testRealm().users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(readSystemDefaultConfig(), testRealm().users().userProfile().getConfiguration());
     }
 
     @Test
     public void testSetDefaultConfig() {
-        UPConfig config = UPConfigUtils.parseDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig().addOrReplaceAttribute(new UPAttribute("test"));
         UserProfileResource userProfile = testRealm().users().userProfile();
         userProfile.update(config);
         getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));

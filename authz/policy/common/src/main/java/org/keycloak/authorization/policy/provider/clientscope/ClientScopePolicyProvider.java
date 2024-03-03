@@ -20,6 +20,7 @@ package org.keycloak.authorization.policy.provider.clientscope;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
@@ -34,6 +35,7 @@ import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresent
  */
 public class ClientScopePolicyProvider implements PolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(ClientScopePolicyProvider.class);
     private final BiFunction<Policy, AuthorizationProvider, ClientScopePolicyRepresentation> representationFunction;
 
     public ClientScopePolicyProvider(
@@ -68,6 +70,7 @@ public class ClientScopePolicyProvider implements PolicyProvider {
                 }
             }
         }
+        logger.debugv("Client Scope Policy {} evaluated to {}", policy.getName(), evaluation.getEffect());
     }
 
     private boolean hasClientScope(Identity identity, ClientScopeModel clientScope) {

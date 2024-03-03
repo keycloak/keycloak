@@ -4,7 +4,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;

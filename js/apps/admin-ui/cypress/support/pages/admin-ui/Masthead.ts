@@ -10,7 +10,7 @@ export default class Masthead extends CommonElements {
   #userDrpDwnKebab = "#user-dropdown-kebab";
   #globalAlerts = "global-alerts";
   #documentationLink = "#link";
-  #backToAdminConsoleLink = "#landingReferrerLink";
+  #backToAdminConsoleLink = "referrer-link";
   #userDrpdwnItem = ".pf-c-dropdown__menu-item";
 
   #getAlertsContainer() {
@@ -70,7 +70,7 @@ export default class Masthead extends CommonElements {
   }
 
   goToAdminConsole() {
-    cy.get(this.#backToAdminConsoleLink).click({ force: true });
+    cy.findByTestId(this.#backToAdminConsoleLink).click({ force: true });
     return this;
   }
 

@@ -15,7 +15,6 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
 import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
@@ -27,7 +26,6 @@ export default function CreateUser() {
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm: realmName } = useRealm();
-  const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<UserFormFields>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -46,14 +44,8 @@ export default function CreateUser() {
       }
 
       setRealm(realm);
-
-      const isUserProfileEnabled =
-        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-        realm.attributes?.userProfileEnabled === "true";
-
-      setUserProfileMetadata(
-        isUserProfileEnabled ? userProfileMetadata : undefined,
-      );
+      form.setValue("attributes.locale", realm.defaultLocale || "");
+      setUserProfileMetadata(userProfileMetadata);
     },
     [],
   );

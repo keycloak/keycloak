@@ -17,7 +17,11 @@
 package org.keycloak.email.freemarker.beans;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,17 +38,25 @@ public class ProfileBean {
     private UserModel user;
     private final Map<String, String> attributes = new HashMap<>();
 
-    public ProfileBean(UserModel user) {
+    public ProfileBean(UserModel user, KeycloakSession session) {
         this.user = user;
 
         if (user.getAttributes() != null) {
+            //TODO: there is no need to set only a single value for attributes but changing this might break existing
+            // deployments using email templates, if we change the contract to return multiple values for attributes
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+            UPConfig configuration = provider.getConfiguration();
+
             for (Map.Entry<String, List<String>> attr : user.getAttributes().entrySet()) {
                 List<String> attrValue = attr.getValue();
                 if (attrValue != null && attrValue.size() > 0) {
                     attributes.put(attr.getKey(), attrValue.get(0));
                 }
 
-                if (attrValue != null && attrValue.size() > 1) {
+                UPAttribute attribute = configuration.getAttribute(attr.getKey());
+                boolean multivalued = attribute != null && attribute.isMultivalued();
+
+                if (!multivalued && attrValue != null && attrValue.size() > 1) {
                     logger.warnf("There are more values for attribute '%s' of user '%s' . Will display just first value", attr.getKey(), user.getUsername());
                 }
             }

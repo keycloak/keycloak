@@ -45,6 +45,7 @@ import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -175,7 +176,12 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             } else if (variable.startsWith("CLAIM.")) {
                 String name = variable.substring("CLAIM.".length());
                 Object value = AbstractClaimMapper.getClaimValue(context, name);
-                if (value == null) value = "";
+                if (value == null) {
+                    value = "";
+                } else if (value instanceof Collection && ((Collection<?>) value).size() == 1) {
+                    // In case the value is list with single value, it might be preferred to avoid converting whole collection toString, but rather use value like "foo" instead of "[foo]"
+                    value = ((Collection<?>) value).iterator().next();
+                }
                 m.appendReplacement(sb, transformer.apply(value.toString()));
             } else {
                 m.appendReplacement(sb, m.group(1));

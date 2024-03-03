@@ -135,6 +135,7 @@ export const PartialExportDialog = ({
         <Alert
           data-testid="warning-message"
           variant="warning"
+          component="p"
           title={t("exportWarningTitle")}
           isInline
         >

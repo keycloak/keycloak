@@ -32,7 +32,6 @@
 
     <modules>
         <module>rest</module>
-        <module>domain-extension</module>
         <module>authenticator</module>
     </modules>
 </project>

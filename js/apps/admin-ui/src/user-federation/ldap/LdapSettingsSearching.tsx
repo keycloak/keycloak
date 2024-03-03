@@ -83,16 +83,30 @@ export const LdapSettingsSearching = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
+                aria-label={t("selectEditMode")}
                 validated={
                   (form.formState.errors.config as any)?.editMode?.[0]
                     ? "error"
                     : "default"
                 }
               >
-                <SelectOption value="" isPlaceholder />
-                <SelectOption value="READ_ONLY" />
-                <SelectOption value="WRITABLE" />
-                <SelectOption value="UNSYNCED" />
+                <SelectOption
+                  aria-label={t("emptySelection")}
+                  value=""
+                  isPlaceholder
+                />
+                <SelectOption
+                  aria-label={t("readOnlySelection")}
+                  value="READ_ONLY"
+                />
+                <SelectOption
+                  aria-label={t("writableSelection")}
+                  value="WRITABLE"
+                />
+                <SelectOption
+                  aria-label={t("unsyncedSelection")}
+                  value="UNSYNCED"
+                />
               </Select>
             )}
           />

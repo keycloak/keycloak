@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
-import { FormGroup } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { Checkbox, FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
@@ -8,6 +8,7 @@ import { KeycloakTextInput } from "../../../components/keycloak-text-input/Keycl
 export const Regex = () => {
   const { t } = useTranslation();
   const {
+    control,
     register,
     formState: { errors },
   } = useFormContext();
@@ -52,6 +53,29 @@ export const Regex = () => {
           data-testid="regexPattern"
           validated={errors.pattern ? "error" : "default"}
           {...register("pattern", { required: true })}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("targetContextAttributes")}
+        fieldId="targetContextAttributes"
+        labelIcon={
+          <HelpItem
+            helpText={t("targetContextAttributesHelp")}
+            fieldLabelId="targetContextAttributes"
+          />
+        }
+      >
+        <Controller
+          name="targetContextAttributes"
+          defaultValue={false}
+          control={control}
+          render={({ field }) => (
+            <Checkbox
+              id="targetContextAttributes"
+              isChecked={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
       </FormGroup>
     </>

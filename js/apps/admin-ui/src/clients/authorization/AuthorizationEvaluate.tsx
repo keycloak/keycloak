@@ -281,7 +281,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
         </Panel>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("identityInformation")}</Title>
+            <Title headingLevel="h2">{t("permissions")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
@@ -381,8 +381,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                           }}
                           selections={field.value}
                           variant={SelectVariant.typeaheadMulti}
-                          typeAheadAriaLabel={t("authScopes")}
+                          typeAheadAriaLabel={t("selectAuthScopes")}
                           isOpen={scopesDropdownOpen}
+                          aria-label={t("selectAuthScopes")}
                         >
                           {scopes.map((scope) => (
                             <SelectOption

@@ -23,15 +23,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +42,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -63,26 +70,31 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
     @Page
     protected AppPage appPage;
 
+    private UPConfig upConfig;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setLoginTheme("address");
         // the custom theme expects email as username and the username field is not rendered at all
         testRealm.setRegistrationEmailAsUsername(true);
+    }
+
+    @Before
+    public void onBefore() {
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("tom")
                 .email("tom@keycloak.org")
                 .password("password")
                 .firstName("Tom")
-                .lastName("Brady").build();
-        testRealm.getUsers().add(user);
-    }
+                .lastName("Brady")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .build();
+        Response resp = testRealm().users().create(user);
+        String userId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        getCleanup().addUserId(userId);
 
-    @Before
-    public void onBefore() {
-        UserRepresentation user = getUser("tom");
-        user.setAttributes(Map.of());
-        user.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-        testRealm().users().get(user.getId()).update(user);
+        upConfig = updateUserProfileConfiguration();
     }
 
     @Test
@@ -92,6 +104,37 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         assertNull(attributes);
         user = updateProfile();
         assertCustomAttributes(user.getAttributes());
+    }
+
+    @Test
+    public void testUnmanagedAttributeEnabled() {
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        testUpdateProfile();
+    }
+
+    @Test
+    public void testUnmanagedAttributeAdminEdit() {
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        UserRepresentation user = updateProfile();
+        assertNull(user.getAttributes());
+    }
+
+    @Test
+    public void testUnmanagedAttributeDisabled() {
+        for (String name : CUSTOM_ATTRIBUTES.keySet()) {
+            upConfig.removeAttribute(name);
+        }
+        testRealm().users().userProfile().update(upConfig);
+        UserRepresentation user = updateProfile();
+        assertNull(user.getAttributes());
     }
 
     protected UserRepresentation updateProfile() {
@@ -123,5 +166,17 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         loginPage.open();
         loginPage.login("tom@keycloak.org", "password");
         updateProfilePage.assertCurrent();
+    }
+
+    private UPConfig updateUserProfileConfiguration() {
+        UPConfig upCOnfig = testRealm().users().userProfile().getConfiguration();
+        upCOnfig.setUnmanagedAttributePolicy(null);
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("street", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("locality", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("region", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("postal_code", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        upCOnfig.addOrReplaceAttribute(new UPAttribute("country", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
+        testRealm().users().userProfile().update(upCOnfig);
+        return upCOnfig;
     }
 }

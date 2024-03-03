@@ -387,5 +387,36 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>db-aurora-postgres</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>includeProprietaryDependencies</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>software.amazon.jdbc</groupId>
+                                            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                                            <version>${aws-jdbc-wrapper.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

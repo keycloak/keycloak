@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Deploy AWS Aurora in multiple availability zones"
 summary="Building block for a database"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.
@@ -56,7 +54,7 @@ include::partials/aurora/aurora-verify-peering-connections.adoc[]
 Now that an Aurora database has been established and linked with all of your ROSA clusters, the next step is to deploy {project_name} as described in the <@links.ha id="deploy-keycloak-kubernetes" /> {section} with the JDBC url configured to use the Aurora database writer endpoint.
 To do this, create a `{project_name}` CR with the following adjustments:
 
-. Update `spec.db.url` to be `jdbc:postgresql://$HOST:5432/keycloak` where `$HOST` is the
+. Update `spec.db.url` to be `jdbc:aws-wrapper:postgresql://$HOST:5432/keycloak` where `$HOST` is the
 <<aurora-writer-url, Aurora writer endpoint URL>>.
 
 . Ensure that the Secrets referenced by `spec.db.usernameSecret` and `spec.db.passwordSecret` contain usernames and passwords defined when creating Aurora.

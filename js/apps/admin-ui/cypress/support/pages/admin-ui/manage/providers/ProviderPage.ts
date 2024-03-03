@@ -63,9 +63,9 @@ export default class ProviderPage {
   #cachePolicyList = "#kc-cache-policy + ul";
 
   // Mapper input values
-  #userModelAttInput = "user.model.attribute";
+  #userModelAttInput = "config.user🍺model🍺attribute";
   #ldapAttInput = "ldap.attribute";
-  #userModelAttNameInput = "user.model.attribute";
+  #userModelAttNameInput = "config.user🍺model🍺attribute";
   #attValueInput = "attribute.value";
   #ldapFullNameAttInput = "ldap.full.name.attribute";
   #ldapAttNameInput = "ldap.attribute.name";
@@ -317,7 +317,7 @@ export default class ProviderPage {
   }
 
   createNewMapper(mapperType: string) {
-    const userModelAttValue = "firstName";
+    const userModelAttValue = "middleName";
     const ldapAttValue = "cn";
     const ldapDnValue = "ou=groups";
 

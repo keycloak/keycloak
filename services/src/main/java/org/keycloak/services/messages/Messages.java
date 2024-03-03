@@ -109,6 +109,7 @@ public class Messages {
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
+    public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
 
     public static final String EMAIL_SENT = "emailSentMessage";
 

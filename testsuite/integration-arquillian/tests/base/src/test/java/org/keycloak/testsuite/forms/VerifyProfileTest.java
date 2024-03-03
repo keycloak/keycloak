@@ -21,14 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,6 +39,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -50,7 +49,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -79,7 +77,6 @@ import org.openqa.selenium.By;
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     public static final String SCOPE_DEPARTMENT = "department";
@@ -116,10 +113,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     private static ClientRepresentation client_scope_optional;
 
     @Override
+    protected boolean removeVerifyProfileAtImport() {
+        // we need the verify profile action enabled as default
+        return false;
+    }
+
+    @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-
-        enableDynamicUserProfile(testRealm);
-
         UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test").email("login@test.com").enabled(true).password("password").build();
         UserRepresentation user2 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test2").email("login2@test.com").enabled(true).password("password").build();
         UserRepresentation user3 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test3").email("login3@test.com").enabled(true).password("password").lastName("ExistingLast").build();
@@ -129,17 +129,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password("password").firstName("NoMailFirst").lastName("NoMailLast").build();
 
         RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6).user(userWithoutEmail);
-
-        RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
-        action.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
-        action.setEnabled(true);
-        action.setDefaultAction(false);
-        action.setPriority(10);
-
-        List<RequiredActionProviderRepresentation> actions = new ArrayList<>();
-        actions.add(action);
-        testRealm.setRequiredActions(actions);
 
         testRealm.setClientScopes(new ArrayList<>());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build());
@@ -231,45 +220,45 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         verifyProfilePage.assertCurrent();
         String htmlFormId="kc-update-profile-form";
 
-        //assert fields and groups location in form
+        //assert fields and groups location in form, attributes without a group are the last
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(1) > label#header-company")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > label#description-company")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#firstName")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#department")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(1) > label#header-company")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(1) > label#header-contact")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > label#description-company")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#email")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#department")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#lastName")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(1) > label#header-contact")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(6) > div:nth-child(2) > input#username")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#email")
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(7) > div:nth-child(2) > input#firstName")
                 ).isDisplayed()
         );
     }
@@ -404,15 +393,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIgnoreCustomAttributeWhenUserProfileIsDisabled() {
-        try {
-            disableDynamicUserProfile(testRealm());
-            testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
-            testDefaultProfile();
-        } finally {
-            RealmRepresentation realm = testRealm().toRepresentation();
-            enableDynamicUserProfile(realm);
-            testRealm().update(realm);
-        }
+        testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
+        testDefaultProfile();
     }
 
     private static RunOnServer setEmptyFirstNameAndCustomAttribute() {
@@ -1166,7 +1148,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testConfigurationRemainsAfterReset() throws IOException {
+    public void testConfigurationPersisted() throws IOException {
         String customConfig = "{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
@@ -1175,13 +1157,7 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
         UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
 
-        RealmResource realmRes = testRealm();
-        disableDynamicUserProfile(realmRes, false);
-        RealmRepresentation realm = realmRes.toRepresentation();
-        enableDynamicUserProfile(realm);
-        testRealm().update(realm);
-
-        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), realmRes.users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), testRealm().users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
@@ -1211,30 +1187,6 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         return result;
     }
 
-    public static void enableDynamicUserProfile(RealmRepresentation testRealm) {
-        if (testRealm.getAttributes() == null) {
-            testRealm.setAttributes(new HashMap<>());
-        }
-        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-    }
-
-    public static void disableDynamicUserProfile(RealmResource realm) {
-        disableDynamicUserProfile(realm, true);
-    }
-
-    public static void disableDynamicUserProfile(RealmResource realm, boolean reset) {
-        RealmRepresentation realmRep = realm.toRepresentation();
-        if (realmRep.getAttributes() == null) {
-            realmRep.setAttributes(new HashMap<>());
-        }
-        realmRep.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.FALSE.toString());
-        realm.update(realmRep);
-        if (reset) {
-            setUserProfileConfiguration(realm, null);
-        }
-    }
-
-
     public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
         try {
             UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
@@ -1259,6 +1211,13 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         } catch (IOException ioe) {
             throw new RuntimeException("Failed to read configuration", ioe);
         }
+    }
+
+    public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {
+        UPConfig cfg = upResource.getConfiguration();
+        cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        upResource.update(cfg);
+        return cfg;
     }
 
     public static UserRepresentation getUser(RealmResource testRealm, String userId) {

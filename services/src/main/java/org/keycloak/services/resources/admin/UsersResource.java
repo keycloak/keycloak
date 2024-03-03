@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -132,23 +131,6 @@ public class UsersResource {
         String username = rep.getUsername();
         if(realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
-        }
-        if (ObjectUtil.isBlank(username)) {
-            throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
-        }
-
-        // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(realm, username) != null) {
-            throw ErrorResponse.exists("User exists with same username");
-        }
-        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
-            try {
-                if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
-                    throw ErrorResponse.exists("User exists with same email");
-                }
-            } catch (ModelDuplicateException e) {
-                throw ErrorResponse.exists("User exists with same email");
-            }
         }
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);

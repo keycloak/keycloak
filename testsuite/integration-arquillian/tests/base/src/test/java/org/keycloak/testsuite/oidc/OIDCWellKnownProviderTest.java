@@ -41,7 +41,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -142,10 +142,10 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
 
             // Signature algorithms
-            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), "none", Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-            Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), "none", Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-            Assert.assertNames(oidcConfig.getAuthorizationSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
+            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), "none", Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
+            Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), "none", Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
+            Assert.assertNames(oidcConfig.getAuthorizationSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
             // request object encryption algorithms
             Assert.assertNames(oidcConfig.getRequestObjectEncryptionAlgValuesSupported(), JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256, JWEConstants.RSA1_5);
@@ -161,12 +161,12 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
-            Assert.assertNames(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+            Assert.assertNames(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
             // NOTE: Those are overriden in "oidc-well-known-config-override.json" and they are tested in testDefaultProviderCustomizations
             //Assert.assertNames(oidcConfig.getIntrospectionEndpointAuthMethodsSupported(), "private_key_jwt", "client_secret_jwt", "tls_client_auth", "custom_nonexisting_authenticator");
             Assert.assertNames(oidcConfig.getIntrospectionEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
                 Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
-                Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+                Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
             // Claims
             assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME, IDToken.ACR);
@@ -196,7 +196,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getBackchannelAuthenticationUrl());
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.CIBA_GRANT_TYPE);
             Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll", "ping");
-            Assert.assertNames(oidcConfig.getBackchannelAuthenticationRequestSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+            Assert.assertNames(oidcConfig.getBackchannelAuthenticationRequestSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
 
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
@@ -207,7 +207,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
                 "client_secret_post", "private_key_jwt", "client_secret_jwt", "tls_client_auth");
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported(), Algorithm.PS256,
                 Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256,
-                Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+                Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.EdDSA);
 
             assertEquals(oidcConfig.getDeviceAuthorizationEndpoint(), oauth.getDeviceAuthorizationUrl());
 

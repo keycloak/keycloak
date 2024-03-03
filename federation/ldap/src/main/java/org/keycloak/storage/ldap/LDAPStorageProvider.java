@@ -27,10 +27,12 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
@@ -44,7 +46,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.LegacyUserCredentialManager;
+import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -67,7 +69,7 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -204,7 +206,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // We need to avoid having CachedUserModel as cache is upper-layer then LDAP. Hence having CachedUserModel here may cause StackOverflowError
         if (local instanceof CachedUserModel) {
-            LegacyStoreManagers datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
+            StoreManagers datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
             local = datastoreProvider.userStorageManager().getUserById(realm, local.getId());
 
             existing = userManager.getManagedProxiedUser(local.getId());
@@ -365,15 +367,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     /**
-     * It supports 
-     * <ul>
-     *     <li>{@link UserModel#FIRST_NAME}</li>
-     *     <li>{@link UserModel#LAST_NAME}</li>
-     *     <li>{@link UserModel#EMAIL}</li>
-     *     <li>{@link UserModel#USERNAME}</li>
-     * </ul>
-     * 
-     * Other fields are not supported. The search for LDAP REST endpoints is done in the context of fields which are stored in LDAP (above).
+     * LDAP search supports {@link UserModel#SEARCH}, {@link UserModel#EXACT} and
+     * all the other user attributes that are managed by a mapper (method
+     * <em>getUserAttributes</em>).
      */
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
@@ -382,8 +378,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 searchLDAP(realm, search, firstResult, maxResults) :
                 searchLDAPByAttributes(realm, params, firstResult, maxResults);
 
-        return StreamsUtil.paginatedStream(result.filter(filterLocalUsers(realm)), firstResult, maxResults)
-            .map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
+        if (model.isImportEnabled()) {
+            result = result.filter(filterLocalUsers(realm));
+        }
+        return StreamsUtil.paginatedStream(
+                result.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject, false))
+                        .filter(Objects::nonNull),
+                firstResult, maxResults);
     }
 
     @Override
@@ -504,37 +505,62 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     /**
-     * Searches LDAP using logical conjunction of params. It supports 
-     * <ul>
-     *     <li>{@link UserModel#FIRST_NAME}</li>
-     *     <li>{@link UserModel#LAST_NAME}</li>
-     *     <li>{@link UserModel#EMAIL}</li>
-     *     <li>{@link UserModel#USERNAME}</li>
-     * </ul>
-     * 
-     * For zero or any other param it returns all users.
+     * Searches LDAP using logical conjunction of params. It uses the LDAP mappers
+     * (method <em>getUserAttributes</em>) to control what attributes are
+     * managed by the ldap server. If one attribute is not defined by the
+     * mappers then empty stream is returned (the attribute is not mapped
+     * into ldap, therefore no ldap user can have the specified value).
      */
     private Stream<LDAPObject> searchLDAPByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        // get the attributes that are managed by the configured ldap mappers
+        Set<String> managedAttrs = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .map(mapperManager::getMapper)
+                .map(LDAPStorageMapper::getUserAttributes)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
+        final boolean exact = Boolean.parseBoolean(attributes.get(UserModel.EXACT));
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
 
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-            // Mapper should replace parameter with correct LDAP mapped attributes
-            if (attributes.containsKey(UserModel.USERNAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME)));
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                String attrName = entry.getKey();
+                if (LDAPConstants.LDAP_ID.equals(attrName)) {
+                    String uuidLDAPAttributeName = this.ldapIdentityStore.getConfig().getUuidLDAPAttributeName();
+                    Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, entry.getValue());
+                    ldapQuery.addWhereCondition(usernameCondition);
+                } else if (LDAPConstants.LDAP_ENTRY_DN.equals(attrName)) {
+                    ldapQuery.setSearchDn(entry.getValue());
+                    ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
+                } else if (managedAttrs.contains(attrName)) {
+                    // we can search any attribute that is mapped to a user attribute
+                    switch (attrName) {
+                        case UserModel.USERNAME:
+                        case UserModel.EMAIL:
+                        case UserModel.FIRST_NAME:
+                        case UserModel.LAST_NAME:
+                            if (exact) {
+                                ldapQuery.addWhereCondition(conditionsBuilder.equal(attrName, entry.getValue()));
+                            } else {
+                                // doing a *value* search
+                                ldapQuery.addWhereCondition(conditionsBuilder.substring(attrName, null, new String[]{entry.getValue()}, null));
+                            }
+                            break;
+                        default:
+                            // custom attributes are only equals
+                            ldapQuery.addWhereCondition(conditionsBuilder.equal(attrName, entry.getValue()));
+                            break;
+                    }
+                } else if (!attrName.equals(UserModel.EXACT)
+                        && !attrName.equals(UserModel.INCLUDE_SERVICE_ACCOUNT)
+                        && !(UserModel.ENABLED.equals(attrName) && Boolean.parseBoolean(entry.getValue()))) {
+                    // if the attr is not mapped just return empty stream
+                    // skip special names and enabled if looking for true (enabled is not mapped so it's always true)
+                    logger.debugf("Searching in LDAP using unmapped attribute [%s], returning empty stream", attrName);
+                    return Stream.empty();
+                }
             }
-            if (attributes.containsKey(UserModel.EMAIL)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL)));
-            }
-            if (attributes.containsKey(UserModel.FIRST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME)));
-            }
-            if (attributes.containsKey(UserModel.LAST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME)));
-            }
-            // for all other searchable fields: Ignoring is the fallback option, since it may overestimate the results but does not ignore matches.
-            // for empty params: all users are returned (pagination applies)
             return paginatedSearchLDAP(ldapQuery, firstResult, maxResults);
         }
     }
@@ -619,6 +645,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser) {
+        return importUserFromLDAP(session, realm, ldapUser, true);
+    }
+
+    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, boolean duplicates) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
 
@@ -632,6 +662,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // Need to evict the existing user from cache
                 if (UserStorageUtil.userCache(session) != null) {
                     UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
+                }
+                if (!duplicates) {
+                    // if duplicates are not wanted return null
+                    return null;
                 }
             } else {
                 imported = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, ldapUsername);
@@ -662,7 +696,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if(getLdapIdentityStore().getConfig().isTrustEmail()){
             imported.setEmailVerified(true);
         }
-        if (kerberosConfig.getKerberosPrincipalAttribute() != null) {
+        if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.getKerberosPrincipalAttribute() != null) {
             String kerberosPrincipal = ldapUser.getAttributeAsString(kerberosConfig.getKerberosPrincipalAttribute());
             if (kerberosPrincipal == null) {
                 logger.warnf("Kerberos principal attribute not found on LDAP user [%s]. Configured kerberos principal attribute name is [%s]", ldapUser.getDn(), kerberosConfig.getKerberosPrincipalAttribute());
@@ -827,7 +861,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((LegacyUserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((UserCredentialManager) user.credentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
             return validPassword(realm, user, input.getChallengeResponse());
         } else {
             return false; // invalid cred type

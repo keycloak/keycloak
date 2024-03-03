@@ -28,7 +28,6 @@ import {
   convertAttributeNameToForm,
   convertToFormValues,
 } from "../util";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import {
   UnmanagedAttributePolicy,
   UserProfileConfig,
@@ -57,7 +56,6 @@ export const RealmSettingsGeneralTab = ({
     setValue,
     formState: { isDirty, errors },
   } = form;
-  const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
 
   const requireSslTypes = ["all", "external", "none"];
@@ -72,7 +70,6 @@ export const RealmSettingsGeneralTab = ({
   ];
   const [isUnmanagedAttributeOpen, setIsUnmanagedAttributeOpen] =
     useState(false);
-  const [isUserProfileEnabled, setUserProfileEnabled] = useState(false);
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -86,7 +83,6 @@ export const RealmSettingsGeneralTab = ({
         result,
       );
     }
-    setUserProfileEnabled(realm.attributes?.["userProfileEnabled"] === "true");
   };
 
   useFetch(
@@ -125,10 +121,6 @@ export const RealmSettingsGeneralTab = ({
             control={control}
             rules={{
               required: { value: true, message: t("required") },
-              pattern: {
-                value: /^[a-zA-Z0-9-_]+$/,
-                message: t("invalidRealmName"),
-              },
             }}
             defaultValue=""
             render={({ field }) => (
@@ -218,6 +210,7 @@ export const RealmSettingsGeneralTab = ({
         >
           <FormProvider {...form}>
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormProvider>
@@ -250,79 +243,41 @@ export const RealmSettingsGeneralTab = ({
             )}
           />
         </FormGroup>
-        {isFeatureEnabled(Feature.DeclarativeUserProfile) && (
-          <FormGroup
-            hasNoPaddingTop
-            label={t("userProfileEnabled")}
-            labelIcon={
-              <HelpItem
-                helpText={t("userProfileEnabledHelp")}
-                fieldLabelId="userProfileEnabled"
-              />
-            }
-            fieldId="kc-user-profile-enabled"
-          >
-            <Controller
-              name={
-                convertAttributeNameToForm(
-                  "attributes.userProfileEnabled",
-                ) as any
-              }
-              control={control}
-              defaultValue="false"
-              render={({ field }) => (
-                <Switch
-                  id="kc-user-profile-enabled"
-                  data-testid="user-profile-enabled-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => {
-                    field.onChange(value.toString());
-                    setUserProfileEnabled(value);
-                  }}
-                  aria-label={t("userProfileEnabled")}
-                />
-              )}
+        <FormGroup
+          label={t("unmanagedAttributes")}
+          fieldId="kc-user-profile-unmanaged-attribute-policy"
+          labelIcon={
+            <HelpItem
+              helpText={t("unmanagedAttributesHelpText")}
+              fieldLabelId="unmanagedAttributes"
             />
-          </FormGroup>
-        )}
-        {isUserProfileEnabled && (
-          <FormGroup
-            label={t("unmanagedAttributes")}
-            fieldId="kc-user-profile-unmanaged-attribute-policy"
-            labelIcon={
-              <HelpItem
-                helpText={t("unmanagedAttributesHelpText")}
-                fieldLabelId="unmanagedAttributes"
-              />
+          }
+        >
+          <Select
+            toggleId="kc-user-profile-unmanaged-attribute-policy"
+            onToggle={() =>
+              setIsUnmanagedAttributeOpen(!isUnmanagedAttributeOpen)
             }
-          >
-            <Select
-              toggleId="kc-user-profile-unmanaged-attribute-policy"
-              onToggle={() =>
-                setIsUnmanagedAttributeOpen(!isUnmanagedAttributeOpen)
+            onSelect={(_, value) => {
+              if (userProfileConfig) {
+                userProfileConfig.unmanagedAttributePolicy =
+                  value as UnmanagedAttributePolicy;
+                setUserProfileConfig(userProfileConfig);
               }
-              onSelect={(_, value) => {
-                if (userProfileConfig) {
-                  userProfileConfig.unmanagedAttributePolicy =
-                    value as UnmanagedAttributePolicy;
-                  setUserProfileConfig(userProfileConfig);
-                }
-                setIsUnmanagedAttributeOpen(false);
-              }}
-              selections={userProfileConfig?.unmanagedAttributePolicy}
-              variant={SelectVariant.single}
-              isOpen={isUnmanagedAttributeOpen}
-            >
-              {unmanagedAttributePolicies.map((policy) => (
-                <SelectOption key={policy} value={policy}>
-                  {t(`unmanagedAttributePolicy.${policy}`)}
-                </SelectOption>
-              ))}
-            </Select>
-          </FormGroup>
-        )}
+              setIsUnmanagedAttributeOpen(false);
+            }}
+            selections={userProfileConfig?.unmanagedAttributePolicy}
+            variant={SelectVariant.single}
+            isOpen={isUnmanagedAttributeOpen}
+            aria-label={t("selectUnmanagedAttributePolicy")}
+          >
+            {unmanagedAttributePolicies.map((policy) => (
+              <SelectOption key={policy} value={policy}>
+                {t(`unmanagedAttributePolicy.${policy}`)}
+              </SelectOption>
+            ))}
+          </Select>
+        </FormGroup>
         <FormGroup
           label={t("endpoints")}
           labelIcon={

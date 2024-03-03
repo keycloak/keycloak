@@ -28,28 +28,28 @@ public class FeaturePropertyMappersTest {
 
     @Test
     public void testInvalidFeatureFormat() {
-        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeatures("invalid:"));
+        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeature("invalid:"));
     }
 
     @Test
     public void testInvalidFeature() {
-        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeatures("invalid"));
+        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeature("invalid"));
     }
 
     @Test
     public void testInvalidVersionedFeature() {
-        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeatures("invalid:v1"));
+        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeature("invalid:v1"));
     }
 
     @Test
     public void testInvalidFeatureVersion() {
-        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeatures(Feature.DOCKER.getUnversionedKey() + ":v0"));
+        assertThrows(PropertyException.class, () -> FeaturePropertyMappers.validateEnabledFeature(Feature.DOCKER.getUnversionedKey() + ":v0"));
     }
 
     @Test
     public void testValidFeatures() {
-        FeaturePropertyMappers.validateEnabledFeatures(
-                Feature.DOCKER.getUnversionedKey() + "," + "preview" + "," + Feature.ACCOUNT2.getVersionedKey());
+        FeaturePropertyMappers.validateEnabledFeature("preview");
+        FeaturePropertyMappers.validateEnabledFeature(Feature.ACCOUNT2.getVersionedKey());
     }
 
 }

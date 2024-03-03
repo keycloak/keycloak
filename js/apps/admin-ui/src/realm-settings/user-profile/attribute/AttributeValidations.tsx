@@ -131,7 +131,7 @@ export const AttributeValidations = () => {
             </Tbody>
           </TableComposable>
         ) : (
-          <Text className="kc-emptyValidators" component={TextVariants.h6}>
+          <Text className="kc-emptyValidators" component={TextVariants.p}>
             {t("emptyValidators")}
           </Text>
         )}

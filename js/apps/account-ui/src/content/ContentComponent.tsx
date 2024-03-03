@@ -1,43 +1,45 @@
 import { Spinner } from "@patternfly/react-core";
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { environment } from "../environment";
+import { useEnvironment } from "../root/KeycloakContext";
+import { MenuItem } from "../root/PageNav";
+import { ContentComponentParams } from "../routes";
 import { joinPath } from "../utils/joinPath";
 import { usePromise } from "../utils/usePromise";
-import { fetchContentJson } from "./ContentRenderer";
-import { ContentItem, ModulePageDef, isExpansion } from "./content";
-import { ContentComponentParams } from "../routes";
+import fetchContentJson from "./fetchContent";
 
 function findComponent(
-  content: ContentItem[],
+  content: MenuItem[],
   componentId: string,
 ): string | undefined {
   for (const item of content) {
-    if ("path" in item && item.path === componentId) {
-      return (item as ModulePageDef).modulePath;
+    if (
+      "path" in item &&
+      item.path.endsWith(componentId) &&
+      "modulePath" in item
+    ) {
+      return item.modulePath;
     }
-    if (isExpansion(item)) {
-      return findComponent(item.content, componentId);
+    if ("children" in item) {
+      return findComponent(item.children, componentId);
     }
   }
   return undefined;
 }
 
-const ContentComponent = () => {
-  const [content, setContent] = useState<ContentItem[]>();
+export const ContentComponent = () => {
+  const context = useEnvironment();
+
+  const [content, setContent] = useState<MenuItem[]>();
   const { componentId } = useParams<ContentComponentParams>();
 
-  usePromise((signal) => fetchContentJson({ signal }), setContent);
+  usePromise((signal) => fetchContentJson({ signal, context }), setContent);
   const modulePath = useMemo(
     () => findComponent(content || [], componentId!),
     [content, componentId],
   );
 
-  return (
-    <Suspense fallback={<Spinner />}>
-      {modulePath && <Component modulePath={modulePath} />}
-    </Suspense>
-  );
+  return modulePath && <Component modulePath={modulePath} />;
 };
 
 type ComponentProps = {
@@ -45,10 +47,16 @@ type ComponentProps = {
 };
 
 const Component = ({ modulePath }: ComponentProps) => {
+  const { environment } = useEnvironment();
+
   const Element = lazy(
     () => import(joinPath(environment.resourceUrl, modulePath)),
   );
-  return <Element />;
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Element />
+    </Suspense>
+  );
 };
 
 export default ContentComponent;

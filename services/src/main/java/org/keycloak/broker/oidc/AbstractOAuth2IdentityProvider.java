@@ -19,6 +19,8 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -42,6 +44,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -78,8 +82,11 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -405,7 +412,24 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
 
         if (getConfig().isJWTAuthentication()) {
-            String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
+            String sha1x509Thumbprint = null;
+            SignatureSignerContext signer = getSignatureContext();
+            if (getConfig().isJwtX509HeadersEnabled()) {
+                KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), signer.getKid(), KeyUse.SIG, signer.getAlgorithm());
+                if (key != null
+                        && key.getStatus().isEnabled()
+                        && key.getPublicKey() != null
+                        && key.getUse().equals(KeyUse.SIG)
+                        && key.getType().equals(KeyType.RSA)) {
+                    JWKBuilder builder = JWKBuilder.create().kid(key.getKid()).algorithm(key.getAlgorithmOrDefault());
+                    List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
+                            .filter(certs -> !certs.isEmpty())
+                            .orElseGet(() -> Collections.singletonList(key.getCertificate()));
+                    RSAPublicJWK jwk = (RSAPublicJWK) builder.rsa(key.getPublicKey(), certificates, key.getUse());
+                    sha1x509Thumbprint = jwk.getSha1x509Thumbprint();
+                }
+            }
+            String jws = new JWSBuilder().type(OAuth2Constants.JWT).x5t(sha1x509Thumbprint).jsonContent(generateToken()).sign(signer);
             return tokenRequest
                     .param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
                     .param(OAuth2Constants.CLIENT_ASSERTION, jws)

@@ -57,7 +57,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
+public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
@@ -260,6 +260,16 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     @Override
     public void setPermanentLockout(final boolean val) {
         setAttribute("permanentLockout", val);
+    }
+
+    @Override
+    public int getMaxTemporaryLockouts() {
+        return getAttribute("maxTemporaryLockouts", 0);
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        setAttribute("maxTemporaryLockouts", val);
     }
 
     @Override
@@ -589,6 +599,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         getAttributes().entrySet().stream()
                 .filter(Objects::nonNull)
                 .filter(entry -> nonNull(entry.getValue()))
+                .filter(entry -> !entry.getValue().isEmpty())
                 .filter(entry -> entry.getKey().startsWith(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "."))
                 .forEach(entry -> userActionTokens.put(entry.getKey().substring(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN.length() + 1), Integer.valueOf(entry.getValue())));
 
@@ -1555,6 +1566,18 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     @Override
     public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
         realm.setDockerAuthenticationFlow(flow.getId());
+    }
+
+    @Override
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        String flowId = getAttribute(RealmAttributes.FIRST_BROKER_LOGIN_FLOW_ID);
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+        setAttribute(RealmAttributes.FIRST_BROKER_LOGIN_FLOW_ID, flow.getId());
     }
 
     @Override

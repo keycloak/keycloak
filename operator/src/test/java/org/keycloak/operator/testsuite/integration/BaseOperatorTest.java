@@ -18,13 +18,13 @@
 package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
-import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -51,6 +51,7 @@ import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger.Level;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,9 +60,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecFluent.PodTemplateNested;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.opentest4j.TestAbortedException;
@@ -71,13 +70,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.Instance;
@@ -312,11 +316,12 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               return;
           }
           Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());
+          logEvents();
           savePodLogs();
           // provide some helpful entries in the main log as well
           logFailedKeycloaks();
           if (operatorDeployment == OperatorDeployment.remote) {
-              logFailed(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus);
+              log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }
           logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
           k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems().stream()
@@ -326,19 +331,38 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       }
   }
 
-  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void log(R resource, Function<T, Object> statusExtractor, boolean failedOnly) {
       var instance = resource.get();
-      if (resource.isReady()) {
-          return;
+      if (failedOnly) {
+          if (resource.isReady()) {
+              return;
+          }
+          Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
+      } else {
+          Log.infof("%s is ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
       }
-      Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
       try {
           String log = resource.getLog();
           log = log.substring(Math.max(0, log.length() - 5000));
-          Log.warnf("%s not ready log: %s", instance.getMetadata().getName(), log);
+          Log.warnf("%s log: %s", instance.getMetadata().getName(), log);
       } catch (KubernetesClientException e) {
           Log.warnf("No %s log: %s", instance.getMetadata().getName(), e.getMessage());
+          if (instance instanceof Pod) {
+              try {
+                  String previous = k8sclient.raw(String.format("/api/v1/namespaces/%s/pods/%s/log?previous=true", namespace, instance.getMetadata().getName()));
+                  Log.warnf("%s previous log: %s", instance.getMetadata().getName(), previous);
+              } catch (KubernetesClientException pe) {
+                  // not available
+                  if (pe.getCode() != HttpURLConnection.HTTP_BAD_REQUEST) {
+                      Log.infof("Could not obtain previous log for %s: %s", instance.getMetadata().getName(), e.getMessage());
+                  }
+              }
+          }
       }
+  }
+
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+      log(resource, statusExtractor, true);
   }
 
   private void logFailedKeycloaks() {
@@ -353,6 +377,30 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
                               .getItems().stream().forEach(pod -> logFailed(k8sclient.pods().resource(pod), Pod::getStatus));
                   }
               });
+  }
+
+  private void logEvents() {
+      List<Event> recentEventList = k8sclient.resources(Event.class).list().getItems();
+
+      var grouped = recentEventList.stream()
+              .sorted(Comparator.comparing(BaseOperatorTest::getTime, Comparator.nullsFirst(Comparator.reverseOrder())))
+              .collect(
+                      Collectors.groupingBy(
+                              event -> java.util.Arrays.asList(event.getType(), event.getReason(),
+                                      event.getMetadata().getName(), event.getNote()),
+                              LinkedHashMap::new, Collectors.toList()))
+              .entrySet().iterator();
+
+      for (int i = 0; i < 50 && grouped.hasNext(); i++) {
+          var entry = grouped.next();
+          Log.logf("Normal".equals(entry.getValue().get(0).getType()) ? Level.INFO : Level.WARN,
+                  "Event last seen %s repeated %s times - %s", getTime(entry.getValue().get(0)),
+                  entry.getValue().size(), entry.getKey().stream().collect(Collectors.joining(" ")));
+      }
+  }
+
+  private static String getTime(Event event) {
+      return Optional.ofNullable(event.getEventTime()).map(MicroTime::getTime).orElse(event.getDeprecatedLastTimestamp());
   }
 
   @AfterAll
@@ -405,12 +453,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static Keycloak disableProbes(Keycloak keycloak) {
       KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());
       var podTemplateSpecBuilder = specBuilder.editOrNewUnsupported().editOrNewPodTemplate().editOrNewSpec();
-      ContainersNested<SpecNested<PodTemplateNested<UnsupportedNested<KeycloakSpecBuilder>>>> containerBuilder = null;
-      if (podTemplateSpecBuilder.hasContainers()) {
-          containerBuilder = podTemplateSpecBuilder.editContainer(0);
-      } else {
-          containerBuilder = podTemplateSpecBuilder.addNewContainer();
-      }
+      var containerBuilder = podTemplateSpecBuilder.hasContainers() ? podTemplateSpecBuilder.editContainer(0)
+              : podTemplateSpecBuilder.addNewContainer();
       keycloak.setSpec(containerBuilder.withNewLivenessProbe().withNewExec().addToCommand("true").endExec()
               .endLivenessProbe().withNewReadinessProbe().withNewExec().addToCommand("true").endExec()
               .endReadinessProbe().withNewStartupProbe().withNewExec().addToCommand("true").endExec()

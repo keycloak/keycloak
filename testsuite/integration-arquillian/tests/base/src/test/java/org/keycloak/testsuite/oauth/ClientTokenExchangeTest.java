@@ -95,9 +95,9 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void checkFeatureDisabled() {
-        // Required feature should return Status code 501 - Feature doesn't work
+        // Required feature should return Status code 400 - Feature doesn't work
         testingClient.server().run(ClientTokenExchangeTest::addDirectExchanger);
-        Assert.assertEquals(501, checkTokenExchange().getStatus());
+        Assert.assertEquals(400, checkTokenExchange().getStatus());
         testingClient.server().run(ClientTokenExchangeTest::removeDirectExchanger);
     }
 
@@ -1008,6 +1008,13 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         response = oauth.doTokenExchange(TEST, accessToken, null, "client-exchanger", "secret");
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertEquals("Client is not within the token audience", response.getErrorDescription());
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    @UncaughtServerErrorExpected
+    public void testExchangeWithDynamicScopesEnabled() throws Exception {
+        testExchange();
     }
 
     private static void addDirectExchanger(KeycloakSession session) {

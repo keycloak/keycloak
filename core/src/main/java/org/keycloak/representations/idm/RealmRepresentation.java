@@ -91,6 +91,7 @@ public class RealmRepresentation {
     //--- brute force settings
     protected Boolean bruteForceProtected;
     protected Boolean permanentLockout;
+    protected Integer maxTemporaryLockouts;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -205,6 +206,7 @@ public class RealmRepresentation {
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
     protected String dockerAuthenticationFlow;
+    protected String firstBrokerLoginFlow;
 
     protected Map<String, String> attributes;
 
@@ -764,6 +766,14 @@ public class RealmRepresentation {
         this.permanentLockout = permanentLockout;
     }
 
+    public Integer getMaxTemporaryLockouts() {
+        return maxTemporaryLockouts;
+    }
+
+    public void setMaxTemporaryLockouts(Integer maxTemporaryLockouts) {
+        this.maxTemporaryLockouts = maxTemporaryLockouts;
+    }
+
     public Integer getMaxFailureWaitSeconds() {
         return maxFailureWaitSeconds;
     }
@@ -1316,6 +1326,15 @@ public class RealmRepresentation {
 
     public RealmRepresentation setDockerAuthenticationFlow(final String dockerAuthenticationFlow) {
         this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
+    }
+
+    public String getFirstBrokerLoginFlow() {
+        return firstBrokerLoginFlow;
+    }
+
+    public RealmRepresentation setFirstBrokerLoginFlow(String firstBrokerLoginFlow) {
+        this.firstBrokerLoginFlow = firstBrokerLoginFlow;
         return this;
     }
 

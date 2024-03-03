@@ -1,15 +1,21 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.Attributes;
@@ -22,6 +28,22 @@ import org.keycloak.userprofile.UserProfileProvider;
  * @author Vlastimil Elias <velias@redhat.com>
  */
 public abstract class AbstractUserProfileBean {
+
+
+    private static final Comparator<Attribute> ATTRIBUTE_COMPARATOR = (a1, a2) -> {
+        AttributeGroup g1 = a1.getGroup();
+        AttributeGroup g2 = a2.getGroup();
+
+        if (g1 == null && g2 == null) {
+            return a1.compareTo(a2);
+        }
+
+        if (g1 != null && g1.equals(g2)) {
+            return a1.compareTo(a2);
+        }
+
+        return Comparator.nullsLast(AttributeGroup::compareTo).compare(g1, g2);
+    };
 
     protected final MultivaluedMap<String, String> formData;
     protected UserProfile profile;
@@ -77,6 +99,13 @@ public abstract class AbstractUserProfileBean {
     public List<Attribute> getAttributes() {
         return attributes;
     }
+
+    public Map<String, Object> getHtml5DataAnnotations() {
+        return getAttributes().stream().map(Attribute::getHtml5DataAnnotations)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (l, r) -> l));
+    }
     
     /**
      * Get map of all attributes where attribute name is key. Useful to render crafted form.
@@ -96,7 +125,7 @@ public abstract class AbstractUserProfileBean {
                 .filter((am) -> writeableOnly ? !profileAttributes.isReadOnly(am.getName()) : true)
                 .filter((am) -> !profileAttributes.getUnmanagedAttributes().containsKey(am.getName()))
                 .map(Attribute::new)
-                .sorted()
+                .sorted(ATTRIBUTE_COMPARATOR)
                 .collect(Collectors.toList());
     }
 
@@ -117,6 +146,10 @@ public abstract class AbstractUserProfileBean {
 
         public String getDisplayName() {
             return metadata.getAttributeDisplayName();
+        }
+
+        public boolean isMultivalued() {
+            return metadata.isMultivalued();
         }
 
         public String getValue() {
@@ -167,6 +200,19 @@ public abstract class AbstractUserProfileBean {
 
             return annotations;
         }
+
+        public Map<String, Object> getHtml5DataAnnotations() {
+            Map<String, Object> groupAnnotations = Optional.ofNullable(getGroup()).map(AttributeGroup::getAnnotations).orElse(Map.of());
+            Map<String, Object> annotations = Stream.concat(getAnnotations().entrySet().stream(), groupAnnotations.entrySet().stream())
+                    .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
+            if (isMultivalued()) {
+                annotations = new HashMap<>(annotations);
+                annotations.put("kcMultivalued", "");
+            }
+
+            return annotations;
+        }
       
         /**
          * Get info about validators applied to attribute.  
@@ -181,39 +227,72 @@ public abstract class AbstractUserProfileBean {
             return metadata.getValidators().stream().collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
         }
 
-        public String getGroup() {
-            if (metadata.getAttributeGroupMetadata() != null) {
-                return metadata.getAttributeGroupMetadata().getName();
+        public AttributeGroup getGroup() {
+            AttributeGroupMetadata groupMetadata = metadata.getAttributeGroupMetadata();
+
+            if (groupMetadata != null) {
+                return new AttributeGroup(groupMetadata);
             }
+
             return null;
-        }
-
-        public String getGroupDisplayHeader() {
-            if (metadata.getAttributeGroupMetadata() != null) {
-                return metadata.getAttributeGroupMetadata().getDisplayHeader();
-            }
-            return null;
-        }
-
-        public String getGroupDisplayDescription() {
-            if (metadata.getAttributeGroupMetadata() != null) {
-                return metadata.getAttributeGroupMetadata().getDisplayDescription();
-            }
-            return null;
-        }
-
-        public Map<String, Object> getGroupAnnotations() {
-
-            if ((metadata.getAttributeGroupMetadata() == null) || (metadata.getAttributeGroupMetadata().getAnnotations() == null)) {
-                return Collections.emptyMap();
-            }
-            
-            return metadata.getAttributeGroupMetadata().getAnnotations();
         }
 
         @Override
         public int compareTo(Attribute o) {
             return Integer.compare(metadata.getGuiOrder(), o.metadata.getGuiOrder());
+        }
+    }
+
+    public class AttributeGroup implements Comparable<AttributeGroup> {
+
+        private AttributeGroupMetadata metadata;
+
+        AttributeGroup(AttributeGroupMetadata metadata) {
+            this.metadata = metadata;
+        }
+
+        public String getName() {
+            return metadata.getName();
+        }
+
+        public String getDisplayHeader() {
+            return Optional.ofNullable(metadata.getDisplayHeader()).orElse(getName());
+        }
+
+        public String getDisplayDescription() {
+            return metadata.getDisplayDescription();
+        }
+
+        public Map<String, Object> getAnnotations() {
+            return Optional.ofNullable(metadata.getAnnotations()).orElse(Map.of());
+        }
+
+        public Map<String, Object> getHtml5DataAnnotations() {
+            return getAnnotations().entrySet().stream()
+                    .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AttributeGroup that = (AttributeGroup) o;
+            return Objects.equals(metadata.getName(), that.metadata.getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(metadata);
+        }
+
+        @Override
+        public String toString() {
+            return metadata.getName();
+        }
+
+        @Override
+        public int compareTo(AttributeGroup o) {
+            return getDisplayHeader().compareTo(o.getDisplayHeader());
         }
     }
 }

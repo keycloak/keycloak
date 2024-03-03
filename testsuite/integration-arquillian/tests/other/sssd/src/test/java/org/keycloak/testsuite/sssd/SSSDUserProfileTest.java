@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -43,8 +42,6 @@ import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -56,13 +53,11 @@ import org.keycloak.userprofile.config.UPConfigUtils;
  * @author rmartinc
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         // enable user profile and add sssd provider in the realm
-        VerifyProfileTest.enableDynamicUserProfile(testRealm);
         ComponentExportRepresentation sssdComp = new ComponentExportRepresentation();
         sssdComp.setName(PROVIDER_NAME);
         sssdComp.setProviderId(PROVIDER_NAME);
@@ -109,10 +104,10 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         Assert.assertEquals(getFirstName(username), updateProfilePage.getFirstName());
         Assert.assertEquals(getLastName(username), updateProfilePage.getLastName());
         Assert.assertEquals(getEmail(username), updateProfilePage.getEmail());
-        Assert.assertFalse(updateProfilePage.getFieldById(UserModel.FIRST_NAME).isEnabled());
-        Assert.assertFalse(updateProfilePage.getFieldById(UserModel.LAST_NAME).isEnabled());
-        Assert.assertFalse(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
-        Assert.assertFalse(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
+        Assert.assertFalse(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
+        Assert.assertFalse(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
+        Assert.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+        Assert.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
         updateProfilePage.prepareUpdate().submit();
 
         // check events
@@ -153,10 +148,10 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         Assert.assertEquals("Tom", updateProfilePage.getFirstName());
         Assert.assertEquals("Brady", updateProfilePage.getLastName());
         Assert.assertEquals("test-user@localhost", updateProfilePage.getEmail());
-        Assert.assertTrue(updateProfilePage.getFieldById(UserModel.FIRST_NAME).isEnabled());
-        Assert.assertTrue(updateProfilePage.getFieldById(UserModel.LAST_NAME).isEnabled());
-        Assert.assertTrue(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
-        Assert.assertTrue(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
+        Assert.assertTrue(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
+        Assert.assertTrue(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
+        Assert.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+        Assert.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
         updateProfilePage.prepareUpdate().submit();
 
         // check events
@@ -201,11 +196,11 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
             Assert.assertEquals(getEmail(username), updateProfilePage.getEmail());
-            Assert.assertNull(updateProfilePage.getFieldById(UserModel.FIRST_NAME));
-            Assert.assertNull(updateProfilePage.getFieldById(UserModel.LAST_NAME));
-            Assert.assertFalse(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
-            Assert.assertFalse(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
+            Assert.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
+            Assert.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
+            Assert.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+            Assert.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
             updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
@@ -253,11 +248,11 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
             Assert.assertEquals("test-user@localhost", updateProfilePage.getEmail());
-            Assert.assertNull(updateProfilePage.getFieldById(UserModel.FIRST_NAME));
-            Assert.assertNull(updateProfilePage.getFieldById(UserModel.LAST_NAME));
-            Assert.assertTrue(updateProfilePage.getFieldById(UserModel.EMAIL).isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById(UserModel.USERNAME).isEnabled());
-            Assert.assertTrue(updateProfilePage.getFieldById("postal_code").isEnabled());
+            Assert.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
+            Assert.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
+            Assert.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+            Assert.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
             updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();

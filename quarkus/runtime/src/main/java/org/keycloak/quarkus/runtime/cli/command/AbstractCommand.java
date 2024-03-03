@@ -65,7 +65,7 @@ public abstract class AbstractCommand {
     }
 
     protected void validateConfig() {
-        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
+        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this);
     }
 
     public abstract String getName();

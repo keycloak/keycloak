@@ -679,6 +679,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public int getMaxTemporaryLockouts() {
+            return 0;
+        }
+
+        @Override
+        public void setMaxTemporaryLockouts(int val) {
+
+        }
+
+        @Override
         public int getMaxFailureWaitSeconds() {
             return 0;
         }
@@ -1231,6 +1241,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
+
+        }
+
+        @Override
+        public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+            return null;
+        }
+
+        @Override
+        public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
 
         }
 

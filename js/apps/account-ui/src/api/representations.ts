@@ -81,6 +81,7 @@ export interface UserProfileAttributeMetadata {
   readOnly: boolean;
   annotations?: { [index: string]: any };
   validators: { [index: string]: { [index: string]: any } };
+  multivalued: boolean;
 }
 
 export interface UserProfileMetadata {

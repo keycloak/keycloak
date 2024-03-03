@@ -16,17 +16,18 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ExplainedVerificationException;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
 import org.keycloak.common.VerificationException;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -34,7 +35,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -113,37 +116,10 @@ public class LoginActionsServiceChecks {
     }
 
     /**
-     * Verifies that the authentication session has not yet been converted to user session, in other words
-     * that the user has not yet completed authentication and logged in.
-     */
-    public static <T extends JsonWebToken> void checkNotLoggedInYet(ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionId) throws VerificationException {
-        if (authSessionId == null) {
-            return;
-        }
-
-        UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
-        boolean hasNoRequiredActions =
-          (userSession == null || userSession.getUser().getRequiredActionsStream().count() == 0)
-          &&
-          (authSessionFromCookie == null || authSessionFromCookie.getRequiredActions() == null || authSessionFromCookie.getRequiredActions().isEmpty());
-
-        if (userSession != null && hasNoRequiredActions) {
-            LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class).setAuthenticationSession(context.getAuthenticationSession())
-              .setSuccess(Messages.ALREADY_LOGGED_IN);
-
-            if (context.getSession().getContext().getClient() == null) {
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
-
-            throw new LoginActionsServiceException(loginForm.createInfoPage());
-        }
-    }
-
-    /**
      *  Verifies whether the user given by ID both exists in the current realm. If yes,
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
-    public static void checkIsUserValid(KeycloakSession session, RealmModel realm, String userId, Consumer<UserModel> userSetter) throws VerificationException {
+    public static void checkIsUserValid(KeycloakSession session, RealmModel realm, String userId, Consumer<UserModel> userSetter, EventBuilder event) throws VerificationException {
         UserModel user = userId == null ? null : session.users().getUserById(realm, userId);
 
         if (user == null) {
@@ -152,6 +128,21 @@ public class LoginActionsServiceChecks {
 
         if (! user.isEnabled()) {
             throw new ExplainedVerificationException(Errors.USER_DISABLED, Messages.ACCOUNT_DISABLED);
+        }
+
+        AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, true);
+
+        if (authResult != null) {
+            UserSessionModel userSession = authResult.getSession();
+            if (!user.equals(userSession.getUser())) {
+                // do not allow authenticated users performing actions that are bound to other user and fire an event
+                // it might be an attempt to hijack a user account or perform actions on behalf of others
+                // we don't support yet multiple accounts within a same browser session
+                event.detail(Details.EXISTING_USER, userSession.getUser().getId());
+                event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
+                AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+            }
         }
 
         if (userSetter != null) {
@@ -163,9 +154,9 @@ public class LoginActionsServiceChecks {
      *  Verifies whether the user given by ID both exists in the current realm. If yes,
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
-    public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkIsUserValid(T token, ActionTokenContext<T> context) throws VerificationException {
+    public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkIsUserValid(T token, ActionTokenContext<T> context, EventBuilder event) throws VerificationException {
         try {
-            checkIsUserValid(context.getSession(), context.getRealm(), token.getUserId(), context.getAuthenticationSession()::setAuthenticatedUser);
+            checkIsUserValid(context.getSession(), context.getRealm(), token.getUserId(), context.getAuthenticationSession()::setAuthenticatedUser, event);
         } catch (ExplainedVerificationException ex) {
             throw new ExplainedTokenVerificationException(token, ex);
         }

@@ -36,6 +36,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -150,16 +155,26 @@ public class AccountLoader {
         }
     }
 
-
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
-                .setAudience(client.getClientId())
                 .authenticate();
-
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer token required");
         }
-        Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
+
+        AccessToken accessToken = authResult.getToken();
+        if (accessToken.getAudience() == null || accessToken.getResourceAccess(client.getClientId()) == null) {
+            // transform for introspection to get the required claims
+            AccessTokenIntrospectionProvider provider = (AccessTokenIntrospectionProvider) session.getProvider(TokenIntrospectionProvider.class,
+                    AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
+            accessToken = provider.transformAccessToken(accessToken);
+        }
+
+        if (!accessToken.hasAudience(client.getClientId())) {
+            throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
+        }
+
+        Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.getUser(), client, authResult.getSession(), false);
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
 

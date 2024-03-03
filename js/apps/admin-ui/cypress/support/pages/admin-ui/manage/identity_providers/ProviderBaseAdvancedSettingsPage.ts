@@ -4,6 +4,7 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export enum LoginFlowOption {
+  empty = "",
   none = "None",
   browser = "browser",
   directGrant = "direct grant",
@@ -68,7 +69,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #doNotStoreUsers = "#doNotStoreUsers";
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
-  #firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
+  #firstLoginFlowSelect = "#firstBrokerLoginFlowAliasOverride";
   #postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   #syncModeSelect = "#syncMode";
   #essentialClaimSwitch = "#filteredByClaim";
@@ -86,6 +87,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
   #clientAssertionAudienceInput = "#clientAssertionAudience";
+  #jwtX509HeadersSwitch = "#jwtX509HeadersEnabled";
 
   public clickSaveBtn() {
     cy.findByTestId(this.#saveBtn).click();
@@ -408,6 +410,39 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     return this;
   }
 
+  public assertOIDCJWTX509HeadersSwitch() {
+    cy.findByTestId("jump-link-openid-connect-settings").click();
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.post)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.basicAuth)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.jwt)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.jwtPrivKey)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("exist");
+
+    super.assertSwitchStateOff(cy.get(this.#jwtX509HeadersSwitch));
+    cy.get(this.#jwtX509HeadersSwitch).parent().click();
+    super.assertSwitchStateOn(cy.get(this.#jwtX509HeadersSwitch));
+    return this;
+  }
+
   public assertOIDCSettingsAdvancedSwitches() {
     cy.get(this.#advancedSettingsToggle).scrollIntoView().click();
 
@@ -462,9 +497,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertAccountLinkingOnlySwitchTurnedOn(false);
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
-    this.assertFirstLoginFlowSelectOptionEqual(
-      LoginFlowOption.firstBrokerLogin,
-    );
+    this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
     this.assertClientAssertSigAlgSelectOptionEqual(

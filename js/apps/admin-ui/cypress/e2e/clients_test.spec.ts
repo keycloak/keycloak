@@ -275,34 +275,34 @@ describe("Clients test", () => {
         .should("have.length.gt", 0);
     });
 
-    it("check generated access token when user is not selected", () => {
+    it("check generated id token and user info", () => {
       commonPage.tableToolbarUtils().searchItem(clientName);
       commonPage.tableUtils().clickRowItemLink(clientName);
 
       clientDetailsPage.goToClientScopesEvaluateTab();
-      clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
-
       cy.get("div#generatedAccessToken").contains("No generated access token");
-    });
 
-    it("check generated id token when user is not selected", () => {
-      commonPage.tableToolbarUtils().searchItem(clientName);
-      commonPage.tableUtils().clickRowItemLink(clientName);
-
-      clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
-
       cy.get("div#generatedIdToken").contains("No generated id token");
-    });
 
-    it("check generated user info when user is not selected", () => {
-      commonPage.tableToolbarUtils().searchItem(clientName);
-      commonPage.tableUtils().clickRowItemLink(clientName);
-
-      clientDetailsPage.goToClientScopesEvaluateTab();
       clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
-
       cy.get("div#generatedUserInfo").contains("No generated user info");
+
+      cy.get("input#user-select-typeahead").type("admin");
+      cy.get("li[id*=select-option-] > button:first-child").click();
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedAccessTokenTab();
+      cy.get("div#generatedAccessToken").contains(
+        '"preferred_username": "admin"',
+      );
+      cy.get("div#generatedAccessToken").contains('"scope": "');
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedIdTokenTab();
+      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+
+      clientDetailsPage.goToClientScopesEvaluateGeneratedUserInfoTab();
+      cy.get("div#generatedIdToken").contains('"preferred_username": "admin"');
+      cy.get("div#generatedIdToken").contains('"session_state"');
     });
   });
 
@@ -517,6 +517,7 @@ describe("Clients test", () => {
     });
 
     const identicalClientId = "identical";
+
     it("Should fail to create client with same ID", () => {
       commonPage.sidebar().goToClients();
       commonPage.tableToolbarUtils().createClient();
@@ -1000,6 +1001,7 @@ describe("Clients test", () => {
 
   describe("Mapping tab", () => {
     const mappingClient = "mapping-client";
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();

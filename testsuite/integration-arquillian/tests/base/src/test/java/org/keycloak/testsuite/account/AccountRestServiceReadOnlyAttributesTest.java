@@ -19,20 +19,28 @@
 package org.keycloak.testsuite.account;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
 
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.userprofile.UserProfileConstants;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
@@ -47,6 +55,46 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     private static final Logger logger = Logger.getLogger(AccountRestServiceReadOnlyAttributesTest.class);
 
+    @Before
+    public void configureUserProfile() {
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UPConfig cfg = userProfileRes.getConfiguration();
+        //cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        cfg.addOrReplaceAttribute(createUpAttribute("someOtherAttr"));
+        cfg.addOrReplaceAttribute(createUpAttribute("usercertificate"));
+        cfg.addOrReplaceAttribute(createUpAttribute("uSErCertificate"));
+        cfg.addOrReplaceAttribute(createUpAttribute("KERBEROS_PRINCIPAL"));
+        cfg.addOrReplaceAttribute(createUpAttribute("noKerberos_Principal"));
+        cfg.addOrReplaceAttribute(createUpAttribute("KERBEROS_PRINCIPALno"));
+        cfg.addOrReplaceAttribute(createUpAttribute("enabled"));
+        cfg.addOrReplaceAttribute(createUpAttribute("CREATED_TIMESTAMP"));
+        cfg.addOrReplaceAttribute(createUpAttribute("saml.something"));
+
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedfoo"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedFOo"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedFoot"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedbar"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedBAr"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedBArr"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedbarrier"));
+        cfg.addOrReplaceAttribute(createUpAttribute("nodeniedbar"));
+        cfg.addOrReplaceAttribute(createUpAttribute("nodeniedBARrier"));
+        cfg.addOrReplaceAttribute(createUpAttribute("saml.persistent.name.id.for.foo"));
+        cfg.addOrReplaceAttribute(createUpAttribute("saml.persistent.name.id.for._foo_"));
+        cfg.addOrReplaceAttribute(createUpAttribute("saml.persistent.name.idafor.foo"));
+        // TODO: Doublecheck this. We should either document that attributes with custom characters are not allowed or we should enable to configure them
+        // cfg.addOrReplaceAttribute(createUpAttribute("deniedsome/thing"));
+        // cfg.addOrReplaceAttribute(createUpAttribute("deniedsome*thing"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedsomeithing"));
+        cfg.addOrReplaceAttribute(createUpAttribute("deniedSomeAdmin"));
+        userProfileRes.update(cfg);
+    }
+
+    private UPAttribute createUpAttribute(String name) {
+        return new UPAttribute(name, new UPAttributePermissions(Collections.emptySet(), Set.of(UserProfileConstants.ROLE_USER, UserProfileConstants.ROLE_ADMIN)));
+    }
+
+    // Test read-only attributes from provider configuration have precedence over the user-profile realm configuration settings (Read-only attributes from provider config are always read-only)
     @Test
     public void testUpdateProfileCannotUpdateReadOnlyAttributes() throws IOException {
         // Denied by default
@@ -85,9 +133,10 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         testAccountUpdateAttributeExpectFailure("saml.persistent.name.id.for._foo_");
         testAccountUpdateAttributeExpectSuccess("saml.persistent.name.idafor.foo");
 
+        // TODO: Uncomment similarly like above
         // Special characters inside should be quoted
-        testAccountUpdateAttributeExpectFailure("deniedsome/thing");
-        testAccountUpdateAttributeExpectFailure("deniedsome*thing");
+        //testAccountUpdateAttributeExpectFailure("deniedsome/thing");
+        //testAccountUpdateAttributeExpectFailure("deniedsome*thing");
         testAccountUpdateAttributeExpectSuccess("deniedsomeithing");
 
         // Denied only for admin, but allowed for normal user
@@ -135,9 +184,10 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         user.singleAttribute(attrName, "foo-updated");
         updateError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
 
-        // Ignore removal of read-only attributes
+        // Removal of read-only attribute not allowed
         user.getAttributes().remove(attrName);
-        user = updateAndGet(user);
+        updateError(user, 400, Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED);
+        user = get();
         assertTrue(user.getAttributes().containsKey(attrName));
 
         // Revert with admin REST
@@ -178,6 +228,10 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
         int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(204, status);
+        return get();
+    }
+
+    private UserRepresentation get() throws IOException {
         return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 

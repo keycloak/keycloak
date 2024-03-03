@@ -1,3 +1,5 @@
-The number of JGroup threads is `200` by default, and can be configured using the property Java system property `jgroups.thread_pool.max_threads`.
-As shown in experiments, assuming a Keycloak cluster with 4 Pods, each Pod shouldn't have more than 50 worker threads so that it doesn't run out of threads in the JGroup thread pool of 200.
-Use the Quarkus configuration options `quarkus.thread-pool.max-threads` to configure the maximum number of worker threads.
+The number of JGroup threads is `200` by default.
+While it can be configured using the property Java system property `jgroups.thread_pool.max_threads`, we advise keeping it at this value.
+As shown in experiments, the total number of Quarkus worker threads in the cluster must not exceed the number of threads in the JGroup thread pool of 200 in each node to avoid deadlocks in the JGroups communication.
+Given a {project_name} cluster with four Pods, each Pod should then have 50 Quarkus worker threads.
+Use the {project_name} configuration option `http-pool-max-threads` to configure the maximum number of Quarkus worker threads.

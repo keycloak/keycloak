@@ -42,15 +42,15 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

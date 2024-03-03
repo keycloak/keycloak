@@ -4,13 +4,14 @@ import {
   InputGroup,
   TextInput,
   TextInputProps,
+  TextInputTypes,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { type TFunction } from "i18next";
 import { Fragment, useEffect, useMemo } from "react";
 import { FieldPath, UseFormReturn, useWatch } from "react-hook-form";
 
-import { UserProfileFieldProps } from "./UserProfileFields";
+import { InputType, UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
 import { UserFormFields, fieldName, labelAttribute } from "./utils";
 
@@ -19,6 +20,7 @@ export const MultiInputComponent = ({
   form,
   attribute,
   renderer,
+  ...rest
 }: UserProfileFieldProps) => (
   <UserProfileGroup t={t} form={form} attribute={attribute} renderer={renderer}>
     <MultiLineInput
@@ -29,6 +31,7 @@ export const MultiInputComponent = ({
       addButtonLabel={t("addMultivaluedLabel", {
         fieldLabel: labelAttribute(t, attribute),
       })}
+      {...rest}
     />
   </UserProfileGroup>
 );
@@ -40,11 +43,13 @@ export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   addButtonLabel?: string;
   isDisabled?: boolean;
   defaultValue?: string[];
+  inputType: InputType;
 };
 
 const MultiLineInput = ({
   t,
   name,
+  inputType,
   form,
   addButtonLabel,
   isDisabled = false,
@@ -84,6 +89,10 @@ const MultiLineInput = ({
     });
   };
 
+  const type = inputType.startsWith("html")
+    ? (inputType.substring("html".length + 2) as TextInputTypes)
+    : "text";
+
   useEffect(() => {
     register(name);
   }, [register]);
@@ -99,6 +108,7 @@ const MultiLineInput = ({
               name={`${name}.${index}.value`}
               value={value}
               isDisabled={isDisabled}
+              type={type}
               {...rest}
             />
             <Button

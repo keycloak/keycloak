@@ -33,8 +33,8 @@ body:
         - admin/cli
         - admin/fine-grained-permissions
         - admin/ui
-        - admin/client/node
-        - admin/client/java
+        - admin/client-java
+        - admin/client-js
         - authentication
         - authentication/webauthn
         - authorization-services
@@ -42,13 +42,14 @@ body:
         - core
         - dependencies
         - dist/quarkus
-        - dist/wildfly
         - docs
         - identity-brokering
         - import-export
         - infinispan
         - ldap
+        - login/ui
         - oidc
+        - oid4vc
         - operator
         - saml
         - storage
@@ -56,6 +57,7 @@ body:
         - token-exchange
         - translations
         - user-profile
+        - welcome/ui
     validations:
       required: true
   - type: textarea
@@ -72,6 +74,13 @@ body:
       description: What version of Keycloak are you running?
     validations:
       required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression
+      description: Was the issue introduced only after upgrading Keycloak, and it worked as expected in the past?
+      options:
+        - label: The issue is a regression
   - type: textarea
     id: behaviorExpected
     attributes:

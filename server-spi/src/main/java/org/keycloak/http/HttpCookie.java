@@ -17,33 +17,36 @@
 
 package org.keycloak.http;
 
-import org.keycloak.common.util.ServerCookie;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.ext.RuntimeDelegate;
 import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 
 /**
  * An extension of {@link javax.ws.rs.core.Cookie} in order to support additional
  * fields and behavior.
+ *
+ * @deprecated This class will be removed in the future. Please use {@link jakarta.ws.rs.core.NewCookie.Builder}
  */
-public final class HttpCookie extends jakarta.ws.rs.core.Cookie {
-
-    private final String comment;
-    private final int maxAge;
-    private final boolean secure;
-    private final boolean httpOnly;
-    private final SameSiteAttributeValue sameSite;
+@Deprecated(since = "24.0.0", forRemoval = true)
+public final class HttpCookie extends NewCookie {
 
     public HttpCookie(int version, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSiteAttributeValue sameSite) {
-        super(name, value, path, domain, version);
-        this.comment = comment;
-        this.maxAge = maxAge;
-        this.secure = secure;
-        this.httpOnly = httpOnly;
-        this.sameSite = sameSite;
+        super(name, value, path, domain, version, comment, maxAge, null, secure, httpOnly, convertSameSite(sameSite));
+    }
+
+    private static SameSite convertSameSite(SameSiteAttributeValue sameSiteAttributeValue) {
+        if (sameSiteAttributeValue == null) {
+            return null;
+        }
+        switch (sameSiteAttributeValue) {
+            case NONE: return SameSite.NONE;
+            case LAX: return SameSite.LAX;
+            case STRICT: return SameSite.STRICT;
+        }
+        throw new IllegalArgumentException("Unknown SameSite value " + sameSiteAttributeValue);
     }
 
     public String toHeaderValue() {
-        StringBuilder cookieBuf = new StringBuilder();
-        ServerCookie.appendCookieValue(cookieBuf, getVersion(), getName(), getValue(), getPath(), getDomain(), comment, maxAge, secure, httpOnly, sameSite);
-        return cookieBuf.toString();
+        return RuntimeDelegate.getInstance().createHeaderDelegate(NewCookie.class).toString(this);
     }
 }

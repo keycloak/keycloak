@@ -75,7 +75,7 @@ export const EventListenersForm = ({
                 field.onChange([]);
               }}
               isOpen={selectEventListenerOpen}
-              aria-labelledby={"eventsListeners"}
+              aria-label={"selectEventsListeners"}
             >
               {Object.keys(eventListeners!).map((event) => (
                 <SelectOption key={event} value={event} />

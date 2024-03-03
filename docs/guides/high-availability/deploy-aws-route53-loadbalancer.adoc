@@ -4,11 +4,9 @@
 <@tmpl.guide
 title="Deploy an AWS Route 53 loadbalancer"
 summary="Building block for a loadbalancer"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
-This topic describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup. These instructions are intended for used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
+This topic describes the procedure required to configure DNS based failover for Multi-AZ {project_name} clusters using AWS Route53 for an active/passive setup. These instructions are intended to be used with the setup described in the <@links.ha id="concepts-active-passive-sync"/> {section}.
 Use it together with the other building blocks outlined in the <@links.ha id="bblocks-active-passive-sync"/> {section}.
 
 include::partials/blueprint-disclaimer.adoc[]

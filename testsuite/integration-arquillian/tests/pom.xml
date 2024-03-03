@@ -1534,7 +1534,6 @@
                                     <auth.server.migration>true</auth.server.migration>
                                     <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>
                                     <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
-                                    <auth.server.feature>declarative-user-profile</auth.server.feature>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -1814,6 +1813,7 @@
                 <dependency>
                     <groupId>org.hamcrest</groupId>
                     <artifactId>hamcrest</artifactId>
+                    <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>

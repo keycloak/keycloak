@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -26,6 +27,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -52,8 +54,8 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
-import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.StoreMigrateRepresentationEvent;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
@@ -61,6 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Per request object
@@ -245,6 +248,7 @@ public class RealmManager {
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setPermanentLockout(false);
+        realm.setMaxTemporaryLockouts(0);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
@@ -278,7 +282,7 @@ public class RealmManager {
             }
 
           // Refresh periodic sync tasks for configured storageProviders
-          LegacyStoreSyncEvent.fire(session, realm, true);
+          StoreSyncEvent.fire(session, realm, true);
         }
         return removed;
     }
@@ -515,6 +519,9 @@ public class RealmManager {
         } else {
             ReservedCharValidator.validate(id);
         }
+        if (StringUtil.isBlank(rep.getRealm())) {
+            throw new ModelException("Realm name cannot be empty");
+        }
 
         RealmModel realm = model.createRealm(id, rep.getRealm());
         RealmModel currentRealm = session.getContext().getRealm();
@@ -601,14 +608,25 @@ public class RealmManager {
                 KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
             }
 
-            // Refresh periodic sync tasks for configured storageProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            // enlistAfterCompletion(..) as we need to ensure that the realm is committed to the database before we can update the sync tasks
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    // Refresh periodic sync tasks for configured storageProviders
+                    StoreSyncEvent.fire(session, realm, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
 
             setupAuthorizationServices(realm);
             setupClientRegistrations(realm);
 
             if (rep.getKeycloakVersion() != null) {
-                LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
+                StoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
             }
 
             session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);

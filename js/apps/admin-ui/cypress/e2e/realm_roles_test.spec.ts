@@ -262,6 +262,7 @@ describe("Realm roles test", () => {
     });
 
     const keyValue = new KeyValueInput("attributes");
+
     it("should add attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 

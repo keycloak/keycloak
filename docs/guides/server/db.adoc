@@ -24,6 +24,7 @@ The server has built-in support for different databases. You can query the avail
 |MySQL | `mysql` | ${properties["mysql.version"]}
 |Oracle Database | `oracle` | ${properties["oracledb.version"]}
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]}
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
@@ -55,9 +56,9 @@ To install the Oracle Database driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
@@ -91,9 +92,9 @@ To install the Microsoft SQL Server driver for {project_name}:
 +
 A minimal Dockerfile to build an image which can be used with the {project_name} Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
 +
-[source,dockerfile]
+[source,dockerfile,subs="attributes+"]
 ----
-FROM quay.io/keycloak/keycloak:latest
+FROM quay.io/keycloak/keycloak:{containerlabel}
 ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
 # Setting the build parameter for the database:
 ENV KC_DB=mssql
@@ -227,6 +228,38 @@ show server_encoding;
 create database keycloak with encoding 'UTF8';
 ----
 
+[[preparing-keycloak-for-amazon-aurora-postgresql]]
+== Preparing for Amazon Aurora PostgreSQL
+
+When using Amazon Aurora PostgreSQL, the https://github.com/awslabs/aws-advanced-jdbc-wrapper[Amazon Web Services JDBC Driver] offers additional features like transfer of database connections when a writer instance changes in a Multi-AZ setup.
+This driver is not part of the distribution and needs to be installed before it can be used.
+
+To install this driver, apply the following steps:
+
+. When running the unzipped distribution: Download the JAR file from the https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/[Amazon Web Services JDBC Driver releases page] and place it in {project_name}'s `providers` folder.
+
+. When running containers: Build a custom {project_name} image and add the JAR in the `providers` folder.
++
+A minimal Dockerfile to build an image which can be used with the {project_name} Operator looks like the following:
++
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel}
+ADD --chmod=0666 https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/download/${properties["aws-jdbc-wrapper.version"]}/aws-advanced-jdbc-wrapper-${properties["aws-jdbc-wrapper.version"]}.jar /opt/keycloak/providers/aws-advanced-jdbc-wrapper.jar
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images, and the <@links.operator id="customizing-keycloak" /> {section} on how to run optimized and non-optimized images with the {project_name} Operator.
+. Configure {project_name} to run with the following parameters:
+`db-url`:: Insert `aws-wrapper` to the regular PostgreSQL JDBC URL resulting in a URL like `+jdbc:aws-wrapper:postgresql://...+`.
+`db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
+`transaction-xa-enabled`:: Set to `false`, as the Amazon Web Services JDBC Driver does not support XA transactions.
+
+== Preparing for MySQL server
+
+Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
+If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
+You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading Keycloak.
+
 == Changing database locking timeout in a cluster configuration
 
 Because cluster nodes can boot concurrently, they take extra time for database actions. For example, a booting server instance may perform some database migration, importing, or first time initializations. A database lock prevents start actions from conflicting with each other when cluster nodes boot up concurrently.
@@ -247,16 +280,16 @@ The maximum timeout for this lock is 900 seconds. If a node waits on this lock f
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
 
 .Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-migration-strategy=manual"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-migration-strategy=manual"/>
 
 If you want to get a SQL file for DB initialization, too, you have to add this additional SPI initializeEmpty (true/false):
 
 .Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-initialize-empty=false"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-initialize-empty=false"/>
 
 In the same way the migrationExport to point to a specific file and location:
 
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-legacy-migration-export=<path>/<file.sql>"/>
+<@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>"/>
 
 </@tmpl.guide>

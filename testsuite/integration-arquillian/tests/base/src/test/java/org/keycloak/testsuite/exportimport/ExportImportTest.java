@@ -265,13 +265,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testExportUserProfileConfig() throws IOException {
-        //Enable user profile on realm
         RealmResource realmRes = adminClient.realm(TEST_REALM);
-        RealmRepresentation realmRep = realmRes.toRepresentation();
-        Map<String, String> realmAttr = realmRep.getAttributesOrEmpty();
-        realmAttr.put(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-        realmRep.setAttributes(realmAttr);
-        realmRes.update(realmRep);
 
         //add some non-default config
         UPConfig persistedConfig = VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);

@@ -178,7 +178,7 @@
 
         <input type="submit"
                class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-               id="registerWebAuthn" value="${msg("doRegister")}" onclick="registerSecurityKey()"/>
+               id="registerWebAuthn" value="${msg("doRegisterSecurityKey")}" onclick="registerSecurityKey()"/>
 
         <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"

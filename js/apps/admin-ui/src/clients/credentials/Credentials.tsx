@@ -67,6 +67,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const [accessToken, setAccessToken] = useState("");
   const [open, isOpen] = useState(false);
 
+  const selectedProvider = providers.find(
+    (provider) => provider.id === clientAuthenticatorType,
+  );
+
   useFetch(
     () =>
       Promise.all([
@@ -200,17 +204,17 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               </Button>
             </ActionGroup>
           </CardBody>
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && <Divider />}
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && (
-            <CardBody>
-              <ClientSecret
-                client={client}
-                secret={secret}
-                toggle={toggleClientSecretConfirm}
-              />
-            </CardBody>
+          {selectedProvider?.supportsSecret && (
+            <>
+              <Divider />
+              <CardBody>
+                <ClientSecret
+                  client={client}
+                  secret={secret}
+                  toggle={toggleClientSecretConfirm}
+                />
+              </CardBody>
+            </>
           )}
         </Card>
         <Card isFlat>

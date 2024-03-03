@@ -18,6 +18,8 @@ package org.keycloak.testsuite.model.parameters;
 
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.testsuite.model.HotRodServerRule;
@@ -54,7 +56,11 @@ public class CrossDCInfinispan extends KeycloakModelParameters {
                     .config("nodeName", "node-" + NODE_COUNTER.get())
                     .config("siteName", siteName(NODE_COUNTER.get()))
                     .config("remoteStorePort", siteName(NODE_COUNTER.get()).equals("site-2") ? "11333" : "11222")
-                    .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()));
+                    .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()))
+                    .spi(UserSessionSpi.NAME)
+                    .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
+                    .config("offlineSessionCacheEntryLifespanOverride", "43200")
+                    .config("offlineClientSessionCacheEntryLifespanOverride", "43200");
         }
     }
 

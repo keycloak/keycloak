@@ -24,7 +24,10 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
+import {
+  DynamicComponents,
+  convertToName,
+} from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
@@ -295,17 +298,30 @@ export default function LdapMapperDetails() {
                 render={({ field }) => (
                   <Select
                     toggleId="kc-providerId"
+                    typeAheadAriaLabel={t("mapperType")}
                     required
                     onToggle={() =>
                       setIsMapperDropdownOpen(!isMapperDropdownOpen)
                     }
                     isOpen={isMapperDropdownOpen}
                     onSelect={(_, value) => {
-                      field.onChange(value as string);
+                      setupForm({
+                        providerId: value as string,
+                        ...Object.fromEntries(
+                          components
+                            .find((c) => c.id === value)
+                            ?.properties.filter((m) => m.type === "List")
+                            .map((m) => [
+                              convertToName(m.name!),
+                              m.options?.[0],
+                            ]) || [],
+                        ),
+                      });
                       setIsMapperDropdownOpen(false);
                     }}
                     selections={field.value}
                     variant={SelectVariant.typeahead}
+                    aria-label={t("selectMapperType")}
                   >
                     {components.map((c) => (
                       <SelectOption key={c.id} value={c.id} />

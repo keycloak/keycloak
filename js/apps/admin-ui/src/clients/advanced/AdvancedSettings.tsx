@@ -267,6 +267,34 @@ export const AdvancedSettings = ({
             />
           </FormGroup>
           <FormGroup
+            label={t("lightweightAccessToken")}
+            fieldId="lightweightAccessToken"
+            labelIcon={
+              <HelpItem
+                helpText={t("lightweightAccessTokenHelp")}
+                fieldLabelId="lightweightAccessToken"
+              />
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.client.use.lightweight.access.token.enabled",
+              )}
+              defaultValue="false"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="lightweightAccessToken"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange(value.toString())}
+                  aria-label={t("lightweightAccessToken")}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
             labelIcon={
@@ -277,6 +305,7 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput
+              label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
             />
           </FormGroup>

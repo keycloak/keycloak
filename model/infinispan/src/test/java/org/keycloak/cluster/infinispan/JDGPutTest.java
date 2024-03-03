@@ -18,19 +18,12 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.net.SocketAddress;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.impl.RemoteCacheImpl;
-import org.infinispan.client.hotrod.impl.operations.IterationStartOperation;
-import org.infinispan.client.hotrod.impl.operations.IterationStartResponse;
-import org.infinispan.client.hotrod.impl.operations.OperationsFactory;
 import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -40,8 +33,6 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-
-import static org.infinispan.client.hotrod.impl.Util.await;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -100,81 +91,24 @@ public class JDGPutTest {
     }
 
     private static void bulkLoadSessions(RemoteCache remoteCache) {
-        int size = remoteCache.size();
-        int ispnSegmentsCount = getIspnSegmentsCount(remoteCache);
-        RemoteCacheSessionsLoaderContext ctx = new RemoteCacheSessionsLoaderContext(ispnSegmentsCount, 64, 1);
+        RemoteCacheSessionsLoaderContext ctx = new RemoteCacheSessionsLoaderContext(64);
 
-        Set<Integer> myIspnSegments = getMyIspnSegments(0, ctx);
+        Map<Object, Object> toInsert = new HashMap<>(ctx.getSessionsPerSegment());
 
-        Map<Object, Object> remoteEntries = new HashMap<>();
-        CloseableIterator<Map.Entry> iterator = null;
-        int countLoaded = 0;
-        try {
-            iterator = remoteCache.retrieveEntries(null, myIspnSegments, ctx.getSessionsPerSegment());
-            while (iterator.hasNext()) {
-                countLoaded++;
-                Map.Entry entry = iterator.next();
-                remoteEntries.put(entry.getKey(), entry.getValue());
+        try (CloseableIterator<Map.Entry<Object, Object>> it = remoteCache.retrieveEntries(null, ctx.getSessionsPerSegment())) {
+            while (it.hasNext()) {
+                Map.Entry<?,?> entry = it.next();
+                toInsert.put(entry.getKey(), entry.getValue());
             }
+
         } catch (RuntimeException e) {
-            System.err.println(String.format("Error loading sessions from remote cache '%s' for segment '%d'", remoteCache.getName(), 1));
+            logger.warnf(e, "Error loading sessions from remote cache '%s'", remoteCache.getName());
             throw e;
-        } finally {
-            if (iterator != null) {
-                iterator.close();
-            }
         }
 
-        logger.info("Loaded " + remoteEntries);
+        logger.info("Loaded " + toInsert);
 
     }
 
-    protected static int getIspnSegmentsCount(RemoteCache remoteCache) {
-        OperationsFactory operationsFactory = ((RemoteCacheImpl) remoteCache).getOperationsFactory();
-        Map<SocketAddress, Set<Integer>> segmentsByAddress = operationsFactory.getPrimarySegmentsByAddress();
 
-        for (Map.Entry<SocketAddress, Set<Integer>> entry : segmentsByAddress.entrySet()) {
-            SocketAddress targetAddress = entry.getKey();
-
-            // Same like RemoteCloseableIterator.startInternal
-            IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, 64, false, null, targetAddress);
-            IterationStartResponse startResponse = await(iterationStartOperation.execute());
-
-            try {
-                // Could happen for non-clustered caches
-                if (startResponse.getSegmentConsistentHash() == null) {
-                    return -1;
-                } else {
-                    return startResponse.getSegmentConsistentHash().getNumSegments();
-            }
-            } finally {
-                startResponse.getChannel().close();
-            }
-        }
-        // Handle the case when primary segments owned by the address are not known
-        return -1;
-    }
-
-    // Compute set of ISPN segments into 1 "worker" segment
-    protected static Set<Integer> getMyIspnSegments(int segment, RemoteCacheSessionsLoaderContext ctx) {
-        // Remote cache is non-clustered
-        if (ctx.getIspnSegmentsCount() < 0) {
-            return null;
-        }
-
-        if (ctx.getIspnSegmentsCount() % ctx.getSegmentsCount() > 0) {
-            throw new IllegalStateException("Illegal state. IspnSegmentsCount: " + ctx.getIspnSegmentsCount() + ", segmentsCount: " + ctx.getSegmentsCount());
-        }
-
-        int countPerSegment = ctx.getIspnSegmentsCount() / ctx.getSegmentsCount();
-        int first = segment * countPerSegment;
-        int last = first + countPerSegment - 1;
-
-        Set<Integer> myIspnSegments = new HashSet<>();
-        for (int i=first ; i<=last ; i++) {
-            myIspnSegments.add(i);
-        }
-        return myIspnSegments;
-
-    }
 }

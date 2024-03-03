@@ -110,7 +110,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -118,7 +117,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -153,7 +152,6 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-server-hotrod-jakarta</artifactId>
-            <version>${infinispan.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -515,7 +513,6 @@
         <profile>
             <id>app-server-wildfly</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
                 <property>
                     <name>app.server</name>
                     <value>wildfly</value>

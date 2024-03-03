@@ -42,32 +42,27 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, List<String>> getUnmanagedAttributes() {
-        RealmModel realm = session.getContext().getRealm();
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
 
-        if (provider.isEnabled(realm)) {
-            UserProfile profile = provider.create(USER_API, user);
-            Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
-            Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
-            UPConfig upConfig = provider.getConfiguration();
+        UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        UPConfig upConfig = provider.getConfiguration();
 
-            if (upConfig.getUnmanagedAttributePolicy() == null) {
-                return Collections.emptyMap();
-            }
-
-            Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
-            managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
-            attributes.entrySet().removeAll(managedAttributes.entrySet());
-
-            attributes.remove(UserModel.USERNAME);
-            attributes.remove(UserModel.EMAIL);
-
-            return attributes.entrySet().stream()
-                    .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
-                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        if (upConfig.getUnmanagedAttributePolicy() == null) {
+            return Collections.emptyMap();
         }
 
-        return Collections.emptyMap();
+        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
+        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
+        attributes.entrySet().removeAll(managedAttributes.entrySet());
+
+        attributes.remove(UserModel.USERNAME);
+        attributes.remove(UserModel.EMAIL);
+
+        return attributes.entrySet().stream()
+                .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
 }

@@ -29,6 +29,7 @@ nbproject
 # VS Code #
 ###########
 *.code-workspace
+*.vscode
 
 # Compiled source #
 ###################
@@ -64,6 +65,7 @@ nbproject
 # Maven #
 #########
 target
+bin
 
 # Maven shade
 #############

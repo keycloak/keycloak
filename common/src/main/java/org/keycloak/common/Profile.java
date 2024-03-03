@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -48,14 +49,18 @@ public class Profile {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
-        ACCOUNT2("Account Management Console 2", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console 3", Type.PREVIEW, Feature.ACCOUNT_API),
+
+        @Deprecated
+        ACCOUNT2("Account Console version 2", Type.DEPRECATED, Feature.ACCOUNT_API),
+        ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
         ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
+
+        LOGIN2("New Login Theme", Type.EXPERIMENTAL),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
@@ -72,8 +77,6 @@ public class Profile {
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
-
-        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
 
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
 
@@ -94,17 +97,31 @@ public class Profile {
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
 
+        @Deprecated
         LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multi-site support", Type.PREVIEW),
+        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+
+        CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
+
+        OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
+
+        HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
+        //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+
+        DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
         ;
 
         private final Type type;
         private final String label;
+        private final String unversionedKey;
+        private final String key;
 
         private Set<Feature> dependencies;
         private int version;
@@ -120,8 +137,14 @@ public class Profile {
             this.label = label;
             this.type = type;
             this.version = version;
-            if (this.version > 1 && !this.name().endsWith("_V" + version)) {
-                throw new IllegalStateException("It is expected that the enum name ends with the version");
+            this.key = name().toLowerCase().replaceAll("_", "-");
+            if (this.name().endsWith("_V" + version)) {
+                unversionedKey = key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            } else {
+                this.unversionedKey = key;
+                if (this.version > 1) {
+                    throw new IllegalStateException("It is expected that the enum name ends with the version");
+                }
             }
             this.dependencies = Arrays.stream(dependencies).collect(Collectors.toSet());
         }
@@ -133,7 +156,7 @@ public class Profile {
          * {@link #getVersionedKey()} should instead be shown to users where possible.
          */
         public String getKey() {
-            return name().toLowerCase().replaceAll("_", "-");
+            return key;
         }
 
         /**
@@ -141,11 +164,7 @@ public class Profile {
          * will share this key.
          */
         public String getUnversionedKey() {
-            String key = getKey();
-            if (version == 1) {
-                return key;
-            }
-            return key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            return unversionedKey;
         }
 
         /**
@@ -192,6 +211,8 @@ public class Profile {
         }
     }
 
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V1.getUnversionedKey())));
+
     private static final Logger logger = Logger.getLogger(Profile.class);
 
     private static Profile CURRENT;
@@ -217,6 +238,8 @@ public class Profile {
             Feature enabledFeature = null;
             if (unversionedConfig == FeatureConfig.ENABLED) {
                 enabledFeature = entry.getValue().iterator().next();
+            } else if (unversionedConfig == FeatureConfig.DISABLED && ESSENTIAL_FEATURES.contains(unversionedFeature)) {
+                throw new ProfileException(String.format("Feature %s cannot be disabled.", unversionedFeature));
             }
 
             // now check each feature version to ensure consistency and select any features enabled by default
@@ -312,6 +335,10 @@ public class Profile {
 
     public static Set<String> getAllUnversionedFeatureNames() {
         return Collections.unmodifiableSet(getOrderedFeatures().keySet());
+    }
+
+    public static Set<String> getDisableableUnversionedFeatureNames() {
+        return getOrderedFeatures().keySet().stream().filter(f -> !ESSENTIAL_FEATURES.contains(f)).collect(Collectors.toSet());
     }
 
     /**

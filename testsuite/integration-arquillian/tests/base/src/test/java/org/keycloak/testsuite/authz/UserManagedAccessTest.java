@@ -34,6 +34,8 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.resource.PermissionResource;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -693,6 +695,31 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A");
         assertTrue(permissions.isEmpty());
+    }
+
+    @Test
+    public void testResourceIsUserManagedCheck() throws Exception {
+        resource = addResource("Resource A", null, false, "ScopeA");
+
+        PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
+        ticket.setResource(resource.getId());
+        ticket.setRequesterName("marta");
+        ticket.setScopeName("ScopeA");
+        ticket.setGranted(true);
+
+        ProtectionResource protection = getAuthzClient().protection();
+
+        try {
+            protection.permission().create(ticket);
+            fail("Ticket creation should be denied, resource is not owner managed");
+        } catch (RuntimeException cause) {
+            cause.printStackTrace();
+            assertTrue(HttpResponseException.class.isInstance(cause.getCause()));
+            assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
+            String errorString = new String((HttpResponseException.class.cast(cause.getCause()).getBytes()));
+            assertTrue(errorString.contains("invalid_permission"));
+            assertTrue(errorString.contains("permission can only be created for resources with user-managed access enabled"));
+        }
     }
 
     private List<Permission> authorize(String userName, String password, AuthorizationRequest request) {

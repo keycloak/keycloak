@@ -35,6 +35,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -56,6 +57,8 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         testUser2.setFirstName("Václav");
         testUser2.setLastName("Muzikář");
         ApiUtil.removeUserByUsername(testRealmResource(), testUser2.getUsername());
+        
+        VerifyProfileTest.enableUnmanagedAttributes(testRealmResource().users().userProfile());
     }
 
     @Override

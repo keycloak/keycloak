@@ -219,7 +219,7 @@ After entering the username, the flow works as follows:
 
 If users have WebAuthn passwordless credentials recorded, they can use these credentials to log in directly. This is the password-less login. The user can also select *Password with OTP* because the `WebAuthn Passwordless` execution and the `Password with OTP` flow are set to *Alternative*. If they are set to *Required*, the user has to enter WebAuthn, password, and OTP.
 
-If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Security Key` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
+If the user selects the *Try another way* link with `WebAuthn passwordless` authentication, the user can choose between `Password` and `Passkey` (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP. If the user has no WebAuthn credentials, the user must enter the password and then the OTP. If the user has no OTP credential, they will be asked to record one.
 
 [NOTE]
 ====
@@ -402,6 +402,25 @@ In case you do not want `acr` claim inside tokens or you need some custom logic 
 Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
 one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
 in the authentication flow), then {project_name} will throw an error.
+
+[[_registration-rc-client-flows]]
+==== Registration or Reset credentials requested by client
+
+Usually when the user is redirected to the {project_name} from client application, the `browser` flow is triggered. This flow may allow the user to <<con-user-registration_{context}, register>> in case
+that realm registration is enabled and the user clicks `Register` on the login screen. Also, if <<enabling-forgot-password,Forget password>> is enabled for the realm, the user can
+click `Forget password` on the login screen, which triggers the `Reset credentials` flow where users can reset credentials after email address confirmation.
+
+Sometimes it can be useful for the client application to directly redirect the user to the *Registration* screen or to the *Reset credentials* flow. The resulting action will match the action of when the 
+user clicks *Register* or *Forget password* on the normal login screen. Automatic redirect to the registration or reset-credentials screen can be done as follows:
+
+* When the client wants the user to be redirected directly to the registration, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/registrations` . So the full URL
+might be similar to the following: `https://keycloak.example.com/realms/your_realm/protocol/openid-connect/registrations`.
+
+* When the client wants a user to be redirected directly to the `Reset credentials` flow, the OIDC client should replace the very last snippet from the OIDC login URL path (`/auth`) with `/forgot-credentials` .
+
+WARNING: The preceding steps are the only supported method for a client to directly request a registration or reset-credentials flow. For security
+purposes, it is not supported and recommended for client applications to bypass OIDC/SAML flows and directly redirect to other {project_name} endpoints (such as for instance endpoints under
+`/realms/realm_name/login-actions` or `/realms/realm_name/broker`).
 
 [[_user_session_limits]]
 === User session limits

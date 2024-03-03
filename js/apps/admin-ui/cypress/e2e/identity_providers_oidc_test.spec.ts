@@ -103,6 +103,8 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.assertClientAssertionAudienceInputEqual(
         "http://localhost:8180",
       );
+      //JWT X509 Headers
+      providerBaseAdvancedSettingsPage.assertOIDCJWTX509HeadersSwitch();
       //OIDC Advanced Settings
       providerBaseAdvancedSettingsPage.assertOIDCSettingsAdvancedSwitches();
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.none);

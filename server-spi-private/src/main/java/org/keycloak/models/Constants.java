@@ -63,6 +63,7 @@ public final class Constants {
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
+    public static final String INTERNAL_SIGNATURE_ALGORITHM = Algorithm.HS512;
 
     public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
     public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
@@ -158,9 +159,9 @@ public final class Constants {
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 
-    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
-    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
-
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
+    public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
+
+    public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
 }

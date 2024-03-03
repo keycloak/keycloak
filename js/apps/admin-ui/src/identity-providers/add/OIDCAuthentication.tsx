@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "ui-shared";
 import { ClientIdSecret } from "../component/ClientIdSecret";
+import { SwitchField } from "../component/SwitchField";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { TextField } from "../component/TextField";
@@ -106,6 +107,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
               }}
               selections={field.value || t("algorithmNotSpecified")}
               variant={SelectVariant.single}
+              aria-label={t("selectClientAssertionSigningAlg")}
               isOpen={openClientAuthSigAlg}
             >
               {[
@@ -129,6 +131,12 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         <TextField
           field="config.clientAssertionAudience"
           label="clientAssertionAudience"
+        />
+      )}
+      {clientAuthMethod === "private_key_jwt" && (
+        <SwitchField
+          field="config.jwtX509HeadersEnabled"
+          label="jwtX509HeadersEnabled"
         />
       )}
     </>

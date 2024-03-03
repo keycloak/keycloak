@@ -244,6 +244,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getMaxTemporaryLockouts() {
+        if(isUpdated()) return updated.getMaxTemporaryLockouts();
+        return cached.getMaxTemporaryLockouts();
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(final int val) {
+        getDelegateForUpdate();
+        updated.setMaxTemporaryLockouts(val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         if (isUpdated()) return updated.getMaxFailureWaitSeconds();
         return cached.getMaxFailureWaitSeconds();
@@ -1252,6 +1264,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setDockerAuthenticationFlow(final AuthenticationFlowModel flow) {
         getDelegateForUpdate();
         updated.setDockerAuthenticationFlow(flow);
+    }
+
+    @Override
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        if (isUpdated()) return updated.getFirstBrokerLoginFlow();
+        return cached.getFirstBrokerLoginFlow();
+    }
+
+    @Override
+    public void setFirstBrokerLoginFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setFirstBrokerLoginFlow(flow);
     }
 
     @Override

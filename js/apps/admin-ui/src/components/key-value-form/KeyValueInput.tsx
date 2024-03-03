@@ -31,12 +31,14 @@ export type DefaultValue = {
 
 type KeyValueInputProps = {
   name: string;
+  label?: string;
   defaultKeyValue?: DefaultValue[];
   isDisabled?: boolean;
 };
 
 export const KeyValueInput = ({
   name,
+  label = "attributes",
   defaultKeyValue,
   isDisabled = false,
 }: KeyValueInputProps) => {
@@ -71,9 +73,10 @@ export const KeyValueInput = ({
           <span className="pf-c-form__label-text">{t("value")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
-          const keyError = !!(errors as any)[name]?.[index]?.key;
-          const valueError = !!(errors as any)[name]?.[index]?.value;
-
+          const error = (errors as any)[name]?.[index];
+          const keyError = !!error?.key;
+          const valueErrorPresent = !!error?.value || !!error?.message;
+          const valueError = error?.message || t("valueError");
           return (
             <Fragment key={attribute.id}>
               <GridItem span={5}>
@@ -116,15 +119,15 @@ export const KeyValueInput = ({
                     aria-label={t("value")}
                     data-testid={`${name}-value`}
                     {...register(`${name}.${index}.value`, { required: true })}
-                    validated={valueError ? "error" : "default"}
+                    validated={valueErrorPresent ? "error" : "default"}
                     isRequired
                     isDisabled={isDisabled}
                   />
                 )}
-                {valueError && (
+                {valueErrorPresent && (
                   <HelperText>
                     <HelperTextItem variant="error">
-                      {t("valueError")}
+                      {valueError}
                     </HelperTextItem>
                   </HelperText>
                 )}
@@ -154,7 +157,7 @@ export const KeyValueInput = ({
             onClick={appendNew}
             isDisabled={isDisabled}
           >
-            {t("addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
@@ -165,9 +168,7 @@ export const KeyValueInput = ({
       className="pf-u-p-0"
       variant="xs"
     >
-      <EmptyStateBody>
-        {t("missingAttributes", { name: "attributes" })}
-      </EmptyStateBody>
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
       <Button
         data-testid={`${name}-add-row`}
         variant="link"
@@ -176,7 +177,7 @@ export const KeyValueInput = ({
         onClick={appendNew}
         isDisabled={isDisabled}
       >
-        {t("addAttribute")}
+        {t("addAttribute", { label })}
       </Button>
     </EmptyState>
   );

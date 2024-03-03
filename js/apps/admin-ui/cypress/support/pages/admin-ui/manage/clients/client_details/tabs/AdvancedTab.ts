@@ -1,11 +1,6 @@
 import PageObject from "../../../../components/PageObject";
 
 export default class AdvancedTab extends PageObject {
-  #setToNowBtn = "#setToNow";
-  #clearBtn = "#clear";
-  #pushBtn = "#push";
-  #notBeforeInput = "#kc-not-before";
-
   #clusterNodesExpandBtn =
     ".pf-c-expandable-section .pf-c-expandable-section__toggle";
   #testClusterAvailability = "#testClusterAvailability";
@@ -44,42 +39,9 @@ export default class AdvancedTab extends PageObject {
   #directGrantInput = "#directGrant";
 
   #jumpToOIDCCompatabilitySettings =
-    "jump-link-open-id-connect-compatibility-modes";
+    "jump-link-openid-connect-compatibility-modes";
   #jumpToAdvancedSettings = "jump-link-advanced-settings";
   #jumpToAuthFlowOverride = "jump-link-authentication-flow-overrides";
-
-  setRevocationToNow() {
-    cy.get(this.#setToNowBtn).click();
-    return this;
-  }
-
-  clearRevocation() {
-    cy.get(this.#clearBtn).click();
-    return this;
-  }
-
-  pushRevocation() {
-    cy.get(this.#pushBtn).click();
-    return this;
-  }
-
-  checkRevacationIsNone() {
-    cy.get(this.#notBeforeInput).should("have.value", "None");
-
-    return this;
-  }
-
-  checkRevocationIsSetToNow() {
-    cy.get(this.#notBeforeInput).should(
-      "have.value",
-      new Date().toLocaleString("en-US", {
-        dateStyle: "long",
-        timeStyle: "short",
-      }),
-    );
-
-    return this;
-  }
 
   expandClusterNode() {
     cy.get(this.#clusterNodesExpandBtn).click();

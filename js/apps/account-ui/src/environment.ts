@@ -1,3 +1,17 @@
+export type Feature = {
+  isRegistrationEmailAsUsername: boolean;
+  isEditUserNameAllowed: boolean;
+  isInternationalizationEnabled: boolean;
+  isLinkedAccountsEnabled: boolean;
+  isEventsEnabled: boolean;
+  isMyResourcesEnabled: boolean;
+  isTotpConfigured: boolean;
+  deleteAccountAllowed: boolean;
+  updateEmailFeatureEnabled: boolean;
+  updateEmailActionEnabled: boolean;
+  isViewGroupsEnabled: boolean;
+};
+
 export type Environment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
@@ -14,19 +28,7 @@ export type Environment = {
   /** The locale of the user */
   locale: string;
   /** Feature flags */
-  features: {
-    isRegistrationEmailAsUsername: boolean;
-    isEditUserNameAllowed: boolean;
-    isInternationalizationEnabled: boolean;
-    isLinkedAccountsEnabled: boolean;
-    isEventsEnabled: boolean;
-    isMyResourcesEnabled: boolean;
-    isTotpConfigured: boolean;
-    deleteAccountAllowed: boolean;
-    updateEmailFeatureEnabled: boolean;
-    updateEmailActionEnabled: boolean;
-    isViewGroupsEnabled: boolean;
-  };
+  features: Feature;
 };
 
 // The default environment, used during development.

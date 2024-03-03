@@ -1,4 +1,5 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
@@ -23,6 +24,7 @@ import useToggle from "../../utils/useToggle";
 type ResetPasswordDialogProps = {
   user: UserRepresentation;
   isResetPassword: boolean;
+  onAddRequiredActions?: (requiredActions: string[]) => void;
   refresh: () => void;
   onClose: () => void;
 };
@@ -42,6 +44,7 @@ const credFormDefaultValues: CredentialsForm = {
 export const ResetPasswordDialog = ({
   user,
   isResetPassword,
+  onAddRequiredActions,
   refresh,
   onClose,
 }: ResetPasswordDialogProps) => {
@@ -88,6 +91,9 @@ export const ResetPasswordDialog = ({
           value: password,
         },
       });
+      if (temporaryPassword) {
+        onAddRequiredActions?.([RequiredActionAlias.UPDATE_PASSWORD]);
+      }
       const credentials = await adminClient.users.getCredentials({
         id: user.id!,
       });

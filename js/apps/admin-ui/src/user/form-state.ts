@@ -8,7 +8,7 @@ import { beerify, debeerify } from "../util";
 
 export type UserFormFields = Omit<
   UIUserRepresentation,
-  "attributes" | "userProfileMetadata | unmanagedAttributes"
+  "attributes" | "userProfileMetadata" | "unmanagedAttributes"
 > & {
   attributes?: KeyValueType[] | Record<string, string | string[]>;
   unmanagedAttributes?: KeyValueType[] | Record<string, string | string[]>;
@@ -18,18 +18,11 @@ export interface UIUserRepresentation extends UserRepresentation {
   unmanagedAttributes?: Record<string, string[]>;
 }
 
-export function toUserFormFields(
-  data: UIUserRepresentation,
-  userProfileEnabled: boolean,
-): UserFormFields {
-  let attributes: Record<string, string | string[]> = {};
-  if (userProfileEnabled) {
-    Object.entries(data.attributes || {}).forEach(
-      ([k, v]) => (attributes[beerify(k)] = v),
-    );
-  } else {
-    attributes = arrayToKeyValue(data.attributes);
-  }
+export function toUserFormFields(data: UIUserRepresentation): UserFormFields {
+  const attributes: Record<string, string | string[]> = {};
+  Object.entries(data.attributes || {}).forEach(
+    ([k, v]) => (attributes[beerify(k)] = v),
+  );
 
   const unmanagedAttributes = arrayToKeyValue(data.unmanagedAttributes);
   return { ...data, attributes, unmanagedAttributes };

@@ -134,6 +134,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               <FormGroupField label="validatingPublicKey">
                 <KeycloakTextArea
                   data-testid="validatingPublicKey"
+                  aria-label={t("validatingPublicKey")}
                   {...register("config.publicKeySignatureVerifier")}
                 />
               </FormGroupField>

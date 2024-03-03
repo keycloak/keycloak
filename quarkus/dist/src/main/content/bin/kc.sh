@@ -37,6 +37,7 @@ abs_path () {
 SERVER_OPTS="-Dkc.home.dir='$(abs_path '..')'"
 SERVER_OPTS="$SERVER_OPTS -Djboss.server.config.dir='$(abs_path '../conf')'"
 SERVER_OPTS="$SERVER_OPTS -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+SERVER_OPTS="$SERVER_OPTS -Dpicocli.disable.closures=true"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
@@ -54,7 +55,7 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\+$' >/dev/null; then
+          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
               DEBUG_PORT=$2
               shift
           fi
@@ -96,7 +97,23 @@ if [ -z "$JAVA_OPTS" ]; then
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
    # Both ZGC and Shenandoah GC seem to be more eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning as as it is not as aggressive as ParallelGC in reclaiming dead objects.
-   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -XX:FlightRecorderOptions=stackdepth=512"
+
+   if [ -z "$JAVA_OPTS_KC_HEAP" ]; then
+      JAVA_OPTS_KC_HEAP="-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
+      if [ "$KC_RUN_IN_CONTAINER" = "true" ]; then
+         # Maximum utilization of the heap is set to 70% of the total container memory
+         # Initial heap size is set to 50% of the total container memory in order to reduce GC executions
+         JAVA_OPTS_KC_HEAP="$JAVA_OPTS_KC_HEAP -XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50"
+      else
+         JAVA_OPTS_KC_HEAP="$JAVA_OPTS_KC_HEAP -Xms64m -Xmx512m"
+      fi
+   else
+      echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values: $JAVA_OPTS_KC_HEAP"
+   fi
+
+   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_KC_HEAP"
+
 else
    echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 fi

@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -31,9 +33,10 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.WatchedSecretsController;
+import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
@@ -58,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PodTemplateTest {
 
     @InjectMock
-    WatchedSecretsController watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDeploymentDependentResource deployment;
@@ -417,6 +420,46 @@ public class PodTemplateTest {
 
         // Assert
         assertThat(podTemplate.getSpec().getContainers().get(0).getCommand().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG));
+    }
+
+    @Test
+    public void testCacheConfigFileMount() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.withNewCacheSpec().withNewConfigMapFile("file.xml", "cm", null).endCacheSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        VolumeMount volumeMount = podTemplate.getSpec().getContainers().get(0).getVolumeMounts().stream()
+                .filter(vm -> vm.getName().equals(KeycloakDeploymentDependentResource.CACHE_CONFIG_FILE_MOUNT_NAME))
+                .findFirst().orElseThrow();
+        assertThat(volumeMount.getMountPath()).isEqualTo(Constants.CACHE_CONFIG_FOLDER);
+
+        Volume volume = podTemplate.getSpec().getVolumes().stream()
+                .filter(v -> v.getName().equals(KeycloakDeploymentDependentResource.CACHE_CONFIG_FILE_MOUNT_NAME))
+                .findFirst().orElseThrow();
+        assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
+    }
+
+    @Test
+    public void testServiceCaCrt() {
+        this.deployment.setUseServiceCaCrt(true);
+        try {
+            // Arrange
+            PodTemplateSpec additionalPodTemplate = null;
+
+            // Act
+            var podTemplate = getDeployment(additionalPodTemplate, null, null).getSpec().getTemplate();
+
+            // Assert
+            var paths = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)).findFirst().orElseThrow();
+            assertThat(paths.getValue()).isEqualTo("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt");
+        } finally {
+            this.deployment.setUseServiceCaCrt(false);
+        }
     }
 
 }

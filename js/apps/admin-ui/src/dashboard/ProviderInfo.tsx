@@ -22,7 +22,7 @@ export const ProviderInfo = () => {
   const providerInfo = useMemo(
     () =>
       Object.entries(serverInfo.providers || []).filter(([key]) =>
-        key.includes(filter),
+        key.toLowerCase().includes(filter.toLowerCase()),
       ),
     [filter],
   );

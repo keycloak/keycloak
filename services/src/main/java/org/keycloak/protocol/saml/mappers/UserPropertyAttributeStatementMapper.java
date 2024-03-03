@@ -44,6 +44,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_PROPERTY_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
         AttributeStatementHelper.setConfigProperties(configProperties);
 

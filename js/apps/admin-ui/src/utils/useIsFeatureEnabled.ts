@@ -3,12 +3,12 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 export enum Feature {
   AdminFineGrainedAuthz = "ADMIN_FINE_GRAINED_AUTHZ",
   ClientPolicies = "CLIENT_POLICIES",
-  DeclarativeUserProfile = "DECLARATIVE_USER_PROFILE",
   Kerberos = "KERBEROS",
   DynamicScopes = "DYNAMIC_SCOPES",
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",
+  ClientTypes = "CLIENT_TYPES",
 }
 
 export default function useIsFeatureEnabled() {

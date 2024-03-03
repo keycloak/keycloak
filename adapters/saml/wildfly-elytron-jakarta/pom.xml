@@ -92,11 +92,15 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
+            <artifactId>infinispan-core-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-client-hotrod-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
