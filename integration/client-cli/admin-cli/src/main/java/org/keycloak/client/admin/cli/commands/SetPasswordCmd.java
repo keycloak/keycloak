@@ -16,15 +16,13 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.client.admin.cli.config.ConfigData;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import static org.keycloak.client.admin.cli.operations.UserOperations.getIdFromUsername;
 import static org.keycloak.client.admin.cli.operations.UserOperations.resetUserPassword;
@@ -34,52 +32,28 @@ import static org.keycloak.client.admin.cli.util.ConfigUtil.credentialsAvailable
 import static org.keycloak.client.admin.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.admin.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "set-password", description = "[ARGUMENTS]")
+@Command(name = "set-password", description = "[ARGUMENTS]")
 public class SetPasswordCmd extends AbstractAuthOptionsCmd {
 
-    @Option(name = "username", description = "Username")
+    @Option(names = "--username", description = "Username")
     String username;
 
-    @Option(name = "userid", description = "User ID")
+    @Option(names = "--userid", description = "User ID")
     String userid;
 
-    @Option(shortName = 'p', name = "new-password", description = "New password")
+    @Option(names = {"-p", "--new-password"}, description = "New password")
     String pass;
 
-    @Option(shortName = 't', name = "temporary", description = "is password temporary", hasValue = false)
+    @Option(names = {"-t", "--temporary"}, description = "is password temporary")
     boolean temporary;
 
-
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            processGlobalOptions();
-
-            return process(commandInvocation);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
-    }
-
-
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
-        if (args != null && args.size() > 0) {
-            throw new IllegalArgumentException("Invalid option: " + args.get(0));
-        }
-
+    protected void process() {
         if (userid == null && username == null) {
             throw new IllegalArgumentException("No user specified. Use --username or --userid to specify user");
         }
@@ -89,17 +63,17 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
         }
 
         if (pass == null) {
-            pass = readSecret("Enter password: ", commandInvocation);
+            pass = readSecret("Enter password: ");
         }
 
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);
 
-        setupTruststore(config, commandInvocation);
+        setupTruststore(config);
 
         String auth = null;
 
-        config = ensureAuthInfo(config, commandInvocation);
+        config = ensureAuthInfo(config);
         config = copyWithServerInfo(config);
         if (credentialsAvailable(config)) {
             auth = ensureToken(config);
@@ -117,20 +91,14 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
         }
 
         resetUserPassword(adminRoot, realm, auth, userid, pass, temporary);
-
-        return CommandResult.SUCCESS;
     }
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && username == null && userid == null && pass == null;
+        return super.nothingToDo() && username == null && userid == null && pass == null;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help set-password' for more information";
-    }
-
-
+    @Override
     protected String help() {
         return usage();
     }
