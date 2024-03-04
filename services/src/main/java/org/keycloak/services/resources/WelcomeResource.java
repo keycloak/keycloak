@@ -29,6 +29,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ext.Provider;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -64,6 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/")
 public class WelcomeResource {
 
