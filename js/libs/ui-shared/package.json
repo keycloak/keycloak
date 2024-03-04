@@ -42,7 +42,7 @@
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@patternfly/react-core": "^4.278.0",
-    "@patternfly/react-icons": "^4.93.7",
+    "@patternfly/react-icons": "^5.2.1",
     "i18next": "^23.10.0",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",

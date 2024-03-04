@@ -75,8 +75,8 @@ importers:
         specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.7
-        version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.2.1
+        version: 5.2.1(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-table':
         specifier: ^4.113.6
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
@@ -160,8 +160,8 @@ importers:
         specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.7
-        version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.2.1
+        version: 5.2.1(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
         specifier: ^4.92.8
         version: 4.92.8
@@ -437,8 +437,8 @@ importers:
         specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: ^4.93.7
-        version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.2.1
+        version: 5.2.1(react-dom@18.2.0)(react@18.2.0)
       i18next:
         specifier: ^23.10.0
         version: 23.10.0
@@ -1358,6 +1358,16 @@ packages:
     peerDependencies:
       react: ^16.8 || ^17 || ^18
       react-dom: ^16.8 || ^17 || ^18
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
+  /@patternfly/react-icons@5.2.1(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-aeJ0X+U2NDe8UmI5eQiT0iuR/wmUq97UkDtx3HoZcpRb9T6eUBfysllxjRqHS8rOOspdU8OWq+CUhQ/E2ZDibg==}
+    peerDependencies:
+      react: ^17 || ^18
+      react-dom: ^17 || ^18
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -8501,7 +8511,7 @@ packages:
       '@patternfly/patternfly': 4.224.5
       '@patternfly/react-code-editor': 4.82.121(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0)
       '@patternfly/react-core': 4.278.0(react-dom@18.2.0)(react@18.2.0)
-      '@patternfly/react-icons': 4.93.7(react-dom@18.2.0)(react@18.2.0)
+      '@patternfly/react-icons': 5.2.1(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles': 4.92.8
       '@patternfly/react-table': 4.113.6(react-dom@18.2.0)(react@18.2.0)
       dagre: 0.8.5
