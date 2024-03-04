@@ -163,8 +163,8 @@ importers:
         specifier: ^4.93.7
         version: 4.93.7(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
-        specifier: ^4.92.8
-        version: 4.92.8
+        specifier: ^5.2.1
+        version: 5.2.1
       '@patternfly/react-table':
         specifier: ^4.113.6
         version: 4.113.6(react-dom@18.2.0)(react@18.2.0)
@@ -394,8 +394,8 @@ importers:
         specifier: ^4.278.0
         version: 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
-        specifier: ^4.92.8
-        version: 4.92.8
+        specifier: ^5.2.1
+        version: 5.2.1
       keycloak-js:
         specifier: workspace:*
         version: link:../keycloak-js
@@ -1365,6 +1365,10 @@ packages:
 
   /@patternfly/react-styles@4.92.8:
     resolution: {integrity: sha512-K4lUU8O4HiCX9NeuNUIrPgN3wlGERCxJVio+PAjd8hpJD/PKnjFfOJ9u6/Cii3qLy/5ZviWPRNHbGiwA/+YUhg==}
+    dev: false
+
+  /@patternfly/react-styles@5.2.1:
+    resolution: {integrity: sha512-GT96hzI1QenBhq6Pfc51kxnj9aVLjL1zSLukKZXcYVe0HPOy0BFm90bT1Fo4e/z7V9cDYw4SqSX1XLc3O4jsTw==}
     dev: false
 
   /@patternfly/react-table@4.113.6(react-dom@18.2.0)(react@18.2.0):
@@ -8502,7 +8506,7 @@ packages:
       '@patternfly/react-code-editor': 4.82.121(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0)
       '@patternfly/react-core': 4.278.0(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons': 4.93.7(react-dom@18.2.0)(react@18.2.0)
-      '@patternfly/react-styles': 4.92.8
+      '@patternfly/react-styles': 5.2.1
       '@patternfly/react-table': 4.113.6(react-dom@18.2.0)(react@18.2.0)
       dagre: 0.8.5
       file-saver: 2.0.5
