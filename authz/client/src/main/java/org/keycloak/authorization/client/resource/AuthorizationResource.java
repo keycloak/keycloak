@@ -86,6 +86,7 @@ public class AuthorizationResource {
 
         if (request.getMetadata() == null) {
             metadata = new AuthorizationRequest.Metadata();
+            request.setMetadata(metadata);
         } else {
             metadata = request.getMetadata();
         }
