@@ -15,6 +15,7 @@ The different {sections} introduce the necessary concepts and building blocks.
 For each building block, a blueprint shows how to set a fully functional example.
 Additional performance tuning and security hardening are still recommended when preparing a production setup.
 
+ifeval::[{project_community}==true]
 == Concept and building block overview
 
 * <@links.ha id="concepts-active-passive-sync" />
@@ -38,5 +39,7 @@ Additional performance tuning and security hardening are still recommended when 
 * <@links.ha id="operate-switch-over" />
 * <@links.ha id="operate-network-partition-recovery" />
 * <@links.ha id="operate-switch-back" />
+
+endif::[]
 
 </@tmpl.guide>
