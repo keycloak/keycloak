@@ -31,8 +31,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
-            <artifactId>aesh</artifactId>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-cli</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

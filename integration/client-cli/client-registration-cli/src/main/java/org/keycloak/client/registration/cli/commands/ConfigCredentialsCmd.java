@@ -1,10 +1,5 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.console.command.Command;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.RealmConfigData;
@@ -16,6 +11,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 
+import picocli.CommandLine.Command;
+
 import static org.keycloak.client.registration.cli.util.AuthUtil.getAuthTokens;
 import static org.keycloak.client.registration.cli.util.AuthUtil.getAuthTokensByJWT;
 import static org.keycloak.client.registration.cli.util.AuthUtil.getAuthTokensBySecret;
@@ -26,15 +23,14 @@ import static org.keycloak.client.registration.cli.util.ConfigUtil.saveTokens;
 import static org.keycloak.client.registration.cli.util.IoUtil.printErr;
 import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "credentials", description = "--server SERVER_URL --realm REALM [ARGUMENTS]")
-public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Command {
+@Command(name = "credentials", description = "--server SERVER_URL --realm REALM [ARGUMENTS]")
+public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
 
     private int sigLifetime = 600;
 
@@ -60,24 +56,9 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         }
     }
 
-
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            if (printHelp()) {
-                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
-            }
-
-            checkUnsupportedOptions("--no-config", booleanOptionForCheck(noconfig));
-
-            processGlobalOptions();
-
-            return process(commandInvocation);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
-        } finally {
-            commandInvocation.stop();
-        }
+    protected String[] getUnsupportedOptions() {
+        return new String[] {"--no-config", booleanOptionForCheck(noconfig)};
     }
 
     @Override
@@ -85,8 +66,8 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         return noOptions();
     }
 
-    public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-
+    @Override
+    protected void process() {
         // check server
         if (server == null) {
             throw new IllegalArgumentException("Required option not specified: --server");
@@ -113,18 +94,18 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
 
             // if user was set there needs to be a password so we can authenticate
             if (password == null) {
-                password = readSecret("Enter password: ", commandInvocation);
+                password = readSecret("Enter password: ");
             }
             // if secret was set to be read from stdin, then ask for it
             if ("-".equals(secret) && keystore == null) {
-                secret = readSecret("Enter client secret: ", commandInvocation);
+                secret = readSecret("Enter client secret: ");
             }
         } else if (keystore != null || secret != null || clientSet) {
             grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
             printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
             if (keystore == null) {
                 if (secret == null) {
-                    secret = readSecret("Enter client secret: ", commandInvocation);
+                    secret = readSecret("Enter client secret: ");
                 }
             }
         }
@@ -139,8 +120,8 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
             }
 
             if (storePass == null) {
-                storePass = readSecret("Enter keystore password: ", commandInvocation);
-                keyPass = readSecret("Enter key password: ", commandInvocation);
+                storePass = readSecret("Enter keystore password: ");
+                keyPass = readSecret("Enter key password: ");
             }
 
             if (keyPass == null) {
@@ -163,10 +144,10 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
                 config.setServerUrl(server);
                 config.setRealm(realm);
             });
-            return CommandResult.SUCCESS;
+            return;
         }
 
-        setupTruststore(copyWithServerInfo(loadConfig()), commandInvocation);
+        setupTruststore(copyWithServerInfo(loadConfig()));
 
         // now use the token endpoint to retrieve access token, and refresh token
         AccessTokenResponse tokens = signedRequestToken != null ?
@@ -179,14 +160,9 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
 
         // save tokens to config file
         saveTokens(tokens, server, realm, clientId, signedRequestToken, sigExpiresAt, secret, grantTypeForAuthentication);
-
-        return CommandResult.SUCCESS;
     }
 
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help config credentials' for more information";
-    }
-
+    @Override
     protected String help() {
         return usage();
     }
