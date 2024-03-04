@@ -122,6 +122,14 @@ The {project_name} JS adapter now uses the https://webpack.js.org/guides/package
 
 The {project_name} JS adapter now sets the `pkceMethod` option to `S256` by default. This change enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you use the adapter on a system that does not support PKCE, you can set the `pkceMethod` option to `false` to disable it.
 
+= Changes to Password Hashing
+
+In this release, we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+
+As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
+Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed. This change means better security aligned with latest recommendations, but
+it has impact on performance. It is possible to stick to the old behaviour by adding password policies `hashAlgorithm` and `hashIterations` to your realm. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = OAuth/OIDC related improvements
 
 == Lightweight access tokens support
