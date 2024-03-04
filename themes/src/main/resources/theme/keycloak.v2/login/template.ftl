@@ -26,7 +26,7 @@
     </#if>
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
-            <script type="module" src="${url.resourcesPath}/${script}"></script>
+            <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
     <#if scripts??>

@@ -80,6 +80,10 @@
 		</div>
 		<#nested "afterField" attribute>
 	</#list>
+
+	<#list profile.html5DataAnnotations?keys as key>
+        <script type="module" src="${url.resourcesPath}/js/${key}.js"></script>
+    </#list>
 </#macro>
 
 <#macro inputFieldByType attribute>
@@ -102,7 +106,6 @@
 
 <#macro inputTag attribute>
 	<input type="<@inputTagType attribute=attribute/>" :id="$id('name-${attribute.name}')" name="${attribute.name}" class="${properties.kcInputClass!}"
-		x-model="item.value" @input.debounce.500ms="item.value = $store.format.formatElement($event)"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
@@ -160,13 +163,13 @@
 		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
 	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
 		<#assign options=attribute.validators.options.options>
+	<#else>
+		<#assign options=[]>
 	</#if>
 
-	<#if options??>
-		<#list options as option>
+	<#list options as option>
 		<option value="${option}" <#if attribute.values?seq_contains(option)>selected</#if>><@selectOptionLabelText attribute=attribute option=option/></option>
-		</#list>
-	</#if>
+	</#list>
 	</select>
 </#macro>
 
@@ -184,23 +187,23 @@
 	</#if>
 	
 	<#if attribute.annotations.inputOptionsFromValidation?? && attribute.validators[attribute.annotations.inputOptionsFromValidation]?? && attribute.validators[attribute.annotations.inputOptionsFromValidation].options??>
-		<#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
-	<#elseif attribute.validators.options?? && attribute.validators.options.options??>
-		<#assign options=attribute.validators.options.options>
-	</#if>
+        <#assign options=attribute.validators[attribute.annotations.inputOptionsFromValidation].options>
+    <#elseif attribute.validators.options?? && attribute.validators.options.options??>
+        <#assign options=attribute.validators.options.options>
+    <#else>
+        <#assign options=[]>
+    </#if>
 
-	<#if options??>
-		<#list options as option>
-		<div class="${classDiv}">
-			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
-				aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
-				<#if attribute.readOnly>disabled</#if>
-				<#if attribute.values?seq_contains(option)>checked</#if>
-			/>
-			<label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
-		</div>
-		</#list>
-	</#if>	
+    <#list options as option>
+        <div class="${classDiv}">
+            <input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
+                aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+                <#if attribute.readOnly>disabled</#if>
+                <#if attribute.values?seq_contains(option)>checked</#if>
+            />
+            <label for="${attribute.name}-${option}" class="${classLabel}<#if attribute.readOnly> ${properties.kcInputClassRadioCheckboxLabelDisabled!}</#if>"><@selectOptionLabelText attribute=attribute option=option/></label>
+        </div>
+    </#list>
 </#macro>
 
 <#macro selectOptionLabelText attribute option>
