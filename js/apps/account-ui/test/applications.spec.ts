@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { login } from "./login";
-import { getBaseUrl } from "./utils";
 import { getRootPath } from "../src/utils/getRootPath";
+import { login } from "./login";
+import { getAccountUrl, getAdminUrl } from "./utils";
 
 test.describe("Applications test", () => {
   test.beforeEach(async ({ page }) => {
@@ -68,11 +68,11 @@ test.describe("Applications test", () => {
 
     // go to admin console
     await page.goto("/");
-    await expect(page).toHaveURL(`${getBaseUrl()}/admin/master/console/`);
-    await page.waitForURL(`${getBaseUrl()}/admin/master/console/`);
+    await expect(page).toHaveURL(getAdminUrl());
+    await page.waitForURL(getAdminUrl());
 
     await page.goto(getRootPath());
-    await page.waitForURL(getBaseUrl() + getRootPath());
+    await page.waitForURL(getAccountUrl());
 
     await page.getByTestId("applications").click();
 
