@@ -160,7 +160,7 @@
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
-        <aurora-postgresql.version>15.3</aurora-postgresql.version>
+        <aurora-postgresql.version>15.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.4</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.2</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
