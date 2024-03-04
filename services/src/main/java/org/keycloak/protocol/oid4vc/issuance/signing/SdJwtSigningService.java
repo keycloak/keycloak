@@ -53,7 +53,6 @@ public class SdJwtSigningService extends SigningService<String> {
     private static final String ISSUER_CLAIM ="iss";
     private static final String NOT_BEFORE_CLAIM ="nbf";
     private static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
-    private static final String SELECTIVE_DISCLOSURE_ALGORITHM_CLAIM = "_sd_jwt";
     private static final String CREDENTIAL_ID_CLAIM = "jti";
 
     private final ObjectMapper objectMapper;
