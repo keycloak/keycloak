@@ -18,7 +18,7 @@ test.describe("Personal info page", () => {
   test("sets basic information", async ({ page }) => {
     user = await createRandomUserWithPassword("user-" + randomUUID(), "pwd");
 
-    await login(page, user, "pwd", "master");
+    await login(page, user, "pwd");
 
     await page.getByTestId("email").fill(`${user}@somewhere.com`);
     await page.getByTestId("firstName").fill("Erik");
@@ -84,7 +84,7 @@ test.describe("Personal info with userprofile enabled", async () => {
 
 // skip currently the locale is not part of the response
 test.describe.skip("Realm localization", async () => {
-  test.beforeAll(() => enableLocalization("master"));
+  test.beforeAll(() => enableLocalization());
 
   test("change locale", async ({ page }) => {
     const user = await createRandomUserWithPassword(
@@ -92,7 +92,7 @@ test.describe.skip("Realm localization", async () => {
       "pwd",
     );
 
-    await login(page, user, "pwd", "master");
+    await login(page, user, "pwd");
     await page
       .locator("div")
       .filter({ hasText: /^Deutsch$/ })
