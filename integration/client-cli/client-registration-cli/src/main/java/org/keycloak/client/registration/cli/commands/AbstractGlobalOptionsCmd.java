@@ -1,38 +1,37 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.Command;
-import org.keycloak.client.registration.cli.aesh.Globals;
+import org.keycloak.client.registration.cli.Globals;
+
+import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public abstract class AbstractGlobalOptionsCmd implements Command {
+public abstract class AbstractGlobalOptionsCmd implements Runnable {
 
-    @Option(shortName = 'x', description = "Print full stack trace when exiting with error", hasValue = false)
-    protected boolean dumpTrace;
-
-    @Option(name = "help", description = "Print command specific help", hasValue = false)
-    protected boolean help;
-
-    protected void initFromParent(AbstractGlobalOptionsCmd parent) {
-        dumpTrace = parent.dumpTrace;
-        help = parent.help;
+    @Option(names = "--help",
+            description = "Print command specific help")
+    public void setHelp(boolean help) {
+        Globals.help = help;
     }
 
-    protected void processGlobalOptions() {
+    @Option(names = "-x",
+            description = "Print full stack trace when exiting with error")
+    public void setDumpTrace(boolean dumpTrace) {
         Globals.dumpTrace = dumpTrace;
     }
 
-    protected boolean printHelp() {
-        if (help || nothingToDo()) {
+    protected void printHelpIfNeeded() {
+        if (Globals.help) {
             printOut(help());
-            return true;
+            System.exit(CommandLine.ExitCode.OK);
+        } else if (nothingToDo()) {
+            printOut(help());
+            System.exit(CommandLine.ExitCode.USAGE);
         }
-
-        return false;
     }
 
     protected boolean nothingToDo() {
@@ -42,4 +41,47 @@ public abstract class AbstractGlobalOptionsCmd implements Command {
     protected String help() {
         return KcRegCmd.usage();
     }
+
+    @Override
+    public void run() {
+        printHelpIfNeeded();
+
+        checkUnsupportedOptions(getUnsupportedOptions());
+
+        processOptions();
+
+        process();
+    }
+
+    protected String[] getUnsupportedOptions() {
+        return new String[0];
+    }
+
+    protected void processOptions() {
+
+    }
+
+    protected void process() {
+
+    }
+
+    protected void checkUnsupportedOptions(String ... options) {
+        if (options.length % 2 != 0) {
+            throw new IllegalArgumentException("Even number of argument required");
+        }
+
+        for (int i = 0; i < options.length; i++) {
+            String name = options[i];
+            String value = options[++i];
+
+            if (value != null) {
+                throw new IllegalArgumentException("Unsupported option: " + name);
+            }
+        }
+    }
+
+    protected static String booleanOptionForCheck(boolean value) {
+        return value ? "true" : null;
+    }
+
 }

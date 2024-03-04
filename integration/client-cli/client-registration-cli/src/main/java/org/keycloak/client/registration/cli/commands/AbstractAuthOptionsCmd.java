@@ -1,7 +1,5 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.ConfigHandler;
@@ -13,6 +11,8 @@ import org.keycloak.client.registration.cli.util.HttpUtil;
 import org.keycloak.client.registration.cli.util.IoUtil;
 
 import java.io.File;
+
+import picocli.CommandLine.Option;
 
 import static org.keycloak.client.registration.cli.config.FileConfigHandler.setConfigFile;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.checkAuthInfo;
@@ -26,58 +26,55 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
 
     static final String DEFAULT_CLIENT = "admin-cli";
 
-    @Option(name = "config", description = "Path to the config file (~/.keycloak/kcreg.config by default)", hasValue = true)
+    @Option(names = "--config", description = "Path to the config file (~/.keycloak/kcreg.config by default)")
     protected String config;
 
-    @Option(name = "no-config", description = "No configuration file should be used, no authentication info is loaded or saved", hasValue = false)
+    @Option(names = "--no-config", description = "No configuration file should be used, no authentication info is loaded or saved")
     protected boolean noconfig;
 
-    @Option(name = "server", description = "Server endpoint url (e.g. 'http://localhost:8080')", hasValue = true)
+    @Option(names = "--server", description = "Server endpoint url (e.g. 'http://localhost:8080')")
     protected String server;
 
-    @Option(name = "realm", description = "Realm name to authenticate against", hasValue = true)
+    @Option(names = "--realm", description = "Realm name to authenticate against")
     protected String realm;
 
-    @Option(name = "client", description = "Realm name to authenticate against", hasValue = true)
+    @Option(names = "--client", description = "Realm name to authenticate against")
     protected String clientId;
 
-    @Option(name = "user", description = "Username to login with", hasValue = true)
+    @Option(names = "--user", description = "Username to login with")
     protected String user;
 
-    @Option(name = "password", description = "Password to login with (prompted for if not specified and --user is used)", hasValue = true)
+    @Option(names = "--password", description = "Password to login with (prompted for if not specified and --user is used)")
     protected String password;
 
-    @Option(name = "secret", description = "Secret to authenticate the client (prompted for if no --user or --keystore is specified)", hasValue = true)
+    @Option(names = "--secret", description = "Secret to authenticate the client (prompted for if no --user or --keystore is specified)")
     protected String secret;
 
-    @Option(name = "keystore", description = "Path to a keystore containing private key", hasValue = true)
+    @Option(names = "--keystore", description = "Path to a keystore containing private key")
     protected String keystore;
 
-    @Option(name = "storepass", description = "Keystore password (prompted for if not specified and --keystore is used)", hasValue = true)
+    @Option(names = "--storepass", description = "Keystore password (prompted for if not specified and --keystore is used)")
     protected String storePass;
 
-    @Option(name = "keypass", description = "Key password (prompted for if not specified and --keystore is used without --storepass, \n                             otherwise defaults to keystore password)", hasValue = true)
+    @Option(names = "--keypass", description = "Key password (prompted for if not specified and --keystore is used without --storepass, \n                             otherwise defaults to keystore password)")
     protected String keyPass;
 
-    @Option(name = "alias", description = "Alias of the key inside a keystore (defaults to the value of ClientId)", hasValue = true)
+    @Option(names = "--alias", description = "Alias of the key inside a keystore (defaults to the value of ClientId)")
     protected String alias;
 
-    @Option(name = "truststore", description = "Path to a truststore", hasValue = true)
+    @Option(names = "--truststore", description = "Path to a truststore")
     protected String trustStore;
 
-    @Option(name = "trustpass", description = "Truststore password (prompted for if not specified and --truststore is used)", hasValue = true)
+    @Option(names = "--trustpass", description = "Truststore password (prompted for if not specified and --truststore is used)")
     protected String trustPass;
 
-    @Option(name = "insecure", description = "Turns off TLS validation", hasValue = false)
+    @Option(names = "--insecure", description = "Turns off TLS validation")
     protected boolean insecure;
 
-    @Option(shortName = 't', name = "token", description = "Initial / Registration access token to use)", hasValue = true)
+    @Option(names = {"-t", "--token"}, description = "Initial / Registration access token to use)")
     protected String token;
 
     protected void initFromParent(AbstractAuthOptionsCmd parent) {
-
-        super.initFromParent(parent);
-
         noconfig = parent.noconfig;
         config = parent.config;
         server = parent.server;
@@ -110,12 +107,11 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
                 token == null && config == null;
     }
 
-    protected void processGlobalOptions() {
-
-        super.processGlobalOptions();
+    @Override
+    protected void processOptions() {
 
         if (config != null && noconfig) {
-            throw new RuntimeException("Options --config and --no-config are mutually exclusive");
+            throw new IllegalArgumentException("Options --config and --no-config are mutually exclusive");
         }
 
         if (!noconfig) {
@@ -130,7 +126,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
         }
     }
 
-    protected void setupTruststore(ConfigData configData, CommandInvocation invocation ) {
+    protected void setupTruststore(ConfigData configData) {
 
         if (!configData.getServerUrl().startsWith("https:")) {
             return;
@@ -147,7 +143,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
                 pass = configData.getTrustpass();
             }
             if (pass == null) {
-                pass = IoUtil.readSecret("Enter truststore password: ", invocation);
+                pass = IoUtil.readSecret("Enter truststore password: ");
             }
 
             try {
@@ -162,7 +158,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
         }
     }
 
-    protected ConfigData ensureAuthInfo(ConfigData config, CommandInvocation commandInvocation) {
+    protected ConfigData ensureAuthInfo(ConfigData config) {
 
         if (requiresLogin()) {
             // make sure current handler is in-memory handler
@@ -178,7 +174,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
                 ConfigCredentialsCmd login = new ConfigCredentialsCmd();
                 login.initFromParent(this);
                 login.init(config);
-                login.process(commandInvocation);
+                login.process();
 
                 // this must be executed before finally block which restores config handler
                 return loadConfig();
@@ -237,6 +233,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
         rdata.setGrantTypeForAuthentication(grantTypeForAuthentication);
     }
 
+    @Override
     protected void checkUnsupportedOptions(String ... options) {
         if (options.length % 2 != 0) {
             throw new IllegalArgumentException("Even number of argument required");

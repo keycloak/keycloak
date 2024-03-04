@@ -1,11 +1,5 @@
 package org.keycloak.client.registration.cli.commands;
 
-import org.jboss.aesh.cl.Arguments;
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-import org.jboss.aesh.console.command.CommandException;
-import org.jboss.aesh.console.command.CommandResult;
-import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.keycloak.client.registration.cli.common.AttributeKey;
 import org.keycloak.client.registration.cli.common.EndpointType;
 import org.keycloak.client.registration.cli.util.ReflectionUtil;
@@ -19,8 +13,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
@@ -32,97 +30,78 @@ import static org.keycloak.client.registration.cli.util.ReflectionUtil.isMapType
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "attrs", description = "[ATTRIBUTE] [--endpoint TYPE]")
+@Command(name = "attrs", description = "[ATTRIBUTE] [--endpoint TYPE]")
 public class AttrsCmd extends AbstractGlobalOptionsCmd {
 
-    @Option(shortName = 'e', name = "endpoint", description = "Endpoint type to use", hasValue = true)
+    CommandLine.Model.CommandSpec spec;
+
+    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type to use")
     protected String endpoint;
 
-    @Arguments
-    protected List<String> args;
-
+    @Parameters(arity = "0..1")
     protected String attr;
 
     @Override
-    public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        try {
-            processGlobalOptions();
+    protected void process() {
+        EndpointType regType = EndpointType.DEFAULT;
+        PrintStream out = System.out;
 
-            if (printHelp()) {
-                return CommandResult.SUCCESS;
+        if (endpoint != null) {
+            regType = EndpointType.of(endpoint);
+        }
+
+        Class type = regType == EndpointType.DEFAULT ? ClientRepresentation.class : (regType == EndpointType.OIDC ? OIDCClientRepresentation.class : null);
+        if (type == null) {
+            throw new IllegalArgumentException("Endpoint not supported: " + regType);
+        }
+        AttributeKey key = attr == null ? new AttributeKey() : new AttributeKey(attr);
+
+        Field f = ReflectionUtil.resolveField(type, key);
+        String ts = f != null ? ReflectionUtil.getTypeString(null, f) : null;
+
+        if (f == null) {
+            out.printf("Attributes for %s format:\n", regType.getEndpoint());
+
+            LinkedHashMap<String, String> items = getAttributeListWithJSonTypes(type, key);
+            for (Map.Entry<String, String> item : items.entrySet()) {
+                out.printf("  %-40s %s\n", item.getKey(), item.getValue());
             }
 
-            EndpointType regType = EndpointType.DEFAULT;
-            PrintStream out = commandInvocation.getShell().out();
+        } else {
+            out.printf("%-40s %s", attr, ts);
+            boolean eol = false;
 
-            if (endpoint != null) {
-                regType = EndpointType.of(endpoint);
-            }
-
-            if (args != null) {
-                if (args.size() > 1) {
-                    throw new IllegalArgumentException("Invalid option: " + args.get(1));
-                }
-                attr = args.get(0);
-            }
-
-            Class type = regType == EndpointType.DEFAULT ? ClientRepresentation.class : (regType == EndpointType.OIDC ? OIDCClientRepresentation.class : null);
-            if (type == null) {
-                throw new IllegalArgumentException("Endpoint not supported: " + regType);
-            }
-            AttributeKey key = attr == null ? new AttributeKey() : new AttributeKey(attr);
-
-            Field f = ReflectionUtil.resolveField(type, key);
-            String ts = f != null ? ReflectionUtil.getTypeString(null, f) : null;
-
-            if (f == null) {
-                out.printf("Attributes for %s format:\n", regType.getEndpoint());
-
-                LinkedHashMap<String, String> items = getAttributeListWithJSonTypes(type, key);
-                for (Map.Entry<String, String> item : items.entrySet()) {
-                    out.printf("  %-40s %s\n", item.getKey(), item.getValue());
-                }
-
-            } else {
-                out.printf("%-40s %s", attr, ts);
-                boolean eol = false;
-
-                Type t = f.getGenericType();
-                if (isListType(f.getType()) && t instanceof ParameterizedType) {
-                    t = ((ParameterizedType) t).getActualTypeArguments()[0];
-                    if (!isBasicType(t) && t instanceof Class) {
-                        eol = true;
-                        System.out.printf(", where value is:\n", ts);
-                        LinkedHashMap<String, String> items = ReflectionUtil.getAttributeListWithJSonTypes((Class) t, null);
-                        for (Map.Entry<String, String> item : items.entrySet()) {
-                            out.printf("    %-36s %s\n", item.getKey(), item.getValue());
-                        }
-                    }
-                } else if (isMapType(f.getType()) && t instanceof ParameterizedType) {
-                    t = ((ParameterizedType) t).getActualTypeArguments()[1];
-                    if (!isBasicType(t) && t instanceof Class) {
-                        eol = true;
-                        out.printf(", where value is:\n", ts);
-                        LinkedHashMap<String, String> items = ReflectionUtil.getAttributeListWithJSonTypes((Class) t, null);
-                        for (Map.Entry<String, String> item : items.entrySet()) {
-                            out.printf("    %-36s %s\n", item.getKey(), item.getValue());
-                        }
+            Type t = f.getGenericType();
+            if (isListType(f.getType()) && t instanceof ParameterizedType) {
+                t = ((ParameterizedType) t).getActualTypeArguments()[0];
+                if (!isBasicType(t) && t instanceof Class) {
+                    eol = true;
+                    out.printf(", where value is:\n", ts);
+                    LinkedHashMap<String, String> items = ReflectionUtil.getAttributeListWithJSonTypes((Class) t, null);
+                    for (Map.Entry<String, String> item : items.entrySet()) {
+                        out.printf("    %-36s %s\n", item.getKey(), item.getValue());
                     }
                 }
-
-                if (!eol) {
-                    // add end of line
-                    out.println();
+            } else if (isMapType(f.getType()) && t instanceof ParameterizedType) {
+                t = ((ParameterizedType) t).getActualTypeArguments()[1];
+                if (!isBasicType(t) && t instanceof Class) {
+                    eol = true;
+                    out.printf(", where value is:\n", ts);
+                    LinkedHashMap<String, String> items = ReflectionUtil.getAttributeListWithJSonTypes((Class) t, null);
+                    for (Map.Entry<String, String> item : items.entrySet()) {
+                        out.printf("    %-36s %s\n", item.getKey(), item.getValue());
+                    }
                 }
             }
 
-            return CommandResult.SUCCESS;
-
-        } finally {
-            commandInvocation.stop();
+            if (!eol) {
+                // add end of line
+                out.println();
+            }
         }
     }
 
+    @Override
     protected String help() {
         return usage();
     }
