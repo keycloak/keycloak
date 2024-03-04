@@ -24,6 +24,13 @@
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
         </#list>
     </#if>
+    <script type="importmap">
+        {
+            "imports": {
+                "alpinejs": "${url.resourcesCommonPath}/node_modules/alpinejs/dist/module.esm.js"
+            }
+        }
+    </script>
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
@@ -216,6 +223,11 @@
     </main>
   </div>
 </div>
+<script type="module">
+    import Alpine from "alpinejs";
+
+    Alpine.start();
+</script>
 </body>
 </html>
 </#macro>
