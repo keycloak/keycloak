@@ -74,7 +74,7 @@ export const TokenLifespan = ({
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
-            <SplitItem>
+            <SplitItem hidden={!isExpireSet(field.value)}>
               <TimeSelector
                 validated={
                   isExpireSet(field.value) && field.value! < 1

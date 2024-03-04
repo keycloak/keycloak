@@ -127,19 +127,6 @@ export const AdvancedSettings = ({
             units={["minute", "day", "hour"]}
           />
 
-          <TokenLifespan
-            id="clientOfflineSessionMax"
-            name={convertAttributeNameToForm(
-              "attributes.client.offline.session.max.lifespan",
-            )}
-            defaultValue={
-              realm?.offlineSessionMaxLifespanEnabled
-                ? realm.offlineSessionMaxLifespan
-                : undefined
-            }
-            units={["minute", "day", "hour"]}
-          />
-
           <FormGroup
             label={t("oAuthMutual")}
             fieldId="oAuthMutual"
