@@ -26,9 +26,14 @@ import { RealmOverrides } from "./RealmOverrides";
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
   realm: RealmRepresentation;
+  tableData: Record<string, string>[] | undefined;
 };
 
-export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
+export const LocalizationTab = ({
+  save,
+  realm,
+  tableData,
+}: LocalizationTabProps) => {
   const { t } = useTranslation();
   const { whoAmI } = useWhoAmI();
 
@@ -244,6 +249,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
           internationalizationEnabled={internationalizationEnabled}
           watchSupportedLocales={watchSupportedLocales}
           realm={realm}
+          tableData={tableData}
         />
       </Tab>
       <Tab

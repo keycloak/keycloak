@@ -40,7 +40,7 @@ export const AddTranslationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("AddTranslation")}
+      title={t("addTranslation")}
       isOpen
       onClose={handleModalToggle}
       actions={[
