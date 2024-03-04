@@ -1058,7 +1058,7 @@ public class AuthenticationManager {
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
             // See if any clientScopes need to be approved on consent screen
-            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session);
+            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
             if (!clientScopesToApprove.isEmpty()) {
                 return CommonClientSessionModel.Action.OAUTH_GRANT.name();
             }
@@ -1122,7 +1122,7 @@ public class AuthenticationManager {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
-            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session);
+            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
 
             // Skip grant screen if everything was already approved by this user
             if (clientScopesToApprove.size() > 0) {
@@ -1149,7 +1149,7 @@ public class AuthenticationManager {
 
     }
 
-    private static List<AuthorizationDetails> getClientScopesToApproveOnConsentScreen(UserConsentModel grantedConsent, KeycloakSession session) {
+    private static List<AuthorizationDetails> getClientScopesToApproveOnConsentScreen(UserConsentModel grantedConsent, KeycloakSession session, AuthenticationSessionModel authSession) {
         // Client Scopes to be displayed on consent screen
         List<AuthorizationDetails> clientScopesToDisplay = new LinkedList<>();
 
@@ -1164,6 +1164,10 @@ public class AuthenticationManager {
             if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope) || isDynamicScopeWithParam(authDetails)) {
                 clientScopesToDisplay.add(authDetails);
             }
+        }
+        //force consent when running a verification flow of OAuth 2.0 Device Authorization Grant
+        if(clientScopesToDisplay.isEmpty() && isOAuth2DeviceVerificationFlow(authSession)) {
+            clientScopesToDisplay.add(new AuthorizationDetails(authSession.getClient()));
         }
 
         return clientScopesToDisplay;
