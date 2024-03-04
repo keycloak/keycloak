@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-karaf</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>22.0.9</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-fuse61</artifactId>
