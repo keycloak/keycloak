@@ -130,7 +130,6 @@ public class SdJwtSigningService extends SigningService<String> {
             throw new SigningServiceException("SD-JWT only supports single type credentials.");
         }
         rootNode.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, verifiableCredential.getType().get(0));
-        rootNode.put(SELECTIVE_DISCLOSURE_ALGORITHM_CLAIM, hashAlgorithm);
         rootNode.put(CREDENTIAL_ID_CLAIM, JwtSigningService.createCredentialId(verifiableCredential));
 
         SdJwt sdJwt = SdJwt.builder()
