@@ -346,6 +346,16 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             Assert.assertEquals("user1", user1.getFirstAttribute(LDAPConstants.LDAP_ID));
         });
 
+        // Remove all users from model - required step before the next test execution especially when running against external AD
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Remove all users from model
+            UserStoragePrivateUtil.userLocalStorage(session)
+                    .searchForUserStream(ctx.getRealm(), Collections.emptyMap())
+                    .collect(Collectors.toList())
+                    .forEach(user -> UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user));
+        });
+
         // Revert config changes
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
         ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
