@@ -51,8 +51,8 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.utils.ScopeUtil;
 import org.w3c.dom.Document;
 
@@ -112,9 +112,9 @@ public class SoapTest {
         Document doc = SAML2Request.convert(request);
         Profile.defaults();
         CryptoIntegration.init(CryptoProvider.class.getClassLoader());
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        KeycloakSession session = new DefaultKeycloakSession(sessionFactory);
+        KeycloakSession session = new ResteasyKeycloakSession(sessionFactory);
 
         SOAPMessage soapResponse = Soap.createMessage()
                 .addMimeHeader("SOAPAction", "http://www.oasis-open.org/committees/security")
@@ -154,9 +154,9 @@ public class SoapTest {
                 return ScopeUtil.createScope(new HashMap<>());
             }
         });
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        KeycloakSession session = new DefaultKeycloakSession(sessionFactory);
+        KeycloakSession session = new ResteasyKeycloakSession(sessionFactory);
 
         SOAPException ex = Assert.assertThrows(SOAPException.class, () -> {
             Soap.createMessage()

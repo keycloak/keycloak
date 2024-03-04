@@ -1313,6 +1313,12 @@
                 <artifactId>keycloak-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-services</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
 
             <!-- Authorization -->
             <dependency>

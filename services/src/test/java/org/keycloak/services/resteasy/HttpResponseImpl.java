@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services;
+package org.keycloak.services.resteasy;
 
 import jakarta.ws.rs.core.NewCookie;
 import org.keycloak.http.HttpResponse;

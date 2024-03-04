@@ -40,7 +40,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakContext implements KeycloakContext {
+public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     private RealmModel realm;
 
@@ -131,12 +131,12 @@ public class DefaultKeycloakContext implements KeycloakContext {
     public Locale resolveLocale(UserModel user) {
         return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user);
     }
-    
+
     @Override
     public AuthenticationSessionModel getAuthenticationSession() {
         return authenticationSession;
     }
-    
+
     @Override
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
@@ -170,13 +170,9 @@ public class DefaultKeycloakContext implements KeycloakContext {
         return response;
     }
 
-    protected HttpRequest createHttpRequest() {
-        return new HttpRequestImpl(getContextObject(org.jboss.resteasy.spi.HttpRequest.class));
-    }
+    protected abstract HttpRequest createHttpRequest();
 
-    protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
-    }
+    protected abstract HttpResponse createHttpResponse();
 
     protected KeycloakSession getSession() {
         return session;

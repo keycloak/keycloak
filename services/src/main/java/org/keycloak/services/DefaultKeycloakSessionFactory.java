@@ -52,7 +52,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
+public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
     private static final Logger logger = Logger.getLogger(DefaultKeycloakSessionFactory.class);
 
@@ -74,7 +74,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     private Long roleStorageProviderTimeout;
 
     protected ComponentFactoryProviderFactory componentFactoryPF;
-    
+
     @Override
     public void register(ProviderEventListener listener) {
         listeners.add(listener);
@@ -318,11 +318,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         return true;
     }
 
-    public KeycloakSession create() {
-        KeycloakSession session =  new DefaultKeycloakSession(this);
-        return session;
-    }
-
     @Override
     public Set<Spi> getSpis() {
         return spis;
@@ -396,6 +391,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         return null;
     }
 
+    @Override
     public void close() {
         ProviderManagerRegistry.SINGLETON.setDeployer(null);
         for (Map<String, ProviderFactory> factories : factoriesMap.values()) {

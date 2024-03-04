@@ -6,7 +6,6 @@ import static org.keycloak.services.resources.KeycloakApplication.getSessionFact
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.Failure;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
@@ -121,10 +120,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (throwable instanceof WebApplicationException) {
             WebApplicationException ex = (WebApplicationException) throwable;
             status = ex.getResponse().getStatus();
-        }
-        if (throwable instanceof Failure) {
-            Failure f = (Failure) throwable;
-            status = f.getErrorCode();
         }
         if (throwable instanceof JsonProcessingException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();

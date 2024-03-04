@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services;
+package org.keycloak.services.resteasy;
 
 import static jakarta.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE;
 
@@ -36,6 +36,7 @@ import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.services.FormPartValueImpl;
 
 public class HttpRequestImpl implements HttpRequest {
 
