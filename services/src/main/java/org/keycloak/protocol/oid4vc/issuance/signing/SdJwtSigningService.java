@@ -141,12 +141,7 @@ public class SdJwtSigningService extends SigningService<String> {
                 .withJwsType(tokenType)
                 .build();
 
-        StringJoiner tokenJoiner = new StringJoiner("~");
-        // start with the actual credential
-        tokenJoiner.add(sdJwt.getIssuerSignedJWT().getJwsString());
-        // append the disclosures
-        sdJwt.getDisclosures().forEach(tokenJoiner::add);
-        return tokenJoiner.toString();
+        return sdJwt.toSdJwtString();
     }
 
 }
