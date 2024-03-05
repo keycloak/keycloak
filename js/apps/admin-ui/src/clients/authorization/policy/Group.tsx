@@ -12,11 +12,10 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem, TextControl } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../../utils/useFetch";
 
 type GroupForm = {
@@ -33,7 +32,6 @@ export const Group = () => {
   const { t } = useTranslation();
   const {
     control,
-    register,
     getValues,
     setValue,
     formState: { errors },
@@ -62,23 +60,11 @@ export const Group = () => {
 
   return (
     <>
-      <FormGroup
+      <TextControl
+        name="groupsClaim"
         label={t("groupsClaim")}
-        labelIcon={
-          <HelpItem
-            helpText={t("groupsClaimHelp")}
-            fieldLabelId="groupsClaim"
-          />
-        }
-        fieldId="groups"
-      >
-        <KeycloakTextInput
-          type="text"
-          id="groupsClaim"
-          data-testid="groupsClaim"
-          {...register("groupsClaim")}
-        />
-      </FormGroup>
+        labelIcon={t("groupsClaimHelp")}
+      />
       <FormGroup
         label={t("groups")}
         labelIcon={
