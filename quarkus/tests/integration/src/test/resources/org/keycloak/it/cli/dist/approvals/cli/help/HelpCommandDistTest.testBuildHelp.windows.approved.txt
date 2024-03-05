@@ -61,25 +61,9 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: account-api[:v1],
-                       account2[:v1], account3[:v1], admin-api[:v1], admin-fine-grained-authz[:v1],
-                       admin2[:v1], authorization[:v1], ciba[:v1], client-policies[:v1],
-                       client-secret-rotation[:v1], client-types[:v1], declarative-ui[:v1],
-                       device-flow[:v1], docker[:v1], dpop[:v1], dynamic-scopes[:v1], fips[:v1],
-                       hostname[:v1], impersonation[:v1], js-adapter[:v1], kerberos[:v1],
-                       linkedin-oauth[:v1], login2[:v1], multi-site[:v1], offline-session-preloading
-                       [:v1], oid4vc-vci[:v1], par[:v1], preview, recovery-codes[:v1], scripts[:
-                       v1], step-up-authentication[:v1], token-exchange[:v1], transient-users[:v1],
-                       update-email[:v1], web-authn[:v1].
+--features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
-                     Disables a set of one or more features. Possible values are: account-api,
-                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
-                       authorization, ciba, client-policies, client-secret-rotation, client-types,
-                       declarative-ui, device-flow, docker, dpop, dynamic-scopes, fips,
-                       impersonation, js-adapter, kerberos, linkedin-oauth, login2, multi-site,
-                       offline-session-preloading, oid4vc-vci, par, preview, recovery-codes,
-                       scripts, step-up-authentication, token-exchange, transient-users,
-                       update-email, web-authn.
+                     Disables a set of one or more features. Possible values are: <...>.
 
 HTTP(S):
 

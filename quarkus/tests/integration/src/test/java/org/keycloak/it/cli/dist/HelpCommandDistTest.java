@@ -172,7 +172,9 @@ public class HelpCommandDistTest {
 
     private void assertHelp(CLIResult result) {
         try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
-            Approvals.verify(result.getOutput());
+            // normalize the output to prevent changes around the feature toggles to mark the output to differ
+            String output = result.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
+            Approvals.verify(output);
         } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
         }
