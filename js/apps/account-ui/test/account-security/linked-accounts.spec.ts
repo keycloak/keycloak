@@ -1,18 +1,20 @@
-import { expect, test } from "@playwright/test";
-import {
-  createIdentityProvider,
-  deleteIdentityProvider,
-  createClient,
-  deleteClient,
-  inRealm,
-  findClientByClientId,
-  createRandomUserWithPassword,
-  deleteUser,
-} from "../admin-client";
-import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
 import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { randomUUID } from "crypto";
+import { expect, test } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+
+import {
+  createClient,
+  createIdentityProvider,
+  createRandomUserWithPassword,
+  deleteClient,
+  deleteIdentityProvider,
+  deleteUser,
+  findClientByClientId,
+  inRealm,
+} from "../admin-client";
+import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
+import { getBaseUrl } from "../utils";
 
 const realm = "groups";
 
@@ -30,7 +32,7 @@ test.describe("Account linking", () => {
     groupIdPClientId = await createClient(
       groupsIdPClient as ClientRepresentation,
     );
-    const kc = process.env.KEYCLOAK_SERVER || "http://localhost:8080";
+    const baseUrl = getBaseUrl();
     const idp: IdentityProviderRepresentation = {
       alias: "master-idp",
       providerId: "oidc",
@@ -39,12 +41,12 @@ test.describe("Account linking", () => {
         clientId: "groups-idp",
         clientSecret: "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
         validateSignature: "false",
-        tokenUrl: `${kc}/realms/master/protocol/openid-connect/token`,
-        jwksUrl: `${kc}/realms/master/protocol/openid-connect/certs`,
-        issuer: `${kc}/realms/master`,
-        authorizationUrl: `${kc}/realms/master/protocol/openid-connect/auth`,
-        logoutUrl: `${kc}/realms/master/protocol/openid-connect/logout`,
-        userInfoUrl: `${kc}/realms/master/protocol/openid-connect/userinfo`,
+        tokenUrl: `${baseUrl}/realms/master/protocol/openid-connect/token`,
+        jwksUrl: `${baseUrl}/realms/master/protocol/openid-connect/certs`,
+        issuer: `${baseUrl}/realms/master`,
+        authorizationUrl: `${baseUrl}/realms/master/protocol/openid-connect/auth`,
+        logoutUrl: `${baseUrl}/realms/master/protocol/openid-connect/logout`,
+        userInfoUrl: `${baseUrl}/realms/master/protocol/openid-connect/userinfo`,
       },
     };
 

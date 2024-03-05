@@ -71,6 +71,8 @@ import java.util.Set;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ *
+ * Note: the classes and singletons are not used by Quarkus - see the KeycloakProcessor to do exclusions
  */
 public class KeycloakApplication extends Application {
 

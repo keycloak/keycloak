@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { getRootPath } from "./src/utils/getRootPath";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -11,9 +12,7 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
   use: {
-    baseURL: process.env.CI
-      ? "http://localhost:8080/realms/master/account/"
-      : "http://localhost:8080/",
+    baseURL: `http://localhost:8080${getRootPath()}`,
     trace: "on-first-retry",
   },
 

@@ -1,36 +1,38 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  Button,
   Divider,
   FormGroup,
+  Grid,
+  GridItem,
   Radio,
   Select,
   SelectOption,
   SelectVariant,
   Switch,
+  Tooltip,
 } from "@patternfly/react-core";
 import { isEqual } from "lodash-es";
-import { useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
-import { DefaultSwitchControl } from "../../../components/SwitchControl";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
-import type { AttributeParams } from "../../routes/Attribute";
-
 import "../../realm-settings-section.css";
+import { GlobeRouteIcon } from "@patternfly/react-icons";
+import { AddTranslationsDialog } from "./AddTranslationsDialog";
+import useToggle from "../../../utils/useToggle";
+import { AttributeParams } from "../../routes/Attribute";
+import { useRealm } from "../../../context/realm-context/RealmContext";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -38,9 +40,29 @@ const REQUIRED_FOR = [
   { label: "requiredForLabel.admins", value: ["admin"] },
 ] as const;
 
-export const AttributeGeneralSettings = () => {
+type TranslationForm = {
+  locale: string;
+  value: string;
+};
+
+type Translations = {
+  key: string;
+  translations: TranslationForm[];
+};
+
+export type AttributeGeneralSettingsProps = {
+  onHandlingTranslationData: (data: Translations) => void;
+  onHandlingGeneratedDisplayName: (displayName: string) => void;
+};
+
+export const AttributeGeneralSettings = ({
+  onHandlingTranslationData,
+  onHandlingGeneratedDisplayName,
+}: AttributeGeneralSettingsProps) => {
   const { t } = useTranslation();
+  const { realm: realmName } = useRealm();
   const form = useFormContext();
+  const tooltipRef = useRef();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
   const [config, setConfig] = useState<UserProfileConfig>();
@@ -48,8 +70,31 @@ export const AttributeGeneralSettings = () => {
   const [selectRequiredForOpen, setSelectRequiredForOpen] = useState(false);
   const [isAttributeGroupDropdownOpen, setIsAttributeGroupDropdownOpen] =
     useState(false);
+  const [addTranslationsModalOpen, toggleModal] = useToggle();
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const [newAttributeName, setNewAttributeName] = useState("");
+  const [generatedDisplayName, setGeneratedDisplayName] = useState("");
+  const [translationsData, setTranslationsData] = useState<Translations>({
+    key: "",
+    translations: [],
+  });
+  const displayNameRegex = /\$\{([^}]+)\}/;
+
+  const handleAttributeNameChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const newAttributeName = event.target.value;
+    setNewAttributeName(newAttributeName);
+
+    const newDisplayName =
+      newAttributeName !== "" && realm?.internationalizationEnabled
+        ? "${profile.attributes." + `${newAttributeName}}`
+        : "";
+
+    setGeneratedDisplayName(newDisplayName);
+  };
 
   const hasSelector = useWatch({
     control: form.control,
@@ -67,8 +112,39 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
+  const attributeDisplayName = useWatch({
+    control: form.control,
+    name: "displayName",
+  });
+
+  const displayNamePatternMatch = displayNameRegex.test(attributeDisplayName);
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
+      if (!realm) {
+        throw new Error(t("notFound"));
+      }
+      setRealm(realm);
+    },
+    [],
+  );
+
   useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
   useFetch(() => adminClient.users.getProfile(), setConfig, []);
+
+  const handleTranslationsData = (translationsData: Translations) => {
+    onHandlingTranslationData(translationsData);
+  };
+
+  const handleGeneratedDisplayName = (displayName: string) => {
+    onHandlingGeneratedDisplayName(displayName);
+  };
+
+  useEffect(() => {
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  }, [translationsData, generatedDisplayName]);
 
   if (!clientScopes) {
     return <KeycloakSpinner />;
@@ -82,9 +158,33 @@ export const AttributeGeneralSettings = () => {
     form.setValue("hasRequiredScopes", hasRequiredScopes);
   }
 
+  const handleTranslationsAdded = (translationsData: Translations) => {
+    setTranslationsData(translationsData);
+  };
+
+  const handleToggleDialog = () => {
+    toggleModal();
+    handleTranslationsData(translationsData);
+    handleGeneratedDisplayName(generatedDisplayName);
+  };
+
   return (
-    <FormAccess role="manage-realm" isHorizontal>
-      <FormProvider {...form}>
+    <>
+      {addTranslationsModalOpen && (
+        <AddTranslationsDialog
+          translationKey={
+            editMode
+              ? attributeDisplayName
+              : "${profile.attributes." + `${newAttributeName}}`
+          }
+          onTranslationsAdded={handleTranslationsAdded}
+          toggleDialog={handleToggleDialog}
+          onCancel={() => {
+            toggleModal();
+          }}
+        />
+      )}
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("attributeName")}
           labelIcon={
@@ -106,6 +206,7 @@ export const AttributeGeneralSettings = () => {
             isDisabled={editMode}
             validated={form.formState.errors.name ? "error" : "default"}
             {...form.register("name", { required: true })}
+            onChange={handleAttributeNameChange}
           />
         </FormGroup>
         <FormGroup
@@ -118,18 +219,48 @@ export const AttributeGeneralSettings = () => {
           }
           fieldId="kc-attribute-display-name"
         >
-          <KeycloakTextInput
-            id="kc-attribute-display-name"
-            defaultValue=""
-            data-testid="attribute-display-name"
-            {...form.register("displayName")}
-          />
+          <Grid hasGutter>
+            <GridItem span={realm?.internationalizationEnabled ? 11 : 12}>
+              <KeycloakTextInput
+                id="kc-attribute-display-name"
+                data-testid="attribute-display-name"
+                isDisabled={
+                  (realm?.internationalizationEnabled &&
+                    newAttributeName !== "") ||
+                  (editMode && displayNamePatternMatch)
+                }
+                value={
+                  editMode
+                    ? attributeDisplayName
+                    : realm?.internationalizationEnabled
+                      ? generatedDisplayName
+                      : undefined
+                }
+                {...form.register("displayName")}
+              />
+            </GridItem>
+            {realm?.internationalizationEnabled && (
+              <GridItem span={1}>
+                <Button
+                  ref={tooltipRef}
+                  variant="link"
+                  className="pf-m-plain kc-attribute-display-name-iconBtn"
+                  data-testid="addAttributeTranslationBtn"
+                  aria-label={t("addAttributeTranslationBtn")}
+                  isDisabled={!newAttributeName && !editMode}
+                  onClick={() => {
+                    toggleModal();
+                  }}
+                  icon={<GlobeRouteIcon />}
+                />
+                <Tooltip
+                  content={t("addAttributeTranslationTooltip")}
+                  reference={tooltipRef}
+                />
+              </GridItem>
+            )}
+          </Grid>
         </FormGroup>
-        <DefaultSwitchControl
-          name="multivalued"
-          label={t("multivalued")}
-          labelIcon={t("multivaluedHelp")}
-        />
         <FormGroup
           label={t("attributeGroup")}
           labelIcon={
@@ -407,7 +538,7 @@ export const AttributeGeneralSettings = () => {
             )}
           </>
         )}
-      </FormProvider>
-    </FormAccess>
+      </FormAccess>
+    </>
   );
 };

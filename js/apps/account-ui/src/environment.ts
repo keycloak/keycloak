@@ -1,3 +1,6 @@
+import { matchPath } from "react-router-dom";
+import { DEFAULT_REALM, ROOT_PATH } from "./constants";
+
 export type Feature = {
   isRegistrationEmailAsUsername: boolean;
   isEditUserNameAllowed: boolean;
@@ -31,11 +34,12 @@ export type Environment = {
   features: Feature;
 };
 
-// The default environment, used during development.
-const realm = new URLSearchParams(window.location.search).get("realm");
+// Detect the current realm from the URL.
+const match = matchPath(ROOT_PATH, location.pathname);
+
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  realm: realm || "master",
+  realm: match?.params.realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",

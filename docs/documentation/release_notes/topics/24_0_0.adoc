@@ -96,9 +96,6 @@ endif::[]
 
 The 'welcome' page that appears at the first use of {project_name} is redesigned. It provides a better setup experience and conforms to the latest version of https://www.patternfly.org/[PatternFly]. The simplified page layout includes only a form to register the first administrative user. After completing the registration, the user is sent directly to the Admin Console.
 
-.New welcome page with a simplified layout and registration form
-image::images/new-welcome-screen.png[New welcome page with a simplified layout and registration form]
-
 If you use a custom theme, you may need to update it to support the new welcome page. For details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = New Account Console now the default
@@ -106,9 +103,6 @@ If you use a custom theme, you may need to update it to support the new welcome 
 We introduced version 3 of the Account Console in {project_name} 22 as a preview feature. In this release, we are making it the default version, and deprecating version 2 in the process, which will be removed in a subsequent release.
 
 This new version has built-in support for the user profile feature, which allows administrators to configure which attributes are available to users in the Account Console, and lands a user directly on their personal account page after logging in.
-
-.New Account Console with custom attributes
-image::images/new-account-console.png[New Account Console with custom attributes]
 
 If you are using or extending the customization features of this theme,  you may need to perform additional migrations. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
@@ -121,6 +115,14 @@ The {project_name} JS adapter now uses the https://webpack.js.org/guides/package
 == PKCE enabled by default
 
 The {project_name} JS adapter now sets the `pkceMethod` option to `S256` by default. This change enables Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) for all applications using the adapter. If you use the adapter on a system that does not support PKCE, you can set the `pkceMethod` option to `false` to disable it.
+
+= Changes to Password Hashing
+
+In this release, we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+
+As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
+Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed. This change means better security aligned with latest recommendations, but
+it has impact on performance. It is possible to stick to the old behaviour by adding password policies `hashAlgorithm` and `hashIterations` to your realm. For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = OAuth/OIDC related improvements
 

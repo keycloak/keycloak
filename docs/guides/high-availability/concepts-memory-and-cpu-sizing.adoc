@@ -76,7 +76,7 @@ Limits calculated:
 +
 (1000 MB base memory plus 250 MB RAM for 50,000 active sessions)
 
-* Memory limit: 1360 GB
+* Memory limit: 1360 MB
 +
 (1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
 
