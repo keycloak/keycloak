@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -537,7 +538,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Revert policy change
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
-        protocolMapperPolicyRep.getConfig().remove(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
+        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 
@@ -586,6 +587,95 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
+    @Test
+    public void passingAnAlreadyAssignedProtocolMapperWithDisallowedTypeDoesNotFail() throws Exception {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        // Check the client can be updated with a representation keeping the disallowed protocolMapper
+        reg.update(clientResource.toRepresentation());
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
+    public void passingNewProtocolMapperOfDisallowedTypeInAdditionToAnAlreadyAssignedOneOfTheSameTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().add(createHardcodedMapperRep());
+        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
+    public void alteringAnAlreadyAssignedProtocolMappersConfigWithDisallowedTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        // Check the client can be updated with a representation keeping the disallowed protocolMapper
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().forEach(mapper -> mapper.getConfig().put("foo", "bar"));
+        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
+
+    @Test
+    public void alteringAnAlreadyAssignedProtocolMappersIdWithDisallowedTypeFails() {
+        setTrustedHost("localhost");
+
+        ClientRepresentation clientRep = createRep("test-app");
+        // Create the client with a client registration disallowed protocolMapper
+        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
+        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+
+        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+        // Check the client can be updated with a representation keeping the disallowed protocolMapper
+        ClientRepresentation representation = clientResource.toRepresentation();
+        representation.getProtocolMappers().forEach(mapper -> mapper.setId(UUID.randomUUID().toString()));
+        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+
+        // Revert client
+        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+    }
 
     @Test
     public void testProtocolMappersConsentRequired() throws Exception {
@@ -622,7 +712,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Revert
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
-        protocolMapperPolicyRep.getConfig().remove(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
+        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 

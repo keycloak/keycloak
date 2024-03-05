@@ -18,12 +18,15 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
@@ -48,10 +51,10 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
     @Override
     public void beforeRegister(ClientRegistrationContext context) throws ClientRegistrationPolicyException {
-        testMappers(context);
+        testMappers(context, null);
     }
 
-    protected void testMappers(ClientRegistrationContext context) throws ClientRegistrationPolicyException {
+    protected void testMappers(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
         List<ProtocolMapperRepresentation> protocolMappers = context.getClient().getProtocolMappers();
         if (protocolMappers == null) {
             return;
@@ -59,15 +62,39 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
         List<String> allowedMapperProviders = getAllowedMapperProviders();
 
-        for (ProtocolMapperRepresentation mapper : protocolMappers) {
-            String mapperType = mapper.getProtocolMapper();
+        for (ProtocolMapperRepresentation mapperRepresentation : protocolMappers) {
+            String mapperType = mapperRepresentation.getProtocolMapper();
 
-            if (!allowedMapperProviders.contains(mapperType)) {
-                ServicesLogger.LOGGER.clientRegistrationMapperNotAllowed(mapper.getName(), mapperType);
-                throw new ClientRegistrationPolicyException("ProtocolMapper type not allowed");
-            }
-        }
+			if (allowedMapperProviders.contains(mapperType)) {
+				continue;
+			}
+			if (clientModel == null) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
+			String mapperRepresentationId = mapperRepresentation.getId();
+			if (mapperRepresentationId == null) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
+			ProtocolMapperModel mapperModel = clientModel.getProtocolMapperById(mapperRepresentationId);
+			if (mapperModel == null) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
+			Map<String, String> modelConfig = mapperModel.getConfig();
+			Map<String, String> representationConfig = mapperRepresentation.getConfig();
+			if (!Objects.equals(representationConfig, modelConfig)) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
+		}
     }
+
+	protected void failWithProtocolMapperTypeNotAllowedError(ProtocolMapperRepresentation mapper) {
+		ServicesLogger.LOGGER.clientRegistrationMapperNotAllowed(mapper.getName(), mapper.getProtocolMapper());
+		throw new ClientRegistrationPolicyException("ProtocolMapper type not allowed");
+	}
 
     // Remove builtin mappers of unsupported types too
     @Override
@@ -82,10 +109,9 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
                 .forEach(clientModel::removeProtocolMapper);
     }
 
-    // We don't take already existing protocolMappers into consideration for now
     @Override
     public void beforeUpdate(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        testMappers(context);
+        testMappers(context, clientModel);
     }
 
     @Override
