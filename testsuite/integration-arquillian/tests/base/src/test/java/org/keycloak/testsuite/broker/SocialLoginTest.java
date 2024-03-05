@@ -643,7 +643,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Assert.assertEquals(1, users.size());
 
         String username = users.get(0).getUsername();
-        checkFeature(501, username);
+        checkFeature(400, username);
 
         testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
@@ -730,7 +730,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         } finally {
             httpClient.close();
             testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
-            checkFeature(501, username);
+            checkFeature(400, username);
         }
     }
 }
