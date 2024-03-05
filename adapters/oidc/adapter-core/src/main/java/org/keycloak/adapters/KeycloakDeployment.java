@@ -53,7 +53,7 @@ public class KeycloakDeployment {
     protected String realm;
     protected PublicKeyLocator publicKeyLocator;
     protected String authServerBaseUrl;
-    protected String realmInfoUrl;
+    protected volatile String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
     protected String tokenUrl;
     protected KeycloakUriBuilder logoutUrl;
@@ -185,7 +185,6 @@ public class KeycloakDeployment {
                         OIDCConfigurationRepresentation config = getOidcConfiguration(discoveryUrl);
 
                         authUrl = KeycloakUriBuilder.fromUri(config.getAuthorizationEndpoint());
-                        realmInfoUrl = config.getIssuer();
 
                         tokenUrl = config.getTokenEndpoint();
                         logoutUrl = KeycloakUriBuilder.fromUri(config.getLogoutEndpoint());
@@ -199,6 +198,8 @@ public class KeycloakDeployment {
                             .build(getRealm()).toString();
                         jwksUrl = config.getJwksUri();
 
+                        // the realmInfoUrl is used as a mutex, so we need to initialize it last
+                        realmInfoUrl = config.getIssuer();
                         log.infov("Loaded URLs from {0}", discoveryUrl);
                     } catch (Exception e) {
                         log.warnv(e, "Failed to load URLs from {0}", discoveryUrl);

@@ -21,6 +21,12 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,10 +74,85 @@ public class KeycloakDeploymentTest {
         assertEquals("https://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
     }
 
-    class KeycloakDeploymentMock extends KeycloakDeployment {
+    @Test
+    public void logoutUrlNotNullInMultiThreading() {
+        final int numberOfAttempts = 15;
+        IntStream.rangeClosed(1, numberOfAttempts).forEach(attemptIndex -> {
+            KeycloakDeployment keycloakDeployment = createTestDeployment();
+
+            // keep it pretty low to avoid unneeded pressure on CI yet be able to reproduce the KEYCLOAK-27489 issue
+            final int numberOfThreads = 20;
+            AtomicInteger threadsReceivedNull = new AtomicInteger(0);
+
+            new MultipleThreads(numberOfThreads, () -> {
+                if (keycloakDeployment.getLogoutUrl() == null) {
+                    threadsReceivedNull.incrementAndGet();
+                }
+            }).run();
+
+			assertEquals(
+                String.format("No thread must receive null logout URL, but it was received during the attempt#%d/%d", attemptIndex, numberOfAttempts), 
+                    0,
+                    threadsReceivedNull.get()
+            );
+        });
+    }
+
+    private KeycloakDeployment createTestDeployment() {
+        KeycloakDeployment keycloakDeployment = new KeycloakDeploymentMock();
+        keycloakDeployment.setRealm("test");
+        AdapterConfig config = new AdapterConfig();
+        config.setAuthServerUrl("http://localhost:80/auth");
+        keycloakDeployment.setAuthServerBaseUrl(config);
+        return keycloakDeployment;
+    }
+
+    private static class MultipleThreads {
+        private final int numberOfThreads;
+        private final Runnable runnable;
+
+        private MultipleThreads(int numberOfThreads, Runnable runnable) {
+            this.numberOfThreads = numberOfThreads;
+            this.runnable = runnable;
+        }
+
+        private void run() {
+            ExecutorService service = Executors.newFixedThreadPool(numberOfThreads);
+            // startLatch increases the concurrency
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch finishLatch = new CountDownLatch(numberOfThreads);
+
+            IntStream.range(0, numberOfThreads).forEach(threadIndex ->
+                service.submit(() -> {
+                    try {
+                        startLatch.await();
+                        runnable.run();
+                    }
+                    catch (InterruptedException e) {
+                        // point to improve: the exceptions can be collected to a concurrent list and fail the test
+                        // not affecting the current test though
+                        throw new RuntimeException("Failed to wait in the start latch", e);
+                    }
+                    finally {
+                        finishLatch.countDown();
+                    }
+                })
+            );
+            // start actions in all threads at once
+            startLatch.countDown();
+            // wait until all threads complete
+			try {
+				finishLatch.await();
+			} catch (InterruptedException e) {
+                throw new RuntimeException("Failed to wait in the finish latch", e);
+			}
+		}
+    }
+
+    private static class KeycloakDeploymentMock extends KeycloakDeployment {
 
         @Override
-        protected OIDCConfigurationRepresentation getOidcConfiguration(String discoveryUrl) throws Exception {
+        protected OIDCConfigurationRepresentation getOidcConfiguration(String discoveryUrl) {
             String base = KeycloakUriBuilder.fromUri(discoveryUrl).replacePath("/auth").build().toString();
 
             OIDCConfigurationRepresentation rep = new OIDCConfigurationRepresentation();
