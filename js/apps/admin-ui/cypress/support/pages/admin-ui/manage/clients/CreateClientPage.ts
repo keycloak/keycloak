@@ -25,11 +25,11 @@ export default class CreateClientPage extends CommonPage {
   #deviceAuthGrantChkBx = "#kc-oauth-device-authorization-grant";
   #serviceAccountRolesChkBx = "#kc-flow-service-account";
 
-  #rootUrlInput = "#kc-root-url";
-  #homeUrlInput = "#kc-home-url";
+  #rootUrlInput = "rootUrl";
+  #homeUrlInput = "baseUrl";
   #firstValidRedirectUrlInput = "redirectUris0";
   #firstWebOriginsInput = "webOrigins0";
-  #adminUrlInput = "#kc-admin-url";
+  #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#loginTheme";
   #loginThemeList = 'ul[aria-label="Login theme"]';
@@ -227,12 +227,12 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkAccessSettingsElements() {
-    cy.get(this.#adminUrlInput).scrollIntoView();
-    cy.get(this.#rootUrlInput).should("not.be.disabled");
-    cy.get(this.#homeUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).scrollIntoView();
+    cy.findByTestId(this.#rootUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#homeUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstValidRedirectUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstWebOriginsInput).should("not.be.disabled");
-    cy.get(this.#adminUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).should("not.be.disabled");
 
     return this;
   }
