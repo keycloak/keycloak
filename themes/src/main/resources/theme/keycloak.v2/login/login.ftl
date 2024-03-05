@@ -99,8 +99,8 @@
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-            <div id="kc-registration-container">
-                <div id="kc-registration">
+            <div id="kc-registration-container" class="pf-v5-c-login__main-footer-band">
+                <div id="kc-registration" class="pf-v5-c-login__main-footer-band-item">
                     <span>${msg("noAccount")} <a tabindex="6"
                                                  href="${url.registrationUrl}">${msg("doRegister")}</a></span>
                 </div>
