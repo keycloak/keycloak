@@ -33,6 +33,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.InputStream;
 
 /**
@@ -40,6 +42,7 @@ import java.io.InputStream;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Provider
 @Path("/js")
 public class JsResource {
 

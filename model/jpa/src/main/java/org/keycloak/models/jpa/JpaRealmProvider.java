@@ -864,19 +864,24 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
             Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
 
-            Predicate attrValuePredicate;
             if (dbProductName.equals("Oracle")) {
-                // SELECT * FROM client_attributes WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
-                // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
-                // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
-                // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
-                // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
-                attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
+                // Use the dbms_lob.substr index and the full comparison in oracle
+                Predicate attrValuePredicate1 = builder.equal(
+                        builder.function("dbms_lob.substr", Integer.class, attributeJoin.get("value"), builder.literal(255), builder.literal(1)),
+                        builder.function("substr", Integer.class, builder.literal(value), builder.literal(1), builder.literal(255)));
+                Predicate attrValuePredicate2 = builder.equal(builder.function("dbms_lob.compare", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate1, attrValuePredicate2));
+            } else if (dbProductName.equals("PostgreSQL")) {
+                // use the substr comparison and the full comparison in postgresql
+                Predicate attrValuePredicate1 = builder.equal(
+                        builder.function("substr", Integer.class, attributeJoin.get("value"), builder.literal(1), builder.literal(255)),
+                        builder.function("substr", Integer.class, builder.literal(value), builder.literal(1), builder.literal(255)));
+                Predicate attrValuePredicate2 =  builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate1, attrValuePredicate2));
             } else {
-                attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+                Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
             }
-
-            predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
         }
 
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));

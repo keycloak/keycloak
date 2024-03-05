@@ -202,7 +202,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
     private static void testCustomAttributeInAnyContext(KeycloakSession session) {
         Map<String, Object> attributes = new HashMap<>();
 
-        attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
@@ -243,7 +243,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         Map<String, Object> attributes = new HashMap<>();
 
-        attributes.put(UserModel.USERNAME, "profiled-user");
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
         attributes.put(UserModel.FIRST_NAME, "John");
         attributes.put(UserModel.LAST_NAME, "Doe");
         attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");

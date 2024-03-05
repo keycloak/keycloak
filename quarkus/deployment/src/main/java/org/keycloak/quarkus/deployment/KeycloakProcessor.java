@@ -46,7 +46,6 @@ import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.resteasy.reactive.spi.IgnoreStackMixingBuildItem;
 import io.smallrye.config.ConfigValue;
 import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
@@ -61,7 +60,6 @@ import org.jboss.jandex.MethodInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
-import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -104,7 +102,10 @@ import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.LoadBalancerResource;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
 import org.keycloak.theme.FolderThemeProviderFactory;
@@ -206,11 +207,6 @@ class KeycloakProcessor {
 
     private static ProviderFactory registerSAMLScriptMapper(ScriptProviderMetadata metadata) {
         return new DeployedScriptSAMLProtocolMapper(metadata);
-    }
-
-    @BuildStep
-    IgnoreStackMixingBuildItem getIgnoreStackMixing() {
-        return new IgnoreStackMixingBuildItem();
     }
 
     @BuildStep
@@ -585,8 +581,8 @@ class KeycloakProcessor {
     }
 
     /**
-     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
-     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
+     * This will cause quarkus to include specified modules in the jandex index. For example keycloak-services is needed as it includes
+     * most of the JAX-RS resources, which are required to register Resteasy builtin providers.
      * Similar reason is liquibase
      *
      * @param indexDependencyBuildItemBuildProducer
@@ -646,6 +642,21 @@ class KeycloakProcessor {
             BuildProducer<MethodScannerBuildItem> scanner) {
         buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                 KeycloakApplication.class.getName())), false));
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    AdminRoot.class.getName())), false));
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    JsResource.class.getName())), false));
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    LoadBalancerResource.class.getName())), false));
+        }
 
         KeycloakHandlerChainCustomizer chainCustomizer = new KeycloakHandlerChainCustomizer();
 

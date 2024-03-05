@@ -34,7 +34,7 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -56,6 +56,7 @@ type RealmOverridesProps = {
   internationalizationEnabled: boolean;
   watchSupportedLocales: string[];
   realm: RealmRepresentation;
+  tableData: Record<string, string>[] | undefined;
 };
 
 type EditStatesType = { [key: number]: boolean };
@@ -77,6 +78,7 @@ export const RealmOverrides = ({
   internationalizationEnabled,
   watchSupportedLocales,
   realm,
+  tableData,
 }: RealmOverridesProps) => {
   const { t } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
@@ -173,7 +175,7 @@ export const RealmOverrides = ({
 
       setTableRows(updatedRows);
     });
-  }, [tableKey, first, max, filter]);
+  }, [tableKey, tableData, first, max, filter]);
 
   const handleModalToggle = () => {
     setAddTranslationModalOpen(!addTranslationModalOpen);

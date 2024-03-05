@@ -13,7 +13,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -82,7 +82,9 @@ export const UserForm = ({
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
 
-  setValue("requiredActions", user?.requiredActions || []);
+  useEffect(() => {
+    setValue("requiredActions", user?.requiredActions || []);
+  }, [user, setValue]);
 
   const unLockUser = async () => {
     try {
@@ -387,7 +389,7 @@ export const UserForm = ({
           isDisabled={
             !user?.id &&
             !watchUsernameInput &&
-            !realm.registrationEmailAsUsername
+            realm.registrationEmailAsUsername === false
           }
           variant="primary"
           type="submit"

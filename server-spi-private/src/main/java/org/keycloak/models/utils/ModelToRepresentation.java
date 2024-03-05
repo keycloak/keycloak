@@ -115,6 +115,8 @@ public class ModelToRepresentation {
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
+
+        REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
     }
 
     private static final Logger LOG = Logger.getLogger(ModelToRepresentation.class);
@@ -471,6 +473,7 @@ public class ModelToRepresentation {
         if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getFirstBrokerLoginFlow() != null) rep.setFirstBrokerLoginFlow(realm.getFirstBrokerLoginFlow().getAlias());
 
         rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
 

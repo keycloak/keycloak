@@ -26,23 +26,20 @@ import org.keycloak.testsuite.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.KerberosRule;
 
 import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
@@ -181,7 +178,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         UserRepresentation john = new UserRepresentation();
         john.setUsername("john");
         Response response = testRealmResource().users().create(john);
-        Assert.assertEquals(500, response.getStatus());
+        Assert.assertEquals(400, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Could not create user", error.getErrorMessage());
         response.close();
     }
 

@@ -163,6 +163,20 @@ describe("User creation", () => {
 
     masthead.checkNotificationMessage("The user has been saved");
 
+    attributesTab
+      .addAttribute("LDAP_ID", "value_test")
+      .addAttribute("LDAP_ID", "another_value_test")
+      .addAttribute("c", "d")
+      .save();
+
+    masthead.checkNotificationMessage("The user has not been saved: ");
+
+    cy.get(".pf-c-helper-text__item-text")
+      .filter(':contains("Update of read-only attribute rejected")')
+      .should("have.length", 2);
+
+    cy.reload();
+
     userDetailsPage.goToDetailsTab();
     attributesTab
       .goToAttributesTab()

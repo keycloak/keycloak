@@ -33,10 +33,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -67,9 +64,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.services.ErrorResponseException;
 
 /**
  * @resource Roles
@@ -179,7 +174,7 @@ public class RoleContainerResource extends RoleResource {
                         }
                         realmRoles.add(realmRole);
                     }
-                    RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
+                    realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                 }
 
                 Map<String, List<String>> compositeClientRoles = composites.getClient();
@@ -200,7 +195,7 @@ public class RoleContainerResource extends RoleResource {
                             }
                             clientRoles.add(clientRole);
                         }
-                        RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
+                        clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                     }
                 }
             }

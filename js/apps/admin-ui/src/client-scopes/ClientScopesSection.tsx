@@ -157,22 +157,28 @@ export default function ClientScopesSection() {
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      try {
-        for (const scope of selectedScopes) {
-          try {
-            await removeScope(scope);
-          } catch (error: any) {
-            console.warn(
-              "could not remove scope",
-              error.response?.data?.errorMessage || error,
-            );
+      const clientScopes = await adminClient.clientScopes.find();
+      const clientScopeLength = Object.keys(clientScopes).length;
+      if (clientScopeLength - selectedScopes.length > 0) {
+        try {
+          for (const scope of selectedScopes) {
+            try {
+              await removeScope(scope);
+            } catch (error: any) {
+              console.warn(
+                "could not remove scope",
+                error.response?.data?.errorMessage || error,
+              );
+            }
+            await adminClient.clientScopes.del({ id: scope.id! });
           }
-          await adminClient.clientScopes.del({ id: scope.id! });
+          addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addError("deleteErrorClientScope", error);
         }
-        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
-        refresh();
-      } catch (error) {
-        addError("deleteErrorClientScope", error);
+      } else {
+        addError(t("notAllowedToDeleteAllClientScopes"), "error");
       }
     },
   });

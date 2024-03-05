@@ -146,6 +146,12 @@ To specify your own cache configuration file, enter this command:
 
 The configuration file is relative to the `conf/` directory.
 
+=== CLI options for remote server
+
+For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
+Once any of declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+
+
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
 {project_name} supports a wide range of transport stacks:

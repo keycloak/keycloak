@@ -365,12 +365,17 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
         }
 
-        switch (requestedTokenType) {
-            case OAuth2Constants.ACCESS_TOKEN_TYPE:
-            case OAuth2Constants.REFRESH_TOKEN_TYPE:
-                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
-            case OAuth2Constants.SAML2_TOKEN_TYPE:
-                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+        try {
+            session.getContext().setClient(targetClient);
+            switch (requestedTokenType) {
+                case OAuth2Constants.ACCESS_TOKEN_TYPE:
+                case OAuth2Constants.REFRESH_TOKEN_TYPE:
+                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                case OAuth2Constants.SAML2_TOKEN_TYPE:
+                    return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+            }
+        } finally {
+            session.getContext().setClient(client);
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);

@@ -16,6 +16,31 @@ Options:
                        built a server image using the 'build' command.
 -v, --verbose        Print out error details when running this command.
 
+Cache:
+
+--cache-remote-host <hostname>
+                     The hostname of the remote server for the remote store configuration. It
+                       replaces the 'host' attribute of 'remote-server' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-username' and 'cache-remote-password' are required
+                       as well and the related configuration in XML file should not be present.
+--cache-remote-password <password>
+                     The password for the authentication to the remote server for the remote store.
+                       It replaces the 'password' attribute of 'digest' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-host' and 'cache-remote-username' are required as
+                       well and the related configuration in XML file should not be present.
+--cache-remote-port <port>
+                     The port of the remote server for the remote store configuration. It replaces
+                       the 'port' attribute of 'remote-server' tag of the configuration specified
+                       via XML file (see 'cache-config-file' option.). Default: 11222.
+--cache-remote-username <username>
+                     The username for the authentication to the remote server for the remote store.
+                       It replaces the 'username' attribute of 'digest' tag of the configuration
+                       specified via XML file (see 'cache-config-file' option.). If the option is
+                       specified, 'cache-remote-host' and 'cache-remote-password' are required as
+                       well and the related configuration in XML file should not be present.
+
 Database:
 
 --db-password <password>
@@ -145,7 +170,7 @@ Vault:
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
-                       are: console, file, gelf. Default: console.
+                       are: console, file, gelf (deprecated). Default: console.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false.
 --log-console-format <format>
@@ -163,30 +188,31 @@ Logging:
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default.
 --log-gelf-facility <name>
-                     The facility (name of the process) that sends the message. Default: keycloak.
+                     DEPRECATED. The facility (name of the process) that sends the message.
+                       Default: keycloak.
 --log-gelf-host <hostname>
-                     Hostname of the Logstash or Graylog Host. By default UDP is used, prefix the
-                       host with 'tcp:' to switch to TCP. Example: 'tcp:localhost' Default:
-                       localhost.
+                     DEPRECATED. Hostname of the Logstash or Graylog Host. By default UDP is used,
+                       prefix the host with 'tcp:' to switch to TCP. Example: 'tcp:localhost'
+                       Default: localhost.
 --log-gelf-include-location <true|false>
-                     Include source code location. Default: true.
+                     DEPRECATED. Include source code location. Default: true.
 --log-gelf-include-message-parameters <true|false>
-                     Include message parameters from the log event. Default: true.
+                     DEPRECATED. Include message parameters from the log event. Default: true.
 --log-gelf-include-stack-trace <true|false>
-                     If set to true, occuring stack traces are included in the 'StackTrace' field
-                       in the GELF output. Default: true.
+                     DEPRECATED. If set to true, occuring stack traces are included in the
+                       'StackTrace' field in the GELF output. Default: true.
 --log-gelf-level <level>
-                     The log level specifying which message levels will be logged by the GELF
-                       logger. Message levels lower than this value will be discarded. Default:
-                       INFO.
+                     DEPRECATED. The log level specifying which message levels will be logged by
+                       the GELF logger. Message levels lower than this value will be discarded.
+                       Default: INFO.
 --log-gelf-max-message-size <size>
-                     Maximum message size (in bytes). If the message size is exceeded, GELF will
-                       submit the message in multiple chunks. Default: 8192.
+                     DEPRECATED. Maximum message size (in bytes). If the message size is exceeded,
+                       GELF will submit the message in multiple chunks. Default: 8192.
 --log-gelf-port <port>
-                     The port the Logstash or Graylog Host is called on. Default: 12201.
+                     DEPRECATED. The port the Logstash or Graylog Host is called on. Default: 12201.
 --log-gelf-timestamp-format <pattern>
-                     Set the format for the GELF timestamp field. Uses Java SimpleDateFormat
-                       pattern. Default: yyyy-MM-dd HH:mm:ss,SSS.
+                     DEPRECATED. Set the format for the GELF timestamp field. Uses Java
+                       SimpleDateFormat pattern. Default: yyyy-MM-dd HH:mm:ss,SSS.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to

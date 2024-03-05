@@ -32,6 +32,8 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -40,6 +42,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Provider
 public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);

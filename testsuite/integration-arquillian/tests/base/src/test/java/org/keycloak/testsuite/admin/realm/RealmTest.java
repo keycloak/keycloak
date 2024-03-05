@@ -569,7 +569,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setRealm("");
         assertThrows(BadRequestException.class, () -> realm.update(rep));
     }
-    
+
     @Test
     public void updateRealm() {
         // first change
@@ -1027,8 +1027,17 @@ public class RealmTest extends AbstractAdminTest {
         rep = realm.toRepresentation();
 
         supportedApplications = rep.getOtpSupportedApplications();
-        assertThat(supportedApplications, hasSize(1));
-        assertThat(supportedApplications, containsInAnyOrder("totpAppFreeOTPName"));
+        assertThat(supportedApplications, hasSize(2));
+        assertThat(supportedApplications, containsInAnyOrder("totpAppFreeOTPName", "totpAppGoogleName"));
+
+        rep.setOtpPolicyType("hotp");
+        realm.update(rep);
+
+        rep = realm.toRepresentation();
+
+        supportedApplications = rep.getOtpSupportedApplications();
+        assertThat(supportedApplications, hasSize(2));
+        assertThat(supportedApplications, containsInAnyOrder("totpAppFreeOTPName", "totpAppGoogleName"));
     }
 
     private void setupTestAppAndUser() {

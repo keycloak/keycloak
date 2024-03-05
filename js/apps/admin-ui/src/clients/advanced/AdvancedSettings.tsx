@@ -127,19 +127,6 @@ export const AdvancedSettings = ({
             units={["minute", "day", "hour"]}
           />
 
-          <TokenLifespan
-            id="clientOfflineSessionMax"
-            name={convertAttributeNameToForm(
-              "attributes.client.offline.session.max.lifespan",
-            )}
-            defaultValue={
-              realm?.offlineSessionMaxLifespanEnabled
-                ? realm.offlineSessionMaxLifespan
-                : undefined
-            }
-            units={["minute", "day", "hour"]}
-          />
-
           <FormGroup
             label={t("oAuthMutual")}
             fieldId="oAuthMutual"
@@ -262,6 +249,34 @@ export const AdvancedSettings = ({
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("pushedAuthorizationRequestRequired")}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("lightweightAccessToken")}
+            fieldId="lightweightAccessToken"
+            labelIcon={
+              <HelpItem
+                helpText={t("lightweightAccessTokenHelp")}
+                fieldLabelId="lightweightAccessToken"
+              />
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.client.use.lightweight.access.token.enabled",
+              )}
+              defaultValue="false"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="lightweightAccessToken"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange(value.toString())}
+                  aria-label={t("lightweightAccessToken")}
                 />
               )}
             />

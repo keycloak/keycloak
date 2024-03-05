@@ -1,21 +1,26 @@
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { expect, test } from "@playwright/test";
 import {
-  createUser,
+  createRandomUserWithPassword,
   deleteUser,
   enableLocalization,
   importUserProfile,
+  inRealm,
 } from "../admin-client";
 import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };
+import { randomUUID } from "crypto";
 
 const realm = "user-profile";
 
 test.describe("Personal info page", () => {
+  let user: string;
   test("sets basic information", async ({ page }) => {
-    await login(page, "admin", "admin", "master");
+    user = await createRandomUserWithPassword("user-" + randomUUID(), "pwd");
 
-    await page.getByTestId("email").fill("edewit@somewhere.com");
+    await login(page, user, "pwd");
+
+    await page.getByTestId("email").fill(`${user}@somewhere.com`);
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
@@ -26,34 +31,26 @@ test.describe("Personal info page", () => {
 });
 
 test.describe("Personal info with userprofile enabled", async () => {
+  let user: string;
   test.beforeAll(async () => {
     await importUserProfile(userProfileConfig as UserProfileConfig, realm);
-    await createUser(
-      {
-        username: "jdoe",
-        enabled: true,
+    user = await inRealm(realm, () =>
+      createRandomUserWithPassword("user-" + randomUUID(), "jdoe", {
         email: "jdoe@keycloak.org",
         firstName: "John",
         lastName: "Doe",
-        credentials: [
-          {
-            type: "password",
-            value: "jdoe",
-          },
-        ],
         realmRoles: [],
         clientRoles: {
           account: ["manage-account"],
         },
-      },
-      realm,
+      }),
     );
   });
 
-  test.afterAll(async () => await deleteUser("jdoe", realm));
+  test.afterAll(async () => await inRealm(realm, () => deleteUser(user)));
 
   test("render user profile fields", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", realm);
+    await login(page, user, "jdoe", realm);
 
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
@@ -61,7 +58,7 @@ test.describe("Personal info with userprofile enabled", async () => {
   });
 
   test("save user profile", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", realm);
+    await login(page, user, "jdoe", realm);
 
     await page.locator("#select").click();
     await page.getByRole("option", { name: "two" }).click();
@@ -87,10 +84,15 @@ test.describe("Personal info with userprofile enabled", async () => {
 
 // skip currently the locale is not part of the response
 test.describe.skip("Realm localization", async () => {
-  test.beforeAll(() => enableLocalization("master"));
+  test.beforeAll(() => enableLocalization());
 
   test("change locale", async ({ page }) => {
-    await login(page, "admin", "admin", "master");
+    const user = await createRandomUserWithPassword(
+      "user-" + randomUUID(),
+      "pwd",
+    );
+
+    await login(page, user, "pwd");
     await page
       .locator("div")
       .filter({ hasText: /^Deutsch$/ })

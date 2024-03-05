@@ -53,16 +53,16 @@ image:images/account-console-signing-in.png[Signing in]
 .Procedure
 
 . Click *Account Security* in the menu.
-. Click *Signing in*.
-. Click *Set up Security Key*.
+. Click *Signing In*.
+. Click *Set up a Passkey*.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
+image:images/account-console-signing-in-webauthn-2factor.png[Signing in with a Passkey]
 
-. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-. Click *Register* to register your security key.
+. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Passkey.
 . Log out and log in again.
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor.
 
 ==== Passwordless authentication with WebAuthn
 
@@ -74,16 +74,15 @@ image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Sec
 
 . Click *Account Security* in the menu.
 . Click *Signing In*.
-. Click *Set up Security Key* in the *Passwordless* section.
+. Click *Set up a Passkey* in the *Passwordless* section.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
+image:images/account-console-signing-in-webauthn-passwordless.png[Signing in with a Passkey]
 
-. Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-
-. Click *Register* to register your security key.
+. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Passkey.
 . Log out and log in again.
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Security Key as second factor. You no longer need to provide your password to log in.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor. You no longer need to provide your password to log in.
 
 === Viewing device activity
 

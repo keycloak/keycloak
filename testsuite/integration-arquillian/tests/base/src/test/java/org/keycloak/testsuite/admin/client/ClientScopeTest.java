@@ -33,12 +33,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -841,6 +836,19 @@ public class ClientScopeTest extends AbstractClientTest {
 
     }
 
+    @Test
+    public void deleteAllClientScopesMustFail() {
+        List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
+        for (int i = 0; i < clientScopes.size(); i++) {
+            ClientScopeRepresentation clientScope = clientScopes.get(i);
+            if (i != clientScopes.size() - 1) {
+                removeClientScope(clientScope.getId());
+            } else {
+                removeClientScopeMustFail(clientScope.getId());
+            }
+        }
+    }
+
     private void handleExpectedCreateFailure(ClientScopeRepresentation scopeRep, int expectedErrorCode, String expectedErrorMessage) {
         try(Response resp = clientScopes().create(scopeRep)) {
             Assert.assertEquals(expectedErrorCode, resp.getStatus());
@@ -874,6 +882,14 @@ public class ClientScopeTest extends AbstractClientTest {
     private void removeClientScope(String clientScopeId) {
         clientScopes().get(clientScopeId).remove();
         assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeResourcePath(clientScopeId), ResourceType.CLIENT_SCOPE);
+    }
+
+    private void removeClientScopeMustFail(String clientScopeId) {
+        try {
+            clientScopes().get(clientScopeId).remove();
+        } catch (Exception expected) {
+
+        }
     }
 
 }

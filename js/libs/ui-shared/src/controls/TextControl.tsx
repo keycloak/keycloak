@@ -14,7 +14,7 @@ export type TextControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
 > = UseControllerProps<T, P> &
-  TextInputProps & {
+  Omit<TextInputProps, "name" | "isRequired" | "required"> & {
     label: string;
     labelIcon?: string;
     isDisabled?: boolean;

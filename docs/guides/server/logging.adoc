@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Configuring logging"
 summary="Learn how to configure Logging"
-includedOptions="log-*">
+includedOptions="log log-*">
 
 {project_name} uses the JBoss Logging framework. The following is a high-level overview for the available log handlers:
 
@@ -191,6 +191,8 @@ See <<Configuring the console log format>> for more information and a table of t
 <@profile.ifCommunity>
 
 == Centralized logging using GELF
+NOTE: The support for GELF log handler is deprecated and will be removed in a future {project_name} release.
+
 {project_name} can send logs to a centralized log management system such as the following:
 
 * Graylog

@@ -70,8 +70,9 @@ class AeshConsoleCallbackImpl extends AeshConsoleCallback {
             } catch (Exception e) {
                 console.stop();
 
-                if (e instanceof OptionParserException) {
-                    System.err.println("Unknown command: " + aeshLine.getWords().get(0));
+                if (e instanceof OptionParserException && "Option: - must be followed by a valid operator".equals(e.getMessage())) {
+                    System.err.println("Please double check your command options, one or more of them are not specified correctly. "
+                            + "It is possible to have unintentional overlap with other options. e.g. using --clientid will get mistaken for --client, however --cclientid is needed.");
                 } else {
                     System.err.println(e.getMessage());
                 }

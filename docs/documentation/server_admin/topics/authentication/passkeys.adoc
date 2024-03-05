@@ -4,10 +4,10 @@
 {project_name} provides preview support for https://fidoalliance.org/passkeys/[Passkeys]. {project_name} works as a Passkeys Relying Party (RP).
 
 Passkey registration and authentication are realized by the features of xref:webauthn_{context}[WebAuthn].
-Therefore, users of {project_name} can do passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication].
+Therefore, users of {project_name} can do Passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication].
 
 [NOTE]
 ====
-Both synced passkeys and device-bound passkeys can be used for both Same-Device and Cross-Device Authentication (CDA).
-However, passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
+Both synced Passkeys and device-bound Passkeys can be used for both Same-Device and Cross-Device Authentication (CDA).
+However, Passkeys operations success depends on the user's environment. Make sure which operations can succeed in https://passkeys.dev/device-support/[the environment].
 ====

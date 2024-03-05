@@ -243,6 +243,35 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void updateClientScopes() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        ArrayList<String> optionalClientScopes = new ArrayList<>(List.of("address"));
+        client.setOptionalClientScopes(optionalClientScopes);
+
+        ClientRepresentation createdClient = registerClient(client);
+        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
+        Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(createdClient.getDefaultClientScopes().isEmpty());
+
+        authManageClients();
+        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+        registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(obtainedClient.getDefaultClientScopes().isEmpty());
+
+
+        optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
+        client.setOptionalClientScopes(optionalClientScopes);
+        ClientRepresentation updatedClient = reg.update(client);
+        requestedClientScopes = new HashSet<>(optionalClientScopes);
+        registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(updatedClient.getDefaultClientScopes().isEmpty());
+    }
+
+    @Test
     public void testInvalidUrlClientValidation() {
         testClientUriValidation("Root URL is not a valid URL",
                 "Base URL is not a valid URL",

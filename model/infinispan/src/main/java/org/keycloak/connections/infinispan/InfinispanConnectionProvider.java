@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.List;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.provider.Provider;
@@ -83,6 +84,17 @@ public interface InfinispanConnectionProvider extends Provider {
             ACTION_TOKEN_CACHE,
             KEYS_CACHE_NAME
     };
+
+    // list of cache name which could be defined as distributed or replicated
+    public static List<String> DISTRIBUTED_REPLICATED_CACHE_NAMES = List.of(
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
+            WORK_CACHE_NAME);
 
     /**
      *

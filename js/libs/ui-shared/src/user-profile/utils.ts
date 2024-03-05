@@ -30,7 +30,7 @@ export const unWrap = (key: string) => key.substring(2, key.length - 1);
 export const label = (
   t: TFunction,
   text: string | undefined,
-  fallback: string | undefined,
+  fallback?: string,
 ) => (isBundleKey(text) ? t(unWrap(text!)) : text) || fallback;
 
 export const labelAttribute = (
@@ -69,7 +69,7 @@ export function setUserProfileServerError<T>(
     setError(fieldName(e.field) as keyof T, {
       message: t(e.errorMessage, {
         ...params,
-        defaultValue: e.field,
+        defaultValue: e.errorMessage || e.field,
       }),
       type: "server",
     });

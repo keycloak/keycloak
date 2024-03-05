@@ -55,6 +55,7 @@ import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
 import { getUnmanagedAttributes } from "../components/users/resource";
 import "./user-section.css";
+import { KeyValueType } from "../components/key-value-form/key-value-convert";
 
 export default function EditUser() {
   const { t } = useTranslation();
@@ -63,7 +64,15 @@ export default function EditUser() {
   const { hasAccess } = useAccess();
   const { id } = useParams<UserParams>();
   const { realm: realmName } = useRealm();
-  const form = useForm<UserFormFields>({ mode: "onChange" });
+  // Validation of form fields is performed on server, thus we need to clear all errors before submit
+  const clearAllErrorsBeforeSubmit = async (values: UserFormFields) => ({
+    values,
+    errors: {},
+  });
+  const form = useForm<UserFormFields>({
+    mode: "onChange",
+    resolver: clearAllErrorsBeforeSubmit,
+  });
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [user, setUser] = useState<UIUserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
@@ -147,9 +156,46 @@ export default function EditUser() {
       refresh();
     } catch (error) {
       if (isUserProfileError(error)) {
-        setUserProfileServerError(error, form.setError, ((key, param) =>
-          t(key as string, param as any)) as TFunction);
-        addError("userNotSaved", error);
+        if (
+          isUnmanagedAttributesEnabled &&
+          Array.isArray(data.unmanagedAttributes)
+        ) {
+          const unmanagedAttributeErrors: object[] = new Array(
+            data.unmanagedAttributes.length,
+          );
+          let someUnmanagedAttributeError = false;
+          setUserProfileServerError<UserFormFields>(
+            error,
+            (field, params) => {
+              if (field.startsWith("attributes.")) {
+                const attributeName = field.substring("attributes.".length);
+                (data.unmanagedAttributes as KeyValueType[]).forEach(
+                  (attr, index) => {
+                    if (attr.key === attributeName) {
+                      unmanagedAttributeErrors[index] = params;
+                      someUnmanagedAttributeError = true;
+                    }
+                  },
+                );
+              } else {
+                form.setError(field, params);
+              }
+            },
+            ((key, param) => t(key as string, param as any)) as TFunction,
+          );
+          if (someUnmanagedAttributeError) {
+            form.setError(
+              "unmanagedAttributes",
+              unmanagedAttributeErrors as any,
+            );
+          }
+        } else {
+          setUserProfileServerError<UserFormFields>(error, form.setError, ((
+            key,
+            param,
+          ) => t(key as string, param as any)) as TFunction);
+        }
+        addError("userNotSaved", "");
       } else {
         addError("userCreateError", error);
       }
@@ -291,7 +337,7 @@ export default function EditUser() {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
-                <UserCredentials user={user} />
+                <UserCredentials user={user} setUser={setUser} />
               </Tab>
               <Tab
                 data-testid="role-mapping-tab"

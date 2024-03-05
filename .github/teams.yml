@@ -25,6 +25,7 @@ team/core-iam:
   - area/admin/fine-grained-permissions
   - area/authorization-services
   - area/identity-brokering
+  - area/ldap
   - area/user-profile
 
 team/core-shared:
@@ -34,7 +35,6 @@ team/core-shared:
   - area/core
   - area/import-export
   - area/infinispan
-  - area/ldap
   - area/storage
 
 team/cross-dc:

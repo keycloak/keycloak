@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class LoggingOptions {
@@ -30,12 +31,21 @@ public class LoggingOptions {
                 .toList();
     }
 
-    public static final Option<List<Handler>> LOG = OptionBuilder.listOptionBuilder("log", Handler.class)
-            .category(OptionCategory.LOGGING)
-            .description("Enable one or more log handlers in a comma-separated list.")
-            .expectedValues(getAvailableHandlerNames())
-            .defaultValue(Arrays.asList(DEFAULT_LOG_HANDLER))
-            .build();
+    private static Option<List<Handler>> createLogOption() {
+        OptionBuilder<List<Handler>> logOptionBuilder = OptionBuilder.listOptionBuilder("log", Handler.class)
+                .category(OptionCategory.LOGGING)
+                .description("Enable one or more log handlers in a comma-separated list.")
+                .expectedValues(getAvailableHandlerNames())
+                .defaultValue(Arrays.asList(DEFAULT_LOG_HANDLER));
+
+        if (GELF_ACTIVATED) {
+            logOptionBuilder.deprecatedValues(Set.of("gelf"), "GELF log handler has been deprecated.");
+        }
+
+        return logOptionBuilder.build();
+    }
+
+    public static final Option<List<Handler>> LOG = createLogOption();
 
     public enum Level {
         OFF,
@@ -124,17 +134,20 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue("INFO")
             .description("The log level specifying which message levels will be logged by the GELF logger. Message levels lower than this value will be discarded.")
+            .deprecated()
             .build();
 
     public static final Option<String> LOG_GELF_HOST = new OptionBuilder<>("log-gelf-host", String.class)
             .category(OptionCategory.LOGGING)
             .description("Hostname of the Logstash or Graylog Host. By default UDP is used, prefix the host with 'tcp:' to switch to TCP. Example: 'tcp:localhost'")
             .defaultValue("localhost")
+            .deprecated()
             .build();
 
     public static final Option<Integer> LOG_GELF_PORT = new OptionBuilder<>("log-gelf-port", Integer.class)
             .category(OptionCategory.LOGGING)
             .description("The port the Logstash or Graylog Host is called on.")
+            .deprecated()
             .defaultValue(12201)
             .build();
 
@@ -150,36 +163,42 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("If set to true, occuring stack traces are included in the 'StackTrace' field in the GELF output.")
             .defaultValue(Boolean.TRUE)
+            .deprecated()
             .build();
 
     public static final Option<String> LOG_GELF_TIMESTAMP_FORMAT = new OptionBuilder<>("log-gelf-timestamp-format", String.class)
             .category(OptionCategory.LOGGING)
             .description("Set the format for the GELF timestamp field. Uses Java SimpleDateFormat pattern.")
             .defaultValue("yyyy-MM-dd HH:mm:ss,SSS")
+            .deprecated()
             .build();
 
     public static final Option<String> LOG_GELF_FACILITY = new OptionBuilder<>("log-gelf-facility", String.class)
             .category(OptionCategory.LOGGING)
             .description("The facility (name of the process) that sends the message.")
             .defaultValue("keycloak")
+            .deprecated()
             .build();
 
     public static final Option<Integer> LOG_GELF_MAX_MSG_SIZE = new OptionBuilder<>("log-gelf-max-message-size", Integer.class)
             .category(OptionCategory.LOGGING)
             .description("Maximum message size (in bytes). If the message size is exceeded, GELF will submit the message in multiple chunks.")
             .defaultValue(8192)
+            .deprecated()
             .build();
 
     public static final Option<Boolean> LOG_GELF_INCLUDE_LOG_MSG_PARAMS = new OptionBuilder<>("log-gelf-include-message-parameters", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description("Include message parameters from the log event.")
             .defaultValue(Boolean.TRUE)
+            .deprecated()
             .build();
 
     public static final Option<Boolean> LOG_GELF_INCLUDE_LOCATION = new OptionBuilder<>("log-gelf-include-location", Boolean.class)
             .category(OptionCategory.LOGGING)
             .description("Include source code location.")
             .defaultValue(Boolean.TRUE)
+            .deprecated()
             .build();
 
     private static boolean isGelfActivated() {

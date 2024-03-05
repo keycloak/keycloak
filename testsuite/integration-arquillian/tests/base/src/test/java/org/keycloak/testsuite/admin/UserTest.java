@@ -325,6 +325,39 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void createDuplicatedUsernameWithEmail() {
+        createUser("user1@local.com", "user1@local.org");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1@local.org");
+        user.setEmail("user2@localhost");
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void createDuplicatedEmailWithUsername() {
+        createUser("user1@local.com", "user1@local.org");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setEmail("user1@local.com");
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+        }
+    }
+
     //KEYCLOAK-14611
     @Test
     public void createDuplicateEmailWithExistingDuplicates() {
@@ -352,7 +385,7 @@ public class UserTest extends AbstractAdminTest {
         try (Response response = realm.users().create(user)) {
             assertEquals(409, response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
     }
@@ -1707,9 +1740,11 @@ public class UserTest extends AbstractAdminTest {
             user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
             updateUser(realm.users().get(user1Id), user1);
             Assert.fail("Not supposed to successfully update user");
-        } catch (BadRequestException bre) {
+        } catch (BadRequestException expected) {
             // Expected
             assertAdminEvents.assertEmpty();
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("updateReadOnlyAttributesRejectedMessage", error.getErrorMessage());
         }
 
         // The same test as before, but with the case-sensitivity used
@@ -2642,7 +2677,7 @@ public class UserTest extends AbstractAdminTest {
             assertThat(e.getResponse().getStatus(), is(409));
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
     }

@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
         ${msg("loginAccountTitle")}
@@ -99,8 +99,8 @@
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-            <div id="kc-registration-container">
-                <div id="kc-registration">
+            <div id="kc-registration-container" class="pf-v5-c-login__main-footer-band">
+                <div id="kc-registration" class="pf-v5-c-login__main-footer-band-item">
                     <span>${msg("noAccount")} <a tabindex="6"
                                                  href="${url.registrationUrl}">${msg("doRegister")}</a></span>
                 </div>
@@ -111,7 +111,7 @@
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                 <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
                     <#list social.providers as p>
-                        <li class="${properties.kcFormSocialAccountListItmeClass!}">
+                        <li class="${properties.kcFormSocialAccountListItemClass!}">
                             <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>" aria-label="${p.displayName}"
                                     type="button" href="${p.loginUrl}">
                                 <#if p.iconClasses?has_content>

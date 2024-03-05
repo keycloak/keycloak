@@ -4,13 +4,13 @@ The 'welcome' theme has has been updated to use a new layout and now uses Patter
 
 == Migrate from PatternFly 3 to PatternFly 5
 
-The welcome theme was one of the more outdated themes in Keycloak. It was originally based on PatternFly 3, but has now been updated to use PatternFly 5, skipping a major version in the process. This means that if your custom theme extends the built-in theme you will need to update it to use PatternFly 5 syntax. Consult the https://www.patternfly.org/get-started/develop/[PatternFly 5 documentation] for details.
+The welcome theme was one of the more outdated themes in {project_name}. It was originally based on PatternFly 3, but has now been updated to use PatternFly 5, skipping a major version in the process. If your custom theme extends the built-in theme, you will need to update it to use PatternFly 5 syntax. Consult the https://www.patternfly.org/get-started/develop/[PatternFly 5 documentation] for details.
 
 If you are still using PatternFly 3 in your own custom theme (not extending the built-in one), you can continue to use it, but PatternFly 3 support will be removed in a future release, so you should consider migrating to PatternFly 5 as soon as possible.
 
-== Automatic redirect to the Administration Console
+== Automatic redirect to the Admin Console
 
-If the Administration Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
+If the Admin Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
 
 == The `documentationUrl` and `displayCommunityLinks` properties have been removed.
 
@@ -60,7 +60,7 @@ If you are using `content.json` to customize the theme there are some changes to
 
 = Keycloak JS imports might need to be updated
 
-If you are loading Keycloak JS directly from the Keycloak server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+If you are loading Keycloak JS directly from the {project_name} server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
 
 [source,js]
 ----
@@ -77,8 +77,8 @@ import AuthZ from 'keycloak-js/authz';
 
 It is no longer allowed to have the same feature in both the `--features` and `--features-disabled` list.  The feature should appear in only one list.
 
-The usage of unversioned feature names, e.g. `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
-If you need more predictable behavior across releases, reference the particular version you want instead, e.g. `docker:v1`.
+The usage of unversioned feature names, such as `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
+If you need more predictable behavior across releases, reference the particular version you want instead, such as `docker:v1`.
 
 = User Profile Changes
 
@@ -94,8 +94,8 @@ by user profile will be allowed.
 * For the deployments where the *User Profile Enabled* was set to *OFF* (which was also the default settings for the deployments with `declarative-user-profile` feature disabled, which was the default),
 *Unmanaged attributes* will be set to *ON*` after the upgrade. As a result, the behavior should be basically the same as in previous versions with the user profile disabled. 
 The *Attributes* tab will remain in the user details part of the Admin Console. Also users can now set arbitrary attributes through UI pages such as the registration page and update profile page  as long as 
-a particular custom theme supports it. The custom themes should work as before as well. However, consider updating your themes to use the user-profile (See below in the themes section) and
-maybe even remove your custom themes if those themes were need to add custom attributes. We also recommend switching *Unmanaged attributes* to *OFF* or enable this switch only for
+a particular custom theme supports it. The custom themes should work as before as well. However, consider updating your themes to use the user-profile and
+maybe even remove your custom themes if those themes were need to add custom attributes. See the subsequent section on themes. Also, consider toggling *Unmanaged attributes* to *OFF* or enable this switch only for
 administrators so that you can rely on mainly on using managed attributes.
 
 See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the *Unmanaged attributes*.
@@ -103,29 +103,29 @@ See the link:{adminguide_link}#user-profile[User Profile Documentation] for the 
 == Default validations
 
 Default user profile configuration comes with a set of default validations for the basic predefined fields. Those validations were not present in previous versions when the `declarative-user-profile` feature was disabled by default.
-If you have issues due the backwards compatibility, you can change the default validators according to your needs. The default validators are as follows:
+If you have issues due to backward compatibility, you can change the default validators according to your needs. The default validators are as follows:
 
 * The`username`, `email`, `firstName` and `lastName` attributes have a maximum length of 255 characters. These validations were indirectly present in previous versions as well
-due there is a database constraint on the table `USER_ENTITY` for those fields with a maximum length of 255 characters. However when using user storage providers, it might be possible before to use longer values.
+because of the database constraint on the table `USER_ENTITY` for those fields with a maximum length of 255 characters. However, when using user storage providers, it might be possible before to use longer values.
 
 * The `username` attribute has a minimum length of three characters. Username has also `username-prohibited-characters` and `up-username-not-idn-homograph` validator by default, which were not present in previous versions.
 See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that username is not editable by default unless you have the realm switch `Edit username enabled`.
 This change means that existing users with incorrect usernames should still work and they will not be enforced to update their usernames. But new users will be enforced to use correct usernames
 during their registration or creation by the admin REST API.
 
-* Attributes `firstName` and `lastName` have the `person-name-prohibited-characters` validator on them, which were not present in previous versions.
+* The `firstName` and `lastName` attributes have the `person-name-prohibited-characters` validator on them, which were not present in previous versions.
 See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that both first
 name and last name are editable by default, so users, who already have such incorrect first/last name from a previous version will be forced to update them when updating their user profiles.
 
 == User attribute names with strange characters
 
-In previous versions, it was possible to create a user with attribute names like `some:attribute` or `some/attribute`. User profile intentionally does not allow you to create
+In previous versions, you could create a user with attribute names such as `some:attribute` or `some/attribute`. The user profile intentionally does not allow you to create
 attributes with such strange names in the user profile configuration. So you may need to configure `Unmanaged attributes` for your realm and enable unmanaged attributes for administrators
 (ideally) or for end users (if really needed). Although it is strongly preferred to avoid using such attribute names.
 
 == Verify Profile required action enabled by default
 
-The required action `verify-profile` is enabled by default for new realms. But when you are migrating from previous version, your existing realms will have same state of this `verify-profile` action as before, which
+The `verify-profile` required action is enabled by default for new realms. However, when you migrate from a previous version, your existing realms will have the same state of this `verify-profile` action as before, which
 usually means disabled as it was disabled by default in previous versions. For the details about this required action, see the link:{adminguide_link}#user-profile[User Profile Documentation].
 
 == Breaking changes to the User Profile SPI
@@ -139,7 +139,7 @@ The `org.keycloak.userprofile.Attributes` interface includes the following chang
 * Method `getFirstValue` was renamed to `getFirst` to make it less verbose
 * Method `getReadable(boolean)` was removed and now all attributes (including root attributes) are returned whenever they have read rights.
 
-== Changes to Freemarker templates to allow rendering pages based on the user profile configuration set to a realm
+== Changes to Freemarker templates to render pages based on the user profile and realm
 
 In this release, the following templates were updated to make it possible to dynamically render attributes based
 on the user profile configuration set to a realm:
@@ -163,7 +163,7 @@ Also, the templates used by the `declarative-user-profile` feature to render the
 If you were using the `declarative-user-profile` feature in a previous release with customizations to the above templates,
 update the `login-update-profile.ftl` and `register.ftl` accordingly.
 
-== The update profile page when logging in for the first time through a broker now has its own Freemarker templates
+== New Freemarker template for the update profile page at first login through a broker
 
 In this release, the server will render the update profile page when the user is authenticating through a broker for the
 first time using the `idp-review-user-profile.ftl` template.
@@ -179,7 +179,7 @@ to the new template.
 
 = Truststore Changes
 
-The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated, please use the new default location for truststore material, `conf/truststores`, or specify your desired paths via the `truststore-paths` option. For details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated. Therefore, use the new default location for truststore material, `conf/truststores`, or specify your desired paths by using the `truststore-paths` option. For details, see the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
 
 The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
 
@@ -221,7 +221,7 @@ spec:
   proxy:
     headers: forwarded|xforwarded
 ----
-NOTE: If the `proxy.headers` field is not specified, the Operator falls back to the previous behaviour by implicitly setting
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to the previous behavior by implicitly setting
 `proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
 in a future release.
 
@@ -245,19 +245,19 @@ Option `https-client-auth` had been treated as a run time option, however this i
 
 = Sequential loading of offline sessions and remote sessions
 
-Starting with this release, the first member of a Keycloak cluster will load remote sessions sequentially instead of in parallel.
+Starting with this release, the first member of a {project_name} cluster will load remote sessions sequentially instead of in parallel.
 If offline session preloading is enabled, those will be loaded sequentially as well.
 
 The previous code led to high resource-consumption across the cluster at startup and was challenging to analyze in production environments and could lead to complex failure scenarios if a node was restarted during loading.
 Therefore, it was changed to sequential session loading.
 
-For offline sessions, the default in this and previous versions of Keycloak is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
+For offline sessions, the default in this and previous versions of {project_name} is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
 Setups that have offline session preloading enabled should migrate to a setup where offline-session preloading is disabled.
 
 = Deprecated offline session preloading
 
-The default behavior of Keycloak is to load offline sessions on demand.
-The old behavior to preload them at startup is now deprecated, as preloading them at startup does not scale well with a growing number of sessions, and increases Keycloak memory usage.
+The default behavior of {project_name} is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as preloading them at startup does not scale well with a growing number of sessions, and increases {project_name} memory usage.
 The old behavior will be removed in a future release.
 
 To re-enable old behavior while it is deprecated and not removed yet, use the feature flag and the SPI option as shown below:
@@ -301,12 +301,12 @@ For unmanaged attributes, the maximum length is 2048 characters.
 For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
 
 WARNING: {project_name} caches user-related objects in its internal caches.
-The longer the attributes are, the more memory the cache consumes.
+Using longer attributes increases the memory that is consumed by the cache.
 Therefore, limiting the size of the length attributes is recommended.
-Consider storing large objects outside Keycloak and reference them by ID or URL.
+Consider storing large objects outside {project_name} and reference them by ID or URL.
 
 This change adds new indexes on the tables `USER_ATTRIBUTE` and `FED_USER_ATTRIBUTE`.
-If those tables contain more than 300000 entries, Keycloak will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
 == Additional migration steps for LDAP
@@ -320,7 +320,7 @@ To be able to enable changing those attributes via UI and REST APIs, perform the
 
 . Declare the attributes identified above as managed attributes in the user profile of the realm.
 . Define a `length` validator for each attribute added in the previous step specifying the desired minimum and maximum length of the attribute value.
-For binary values, add 33% to the expected binary length to count in the overhead for {project_name}'s internal base64 encoding of binary values.
+For binary values, add 33 percent to the expected binary length to count in the overhead for {project_name}'s internal base64 encoding of binary values.
 
 == Additional migration steps for custom user storage providers
 
@@ -372,7 +372,7 @@ The compatibility mode for SAML encryption introduced in version 21 is now remov
 
 = Changes to Password Hashing
 
-In this release we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+In this release, we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
 
 As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
 Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed as follows:
@@ -407,12 +407,12 @@ This can be done by configuring the hash iterations explicitly in the password p
 
 == Expected increased overall CPU usage and temporary increased database activity
 
-The Concepts for sizing CPU and memory resources in the Keycloak High Availability guide have been updated to reflect the new hashing defaults.
+The Concepts for sizing CPU and memory resources in the {project_name} High Availability guide have been updated to reflect the new hashing defaults.
 While the CPU usage per password-based login in our tests increased by 33% (which includes both the changed password hashing and unchanged TLS connection handling), the overall CPU increase should be around 10% to 15%.
-This is due to the averaging effect of Keycloak's other activities like refreshing access tokens and client credential grants, still this depends on the unique workload of an installation.
+This is due to the averaging effect of {project_name}'s other activities like refreshing access tokens and client credential grants, still this depends on the unique workload of an installation.
 
 After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
-As this clears the user from Keycloak's internal cache, you'll also see an increased read activity on the database level.
+As this clears the user from {project_name}'s internal cache, you will also see an increased read activity on the database level.
 This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
 
 == How to keep using the old pbkdf2-sha256 password hashing?
@@ -467,7 +467,7 @@ The default `requests` memory for Keycloak deployment and the realm import Job i
 
 = Updates to cookies
 
-As part of refactoring cookie handling in Keycloak there are some changes to how cookies are set:
+As part of refactoring cookie handling in {project_name} there are some changes to how cookies are set:
 
 * All cookies will now have the secure attribute set if the request is through a secure context
 * `WELCOME_STATE_CHECKER` cookies now set `SameSite=Strict`
@@ -482,3 +482,11 @@ For custom extensions there may be some changes needed:
 = Internal algorithm changed from HS256 to HS512
 
 The algorithm that {project_name} uses to sign internal tokens (a JWT which is consumed by {project_name} itself, for example a refresh or action token) is being changed from `HS256` to the more secure `HS512`. A new key provider named `hmac-generated-hs512` is now added for realms. Note that in migrated realms the old `hmac-generated` provider and the old `HS256` key are maintained and still validate tokens issued before the upgrade. The `HS256` provider can be manually deleted when no more old tokens exist following the {adminguide_link}#rotating-keys[rotating keys guidelines].
+
+ifeval::[{project_community}==true]
+= GELF log handler has been deprecated
+
+With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying library] providing integration
+with GELF, {project_name} will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
+release. If you require an external log management, consider using file log parsing.
+endif::[]

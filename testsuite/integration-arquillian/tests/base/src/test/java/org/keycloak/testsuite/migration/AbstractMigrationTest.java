@@ -82,6 +82,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -409,6 +410,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             testUnmanagedAttributePolicySet(migrationRealm2, null);
             testHS512KeyCreated(migrationRealm);
             testHS512KeyCreated(migrationRealm2);
+            testClientAttributes(migrationRealm);
         }
         if (testLdapUseTruststoreSpiMigration) {
             testLdapUseTruststoreSpiMigration(migrationRealm2);
@@ -1253,5 +1255,21 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation keysMetadata = realm.keys().getKeyMetadata();
         Assert.assertNotNull("Old HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS256));
         Assert.assertNotNull("New HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS512));
+    }
+
+    private void testClientAttributes(RealmResource realm) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId("migration-saml-client");
+        Assert.assertEquals(1, clients.size());
+        ClientRepresentation client = clients.get(0);
+        Assert.assertNotNull(client.getAttributes().get("saml.artifact.binding.identifier"));
+        Assert.assertNotNull(client.getAttributes().get("saml_idp_initiated_sso_url_name"));
+        List<String> clientIds = realm.clients().query("saml.artifact.binding.identifier:\"" + client.getAttributes().get("saml.artifact.binding.identifier") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
+        clientIds = realm.clients().query("saml_idp_initiated_sso_url_name:\"" + client.getAttributes().get("saml_idp_initiated_sso_url_name") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
     }
 }
