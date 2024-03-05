@@ -1,9 +1,9 @@
 export default class ProviderPage {
   // KerberosSettingsRequired input values
-  #kerberosNameInput = "kerberos-name";
+  #kerberosNameInput = "name";
   #kerberosRealmInput = "config.kerberosRealm.0";
-  #kerberosPrincipalInput = "kerberos-principal";
-  #kerberosKeytabInput = "kerberos-keytab";
+  #kerberosPrincipalInput = "config.serverPrincipal.0";
+  #kerberosKeytabInput = "config.keyTab.0";
 
   // LdapSettingsGeneral input values
   #ldapNameInput = "name";
@@ -11,13 +11,13 @@ export default class ProviderPage {
   #ldapVendorList = "#kc-vendor + ul";
 
   // LdapSettingsConnection input values
-  connectionUrlInput = "ldap-connection-url";
+  connectionUrlInput = "config.connectionUrl.0";
   truststoreSpiInput = "#kc-use-truststore-spi";
   truststoreSpiList = "#kc-use-truststore-spi + ul";
-  connectionTimeoutInput = "connection-timeout";
+  connectionTimeoutInput = "config.connectionTimeout.0";
   bindTypeInput = "#kc-bind-type";
   #bindTypeList = "#kc-bind-type + ul";
-  bindDnInput = "ldap-bind-dn";
+  bindDnInput = "config.bindDn.0";
   bindCredsInput = "ldap-bind-credentials";
   #testConnectionBtn = "test-connection-button";
   #testAuthBtn = "test-auth-button";
@@ -37,17 +37,17 @@ export default class ProviderPage {
   ldapReadTimeout = "config.readTimeout.0";
 
   // LdapSettingsKerberosIntegration input values
-  ldapKerberosRealmInput = "kerberos-realm";
-  ldapServerPrincipalInput = "kerberos-principal";
-  ldapKeyTabInput = "kerberos-keytab";
+  ldapKerberosRealmInput = "config.kerberosRealm.0";
+  ldapServerPrincipalInput = "config.serverPrincipal.0";
+  ldapKeyTabInput = "config.keyTab.0";
   allowKerberosAuth = "allow-kerberos-auth";
   debug = "debug";
   useKerberosForPwAuth = "use-kerberos-pw-auth";
 
   // LdapSettingsSynchronization input values
-  ldapBatchSizeInput = "batch-size";
-  ldapFullSyncPeriodInput = "full-sync-period";
-  ldapUsersSyncPeriodInput = "changed-users-sync-period";
+  ldapBatchSizeInput = "config.batchSizeForSync.0";
+  ldapFullSyncPeriodInput = "config.fullSyncPeriod.0";
+  ldapUsersSyncPeriodInput = "config.changedSyncPeriod.0";
   importUsers = "import-users";
   periodicFullSync = "periodic-full-sync";
   periodicUsersSync = "periodic-changed-users-sync";
