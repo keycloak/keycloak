@@ -158,9 +158,6 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     <bean id="keycloakSecurityContextRequestFilter"
           class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
 
-<bean id="keycloakSecurityContextRequestFilter"
-     class="org.keycloak.adapters.springsecurity.filter.KeycloakSecurityContextRequestFilter" />
-
     <bean id="keycloakLogoutHandler" class="org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler">
         <constructor-arg ref="adapterDeploymentContext" />
     </bean>
