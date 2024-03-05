@@ -58,7 +58,6 @@ When running in embedded mode, the `build` phase happens every time the server i
 There are a few limitations when running tests. The well-known limitations are:
 
 * FIPS tests not working
-* Deploying script providers not working. Probably any test deploying JAR files.
 * Re-starting the server during a test execution is taking too much metaspace. Need more investigation.
 
 ## Debugging - tips & tricks
