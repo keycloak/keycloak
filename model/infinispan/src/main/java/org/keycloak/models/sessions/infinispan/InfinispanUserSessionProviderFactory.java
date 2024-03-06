@@ -23,7 +23,6 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -39,8 +38,6 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessi
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
-import org.keycloak.models.sessions.infinispan.initializer.CacheInitializer;
-import org.keycloak.models.sessions.infinispan.initializer.DBLockBasedCacheInitializer;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -51,7 +48,6 @@ import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitializer;
-import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
@@ -85,8 +81,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
 
-    private boolean preloadOfflineSessionsFromDatabase;
-
     private long offlineSessionCacheEntryLifespanOverride;
 
     private long offlineClientSessionCacheEntryLifespanOverride;
@@ -118,7 +112,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 offlineSessionsCache,
                 clientSessionCache,
                 offlineClientSessionsCache,
-                !preloadOfflineSessionsFromDatabase,
                 this::deriveOfflineSessionCacheEntryLifespanMs,
                 this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
         );
@@ -127,11 +120,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public void init(Config.Scope config) {
         this.config = config;
-        preloadOfflineSessionsFromDatabase = config.getBoolean("preloadOfflineSessionsFromDatabase", false);
-        if (preloadOfflineSessionsFromDatabase && !Profile.isFeatureEnabled(Profile.Feature.OFFLINE_SESSION_PRELOADING)) {
-            throw new RuntimeException("The deprecated offline session preloading feature is disabled in this configuration. Read the migration guide to learn more.");
-        }
-
         offlineSessionCacheEntryLifespanOverride = config.getInt("offlineSessionCacheEntryLifespanOverride", -1);
         offlineClientSessionCacheEntryLifespanOverride = config.getInt("offlineClientSessionCacheEntryLifespanOverride", -1);
     }
@@ -203,31 +191,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
             @Override
             public void run(KeycloakSession session) {
-
-                if (preloadOfflineSessionsFromDatabase) {
-                    // only preload offline-sessions if necessary
-                    log.debug("Start pre-loading userSessions from persistent storage");
-
-                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                    Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-                    int defaultStateTransferTimeout = (int) (connections.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME)
-                      .getCacheConfiguration().clustering().stateTransfer().timeout() / 1000);
-
-                    InfinispanCacheInitializer ispnInitializer = new InfinispanCacheInitializer(sessionFactory, workCache,
-                            new OfflinePersistentUserSessionLoader(sessionsPerSegment), "offlineUserSessions", sessionsPerSegment, maxErrors,
-                            getStalledTimeoutInSeconds(defaultStateTransferTimeout));
-
-                    // DB-lock to ensure that persistent sessions are loaded from DB just on one DC. The other DCs will load them from remote cache.
-                    CacheInitializer initializer = new DBLockBasedCacheInitializer(session, ispnInitializer);
-
-                    initializer.initCache();
-                    initializer.loadSessions();
-
-                    log.debug("Pre-loading userSessions from persistent storage finished");
-                } else {
-                    log.debug("Skipping pre-loading of userSessions from persistent storage");
-                }
-
                 // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
                 persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
             }
@@ -428,7 +391,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public Map<String, String> getOperationalInfo() {
         Map<String, String> info = new HashMap<>();
-        info.put("preloadOfflineSessionsFromDatabase", Boolean.toString(preloadOfflineSessionsFromDatabase));
         info.put("offlineSessionCacheEntryLifespanOverride", Long.toString(offlineSessionCacheEntryLifespanOverride));
         info.put("offlineClientSessionCacheEntryLifespanOverride", Long.toString(offlineClientSessionCacheEntryLifespanOverride));
         return info;

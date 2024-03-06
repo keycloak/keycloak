@@ -24,7 +24,7 @@ import org.keycloak.provider.Provider;
  * one cluster node at a time.</p>
  *
  * <p>There are different namespaces that can be locked. The same <em>DBLockProvider</em>
- * (same session in keycloack) can only be used to lock one namespace, a second
+ * (same session in keycloak) can only be used to lock one namespace, a second
  * attempt will throw a <em>RuntimeException</em>. The <em>hasLock</em> method
  * returns the local namespace locked by this provider.</p>
  *
@@ -43,8 +43,9 @@ public interface DBLockProvider extends Provider {
     enum Namespace {
 
         DATABASE(1),
-        KEYCLOAK_BOOT(1000),
-        OFFLINE_SESSIONS(1001);
+        KEYCLOAK_BOOT(1000)
+        // OFFLINE_SESSIONS(1001) -- Not used anymore. Keeping to avoid reusing the number.
+        ;
 
         private final int id;
 
@@ -55,7 +56,7 @@ public interface DBLockProvider extends Provider {
         public int getId() {
             return id;
         }
-    };
+    }
 
     /**
      * Try to retrieve DB lock or wait if retrieve was unsuccessful.
