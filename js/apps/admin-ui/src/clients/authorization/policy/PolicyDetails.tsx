@@ -201,7 +201,7 @@ export default function PolicyDetails() {
           role="anyone" // if you get this far it means you have access
         >
           <FormProvider {...form}>
-            <NameDescription isDisabled={isDisabled} prefix="policy" />
+            <NameDescription isDisabled={isDisabled} />
             <ComponentType />
             <LogicSelector isDisabled={isDisabled} />
           </FormProvider>

@@ -1,23 +1,23 @@
 export default class ProviderPage {
   // KerberosSettingsRequired input values
-  #kerberosNameInput = "kerberos-name";
-  #kerberosRealmInput = "kerberos-realm";
-  #kerberosPrincipalInput = "kerberos-principal";
-  #kerberosKeytabInput = "kerberos-keytab";
+  #kerberosNameInput = "name";
+  #kerberosRealmInput = "config.kerberosRealm.0";
+  #kerberosPrincipalInput = "config.serverPrincipal.0";
+  #kerberosKeytabInput = "config.keyTab.0";
 
   // LdapSettingsGeneral input values
-  #ldapNameInput = "ldap-name";
+  #ldapNameInput = "name";
   #ldapVendorInput = "#kc-vendor";
   #ldapVendorList = "#kc-vendor + ul";
 
   // LdapSettingsConnection input values
-  connectionUrlInput = "ldap-connection-url";
+  connectionUrlInput = "config.connectionUrl.0";
   truststoreSpiInput = "#kc-use-truststore-spi";
   truststoreSpiList = "#kc-use-truststore-spi + ul";
-  connectionTimeoutInput = "connection-timeout";
+  connectionTimeoutInput = "config.connectionTimeout.0";
   bindTypeInput = "#kc-bind-type";
   #bindTypeList = "#kc-bind-type + ul";
-  bindDnInput = "ldap-bind-dn";
+  bindDnInput = "config.bindDn.0";
   bindCredsInput = "ldap-bind-credentials";
   #testConnectionBtn = "test-connection-button";
   #testAuthBtn = "test-auth-button";
@@ -28,26 +28,26 @@ export default class ProviderPage {
   ldapSearchScopeInput = "#kc-search-scope";
   #ldapSearchScopeInputList = "#kc-search-scope + ul";
   ldapPagination = "ui-pagination";
-  ldapUsersDnInput = "ldap-users-dn";
-  ldapUserLdapAttInput = "ldap-username-attribute";
-  ldapRdnLdapAttInput = "ldap-rdn-attribute";
-  ldapUuidLdapAttInput = "ldap-uuid-attribute";
-  ldapUserObjClassesInput = "ldap-user-object-classes";
-  ldapUserLdapFilter = "user-ldap-filter";
-  ldapReadTimeout = "ldap-read-timeout";
+  ldapUsersDnInput = "config.usersDn.0";
+  ldapUserLdapAttInput = "config.usernameLDAPAttribute.0";
+  ldapRdnLdapAttInput = "config.rdnLDAPAttribute.0";
+  ldapUuidLdapAttInput = "config.uuidLDAPAttribute.0";
+  ldapUserObjClassesInput = "config.userObjectClasses.0";
+  ldapUserLdapFilter = "config.customUserSearchFilter.0";
+  ldapReadTimeout = "config.readTimeout.0";
 
   // LdapSettingsKerberosIntegration input values
-  ldapKerberosRealmInput = "kerberos-realm";
-  ldapServerPrincipalInput = "kerberos-principal";
-  ldapKeyTabInput = "kerberos-keytab";
+  ldapKerberosRealmInput = "config.kerberosRealm.0";
+  ldapServerPrincipalInput = "config.serverPrincipal.0";
+  ldapKeyTabInput = "config.keyTab.0";
   allowKerberosAuth = "allow-kerberos-auth";
   debug = "debug";
   useKerberosForPwAuth = "use-kerberos-pw-auth";
 
   // LdapSettingsSynchronization input values
-  ldapBatchSizeInput = "batch-size";
-  ldapFullSyncPeriodInput = "full-sync-period";
-  ldapUsersSyncPeriodInput = "changed-users-sync-period";
+  ldapBatchSizeInput = "config.batchSizeForSync.0";
+  ldapFullSyncPeriodInput = "config.fullSyncPeriod.0";
+  ldapUsersSyncPeriodInput = "config.changedSyncPeriod.0";
   importUsers = "import-users";
   periodicFullSync = "periodic-full-sync";
   periodicUsersSync = "periodic-changed-users-sync";
@@ -327,7 +327,7 @@ export default class ProviderPage {
     cy.get("#kc-providerId").click();
     cy.get("button").contains(mapperType).click();
 
-    cy.findByTestId("ldap-mapper-name").clear().type(`${mapperType}-test`);
+    cy.findByTestId("name").clear().type(`${mapperType}-test`);
 
     switch (mapperType) {
       case this.#msadUserAcctMapper:

@@ -117,7 +117,7 @@ describe("Client authentication subtab", () => {
         name: "Regex policy",
         description: "Policy for regex",
         targetClaim: "I don't know",
-        regexPattern: ".*?",
+        pattern: ".*?",
       })
       .formUtils()
       .save();

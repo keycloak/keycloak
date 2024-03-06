@@ -528,8 +528,8 @@ export const AdminEvents = () => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("emptyEvents")}
-            instructions={t("emptyEventsInstructions")}
+            message={t("emptyAdminEvents")}
+            instructions={t("emptyAdminEventsInstructions")}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}

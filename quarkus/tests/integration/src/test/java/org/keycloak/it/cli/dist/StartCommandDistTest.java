@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -151,5 +152,13 @@ public class StartCommandDistTest {
         dist.run("build", "--db=dev-mem", "--cache=local");
         cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
+    }
+
+    @Test
+    @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/non-existing.conf", "start"})
+    void testInvalidConfigFileOption(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("File specified via '--config-file' or '-cf' option does not exist.");
+        cliResult.assertError(String.format("Try '%s --help' for more information on the available options.", KeycloakDistribution.SCRIPT_CMD));
     }
 }

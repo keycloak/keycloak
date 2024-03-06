@@ -28,7 +28,10 @@ describe("Policies", () => {
       );
       otpPoliciesPage.setPolicyType("hotp").increaseInitialCounter().save();
       masthead.checkNotificationMessage("OTP policy successfully updated");
-      otpPoliciesPage.checkSupportedApplications("FreeOTP");
+      otpPoliciesPage.checkSupportedApplications(
+        "FreeOTP",
+        "Google Authenticator",
+      );
     });
   });
 

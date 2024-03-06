@@ -11,14 +11,17 @@ import {
 } from "@patternfly/react-core";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
-import { Controller, UseFormReturn, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  UseFormReturn,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -89,7 +92,7 @@ export const LdapSettingsConnection = ({
   });
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
@@ -98,43 +101,15 @@ export const LdapSettingsConnection = ({
         />
       )}
       <FormAccess role="manage-realm" isHorizontal>
-        <FormGroup
+        <TextControl
+          name="config.connectionUrl.0"
           label={t("connectionURL")}
-          labelIcon={
-            <HelpItem
-              helpText={t("consoleDisplayConnectionUrlHelp")}
-              fieldLabelId="connectionURL"
-            />
-          }
-          fieldId="kc-ui-connection-url"
-          isRequired
-          validated={
-            (form.formState.errors.config as any)?.connectionUrl?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.connectionUrl?.[0].message
-          }
-        >
-          <KeycloakTextInput
-            isRequired
-            type="url"
-            id="kc-ui-connection-url"
-            data-testid="ldap-connection-url"
-            validated={
-              (form.formState.errors.config as any)?.connectionUrl?.[0]
-                ? "error"
-                : "default"
-            }
-            {...form.register("config.connectionUrl.0", {
-              required: {
-                value: true,
-                message: t("validateConnectionUrl").toString(),
-              },
-            })}
-          />
-        </FormGroup>
+          labelIcon={t("consoleDisplayConnectionUrlHelp")}
+          type="url"
+          rules={{
+            required: t("validateConnectionUrl"),
+          }}
+        />
         <FormGroup
           label={t("enableStartTls")}
           labelIcon={
@@ -162,9 +137,8 @@ export const LdapSettingsConnection = ({
                 aria-label={t("enableStartTls")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
-
         <FormGroup
           label={t("useTruststoreSpi")}
           labelIcon={
@@ -196,7 +170,7 @@ export const LdapSettingsConnection = ({
                 <SelectOption value="never">{t("never")}</SelectOption>
               </Select>
             )}
-          ></Controller>
+          />
         </FormGroup>
         <FormGroup
           label={t("connectionPooling")}
@@ -225,26 +199,15 @@ export const LdapSettingsConnection = ({
                 aria-label={t("connectionPooling")}
               />
             )}
-          ></Controller>
-        </FormGroup>
-        <FormGroup
-          label={t("connectionTimeout")}
-          labelIcon={
-            <HelpItem
-              helpText={t("connectionTimeoutHelp")}
-              fieldLabelId="consoleTimeout"
-            />
-          }
-          fieldId="kc-ui-connection-timeout"
-        >
-          <KeycloakTextInput
-            type="number"
-            min={0}
-            id="kc-ui-connection-timeout"
-            data-testid="connection-timeout"
-            {...form.register("config.connectionTimeout.0")}
           />
         </FormGroup>
+        <TextControl
+          name="config.connectionTimeout.0"
+          label={t("connectionTimeout")}
+          labelIcon={t("connectionTimeoutHelp")}
+          type="number"
+          min={0}
+        />
         <FormGroup fieldId="kc-test-connection-button">
           <Button
             variant="secondary"
@@ -288,37 +251,19 @@ export const LdapSettingsConnection = ({
                 <SelectOption value="none" />
               </Select>
             )}
-          ></Controller>
+          />
         </FormGroup>
 
         {isEqual(ldapBindType, ["simple"]) && (
           <>
-            <FormGroup
+            <TextControl
+              name="config.bindDn.0"
               label={t("bindDn")}
-              labelIcon={
-                <HelpItem helpText={t("bindDnHelp")} fieldLabelId="bindDn" />
-              }
-              fieldId="kc-ui-bind-dn"
-              helperTextInvalid={t("validateBindDn")}
-              validated={
-                (form.formState.errors.config as any)?.bindDn
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              isRequired
-            >
-              <KeycloakTextInput
-                type="text"
-                id="kc-ui-bind-dn"
-                data-testid="ldap-bind-dn"
-                validated={
-                  (form.formState.errors.config as any)?.bindDn
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...form.register("config.bindDn.0", { required: true })}
-              />
-            </FormGroup>
+              labelIcon={t("bindDnHelp")}
+              rules={{
+                required: t("validateBindDn"),
+              }}
+            />
             <FormGroup
               label={t("bindCredentials")}
               labelIcon={
@@ -364,6 +309,6 @@ export const LdapSettingsConnection = ({
           </Button>
         </FormGroup>
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

@@ -6,9 +6,9 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem, TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -98,7 +98,7 @@ export const LdapSettingsGeneral = ({
   };
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("generalOptions")}
@@ -107,52 +107,31 @@ export const LdapSettingsGeneral = ({
         />
       )}
       <FormAccess role="manage-realm" isHorizontal>
-        <FormGroup
+        {/* These hidden fields are required so data object written back matches data retrieved */}
+        <KeycloakTextInput
+          hidden
+          defaultValue="ldap"
+          {...form.register("providerId")}
+        />
+        <KeycloakTextInput
+          hidden
+          defaultValue="org.keycloak.storage.UserStorageProvider"
+          {...form.register("providerType")}
+        />
+        <KeycloakTextInput
+          hidden
+          defaultValue={realm}
+          {...form.register("parentId")}
+        />
+        <TextControl
+          name="name"
           label={t("uiDisplayName")}
-          labelIcon={
-            <HelpItem
-              helpText={t("uiDisplayNameHelp")}
-              fieldLabelId="uiDisplayName"
-            />
-          }
-          fieldId="kc-ui-display-name"
-          isRequired
-          validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={form.formState.errors.name?.message}
-        >
-          {/* These hidden fields are required so data object written back matches data retrieved */}
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-provider-id"
-            defaultValue="ldap"
-            {...form.register("providerId")}
-          />
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-provider-type"
-            defaultValue="org.keycloak.storage.UserStorageProvider"
-            {...form.register("providerType")}
-          />
-          <KeycloakTextInput
-            hidden
-            id="kc-ui-parentId"
-            defaultValue={realm}
-            {...form.register("parentId")}
-          />
-          <KeycloakTextInput
-            isRequired
-            id="kc-ui-display-name"
-            defaultValue="ldap"
-            data-testid="ldap-name"
-            validated={form.formState.errors.name ? "error" : "default"}
-            {...form.register("name", {
-              required: {
-                value: true,
-                message: `${t("validateName")}`,
-              },
-            })}
-          />
-        </FormGroup>
+          labelIcon={t("uiDisplayNameHelp")}
+          defaultValue="ldap"
+          rules={{
+            required: t("validateName"),
+          }}
+        />
         <FormGroup
           label={t("vendor")}
           labelIcon={
@@ -201,6 +180,6 @@ export const LdapSettingsGeneral = ({
           ></Controller>
         </FormGroup>
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

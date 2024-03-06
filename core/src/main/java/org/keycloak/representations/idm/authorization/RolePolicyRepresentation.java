@@ -25,6 +25,7 @@ import java.util.Set;
 public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
 
     private Set<RoleDefinition> roles;
+    private boolean fetchRoles;
 
     @Override
     public String getType() {
@@ -56,6 +57,14 @@ public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
 
     public void addClientRole(String clientId, String name, boolean required) {
         addRole(clientId + "/" + name, required);
+    }
+
+    public boolean isFetchRoles() {
+        return fetchRoles;
+    }
+
+    public void setFetchRoles(boolean fetchRoles) {
+        this.fetchRoles = fetchRoles;
     }
 
     public static class RoleDefinition {
