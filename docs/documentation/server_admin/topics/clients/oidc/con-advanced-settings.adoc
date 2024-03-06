@@ -131,7 +131,6 @@ Currently, {project_name} client adapters do not support DPoP holder-of-key toke
 ====
 
 :tech_feature_name: DPoP
-:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
 :tech_feature_id: dpop
 include::../../templates/techpreview.adoc[]
 
