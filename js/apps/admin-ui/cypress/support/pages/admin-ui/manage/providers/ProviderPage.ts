@@ -94,7 +94,7 @@ export default class ProviderPage {
   #rolesTab = "rolesTab";
   #createRoleBtn = "no-roles-for-this-client-empty-action";
   #roleSaveBtn = "save";
-  #roleNameField = "#kc-name";
+  #roleNameField = "name";
 
   #groupName = "aa-uf-mappers-group";
   #clientName = "aa-uf-mappers-client";
@@ -310,7 +310,7 @@ export default class ProviderPage {
     cy.wait(1000);
     cy.findByTestId(this.#createRoleBtn).click();
     cy.wait(1000);
-    cy.get(this.#roleNameField).clear().type(roleName);
+    cy.findByTestId(this.#roleNameField).clear().type(roleName);
     cy.wait(1000);
     cy.findByTestId(this.#roleSaveBtn).click();
     cy.wait(1000);

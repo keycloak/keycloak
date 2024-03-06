@@ -1,6 +1,6 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant } from "@patternfly/react-core";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -45,12 +45,13 @@ export default function CreateRealmRole() {
   };
 
   return (
-    <RoleForm
-      form={form}
-      onSubmit={onSubmit}
-      cancelLink={toRealmRoles({ realm })}
-      role="manage-realm"
-      editMode={false}
-    />
+    <FormProvider {...form}>
+      <RoleForm
+        onSubmit={onSubmit}
+        cancelLink={toRealmRoles({ realm })}
+        role="manage-realm"
+        editMode={false}
+      />
+    </FormProvider>
   );
 }
