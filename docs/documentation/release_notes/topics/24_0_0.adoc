@@ -445,3 +445,10 @@ With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying libra
 with GELF, Keycloak will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
 release. If you require an external log management, consider using file log parsing.
 endif::[]
+
+= Support for multi-site active-passive deployments
+
+Deploying {project_name} to multiple independent sites is essential for some environments to provide high availability and a speedy recovery from failures.
+This release supports active-passive deployments for {project_name}.
+
+To get started, use the link:{highavailabilityguide_link}[{highavailabilityguide_name}] which also includes a comprehensive blueprint to deploy a highly available {project_name} to a cloud environment.

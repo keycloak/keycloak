@@ -71,6 +71,8 @@
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:highavailabilityguide_name: High Availability Guide
+:highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
