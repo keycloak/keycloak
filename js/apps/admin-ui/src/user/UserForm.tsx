@@ -161,7 +161,7 @@ export const UserForm = ({
                 id={user.id}
                 aria-label={t("userID")}
                 value={user.id}
-                readOnlyVariant="default"
+                readOnly
               />
             </FormGroup>
             <FormGroup
@@ -172,8 +172,7 @@ export const UserForm = ({
               <KeycloakTextInput
                 value={formatDate(new Date(user.createdTimestamp!))}
                 id="kc-created-at"
-                aria-label={t("createdAt")}
-                readOnlyVariant="default"
+                readOnly
               />
             </FormGroup>
           </>
@@ -220,12 +219,10 @@ export const UserForm = ({
               <TextControl
                 name="username"
                 label={t("username")}
-                readOnlyVariant={
+                readOnly={
                   !!user?.id &&
                   !realm.editUsernameAllowed &&
                   realm.editUsernameAllowed !== undefined
-                    ? "default"
-                    : undefined
                 }
                 rules={{
                   required: t("required"),

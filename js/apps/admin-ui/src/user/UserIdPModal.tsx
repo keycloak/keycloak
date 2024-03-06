@@ -92,7 +92,7 @@ export const UserIdpModal = ({
               id="identityProvider"
               data-testid="idpNameInput"
               value={capitalize(federatedId)}
-              readOnlyVariant="default"
+              readOnly
             />
           </FormGroup>
           <TextControl
