@@ -26,3 +26,7 @@ bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size
 = Removed a model module
 
 The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previous release and is removed in this release. Use the `org.keycloak:keycloak-model-storage` module instead.
+
+= Removed offline session preloading
+
+The old behavior to preload offline sessions at startup is now removed after it has been deprecated in the previous release.

@@ -33,7 +33,6 @@ import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFa
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
-import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 
 /**
@@ -168,26 +167,6 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
                 3,
                 10);
     }
-
-    @Override
-    public boolean isFinished(BaseCacheInitializer initializer) {
-        Cache<String, Serializable> workCache = initializer.getWorkCache();
-
-        // Check if persistent sessions were already loaded in this DC. This is possible just for offline sessions ATM
-        Boolean sessionsLoaded = (Boolean) workCache
-                .getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE)
-                .get(OfflinePersistentUserSessionLoader.PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC);
-
-        if ((cacheName.equals(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) || (cacheName.equals(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)))
-                && sessionsLoaded != null && sessionsLoaded) {
-            log.debugf("Sessions already loaded in current DC. Skip sessions loading from remote cache '%s'", cacheName);
-            return true;
-        } else {
-            log.debugf("Sessions maybe not yet loaded in current DC. Will load them from remote cache '%s'", cacheName);
-            return false;
-        }
-    }
-
 
     @Override
     public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {

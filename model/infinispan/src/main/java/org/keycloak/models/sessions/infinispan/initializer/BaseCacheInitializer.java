@@ -52,12 +52,6 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
     @Override
     protected boolean isFinished() {
-        // Check if we should skipLoadingSessions. This can happen if someone else already did the task (For example in cross-dc environment, it was done by different DC)
-        boolean isFinishedAlready = this.sessionLoader.isFinished(this);
-        if (isFinishedAlready) {
-            return true;
-        }
-
         InitializerState state = getStateFromCache();
         return state != null && state.isFinished();
     }
@@ -122,8 +116,4 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
         }
     }
 
-
-    public Cache<String, Serializable> getWorkCache() {
-        return workCache;
-    }
 }
