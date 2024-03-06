@@ -17,6 +17,7 @@ export type TextAreaControlProps<
   label: string;
   labelIcon?: string;
   isDisabled?: boolean;
+  readOnly?: boolean;
 };
 
 export const TextAreaControl = <
@@ -40,6 +41,7 @@ export const TextAreaControl = <
       labelIcon={props.labelIcon}
       name={props.name}
       error={fieldState.error}
+      readOnly={props.readOnly}
     >
       <KeycloakTextArea
         isRequired={required}
@@ -49,6 +51,7 @@ export const TextAreaControl = <
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
         isDisabled={props.isDisabled}
+        readOnly={props.readOnly}
         {...field}
       />
     </FormLabel>

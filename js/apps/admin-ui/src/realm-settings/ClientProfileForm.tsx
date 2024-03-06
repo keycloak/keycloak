@@ -1,5 +1,5 @@
-import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
+import ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,7 +14,6 @@ import {
   DropdownItem,
   Flex,
   FlexItem,
-  FormGroup,
   Label,
   PageSection,
   Text,
@@ -25,14 +24,12 @@ import { Fragment, useMemo, useState } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem, TextControl } from "ui-shared";
-
+import { HelpItem, TextAreaControl, TextControl } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -44,7 +41,16 @@ import { toExecutor } from "./routes/Executor";
 
 import "./realm-settings-section.css";
 
-type ClientProfileForm = Required<ClientProfileRepresentation>;
+type Executor = {
+  executor: string;
+  configuration?: Record<string, any>;
+};
+
+type ClientProfileForm = {
+  name: string;
+  description: string;
+  executors: Executor[];
+};
 
 const defaultValues: ClientProfileForm = {
   name: "",
@@ -65,7 +71,6 @@ export default function ClientProfileForm() {
     handleSubmit,
     setValue,
     getValues,
-    register,
     formState: { isDirty },
     control,
   } = form;
@@ -113,10 +118,17 @@ export default function ClientProfileForm() {
         "description",
         globalProfile?.description ?? profile?.description ?? "",
       );
-      setValue(
-        "executors",
-        globalProfile?.executors ?? profile?.executors ?? [],
-      );
+
+      const executors: Executor[] = (
+        globalProfile?.executors ??
+        profile?.executors ??
+        []
+      ).map((executor: ClientPolicyExecutorRepresentation) => ({
+        executor: executor.executor || "",
+        configuration: executor.configuration || {},
+      }));
+
+      setValue("executors", executors);
     },
     [key],
   );
@@ -230,14 +242,11 @@ export default function ClientProfileForm() {
               readOnly={isGlobalProfile}
               helperText={t("createClientProfileNameHelperText")}
             />
-            <FormGroup label={t("description")} fieldId="kc-description">
-              <KeycloakTextArea
-                id="kc-description"
-                data-testid="client-profile-description"
-                isReadOnly={isGlobalProfile}
-                {...register("description")}
-              />
-            </FormGroup>
+            <TextAreaControl
+              name="description"
+              label={t("description")}
+              readOnly={isGlobalProfile}
+            />
             <ActionGroup>
               {!isGlobalProfile && (
                 <Button
@@ -351,9 +360,10 @@ export default function ClientProfileForm() {
                                   )}
                                   {executorTypes
                                     ?.filter(
-                                      (type) => type.id === executor.executor,
+                                      (type: any) =>
+                                        type.id === executor.executor,
                                     )
-                                    .map((type) => (
+                                    .map((type: any) => (
                                       <Fragment key={type.id}>
                                         <HelpItem
                                           key={type.id}
