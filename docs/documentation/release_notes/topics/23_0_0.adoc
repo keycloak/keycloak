@@ -80,7 +80,7 @@ Deploying {project_name} to multiple independent sites is essential for some env
 This release adds preview-support for active-passive deployments for {project_name}.
 
 A lot of work has gone into testing and verifying a setup which can sustain load and recover from the failure scenarios.
-To get started, use the https://www.keycloak.org/guides#high-availability[high-availability guide] which also includes a comprehensive blueprint to deploy a highly available {project_name} to a cloud environment.
+To get started, use the link:{highavailabilityguide_link}[{highavailabilityguide_name}] which also includes a comprehensive blueprint to deploy a highly available {project_name} to a cloud environment.
 
 = Adapters
 
