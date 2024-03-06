@@ -266,7 +266,7 @@ public class TokenRevocationEndpoint {
     private void revokeAccessToken() {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         int currentTime = Time.currentTime();
-        long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
+        long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
         singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
     }
 }
