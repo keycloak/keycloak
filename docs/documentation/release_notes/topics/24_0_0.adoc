@@ -445,3 +445,13 @@ With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying libra
 with GELF, Keycloak will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
 release. If you require an external log management, consider using file log parsing.
 endif::[]
+
+= Admin API
+
+== Support for searching users based on search filter, enabled attribute, first result position and maximum number
+
+The User API now supports querying users based on a search filter (matching either username or first or last name or email),
+the `enabled` attribute along with the position of the first result the maximum number of results to retrieve.
+For that, a new `enabled` parameter was added to the `/{realm}/users/search` endpoint.
+
+If the `enabled` flag is set to true, only users that are enabled and that match the filter string are retrieved.

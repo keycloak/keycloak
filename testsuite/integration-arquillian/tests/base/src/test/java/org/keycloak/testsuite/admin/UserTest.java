@@ -1097,6 +1097,31 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchWithFilterAndEnabledAttribute() {
+        createUser();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user3");
+        user.setFirstName("user3First");
+        user.setLastName("user3Last");
+        user.setEmail("user3@localhost");
+        user.setRequiredActions(Collections.emptyList());
+        user.setEnabled(false);
+        createUser(user);
+
+        List<UserRepresentation> searchFilterUserNameAndDisabled = realm.users().search("user3", false, 0, 5);
+        assertEquals(1, searchFilterUserNameAndDisabled.size());
+        assertEquals(user.getUsername(), searchFilterUserNameAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchFilterMailAndDisabled = realm.users().search("user3@localhost", false, 0, 5);
+        assertEquals(1, searchFilterMailAndDisabled.size());
+        assertEquals(user.getUsername(), searchFilterMailAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchFilterLastNameAndEnabled = realm.users().search("user3Last", true, 0, 5);
+        assertEquals(0, searchFilterLastNameAndEnabled.size());
+    }
+
+    @Test
     public void searchByIdp() {
         // Add user without IDP
         createUser();
