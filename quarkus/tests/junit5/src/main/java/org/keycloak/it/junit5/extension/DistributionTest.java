@@ -29,6 +29,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public @interface DistributionTest {
 
     boolean debug() default false;
+    /**
+     * If the distribution should be left running after the launch.
+     */
     boolean keepAlive() default false;
     boolean enableTls() default false;
 
