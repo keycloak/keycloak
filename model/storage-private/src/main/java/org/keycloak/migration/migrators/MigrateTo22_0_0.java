@@ -41,25 +41,25 @@ public class MigrateTo22_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(this::removeHttpChallengeFlow);
+        session.realms().getRealmsStream().forEach(realm -> removeHttpChallengeFlow(session, realm));
         //login, account, email themes are handled by JpaUpdate22_0_0_RemoveRhssoThemes
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        removeHttpChallengeFlow(realm);
+        removeHttpChallengeFlow(session, realm);
         updateLoginTheme(realm);
         updateAccountTheme(realm);
         updateEmailTheme(realm);
         updateClientAttributes(realm);
     }
 
-    private void removeHttpChallengeFlow(RealmModel realm) {
+    private void removeHttpChallengeFlow(KeycloakSession session, RealmModel realm) {
         AuthenticationFlowModel httpChallenge = realm.getFlowByAlias(HTTP_CHALLENGE_FLOW);
         if (httpChallenge == null) return;
 
         try {
-            KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, httpChallenge, () -> {}, () -> {});
+            KeycloakModelUtils.deepDeleteAuthenticationFlow(session, realm, httpChallenge, () -> {}, () -> {});
             LOG.debugf("Removed '%s' authentication flow in realm '%s'", HTTP_CHALLENGE_FLOW, realm.getName());
         } catch (ModelException me) {
             LOG.errorf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please update your deployment to avoid using this flow before migration to latest Keycloak",
