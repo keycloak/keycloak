@@ -6,10 +6,10 @@ import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 import { DEFAULT_REALM } from "../src/constants";
-import { getBaseUrl } from "./utils";
+import { getKeycloakServerUrl } from "./utils";
 
 const adminClient = new KeycloakAdminClient({
-  baseUrl: getBaseUrl(),
+  baseUrl: getKeycloakServerUrl(),
   realmName: DEFAULT_REALM,
 });
 

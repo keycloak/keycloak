@@ -48,7 +48,7 @@ export type ContentComponentParams = {
 };
 
 export const ContentRoute: RouteObject = {
-  path: "/content/:componentId",
+  path: "content/:componentId",
   element: <ContentComponent />,
 };
 
@@ -58,7 +58,7 @@ export const PersonalInfoRoute: IndexRouteObject = {
 };
 
 export const RootRoute: RouteObject = {
-  path: "/",
+  path: "/realms/:realm/account",
   element: <Root />,
   errorElement: <ErrorPage />,
   children: [
