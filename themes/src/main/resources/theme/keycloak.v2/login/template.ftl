@@ -50,9 +50,22 @@
               "${authenticationSession.tabId}",
               "${url.ssoLoginInOtherTabsUrl}"
             );
-	    const darkModeOn = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            const classes = document.querySelector("html").classList;
-                darkModeOn ? classes.add("pf-v5-theme-dark") : classes.add("");
+
+            const DARK_MODE_CLASS = "pf-v5-theme-dark";
+            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+            updateDarkMode(mediaQuery.matches);
+            mediaQuery.addEventListener((event) => updateDarkMode(event.matches));
+
+            function updateDarkMode(isEnabled) {
+                const { classList } = document.documentElement;
+                
+                if (isEnabled) {
+                    classList.add(DARK_MODE_CLASS);
+                } else {
+                    classList.remove(DARK_MODE_CLASS);
+                }
+            }
         </script>
     </#if>
 </head>
