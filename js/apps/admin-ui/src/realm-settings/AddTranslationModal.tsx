@@ -12,7 +12,6 @@ import {
   useForm,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { TextControl } from "ui-shared";
 
