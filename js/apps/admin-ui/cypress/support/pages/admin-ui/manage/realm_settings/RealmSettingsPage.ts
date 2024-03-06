@@ -76,7 +76,7 @@ export default class RealmSettingsPage extends CommonPage {
   duplicateEmailsSwitch = "duplicate-emails-switch";
   verifyEmailSwitch = "verify-email-switch";
   authSwitch = "email-authentication-switch";
-  fromInput = "sender-email-address";
+  fromInput = "smtpServer.from";
   enableSslCheck = "enable-ssl";
   enableStartTlsCheck = "enable-start-tls";
   addProviderDropdown = "addProviderDropdown";
@@ -234,7 +234,7 @@ export default class RealmSettingsPage extends CommonPage {
   #frontEndURL = "#kc-frontend-url";
   #requireSSL = "#kc-require-ssl";
   #unmanagedAttributes = "#kc-user-profile-unmanaged-attribute-policy";
-  #fromDisplayName = "from-display-name";
+  #fromDisplayName = "smtpServer.fromDisplayName";
   #replyToEmail = "#kc-reply-to";
   #port = "#kc-port";
 

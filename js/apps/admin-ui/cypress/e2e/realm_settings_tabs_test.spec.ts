@@ -105,8 +105,8 @@ describe("Realm settings tabs tests", () => {
     cy.get("#kc-host-helper").contains("Required field");
 
     cy.findByTestId("email-tab-revert").click();
-    cy.findByTestId("sender-email-address").should("be.empty");
-    cy.findByTestId("from-display-name").should("be.empty");
+    cy.findByTestId("smtpServer.from").should("be.empty");
+    cy.findByTestId("smtpServer.fromDisplayName").should("be.empty");
     cy.get("#kc-port").should("be.empty");
 
     realmSettingsPage.addSenderEmail("example@example.com");
