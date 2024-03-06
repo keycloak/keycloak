@@ -1288,38 +1288,35 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
     public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
-        if (rep.getAuthenticationFlows() == null) {
-            // assume this is an old version being imported
-            DefaultAuthenticationFlows.migrateFlows(newRealm);
-        } else {
-            if (rep.getAuthenticatorConfig() != null) {
-                for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
-                    if (configRep.getAlias() == null) {
-                        // this can happen only during import json files from keycloak 3.4.0 and older
-                        throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
-                                + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
-                    }
-                    AuthenticatorConfigModel model = RepresentationToModel.toModel(configRep);
-                    newRealm.addAuthenticatorConfig(model);
+
+        if (rep.getAuthenticatorConfig() != null) {
+            for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                if (configRep.getAlias() == null) {
+                    // this can happen only during import json files from keycloak 3.4.0 and older
+                    throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
+                            + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
                 }
+                AuthenticatorConfigModel model = RepresentationToModel.toModel(configRep);
+                newRealm.addAuthenticatorConfig(model);
             }
-            if (rep.getAuthenticationFlows() != null) {
-                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                    AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    String previousId = model.getId();
-                    model = newRealm.addAuthenticationFlow(model);
-                    // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
-                    mappedFlows.put(previousId, model.getId());
-                }
-                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                    AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
-                    for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                        AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
-                        newRealm.addAuthenticatorExecution(execution);
-                    }
+        }
+        if (rep.getAuthenticationFlows() != null) {
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
+                String previousId = model.getId();
+                model = newRealm.addAuthenticationFlow(model);
+                // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
+                mappedFlows.put(previousId, model.getId());
+            }
+            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
+                for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                    AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
+                    newRealm.addAuthenticatorExecution(execution);
                 }
             }
         }
+        DefaultAuthenticationFlows.migrateFlows(newRealm);
         if (rep.getBrowserFlow() == null) {
             AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
             if (defaultFlow != null) {
