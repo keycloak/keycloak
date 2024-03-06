@@ -50,9 +50,7 @@
               "${authenticationSession.tabId}",
               "${url.ssoLoginInOtherTabsUrl}"
             );
-	    const darkModeOn =
-                window.matchMedia &&
-                window.matchMedia("(prefers-color-scheme: dark)").matches;
+	    const darkModeOn = window.matchMedia("(prefers-color-scheme: dark)").matches;
             const classes = document.querySelector("html").classList;
                 darkModeOn ? classes.add("pf-v5-theme-dark") : classes.add("");
         </script>
