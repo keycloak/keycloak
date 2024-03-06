@@ -18,6 +18,7 @@ export type TextControlProps<
     label: string;
     labelIcon?: string;
     isDisabled?: boolean;
+    helperText?: string;
   };
 
 export const TextControl = <
@@ -42,6 +43,7 @@ export const TextControl = <
       labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
+      helperText={props.helperText}
     >
       <KeycloakTextInput
         isRequired={required}
