@@ -90,12 +90,12 @@ public interface GroupResource {
      *
      * @param first
      * @param max
-     * @param full
+     * @param briefRepresentation
      */
     @GET
     @Path("children")
-    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
     /**
