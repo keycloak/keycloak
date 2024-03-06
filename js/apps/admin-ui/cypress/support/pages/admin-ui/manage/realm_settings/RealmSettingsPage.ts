@@ -98,8 +98,8 @@ export default class RealmSettingsPage extends CommonPage {
   emailAddressInput = "email-address-input";
   addBundleButton = "add-translationBtn";
   confirmAddTranslation = "add-translation-confirm-button";
-  keyInput = "key-input";
-  valueInput = "value-input";
+  keyInput = "key";
+  valueInput = "value";
   deleteAction = "delete-action";
   modalConfirm = "confirm";
   ssoSessionIdleInput = "sso-session-idle-input";
@@ -173,8 +173,8 @@ export default class RealmSettingsPage extends CommonPage {
   #jsonEditorSelect = "jsonEditor-profilesView";
   #formViewSelectPolicies = "formView-policiesView";
   #jsonEditorSelectPolicies = "jsonEditor-policiesView";
-  #newClientProfileNameInput = "client-profile-name";
-  #newClientProfileDescriptionInput = "client-profile-description";
+  #newClientProfileNameInput = "name";
+  #newClientProfileDescriptionInput = "description";
   #saveNewClientProfileBtn = "saveCreateProfile";
   #cancelNewClientProfile = "cancelCreateProfile";
   #createPolicyEmptyStateBtn = "no-client-policies-empty-action";
