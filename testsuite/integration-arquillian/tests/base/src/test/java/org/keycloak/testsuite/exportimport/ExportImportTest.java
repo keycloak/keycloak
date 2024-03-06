@@ -258,6 +258,13 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testImportFromRealmWithPartialAuthenticationFlows() {
+        // import a realm with no built-in authentication flows
+        importRealmFromFile("/import/partial-authentication-flows-import.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-authentication-flows-import"));
+    }
+
+    @Test
     public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
         importRealmFromFile("/import/testrealm-authenticator-config-null.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
