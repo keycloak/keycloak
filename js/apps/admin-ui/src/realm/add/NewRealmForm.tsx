@@ -1,11 +1,13 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
@@ -14,8 +16,6 @@ import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
-import { TextControl } from "ui-shared";
 
 export default function NewRealmForm() {
   const { t } = useTranslation();
@@ -24,17 +24,12 @@ export default function NewRealmForm() {
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
-  const [defaultValue, setDefaultValue] = useState(true);
 
   const form = useForm<RealmRepresentation>({
     mode: "onChange",
   });
 
   const { handleSubmit, setValue } = form;
-
-  useEffect(() => {
-    setValue("enabled", defaultValue);
-  }, [setValue, defaultValue]);
 
   const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
@@ -82,7 +77,7 @@ export default function NewRealmForm() {
             <DefaultSwitchControl
               name="enabled"
               label={t("enabled")}
-              onChange={(value) => setDefaultValue(value)}
+              defaultValue={true}
             />
             <ActionGroup>
               <Button variant="primary" type="submit">
