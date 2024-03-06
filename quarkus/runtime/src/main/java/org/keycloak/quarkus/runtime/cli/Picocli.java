@@ -323,7 +323,7 @@ public final class Picocli {
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                logger.warn("The following used options or option values are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse));
+                logger.warn("The following used options or option values are DEPRECATED and will be removed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.");
             }
         } finally {
             PropertyMappingInterceptor.enable();
