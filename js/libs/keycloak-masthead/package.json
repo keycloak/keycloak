@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.63",
-    "@types/react-dom": "^18.2.19",
+    "@types/react-dom": "^18.2.20",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^5.1.5",
