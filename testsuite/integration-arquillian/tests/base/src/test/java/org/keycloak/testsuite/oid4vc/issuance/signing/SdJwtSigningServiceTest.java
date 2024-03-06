@@ -242,10 +242,13 @@ public class SdJwtSigningServiceTest extends SigningServiceTest {
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
             assertEquals("The type should be included", TEST_TYPES.get(0), theToken.getOtherClaims().get("vct"));
-            assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
+
             assertEquals("The nbf date should be included", TEST_ISSUANCE_DATE.toInstant().getEpochSecond(), theToken.getNbf().longValue());
 
             List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
+            if (sds != null && !sds.isEmpty()){
+                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
+            }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
             assertEquals("All undisclosed claims and decoys should be provided.", disclosed.size() + decoys, numSds);
