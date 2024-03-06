@@ -29,7 +29,9 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -44,7 +46,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
@@ -861,12 +862,13 @@ public final class KeycloakModelUtils {
     /**
      * Recursively remove authentication flow (including all subflows and executions) from the model storage
      *
-     * @param realm
+     * @param session The keycloak session
+     * @param realm The realm
      * @param authFlow flow to delete
-     * @param flowUnavailableHandler Will be executed when flow or some of it's subflow is null
+     * @param flowUnavailableHandler Will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationFlow(RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
         if (authFlow == null) {
             flowUnavailableHandler.run();
             return;
@@ -876,12 +878,45 @@ public final class KeycloakModelUtils {
         }
 
         realm.getAuthenticationExecutionsStream(authFlow.getId())
-                .map(AuthenticationExecutionModel::getFlowId)
-                .filter(Objects::nonNull)
-                .map(realm::getAuthenticationFlowById)
-                .forEachOrdered(subflow -> deepDeleteAuthenticationFlow(realm, subflow, flowUnavailableHandler, builtinFlowHandler));
+                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler));
 
         realm.removeAuthenticationFlow(authFlow);
+    }
+
+    /**
+     * Recursively remove authentication executor (including sub-flows and configs) from the model storage
+     *
+     * @param session The keycloak session
+     * @param realm The realm
+     * @param authExecutor The authentication executor to remove
+     * @param flowUnavailableHandler Handler that will be executed when flow, sub-flow or executor is null
+     * @param builtinFlowHandler Handler that will be executed when flow is built-in flow
+     */
+    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+        if (authExecutor == null) {
+            flowUnavailableHandler.run();
+            return;
+        }
+
+        // recursively remove sub flows
+        if (authExecutor.getFlowId() != null) {
+            AuthenticationFlowModel authFlow = realm.getAuthenticationFlowById(authExecutor.getFlowId());
+            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler);
+        }
+
+        // remove the config if not shared
+        if (authExecutor.getAuthenticatorConfig() != null) {
+            DeployedConfigurationsManager configManager = new DeployedConfigurationsManager(session);
+            if (configManager.getDeployedAuthenticatorConfig(authExecutor.getAuthenticatorConfig()) == null) {
+                AuthenticatorConfigModel config = configManager.getAuthenticatorConfig(realm, authExecutor.getAuthenticatorConfig());
+                if (config != null) {
+                    realm.removeAuthenticatorConfig(config);
+                }
+            }
+        }
+
+        // remove the executor at the end
+        realm.removeAuthenticatorExecution(authExecutor);
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {

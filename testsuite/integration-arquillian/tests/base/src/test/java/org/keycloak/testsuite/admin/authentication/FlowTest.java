@@ -20,7 +20,6 @@ package org.keycloak.testsuite.admin.authentication;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -30,7 +29,6 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -84,6 +82,29 @@ public class FlowTest extends AbstractAuthenticationTest {
         // Under the old code, this would throw an error because "grandchild"
         // was left in the database
         addFlowToParent("child", "grandchild");
+
+        authMgmtResource.deleteFlow(findFlowByAlias("Foo", authMgmtResource.getFlows()).getId());
+    }
+
+    @Test
+    public void testRemoveExecutionSubflow() {
+        createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
+        addFlowToParent("Foo", "child");
+        addFlowToParent("child", "grandchild");
+
+        // remove the foo child but using the execution
+        List<AuthenticationExecutionInfoRepresentation> fooExecutions = authMgmtResource.getExecutions("Foo");
+        AuthenticationExecutionInfoRepresentation childExececution = fooExecutions.stream()
+                .filter(r -> "child".equals(r.getDisplayName()) && r.getLevel() == 0).findAny().orElse(null);
+        assertNotNull(childExececution);
+        authMgmtResource.removeExecution(childExececution.getId());
+        assertAdminEvents.clear();
+
+        // check subflows were removed and can be re-created
+        addFlowToParent("Foo", "child");
+        addFlowToParent("child", "grandchild");
+
+        authMgmtResource.deleteFlow(findFlowByAlias("Foo", authMgmtResource.getFlows()).getId());
     }
     
     private void addFlowToParent(String parentAlias, String childAlias) {
@@ -315,6 +336,8 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         authMgmtResource.addExecutionFlow("parent", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
+
+        authMgmtResource.deleteFlow(findFlowByAlias("parent", authMgmtResource.getFlows()).getId());
     }
 
     @Test
