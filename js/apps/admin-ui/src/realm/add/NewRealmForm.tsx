@@ -1,13 +1,7 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
-import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -20,6 +14,7 @@ import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { TextControl } from "ui-shared";
 
 export default function NewRealmForm() {
@@ -29,12 +24,17 @@ export default function NewRealmForm() {
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
+  const [defaultValue, setDefaultValue] = useState(true);
 
   const form = useForm<RealmRepresentation>({
     mode: "onChange",
   });
 
-  const { handleSubmit, control, setValue } = form;
+  const { handleSubmit, setValue } = form;
+
+  useEffect(() => {
+    setValue("enabled", defaultValue);
+  }, [setValue, defaultValue]);
 
   const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
@@ -79,24 +79,11 @@ export default function NewRealmForm() {
               label={t("realmNameField")}
               rules={{ required: t("required") }}
             />
-            <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">
-              <Controller
-                name="enabled"
-                defaultValue={true}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="kc-realm-enabled-switch"
-                    name="enabled"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value}
-                    onChange={field.onChange}
-                    aria-label={t("enabled")}
-                  />
-                )}
-              />
-            </FormGroup>
+            <DefaultSwitchControl
+              name="enabled"
+              label={t("enabled")}
+              onChange={(value) => setDefaultValue(value)}
+            />
             <ActionGroup>
               <Button variant="primary" type="submit">
                 {t("create")}
