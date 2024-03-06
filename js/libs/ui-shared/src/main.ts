@@ -1,7 +1,10 @@
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export { SelectControl } from "./controls/SelectControl";
 export type { SelectControlOption } from "./controls/SelectControl";
-export { SwitchControl } from "./controls/SwitchControl";
+export {
+  SwitchControl,
+  type SwitchControlProps,
+} from "./controls/SwitchControl";
 export { TextControl } from "./controls/TextControl";
 export { TextAreaControl } from "./controls/TextAreaControl";
 export { NumberControl } from "./controls/NumberControl";

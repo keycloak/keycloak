@@ -1,18 +1,12 @@
-import { SwitchProps } from "@patternfly/react-core";
-import { FieldPath, FieldValues, UseControllerProps } from "react-hook-form";
+import { FieldPath, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import type { SwitchControlProps } from "ui-shared";
 import { SwitchControl } from "ui-shared";
 
-type DefaultSwitchControlProps<
+export type DefaultSwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = SwitchProps &
-  UseControllerProps<T, P> & {
-    name: string;
-    label?: string;
-    labelIcon?: string;
-    stringify?: boolean;
-  };
+> = Omit<SwitchControlProps<T, P>, "labelOn" | "labelOff">;
 
 export const DefaultSwitchControl = <
   T extends FieldValues,
