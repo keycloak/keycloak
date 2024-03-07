@@ -109,7 +109,7 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId("email-tab-revert").click();
     cy.findByTestId("smtpServer.from").should("be.empty");
     cy.findByTestId("smtpServer.fromDisplayName").should("be.empty");
-    cy.findByTestId("smtpServer").should("be.empty");
+    cy.findByTestId("smtpServer.port").should("be.empty");
 
     realmSettingsPage.addSenderEmail("example@example.com");
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);
