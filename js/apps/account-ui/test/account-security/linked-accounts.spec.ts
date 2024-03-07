@@ -14,7 +14,7 @@ import {
   inRealm,
 } from "../admin-client";
 import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
-import { getBaseUrl } from "../utils";
+import { getKeycloakServerUrl } from "../utils";
 
 const realm = "groups";
 
@@ -32,7 +32,7 @@ test.describe("Account linking", () => {
     groupIdPClientId = await createClient(
       groupsIdPClient as ClientRepresentation,
     );
-    const baseUrl = getBaseUrl();
+    const baseUrl = getKeycloakServerUrl();
     const idp: IdentityProviderRepresentation = {
       alias: "master-idp",
       providerId: "oidc",
@@ -65,9 +65,7 @@ test.describe("Account linking", () => {
 
   test("Linking", async ({ page }) => {
     // If refactoring this, consider introduction of helper functions for individual pages - login, update profile etc.
-    await page.goto(
-      process.env.CI ? `/realms/${realm}/account` : `/?realm=${realm}`,
-    );
+    await page.goto(`/realms/${realm}/account`);
 
     // Click the login via master-idp provider button
     await loginWithIdp(page, "master-idp");

@@ -20,12 +20,14 @@ import {
   useHref,
   useLinkClickHandler,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import fetchContentJson from "../content/fetchContent";
 import type { Feature } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 import { useEnvironment } from "./KeycloakContext";
+import { getRootPath } from "../utils/getRootPath";
 
 type RootMenuItem = {
   label: TFuncKey;
@@ -132,8 +134,11 @@ export const NavLink = ({
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const href = useHref(to);
-  const handleClick = useLinkClickHandler(to);
+  const { realm } = useParams();
+
+  const menuItemPath = `${getRootPath(realm)}/${to}`;
+  const href = useHref(menuItemPath);
+  const handleClick = useLinkClickHandler(menuItemPath);
 
   return (
     <NavItem
