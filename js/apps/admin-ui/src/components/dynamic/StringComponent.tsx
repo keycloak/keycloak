@@ -1,11 +1,8 @@
-import { FormGroup } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { TextControl } from "ui-shared";
 
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 export const StringComponent = ({
   name,
@@ -16,22 +13,17 @@ export const StringComponent = ({
   required,
 }: ComponentProps) => {
   const { t } = useTranslation();
-  const { register } = useFormContext();
 
   return (
-    <FormGroup
+    <TextControl
+      name={convertToName(name!)}
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
-      fieldId={name!}
-      isRequired={required}
-    >
-      <KeycloakTextInput
-        id={name!}
-        data-testid={name}
-        isDisabled={isDisabled}
-        defaultValue={defaultValue?.toString()}
-        {...register(convertToName(name!))}
-      />
-    </FormGroup>
+      labelIcon={t(helpText!)}
+      defaultValue={defaultValue?.toString()}
+      rules={{
+        required: required ? t("required") : undefined,
+      }}
+      isDisabled={isDisabled}
+    />
   );
 };
