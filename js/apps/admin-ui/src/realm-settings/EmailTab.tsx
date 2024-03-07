@@ -13,16 +13,16 @@ import {
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FormPanel, HelpItem, SwitchControl, TextControl } from "ui-shared";
+import { FormPanel, HelpItem, SwitchControl, TextControl, PasswordControl } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
-import { PasswordInput } from "../components/password-input/PasswordInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
 import { useCurrentUser } from "../utils/useCurrentUser";
 import useToggle from "../utils/useToggle";
+
 import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
@@ -219,29 +219,15 @@ export const RealmSettingsEmailTab = ({
                     required: t("required"),
                   }}
                 />
-                <FormGroup
+              <PasswordControl
+                name="smtpServer.password"
                   label={t("password")}
-                  fieldId="kc-username"
-                  isRequired
-                  validated={errors.smtpServer?.password ? "error" : "default"}
-                  helperTextInvalid={t("required")}
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("passwordHelp")}
-                      fieldLabelId="password"
-                    />
-                  }
-                >
-                  <PasswordInput
-                    id="kc-password"
-                    data-testid="password-input"
-                    aria-label={t("password")}
-                    validated={
-                      errors.smtpServer?.password ? "error" : "default"
-                    }
-                    {...register("smtpServer.password", { required: true })}
-                  />
-                </FormGroup>
+                labelIcon={t("passwordHelp")}
+                rules={{
+                  required: t("required"),
+                }}
+
+              />
               </>
             )}
             {currentUser && (
