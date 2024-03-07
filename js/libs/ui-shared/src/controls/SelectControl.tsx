@@ -73,7 +73,7 @@ export const SelectControl = <
             selections={
               typeof options[0] !== "string"
                 ? (options as SelectControlOption[])
-                    .filter((o) => value.includes(o.key))
+                    .filter((o) => value === o.key)
                     .map((o) => o.value)
                 : value
             }
