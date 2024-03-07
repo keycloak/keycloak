@@ -180,6 +180,7 @@ some user profile classes and some validator related classes (but not builtin va
 `keycloak-server-spi` module. However, the packages for java classes remain the same. You might be affected in some corner cases, such as when you
 are overriding the built-in implementation with your own `UserProfileProvider` implementation However, note that `UserProfileProvider` is an unsupported SPI.
 
+ifeval::[{project_community}==true]
 = Removal of the Map Store
 
 The Map Store has been an experimental feature in previous releases.
@@ -187,6 +188,7 @@ Starting with this release, it is removed and users should continue to use the c
 
 Since this release, it is no longer possible to use `--storage` related CLI options.
 The modules `keycloak-model-map*` have been removed.
+endif::[]
 
 = Removed namespaces from our translations
 We moved all translations into one file for the admin-ui, if you have made your own translations or extended the admin ui you will need to migrate them to this new format.
