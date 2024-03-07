@@ -17,11 +17,13 @@
 
 package org.keycloak.connections.httpclient;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
@@ -35,6 +37,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +77,20 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
-    private final BasicResponseHandler responseHandler = new BasicResponseHandler();
+    private final BasicResponseHandler stringResponseHandler = new BasicResponseHandler();
+
+    private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
+
+    private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
+
+        public InputStream handleEntity(HttpEntity entity) throws IOException {
+            return entity.getContent();
+        }
+
+        public InputStream handleResponse(HttpResponse response) throws IOException {
+            return super.handleResponse(response);
+        }
+    }
 
     @Override
     public HttpClientProvider create(KeycloakSession session) {
@@ -108,10 +124,21 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
-            public String get(String uri) throws IOException {
+            public String getString(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
                 HttpResponse response = httpClient.execute(request);
-                String body = responseHandler.handleResponse(response);
+                String body = stringResponseHandler.handleResponse(response);
+                if (body == null) {
+                    throw new IOException("No content returned from HTTP call");
+                }
+                return body;
+            }
+
+            @Override
+            public InputStream getInputStream(String uri) throws IOException {
+                HttpGet request = new HttpGet(uri);
+                HttpResponse response = httpClient.execute(request);
+                InputStream body = inputStreamResponseHandler.handleResponse(response);
                 if (body == null) {
                     throw new IOException("No content returned from HTTP call");
                 }

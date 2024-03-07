@@ -45,6 +45,6 @@ public class SamlMetadataPublicKeyLoader extends SamlAbstractMetadataPublicKeyLo
     @Override
     protected String getKeys() throws Exception {
         logger.debugf("loading keys from metadata endpoint %s", metadataUrl);
-        return session.getProvider(HttpClientProvider.class).get(metadataUrl);
+        return session.getProvider(HttpClientProvider.class).getString(metadataUrl);
     }
 }

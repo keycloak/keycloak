@@ -150,7 +150,7 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        String file = session.getProvider(HttpClientProvider.class).get(from);
+        String file = session.getProvider(HttpClientProvider.class).getString(from);
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         Map<String, String> config = providerFactory.parseConfig(session, file);
         // add the URL just if needed by the identity provider

@@ -68,7 +68,7 @@ public class BackchannelAuthenticationEndpointRequestParserProcessor {
                     throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
                 }
 
-                String retrievedRequest = session.getProvider(HttpClientProvider.class).get(requestUri);
+                String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
                 new BackchannelAuthenticationEndpointSignedRequestParser(session, retrievedRequest, client, config).parseRequest(request);
             }
 

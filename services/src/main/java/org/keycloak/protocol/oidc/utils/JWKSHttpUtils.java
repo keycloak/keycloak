@@ -31,7 +31,7 @@ import java.io.IOException;
 public class JWKSHttpUtils {
 
     public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
-        String keySetString = session.getProvider(HttpClientProvider.class).get(jwksURI);
+        String keySetString = session.getProvider(HttpClientProvider.class).getString(jwksURI);
         return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
     }
 }

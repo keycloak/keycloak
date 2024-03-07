@@ -96,7 +96,7 @@ public class AuthorizationEndpointRequestParserProcessor {
                     if (requestUri == null) {
                         throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
                     }
-                    String retrievedRequest = session.getProvider(HttpClientProvider.class).get(requestUri);
+                    String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
                     new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
                 }
             }
