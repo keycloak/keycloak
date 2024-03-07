@@ -105,8 +105,8 @@ importers:
         specifier: ^7.51.0
         version: 7.51.0(react@18.2.0)
       react-i18next:
-        specifier: ^14.0.5
-        version: 14.0.5(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.0.8
+        version: 14.0.8(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.22.2
         version: 6.22.2(react-dom@18.2.0)(react@18.2.0)
@@ -211,8 +211,8 @@ importers:
         specifier: ^7.51.0
         version: 7.51.0(react@18.2.0)
       react-i18next:
-        specifier: ^14.0.5
-        version: 14.0.5(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.0.8
+        version: 14.0.8(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.22.2
         version: 6.22.2(react-dom@18.2.0)(react@18.2.0)
@@ -455,8 +455,8 @@ importers:
         specifier: 7.51.0
         version: 7.51.0(react@18.2.0)
       react-i18next:
-        specifier: ^14.0.5
-        version: 14.0.5(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^14.0.8
+        version: 14.0.8(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -6854,8 +6854,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@14.0.5(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-5+bQSeEtgJrMBABBL5lO7jPdSNAbeAZ+MlFWDw//7FnVacuVu3l9EeWFzBQvZsKy+cihkbThWOAThEdH8YjGEw==}
+  /react-i18next@14.0.8(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-1HKM41/Q8c/nQ2rYNNZlFmrjF2aubZT8sMBmY9aH/xa1/gsrTZ+hPwuLv4V7Cr8fYIh0GQ7vv5C1jCx104uNig==}
     peerDependencies:
       i18next: '>= 23.2.3'
       react: '>= 16.8.0'
@@ -8708,7 +8708,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
       react-hook-form: 7.51.0(react@18.2.0)
-      react-i18next: 14.0.5(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 14.0.8(i18next@23.10.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.22.2(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.10.4(@types/react@18.2.63)(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared
