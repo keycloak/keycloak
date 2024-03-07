@@ -11,6 +11,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -101,7 +102,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithoutLocale() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_OFF, USER_WITHOUT_LOCALE))
@@ -112,7 +113,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithLocale() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_OFF, USER_WITH_LOCALE))
@@ -123,7 +124,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledUserWithoutLocale() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE))
@@ -134,7 +135,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledUserWithLocale() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_ON, USER_WITH_LOCALE))
@@ -145,7 +146,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledAcceptLanguageHeader() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE))
@@ -157,7 +158,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledKeycloakLocaleCookie() throws Exception {
-        JsonNode whoAmI = SimpleHttp
+        JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
             .auth(accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE))

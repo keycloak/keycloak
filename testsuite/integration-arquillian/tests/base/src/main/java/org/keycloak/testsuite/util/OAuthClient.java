@@ -72,6 +72,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -1127,7 +1128,7 @@ public class OAuthClient {
 
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp request = SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
+            SimpleHttp request = SimpleHttpDefault.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
                     client);
             if (requestHeaders != null) {
                 for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
@@ -2196,7 +2197,7 @@ public class OAuthClient {
     private JSONWebKeySet getRealmKeys(String realm) {
         String certUrl = baseUrl + "/realms/" + realm + "/protocol/openid-connect/certs";
         try (CloseableHttpClient client = httpClient.get()){
-            return SimpleHttp.doGet(certUrl, client).asJson(JSONWebKeySet.class);
+            return SimpleHttpDefault.doGet(certUrl, client).asJson(JSONWebKeySet.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to retrieve keys", e);
         }

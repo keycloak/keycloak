@@ -61,6 +61,7 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
@@ -326,7 +327,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         // Test account REST not possible
         String accountUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account";
-        SimpleHttp accountRequest = SimpleHttp.doGet(accountUrl, restHttpClient)
+        SimpleHttp accountRequest = SimpleHttpDefault.doGet(accountUrl, restHttpClient)
                 .auth(accessTokenString)
                 .acceptJson();
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), accountRequest.asStatus());

@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 
@@ -49,20 +50,11 @@ import static org.keycloak.utils.StringUtil.isBlank;
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
  * <p>
- * The constructed clients can be configured via Keycloaks SPI configuration, e.g. {@code standalone.xml, standalone-ha.xml, domain.xml}.
- * </p>
+ * Example for Quarkus configuration:
  * <p>
- * Examples for jboss-cli
- * </p>
- * <pre>
  * {@code
- *
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:add(enabled=true)
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.connection-pool-size,value=128)
- * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.proxy-mappings,value=[".*\\.(google|googleapis)\\.com;http://www-proxy.acme.corp.com:8080",".*\\.acme\\.corp\\.com;NO_PROXY",".*;http://fallback:8080"])
+ * spi-connections-http-client-default-connection-pool-size=10
  * }
- * </pre>
- * </p>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultHttpClientFactory implements HttpClientFactory {
@@ -73,13 +65,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private static final String HTTPS_PROXY = "https_proxy";
     private static final String HTTP_PROXY = "http_proxy";
     private static final String NO_PROXY = "no_proxy";
+    public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
-    private final BasicResponseHandler stringResponseHandler = new BasicResponseHandler();
+    private BasicResponseHandler stringResponseHandler;
 
     private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
+    private long maxConsumedResponseSize;
 
     private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
 
@@ -144,6 +138,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 }
                 return body;
             }
+
+            @Override
+            public long getMaxConsumedResponseSize() {
+                return maxConsumedResponseSize;
+            }
         };
     }
 
@@ -153,7 +152,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             if (httpClient != null) {
                 httpClient.close();
             }
-        } catch (IOException e) {
+        } catch (IOException ignored) {
 
         }
     }
@@ -254,7 +253,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        maxConsumedResponseSize = config.getLong(MAX_CONSUMED_RESPONSE_SIZE, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
+        stringResponseHandler = new SafeBasicResponseHandler(maxConsumedResponseSize);
     }
 
     @Override
@@ -333,6 +333,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .name("proxy-mappings")
                 .type("string")
                 .helpText("Denotes the combination of a regex based hostname pattern and a proxy-uri in the form of hostnamePattern;proxyUri.")
+                .add()
+                .property()
+                .name(MAX_CONSUMED_RESPONSE_SIZE)
+                .type("long")
+                .helpText("Maximum size of a response consumed by the client (to prevent denial of service)")
+                .defaultValue(HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
                 .add()
                 .build();
     }

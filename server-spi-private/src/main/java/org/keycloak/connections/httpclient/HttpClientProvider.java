@@ -54,6 +54,8 @@ public interface HttpClientProvider extends Provider {
      * Helper method to retrieve the contents of a URL as a String.
      * Decoding response with the correct character set is performed according to the headers returned in the server's response.
      * To retrieve binary data, use {@link #getInputStream(String)}
+     * 
+     * Implementations should limit the amount of data returned to avoid an {@link OutOfMemoryError}.
      *
      * @param uri URI with data to receive.
      * @return Body of the response as a String.
@@ -88,6 +90,17 @@ public interface HttpClientProvider extends Provider {
     @Deprecated
     default InputStream get(String uri) throws IOException {
         return getInputStream(uri);
+    }
+
+    long DEFAULT_MAX_CONSUMED_RESPONSE_SIZE = 10_000_000L;
+
+    /**
+     * Get the configured limit for the response size.
+     *
+     * @return number of bytes
+     */
+    default long getMaxConsumedResponseSize() {
+        return DEFAULT_MAX_CONSUMED_RESPONSE_SIZE;
     }
 
 }
