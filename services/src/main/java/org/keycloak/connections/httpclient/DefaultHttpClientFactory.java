@@ -23,6 +23,8 @@ import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -75,6 +77,21 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
+    private final BasicResponseHandler stringResponseHandler = new BasicResponseHandler();
+
+    private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
+
+    private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
+
+        public InputStream handleEntity(HttpEntity entity) throws IOException {
+            return entity.getContent();
+        }
+
+        public InputStream handleResponse(HttpResponse response) throws IOException {
+            return super.handleResponse(response);
+        }
+    }
+
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
@@ -107,20 +124,25 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
-            public InputStream get(String uri) throws IOException {
+            public String getString(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
                 HttpResponse response = httpClient.execute(request);
-                int statusCode = response.getStatusLine().getStatusCode();
-                HttpEntity entity = response.getEntity();
-                if (statusCode < 200 || statusCode >= 300) {
-                    EntityUtils.consumeQuietly(entity);
-                    throw new IOException("Unexpected HTTP status code " + response.getStatusLine().getStatusCode() + " when expecting 2xx");
-                }
-                if (entity == null) {
+                String body = stringResponseHandler.handleResponse(response);
+                if (body == null) {
                     throw new IOException("No content returned from HTTP call");
                 }
-                return entity.getContent();
+                return body;
+            }
 
+            @Override
+            public InputStream getInputStream(String uri) throws IOException {
+                HttpGet request = new HttpGet(uri);
+                HttpResponse response = httpClient.execute(request);
+                InputStream body = inputStreamResponseHandler.handleResponse(response);
+                if (body == null) {
+                    throw new IOException("No content returned from HTTP call");
+                }
+                return body;
             }
         };
     }
