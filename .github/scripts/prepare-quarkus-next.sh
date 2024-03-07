@@ -1,28 +1,54 @@
 #!/bin/bash
 set -xeuo pipefail
 
+add_repository() {
+  local file=$1
+  local element=$2
+
+  local id="sonatype-snapshots"
+  local name="Sonatype Snapshots"
+  local url="https://s01.oss.sonatype.org/content/repositories/snapshots/"
+
+  # Decide the tag based on the element
+  local tag
+  if [ "$element" = "repository" ]; then
+    tag="repositories"
+  elif [ "$element" = "pluginRepository" ]; then
+    tag="pluginRepositories"
+  fi
+
+  # Repository to be inserted
+  local repository="<$element> \
+            <id>$id</id> \
+            <name>$name</name> \
+            <url>$url</url> \
+            <snapshots> \
+                <enabled>true</enabled> \
+                <updatePolicy>daily</updatePolicy> \
+            </snapshots> \
+            <releases> \
+                <enabled>false</enabled> \
+            </releases> \
+            </$element>"
+
+  # Check if the tag exists in the file
+  if grep -q "<$tag>" "$file"; then
+    # Insert the element before the closing tag
+    sed -i "/<\/$tag>/i $repository" "$file"
+  else
+    # If the tag doesn't exist, create it and insert the element
+    sed -i "/<\/project>/i \
+            <$tag> \
+            $repository \
+            </$tag>" "$file"
+  fi
+}
+
 git checkout -b new-quarkus-next origin/main
 
-if ! grep -q '<repositories>' pom.xml; then
-  sed -i '/<\/project>/i \
-          <repositories> \
-          </repositories>' pom.xml
-fi
-
-# Insert the <repository> element before the closing </repositories> tag
-sed -i '/<\/repositories>/i \
-        <repository> \
-        <id>sonatype-snapshots</id> \
-        <name>Sonatype Snapshots</name> \
-        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url> \
-        <snapshots> \
-            <enabled>true</enabled> \
-            <updatePolicy>daily</updatePolicy> \
-        </snapshots> \
-        <releases> \
-            <enabled>false</enabled> \
-        </releases> \
-        </repository>' pom.xml
+add_repository "pom.xml" "repository"
+add_repository "quarkus/pom.xml" "pluginRepository"
+add_repository "operator/pom.xml" "pluginRepository"
 
 ./mvnw -B versions:set-property -Dproperty=quarkus.version -DnewVersion=999-SNAPSHOT
 ./mvnw -B versions:set-property -Dproperty=quarkus.build.version -DnewVersion=999-SNAPSHOT
