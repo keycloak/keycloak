@@ -118,6 +118,7 @@ export const RealmSettingsEmailTab = ({
               label={t("from")}
               type="email"
               rules={{
+                required: t("emailInvalid"),
                 pattern: {
                   value: emailRegexPattern,
                   message: t("emailInvalid"),
