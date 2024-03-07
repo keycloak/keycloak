@@ -42,7 +42,13 @@ export const RealmSettingsEmailTab = ({
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
 
-  const form = useForm<FormFields>({ defaultValues: realm });
+  // const form = useForm<FormFields>({ defaultValues: realm });
+  const form = useForm<FormFields>({
+    defaultValues: {
+      smtpServer: { password: realm.smtpServer?.password || "" },
+    },
+  });
+
   const {
     register,
     control,
