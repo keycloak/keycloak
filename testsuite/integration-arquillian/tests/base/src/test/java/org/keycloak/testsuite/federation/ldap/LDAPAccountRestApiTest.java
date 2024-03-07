@@ -45,6 +45,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -248,11 +249,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
             appRealm.setEditUsernameAllowed(false);
         });
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         user.setEmail("john-alias@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
-        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
@@ -261,7 +262,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         //clean up
         usernew.setEmail("john@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
     }
 
@@ -272,11 +273,11 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
             appRealm.setEditUsernameAllowed(false);
         });
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         user.setEmail("john-alias@email.org");
-        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+        SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
 
-        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("johnkeycloak", usernew.getUsername());
         assertEquals("John", usernew.getFirstName());
         assertEquals("Doe", usernew.getLastName());
@@ -288,7 +289,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         //clean up
         usernew.setEmail("john@email.org");
-        final int i = SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+        final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
         org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
                 .search(usernew.getUsername()).get(0);
@@ -300,7 +301,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         userRep.setAttributes(null);
 
         testRealm().users().get(userRep.getId()).update(userRep);
-        usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
 
         // Metadata attributes still not present in account REST
         Assert.assertNull(usernew.getAttributes());
@@ -317,23 +318,23 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     }
 
     private UserRepresentation getProfile() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        return SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
     private void updateProfileExpectSuccess(UserRepresentation user) throws IOException {
-        int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
+        int status = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(204, status);
     }
 
     private void updateProfileExpectError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }
 
     // Send REST request to get all credential containers and credentials of current user
     private List<AccountCredentialResource.CredentialContainer> getCredentials() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
+        return SimpleHttpDefault.doGet(getAccountUrl("credentials"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
     }
 

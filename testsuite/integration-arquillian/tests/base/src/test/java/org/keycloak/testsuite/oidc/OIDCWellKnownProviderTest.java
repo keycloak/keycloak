@@ -47,6 +47,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -288,10 +289,10 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
     public void certs() throws IOException {
         TokenSignatureUtil.registerKeyProvider(Algorithm.ES256, adminClient, testContext);
 
-        OIDCConfigurationRepresentation representation = SimpleHttp.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+        OIDCConfigurationRepresentation representation = SimpleHttpDefault.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         String jwksUri = representation.getJwksUri();
 
-        JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
+        JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
         assertEquals(3, jsonWebKeySet.getKeys().length);
     }
 

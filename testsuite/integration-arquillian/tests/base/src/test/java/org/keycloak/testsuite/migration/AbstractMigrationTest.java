@@ -72,6 +72,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -1118,7 +1119,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testResourceTag() {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
-            String response = SimpleHttp.doGet(url.toString(), client).asString();
+            String response = SimpleHttpDefault.doGet(url.toString(), client).asString();
             Matcher m = Pattern.compile("resources/([^/]*)/common").matcher(response);
             assertTrue(m.find());
             assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{5}"));

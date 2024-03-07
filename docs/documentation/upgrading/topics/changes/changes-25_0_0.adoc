@@ -4,6 +4,20 @@ The nonce claim is now only added to the ID token strictly following the OpenID 
 
 A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
 
+= Limiting memory usage when consuming HTTP responses
+
+In some scenarios like brokering Keycloak uses HTTP to talk to external servers.
+To avoid a denial of service when those providers send too much data, {project_name} now restricts responses to 10 MB by default.
+
+Users can configure this limit by setting the provider configuration option `spi-connections-http-client-default-max-consumed-response-size`:
+
+.Restricting the consumed responses to 1 MB
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
+----
+
+
 = Removed a model module
 
 The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previous release and is removed in this release. Use the `org.keycloak:keycloak-model-storage` module instead.
