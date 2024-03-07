@@ -30,7 +30,7 @@ describe("Users", () => {
     const currentProfileConfig = await kcAdminClient.users.getProfile();
     await kcAdminClient.users.updateProfile({
       ...currentProfileConfig,
-      unmanagedAttributePolicy: UnmanagedAttributePolicy.Enabled
+      unmanagedAttributePolicy: UnmanagedAttributePolicy.Enabled,
     });
 
     // initialize user
@@ -114,7 +114,7 @@ describe("Users", () => {
   it("find users by builtin attributes", async () => {
     // Searching by attributes is only available from Keycloak > 15
     const users = await kcAdminClient.users.find({
-      q: `email:${currentUser.email}`
+      q: `email:${currentUser.email}`,
     });
     expect(users.length).to.be.equal(1);
     expect(users[0]).to.be.deep.include(currentUser);
