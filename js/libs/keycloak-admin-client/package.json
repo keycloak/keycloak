@@ -59,7 +59,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/keycloak/keycloak.git"
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/libs/keycloak-admin-client"
   },
   "homepage": "https://www.keycloak.org/"
 }
