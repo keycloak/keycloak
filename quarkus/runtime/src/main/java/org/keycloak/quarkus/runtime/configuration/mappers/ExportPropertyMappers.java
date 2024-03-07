@@ -20,22 +20,30 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.ExportOptions;
-import picocli.CommandLine;
+import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Optional;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ExportPropertyMappers {
+public final class ExportPropertyMappers {
+    private static final String EXPORTER_PROPERTY = "kc.spi-export-exporter";
+    private static final String SINGLE_FILE = "singleFile";
+    private static final String DIR = "dir";
 
     private ExportPropertyMappers() {
     }
 
     public static PropertyMapper<?>[] getMappers() {
-        return new PropertyMapper[] {
-                fromOption(ExportOptions.FILE)
-                        .to("kc.spi-export-exporter")
+        return new PropertyMapper[]{
+                fromOption(EXPORTER_PLACEHOLDER)
+                        .to(EXPORTER_PROPERTY)
                         .transformer(ExportPropertyMappers::transformExporter)
                         .paramLabel("file")
                         .build(),
@@ -49,43 +57,69 @@ final class ExportPropertyMappers {
                         .build(),
                 fromOption(ExportOptions.REALM)
                         .to("kc.spi-export-single-file-realm-name")
+                        .isEnabled(ExportPropertyMappers::isSingleFileProvider)
                         .paramLabel("realm")
                         .build(),
                 fromOption(ExportOptions.REALM)
                         .to("kc.spi-export-dir-realm-name")
+                        .isEnabled(ExportPropertyMappers::isDirProvider)
                         .paramLabel("realm")
                         .build(),
                 fromOption(ExportOptions.USERS)
                         .to("kc.spi-export-dir-users-export-strategy")
+                        .isEnabled(ExportPropertyMappers::isDirProvider)
                         .paramLabel("strategy")
                         .build(),
                 fromOption(ExportOptions.USERS_PER_FILE)
                         .to("kc.spi-export-dir-users-per-file")
+                        .isEnabled(ExportPropertyMappers::isDirProvider)
                         .paramLabel("number")
                         .build()
         };
     }
 
+    public static void validateConfig() {
+        if (getOptionalValue(EXPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
+            throw new PropertyException("Must specify either --dir or --file options.");
+        }
+    }
+
+    private static final Option<String> EXPORTER_PLACEHOLDER = new OptionBuilder<>("exporter", String.class)
+            .category(OptionCategory.EXPORT)
+            .description("Placeholder for determining export mode")
+            .buildTime(false)
+            .hidden()
+            .build();
+
+    private static boolean isSingleFileProvider() {
+        return isProvider(SINGLE_FILE);
+    }
+
+    private static boolean isDirProvider() {
+        return isProvider(DIR);
+    }
+
+    private static boolean isProvider(String provider) {
+        return Configuration.getOptionalValue(EXPORTER_PROPERTY)
+                .filter(provider::equals)
+                .isPresent();
+    }
+
     private static Optional<String> transformExporter(Optional<String> option, ConfigSourceInterceptorContext context) {
-        ConfigValue exporter = context.proceed("kc.spi-export-exporter");
+        ConfigValue exporter = context.proceed(EXPORTER_PROPERTY);
         if (exporter != null) {
             return Optional.of(exporter.getValue());
         }
-        if (option.isPresent()) {
-            return Optional.of("singleFile");
-        }
-        ConfigValue dirConfigValue = context.proceed("kc.spi-export-dir-dir");
-        if (dirConfigValue != null && dirConfigValue.getValue() != null) {
-            return Optional.of("dir");
-        }
-        ConfigValue dirValue = context.proceed("kc.dir");
-        if (dirValue != null && dirValue.getValue() != null) {
-            return Optional.of("dir");
-        }
-        if (System.getProperty(PROVIDER) == null) {
-            throw new CommandLine.PicocliException("Must specify either --dir or --file options.");
-        }
-        return Optional.empty();
+
+        var file = Configuration.getOptionalValue("kc.spi-export-single-file-file").map(f -> SINGLE_FILE);
+        var dir = Configuration.getOptionalValue("kc.spi-export-dir-dir")
+                .or(() -> Configuration.getOptionalValue("kc.dir"))
+                .map(f -> DIR);
+
+        // Only one option can be specified
+        boolean xor = file.isPresent() ^ dir.isPresent();
+
+        return xor ? file.or(() -> dir) : Optional.empty();
     }
 
 }

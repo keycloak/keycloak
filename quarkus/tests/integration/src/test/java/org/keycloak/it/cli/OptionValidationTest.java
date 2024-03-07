@@ -87,7 +87,7 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({"start", "--db-username=foobar","--db-pasword=mytestpw", "--foobar=barfoo"})
+    @Launch({"start", "--db-username=foobar", "--db-pasword=mytestpw", "--foobar=barfoo"})
     public void failWithFirstOptionOnMultipleUnknownOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
@@ -96,7 +96,7 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({ "start", "--db postgres" })
+    @Launch({"start", "--db postgres"})
     void failSingleParamWithSpace(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Option: '--db postgres' is not expected to contain whitespace, please remove any unnecessary quoting/escaping");

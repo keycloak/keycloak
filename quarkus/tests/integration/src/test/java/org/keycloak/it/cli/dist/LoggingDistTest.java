@@ -96,6 +96,9 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-console-output=json" })
     void testJsonFormatApplied(LaunchResult result) throws JsonProcessingException {
         CLIResult cliResult = (CLIResult) result;
+
+        cliResult.assertMessage("The following used run time options are UNAVAILABLE and will be ignored during build time:");
+        cliResult.assertMessage("- log-console-output: Available only when Console log handler is activated.");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
     }

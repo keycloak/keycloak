@@ -23,6 +23,10 @@
 *Env:* `${option.keyEnv}`
 --
 
+<#if option.enabledWhen?has_content>
+${option.enabledWhen!}
+</#if>
+
 <#if option.deprecated?has_content>
 <#-- Either mark the whole option as deprecated, or just selected values -->
 <#if !option.deprecated.deprecatedValues?has_content>
