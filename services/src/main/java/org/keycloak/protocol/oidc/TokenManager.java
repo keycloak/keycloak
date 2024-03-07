@@ -428,10 +428,6 @@ public class TokenManager {
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);
 
-        int currentTime = Time.currentTime();
-        clientSession.setTimestamp(currentTime);
-        validation.userSession.setLastSessionRefresh(currentTime);
-
         if (refreshToken.getAuthorization() != null) {
             validation.newToken.setAuthorization(refreshToken.getAuthorization());
         }
@@ -1141,24 +1137,29 @@ public class TokenManager {
         }
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
+            refreshToken = new RefreshToken(accessToken);
+            refreshToken.id(KeycloakModelUtils.generateId());
+            refreshToken.issuedNow();
+            int currentTime = Time.currentTime();
+            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+            clientSession.setTimestamp(currentTime);
+            UserSessionModel userSession = clientSession.getUserSession();
+            userSession.setLastSessionRefresh(currentTime);
+
             if (offlineTokenRequested) {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
                     event.error(Errors.NOT_ALLOWED);
                     throw new ErrorResponseException("not_allowed", "Offline tokens not allowed for the user or client", Response.Status.BAD_REQUEST);
                 }
-
-                refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
-                if (realm.isOfflineSessionMaxLifespanEnabled())
+                if (realm.isOfflineSessionMaxLifespanEnabled()) {
                     refreshToken.expiration(getExpiration(true));
+                }
                 sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
             } else {
-                refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(getExpiration(false));
             }
-            refreshToken.id(KeycloakModelUtils.generateId());
-            refreshToken.issuedNow();
         }
 
         private int getExpiration(boolean offline) {

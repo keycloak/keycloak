@@ -2047,6 +2047,32 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
+    public void testTokenExpirationRenewalWhenIssuingTokens() {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        assertNotNull(accessTokenResponse.getAccessToken());
+        assertNotNull(accessTokenResponse.getRefreshToken());
+
+        try {
+            for (int i = 0; i < 3; i++) {
+                AuthorizationRequest request = new AuthorizationRequest();
+                request.setAudience(RESOURCE_SERVER_TEST);
+                AuthorizationResponse authorizationResponse = getAuthzClient(PUBLIC_TEST_CLIENT_CONFIG).authorization(accessTokenResponse.getAccessToken()).authorize(request);
+                AccessToken refreshToken = toAccessToken(authorizationResponse.getRefreshToken());
+                AccessToken accessTokenToken = toAccessToken(authorizationResponse.getToken());
+                assertEquals(refreshToken.getExp() - refreshToken.getIat(), 1800);
+                assertEquals(accessTokenToken.getExp() - accessTokenToken.getIat(), 300);
+                setTimeOffset(i);
+            }
+        } finally {
+            resetTimeOffset();
+        }
+    }
+
+    @Test
     public void testUsingExpiredToken() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
