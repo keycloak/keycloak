@@ -179,8 +179,8 @@ export default class RealmSettingsPage extends CommonPage {
   #cancelNewClientProfile = "cancelCreateProfile";
   #createPolicyEmptyStateBtn = "no-client-policies-empty-action";
   #createPolicyBtn = "createPolicy";
-  #newClientPolicyNameInput = "client-policy-name";
-  #newClientPolicyDescriptionInput = "client-policy-description";
+  #newClientPolicyNameInput = "name";
+  #newClientPolicyDescriptionInput = "description";
   #saveNewClientPolicyBtn = "saveCreatePolicy";
   #cancelNewClientPolicyBtn = "cancelCreatePolicy";
   #alertMessage = ".pf-c-alert__title";

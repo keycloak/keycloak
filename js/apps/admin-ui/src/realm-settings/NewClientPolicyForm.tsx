@@ -14,26 +14,21 @@ import {
   DropdownItem,
   Flex,
   FlexItem,
-  FormGroup,
   PageSection,
   Text,
   TextVariants,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextAreaControl, TextControl } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -451,297 +446,282 @@ export default function NewClientPolicyForm() {
         )}
       />
       <PageSection variant="light">
-        <FormAccess
-          onSubmit={handleSubmit(save)}
-          isHorizontal
-          role="view-realm"
-          className="pf-u-mt-lg"
-        >
-          <FormGroup
-            label={t("name")}
-            fieldId="kc-client-profile-name"
-            isRequired
-            helperTextInvalid={form.formState.errors.name?.message}
-            validated={
-              form.formState.errors.name
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+        <FormProvider {...form}>
+          <FormAccess
+            onSubmit={handleSubmit(save)}
+            isHorizontal
+            role="view-realm"
+            className="pf-u-mt-lg"
           >
-            <KeycloakTextInput
-              id="kc-client-profile-name"
-              data-testid="client-policy-name"
-              validated={
-                form.formState.errors.name
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              {...form.register("name", {
-                required: { value: true, message: t("required") },
-                validate: (value) =>
-                  policies?.some((policy) => policy.name === value)
-                    ? t("createClientProfileNameHelperText").toString()
-                    : true,
-              })}
+            <TextControl
+              name="name"
+              label={t("name")}
+              rules={{
+                required: t("required"),
+                validate: (name) => {
+                  const isNameValid =
+                    !policies ||
+                    policies.every((policy) => policy.name !== name);
+                  return isNameValid || t("createClientProfileNameHelperText");
+                },
+              }}
             />
-          </FormGroup>
-          <FormGroup label={t("description")} fieldId="kc-description">
-            <KeycloakTextArea
-              aria-label={t("description")}
-              id="kc-client-policy-description"
-              data-testid="client-policy-description"
-              {...form.register("description")}
-            />
-          </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="saveCreatePolicy"
-              isDisabled={!form.formState.isValid}
-            >
-              {t("save")}
-            </Button>
-            <Button
-              id="cancelCreatePolicy"
-              variant="link"
-              onClick={() =>
-                showAddConditionsAndProfilesForm || policyName
-                  ? reset()
-                  : navigate(
-                      toClientPolicies({
-                        realm,
-                        tab: "policies",
-                      }),
-                    )
-              }
-              data-testid="cancelCreatePolicy"
-            >
-              {showAddConditionsAndProfilesForm ? t("reload") : t("cancel")}
-            </Button>
-          </ActionGroup>
-          {(showAddConditionsAndProfilesForm || form.formState.isSubmitted) && (
-            <>
-              <Flex>
-                <FlexItem>
-                  <Text className="kc-conditions" component={TextVariants.h1}>
-                    {t("conditions")}
-                    <HelpItem
-                      helpText={t("conditionsHelp")}
-                      fieldLabelId="conditions"
-                    />
-                  </Text>
-                </FlexItem>
-                <FlexItem align={{ default: "alignRight" }}>
-                  <Button
-                    id="addCondition"
-                    component={(props) => (
-                      <Link
-                        {...props}
-                        to={toNewClientPolicyCondition({
+            <TextAreaControl name="description" label={t("description")} />
+            <ActionGroup>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="saveCreatePolicy"
+                isDisabled={!form.formState.isValid}
+              >
+                {t("save")}
+              </Button>
+              <Button
+                id="cancelCreatePolicy"
+                variant="link"
+                onClick={() =>
+                  showAddConditionsAndProfilesForm || policyName
+                    ? reset()
+                    : navigate(
+                        toClientPolicies({
                           realm,
-                          policyName: policyName!,
-                        })}
-                      ></Link>
-                    )}
-                    variant="link"
-                    className="kc-addCondition"
-                    data-testid="addCondition"
-                    icon={<PlusCircleIcon />}
-                  >
-                    {t("addCondition")}
-                  </Button>
-                </FlexItem>
-              </Flex>
-              {policyConditions.length > 0 ? (
-                <DataList aria-label={t("conditions")} isCompact>
-                  {policyConditions.map((condition, idx) => (
-                    <DataListItem
-                      aria-labelledby="conditions-list-item"
-                      key={`list-item-${idx}`}
-                      id={condition.condition}
-                      data-testid="conditions-list-item"
+                          tab: "policies",
+                        }),
+                      )
+                }
+                data-testid="cancelCreatePolicy"
+              >
+                {showAddConditionsAndProfilesForm ? t("reload") : t("cancel")}
+              </Button>
+            </ActionGroup>
+            {(showAddConditionsAndProfilesForm ||
+              form.formState.isSubmitted) && (
+              <>
+                <Flex>
+                  <FlexItem>
+                    <Text className="kc-conditions" component={TextVariants.h1}>
+                      {t("conditions")}
+                      <HelpItem
+                        helpText={t("conditionsHelp")}
+                        fieldLabelId="conditions"
+                      />
+                    </Text>
+                  </FlexItem>
+                  <FlexItem align={{ default: "alignRight" }}>
+                    <Button
+                      id="addCondition"
+                      component={(props) => (
+                        <Link
+                          {...props}
+                          to={toNewClientPolicyCondition({
+                            realm,
+                            policyName: policyName!,
+                          })}
+                        ></Link>
+                      )}
+                      variant="link"
+                      className="kc-addCondition"
+                      data-testid="addCondition"
+                      icon={<PlusCircleIcon />}
                     >
-                      <DataListItemRow data-testid="conditions-list-row">
-                        <DataListItemCells
-                          dataListCells={[
-                            <DataListCell
-                              key={`name-${idx}`}
-                              data-testid="condition-type"
-                            >
-                              {Object.keys(condition.configuration!).length !==
-                              0 ? (
-                                <Link
-                                  key={condition.condition}
-                                  data-testid={`${condition.condition}-condition-link`}
-                                  to={toEditClientPolicyCondition({
-                                    realm,
-                                    conditionName: condition.condition!,
-                                    policyName: policyName,
-                                  })}
-                                  className="kc-condition-link"
-                                >
-                                  {condition.condition}
-                                </Link>
-                              ) : (
-                                condition.condition
-                              )}
-                              {conditionTypes?.map(
-                                (type) =>
-                                  type.id === condition.condition && (
+                      {t("addCondition")}
+                    </Button>
+                  </FlexItem>
+                </Flex>
+                {policyConditions.length > 0 ? (
+                  <DataList aria-label={t("conditions")} isCompact>
+                    {policyConditions.map((condition, idx) => (
+                      <DataListItem
+                        aria-labelledby="conditions-list-item"
+                        key={`list-item-${idx}`}
+                        id={condition.condition}
+                        data-testid="conditions-list-item"
+                      >
+                        <DataListItemRow data-testid="conditions-list-row">
+                          <DataListItemCells
+                            dataListCells={[
+                              <DataListCell
+                                key={`name-${idx}`}
+                                data-testid="condition-type"
+                              >
+                                {Object.keys(condition.configuration!)
+                                  .length !== 0 ? (
+                                  <Link
+                                    key={condition.condition}
+                                    data-testid={`${condition.condition}-condition-link`}
+                                    to={toEditClientPolicyCondition({
+                                      realm,
+                                      conditionName: condition.condition!,
+                                      policyName: policyName,
+                                    })}
+                                    className="kc-condition-link"
+                                  >
+                                    {condition.condition}
+                                  </Link>
+                                ) : (
+                                  condition.condition
+                                )}
+                                {conditionTypes?.map(
+                                  (type) =>
+                                    type.id === condition.condition && (
+                                      <>
+                                        <HelpItem
+                                          helpText={type.helpText}
+                                          fieldLabelId={condition.condition}
+                                        />
+                                        <Button
+                                          variant="link"
+                                          aria-label="remove-condition"
+                                          isInline
+                                          icon={
+                                            <TrashIcon
+                                              className="kc-conditionType-trash-icon"
+                                              data-testid={`delete-${condition.condition}-condition`}
+                                              onClick={() => {
+                                                toggleDeleteConditionDialog();
+                                                setConditionToDelete({
+                                                  idx: idx,
+                                                  name: type.id!,
+                                                });
+                                              }}
+                                            />
+                                          }
+                                        ></Button>
+                                      </>
+                                    ),
+                                )}
+                              </DataListCell>,
+                            ]}
+                          />
+                        </DataListItemRow>
+                      </DataListItem>
+                    ))}
+                  </DataList>
+                ) : (
+                  <>
+                    <Divider />
+                    <Text
+                      className="kc-emptyConditions"
+                      component={TextVariants.h2}
+                    >
+                      {t("emptyConditions")}
+                    </Text>
+                  </>
+                )}
+              </>
+            )}
+            {(showAddConditionsAndProfilesForm ||
+              form.formState.isSubmitted) && (
+              <>
+                <Flex>
+                  <FlexItem>
+                    <Text
+                      className="kc-client-profiles"
+                      component={TextVariants.h1}
+                    >
+                      {t("clientProfiles")}
+                      <HelpItem
+                        helpText={t("clientProfilesHelp")}
+                        fieldLabelId="clientProfiles"
+                      />
+                    </Text>
+                  </FlexItem>
+                  <FlexItem align={{ default: "alignRight" }}>
+                    <Button
+                      id="addClientProfile"
+                      variant="link"
+                      className="kc-addClientProfile"
+                      data-testid="addClientProfile"
+                      icon={<PlusCircleIcon />}
+                      onClick={toggleModal}
+                    >
+                      {t("addClientProfile")}
+                    </Button>
+                  </FlexItem>
+                </Flex>
+                {policyProfiles.length > 0 ? (
+                  <DataList aria-label={t("profiles")} isCompact>
+                    {policyProfiles.map((profile, idx) => (
+                      <DataListItem
+                        aria-labelledby={`${profile}-profile-list-item`}
+                        key={profile}
+                        id={`${profile}-profile-list-item`}
+                        data-testid={"profile-list-item"}
+                      >
+                        <DataListItemRow data-testid="profile-list-row">
+                          <DataListItemCells
+                            dataListCells={[
+                              <DataListCell
+                                key="name"
+                                data-testid="profile-name"
+                              >
+                                {profile && (
+                                  <Link
+                                    key={profile}
+                                    data-testid="profile-name-link"
+                                    to={toClientProfile({
+                                      realm,
+                                      profileName: profile,
+                                    })}
+                                    className="kc-profile-link"
+                                  >
+                                    {profile}
+                                  </Link>
+                                )}
+                                {policyProfiles
+                                  .filter((type) => type === profile)
+                                  .map((type) => (
                                     <>
                                       <HelpItem
-                                        helpText={type.helpText}
-                                        fieldLabelId={condition.condition}
+                                        helpText={
+                                          clientProfiles.find(
+                                            (profile) => type === profile.name,
+                                          )?.description
+                                        }
+                                        fieldLabelId={profile}
                                       />
                                       <Button
                                         variant="link"
-                                        aria-label="remove-condition"
+                                        aria-label="remove-client-profile"
                                         isInline
                                         icon={
                                           <TrashIcon
                                             className="kc-conditionType-trash-icon"
-                                            data-testid={`delete-${condition.condition}-condition`}
+                                            data-testid="deleteClientProfileDropdown"
                                             onClick={() => {
-                                              toggleDeleteConditionDialog();
-                                              setConditionToDelete({
+                                              toggleDeleteProfileDialog();
+                                              setProfileToDelete({
                                                 idx: idx,
-                                                name: type.id!,
+                                                name: type!,
                                               });
                                             }}
                                           />
                                         }
                                       ></Button>
                                     </>
-                                  ),
-                              )}
-                            </DataListCell>,
-                          ]}
-                        />
-                      </DataListItemRow>
-                    </DataListItem>
-                  ))}
-                </DataList>
-              ) : (
-                <>
-                  <Divider />
-                  <Text
-                    className="kc-emptyConditions"
-                    component={TextVariants.h2}
-                  >
-                    {t("emptyConditions")}
-                  </Text>
-                </>
-              )}
-            </>
-          )}
-          {(showAddConditionsAndProfilesForm || form.formState.isSubmitted) && (
-            <>
-              <Flex>
-                <FlexItem>
-                  <Text
-                    className="kc-client-profiles"
-                    component={TextVariants.h1}
-                  >
-                    {t("clientProfiles")}
-                    <HelpItem
-                      helpText={t("clientProfilesHelp")}
-                      fieldLabelId="clientProfiles"
-                    />
-                  </Text>
-                </FlexItem>
-                <FlexItem align={{ default: "alignRight" }}>
-                  <Button
-                    id="addClientProfile"
-                    variant="link"
-                    className="kc-addClientProfile"
-                    data-testid="addClientProfile"
-                    icon={<PlusCircleIcon />}
-                    onClick={toggleModal}
-                  >
-                    {t("addClientProfile")}
-                  </Button>
-                </FlexItem>
-              </Flex>
-              {policyProfiles.length > 0 ? (
-                <DataList aria-label={t("profiles")} isCompact>
-                  {policyProfiles.map((profile, idx) => (
-                    <DataListItem
-                      aria-labelledby={`${profile}-profile-list-item`}
-                      key={profile}
-                      id={`${profile}-profile-list-item`}
-                      data-testid={"profile-list-item"}
+                                  ))}
+                              </DataListCell>,
+                            ]}
+                          />
+                        </DataListItemRow>
+                      </DataListItem>
+                    ))}
+                  </DataList>
+                ) : (
+                  <>
+                    <Divider />
+                    <Text
+                      className="kc-emptyClientProfiles"
+                      component={TextVariants.h2}
                     >
-                      <DataListItemRow data-testid="profile-list-row">
-                        <DataListItemCells
-                          dataListCells={[
-                            <DataListCell key="name" data-testid="profile-name">
-                              {profile && (
-                                <Link
-                                  key={profile}
-                                  data-testid="profile-name-link"
-                                  to={toClientProfile({
-                                    realm,
-                                    profileName: profile,
-                                  })}
-                                  className="kc-profile-link"
-                                >
-                                  {profile}
-                                </Link>
-                              )}
-                              {policyProfiles
-                                .filter((type) => type === profile)
-                                .map((type) => (
-                                  <>
-                                    <HelpItem
-                                      helpText={
-                                        clientProfiles.find(
-                                          (profile) => type === profile.name,
-                                        )?.description
-                                      }
-                                      fieldLabelId={profile}
-                                    />
-                                    <Button
-                                      variant="link"
-                                      aria-label="remove-client-profile"
-                                      isInline
-                                      icon={
-                                        <TrashIcon
-                                          className="kc-conditionType-trash-icon"
-                                          data-testid="deleteClientProfileDropdown"
-                                          onClick={() => {
-                                            toggleDeleteProfileDialog();
-                                            setProfileToDelete({
-                                              idx: idx,
-                                              name: type!,
-                                            });
-                                          }}
-                                        />
-                                      }
-                                    ></Button>
-                                  </>
-                                ))}
-                            </DataListCell>,
-                          ]}
-                        />
-                      </DataListItemRow>
-                    </DataListItem>
-                  ))}
-                </DataList>
-              ) : (
-                <>
-                  <Divider />
-                  <Text
-                    className="kc-emptyClientProfiles"
-                    component={TextVariants.h2}
-                  >
-                    {t("emptyProfiles")}
-                  </Text>
-                </>
-              )}
-            </>
-          )}
-        </FormAccess>
+                      {t("emptyProfiles")}
+                    </Text>
+                  </>
+                )}
+              </>
+            )}
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );
