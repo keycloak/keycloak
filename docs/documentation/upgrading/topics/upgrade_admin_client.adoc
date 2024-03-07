@@ -2,7 +2,7 @@
 
 [[_upgrade_admin_client]]
 
-It is important that you upgrade the {project_name} server first, and then upgrade the admin-client. Earlier versions of the
+Be sure that you upgrade the {project_name} server before you upgrade the admin-client. Earlier versions of the
 admin-client might work with later versions of {project_name} server, but earlier versions of {project_name} server might not
-work with later versions of the admin-client. It is recommended to use the admin-client version that matches the used 
+work with later versions of the admin-client. Therefore, use the admin-client version that matches the current 
 {project_name} server version.
