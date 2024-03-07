@@ -48,7 +48,7 @@ export default function AddIdentityProvider() {
 
   const {
     handleSubmit,
-    formState: { isDirty },
+    formState: { isValid },
   } = form;
 
   const { addAlert, addError } = useAlerts();
@@ -100,7 +100,7 @@ export default function AddIdentityProvider() {
           </FormProvider>
           <ActionGroup>
             <Button
-              isDisabled={!isDirty}
+              isDisabled={!isValid}
               variant="primary"
               type="submit"
               data-testid="createProvider"

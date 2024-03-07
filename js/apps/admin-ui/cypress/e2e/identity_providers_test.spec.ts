@@ -139,10 +139,7 @@ describe("Identity provider test", () => {
       createProviderPage.checkGitHubCardVisible().clickGitHubCard();
 
       createProviderPage.checkAddButtonDisabled();
-      createProviderPage
-        .fill(identityProviderName)
-        .clickAdd()
-        .checkClientIdRequiredMessage(true);
+      createProviderPage.fill(identityProviderName).checkAddButtonDisabled();
       createProviderPage.fill(identityProviderName, "123").clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
 

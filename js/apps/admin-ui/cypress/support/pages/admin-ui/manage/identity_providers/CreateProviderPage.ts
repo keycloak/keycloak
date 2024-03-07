@@ -1,7 +1,7 @@
 export default class CreateProviderPage {
   #github = "github";
   #clientIdField = "clientId";
-  #clientIdError = "#kc-client-secret-helper";
+  #clientIdError = "#config\\.clientSecret-helper";
   #clientSecretField = "config.clientSecret";
   #displayName = "displayName";
   #discoveryEndpoint = "discoveryEndpoint";
