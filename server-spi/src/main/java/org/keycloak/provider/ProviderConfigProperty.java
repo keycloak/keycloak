@@ -68,6 +68,11 @@ public class ProviderConfigProperty {
      */
     public static final String MAP_TYPE ="Map";
 
+    /**
+     * URL field
+     */
+    public static final String URL_TYPE ="Url";
+
     protected String name;
     protected String label;
     protected String helpText;
