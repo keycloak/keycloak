@@ -6,4 +6,4 @@ Because of issue https://github.com/keycloak/keycloak/issues/25078[#25078], the 
 ./kc.sh start --spi-events-listener-jboss-logging-sanitize=false --spi-events-listener-jboss-logging-quotes=none ...
 ```
 
-More information about the options in the https://www.keycloak.org/server/all-provider-config#_jboss_logging[all provider configuration guide].
+For more information about the options, see https://www.keycloak.org/server/all-provider-config#_jboss_logging[all provider configuration guide].
