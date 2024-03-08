@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>legacy</module>
         <module>storage</module>
         <module>storage-private</module>
         <module>storage-services</module>
