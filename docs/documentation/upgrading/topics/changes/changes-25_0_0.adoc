@@ -1,3 +1,8 @@
+= Metrics for embedded caches enabled by default
+
+Metrics for the embedded caches are now enabled by default.
+To enable histograms for latencies, set the option `cache-metrics-histograms-enabled` to `true`.
+
 = Nonce claim is only added to the ID token
 
 The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).

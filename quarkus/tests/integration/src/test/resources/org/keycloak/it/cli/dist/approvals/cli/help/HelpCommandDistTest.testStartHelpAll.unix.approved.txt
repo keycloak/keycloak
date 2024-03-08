@@ -40,6 +40,9 @@ Cache:
                        'cache-mtls-truststore.p12' under conf/ directory.
 --cache-embedded-mtls-trust-store-password <password>
                      The password to access the Truststore.
+--cache-metrics-histograms-enabled <true|false>
+                     Enable histograms for metrics for the embedded caches. Default: false.
+                       Available only when metrics are enabled.
 --cache-remote-host <hostname>
                      The hostname of the remote server for the remote store configuration. It
                        replaces the 'host' attribute of 'remote-server' tag of the configuration

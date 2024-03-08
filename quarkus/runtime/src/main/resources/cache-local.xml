@@ -22,7 +22,6 @@
         xmlns="urn:infinispan:config:14.0">
 
     <cache-container name="keycloak">
-        <metrics names-as-tags="true" />
         <local-cache name="default">
             <transaction transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"/>
         </local-cache>

@@ -61,6 +61,11 @@ final class CachingPropertyMappers {
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
+
+                fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .build(),
+
         };
     }
 

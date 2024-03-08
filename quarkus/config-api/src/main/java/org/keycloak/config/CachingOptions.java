@@ -19,6 +19,9 @@ public class CachingOptions {
     public static final String CACHE_REMOTE_USERNAME_PROPERTY = CACHE_REMOTE_PREFIX + "-username";
     public static final String CACHE_REMOTE_PASSWORD_PROPERTY = CACHE_REMOTE_PREFIX + "-password";
 
+    private static final String CACHE_METRICS_PREFIX = "cache-metrics";
+    public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
+
     public enum Mechanism {
         ispn,
         local
@@ -115,6 +118,11 @@ public class CachingOptions {
                     + "It replaces the 'password' attribute of 'digest' tag of the configuration specified via XML file (see '%s' option.). "
                     + "If the option is specified, '%s' and '%s' are required as well and the related configuration in XML file should not be present.", 
                     CACHE_CONFIG_FILE_PROPERTY, CACHE_REMOTE_HOST_PROPERTY, CACHE_REMOTE_USERNAME_PROPERTY))
+            .build();
+
+    public static final Option<Boolean> CACHE_METRICS_HISTOGRAMS_ENABLED = new OptionBuilder<>(CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY, Boolean.class)
+            .category(OptionCategory.CACHE)
+            .description("Enable histograms for metrics for the embedded caches.")
             .build();
 
 }
