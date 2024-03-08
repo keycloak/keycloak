@@ -74,13 +74,15 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 			}
 			String mapperRepresentationId = mapperRepresentation.getId();
 			if (mapperRepresentationId == null) {
-				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
-				return;
+				String message = "Missing id for mapper named '%s'".formatted(mapperRepresentation.getName());
+				ServicesLogger.LOGGER.warn(message);
+				throw new ClientRegistrationPolicyException(message);
 			}
 			ProtocolMapperModel mapperModel = clientModel.getProtocolMapperById(mapperRepresentationId);
 			if (mapperModel == null) {
-				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
-				return;
+				String message = "No existing mapper model found for id '%s'".formatted(mapperRepresentationId);
+				ServicesLogger.LOGGER.warn(message);
+				throw new ClientRegistrationPolicyException(message);
 			}
 			Map<String, String> modelConfig = mapperModel.getConfig();
 			Map<String, String> representationConfig = mapperRepresentation.getConfig();

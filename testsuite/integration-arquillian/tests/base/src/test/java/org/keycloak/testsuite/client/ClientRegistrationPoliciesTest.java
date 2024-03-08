@@ -573,7 +573,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         registeredClient.getProtocolMappers().add(createHardcodedMapperRep());
 
         // Check I can't update client because of protocolMapper
-        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "ProtocolMapper type not allowed");
+        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "Missing id for mapper named 'Hardcoded foo role'");
 
         // Remove "bad" protocolMapper
         registeredClient.getProtocolMappers().removeIf((ProtocolMapperRepresentation mapper) -> {
@@ -625,7 +625,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         ClientRepresentation representation = clientResource.toRepresentation();
         representation.getProtocolMappers().add(createHardcodedMapperRep());
-        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+        assertFail(ClientRegOp.UPDATE, representation, 403, "Missing id for mapper named 'Hardcoded foo role'");
 
         // Revert client
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
@@ -668,10 +668,9 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-        // Check the client can be updated with a representation keeping the disallowed protocolMapper
         ClientRepresentation representation = clientResource.toRepresentation();
         representation.getProtocolMappers().forEach(mapper -> mapper.setId(UUID.randomUUID().toString()));
-        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+        assertFail(ClientRegOp.UPDATE, representation, 403, "No existing mapper model found for id");
 
         // Revert client
         ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
