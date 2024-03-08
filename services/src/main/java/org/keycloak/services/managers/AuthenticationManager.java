@@ -251,7 +251,8 @@ public class AuthenticationManager {
             UserSessionModel userSession, UriInfo uriInfo,
             ClientConnection connection, HttpHeaders headers,
             boolean logoutBroker) {
-        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+
+        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, userSession == null ? false : userSession.isOffline());
     }
 
     /**
