@@ -258,26 +258,13 @@ For more information about securing cache communication, see the https://infinis
 
 == Exposing metrics from caches
 
-By default, metrics from caches are not automatically exposed when the metrics are enabled.
+Metrics from caches are automatically exposed when the metrics are enabled.
+
+To enable histograms for the cache metrics, set `cache-metrics-histograms-enabled` to `true`.
+While these metrics provide more insights into the latency distribution, collecting them might have a performance impact, so you should be cautious to activate them in an already saturated system.
+
+<@kc.start parameters="--metrics-enabled true --cache-metrics-histograms-enabled true"/>
+
 For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
-
-To enable global metrics for all caches within the `cache-container`, you need to change your cache configuration file (e.g.: `conf/cache-ispn.xml`) to enable `statistics` at the `cache-container` level as follows:
-
-.enabling metrics for all caches
-[source]
-----
-<cache-container name="keycloak" statistics="true">
-    ...
-</cache-container>
-----
-
-Similarly, you can enable metrics individually for each cache by enabling `statistics` as follows:
-
-.enabling metrics for a specific cache
-----
-<local-cache name="realms" statistics="true">
-    ...
-</local-cache>
-----
 
 </@tmpl.guide>
