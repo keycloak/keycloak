@@ -146,13 +146,32 @@ export default function SessionsTable({
     },
   });
 
+  async function onClickRevoke(
+    event: MouseEvent,
+    rowIndex: number,
+    rowData: IRowData,
+  ) {
+    const session = rowData.data as UserSessionRepresentation;
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: true,
+    });
+
+    refresh();
+  }
+
   async function onClickSignOut(
     event: MouseEvent,
     rowIndex: number,
     rowData: IRowData,
   ) {
     const session = rowData.data as UserSessionRepresentation;
-    await adminClient.realms.deleteSession({ realm, session: session.id! });
+    await adminClient.realms.deleteSession({
+      realm,
+      session: session.id!,
+      isOffline: false,
+    });
 
     if (session.userId === whoAmI.getUserId()) {
       await keycloak.logout({ redirectUri: "" });
@@ -185,8 +204,16 @@ export default function SessionsTable({
         }
         columns={columns}
         actionResolver={(rowData: IRowData) => {
-          if (rowData.data.type === "OFFLINE") {
-            return [];
+          if (
+            rowData.data.type === "Offline" ||
+            rowData.data.type === "OFFLINE"
+          ) {
+            return [
+              {
+                title: t("revoke"),
+                onClick: onClickRevoke,
+              } as Action<UserSessionRepresentation>,
+            ];
           }
           return [
             {

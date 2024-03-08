@@ -311,12 +311,13 @@ export class Realms extends Resource {
   });
 
   public deleteSession = this.makeRequest<
-    { realm: string; session: string },
+    { realm: string; session: string; isOffline: boolean },
     void
   >({
     method: "DELETE",
     path: "/{realm}/sessions/{session}",
     urlParamKeys: ["realm", "session"],
+    queryParamKeys: ["isOffline"],
   });
 
   public pushRevocation = this.makeRequest<
