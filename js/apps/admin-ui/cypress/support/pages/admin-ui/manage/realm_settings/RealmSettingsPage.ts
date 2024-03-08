@@ -83,7 +83,7 @@ export default class RealmSettingsPage extends CommonPage {
   activeSwitch = "active";
   enabledSwitch = "enabled";
   addProviderButton = "add-provider-button";
-  displayName = "name-input";
+  displayName = "name";
   enableEvents = "eventsEnabled";
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
