@@ -124,6 +124,7 @@ export async function unLinkAccount(
       method: "DELETE",
     },
   );
+  if (response.ok) return;
   return parseResponse(response);
 }
 
