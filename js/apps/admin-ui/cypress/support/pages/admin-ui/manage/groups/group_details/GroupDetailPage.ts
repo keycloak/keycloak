@@ -20,7 +20,7 @@ export default class GroupDetailPage extends GroupPage {
   #actionDrpDwnItemRenameGroup = "renameGroupAction";
   #actionDrpDwnItemDeleteGroup = "deleteGroup";
   #headerGroupName = ".pf-l-level.pf-m-gutter";
-  #renameGroupModalGroupNameInput = "groupNameInput";
+  #renameGroupModalGroupNameInput = "name";
   #renameGroupModalRenameBtn = "renameGroup";
   #permissionSwitch = "permissionSwitch";
 
