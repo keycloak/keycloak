@@ -856,7 +856,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void assertOfflineToken(String offlineToken) {
         RefreshToken offlineTokenParsed = oauth.parseRefreshToken(offlineToken);
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineTokenParsed.getType());
-        assertEquals(0, offlineTokenParsed.getExpiration());
+        assertEquals(Long.valueOf(0), offlineTokenParsed.getExp());
         assertTrue(TokenUtil.hasScope(offlineTokenParsed.getScope(), OAuth2Constants.OFFLINE_ACCESS));
     }
 

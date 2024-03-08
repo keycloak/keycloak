@@ -43,13 +43,13 @@ public class RefreshableKeycloakSecurityContextTest {
 
 		TokenMetadataRepresentation token = new TokenMetadataRepresentation();
 		token.setActive(true);
-		token.issuedAt(4999);
+		token.iat(4999L);
 
 		RefreshableKeycloakSecurityContext sut = new RefreshableKeycloakSecurityContext(keycloakDeployment,null,null,token,null, null, null);
 
 		assertFalse(sut.isActive());
 
-		token.issuedAt(5000);
+		token.iat(5000L);
 		assertTrue(sut.isActive());
 	}
 	

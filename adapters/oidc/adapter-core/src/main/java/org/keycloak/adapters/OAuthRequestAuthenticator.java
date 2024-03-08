@@ -369,7 +369,7 @@ public class OAuthRequestAuthenticator {
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.updateNotBefore(tokenResponse.getNotBeforePolicy());
         }
-        if (token.getIssuedAt() < deployment.getNotBefore()) {
+        if (token.getIat() < deployment.getNotBefore()) {
             log.error("Stale token");
             return challenge(403, OIDCAuthenticationError.Reason.STALE_TOKEN, null);
         }

@@ -170,9 +170,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Long.valueOf(jsonNode.get("nbf").asLong()), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
@@ -226,9 +226,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-app", rep.getClientId());
         assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf"), rep.getNbf());
+        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
+        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
+        assertEquals(Long.valueOf(jsonNode.get("nbf").asLong()), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
         assertEquals(jsonNode.get("typ").asText(), "Refresh");
