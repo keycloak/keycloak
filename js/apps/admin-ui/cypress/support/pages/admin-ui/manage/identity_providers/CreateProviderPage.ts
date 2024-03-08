@@ -5,7 +5,7 @@ export default class CreateProviderPage {
   #clientSecretField = "clientSecret";
   #displayName = "displayName";
   #discoveryEndpoint = "discoveryEndpoint";
-  #authorizationUrl = "authorizationUrl";
+  #authorizationUrl = "config.authorizationUrl";
   #addButton = "createProvider";
   #saveButton = "idp-details-save";
   #ssoServiceUrl = "sso-service-url";
