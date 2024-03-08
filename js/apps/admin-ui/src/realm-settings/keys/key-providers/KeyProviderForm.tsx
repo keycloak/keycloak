@@ -3,16 +3,12 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
-  TextInput,
-  ValidatedOptions,
 } from "@patternfly/react-core";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { HelpItem, TextControl } from "ui-shared";
-
+import { TextControl } from "ui-shared";
 import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
@@ -46,12 +42,7 @@ export const KeyProviderForm = ({
   const form = useForm<ComponentRepresentation>({
     mode: "onChange",
   });
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = form;
+  const { handleSubmit, reset } = form;
 
   const save = async (component: ComponentRepresentation) => {
     if (component.config)
@@ -102,48 +93,28 @@ export const KeyProviderForm = ({
           <TextControl
             name="id"
             label={t("providerId")}
-            labelIcon={t("mapperNameHelp")}
+            labelIcon={t("providerIdHelp")}
             rules={{
               required: t("required"),
             }}
             readOnly
           />
         )}
-        <FormGroup
+        <TextControl
+          name="name"
+          defaultValue={providerType}
           label={t("name")}
-          labelIcon={
-            <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
+          labelIcon={t("mapperNameHelp")}
+          rules={{
+            required: t("required"),
+          }}
+        />
+        <DynamicComponents
+          properties={
+            allComponentTypes.find((type) => type.id === providerType)
+              ?.properties || []
           }
-          fieldId="name"
-          isRequired
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          helperTextInvalid={t("required")}
-        >
-          <Controller
-            name="name"
-            control={control}
-            rules={{ required: true }}
-            defaultValue={providerType}
-            render={({ field }) => (
-              <TextInput
-                id="name"
-                value={field.value}
-                onChange={field.onChange}
-                data-testid="name-input"
-              />
-            )}
-          />
-        </FormGroup>
-        <FormProvider {...form}>
-          <DynamicComponents
-            properties={
-              allComponentTypes.find((type) => type.id === providerType)
-                ?.properties || []
-            }
-          />
-        </FormProvider>
+        />
         <ActionGroup>
           <Button
             data-testid="add-provider-button"
