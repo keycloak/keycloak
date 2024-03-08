@@ -97,6 +97,7 @@ export const GroupsModal = ({
             name="name"
             label={t("name")}
             rules={{ required: t("required") }}
+            autoFocus
           />
         </Form>
       </FormProvider>
