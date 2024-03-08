@@ -947,10 +947,10 @@ public class RealmTest extends AbstractAdminTest {
         EventRepresentation event = events.poll();
         assertNotNull(event);
 
-        realm.deleteSession(event.getSessionId());
+        realm.deleteSession(event.getSessionId(), false);
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()), ResourceType.USER_SESSION);
         try {
-            realm.deleteSession(event.getSessionId());
+            realm.deleteSession(event.getSessionId(), false);
             fail("Expected 404");
         } catch (NotFoundException e) {
             // Expected
