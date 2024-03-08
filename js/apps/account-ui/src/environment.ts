@@ -18,6 +18,8 @@ export type Feature = {
 export type Environment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
+  /** The URL to the root of the account console. */
+  baseUrl: string;
   /** The realm used to authenticate the user to the Account Console. */
   realm: string;
   /** The identifier of the client used to authenticate the user to the Account Console. */
@@ -39,6 +41,7 @@ const match = matchPath(ROOT_PATH, location.pathname);
 
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
+  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account`,
   realm: match?.params.realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
