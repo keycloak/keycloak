@@ -336,7 +336,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.deleteSession("nosuch");
+                realm.deleteSession("nosuch", false);
             }
         }, Resource.USER, true);
         invoke(new Invocation() {

@@ -53,24 +53,6 @@ export default class TablePage extends CommonElements {
     return this;
   }
 
-  assertRowItemActionDoesNotExist(itemName: string, actionItemName: string) {
-    cy.get(
-      (this.#tableInModal ? ".pf-c-modal-box.pf-m-md " : "") +
-        this.#tableRowItem,
-    )
-      .contains(itemName)
-      .parentsUntil("tbody")
-      .then(($tbody) => {
-        if ($tbody.find(".pf-c-dropdown__toggle").length > 0) {
-          $tbody.find(".pf-c-dropdown__toggle").click();
-          cy.get(this.dropdownMenuItem)
-            .contains(actionItemName)
-            .should("not.exist");
-        }
-      });
-    return this;
-  }
-
   #getRowItemAction(itemName: string, actionItemName: string) {
     return cy
       .get(

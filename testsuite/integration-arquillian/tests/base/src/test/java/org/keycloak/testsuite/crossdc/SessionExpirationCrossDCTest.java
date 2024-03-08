@@ -425,7 +425,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Logout single session of user first
         UserResource user = ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test");
         UserSessionRepresentation userSession = user.getUserSessions().get(0);
-        getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId());
+        getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId(), false);
 
         // Just one session expired.
         assertStatisticsExpected("After logout single session", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
