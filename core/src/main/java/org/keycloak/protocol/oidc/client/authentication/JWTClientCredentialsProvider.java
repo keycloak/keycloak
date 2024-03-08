@@ -182,10 +182,10 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
-        reqToken.expiration(now + this.tokenTimeout);
-        reqToken.notBefore(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + this.tokenTimeout);
+        reqToken.nbf(now);
 
         return reqToken;
     }

@@ -478,7 +478,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
 
         Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assert.assertEquals(0, offlineToken.getExpiration());
+        Assert.assertEquals(Long.valueOf(0), offlineToken.getExp());
 
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
 

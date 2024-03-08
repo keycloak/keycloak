@@ -88,11 +88,11 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
     }
 
     public boolean isActive() {
-        return token != null && this.token.isActive() && deployment!=null && this.token.getIssuedAt() >= deployment.getNotBefore();
+        return token != null && this.token.isActive() && deployment!=null && this.token.getIat() >= deployment.getNotBefore();
     }
 
     public boolean isTokenTimeToLiveSufficient(AccessToken token) {
-        return token != null && (token.getExpiration() - this.deployment.getTokenMinimumTimeToLive()) > Time.currentTime();
+        return token != null && (token.getExp() - this.deployment.getTokenMinimumTimeToLive()) > Time.currentTime();
     }
 
     public KeycloakDeployment getDeployment() {

@@ -110,7 +110,7 @@ public class BearerTokenRequestAuthenticator {
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
-        if (token.getIssuedAt() < deployment.getNotBefore()) {
+        if (token.getIat() < deployment.getNotBefore()) {
             log.debug("Stale token");
             challenge = challengeResponse(exchange,  OIDCAuthenticationError.Reason.STALE_TOKEN, "invalid_token", "Stale token");
             return AuthOutcome.FAILED;
