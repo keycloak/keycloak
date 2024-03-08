@@ -11,6 +11,7 @@ import {
 } from "react";
 import { AlertProvider, Help } from "ui-shared";
 import { Environment } from "../environment";
+import { ErrorPage } from "./ErrorPage";
 
 export type KeycloakContext = KeycloakContextProps & {
   keycloak: Keycloak;
@@ -39,6 +40,7 @@ export const KeycloakProvider = ({
 }: PropsWithChildren<KeycloakContextProps>) => {
   const calledOnce = useRef(false);
   const [init, setInit] = useState(false);
+  const [error, setError] = useState<unknown>();
   const keycloak = useMemo(
     () =>
       new Keycloak({
@@ -54,6 +56,7 @@ export const KeycloakProvider = ({
     if (calledOnce.current) {
       return;
     }
+
     const init = () => {
       return keycloak.init({
         onLoad: "check-sso",
@@ -61,11 +64,21 @@ export const KeycloakProvider = ({
         responseMode: "query",
       });
     };
-    init().then(() => setInit(true));
+
+    init()
+      .then(() => setInit(true))
+      .catch((error) => setError(error));
+
     calledOnce.current = true;
   }, [keycloak]);
 
-  if (!init) return <Spinner />;
+  if (error) {
+    return <ErrorPage error={error} />;
+  }
+
+  if (!init) {
+    return <Spinner />;
+  }
 
   return (
     <KeycloakEnvContext.Provider value={{ environment, keycloak }}>
