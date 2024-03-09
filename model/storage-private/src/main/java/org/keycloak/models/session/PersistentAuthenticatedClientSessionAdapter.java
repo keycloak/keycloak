@@ -54,7 +54,6 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
         model = new PersistentClientSessionModel();
         model.setClientId(clientSession.getClient().getId());
-        model.setUserId(clientSession.getUserSession().getUser().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 

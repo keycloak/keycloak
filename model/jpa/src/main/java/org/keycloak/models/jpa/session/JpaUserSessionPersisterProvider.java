@@ -496,12 +496,57 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private PersistentUserSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionEntity entity) {
-        PersistentUserSessionModel model = new PersistentUserSessionModel();
-        model.setUserSessionId(entity.getUserSessionId());
-        model.setStarted(entity.getCreatedOn());
-        model.setLastSessionRefresh(entity.getLastSessionRefresh());
-        model.setData(entity.getData());
-        model.setOffline(offlineFromString(entity.getOffline()));
+        PersistentUserSessionModel model = new PersistentUserSessionModel() {
+            @Override
+            public String getUserSessionId() {
+                return entity.getUserSessionId();
+            }
+
+            @Override
+            public void setUserSessionId(String userSessionId) {
+                entity.setUserSessionId(userSessionId);
+            }
+
+            @Override
+            public int getStarted() {
+                return entity.getCreatedOn();
+            }
+
+            @Override
+            public void setStarted(int started) {
+                entity.setCreatedOn(started);
+            }
+
+            @Override
+            public int getLastSessionRefresh() {
+                return entity.getLastSessionRefresh();
+            }
+
+            @Override
+            public void setLastSessionRefresh(int lastSessionRefresh) {
+                entity.setLastSessionRefresh(lastSessionRefresh);
+            }
+
+            @Override
+            public boolean isOffline() {
+                return offlineFromString(entity.getOffline());
+            }
+
+            @Override
+            public void setOffline(boolean offline) {
+                entity.setOffline(offlineToString(offline));
+            }
+
+            @Override
+            public String getData() {
+                return entity.getData();
+            }
+
+            @Override
+            public void setData(String data) {
+                entity.setData(data);
+            }
+        };
 
         Map<String, AuthenticatedClientSessionModel> clientSessions = new HashMap<>();
         return new PersistentUserSessionAdapter(session, model, realm, entity.getUserId(), clientSessions);
@@ -515,21 +560,51 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         // can be null if client is not found anymore
         ClientModel client = realm.getClientById(clientId);
 
-        PersistentClientSessionModel model = new PersistentClientSessionModel();
-        model.setClientId(clientId);
-        model.setUserSessionId(userSession.getId());
-
-        if (userSession instanceof PersistentUserSessionAdapter) {
-            model.setUserId(((PersistentUserSessionAdapter) userSession).getUserId());
-        }
-        else {
-            UserModel user = userSession.getUser(); 
-            if (user != null) { 
-                model.setUserId(user.getId()); 
+        PersistentClientSessionModel model = new PersistentClientSessionModel() {
+            @Override
+            public String getUserSessionId() {
+                return entity.getUserSessionId();
             }
-        }
-        model.setTimestamp(entity.getTimestamp());
-        model.setData(entity.getData());
+
+            @Override
+            public void setUserSessionId(String userSessionId) {
+                entity.setUserSessionId(userSessionId);
+            }
+
+            @Override
+            public String getClientId() {
+                String clientId = entity.getClientId();
+                if (isExternalClient(entity)) {
+                    clientId = getExternalClientId(entity);
+                }
+                return clientId;
+            }
+
+            @Override
+            public void setClientId(String clientId) {
+                throw new IllegalStateException("forbidden");
+            }
+
+            @Override
+            public int getTimestamp() {
+                return entity.getTimestamp();
+            }
+
+            @Override
+            public void setTimestamp(int timestamp) {
+                entity.setTimestamp(timestamp);
+            }
+
+            @Override
+            public String getData() {
+                return entity.getData();
+            }
+
+            @Override
+            public void setData(String data) {
+                entity.setData(data);
+            }
+        };
         return new PersistentAuthenticatedClientSessionAdapter(session, model, realm, client, userSession);
     }
 

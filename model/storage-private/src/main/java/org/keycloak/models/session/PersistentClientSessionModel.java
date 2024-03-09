@@ -45,14 +45,6 @@ public class PersistentClientSessionModel {
         this.clientId = clientId;
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
     public int getTimestamp() {
         return timestamp;
     }
