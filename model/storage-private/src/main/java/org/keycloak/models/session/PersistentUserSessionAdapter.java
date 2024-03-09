@@ -58,7 +58,53 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             data.setState(other.getState().toString());
         }
 
-        this.model = new PersistentUserSessionModel();
+        this.model = new PersistentUserSessionModel() {
+            private String userSessionId;
+            private int started;
+            private int lastSessionRefresh;
+            private boolean offline;
+            private String data;
+
+            public String getUserSessionId() {
+                return userSessionId;
+            }
+
+            public void setUserSessionId(String userSessionId) {
+                this.userSessionId = userSessionId;
+            }
+
+            public int getStarted() {
+                return started;
+            }
+
+            public void setStarted(int started) {
+                this.started = started;
+            }
+
+            public int getLastSessionRefresh() {
+                return lastSessionRefresh;
+            }
+
+            public void setLastSessionRefresh(int lastSessionRefresh) {
+                this.lastSessionRefresh = lastSessionRefresh;
+            }
+
+            public boolean isOffline() {
+                return offline;
+            }
+
+            public void setOffline(boolean offline) {
+                this.offline = offline;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+        };
         this.model.setStarted(other.getStarted());
         this.model.setUserSessionId(other.getId());
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());

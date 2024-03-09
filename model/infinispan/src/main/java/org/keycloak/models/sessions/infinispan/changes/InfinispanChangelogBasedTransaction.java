@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
@@ -353,6 +354,132 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                                 }
                                             };
                                         }
+
+                                        @Override
+                                        public String getRealmId() {
+                                            return userSessionModel.getRealm().getId();
+                                        }
+
+                                        @Override
+                                        public void setRealmId(String realmId) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getId() {
+                                            return userSessionModel.getId();
+                                        }
+
+                                        @Override
+                                        public void setId(String id) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getUser() {
+                                            return userSessionModel.getUser().getId();
+                                        }
+
+                                        @Override
+                                        public void setUser(String user) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getLoginUsername() {
+                                            return userSessionModel.getLoginUsername();
+                                        }
+
+                                        @Override
+                                        public void setLoginUsername(String loginUsername) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getIpAddress() {
+                                            return userSessionModel.getIpAddress();
+                                        }
+
+                                        @Override
+                                        public void setIpAddress(String ipAddress) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getAuthMethod() {
+                                            return userSessionModel.getAuthMethod();
+                                        }
+
+                                        @Override
+                                        public void setAuthMethod(String authMethod) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public boolean isRememberMe() {
+                                            return userSessionModel.isRememberMe();
+                                        }
+
+                                        @Override
+                                        public void setRememberMe(boolean rememberMe) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public int getStarted() {
+                                            return userSessionModel.getStarted();
+                                        }
+
+                                        @Override
+                                        public void setStarted(int started) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public int getLastSessionRefresh() {
+                                            return userSessionModel.getLastSessionRefresh();
+                                        }
+
+                                        @Override
+                                        public void setNotes(Map<String, String> notes) {
+                                            userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
+                                            notes.forEach((k, v) -> userSessionModel.setNote(k, v));
+                                        }
+
+                                        @Override
+                                        public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public UserSessionModel.State getState() {
+                                            return userSessionModel.getState();
+                                        }
+
+                                        @Override
+                                        public String getBrokerSessionId() {
+                                            return userSessionModel.getBrokerSessionId();
+                                        }
+
+                                        @Override
+                                        public void setBrokerSessionId(String brokerSessionId) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public String getBrokerUserId() {
+                                            return userSessionModel.getBrokerUserId();
+                                        }
+
+                                        @Override
+                                        public void setBrokerUserId(String brokerUserId) {
+                                            throw new IllegalStateException("not supported");
+                                        }
+
+                                        @Override
+                                        public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+                                            throw new IllegalStateException("not supported");
+                                        }
                                     };
                                     sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
                                         vSessionUpdateTask.runUpdate((V) userSessionEntity);
@@ -379,6 +506,21 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                             } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
                                 AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
                                 session.getProvider(UserSessionPersisterProvider.class).createClientSession(new AuthenticatedClientSessionModel() {
+                                    @Override
+                                    public int getStarted() {
+                                        return entity.getStarted();
+                                    }
+
+                                    @Override
+                                    public int getUserSessionStarted() {
+                                        return entity.getUserSessionStarted();
+                                    }
+
+                                    @Override
+                                    public boolean isUserSessionRememberMe() {
+                                        return entity.isUserSessionRememberMe();
+                                    }
+
                                     @Override
                                     public String getId() {
                                         return entity.getId().toString();
@@ -648,6 +790,87 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                             @Override
                                             public void setAuthMethod(String authMethod) {
                                                 clientSessionModel.setProtocol(authMethod);
+                                            }
+
+                                            @Override
+                                            public String getAuthMethod() {
+                                                throw new IllegalStateException("not implemented");
+                                            }
+
+                                            @Override
+                                            public String getRedirectUri() {
+                                                return clientSessionModel.getRedirectUri();
+                                            }
+
+                                            @Override
+                                            public int getTimestamp() {
+                                                return clientSessionModel.getTimestamp();
+                                            }
+
+                                            @Override
+                                            public int getUserSessionStarted() {
+                                                return clientSessionModel.getUserSessionStarted();
+                                            }
+
+                                            @Override
+                                            public int getStarted() {
+                                                return clientSessionModel.getStarted();
+                                            }
+
+                                            @Override
+                                            public boolean isUserSessionRememberMe() {
+                                                return clientSessionModel.isUserSessionRememberMe();
+                                            }
+
+                                            @Override
+                                            public String getClientId() {
+                                                return clientSessionModel.getClient().getClientId();
+                                            }
+
+                                            @Override
+                                            public void setClientId(String clientId) {
+                                                throw new IllegalStateException("not implemented");
+                                            }
+
+                                            @Override
+                                            public String getAction() {
+                                                return clientSessionModel.getAction();
+                                            }
+
+                                            @Override
+                                            public void setNotes(Map<String, String> notes) {
+                                                clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
+                                                notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
+                                            }
+
+                                            @Override
+                                            public String getCurrentRefreshToken() {
+                                                return clientSessionModel.getCurrentRefreshToken();
+                                            }
+
+                                            @Override
+                                            public int getCurrentRefreshTokenUseCount() {
+                                                return clientSessionModel.getCurrentRefreshTokenUseCount();
+                                            }
+
+                                            @Override
+                                            public UUID getId() {
+                                                return UUID.fromString(clientSessionModel.getId());
+                                            }
+
+                                            @Override
+                                            public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+                                                throw new IllegalStateException("not implemented");
+                                            }
+
+                                            @Override
+                                            public String getUserSessionId() {
+                                                return clientSessionModel.getUserSession().getId();
+                                            }
+
+                                            @Override
+                                            public void setUserSessionId(String userSessionId) {
+                                                throw new IllegalStateException("not implemented");
                                             }
                                         };
                                         sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {

@@ -20,51 +20,25 @@ package org.keycloak.models.session;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentUserSessionModel {
+public interface PersistentUserSessionModel {
 
-    private String userSessionId;
-    private int started;
-    private int lastSessionRefresh;
-    private boolean offline;
-    private String data;
+    String getUserSessionId();
 
-    public String getUserSessionId() {
-        return userSessionId;
-    }
+    void setUserSessionId(String userSessionId);
 
-    public void setUserSessionId(String userSessionId) {
-        this.userSessionId = userSessionId;
-    }
+    int getStarted();
 
-    public int getStarted() {
-        return started;
-    }
+    void setStarted(int started);
 
-    public void setStarted(int started) {
-        this.started = started;
-    }
+    int getLastSessionRefresh();
 
-    public int getLastSessionRefresh() {
-        return lastSessionRefresh;
-    }
+    void setLastSessionRefresh(int lastSessionRefresh);
 
-    public void setLastSessionRefresh(int lastSessionRefresh) {
-        this.lastSessionRefresh = lastSessionRefresh;
-    }
+    boolean isOffline();
 
-    public boolean isOffline() {
-        return offline;
-    }
+    void setOffline(boolean offline);
 
-    public void setOffline(boolean offline) {
-        this.offline = offline;
-    }
+    String getData();
 
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
+    void setData(String data);
 }

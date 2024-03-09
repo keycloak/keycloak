@@ -52,7 +52,44 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         data.setNotes(clientSession.getNotes());
         data.setRedirectUri(clientSession.getRedirectUri());
 
-        model = new PersistentClientSessionModel();
+        model = new PersistentClientSessionModel() {
+            private String userSessionId;
+            private String clientId;
+            private int timestamp;
+            private String data;
+
+            public String getUserSessionId() {
+                return userSessionId;
+            }
+
+            public void setUserSessionId(String userSessionId) {
+                this.userSessionId = userSessionId;
+            }
+
+            public String getClientId() {
+                return clientId;
+            }
+
+            public void setClientId(String clientId) {
+                this.clientId = clientId;
+            }
+
+            public int getTimestamp() {
+                return timestamp;
+            }
+
+            public void setTimestamp(int timestamp) {
+                this.timestamp = timestamp;
+            }
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+        };
         model.setClientId(clientSession.getClient().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());

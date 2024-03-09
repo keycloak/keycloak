@@ -20,42 +20,21 @@ package org.keycloak.models.session;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentClientSessionModel {
+public interface PersistentClientSessionModel {
 
-    private String userSessionId;
-    private String clientId;
-    private int timestamp;
-    private String data;
+    String getUserSessionId();
 
-    public String getUserSessionId() {
-        return userSessionId;
-    }
+    void setUserSessionId(String userSessionId);
 
-    public void setUserSessionId(String userSessionId) {
-        this.userSessionId = userSessionId;
-    }
+    String getClientId();
 
-    public String getClientId() {
-        return clientId;
-    }
+    void setClientId(String clientId);
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
+    int getTimestamp();
 
-    public int getTimestamp() {
-        return timestamp;
-    }
+    void setTimestamp(int timestamp);
 
-    public void setTimestamp(int timestamp) {
-        this.timestamp = timestamp;
-    }
+    String getData();
 
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
+    void setData(String data);
 }
