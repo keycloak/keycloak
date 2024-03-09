@@ -24,10 +24,8 @@ public class PersistentClientSessionModel {
 
     private String userSessionId;
     private String clientId;
-    private String userId;
     private int timestamp;
     private String data;
-
 
     public String getUserSessionId() {
         return userSessionId;
