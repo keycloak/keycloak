@@ -1028,7 +1028,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void configureBrowserFlowWithWebAuthnAuthenticator(String newFlowAlias) {
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", newFlowAlias);
         Response response = testRealm().flows().copy("browser", params);
         response.close();

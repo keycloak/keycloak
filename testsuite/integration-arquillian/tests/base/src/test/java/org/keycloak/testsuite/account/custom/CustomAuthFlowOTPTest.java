@@ -531,7 +531,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         response.close();
         
         //add execution - username-password form
-        Map<String, String> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("provider", "auth-username-password-form");
         getAuthMgmtResource().addExecution(flowAlias, data);
         
