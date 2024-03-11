@@ -1,11 +1,10 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
-import { ReactNode, useEffect, useState } from "react";
+import debouncePromise from "awesome-debounce-promise";
+import { ReactNode, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import environment from "../../environment";
 
 type DiscoveryEndpointFieldProps = {
@@ -22,14 +21,9 @@ export const DiscoveryEndpointField = ({
   const { t } = useTranslation();
   const {
     setValue,
-    register,
-    setError,
-    watch,
     clearErrors,
     formState: { errors },
   } = useFormContext();
-  const discoveryUrl = watch("discoveryEndpoint");
-
   const [discovery, setDiscovery] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [discoveryResult, setDiscoveryResult] =
@@ -39,31 +33,21 @@ export const DiscoveryEndpointField = ({
     Object.keys(result).map((k) => setValue(`config.${k}`, result[k]));
   };
 
-  useEffect(() => {
-    if (!discoveryUrl) {
+  const discover = async (fromUrl: string) => {
+    setDiscovering(true);
+    try {
+      const result = await adminClient.identityProviders.importFromUrl({
+        providerId: id,
+        fromUrl,
+      });
+      setupForm(result);
+      setDiscoveryResult(result);
+    } catch (error) {
+      return (error as Error).message;
+    } finally {
       setDiscovering(false);
-      return;
     }
-
-    (async () => {
-      clearErrors("discoveryError");
-      try {
-        const result = await adminClient.identityProviders.importFromUrl({
-          providerId: id,
-          fromUrl: discoveryUrl,
-        });
-        setupForm(result);
-        setDiscoveryResult(result);
-      } catch (error) {
-        setError("discoveryError", {
-          type: "manual",
-          message: (error as Error).message,
-        });
-      }
-
-      setDiscovering(false);
-    })();
-  }, [discovering]);
+  };
 
   return (
     <>
@@ -98,20 +82,21 @@ export const DiscoveryEndpointField = ({
         />
       </FormGroup>
       {discovery && (
-        <FormGroup
+        <TextControl
+          name="discoveryEndpoint"
           label={t(
             id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor",
           )}
-          fieldId="kc-discovery-endpoint"
-          labelIcon={
-            <HelpItem
-              helpText={t(
-                id === "oidc"
-                  ? "discoveryEndpointHelp"
-                  : "samlEntityDescriptorHelp",
-              )}
-              fieldLabelId="discoveryEndpoint"
-            />
+          labelIcon={t(
+            id === "oidc"
+              ? "discoveryEndpointHelp"
+              : "samlEntityDescriptorHelp",
+          )}
+          type="url"
+          placeholder={
+            id === "oidc"
+              ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
+              : ""
           }
           validated={
             errors.discoveryError || errors.discoveryEndpoint
@@ -120,42 +105,19 @@ export const DiscoveryEndpointField = ({
                 ? "default"
                 : "success"
           }
-          helperTextInvalid={
-            errors.discoveryEndpoint
-              ? t("required")
-              : t("noValidMetaDataFound", {
-                  error: errors.discoveryError?.message,
-                })
+          customIconUrl={
+            discovering
+              ? environment.resourceUrl + "/discovery-load-indicator.svg"
+              : ""
           }
-          isRequired
-        >
-          <KeycloakTextInput
-            type="url"
-            data-testid="discoveryEndpoint"
-            id="kc-discovery-endpoint"
-            placeholder={
-              id === "oidc"
-                ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
-                : ""
-            }
-            validated={
-              errors.discoveryError || errors.discoveryEndpoint
-                ? "error"
-                : !discoveryResult
-                  ? "default"
-                  : "success"
-            }
-            customIconUrl={
-              discovering
-                ? environment.resourceUrl + "/discovery-load-indicator.svg"
-                : ""
-            }
-            {...register("discoveryEndpoint", {
-              required: true,
-              onBlur: () => setDiscovering(true),
-            })}
-          />
-        </FormGroup>
+          rules={{
+            required: t("required"),
+            validate: debouncePromise(
+              async (value: string) => await discover(value),
+              1000,
+            ),
+          }}
+        />
       )}
       {!discovery && fileUpload}
       {discovery && !errors.discoveryError && children(true)}

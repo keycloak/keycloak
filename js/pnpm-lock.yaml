@@ -171,6 +171,9 @@ importers:
       admin-ui:
         specifier: 'file:'
         version: file:apps/admin-ui(@types/react@18.2.64)(react-monaco-editor@0.51.0)
+      awesome-debounce-promise:
+        specifier: ^2.1.0
+        version: 2.1.0
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -2287,6 +2290,10 @@ packages:
     resolution: {integrity: sha512-XKJdy+OClLk3hketHi9Qg6gTfe1F3y+UFnHxKA2rn9Dw+oXa4Gb378Ztz9HlMgZKSxpPmn4BNVh9wgkpvrK1uw==}
     dev: true
 
+  /@types/debounce-promise@3.1.9:
+    resolution: {integrity: sha512-awNxydYSU+E2vL7EiOAMtiSOfL5gUM5X4YSE2A92qpxDJQ/rXz6oMPYBFDcDywlUmvIDI6zsqgq17cGm5CITQw==}
+    dev: false
+
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
@@ -3058,6 +3065,28 @@ packages:
       possible-typed-array-names: 1.0.0
     dev: true
 
+  /awesome-debounce-promise@2.1.0:
+    resolution: {integrity: sha512-0Dv4j2wKk5BrNZh4jgV2HUdznaeVgEK/WTvcHhZWUElhmQ1RR+iURRoLEwICFyR0S/5VtxfcvY6gR+qSe95jNg==}
+    engines: {node: '>=8', npm: '>=5'}
+    dependencies:
+      '@types/debounce-promise': 3.1.9
+      awesome-imperative-promise: 1.0.1
+      awesome-only-resolves-last-promise: 1.0.3
+      debounce-promise: 3.1.2
+    dev: false
+
+  /awesome-imperative-promise@1.0.1:
+    resolution: {integrity: sha512-EmPr3FqbQGqlNh+WxMNcF9pO9uDQJnOC4/3rLBQNH9m4E9qI+8lbfHCmHpVAsmGqPJPKhCjJLHUQzQW/RBHRdQ==}
+    engines: {node: '>=8', npm: '>=5'}
+    dev: false
+
+  /awesome-only-resolves-last-promise@1.0.3:
+    resolution: {integrity: sha512-7q4WPsYiD8Omvi/yHL314DkvsD/lM//Z2/KcU1vWk0xJotiV0GMJTgHTpWl3n90HJqpXKg7qX+VVNs5YbQyPRQ==}
+    engines: {node: '>=8', npm: '>=5'}
+    dependencies:
+      awesome-imperative-promise: 1.0.1
+    dev: false
+
   /aws-sign2@0.7.0:
     resolution: {integrity: sha512-08kcGqnYf/YmjoRhfxyu+CLxBjUtHLXLXX/vUfx9l2LYzG3c1m61nrpyFUZI6zeS+Li/wWMMidD9KgrqtGq3mA==}
     dev: true
@@ -3736,6 +3765,10 @@ packages:
   /de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
     dev: true
+
+  /debounce-promise@3.1.2:
+    resolution: {integrity: sha512-rZHcgBkbYavBeD9ej6sP56XfG53d51CD4dnaw989YX/nZ/ZJfgRx/9ePKmTNiUiyQvh4mtrMoS3OAWW+yoYtpg==}
+    dev: false
 
   /debug@3.2.7(supports-color@8.1.1):
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}

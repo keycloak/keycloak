@@ -69,6 +69,7 @@
     "@patternfly/react-styles": "^4.92.8",
     "@patternfly/react-table": "^4.113.6",
     "admin-ui": "file:",
+    "awesome-debounce-promise": "^2.1.0",
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "file-selector": "^0.6.0",
