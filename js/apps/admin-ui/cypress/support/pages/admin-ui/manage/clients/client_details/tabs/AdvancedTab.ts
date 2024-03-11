@@ -30,10 +30,11 @@ export default class AdvancedTab extends PageObject {
     "#useRefreshTokenForClientCredentialsGrant";
   #useLowerCaseBearerTypeSwitch = "#useLowerCaseBearerType";
 
-  #oAuthMutualSwitch = "attributes.tls.client.certificate.bound.access.tokens";
+  #oAuthMutualSwitch =
+    "attributes.tls🍺client🍺certificate🍺bound🍺access🍺tokens";
   #keyForCodeExchangeInput = "#keyForCodeExchange";
   #pushedAuthorizationRequestRequiredSwitch =
-    "attributes.require.pushed.authorization.requests";
+    "attributes.require🍺pushed🍺authorization🍺requests";
 
   #browserFlowInput = "#browserFlow";
   #directGrantInput = "#directGrant";
