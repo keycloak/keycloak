@@ -6,15 +6,13 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
-
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { adminClient } from "../../admin-client";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
@@ -99,7 +97,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.accessTokenLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionIdle"
             name={convertAttributeNameToForm(
@@ -108,7 +105,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientSessionMax"
             name={convertAttributeNameToForm(
@@ -117,7 +113,6 @@ export const AdvancedSettings = ({
             defaultValue={realm?.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
-
           <TokenLifespan
             id="clientOfflineSessionIdle"
             name={convertAttributeNameToForm(
@@ -126,66 +121,25 @@ export const AdvancedSettings = ({
             defaultValue={realm?.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
-
-          <FormGroup
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.tls.client.certificate.bound.access.tokens",
+            )}
             label={t("oAuthMutual")}
-            fieldId="oAuthMutual"
-            hasNoPaddingTop
-            labelIcon={
-              <HelpItem
-                helpText={t("oAuthMutualHelp")}
-                fieldLabelId="oAuthMutual"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.tls.client.certificate.bound.access.tokens",
-              )}
-              defaultValue={false}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="oAuthMutual-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
-                  aria-label={t("oAuthMutual")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("oAuthMutualHelp")}
+            defaultValue={false}
+            stringify
+          />
           {isDPoPEnabled && (
-            <FormGroup
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens",
+              )}
               label={t("oAuthDPoP")}
-              fieldId="oAuthDPoP"
-              hasNoPaddingTop
-              labelIcon={
-                <HelpItem
-                  helpText={t("oAuthDPoPHelp")}
-                  fieldLabelId="oAuthDPoP"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.dpop.bound.access.tokens",
-                )}
-                defaultValue={false}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="oAuthDPoP-switch"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange("" + value)}
-                    aria-label={t("oAuthDPoP")}
-                  />
-                )}
-              />
-            </FormGroup>
+              labelIcon={t("oAuthDPoPHelp")}
+              defaultValue={false}
+              stringify
+            />
           )}
           <FormGroup
             label={t("keyForCodeExchange")}
@@ -225,62 +179,24 @@ export const AdvancedSettings = ({
               )}
             />
           </FormGroup>
-          <FormGroup
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.require.pushed.authorization.requests",
+            )}
             label={t("pushedAuthorizationRequestRequired")}
-            fieldId="pushedAuthorizationRequestRequired"
-            labelIcon={
-              <HelpItem
-                helpText={t("pushedAuthorizationRequestRequiredHelp")}
-                fieldLabelId="pushedAuthorizationRequestRequired"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.require.pushed.authorization.requests",
-              )}
-              defaultValue="false"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="pushedAuthorizationRequestRequired"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
-                  aria-label={t("pushedAuthorizationRequestRequired")}
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("pushedAuthorizationRequestRequiredHelp")}
+            defaultValue="false"
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.client.use.lightweight.access.token.enabled",
+            )}
             label={t("lightweightAccessToken")}
-            fieldId="lightweightAccessToken"
-            labelIcon={
-              <HelpItem
-                helpText={t("lightweightAccessTokenHelp")}
-                fieldLabelId="lightweightAccessToken"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.client.use.lightweight.access.token.enabled",
-              )}
-              defaultValue="false"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="lightweightAccessToken"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
-                  aria-label={t("lightweightAccessToken")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("lightweightAccessTokenHelp")}
+            defaultValue="false"
+            stringify
+          />
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
