@@ -18,3 +18,4 @@
 org.keycloak.protocol.oidc.OIDCLoginProtocolFactory
 org.keycloak.protocol.saml.SamlProtocolFactory
 org.keycloak.protocol.docker.DockerAuthV2ProtocolFactory
+org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory

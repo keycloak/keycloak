@@ -33,7 +33,6 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialSubject {
 
-
     @JsonIgnore
     private Map<String, Object> claims = new HashMap<>();
 
@@ -45,5 +44,10 @@ public class CredentialSubject {
     @JsonAnySetter
     public void setClaims(String name, Object claim) {
         claims.put(name, claim);
+    }
+
+    public CredentialSubject setClaims(Map<String, Object> claims) {
+        this.claims = claims;
+        return this;
     }
 }

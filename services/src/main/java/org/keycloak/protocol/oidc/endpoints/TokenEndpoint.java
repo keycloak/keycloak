@@ -58,6 +58,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
@@ -130,7 +131,8 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
+        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)// pre-authorized grants are not necessarily used by known clients.
+                && !grantType.equals(PreAuthorizedCodeGrantType.GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }
@@ -202,7 +204,7 @@ public class TokenEndpoint {
         for (String key : formParams.keySet()) {
             if (formParams.get(key).size() != 1) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
-                    Response.Status.BAD_REQUEST);
+                        Response.Status.BAD_REQUEST);
             }
         }
     }
