@@ -121,6 +121,7 @@ public class GroupsResource {
      * @return
      */
     @Path("{group-id}")
+    @Operation( summary = "Get group details. Does not expand hierarchy.  Subgroups will not be set.")
     public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
 
