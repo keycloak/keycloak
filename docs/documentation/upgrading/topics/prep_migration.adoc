@@ -15,5 +15,5 @@ The database will no longer be compatible with the old server after you upgrade 
 
 [WARNING]
 ====
-After upgrade of {project_name}, all user sessions are lost. All users will have to log in again.
+After upgrade of {project_name}, except for offline user sessions, user sessions are lost. Users will have to log in again.
 ====
