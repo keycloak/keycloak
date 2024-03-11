@@ -214,17 +214,7 @@ public class JwtSigningServiceTest extends SigningServiceTest {
         }
     }
 
-    private static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
-        // we only set one key to the realm, thus can just take the first one
-        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
-        // the key from the `configureTestRealm` method.
-        return keycloakSession
-                .keys()
-                .getKeysStream(keycloakSession.getContext().getRealm())
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No key was configured"));
-    }
-
+ 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         if (testRealm.getComponents() != null) {
