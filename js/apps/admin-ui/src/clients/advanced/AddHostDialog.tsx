@@ -83,10 +83,7 @@ export const AddHostDialog = ({
             name="node"
             label={t("nodeHost")}
             rules={{
-              required: {
-                value: true,
-                message: t("required"),
-              },
+              required: t("required"),
             }}
           />
         </Form>

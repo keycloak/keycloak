@@ -127,7 +127,6 @@ export const AdvancedSettings = ({
             )}
             label={t("oAuthMutual")}
             labelIcon={t("oAuthMutualHelp")}
-            defaultValue={false}
             stringify
           />
           {isDPoPEnabled && (
@@ -137,7 +136,6 @@ export const AdvancedSettings = ({
               )}
               label={t("oAuthDPoP")}
               labelIcon={t("oAuthDPoPHelp")}
-              defaultValue={false}
               stringify
             />
           )}
@@ -185,7 +183,6 @@ export const AdvancedSettings = ({
             )}
             label={t("pushedAuthorizationRequestRequired")}
             labelIcon={t("pushedAuthorizationRequestRequiredHelp")}
-            defaultValue="false"
             stringify
           />
           <DefaultSwitchControl
@@ -194,7 +191,6 @@ export const AdvancedSettings = ({
             )}
             label={t("lightweightAccessToken")}
             labelIcon={t("lightweightAccessTokenHelp")}
-            defaultValue="false"
             stringify
           />
           <FormGroup
