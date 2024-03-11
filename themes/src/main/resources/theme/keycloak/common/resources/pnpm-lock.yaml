@@ -15,8 +15,8 @@ dependencies:
     specifier: ^4.278.1
     version: 4.278.1(react-dom@18.2.0)(react@18.2.0)
   alpinejs:
-    specifier: ^3.13.6
-    version: 3.13.6
+    specifier: ^3.13.7
+    version: 3.13.7
   jquery:
     specifier: ^3.7.1
     version: 3.7.1
@@ -592,8 +592,8 @@ packages:
     hasBin: true
     dev: true
 
-  /alpinejs@3.13.6:
-    resolution: {integrity: sha512-/F7pVR+11r1A0KVw+eY1DcjTFlRQn9arD3p5/2Q4vq0N2WDC/dHpg+Pz7ZMiVQlHE7ZmZmcqTRm1wYTdDLMiEg==}
+  /alpinejs@3.13.7:
+    resolution: {integrity: sha512-rcTyjTANbsePq1hb7eSekt3qjI94HLGeO6JaRjCssCVbIIc+qBrc7pO5S/+2JB6oojIibjM6FA+xRI3zhGPZIg==}
     dependencies:
       '@vue/reactivity': 3.1.5
     dev: false
