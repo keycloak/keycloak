@@ -11,12 +11,11 @@ import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { TextControl } from "ui-shared";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
@@ -61,6 +60,7 @@ export default function AttributesGroupForm() {
   const navigate = useNavigate();
   const params = useParams<EditAttributesGroupParams>();
   const form = useForm<FormFields>({ defaultValues });
+  const { handleSubmit, reset } = form;
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
@@ -76,7 +76,7 @@ export default function AttributesGroupForm() {
       ? parseAnnotations(matchingGroup.annotations)
       : [];
 
-    form.reset({ ...defaultValues, ...matchingGroup, annotations });
+    reset({ ...defaultValues, ...matchingGroup, annotations });
   }, [matchingGroup]);
 
   const onSubmit: SubmitHandler<FormFields> = async (values) => {
@@ -110,82 +110,63 @@ export default function AttributesGroupForm() {
         titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
         divider
       />
-      <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormAccess isHorizontal role="manage-realm">
-          <FormGroup
-            label={t("nameField")}
-            fieldId="kc-name"
-            isRequired
-            helperTextInvalid={t("required")}
-            validated={form.formState.errors.name ? "error" : "default"}
-            labelIcon={
-              <HelpItem helpText={t("nameHintHelp")} fieldLabelId="nameField" />
-            }
+      <PageSection variant="light">
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            role="manage-realm"
+            onSubmit={handleSubmit(onSubmit)}
           >
-            <KeycloakTextInput
-              id="kc-name"
-              isReadOnly={!!matchingGroup}
-              {...form.register("name", { required: true })}
+            <TextControl
+              name="name"
+              label={t("nameField")}
+              labelIcon={t("nameHintHelp")}
+              rules={{ required: t("required") }}
+              readOnlyVariant={matchingGroup ? "default" : undefined}
             />
-            {!!matchingGroup && (
-              <input type="hidden" {...form.register("name")} />
-            )}
-          </FormGroup>
-          <FormGroup
-            label={t("displayHeaderField")}
-            fieldId="kc-display-header"
-            labelIcon={
-              <HelpItem
-                helpText={t("displayHeaderHintHelp")}
-                fieldLabelId="displayHeaderField"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="kc-display-header"
-              {...form.register("displayHeader")}
+            <TextControl
+              name="displayHeader"
+              label={t("displayHeaderField")}
+              labelIcon={t("displayHeaderHintHelp")}
             />
-          </FormGroup>
-          <FormGroup
-            label={t("displayDescriptionField")}
-            fieldId="kc-display-description"
-            labelIcon={
-              <HelpItem
-                helpText={t("displayDescriptionHintHelp")}
-                fieldLabelId="displayDescriptionField"
-              />
-            }
-          >
-            <KeycloakTextInput
-              id="kc-display-description"
-              {...form.register("displayDescription")}
+            <TextControl
+              name="displayDescription"
+              label={t("displayDescriptionField")}
+              labelIcon={t("displayDescriptionHintHelp")}
             />
-          </FormGroup>
-          <TextContent>
-            <Text component="h2">{t("annotationsText")}</Text>
-          </TextContent>
-          <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-            <FormProvider {...form}>
-              <KeyValueInput label={t("annotationsText")} name="annotations" />
-            </FormProvider>
-          </FormGroup>
-          <ActionGroup>
-            <Button variant="primary" type="submit" data-testid="saveGroupBtn">
-              {t("save")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => (
-                <Link
-                  {...props}
-                  to={toUserProfile({ realm, tab: "attributes-group" })}
+            <TextContent>
+              <Text component="h2">{t("annotationsText")}</Text>
+            </TextContent>
+            <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
+              <FormProvider {...form}>
+                <KeyValueInput
+                  label={t("annotationsText")}
+                  name="annotations"
                 />
-              )}
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+              </FormProvider>
+            </FormGroup>
+            <ActionGroup>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="saveGroupBtn"
+              >
+                {t("save")}
+              </Button>
+              <Button
+                variant="link"
+                component={(props) => (
+                  <Link
+                    {...props}
+                    to={toUserProfile({ realm, tab: "attributes-group" })}
+                  />
+                )}
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );
