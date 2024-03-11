@@ -44,7 +44,7 @@ export const SelectControl = <
   label,
   options,
   controller,
-  variant,
+  variant = SelectVariant.single,
   labelIcon,
   ...rest
 }: SelectControlProps<T, P>) => {
