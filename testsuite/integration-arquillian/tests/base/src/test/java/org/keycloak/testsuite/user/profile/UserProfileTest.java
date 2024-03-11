@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
+import static org.keycloak.userprofile.config.UPConfigUtils.parseSystemDefaultConfig;
 
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -2243,5 +2245,20 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.setConfiguration(upConfig);
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
         profile.update();
+    }
+
+    @Test
+    public void testDefaultConfigWhenComponentConfigIsNotSet() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultConfigWhenComponentConfigIsNotSet);
+    }
+
+    private static void testDefaultConfigWhenComponentConfigIsNotSet(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        provider.setConfiguration(parseSystemDefaultConfig());
+        RealmModel realm = session.getContext().getRealm();
+        ComponentModel component = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().get();
+        component.setConfig(new MultivaluedHashMap<>());
+        realm.updateComponent(component);
+        provider.create(UserProfileContext.USER_API, Map.of());
     }
 }
