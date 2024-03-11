@@ -1,6 +1,6 @@
 [[intro]]
 
-== Upgrading Keycloak
+== Upgrading {project_name}
 
 This guide describes how to upgrade {project_name}. Use the following procedures in this order:
 
