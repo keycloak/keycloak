@@ -17,14 +17,12 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
   Title,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextControl } from "ui-shared";
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -34,7 +32,7 @@ import {
   KeyValueType,
   keyValueToArray,
 } from "../../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -96,7 +94,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,
-    register,
     reset,
     trigger,
     formState: { isValid, errors },
@@ -104,9 +101,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
   const { t } = useTranslation();
   const { addError } = useAlerts();
   const realm = useRealm();
-
   const [scopesDropdownOpen, setScopesDropdownOpen] = useState(false);
-
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [applyToResourceType, setApplyToResourceType] = useState(false);
@@ -114,7 +109,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [evaluateResult, setEvaluateResult] =
     useState<PolicyEvaluationResponse>();
-
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
   useFetch(
@@ -285,26 +279,12 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
-              <FormGroup
+              <DefaultSwitchControl
+                name="applyToResourceType"
                 label={t("applyToResourceType")}
-                fieldId="applyToResourceType"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("applyToResourceTypeHelp")}
-                    fieldLabelId="applyToResourceType"
-                  />
-                }
-              >
-                <Switch
-                  id="applyToResource-switch"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={applyToResourceType}
-                  onChange={setApplyToResourceType}
-                  aria-label={t("applyToResourceType")}
-                />
-              </FormGroup>
-
+                labelIcon={t("applyToResourceTypeHelp")}
+                onChange={setApplyToResourceType}
+              />
               {!applyToResourceType ? (
                 <FormGroup
                   label={t("resourcesAndScopes")}
@@ -328,26 +308,12 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 </FormGroup>
               ) : (
                 <>
-                  <FormGroup
+                  <TextControl
+                    name="alias"
                     label={t("resourceType")}
-                    isRequired
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("resourceTypeHelp")}
-                        fieldLabelId="resourceType"
-                      />
-                    }
-                    fieldId="client"
-                    validated={errors.alias ? "error" : "default"}
-                    helperTextInvalid={t("required")}
-                  >
-                    <KeycloakTextInput
-                      id="alias"
-                      aria-label="resource-type"
-                      data-testid="alias"
-                      {...register("alias", { required: true })}
-                    />
-                  </FormGroup>
+                    labelIcon={t("resourceTypeHelp")}
+                    rules={{ required: t("required") }}
+                  />
                   <FormGroup
                     label={t("authScopes")}
                     labelIcon={
