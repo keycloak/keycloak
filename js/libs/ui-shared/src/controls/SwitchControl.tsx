@@ -12,7 +12,7 @@ import { FormLabel } from "./FormLabel";
 export type SwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = Omit<SwitchProps, "name" | "defaultValue"> &
+> = Omit<SwitchProps, "name" | "defaultValue" | "ref"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
@@ -45,10 +45,10 @@ export const SwitchControl = <
         defaultValue={defaultValue}
         render={({ field: { onChange, value } }) => (
           <Switch
+            {...props}
             id={props.name}
             data-testid={props.name}
             label={props.labelOn}
-            labelOff={props.labelOff}
             isChecked={props.stringify ? value === "true" : value}
             onChange={(checked, e) => {
               const value = props.stringify ? checked.toString() : checked;
