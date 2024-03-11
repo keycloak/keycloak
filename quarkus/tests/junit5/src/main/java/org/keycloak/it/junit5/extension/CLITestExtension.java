@@ -97,11 +97,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         infinispanContainer = configureExternalInfinispan(context);
 
         if (distConfig != null) {
-            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
-
             if (dist == null) {
                 dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
+
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), true);
 
             copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
             copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
@@ -163,10 +163,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
     }
 
-    private void onKeepServerAlive(KeepServerAlive annotation) {
+    private void onKeepServerAlive(KeepServerAlive annotation, boolean setting) {
         if(annotation != null && dist != null) {
             try {
-                dist.setManualStop(true);
+                dist.setManualStop(setting);
             } catch (Exception cause) {
                 throw new RuntimeException("Error when invoking " + annotation, cause);
             }
@@ -177,12 +177,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null) {
-            if (distConfig.keepAlive()) {
-                dist.stop();
-            }
+        if (dist != null) {
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
+            dist.stop();
 
-            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+            if (distConfig != null && DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
                 dist = null;
             }
         }
