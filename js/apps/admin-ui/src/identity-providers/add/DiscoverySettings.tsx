@@ -3,7 +3,7 @@ import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "ui-shared";
+import { SelectControl, TextAreaControl, TextControl } from "ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 import "./discovery-settings.css";
@@ -70,6 +70,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         name="config.validateSignature"
         label={t("validateSignature")}
         isDisabled={readOnly}
+        stringify
       />
       {validateSignature === "true" && (
         <>
@@ -77,9 +78,10 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             name="config.useJwksUrl"
             label={t("useJwksUrl")}
             isDisabled={readOnly}
+            stringify
           />
           {useJwks === "true" ? (
-            <TextControl
+            <TextAreaControl
               name="config.jwksUrl"
               label={t("jwksUrl")}
               readOnly={readOnly}
