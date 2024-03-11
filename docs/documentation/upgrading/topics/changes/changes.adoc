@@ -1,3 +1,4 @@
+[[migration-changes]]
 == Migration Changes
 
 === Migrating to 25.0.0

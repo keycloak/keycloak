@@ -179,7 +179,7 @@ to the new template.
 
 = Truststore Changes
 
-The `spi-truststore-file-*` options and the truststore related options `https-trust-store-*` are deprecated. Therefore, use the new default location for truststore material, `conf/truststores`, or specify your desired paths by using the `truststore-paths` option. For details, see the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated. Therefore, use the new default location for truststore material, `conf/truststores`, or specify your desired paths by using the `truststore-paths` option. For details, see the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
 
 The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
 
