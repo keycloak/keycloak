@@ -39,6 +39,9 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeMessage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -185,16 +188,29 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private void setupTruststore(Properties props) {
-        JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-
-        SSLSocketFactory factory = configurator.getSSLSocketFactory();
-        if (factory != null) {
-            props.put("mail.smtp.ssl.socketFactory", factory);
-            if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
-                props.setProperty("mail.smtp.ssl.trust", "*");
-                props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
-            }
-        }
+         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
+         if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+             props.setProperty("mail.smtp.ssl.trust", "*");
+             props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
+             TrustManager[] trustAllCerts = new TrustManager[]{
+                 new X509TrustManager() {
+                     public X509Certificate[] getAcceptedIssuers() {
+                         return null;
+                     }
+                     public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                     }
+                     public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                     }
+                 }
+             };
+             props.put("mail.smtp.ssl.socketFactory", trustAllCerts);
+             return;
+         } else {
+             SSLSocketFactory factory = configurator.getSSLSocketFactory();
+             if (factory != null) {
+                 props.put("mail.smtp.ssl.socketFactory", factory);
+             }
+         }
     }
 
     @Override
