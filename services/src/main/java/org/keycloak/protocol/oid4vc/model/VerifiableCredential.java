@@ -55,67 +55,76 @@ public class VerifiableCredential {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperties(String name, Object property) {
+    public VerifiableCredential setAdditionalProperties(String name, Object property) {
         additionalProperties.put(name, property);
+        return this;
     }
 
     public List<String> getContext() {
         return context;
     }
 
-    public void setContext(List<String> context) {
+    public VerifiableCredential setContext(List<String> context) {
         this.context = context;
+        return this;
     }
 
     public List<String> getType() {
         return type;
     }
 
-    public void setType(List<String> type) {
+    public VerifiableCredential setType(List<String> type) {
         this.type = type;
-    }
-
-    public void addType(String type) {
-        this.type.add(type);
+        return this;
     }
 
     public URI getIssuer() {
         return issuer;
     }
 
-    public void setIssuer(URI issuer) {
+    public VerifiableCredential setIssuer(URI issuer) {
         this.issuer = issuer;
+        return this;
     }
 
     public Date getIssuanceDate() {
         return issuanceDate;
     }
 
-    public void setIssuanceDate(Date issuanceDate) {
+    public VerifiableCredential setIssuanceDate(Date issuanceDate) {
         this.issuanceDate = issuanceDate;
-    }
-
-    public Date getExpirationDate() {
-        return expirationDate;
-    }
-
-    public void setExpirationDate(Date expirationDate) {
-        this.expirationDate = expirationDate;
-    }
-
-    public CredentialSubject getCredentialSubject() {
-        return credentialSubject;
-    }
-
-    public void setCredentialSubject(CredentialSubject credentialSubject) {
-        this.credentialSubject = credentialSubject;
+        return this;
     }
 
     public URI getId() {
         return id;
     }
 
-    public void setId(URI id) {
+    public VerifiableCredential setId(URI id) {
         this.id = id;
+        return this;
+    }
+
+    public Date getExpirationDate() {
+        return expirationDate;
+    }
+
+    public VerifiableCredential setExpirationDate(Date expirationDate) {
+        this.expirationDate = expirationDate;
+        return this;
+    }
+
+    public CredentialSubject getCredentialSubject() {
+        return credentialSubject;
+    }
+
+    public VerifiableCredential setCredentialSubject(CredentialSubject credentialSubject) {
+        this.credentialSubject = credentialSubject;
+        return this;
+    }
+
+    public VerifiableCredential setAdditionalProperties(Map<String, Object> additionalProperties) {
+        this.additionalProperties = additionalProperties;
+        return this;
     }
 }
