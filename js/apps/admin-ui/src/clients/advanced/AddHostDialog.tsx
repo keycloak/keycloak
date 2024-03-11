@@ -3,15 +3,13 @@ import {
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
 } from "@patternfly/react-core";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type FormFields = {
   node: string;
@@ -31,11 +29,11 @@ export const AddHostDialog = ({
   onClose,
 }: AddHostDialogProps) => {
   const { t } = useTranslation();
+  const form = useForm<FormFields>();
   const {
-    register,
     handleSubmit,
     formState: { isDirty, isValid },
-  } = useForm<FormFields>();
+  } = form;
   const { addAlert, addError } = useAlerts();
 
   async function onSubmit({ node }: FormFields) {
@@ -79,15 +77,17 @@ export const AddHostDialog = ({
         </Button>,
       ]}
     >
-      <Form id="add-host-form" onSubmit={handleSubmit(onSubmit)} isHorizontal>
-        <FormGroup label={t("nodeHost")} fieldId="nodeHost" isRequired>
-          <KeycloakTextInput
-            id="nodeHost"
-            {...register("node", { required: true })}
-            isRequired
+      <FormProvider {...form}>
+        <Form id="add-host-form" onSubmit={handleSubmit(onSubmit)} isHorizontal>
+          <TextControl
+            name="node"
+            label={t("nodeHost")}
+            rules={{
+              required: t("required"),
+            }}
           />
-        </FormGroup>
-      </Form>
+        </Form>
+      </FormProvider>
     </Modal>
   );
 };

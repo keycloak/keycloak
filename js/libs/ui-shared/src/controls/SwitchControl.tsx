@@ -28,7 +28,8 @@ export const SwitchControl = <
 >(
   props: SwitchControlProps<T, P>,
 ) => {
-  const defaultValue = props.defaultValue ?? (false as PathValue<T, P>);
+  const fallbackValue = props.stringify ? "false" : false;
+  const defaultValue = props.defaultValue ?? (fallbackValue as PathValue<T, P>);
   const { control } = useFormContext();
   return (
     <FormLabel
