@@ -110,7 +110,6 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
       {isPkceEnabled === "true" && (
         <SelectControl
           name="config.pkceMethod"
-          className="pf-u-pb-3xl"
           label={t("pkceMethod")}
           labelIcon={t("pkceMethodHelp")}
           controller={{
