@@ -2,20 +2,18 @@
 
 == Preparing for upgrading
 
-Before you upgrade, be aware of the order in which you need to perform the upgrade steps. In particular, be sure to upgrade {project_name} server before you upgrade the adapters.
+Perform the following steps before you upgrade the server.
+
+.Procedure
+. Back up the old installation, such as configuration, themes, and so on.
+. Handle any open transactions and delete the `data/tx-object-store/` transaction directory.
+
+. Back up the database using instructions in the documentation for your relational
+  database.
++
+The database will no longer be compatible with the old server after you upgrade the server. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
 
 [WARNING]
 ====
-In a minor upgrade of {project_name}, all user sessions are lost. After the upgrade, all users will have to log in again.
+After upgrade of {project_name}, except for offline user sessions, user sessions are lost. Users will have to log in again.
 ====
-
-.Procedure
-. Back up the old installation (configuration, themes, and so on).
-. Back up the database using instructions in the documentation for your relational
-  database.
-. Upgrade the {project_name} server.
-+
-The database will no longer be compatible with the old server after the upgrade.
-. If you need to revert the upgrade, first restore the old installation, and then restore the database from the backup copy.
-. Upgrade the adapters.
-
