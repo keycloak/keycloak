@@ -116,6 +116,7 @@ public class Profile {
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
+        ORGANIZATION("Organization support within realms", Type.EXPERIMENTAL),
         ;
 
         private final Type type;
