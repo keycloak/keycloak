@@ -105,6 +105,14 @@ if not "x%JAVA_ADD_OPENS%" == "x" (
 )
 set "JAVA_OPTS=%JAVA_OPTS% %JAVA_ADD_OPENS%"
 
+@REM Set the default locale for the JVM to English to prevent locale-specific character variations
+if not "x%JAVA_LOCALE%" == "x" (
+  echo "JAVA_LOCALE already set in environment; overriding default settings with values: %JAVA_LOCALE%"
+) else (
+  set "JAVA_LOCALE=-Duser.language=en -Duser.country=US"
+)
+set "JAVA_OPTS=%JAVA_OPTS% %JAVA_LOCALE%"
+
 if not "x%JAVA_OPTS_APPEND%" == "x" (
   echo "Appending additional Java properties to JAVA_OPTS: %JAVA_OPTS_APPEND%"
   set JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%
