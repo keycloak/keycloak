@@ -59,6 +59,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.utils.StringUtil;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
@@ -512,6 +513,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 }
                 for (String value : values) {
                     updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                }
+                // make sure the last attribute is set with a value
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
+                    updateProfilePage.setAttribute(attribute + "-0", values.get(values.size() - 1));
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
