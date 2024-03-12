@@ -128,3 +128,37 @@ When importing a realm at startup, you are able to use placeholders to resolve v
 In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
 
 </@tmpl.guide>
+
+== Admin Console Import and Export
+
+It is also possible to import and export a realm using {project_name}'s admin console. This functionality is
+different from the other CLI options presented above because the admin console offers only the capability to
+*partially* export a realm. In this case, the current realm settings, along with some resources like clients,
+roles, and groups, can be exported. The realm's users *cannot* be exported using this method.
+
+NOTE: When using the admin console export, the realm and the selected resources are always exported to a file
+named `realm-export.json`. Also, all sensitive values like passwords and client secrets will be masked with `*` symbols.
+
+To export a realm using the admin console, select the realm you want to export, click on `Realm settings`, then
+find the `Action` box in the top right corner of the realm settings screen, and finally select the `Partial export`
+option. You will get a prompt allowing you to select the resources you want to export along with the realm
+configuration. Check the ones you want to export, and click on `Export`.
+
+NOTE: Realms exported from the admin console are not suitable for backups or data transfer between servers.
+Only CLI exports are suitable for backups or data transfer between servers.
+
+WARNING: If there is a great number of groups, roles or clients in your realm, the operation may cause the server to be
+unresponsive to user requests for a while. Use this feature with caution, especially on a production system.
+
+In a similar way, you can import a previously exported realm using the same approach. To do this, go to `Realm settings`,
+then find the `Action` box in the top right corner for the realm settings screen, and finally select the `Partial import`
+option. You will get a prompt that allows you to select the file you want to import, and then, based on the contents
+of this file, you will see the resources you can import along with the realm settings.
+
+You can also control what {project_name} should do if the imported resource already exists. The options are `Fail import`,
+which aborts the import, `Skip`, which skips the duplicate resources without aborting the process, and `Overwrite`, which
+replaces the existing resources with the ones being imported.
+
+NOTE: The admin console partial import can also import files created by the `export` CLI command - i.e. full exports created
+via CLI can be imported via admin console. If the file contains users, they will also be available for importing into the
+current realm.
