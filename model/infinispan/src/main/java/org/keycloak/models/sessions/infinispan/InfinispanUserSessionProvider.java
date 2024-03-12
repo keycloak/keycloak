@@ -273,11 +273,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return wrap(realm, userSessionEntityFromCache, offline);
         }
 
-        /*
-        if (!offline) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             return null;
         }
-         */
 
         // Try to recover from potentially lost offline-sessions by attempting to fetch and re-import
         // the offline session information from the PersistenceProvider.
@@ -364,7 +362,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserSessionPredicate predicate, boolean offline) {
 
-        if (offline || !offline) {
+        if (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
 
             // fetch the offline user-sessions from the persistence provider
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
@@ -424,8 +422,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return wrap(userSession, client, clientSessionEntityFromCache, offline);
         }
 
-        log.debugf("Offline client session is not found in cache, try to load from db, userSession [%s] clientSessionId [%s] clientId [%s]", userSession.getId(), clientSessionId, client.getClientId());
-        return getClientSessionEntityFromPersistenceProvider(userSession, client, offline);
+        if (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            log.debugf("Offline client session is not found in cache, try to load from db, userSession [%s] clientSessionId [%s] clientId [%s]", userSession.getId(), clientSessionId, client.getClientId());
+            return getClientSessionEntityFromPersistenceProvider(userSession, client, offline);
+        }
+
+        return null;
     }
 
     private AuthenticatedClientSessionAdapter getClientSessionEntityFromPersistenceProvider(UserSessionModel userSession, ClientModel client, boolean offline) {
@@ -562,7 +564,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
 
-        if (offline || !offline) {
+        if (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
             return persister.getUserSessionsCountsByClients(realm, offline);
         }
@@ -582,7 +584,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
 
-        if (offline || !offline) {
+        if (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
             return persister.getUserSessionsCount(realm, client, offline);
@@ -636,10 +638,14 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         clusterEventsSenderTx.addEvent(
                 RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+
+        // TODO: This now removes all online +  offline sessions from the store. Need to provide a new interface here to keep the old behavior of only removing online sessions,
+        session.getProvider(UserSessionPersisterProvider.class).onRealmRemoved(realm);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
         removeLocalUserSessions(realmId, false);
+        removeLocalUserSessions(realmId, true);
     }
 
     // public for usage in the testsuite

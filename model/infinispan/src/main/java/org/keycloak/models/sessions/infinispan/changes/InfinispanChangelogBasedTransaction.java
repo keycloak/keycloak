@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -179,717 +180,8 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
-            if (sessionUpdates.getUpdateTasks().size() > 0) {
-                if (cacheName.equals("sessions")) {
-                    try (KeycloakSession session = kcSession.getKeycloakSessionFactory().create()) {
-                        session.getTransactionManager().begin();
-                        try {
-                            if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
-                                session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entry.getKey().toString(), false);
-                            } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
-                                UserSessionEntity entity = (UserSessionEntity) sessionWrapper.getEntity();
-                                session.getProvider(UserSessionPersisterProvider.class).createUserSession(new UserSessionModel() {
-                                    @Override
-                                    public String getId() {
-                                        return entity.getId();
-                                    }
-
-                                    @Override
-                                    public RealmModel getRealm() {
-                                        return session.realms().getRealm(entity.getRealmId());
-                                    }
-
-                                    @Override
-                                    public String getBrokerSessionId() {
-                                        return entity.getBrokerSessionId();
-                                    }
-
-                                    @Override
-                                    public String getBrokerUserId() {
-                                        return entity.getBrokerUserId();
-                                    }
-
-                                    @Override
-                                    public UserModel getUser() {
-                                        return session.users().getUserById(session.realms().getRealm(entity.getRealmId()), entity.getUser());
-                                    }
-
-                                    @Override
-                                    public String getLoginUsername() {
-                                        return entity.getLoginUsername();
-                                    }
-
-                                    @Override
-                                    public String getIpAddress() {
-                                        return entity.getIpAddress();
-                                    }
-
-                                    @Override
-                                    public String getAuthMethod() {
-                                        return entity.getAuthMethod();
-                                    }
-
-                                    @Override
-                                    public boolean isRememberMe() {
-                                        return entity.isRememberMe();
-                                    }
-
-                                    @Override
-                                    public int getStarted() {
-                                        return entity.getStarted();
-                                    }
-
-                                    @Override
-                                    public int getLastSessionRefresh() {
-                                        return entity.getLastSessionRefresh();
-                                    }
-
-                                    @Override
-                                    public void setLastSessionRefresh(int seconds) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public boolean isOffline() {
-                                        return false;
-                                    }
-
-                                    @Override
-                                    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-                                        // This is not used when saving this to the database.
-                                        return Collections.emptyMap();
-                                    }
-
-                                    @Override
-                                    public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public String getNote(String name) {
-                                        return entity.getNotes().get(name);
-                                    }
-
-                                    @Override
-                                    public void setNote(String name, String value) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public void removeNote(String name) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public Map<String, String> getNotes() {
-                                        return entity.getNotes();
-                                    }
-
-                                    @Override
-                                    public State getState() {
-                                        return entity.getState();
-                                    }
-
-                                    @Override
-                                    public void setState(State state) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-                                }, false);
-                            } else {
-                                PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadUserSession(realm, entry.getKey().toString(), false);
-                                if (userSessionModel != null) {
-                                    UserSessionEntity userSessionEntity = new UserSessionEntity() {
-                                        @Override
-                                        public Map<String, String> getNotes() {
-                                            return new HashMap<>() {
-
-                                                @Override
-                                                public String get(Object key) {
-                                                    return userSessionModel.getNotes().get(key);
-                                                }
-
-                                                @Override
-                                                public String put(String key, String value) {
-                                                    String oldValue = userSessionModel.getNotes().get(key);
-                                                    userSessionModel.setNote(key, value);
-                                                    userSessionModel.getUpdatedModel();
-                                                    return oldValue;
-                                                }
-
-                                                @Override
-                                                public String remove(Object key) {
-                                                    String oldValue = userSessionModel.getNotes().get(key);
-                                                    userSessionModel.removeNote(key.toString());
-                                                    return oldValue;
-                                                }
-
-                                                @Override
-                                                public void clear() {
-                                                    userSessionModel.getNotes().forEach((k, v) -> userSessionModel.removeNote(k));
-                                                }
-                                            };
-                                        }
-
-                                        @Override
-                                        public void setLastSessionRefresh(int lastSessionRefresh) {
-                                            userSessionModel.setLastSessionRefresh(lastSessionRefresh);
-                                        }
-
-                                        @Override
-                                        public void setState(UserSessionModel.State state) {
-                                            userSessionModel.setState(state);
-                                        }
-
-                                        @Override
-                                        public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
-                                            return new AuthenticatedClientSessionStore() {
-                                                @Override
-                                                public void clear() {
-                                                    userSessionModel.getAuthenticatedClientSessions().clear();
-                                                }
-                                            };
-                                        }
-
-                                        @Override
-                                        public String getRealmId() {
-                                            return userSessionModel.getRealm().getId();
-                                        }
-
-                                        @Override
-                                        public void setRealmId(String realmId) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getId() {
-                                            return userSessionModel.getId();
-                                        }
-
-                                        @Override
-                                        public void setId(String id) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getUser() {
-                                            return userSessionModel.getUser().getId();
-                                        }
-
-                                        @Override
-                                        public void setUser(String user) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getLoginUsername() {
-                                            return userSessionModel.getLoginUsername();
-                                        }
-
-                                        @Override
-                                        public void setLoginUsername(String loginUsername) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getIpAddress() {
-                                            return userSessionModel.getIpAddress();
-                                        }
-
-                                        @Override
-                                        public void setIpAddress(String ipAddress) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getAuthMethod() {
-                                            return userSessionModel.getAuthMethod();
-                                        }
-
-                                        @Override
-                                        public void setAuthMethod(String authMethod) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public boolean isRememberMe() {
-                                            return userSessionModel.isRememberMe();
-                                        }
-
-                                        @Override
-                                        public void setRememberMe(boolean rememberMe) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public int getStarted() {
-                                            return userSessionModel.getStarted();
-                                        }
-
-                                        @Override
-                                        public void setStarted(int started) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public int getLastSessionRefresh() {
-                                            return userSessionModel.getLastSessionRefresh();
-                                        }
-
-                                        @Override
-                                        public void setNotes(Map<String, String> notes) {
-                                            userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
-                                            notes.forEach((k, v) -> userSessionModel.setNote(k, v));
-                                        }
-
-                                        @Override
-                                        public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public UserSessionModel.State getState() {
-                                            return userSessionModel.getState();
-                                        }
-
-                                        @Override
-                                        public String getBrokerSessionId() {
-                                            return userSessionModel.getBrokerSessionId();
-                                        }
-
-                                        @Override
-                                        public void setBrokerSessionId(String brokerSessionId) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public String getBrokerUserId() {
-                                            return userSessionModel.getBrokerUserId();
-                                        }
-
-                                        @Override
-                                        public void setBrokerUserId(String brokerUserId) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-
-                                        @Override
-                                        public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
-                                            throw new IllegalStateException("not supported");
-                                        }
-                                    };
-                                    sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
-                                        vSessionUpdateTask.runUpdate((V) userSessionEntity);
-                                        if (vSessionUpdateTask.getOperation((V)userSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
-                                            session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entry.getKey().toString(), false);
-                                        }
-                                    });
-                                }
-                            }
-                        } catch (Exception e) {
-                            session.getTransactionManager().setRollbackOnly();
-                            throw e;
-                        }
-                    }
-                }
-
-                if (cacheName.equals("clientSessions")) {
-                    try (KeycloakSession session = kcSession.getKeycloakSessionFactory().create()) {
-                        session.getTransactionManager().begin();
-                        try {
-                            if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
-                                AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
-                                session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
-                            } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
-                                AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
-                                session.getProvider(UserSessionPersisterProvider.class).createClientSession(new AuthenticatedClientSessionModel() {
-                                    @Override
-                                    public int getStarted() {
-                                        return entity.getStarted();
-                                    }
-
-                                    @Override
-                                    public int getUserSessionStarted() {
-                                        return entity.getUserSessionStarted();
-                                    }
-
-                                    @Override
-                                    public boolean isUserSessionRememberMe() {
-                                        return entity.isUserSessionRememberMe();
-                                    }
-
-                                    @Override
-                                    public String getId() {
-                                        return entity.getId().toString();
-                                    }
-
-                                    @Override
-                                    public int getTimestamp() {
-                                        return entity.getTimestamp();
-                                    }
-
-                                    @Override
-                                    public void setTimestamp(int timestamp) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public void detachFromUserSession() {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public UserSessionModel getUserSession() {
-                                        return new UserSessionModel() {
-                                            @Override
-                                            public String getId() {
-                                                return entity.getUserSessionId();
-                                            }
-
-                                            @Override
-                                            public RealmModel getRealm() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getBrokerSessionId() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getBrokerUserId() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public UserModel getUser() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getLoginUsername() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getIpAddress() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getAuthMethod() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public boolean isRememberMe() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public int getStarted() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public int getLastSessionRefresh() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void setLastSessionRefresh(int seconds) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public boolean isOffline() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getNote(String name) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void setNote(String name, String value) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void removeNote(String name) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public Map<String, String> getNotes() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public State getState() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void setState(State state) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-                                        };
-                                    }
-
-                                    @Override
-                                    public String getCurrentRefreshToken() {
-                                        return entity.getCurrentRefreshToken();
-                                    }
-
-                                    @Override
-                                    public void setCurrentRefreshToken(String currentRefreshToken) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public int getCurrentRefreshTokenUseCount() {
-                                        return entity.getCurrentRefreshTokenUseCount();
-                                    }
-
-                                    @Override
-                                    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public String getNote(String name) {
-                                        return entity.getNotes().get(name);
-                                    }
-
-                                    @Override
-                                    public void setNote(String name, String value) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public void removeNote(String name) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public Map<String, String> getNotes() {
-                                        return entity.getNotes();
-                                    }
-
-                                    @Override
-                                    public String getRedirectUri() {
-                                        return entity.getRedirectUri();
-                                    }
-
-                                    @Override
-                                    public void setRedirectUri(String uri) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public RealmModel getRealm() {
-                                        return session.realms().getRealm(entity.getRealmId());
-                                    }
-
-                                    @Override
-                                    public ClientModel getClient() {
-                                        return session.clients().getClientById(session.realms().getRealm(entity.getRealmId()), entity.getClientId());
-                                    }
-
-                                    @Override
-                                    public String getAction() {
-                                        return entity.getAction();
-                                    }
-
-                                    @Override
-                                    public void setAction(String action) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-
-                                    @Override
-                                    public String getProtocol() {
-                                        return entity.getAuthMethod();
-                                    }
-
-                                    @Override
-                                    public void setProtocol(String method) {
-                                        throw new IllegalStateException("not implemented");
-                                    }
-                                }, false);
-                            } else {
-                                AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
-                                ClientModel client = session.clients().getClientById(realm, entity.getClientId());
-                                PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadUserSession(realm, entity.getUserSessionId(), false);
-                                if (userSession != null) {
-                                    PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadClientSession(realm, client, userSession, false);
-                                    if (clientSessionModel != null) {
-                                        AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity(entity.getId()) {
-                                            @Override
-                                            public Map<String, String> getNotes() {
-                                                return new HashMap<>() {
-                                                    @Override
-                                                    public String get(Object key) {
-                                                        return clientSessionModel.getNotes().get(key);
-                                                    }
-
-                                                    @Override
-                                                    public String put(String key, String value) {
-                                                        String oldValue = clientSessionModel.getNotes().get(key);
-                                                        clientSessionModel.setNote(key, value);
-                                                        clientSessionModel.getUpdatedModel();
-                                                        return oldValue;
-                                                    }
-                                                };
-                                            }
-
-                                            @Override
-                                            public void setRedirectUri(String redirectUri) {
-                                                clientSessionModel.setRedirectUri(redirectUri);
-                                            }
-
-                                            @Override
-                                            public void setTimestamp(int timestamp) {
-                                                clientSessionModel.setTimestamp(timestamp);
-                                            }
-
-                                            @Override
-                                            public void setCurrentRefreshToken(String currentRefreshToken) {
-                                                clientSessionModel.setCurrentRefreshToken(currentRefreshToken);
-                                            }
-
-                                            @Override
-                                            public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-                                                clientSessionModel.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
-                                            }
-
-                                            @Override
-                                            public void setAction(String action) {
-                                                clientSessionModel.setAction(action);
-                                            }
-
-                                            @Override
-                                            public void setAuthMethod(String authMethod) {
-                                                clientSessionModel.setProtocol(authMethod);
-                                            }
-
-                                            @Override
-                                            public String getAuthMethod() {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getRedirectUri() {
-                                                return clientSessionModel.getRedirectUri();
-                                            }
-
-                                            @Override
-                                            public int getTimestamp() {
-                                                return clientSessionModel.getTimestamp();
-                                            }
-
-                                            @Override
-                                            public int getUserSessionStarted() {
-                                                return clientSessionModel.getUserSessionStarted();
-                                            }
-
-                                            @Override
-                                            public int getStarted() {
-                                                return clientSessionModel.getStarted();
-                                            }
-
-                                            @Override
-                                            public boolean isUserSessionRememberMe() {
-                                                return clientSessionModel.isUserSessionRememberMe();
-                                            }
-
-                                            @Override
-                                            public String getClientId() {
-                                                return clientSessionModel.getClient().getClientId();
-                                            }
-
-                                            @Override
-                                            public void setClientId(String clientId) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getAction() {
-                                                return clientSessionModel.getAction();
-                                            }
-
-                                            @Override
-                                            public void setNotes(Map<String, String> notes) {
-                                                clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
-                                                notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
-                                            }
-
-                                            @Override
-                                            public String getCurrentRefreshToken() {
-                                                return clientSessionModel.getCurrentRefreshToken();
-                                            }
-
-                                            @Override
-                                            public int getCurrentRefreshTokenUseCount() {
-                                                return clientSessionModel.getCurrentRefreshTokenUseCount();
-                                            }
-
-                                            @Override
-                                            public UUID getId() {
-                                                return UUID.fromString(clientSessionModel.getId());
-                                            }
-
-                                            @Override
-                                            public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-
-                                            @Override
-                                            public String getUserSessionId() {
-                                                return clientSessionModel.getUserSession().getId();
-                                            }
-
-                                            @Override
-                                            public void setUserSessionId(String userSessionId) {
-                                                throw new IllegalStateException("not implemented");
-                                            }
-                                        };
-                                        sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
-                                            vSessionUpdateTask.runUpdate((V) authenticatedClientSessionEntity);
-                                            if (vSessionUpdateTask.getOperation((V) authenticatedClientSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
-                                                session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
-                                            }
-                                        });
-                                    }
-                                } else {
-                                    session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
-                                }
-                            }
-                        } catch (Exception e) {
-                            session.getTransactionManager().setRollbackOnly();
-                            throw e;
-                        }
-                    }
-                }
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                persistUserAndClientSession(entry, sessionUpdates, merged, sessionWrapper, realm);
             }
 
             if (merged != null) {
@@ -898,6 +190,721 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                 // Check if we need to send message to second DC
                 remoteCacheInvoker.runTask(kcSession, realm, cacheName, entry.getKey(), merged, sessionWrapper);
+            }
+        }
+    }
+
+    private void persistUserAndClientSession(Map.Entry<K, SessionUpdatesList<V>> entry, SessionUpdatesList<V> sessionUpdates, MergedUpdate<V> merged, SessionEntityWrapper<V> sessionWrapper, RealmModel realm) {
+        if (!sessionUpdates.getUpdateTasks().isEmpty()) {
+            if (cacheName.equals("sessions")) {
+                try (KeycloakSession session = kcSession.getKeycloakSessionFactory().create()) {
+                    session.getTransactionManager().begin();
+                    try {
+                        if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
+                            session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entry.getKey().toString(), false);
+                        } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
+                            UserSessionEntity entity = (UserSessionEntity) sessionWrapper.getEntity();
+                            session.getProvider(UserSessionPersisterProvider.class).createUserSession(new UserSessionModel() {
+                                @Override
+                                public String getId() {
+                                    return entity.getId();
+                                }
+
+                                @Override
+                                public RealmModel getRealm() {
+                                    return session.realms().getRealm(entity.getRealmId());
+                                }
+
+                                @Override
+                                public String getBrokerSessionId() {
+                                    return entity.getBrokerSessionId();
+                                }
+
+                                @Override
+                                public String getBrokerUserId() {
+                                    return entity.getBrokerUserId();
+                                }
+
+                                @Override
+                                public UserModel getUser() {
+                                    return session.users().getUserById(session.realms().getRealm(entity.getRealmId()), entity.getUser());
+                                }
+
+                                @Override
+                                public String getLoginUsername() {
+                                    return entity.getLoginUsername();
+                                }
+
+                                @Override
+                                public String getIpAddress() {
+                                    return entity.getIpAddress();
+                                }
+
+                                @Override
+                                public String getAuthMethod() {
+                                    return entity.getAuthMethod();
+                                }
+
+                                @Override
+                                public boolean isRememberMe() {
+                                    return entity.isRememberMe();
+                                }
+
+                                @Override
+                                public int getStarted() {
+                                    return entity.getStarted();
+                                }
+
+                                @Override
+                                public int getLastSessionRefresh() {
+                                    return entity.getLastSessionRefresh();
+                                }
+
+                                @Override
+                                public void setLastSessionRefresh(int seconds) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public boolean isOffline() {
+                                    return false;
+                                }
+
+                                @Override
+                                public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+                                    // This is not used when saving this to the database.
+                                    return Collections.emptyMap();
+                                }
+
+                                @Override
+                                public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public String getNote(String name) {
+                                    return entity.getNotes().get(name);
+                                }
+
+                                @Override
+                                public void setNote(String name, String value) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public void removeNote(String name) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public Map<String, String> getNotes() {
+                                    return entity.getNotes();
+                                }
+
+                                @Override
+                                public State getState() {
+                                    return entity.getState();
+                                }
+
+                                @Override
+                                public void setState(State state) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+                            }, false);
+                        } else {
+                            PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadUserSession(realm, entry.getKey().toString(), false);
+                            if (userSessionModel != null) {
+                                UserSessionEntity userSessionEntity = new UserSessionEntity() {
+                                    @Override
+                                    public Map<String, String> getNotes() {
+                                        return new HashMap<>() {
+
+                                            @Override
+                                            public String get(Object key) {
+                                                return userSessionModel.getNotes().get(key);
+                                            }
+
+                                            @Override
+                                            public String put(String key, String value) {
+                                                String oldValue = userSessionModel.getNotes().get(key);
+                                                userSessionModel.setNote(key, value);
+                                                userSessionModel.getUpdatedModel();
+                                                return oldValue;
+                                            }
+
+                                            @Override
+                                            public String remove(Object key) {
+                                                String oldValue = userSessionModel.getNotes().get(key);
+                                                userSessionModel.removeNote(key.toString());
+                                                return oldValue;
+                                            }
+
+                                            @Override
+                                            public void clear() {
+                                                userSessionModel.getNotes().forEach((k, v) -> userSessionModel.removeNote(k));
+                                            }
+                                        };
+                                    }
+
+                                    @Override
+                                    public void setLastSessionRefresh(int lastSessionRefresh) {
+                                        userSessionModel.setLastSessionRefresh(lastSessionRefresh);
+                                    }
+
+                                    @Override
+                                    public void setState(UserSessionModel.State state) {
+                                        userSessionModel.setState(state);
+                                    }
+
+                                    @Override
+                                    public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
+                                        return new AuthenticatedClientSessionStore() {
+                                            @Override
+                                            public void clear() {
+                                                userSessionModel.getAuthenticatedClientSessions().clear();
+                                            }
+                                        };
+                                    }
+
+                                    @Override
+                                    public String getRealmId() {
+                                        return userSessionModel.getRealm().getId();
+                                    }
+
+                                    @Override
+                                    public void setRealmId(String realmId) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getId() {
+                                        return userSessionModel.getId();
+                                    }
+
+                                    @Override
+                                    public void setId(String id) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getUser() {
+                                        return userSessionModel.getUser().getId();
+                                    }
+
+                                    @Override
+                                    public void setUser(String user) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getLoginUsername() {
+                                        return userSessionModel.getLoginUsername();
+                                    }
+
+                                    @Override
+                                    public void setLoginUsername(String loginUsername) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getIpAddress() {
+                                        return userSessionModel.getIpAddress();
+                                    }
+
+                                    @Override
+                                    public void setIpAddress(String ipAddress) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getAuthMethod() {
+                                        return userSessionModel.getAuthMethod();
+                                    }
+
+                                    @Override
+                                    public void setAuthMethod(String authMethod) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public boolean isRememberMe() {
+                                        return userSessionModel.isRememberMe();
+                                    }
+
+                                    @Override
+                                    public void setRememberMe(boolean rememberMe) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public int getStarted() {
+                                        return userSessionModel.getStarted();
+                                    }
+
+                                    @Override
+                                    public void setStarted(int started) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public int getLastSessionRefresh() {
+                                        return userSessionModel.getLastSessionRefresh();
+                                    }
+
+                                    @Override
+                                    public void setNotes(Map<String, String> notes) {
+                                        userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
+                                        notes.forEach((k, v) -> userSessionModel.setNote(k, v));
+                                    }
+
+                                    @Override
+                                    public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public UserSessionModel.State getState() {
+                                        return userSessionModel.getState();
+                                    }
+
+                                    @Override
+                                    public String getBrokerSessionId() {
+                                        return userSessionModel.getBrokerSessionId();
+                                    }
+
+                                    @Override
+                                    public void setBrokerSessionId(String brokerSessionId) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public String getBrokerUserId() {
+                                        return userSessionModel.getBrokerUserId();
+                                    }
+
+                                    @Override
+                                    public void setBrokerUserId(String brokerUserId) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+
+                                    @Override
+                                    public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+                                        throw new IllegalStateException("not supported");
+                                    }
+                                };
+                                sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
+                                    vSessionUpdateTask.runUpdate((V) userSessionEntity);
+                                    if (vSessionUpdateTask.getOperation((V)userSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
+                                        session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entry.getKey().toString(), false);
+                                    }
+                                });
+                            }
+                        }
+                    } catch (Exception e) {
+                        session.getTransactionManager().setRollbackOnly();
+                        throw e;
+                    }
+                }
+            }
+
+            if (cacheName.equals("clientSessions")) {
+                try (KeycloakSession session = kcSession.getKeycloakSessionFactory().create()) {
+                    session.getTransactionManager().begin();
+                    try {
+                        if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
+                            AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
+                            session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+                        } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
+                            AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
+                            session.getProvider(UserSessionPersisterProvider.class).createClientSession(new AuthenticatedClientSessionModel() {
+                                @Override
+                                public int getStarted() {
+                                    return entity.getStarted();
+                                }
+
+                                @Override
+                                public int getUserSessionStarted() {
+                                    return entity.getUserSessionStarted();
+                                }
+
+                                @Override
+                                public boolean isUserSessionRememberMe() {
+                                    return entity.isUserSessionRememberMe();
+                                }
+
+                                @Override
+                                public String getId() {
+                                    return entity.getId().toString();
+                                }
+
+                                @Override
+                                public int getTimestamp() {
+                                    return entity.getTimestamp();
+                                }
+
+                                @Override
+                                public void setTimestamp(int timestamp) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public void detachFromUserSession() {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public UserSessionModel getUserSession() {
+                                    return new UserSessionModel() {
+                                        @Override
+                                        public String getId() {
+                                            return entity.getUserSessionId();
+                                        }
+
+                                        @Override
+                                        public RealmModel getRealm() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getBrokerSessionId() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getBrokerUserId() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public UserModel getUser() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getLoginUsername() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getIpAddress() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getAuthMethod() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public boolean isRememberMe() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public int getStarted() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public int getLastSessionRefresh() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void setLastSessionRefresh(int seconds) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public boolean isOffline() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getNote(String name) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void setNote(String name, String value) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void removeNote(String name) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public Map<String, String> getNotes() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public State getState() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void setState(State state) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+                                    };
+                                }
+
+                                @Override
+                                public String getCurrentRefreshToken() {
+                                    return entity.getCurrentRefreshToken();
+                                }
+
+                                @Override
+                                public void setCurrentRefreshToken(String currentRefreshToken) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public int getCurrentRefreshTokenUseCount() {
+                                    return entity.getCurrentRefreshTokenUseCount();
+                                }
+
+                                @Override
+                                public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public String getNote(String name) {
+                                    return entity.getNotes().get(name);
+                                }
+
+                                @Override
+                                public void setNote(String name, String value) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public void removeNote(String name) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public Map<String, String> getNotes() {
+                                    return entity.getNotes();
+                                }
+
+                                @Override
+                                public String getRedirectUri() {
+                                    return entity.getRedirectUri();
+                                }
+
+                                @Override
+                                public void setRedirectUri(String uri) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public RealmModel getRealm() {
+                                    return session.realms().getRealm(entity.getRealmId());
+                                }
+
+                                @Override
+                                public ClientModel getClient() {
+                                    return session.clients().getClientById(session.realms().getRealm(entity.getRealmId()), entity.getClientId());
+                                }
+
+                                @Override
+                                public String getAction() {
+                                    return entity.getAction();
+                                }
+
+                                @Override
+                                public void setAction(String action) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+
+                                @Override
+                                public String getProtocol() {
+                                    return entity.getAuthMethod();
+                                }
+
+                                @Override
+                                public void setProtocol(String method) {
+                                    throw new IllegalStateException("not implemented");
+                                }
+                            }, false);
+                        } else {
+                            AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
+                            ClientModel client = session.clients().getClientById(realm, entity.getClientId());
+                            PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadUserSession(realm, entity.getUserSessionId(), false);
+                            if (userSession != null) {
+                                PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) session.getProvider(UserSessionPersisterProvider.class).loadClientSession(realm, client, userSession, false);
+                                if (clientSessionModel != null) {
+                                    AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity(entity.getId()) {
+                                        @Override
+                                        public Map<String, String> getNotes() {
+                                            return new HashMap<>() {
+                                                @Override
+                                                public String get(Object key) {
+                                                    return clientSessionModel.getNotes().get(key);
+                                                }
+
+                                                @Override
+                                                public String put(String key, String value) {
+                                                    String oldValue = clientSessionModel.getNotes().get(key);
+                                                    clientSessionModel.setNote(key, value);
+                                                    clientSessionModel.getUpdatedModel();
+                                                    return oldValue;
+                                                }
+                                            };
+                                        }
+
+                                        @Override
+                                        public void setRedirectUri(String redirectUri) {
+                                            clientSessionModel.setRedirectUri(redirectUri);
+                                        }
+
+                                        @Override
+                                        public void setTimestamp(int timestamp) {
+                                            clientSessionModel.setTimestamp(timestamp);
+                                        }
+
+                                        @Override
+                                        public void setCurrentRefreshToken(String currentRefreshToken) {
+                                            clientSessionModel.setCurrentRefreshToken(currentRefreshToken);
+                                        }
+
+                                        @Override
+                                        public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+                                            clientSessionModel.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
+                                        }
+
+                                        @Override
+                                        public void setAction(String action) {
+                                            clientSessionModel.setAction(action);
+                                        }
+
+                                        @Override
+                                        public void setAuthMethod(String authMethod) {
+                                            clientSessionModel.setProtocol(authMethod);
+                                        }
+
+                                        @Override
+                                        public String getAuthMethod() {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getRedirectUri() {
+                                            return clientSessionModel.getRedirectUri();
+                                        }
+
+                                        @Override
+                                        public int getTimestamp() {
+                                            return clientSessionModel.getTimestamp();
+                                        }
+
+                                        @Override
+                                        public int getUserSessionStarted() {
+                                            return clientSessionModel.getUserSessionStarted();
+                                        }
+
+                                        @Override
+                                        public int getStarted() {
+                                            return clientSessionModel.getStarted();
+                                        }
+
+                                        @Override
+                                        public boolean isUserSessionRememberMe() {
+                                            return clientSessionModel.isUserSessionRememberMe();
+                                        }
+
+                                        @Override
+                                        public String getClientId() {
+                                            return clientSessionModel.getClient().getClientId();
+                                        }
+
+                                        @Override
+                                        public void setClientId(String clientId) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getAction() {
+                                            return clientSessionModel.getAction();
+                                        }
+
+                                        @Override
+                                        public void setNotes(Map<String, String> notes) {
+                                            clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
+                                            notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
+                                        }
+
+                                        @Override
+                                        public String getCurrentRefreshToken() {
+                                            return clientSessionModel.getCurrentRefreshToken();
+                                        }
+
+                                        @Override
+                                        public int getCurrentRefreshTokenUseCount() {
+                                            return clientSessionModel.getCurrentRefreshTokenUseCount();
+                                        }
+
+                                        @Override
+                                        public UUID getId() {
+                                            return UUID.fromString(clientSessionModel.getId());
+                                        }
+
+                                        @Override
+                                        public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+
+                                        @Override
+                                        public String getUserSessionId() {
+                                            return clientSessionModel.getUserSession().getId();
+                                        }
+
+                                        @Override
+                                        public void setUserSessionId(String userSessionId) {
+                                            throw new IllegalStateException("not implemented");
+                                        }
+                                    };
+                                    sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
+                                        vSessionUpdateTask.runUpdate((V) authenticatedClientSessionEntity);
+                                        if (vSessionUpdateTask.getOperation((V) authenticatedClientSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
+                                            session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+                                        }
+                                    });
+                                }
+                            } else {
+                                session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+                            }
+                        }
+                    } catch (Exception e) {
+                        session.getTransactionManager().setRollbackOnly();
+                        throw e;
+                    }
+                }
             }
         }
     }
