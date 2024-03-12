@@ -1,4 +1,4 @@
-<#import "pf-5-template.ftl" as layout>
+<#import "template.ftl" as layout>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
