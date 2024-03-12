@@ -78,8 +78,7 @@ public class FipsDistTest {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             dist.assertStopped();
-            // after https://issues.redhat.com/browse/JBTM-3830 reenable this check
-            //cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
 
@@ -127,8 +126,7 @@ public class FipsDistTest {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
             dist.assertStopped();
-            // after https://issues.redhat.com/browse/JBTM-3830 reenable this check
-            //cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
         });
     }
 
