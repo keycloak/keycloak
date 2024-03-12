@@ -1,9 +1,10 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
-import debouncePromise from "awesome-debounce-promise";
-import { ReactNode, useState } from "react";
+import debouncePromise from "p-debounce";
+import { ReactNode, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem, TextControl } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import environment from "../../environment";
 
@@ -48,6 +49,8 @@ export const DiscoveryEndpointField = ({
       setDiscovering(false);
     }
   };
+
+  const discoverDebounced = useMemo(() => debouncePromise(discover, 1000), []);
 
   return (
     <>
@@ -112,10 +115,7 @@ export const DiscoveryEndpointField = ({
           }
           rules={{
             required: t("required"),
-            validate: debouncePromise(
-              async (value: string) => await discover(value),
-              1000,
-            ),
+            validate: (value: string) => discoverDebounced(value),
           }}
         />
       )}

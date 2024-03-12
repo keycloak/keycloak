@@ -171,9 +171,6 @@ importers:
       admin-ui:
         specifier: 'file:'
         version: file:apps/admin-ui(@types/react@18.2.64)(react-monaco-editor@0.51.0)
-      awesome-debounce-promise:
-        specifier: ^2.1.0
-        version: 2.1.0
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -201,6 +198,9 @@ importers:
       monaco-editor:
         specifier: ^0.47.0
         version: 0.47.0
+      p-debounce:
+        specifier: ^4.0.0
+        version: 4.0.0
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -6600,6 +6600,11 @@ packages:
     resolution: {integrity: sha512-o6E5qJV5zkAbIDNhGSIlyOhScKXgQrSRMilfph0clDfM0nEnBOlKlH4sWDmG95BW/CvwNz0vmm7dJVtU2KlMiA==}
     dev: true
 
+  /p-debounce@4.0.0:
+    resolution: {integrity: sha512-4Ispi9I9qYGO4lueiLDhe4q4iK5ERK8reLsuzH6BPaXn53EGaua8H66PXIFGrW897hwjXp+pVLrm/DLxN0RF0A==}
+    engines: {node: '>=12'}
+    dev: false
+
   /p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
@@ -8869,6 +8874,7 @@ packages:
       '@patternfly/react-icons': 4.93.7(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles': 4.92.8
       '@patternfly/react-table': 4.113.6(react-dom@18.2.0)(react@18.2.0)
+      awesome-debounce-promise: 2.1.0
       dagre: 0.8.5
       file-saver: 2.0.5
       file-selector: 0.6.0
