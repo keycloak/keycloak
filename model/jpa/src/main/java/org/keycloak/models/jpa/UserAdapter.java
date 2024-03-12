@@ -196,14 +196,22 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        List<UserAttributeEntity> toRemove = new ArrayList<>();
+        List<UserAttributeEntity> customAttributesToRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
-                toRemove.add(attr);
+                customAttributesToRemove.add(attr);
             }
         }
 
-        if (toRemove.isEmpty()) {
+        if (customAttributesToRemove.isEmpty()) {
+            // make sure root user attributes are set to null
+            if (UserModel.FIRST_NAME.equals(name)) {
+                setFirstName(null);
+            } else if (UserModel.LAST_NAME.equals(name)) {
+                setLastName(null);
+            } else if (UserModel.EMAIL.equals(name)) {
+                setEmail(null);
+            }
             return;
         }
 
@@ -213,7 +221,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         query.setParameter("userId", user.getId());
         query.executeUpdate();
         // KEYCLOAK-3494 : Also remove attributes from local user entity
-        user.getAttributes().removeAll(toRemove);
+        user.getAttributes().removeAll(customAttributesToRemove);
     }
 
     @Override
