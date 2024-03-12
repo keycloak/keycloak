@@ -10,22 +10,19 @@ import {
   PageSection,
   Radio,
   SelectVariant,
-  Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextAreaControl, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useFetch } from "../../utils/useFetch";
 import { toUpperCase } from "../../util";
 import { useParams } from "../../utils/useParams";
@@ -50,7 +47,6 @@ export default function PermissionDetails() {
     mode: "onChange",
   });
   const {
-    register,
     control,
     reset,
     formState: { errors },
@@ -213,84 +209,40 @@ export default function PermissionDetails() {
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
-            <FormGroup
+            <TextControl
+              name="name"
               label={t("name")}
-              isRequired
-              helperTextInvalid={t("required")}
-              validated={errors.name ? "error" : "default"}
-              fieldId="name"
-              labelIcon={
-                <HelpItem helpText={t("permissionName")} fieldLabelId="name" />
-              }
-            >
-              <KeycloakTextInput
-                id="name"
-                validated={errors.name ? "error" : "default"}
-                {...register("name", { required: true })}
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("permissionName")}
+              rules={{ required: t("required") }}
+            />
+            <TextAreaControl
+              name="description"
               label={t("description")}
-              fieldId="description"
-              labelIcon={
-                <HelpItem
-                  helpText={t("permissionDescription")}
-                  fieldLabelId="description"
-                />
-              }
-              validated={errors.description ? "error" : "default"}
-              helperTextInvalid={errors.description?.message}
-            >
-              <KeycloakTextArea
-                id="description"
-                validated={errors.description ? "error" : "default"}
-                {...register("description", {
-                  maxLength: {
-                    value: 255,
-                    message: t("maxLength", { length: 255 }),
-                  },
-                })}
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("permissionDescription")}
+              rules={{
+                maxLength: {
+                  value: 255,
+                  message: t("maxLength", { length: 255 }),
+                },
+              }}
+            />
+            <DefaultSwitchControl
+              name="applyToResourceTypeFlag"
               label={t("applyToResourceTypeFlag")}
-              fieldId="applyToResourceTypeFlag"
-              labelIcon={
-                <HelpItem
-                  helpText={t("applyToResourceTypeFlagHelp")}
-                  fieldLabelId="applyToResourceTypeFlag"
-                />
-              }
-            >
-              <Switch
-                id="applyToResourceTypeFlag"
-                name="applyToResourceTypeFlag"
-                label={t("on")}
-                labelOff={t("off")}
-                isChecked={applyToResourceTypeFlag}
-                onChange={setApplyToResourceTypeFlag}
-                aria-label={t("applyToResourceTypeFlag")}
-              />
-            </FormGroup>
+              labelIcon={t("applyToResourceTypeFlagHelp")}
+              isChecked={applyToResourceTypeFlag}
+              onChange={setApplyToResourceTypeFlag}
+            />
             {applyToResourceTypeFlag ? (
-              <FormGroup
+              <TextControl
+                name="resourceType"
                 label={t("resourceType")}
-                fieldId="resourceType"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("resourceTypeHelp")}
-                    fieldLabelId="resourceType"
-                  />
-                }
-                isRequired={permissionType === "scope"}
-              >
-                <KeycloakTextInput
-                  id="resourceType"
-                  {...register("resourceType", {
-                    required: permissionType === "scope",
-                  })}
-                />
-              </FormGroup>
+                labelIcon={t("resourceTypeHelp")}
+                rules={{
+                  validate: () =>
+                    permissionType === "scope" ? undefined : t("required"),
+                }}
+              />
             ) : (
               <FormGroup
                 label={t("resource")}
