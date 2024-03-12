@@ -126,6 +126,14 @@ else
 fi
 JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
 
+# Set the default locale for the JVM to English to prevent locale-specific character variations
+if [ -z "$JAVA_LOCALE" ]; then
+   JAVA_LOCALE="-Duser.language=en -Duser.country=US"
+else
+   echo "JAVA_LOCALE already set in environment; overriding default settings with values: $JAVA_LOCALE"
+fi
+JAVA_OPTS="$JAVA_OPTS $JAVA_LOCALE"
+
 if [ -n "$JAVA_OPTS_APPEND" ]; then
   echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
