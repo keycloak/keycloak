@@ -18,6 +18,7 @@ export { useStoredState } from "./utils/useStoredState";
 export { isDefined } from "./utils/isDefined";
 export { createNamedContext } from "./utils/createNamedContext";
 export { useRequiredContext } from "./utils/useRequiredContext";
+export { getErrorMessage } from "./utils/getErrorMessage";
 export { UserProfileFields } from "./user-profile/UserProfileFields";
 export {
   setUserProfileServerError,
