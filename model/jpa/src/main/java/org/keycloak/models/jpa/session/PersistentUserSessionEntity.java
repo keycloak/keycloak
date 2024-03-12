@@ -45,6 +45,8 @@ import java.io.Serializable;
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId"),
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.realmId = :realmId AND sess.userId = :userId ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserSessionsByBrokerSessionId", query="select sess from PersistentUserSessionEntity sess where sess.brokerSessionId = :brokerSessionId" +
+                " AND sess.realmId = :realmId AND sess.offline = :offline ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
                 " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
                 " AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
@@ -77,6 +79,9 @@ public class PersistentUserSessionEntity {
 
     @Column(name = "LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
+
+    @Column(name = "BROKER_SESSION_ID")
+    protected String brokerSessionId;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -132,6 +137,14 @@ public class PersistentUserSessionEntity {
 
     public void setOffline(String offline) {
         this.offline = offline;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        this.brokerSessionId = brokerSessionId;
     }
 
     public String getData() {

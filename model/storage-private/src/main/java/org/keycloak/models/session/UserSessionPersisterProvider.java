@@ -86,6 +86,10 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
 
+    default UserSessionModel loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline) {
+        throw new IllegalStateException("not implemented");
+    }
+
     /**
      * Called during startup. For each userSession, it loads also clientSessions.
      * @param firstResult {@code Integer} Index of the first desired user session. Ignored if negative or {@code null}.

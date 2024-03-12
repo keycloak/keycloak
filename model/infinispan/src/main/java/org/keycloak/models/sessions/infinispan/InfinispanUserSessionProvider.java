@@ -323,11 +323,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         String sessionId = persistentUserSession.getId();
 
+        UserSessionEntity ispnUserSessionEntity = getUserSessionEntity(realm, sessionId, offline);
+        // entry is already present in the cache, no need to import
+        if (ispnUserSessionEntity != null) {
+            return ispnUserSessionEntity;
+        }
+
         log.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);
         session.sessions().importUserSessions(Collections.singleton(persistentUserSession), offline);
         log.debugf("user-session imported, trying another lookup for sessionId=%s offline=%s", sessionId, offline);
 
-        UserSessionEntity ispnUserSessionEntity = getUserSessionEntity(realm, sessionId, offline);
+        ispnUserSessionEntity = getUserSessionEntity(realm, sessionId, offline);
 
         if (ispnUserSessionEntity != null) {
             log.debugf("user-session found after import for sessionId=%s offline=%s", sessionId, offline);
@@ -371,7 +377,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 UserModel user = session.users().getUserById(realm, predicate.getUserId());
                 if (user != null) {
                     return persister.loadUserSessionsStream(realm, user, offline, 0, null)
-                            .filter(predicate.toModelPredicate());
+                            .filter(predicate.toModelPredicate())
+                            .map(persistentUserSession -> wrap(realm, importUserSession(realm, offline, persistentUserSession), offline));
                 }
             }
 
@@ -386,14 +393,23 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);
                 return userModel != null ?
                         persister.loadUserSessionsStream(realm, userModel, offline, 0, null)
-                                .filter(predicate.toModelPredicate()):
+                                .filter(predicate.toModelPredicate())
+                                .map(persistentUserSession -> wrap(realm, importUserSession(realm, offline, persistentUserSession), offline)) :
                         Stream.empty();
             }
 
             if (predicate.getClient() != null) {
                 ClientModel client = session.clients().getClientById(realm, predicate.getClient());
                 return persister.loadUserSessionsStream(realm, client, offline, 0, null)
-                        .filter(predicate.toModelPredicate());
+                        .filter(predicate.toModelPredicate())
+                        .map(persistentUserSession -> wrap(realm, importUserSession(realm, offline, persistentUserSession), offline));
+            }
+
+            if (predicate.getBrokerSessionId() != null && !offline) {
+                // we haven't yet migrated the old offline entries, so they don't have a brokerSessionId yet
+                return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), offline))
+                        .filter(predicate.toModelPredicate())
+                        .map(persistentUserSession -> wrap(realm, importUserSession(realm, offline, persistentUserSession), offline));
             }
 
             throw new ModelException("For offline sessions, only lookup by userId, brokerUserId and client is supported");
