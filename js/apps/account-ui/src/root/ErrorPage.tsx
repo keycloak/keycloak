@@ -9,6 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
+import { getErrorMessage as getBaseErrorMessage } from "ui-shared";
 
 type ErrorPageProps = {
   error?: unknown;
@@ -17,7 +18,7 @@ type ErrorPageProps = {
 export const ErrorPage = (props: ErrorPageProps) => {
   const { t } = useTranslation();
   const error = useRouteError() ?? props.error;
-  const errorMessage = getErrorMessage(error);
+  const errorMessage = getErrorMessage(error) ?? t("unknownError");
 
   function onRetry() {
     location.href = location.origin + location.pathname;
@@ -39,27 +40,17 @@ export const ErrorPage = (props: ErrorPageProps) => {
       >
         <TextContent>
           <Text>{t("somethingWentWrongDescription")}</Text>
-          {errorMessage && (
-            <Text component={TextVariants.small}>{errorMessage}</Text>
-          )}
+          <Text component={TextVariants.small}>{errorMessage}</Text>
         </TextContent>
       </Modal>
     </Page>
   );
 };
 
-function getErrorMessage(error: unknown): string | null {
-  if (typeof error === "string") {
-    return error;
-  }
-
+function getErrorMessage(error: unknown) {
   if (isRouteErrorResponse(error)) {
     return error.statusText;
   }
 
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return null;
+  return getBaseErrorMessage(error);
 }

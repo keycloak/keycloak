@@ -34,6 +34,7 @@ export {
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { createNamedContext } from "./utils/createNamedContext";
+export { getErrorMessage } from "./utils/getErrorMessage";
 export { isDefined } from "./utils/isDefined";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { useStoredState } from "./utils/useStoredState";
