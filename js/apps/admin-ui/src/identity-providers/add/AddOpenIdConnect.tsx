@@ -33,6 +33,7 @@ export default function AddOpenIdConnect() {
 
   const form = useForm<IdentityProviderRepresentation>({
     defaultValues: { alias: id },
+    mode: "onChange",
   });
   const {
     handleSubmit,
