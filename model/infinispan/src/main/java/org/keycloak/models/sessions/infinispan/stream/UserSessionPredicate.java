@@ -177,7 +177,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
                 return false;
             }
 
-            if (user != null && !entity.getUser().equals(user)) {
+            if (user != null && !entity.getUser().getId().equals(user)) {
                 return false;
             }
 
