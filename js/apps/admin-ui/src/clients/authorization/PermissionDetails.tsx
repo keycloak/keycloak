@@ -10,6 +10,7 @@ import {
   PageSection,
   Radio,
   SelectVariant,
+  Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -22,7 +23,6 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useFetch } from "../../utils/useFetch";
 import { toUpperCase } from "../../util";
 import { useParams } from "../../utils/useParams";
@@ -213,7 +213,9 @@ export default function PermissionDetails() {
               name="name"
               label={t("name")}
               labelIcon={t("permissionName")}
-              rules={{ required: t("required") }}
+              rules={{
+                required: t("required"),
+              }}
             />
             <TextAreaControl
               name="description"
@@ -226,21 +228,34 @@ export default function PermissionDetails() {
                 },
               }}
             />
-            <DefaultSwitchControl
-              name="applyToResourceTypeFlag"
+            <FormGroup
               label={t("applyToResourceTypeFlag")}
-              labelIcon={t("applyToResourceTypeFlagHelp")}
-              isChecked={applyToResourceTypeFlag}
-              onChange={setApplyToResourceTypeFlag}
-            />
+              fieldId="applyToResourceTypeFlag"
+              labelIcon={
+                <HelpItem
+                  helpText={t("applyToResourceTypeFlagHelp")}
+                  fieldLabelId="applyToResourceTypeFlag"
+                />
+              }
+            >
+              <Switch
+                id="applyToResourceTypeFlag"
+                name="applyToResourceTypeFlag"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={applyToResourceTypeFlag}
+                onChange={setApplyToResourceTypeFlag}
+                aria-label={t("applyToResourceTypeFlag")}
+              />
+            </FormGroup>
             {applyToResourceTypeFlag ? (
               <TextControl
                 name="resourceType"
                 label={t("resourceType")}
                 labelIcon={t("resourceTypeHelp")}
                 rules={{
-                  validate: () =>
-                    permissionType === "scope" ? undefined : t("required"),
+                  required:
+                    permissionType === "scope" ? t("required") : undefined,
                 }}
               />
             ) : (

@@ -9,10 +9,11 @@ import {
   FormGroup,
   Modal,
   Radio,
+  Switch,
 } from "@patternfly/react-core";
+
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { HelpItem } from "ui-shared";
 
 type ImportDialogProps = {
@@ -104,12 +105,26 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 className="pf-u-mb-md"
               />
             </FormGroup>
-            <DefaultSwitchControl
-              name="allowRemoteResourceManagement"
+            <FormGroup
+              hasNoPaddingTop
               label={t("allowRemoteResourceManagement")}
-              labelIcon={t("allowRemoteResourceManagement")}
-              isChecked={imported.allowRemoteResourceManagement}
-            />
+              fieldId="allowRemoteResourceManagement"
+              labelIcon={
+                <HelpItem
+                  helpText={t("allowRemoteResourceManagement")}
+                  fieldLabelId="allowRemoteResourceManagement"
+                />
+              }
+            >
+              <Switch
+                id="allowRemoteResourceManagement"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={imported.allowRemoteResourceManagement}
+                isDisabled
+                aria-label={t("allowRemoteResourceManagement")}
+              />
+            </FormGroup>
           </Form>
           <div className="pf-u-mt-md">
             {Object.entries(imported)
@@ -119,7 +134,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                   <Divider />
                   <p className="pf-u-my-sm">
                     <strong>
-                      {(value as string).length} {t(key)}
+                      {value.length} {t(key)}
                     </strong>
                   </p>
                 </Fragment>
