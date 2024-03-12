@@ -14,12 +14,12 @@ which can be turned on to prevent adding the `iss` parameter to the authenticati
 
 = Wildcard characters handling
 
-JPA allows wildcards `%` and `_` when searching, while other providers like LDAP allow only `*`.
-As `*` is a natural wildcard character in LDAP, it works in all places, while with JPA it only
+JPA allows wildcards `%` and `+_+` when searching, while other providers like LDAP allow only `+*+`.
+As `+*+` is a natural wildcard character in LDAP, it works in all places, while with JPA it only
 worked at the beginning and the end of the search string. Starting with this release the only
-wildcard character is `*` which work consistently across all providers in all places in the search
-string. All special characters in a specific provider like `%` and `_` for JPA are escaped. For exact
-search, with added quotes e.g. `"w*ord"`, the behavior remains the same as in previous releases.
+wildcard character is `+*+` which work consistently across all providers in all places in the search
+string. All special characters in a specific provider like `%` and `+_+` for JPA are escaped. For exact
+search, with added quotes e.g. `+"w*ord"+`, the behavior remains the same as in previous releases.
 
 = Language files for themes default to UTF-8 encoding
 
