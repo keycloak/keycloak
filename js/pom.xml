@@ -27,6 +27,8 @@
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
         <!-- The child projects will package from the 'dist' folder, which is listed as a resource, but isn't a source folder -->
         <maven.build.cache.exclude.value.1>${project.basedir}/dist</maven.build.cache.exclude.value.1>
+        <!-- The clean step is skipped on Windows -->
+        <js.skip.clean>false</js.skip.clean>
     </properties>
 
     <build>
@@ -56,6 +58,8 @@
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <followSymLinks>false</followSymLinks>
+                    <!-- Skip this step if on windows -->
+                    <skip>${js.skip.clean}</skip>
                     <filesets>
                         <fileset>
                             <directory>${basedir}</directory>
@@ -76,4 +80,18 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>clean-when-not-on-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <js.skip.clean>true</js.skip.clean>
+            </properties>
+        </profile>
+    </profiles>
 </project>
