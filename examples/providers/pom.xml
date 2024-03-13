@@ -32,6 +32,5 @@
 
     <modules>
         <module>rest</module>
-        <module>authenticator</module>
     </modules>
 </project>
