@@ -111,9 +111,6 @@ data:
                                   raw-values="true"
                                   shared="true"
                                   segmented="false">
-                        <!-- This is a workaround for the following issue https://github.com/keycloak/keycloak/issues/27117 and should be removed when the issue is fixed -->
-                        <write-behind modification-queue-size="1024"/>
-                        <!-- End of the workaround -->
                         <remote-server host="${env.KC_REMOTE_STORE_HOST}"
                                        port="${env.KC_REMOTE_STORE_PORT}"/> <!--2-->
                         <connection-pool max-active="16"
