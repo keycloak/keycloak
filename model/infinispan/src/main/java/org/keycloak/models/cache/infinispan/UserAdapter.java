@@ -192,8 +192,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeAttribute(String name) {
-        getDelegateForUpdate();
-        updated.removeAttribute(name);
+        if (getFirstAttribute(name) != null) {
+            getDelegateForUpdate();
+            updated.removeAttribute(name);
+        }
     }
 
     @Override
@@ -229,8 +231,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -241,8 +245,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(String action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
