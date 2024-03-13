@@ -25,7 +25,4 @@ public interface OrganizationModel {
 
     String getName();
 
-    void setDomainName(String domainName);
-
-    String getDomainName();
 }
