@@ -204,9 +204,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER, authnRequest.getID());
 
             if (postBinding) {
-                return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
+                return binding.postBinding(SAML2Request.convert(authnRequest)).request(destinationUrl);
             } else {
-                return binding.redirectBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
+                return binding.redirectBinding(SAML2Request.convert(authnRequest)).request(destinationUrl);
             }
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
