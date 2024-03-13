@@ -138,7 +138,7 @@ export default function AttributesGroupForm() {
               <Text component="h2">{t("annotationsText")}</Text>
             </TextContent>
             <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-              ?{" "}
+              {" "}
               <KeyValueInput label={t("annotationsText")} name="annotations" />
             </FormGroup>
             <ActionGroup>
