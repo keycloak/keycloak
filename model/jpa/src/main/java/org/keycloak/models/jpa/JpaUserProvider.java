@@ -1001,15 +1001,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 // All unknown attributes will be assumed as custom attributes
                 default:
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-
                     if (value.length() > 255) {
                         customLongValueSearchAttributes.put(key, value);
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
                         attributePredicates.add(builder.and(
-                                builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                                builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
                     }
                     break;
