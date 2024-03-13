@@ -48,8 +48,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 /**
- * Implementation of a LD-Crypto Suite for Ed25519Signature2018
+ * Implementation of an LD-Crypto Suite for Ed25519Signature2018
  * {@see https://w3c-ccg.github.io/ld-cryptosuite-registry/#ed25519signature2018}
+ * <p>
+ * Canonicalization Algorithm: https://w3id.org/security#URDNA2015
+ * Digest Algorithm: http://w3id.org/digests#sha256
+ * Signature Algorithm: http://w3id.org/security#ed25519
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -57,10 +61,6 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
 
     private final ObjectMapper objectMapper;
     private final SignatureSignerContext signerContext;
-
-    private static final String CANONICALIZATION_ALGORITHM = "https://w3id.org/security#URDNA2015";
-    private static final String DIGEST_ALGORITHM = "http://w3id.org/digests#sha256";
-    private static final String SIGNATURE_ALGORITHM = "http://w3id.org/security#ed25519";
 
     public static final String PROOF_TYPE = "Ed25519Signature2018";
 
@@ -75,7 +75,7 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
         byte[] hashedData = digest(transformedData);
         return sign(hashedData);
     }
-    
+
     private byte[] transform(VerifiableCredential verifiableCredential) {
 
         try {
@@ -121,7 +121,7 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             return md.digest(transformedData);
         } catch (NoSuchAlgorithmException e) {
-            throw new SigningServiceException("Algroithm SHA-256 not supported.", e);
+            throw new SigningServiceException("Algorithm SHA-256 not supported.", e);
         }
     }
 

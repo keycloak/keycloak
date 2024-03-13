@@ -62,7 +62,6 @@ public class LDSigningService extends SigningService<VerifiableCredential> {
             signingKey = signingKey.cloneKey();
             signingKey.setKid(keyId);
         }
-        kid.ifPresent(signingKey::setKid);
         SignatureProvider signatureProvider = keycloakSession.getProvider(SignatureProvider.class, algorithmType);
 
         linkedDataCryptographicSuite = switch (ldpType) {

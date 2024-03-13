@@ -49,7 +49,7 @@ public class LDSigningServiceTest extends SigningServiceTest {
         CryptoIntegration.init(this.getClass().getClassLoader());
     }
 
-    // If an unsupported algorithm is provided, the JWT Sigining Service should not be instantiated.
+    // If an unsupported algorithm is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testUnsupportedLdpType() throws Throwable {
         try {
@@ -69,7 +69,7 @@ public class LDSigningServiceTest extends SigningServiceTest {
         }
     }
 
-    // If no key is provided, the JWT Sigining Service should not be instantiated.
+    // If no key is provided, the JWT Signing Service should not be instantiated.
     @Test(expected = SigningServiceException.class)
     public void testFailIfNoKey() throws Throwable {
         try {
@@ -177,17 +177,6 @@ public class LDSigningServiceTest extends SigningServiceTest {
         String expectedKid = kid.orElse(keyWrapper.getKid());
         assertEquals("The verification method should be set to the key id.", expectedKid, ldProof.getVerificationMethod());
 
-    }
-
-    private static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
-        // we only set one key to the realm, thus can just take the first one
-        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
-        // the key from the `configureTestRealm` method.
-        return keycloakSession
-                .keys()
-                .getKeysStream(keycloakSession.getContext().getRealm())
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No key was configured"));
     }
 
     @Override

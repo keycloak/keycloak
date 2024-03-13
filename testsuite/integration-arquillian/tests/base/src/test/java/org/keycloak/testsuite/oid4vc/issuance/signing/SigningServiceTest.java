@@ -163,7 +163,7 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
 
     protected static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
         // we only set one key to the realm, thus can just take the first one
-        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
+        // if run inside the testsuite, configure is called separated from the test itself, thus we cannot just take
         // the key from the `configureTestRealm` method.
         return keycloakSession
                 .keys()
