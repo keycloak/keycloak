@@ -122,7 +122,7 @@ export default function AttributesGroupForm() {
               label={t("nameField")}
               labelIcon={t("nameHintHelp")}
               rules={{ required: t("required") }}
-              readOnlyVariant={matchingGroup ? "default" : undefined}
+              readOnly={!!matchingGroup}
             />
             <TextControl
               name="displayHeader"
@@ -138,12 +138,8 @@ export default function AttributesGroupForm() {
               <Text component="h2">{t("annotationsText")}</Text>
             </TextContent>
             <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-              <FormProvider {...form}>
-                <KeyValueInput
-                  label={t("annotationsText")}
-                  name="annotations"
-                />
-              </FormProvider>
+              ?{" "}
+              <KeyValueInput label={t("annotationsText")} name="annotations" />
             </FormGroup>
             <ActionGroup>
               <Button
