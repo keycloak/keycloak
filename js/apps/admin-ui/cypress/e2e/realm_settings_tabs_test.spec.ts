@@ -101,13 +101,15 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.fillReplyToEmail("replyTo@email.com");
     realmSettingsPage.fillPort("10");
     cy.findByTestId("email-tab-save").click();
-    cy.get("#kc-display-name-helper").contains("You must enter a valid email.");
-    cy.get("#kc-host-helper").contains("Required field");
+    cy.get("#smtpServer\\.from-helper").contains(
+      "You must enter a valid email.",
+    );
+    cy.get("#smtpServer\\.host-helper").contains("Required field");
 
     cy.findByTestId("email-tab-revert").click();
-    cy.findByTestId("sender-email-address").should("be.empty");
-    cy.findByTestId("from-display-name").should("be.empty");
-    cy.get("#kc-port").should("be.empty");
+    cy.findByTestId("smtpServer.from").should("be.empty");
+    cy.findByTestId("smtpServer.fromDisplayName").should("be.empty");
+    cy.findByTestId("smtpServer.port").should("be.empty");
 
     realmSettingsPage.addSenderEmail("example@example.com");
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);

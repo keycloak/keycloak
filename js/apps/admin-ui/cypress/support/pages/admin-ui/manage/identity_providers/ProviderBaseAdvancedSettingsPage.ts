@@ -79,10 +79,10 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #saveBtn = "idp-details-save";
   #revertBtn = "idp-details-revert";
 
-  #validateSignature = "#validateSignature";
-  #jwksSwitch = "#useJwksUrl";
-  #jwksUrl = "jwksUrl";
-  #pkceSwitch = "#pkceEnabled";
+  #validateSignature = "#config\\.validateSignature";
+  #jwksSwitch = "#config\\.useJwksUrl";
+  #jwksUrl = "config.jwksUrl";
+  #pkceSwitch = "#config\\.pkceEnabled";
   #pkceMethod = "#pkceMethod";
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
@@ -347,9 +347,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertOIDCUrl(url: string) {
     cy.findByTestId("jump-link-openid-connect-settings").click();
-    cy.findByTestId(url + "Url")
-      .clear()
-      .type("invalidUrl");
+    cy.findByTestId(`config.${url}Url`).clear();
+    cy.findByTestId(`config.${url}Url`).type("invalidUrl");
     this.clickSaveBtn();
     masthead.checkNotificationMessage(
       "Could not update the provider The url [" + url + "_url] is malformed",

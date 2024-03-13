@@ -27,20 +27,6 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
---cache-embedded-mtls-enabled <true|false>
-                     Encrypts the network communication between Keycloak servers. Default: false.
---cache-embedded-mtls-key-store-file <file>
-                     The Keystore file path. The Keystore must contain the certificate to use by
-                       the TLS protocol. By default, it lookup 'cache-mtls-keystore.p12' under
-                       conf/ directory.
---cache-embedded-mtls-key-store-password <password>
-                     The password to access the Keystore.
---cache-embedded-mtls-trust-store-file <file>
-                     The Truststore file path. It should contain the trusted certificates or the
-                       Certificate Authority that signed the certificates. By default, it lookup
-                       'cache-mtls-truststore.p12' under conf/ directory.
---cache-embedded-mtls-trust-store-password <password>
-                     The password to access the Truststore.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.

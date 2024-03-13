@@ -30,6 +30,7 @@ export default function AddSamlConnect() {
 
   const form = useForm<DiscoveryIdentityProvider>({
     defaultValues: { alias: id, config: { allowCreate: "true" } },
+    mode: "onChange",
   });
   const {
     handleSubmit,

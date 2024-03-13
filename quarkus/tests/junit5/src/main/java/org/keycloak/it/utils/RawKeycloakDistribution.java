@@ -79,10 +79,6 @@ import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
 
-    // TODO: reconsider the hardcoded timeout once https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak
-    // ensures that the total wait time (two minutes for readiness + 200 seconds) is longer than the transaction timeout of 5 minutes
-    private static final int LONG_SHUTDOWN_WAIT = 200;
-
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
     private static final Logger LOG = Logger.getLogger(RawKeycloakDistribution.class);
@@ -166,7 +162,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 destroyDescendantsOnWindows(keycloak, false);
 
                 keycloak.destroy();
-                keycloak.waitFor(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
+                keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
@@ -266,7 +262,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public void assertStopped() {
         try {
             if (keycloak != null) {
-                keycloak.onExit().get(LONG_SHUTDOWN_WAIT, TimeUnit.SECONDS);
+                keycloak.onExit().get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -276,7 +272,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         } catch (TimeoutException e) {
             LOG.warn("Process did not exit as expected, will attempt a thread dump");
             threadDump();
-            LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
+            throw new RuntimeException(e);
         }
     }
 
@@ -297,9 +293,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 threadDump();
-                LOG.warn("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
-                LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
-                return;
+                throw new IllegalStateException(
+                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
 
             if (!keycloak.isAlive()) {
