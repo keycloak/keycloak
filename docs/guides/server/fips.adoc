@@ -41,7 +41,7 @@ BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-j
 `KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle Keycloak dependencies. The supported BCFIPS bits needed are:
 
 * `bc-fips-1.0.2.3.jar`
-* `bctls-fips-1.0.16.jar`
+* `bctls-fips-1.0.18.jar`
 * `bcpkix-fips-1.0.7.jar`
 
 == Generating keystore
