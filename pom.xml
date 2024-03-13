@@ -2080,5 +2080,17 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>extensions</id>
+            <activation>
+                <property>
+                    <name>extensions</name>
+                </property>
+            </activation>
+            <modules>
+                <module>extensions</module>
+            </modules>
+        </profile>
+
     </profiles>
 </project>
