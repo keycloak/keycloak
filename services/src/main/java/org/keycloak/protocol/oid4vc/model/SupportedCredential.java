@@ -1,17 +1,31 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SupportedCredential {
@@ -21,7 +35,7 @@ public class SupportedCredential {
     @JsonIgnore
     private static final String FORMAT_KEY = "format";
     @JsonIgnore
-    private static final String TYPES_KEY = "types";
+    private static final String SCOPE_KEY = "scope";
     @JsonIgnore
     private static final String CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY = "cryptographic_binding_methods_supported";
     @JsonIgnore
@@ -36,8 +50,8 @@ public class SupportedCredential {
     @JsonProperty(FORMAT_KEY)
     private Format format;
 
-    @JsonProperty(TYPES_KEY)
-    private List<String> types;
+    @JsonProperty(SCOPE_KEY)
+    private String scope;
 
     @JsonProperty(CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY)
     private List<String> cryptographicBindingMethodsSupported;
@@ -60,12 +74,12 @@ public class SupportedCredential {
         return this;
     }
 
-    public List<String> getTypes() {
-        return types;
+    public String getScope() {
+        return scope;
     }
 
-    public SupportedCredential setTypes(List<String> types) {
-        this.types = types;
+    public SupportedCredential setScope(String scope) {
+        this.scope = scope;
         return this;
     }
 
@@ -120,7 +134,7 @@ public class SupportedCredential {
     public Map<String, String> toDotNotation() {
         Map<String, String> dotNotation = new HashMap<>();
         Optional.ofNullable(format).ifPresent(format -> dotNotation.put(id + DOT_SEPERATOR + FORMAT_KEY, format.toString()));
-        Optional.ofNullable(types).ifPresent(types -> dotNotation.put(id + DOT_SEPERATOR + TYPES_KEY, String.join(",", types)));
+        Optional.ofNullable(scope).ifPresent(scope -> dotNotation.put(id + DOT_SEPERATOR + SCOPE_KEY, scope));
         Optional.ofNullable(cryptographicBindingMethodsSupported).ifPresent(types ->
                 dotNotation.put(id + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY, String.join(",", cryptographicBindingMethodsSupported)));
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
@@ -138,11 +152,8 @@ public class SupportedCredential {
 
         SupportedCredential supportedCredential = new SupportedCredential().setId(credentialId);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredential::setFormat);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + SCOPE_KEY)).ifPresent(supportedCredential::setScope);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + EXPIRY_KEY)).map(Long::valueOf).ifPresent(supportedCredential::setExpiryInSeconds);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + TYPES_KEY))
-                .map(types -> types.split(","))
-                .map(Arrays::asList)
-                .ifPresent(supportedCredential::setTypes);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
                 .map(cbms -> cbms.split(","))
                 .map(Arrays::asList)
@@ -171,7 +182,7 @@ public class SupportedCredential {
 
         if (getId() != null ? !getId().equals(that.getId()) : that.getId() != null) return false;
         if (getFormat() != that.getFormat()) return false;
-        if (getTypes() != null ? !getTypes().equals(that.getTypes()) : that.getTypes() != null) return false;
+        if (getScope() != null ? !getScope().equals(that.getScope()) : that.getScope() != null) return false;
         if (getCryptographicBindingMethodsSupported() != null ? !getCryptographicBindingMethodsSupported().equals(that.getCryptographicBindingMethodsSupported()) : that.getCryptographicBindingMethodsSupported() != null)
             return false;
         if (getCryptographicSuitesSupported() != null ? !getCryptographicSuitesSupported().equals(that.getCryptographicSuitesSupported()) : that.getCryptographicSuitesSupported() != null)
@@ -184,7 +195,7 @@ public class SupportedCredential {
     public int hashCode() {
         int result = getId() != null ? getId().hashCode() : 0;
         result = 31 * result + (getFormat() != null ? getFormat().hashCode() : 0);
-        result = 31 * result + (getTypes() != null ? getTypes().hashCode() : 0);
+        result = 31 * result + (getScope() != null ? getScope().hashCode() : 0);
         result = 31 * result + (getCryptographicBindingMethodsSupported() != null ? getCryptographicBindingMethodsSupported().hashCode() : 0);
         result = 31 * result + (getCryptographicSuitesSupported() != null ? getCryptographicSuitesSupported().hashCode() : 0);
         result = 31 * result + (getDisplay() != null ? getDisplay().hashCode() : 0);

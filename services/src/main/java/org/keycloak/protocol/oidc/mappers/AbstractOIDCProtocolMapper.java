@@ -89,8 +89,8 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         boolean shouldUseLightweightToken = getShouldUseLightweightToken(session);
-        boolean includeInAccessToken = shouldUseLightweightToken ?  OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : OIDCAttributeMapperHelper.includeInAccessToken(mappingModel);
-        if (!includeInAccessToken){
+        boolean includeInAccessToken = shouldUseLightweightToken ? OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : OIDCAttributeMapperHelper.includeInAccessToken(mappingModel);
+        if (!includeInAccessToken) {
             return token;
         }
 
@@ -101,7 +101,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                     UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)){
+        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) {
             return token;
         }
 
@@ -122,9 +122,9 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     public AccessToken transformIntrospectionToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+                                                   UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
-        if (!OIDCAttributeMapperHelper.includeInIntrospection(mappingModel)){
+        if (!OIDCAttributeMapperHelper.includeInIntrospection(mappingModel)) {
             return token;
         }
 
@@ -134,10 +134,10 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     *
      * @param token
      * @param mappingModel
      * @param userSession
-     *
      * @deprecated override {@link #setClaim(IDToken, ProtocolMapperModel, UserSessionModel, KeycloakSession, ClientSessionContext)} instead.
      */
     @Deprecated
@@ -146,6 +146,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     *
      * @param token
      * @param mappingModel
      * @param userSession
@@ -160,6 +161,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
 
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     *
      * @param accessTokenResponse
      * @param mappingModel
      * @param userSession

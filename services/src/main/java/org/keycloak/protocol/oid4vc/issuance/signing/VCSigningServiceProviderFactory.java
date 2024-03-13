@@ -25,6 +25,7 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -37,13 +38,13 @@ import java.time.Clock;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService>, EnvironmentDependentProviderFactory {
+public interface VCSigningServiceProviderFactory extends ComponentFactory<VerifiableCredentialsSigningService, VerifiableCredentialsSigningService>, OID4VCEnvironmentProviderFactory {
 
     /**
      * Key for the realm attribute providing the issuerDidy.
      */
     String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
-    
+
     public static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 .property(SigningProperties.KEY_ID.asConfigProperty());
