@@ -13,7 +13,12 @@ import {
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { FormPanel, HelpItem, SwitchControl, TextControl, PasswordControl } from "ui-shared";
+import {
+  FormPanel,
+  SwitchControl,
+  TextControl,
+  PasswordControl,
+} from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
@@ -42,15 +47,7 @@ export const RealmSettingsEmailTab = ({
   const currentUser = useCurrentUser();
 
   const form = useForm<FormFields>({ defaultValues: realm });
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    reset: resetForm,
-    getValues,
-    formState: { errors },
-  } = form;
+  const { control, handleSubmit, watch, reset: resetForm, getValues } = form;
 
   const reset = () => resetForm(realm);
   const watchFromValue = watch("smtpServer.from", "");
@@ -219,15 +216,14 @@ export const RealmSettingsEmailTab = ({
                     required: t("required"),
                   }}
                 />
-              <PasswordControl
-                name="smtpServer.password"
+                <PasswordControl
+                  name="smtpServer.password"
                   label={t("password")}
-                labelIcon={t("passwordHelp")}
-                rules={{
-                  required: t("required"),
-                }}
-
-              />
+                  labelIcon={t("passwordHelp")}
+                  rules={{
+                    required: t("required"),
+                  }}
+                />
               </>
             )}
             {currentUser && (
