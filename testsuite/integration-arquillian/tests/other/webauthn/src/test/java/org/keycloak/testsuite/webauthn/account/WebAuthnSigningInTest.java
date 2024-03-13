@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.webauthn.account;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.junit.Ignore;
 import org.keycloak.admin.client.resource.UserResource;
@@ -29,7 +28,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.theme.DateTimeFormatterUtil;
 
 import java.io.Closeable;

@@ -27,35 +27,27 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LoggedInPageHeader extends AbstractHeader {
-    @FindBy(id = "signOutButton")
+    @FindBy(xpath = "//*[@data-testid='options']//a[text() = 'Sign out']")
     private WebElement logoutBtn;
-    @FindBy(id = "signOutLink")
+    @FindBy(xpath = "//*[@data-testid='options-kebab']//a[text() = 'Sign out']")
     private WebElement logoutBtnMobile;
-
-    @FindBy(id = "locale-dropdown-toggle")
-    private WebElement localeBtn;
-    @FindBy(id = "mobile-locale")
-    private WebElement localeBtnMobile;
-
-    @FindBy(xpath = "//ul[@aria-labelledby='locale-dropdown-toggle']")
-    private WebElement localeDropdown;
-    @FindBy(xpath = "//section[@aria-labelledby='mobile-locale']")
-    private WebElement localeDropdownMobile;
 
     @FindBy(id = "referrerLink")
     private WebElement referrerLink;
     @FindBy(id = "referrerMobileLink")
     private WebElement referrerLinkMobile;
 
-    @FindBy(id = "landingMobileDropdown")
-    private WebElement mobileKebab;
+    @FindBy(xpath = "//*[@data-testid='options']")
+    private WebElement options;
+    @FindBy(xpath = "//*[@data-testid='options-kebab']")
+    private WebElement optionsMobile;
 
     @FindBy(id = "loggedInUser")
     private WebElement toolbarLoggedInUser;
 
     @Override
-    public void clickMobileKebab() {
-        clickLink(mobileKebab);
+    public void clickOptions() {
+        clickLink(isMobileLayout() ? optionsMobile : options);
     }
 
     @Override

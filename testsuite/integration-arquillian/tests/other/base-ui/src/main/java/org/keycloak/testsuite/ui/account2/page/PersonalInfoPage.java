@@ -57,7 +57,7 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     @Override
     public String getPageId() {
-        return "personal-info";
+        return "/";
     }
 
     public void assertUsernameDisabled(boolean expected) {

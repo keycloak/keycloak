@@ -25,7 +25,6 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorF
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -33,8 +32,6 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
@@ -57,9 +54,6 @@ import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUI
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-// Enable ACCOUNT3 feature once https://github.com/keycloak/keycloak/issues/26080 is resolved
-@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
-@DisableFeature(value = Profile.Feature.ACCOUNT3, skipRestart = true)
 public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest implements UseVirtualAuthenticators {
 
     @Page

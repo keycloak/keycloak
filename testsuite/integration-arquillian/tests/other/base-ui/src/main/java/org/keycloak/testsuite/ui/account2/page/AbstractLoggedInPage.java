@@ -34,9 +34,9 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractLoggedInPage extends AbstractAccountPage {
-    public static final String ACCOUNT_SECURITY_ID = "security";
+    public static final String ACCOUNT_SECURITY_ID = "account-security";
 
-    @FindBy(xpath = "//*[@id='main_react_container']//header")
+    @FindBy(xpath = "//div[@id='app']//header[@class='pf-c-page__header']")
     private LoggedInPageHeader header;
 
     @FindBy(id = "page-sidebar")
@@ -121,10 +121,5 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
 
     public void clickBrandLink() {
         clickLink(brandLink);
-    }
-
-    @Override
-    public boolean isCurrent() {
-        return super.isCurrent() && getPageId().equals(sidebar().getActiveNavId());
     }
 }

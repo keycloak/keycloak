@@ -54,7 +54,7 @@ public class WelcomeScreenHeader extends AbstractHeader {
     private WebElement toolbarLoggedInUser;
 
     @Override
-    public void clickMobileKebab() {
+    public void clickOptions() {
         clickLink(mobileKebab);
     }
 

@@ -44,6 +44,6 @@ public abstract class AbstractAccountPage extends AuthRealm {
             fragment = "/" + String.join("/", hashPath);
         }
 
-        return super.createUriBuilder().path("account/").fragment(fragment);
+        return super.createUriBuilder().path("account/").path(fragment);
     }
 }

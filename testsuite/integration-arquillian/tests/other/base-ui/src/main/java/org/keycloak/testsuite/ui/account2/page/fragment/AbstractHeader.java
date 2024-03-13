@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.ui.account2.page.fragment;
 
-import org.jboss.arquillian.graphene.fragment.Root;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import static org.junit.Assert.assertEquals;
@@ -31,9 +29,6 @@ import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
  */
 public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
     public static int MOBILE_WIDTH = 991;
-
-    @Root
-    private WebElement headerRoot;
 
     @Override
     protected int getMobileWidth() {
@@ -60,32 +55,22 @@ public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
         return getToolsBtnText(getReferrerLink());
     }
 
-    public abstract void clickMobileKebab();
+    public abstract void clickOptions();
 
     protected abstract WebElement getLogoutBtn ();
 
     protected abstract WebElement getReferrerLink();
 
     protected void clickToolsBtn(WebElement btn) {
-        if (!isMobileLayout()) {
-            clickLink(btn);
-        }
-        else {
-            clickMobileKebab();
-            clickLink(btn);
-        }
+        clickOptions();
+        clickLink(btn);
     }
 
     protected boolean isToolsBtnVisible(WebElement btn) {
-        if (!isMobileLayout()) {
-            return isElementVisible(btn);
-        }
-        else {
-            clickMobileKebab();
-            boolean ret = isElementVisible(btn);
-            clickMobileKebab(); // hide the dropdown again
-            return ret;
-        }
+        clickOptions();
+        boolean ret = isElementVisible(btn);
+        clickOptions(); // hide the dropdown again
+        return ret;
     }
 
     protected void assertToolsBtnVisible(boolean expected, WebElement btn) {
@@ -95,15 +80,10 @@ public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
     }
 
     protected String getToolsBtnText(WebElement btn) {
-        if (!isMobileLayout()) {
-            return getTextFromElement(btn);
-        }
-        else {
-            clickMobileKebab();
-            String ret = getTextFromElement(btn);
-            clickMobileKebab(); // hide the dropdown again
-            return ret;
-        }
+        clickOptions();
+        String ret = getTextFromElement(btn);
+        clickOptions(); // hide the dropdown again
+        return ret;
     }
 
     protected String getLocaleElementIdPrefix() {

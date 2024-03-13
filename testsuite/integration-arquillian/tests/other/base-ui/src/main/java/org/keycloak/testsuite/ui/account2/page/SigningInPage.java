@@ -38,7 +38,7 @@ public class SigningInPage extends AbstractLoggedInPage {
 
     @Override
     public String getPageId() {
-        return "signingin";
+        return "signing-in";
     }
 
     @Override
@@ -61,9 +61,9 @@ public class SigningInPage extends AbstractLoggedInPage {
 
     public class CredentialType {
         private static final String NOT_SET_UP = "not-set-up";
-        private static final String SET_UP = "set-up";
-        private static final String TITLE = "cred-title";
-        private static final String HELP = "cred-help";
+        private static final String SET_UP_TEST_ID = "create";
+        private static final String TITLE = "title";
+        private static final String HELP = "help-text";
 
         private final String type;
 
@@ -75,13 +75,13 @@ public class SigningInPage extends AbstractLoggedInPage {
             return type;
         }
 
-        private WebElement getItemElement(String item) {
-            String elementId = String.format("%s-%s", type, item);
-            return driver.findElement(By.id(elementId));
+        private WebElement getItemElementByTestId(String item) {
+            String xpath = String.format("//*[@data-testid = '%s/%s']", type, item);
+            return driver.findElement(By.xpath(xpath));
         }
 
         public int getUserCredentialsCount() {
-            String xpath = String.format("//li[starts-with(@id,'%s')]", type + "-" + UserCredential.ROW);
+            String xpath = String.format("//*[@data-testid='%s/credential-list']//div[starts-with(@id,'cred-')]", type);
             return driver.findElements(By.xpath(xpath)).size();
         }
 
@@ -93,7 +93,7 @@ public class SigningInPage extends AbstractLoggedInPage {
             boolean notSetUpLabelPresent;
 
             try {
-                notSetUpLabelPresent = getItemElement(NOT_SET_UP).isDisplayed();
+                notSetUpLabelPresent = getItemElementByTestId(NOT_SET_UP).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 notSetUpLabelPresent = false;
@@ -113,12 +113,12 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         public void clickSetUpLink() {
-            clickLink(getItemElement(SET_UP));
+            clickLink(getItemElementByTestId(SET_UP_TEST_ID));
         }
 
         public boolean isSetUpLinkVisible() {
             try {
-                return getItemElement(SET_UP).isDisplayed();
+                return getItemElementByTestId(SET_UP_TEST_ID).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 return false;
@@ -127,7 +127,7 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public boolean isNotSetUpLabelVisible() {
             try {
-                return getItemElement(NOT_SET_UP).isDisplayed();
+                return getItemElementByTestId(NOT_SET_UP).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 return false;
@@ -136,7 +136,7 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public boolean isTitleVisible() {
             try {
-                return getItemElement(TITLE).isDisplayed();
+                return getItemElementByTestId(TITLE).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 return false;
@@ -144,28 +144,26 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         public String getTitle() {
-            return getTextFromElement(getItemElement(TITLE));
+            return getTextFromElement(getItemElementByTestId(TITLE));
         }
 
         public String getHelpText() {
-            return getTextFromElement(getItemElement(HELP));
+            return getTextFromElement(getItemElementByTestId(HELP));
         }
     }
 
     public class UserCredential {
-        private static final String ROW = "row";
         private static final String LABEL = "label";
         private static final String CREATED_AT = "created-at";
+        private static final String CREDENTIAL_CREATED_AT = "Created ";
         private static final String UPDATE = "update";
         private static final String REMOVE = "remove";
 
         private final String fullId;
-        private final String id;
         private final CredentialType credentialType;
 
         private UserCredential(String id, CredentialType credentialType) {
             this.fullId = id;
-            this.id = id.substring(0,8);
             this.credentialType = credentialType;
         }
 
@@ -178,8 +176,8 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         private WebElement getItemElement(String item) {
-            String elementId = String.format("%s-%s-%s", credentialType.getType(), item, id);
-            return driver.findElement(By.id(elementId));
+            String elementId = String.format("//*[@data-testid='%s/credential-list']//div[@id='cred-%s']//*[@data-testrole='%s']", credentialType.getType(), fullId, item);
+            return driver.findElement(By.xpath(elementId));
         }
 
         private boolean isItemDisplayed(String item) {
@@ -196,7 +194,7 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         public String getUserLabel() {
-            return getTextFromItem(LABEL);
+            return getTextFromElement(getItemElement(LABEL));
         }
 
         public boolean hasCreatedAt() {
@@ -209,10 +207,13 @@ public class SigningInPage extends AbstractLoggedInPage {
         }
 
         public String getCreatedAtStr() {
-            String lastCreatedAtText = getTextFromElement(
-                    driver.findElement(By.cssSelector("[id*='" + CREATED_AT + "'] strong")));
+            String lastCreatedAtLabelXpath = String.format("//*[@data-testid='%s/credential-list']//div[@id='cred-%s']//*[@data-testrole='%s']/strong", credentialType.getType(), fullId, CREATED_AT);
+            String lastCreatedAtLabel = getTextFromElement(driver.findElement(By.xpath(lastCreatedAtLabelXpath)));
+            String lastCreateAtText = getTextFromItem(CREATED_AT);
 
-            return getTextFromItem(CREATED_AT).substring(lastCreatedAtText.length()).trim();
+            return lastCreateAtText
+              .substring(lastCreatedAtLabel.length(), lastCreateAtText.length() - 1)  // remove label, drop last dot
+              .trim();
         }
 
         public LocalDateTime getCreatedAt() {
@@ -237,7 +238,7 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public boolean isPresent() {
             try {
-                return getItemElement(ROW).isDisplayed();
+                return getItemElement(LABEL).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 return false;
