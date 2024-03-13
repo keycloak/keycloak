@@ -185,8 +185,6 @@ While this mode is easy to set up, it also has some disadvantages:
 * The InApp-Browser might also be slower, especially when rendering more complex themes.
 * There are security concerns to consider, before using this mode, such as that it is possible for the app to gain access to the credentials of the user, as it has full control of the browser rendering the login page, so do not allow its use in apps you do not trust.
 
-Use this example app to help you get started: https://github.com/keycloak/keycloak/tree/master/examples/cordova
-
 The alternative mode  is`cordova-native`, which takes a different approach. It opens the login page using the system's browser. After the user has authenticated, the browser redirects back into the application using a special URL. From there, the {project_name} adapter can finish the login by reading the code or token from the URL.
 
 You can activate the native mode by passing the adapter type `cordova-native` to the `init()` method:
@@ -220,8 +218,6 @@ Furthermore, we recommend the following steps to improve compatibility with the 
 ----
 <preference name="AndroidLaunchMode" value="singleTask" />
 ----
-
-There is an example app that shows how to use the native-mode: https://github.com/keycloak/keycloak/tree/master/examples/cordova-native
 
 [#custom-adapters]
 ==== Custom Adapters

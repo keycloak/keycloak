@@ -1894,18 +1894,6 @@
             </modules>
         </profile>
 
-        <profile>
-            <id>examples</id>
-            <activation>
-                <property>
-                    <name>!skipExamples</name>
-                </property>
-            </activation>
-            <modules>
-                <module>examples</module>
-            </modules>
-        </profile>
-
         <!-- Profile to activate EAP8 Adapters Build -->
         <profile>
             <id>eap8-adapters</id>
