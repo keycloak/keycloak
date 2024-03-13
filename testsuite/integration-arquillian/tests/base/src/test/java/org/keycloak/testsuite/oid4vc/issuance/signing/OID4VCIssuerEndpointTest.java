@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -12,6 +13,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.signing.JwtSigningService;
@@ -24,6 +26,7 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 
@@ -50,6 +53,40 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         httpClient = HttpClientBuilder.create().build();
     }
 
+    @Test(expected = BadRequestException.class)
+    public void testGetCredentialOfferUriUnsupportedCredential() throws Throwable {
+        String token = tokenUtil.getToken();
+        try {
+            testingClient.server(TEST_REALM_NAME)
+                    .run((session -> {
+                        OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, token);
+                        oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id");
+
+                    }));
+        } catch (Exception e) {
+            if (e instanceof RunOnServerException) {
+                throw e.getCause();
+            }
+            throw e;
+        }
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void testGetCredentialOfferUriUnauthorized() throws Throwable {
+        try {
+            testingClient.server(TEST_REALM_NAME)
+                    .run((session -> {
+                        OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, null);
+                        oid4VCIssuerEndpoint.getCredentialOfferURI("inexistent-id");
+                    }));
+        } catch (Exception e) {
+            if (e instanceof RunOnServerException) {
+                throw e.getCause();
+            }
+            throw e;
+        }
+    }
+
     @Test
     public void testGetCredentialOfferURI() {
         String token = tokenUtil.getToken();
@@ -57,24 +94,8 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                 .server(TEST_REALM_NAME)
                 .run((session) -> {
                     try {
-                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                        authenticator.setTokenString(token);
+                        OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, token);
 
-                        TimeProvider timeProvider = new OID4VCTest.StaticTimeProvider(1000);
-                        JwtSigningService jwtSigningService = new JwtSigningService(
-                                session,
-                                getKeyFromSession(session).getKid(),
-                                Algorithm.RS256,
-                                "JWT",
-                                "did:web:issuer.org",
-                                timeProvider);
-                        OID4VCIssuerEndpoint oid4VCIssuerEndpoint = new OID4VCIssuerEndpoint(
-                                session,
-                                "did:web:issuer.org",
-                                Map.of(Format.JWT_VC, jwtSigningService),
-                                authenticator,
-                                new ObjectMapper(),
-                                timeProvider);
                         Response response = oid4VCIssuerEndpoint.getCredentialOfferURI("test-credential");
 
                         assertEquals("An offer uri should have been returned.", HttpStatus.SC_OK, response.getStatus());
@@ -86,6 +107,27 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     }
                 });
 
+    }
+
+    private static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, String token) {
+        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+        authenticator.setTokenString(token);
+
+        TimeProvider timeProvider = new OID4VCTest.StaticTimeProvider(1000);
+        JwtSigningService jwtSigningService = new JwtSigningService(
+                session,
+                getKeyFromSession(session).getKid(),
+                Algorithm.RS256,
+                "JWT",
+                "did:web:issuer.org",
+                timeProvider);
+        return new OID4VCIssuerEndpoint(
+                session,
+                "did:web:issuer.org",
+                Map.of(Format.JWT_VC, jwtSigningService),
+                authenticator,
+                new ObjectMapper(),
+                timeProvider);
     }
 
     private String getBasePath(String realm) {
@@ -134,9 +176,10 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                 .auth(token)
                 .asResponse();
 
-        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatus());
+        assertEquals("The credential should have successfully been responded.", HttpStatus.SC_OK, credentialResponse.getStatus());
         CredentialResponse credentialResponseVO = new ObjectMapper().convertValue(credentialResponse.asJson(), CredentialResponse.class);
-
+        assertEquals("Credential should be in the requested format.", offeredCredential.getFormat(), credentialResponseVO.getFormat());
+        assertNotNull("The credential should have been responded.", credentialResponseVO.getCredential());
     }
 
     @Override

@@ -28,13 +28,13 @@ public class OID4VCClientRegistrationProviderTest {
                         Map.of(
                                 "vc.credential-id.expiry_in_s", "100",
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
-                                "vc.credential-id.types", "VerifiableCredential"),
+                                "vc.credential-id.scope", "VerifiableCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredential()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setExpiryInSeconds(100l)
-                                        .setTypes(List.of("VerifiableCredential"))),
+                                        .setScope("VerifiableCredential")),
                                 null, null)
                 },
                 {
@@ -42,32 +42,32 @@ public class OID4VCClientRegistrationProviderTest {
                         Map.of(
                                 "vc.credential-id.expiry_in_s", "100",
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
-                                "vc.credential-id.types", "VerifiableCredential,AnotherCredential"),
+                                "vc.credential-id.scope", "AnotherCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredential()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setExpiryInSeconds(100l)
-                                        .setTypes(List.of("VerifiableCredential", "AnotherCredential"))),
+                                        .setScope("AnotherCredential")),
                                 null, null)
                 },
                 {
                         "Single Supported Credential with format, multi-type and no expiry.",
                         Map.of(
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
-                                "vc.credential-id.types", "VerifiableCredential,AnotherCredential"),
+                                "vc.credential-id.scope", "AnotherCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredential()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
-                                        .setTypes(List.of("VerifiableCredential", "AnotherCredential"))),
+                                        .setScope("AnotherCredential")),
                                 null, null)
                 },
                 {
                         "Single Supported Credential with format, multi-type, no expiry and a display object.",
                         Map.of(
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
-                                "vc.credential-id.types", "VerifiableCredential,AnotherCredential",
+                                "vc.credential-id.scope", "AnotherCredential",
                                 "vc.credential-id.display.name", "Another",
                                 "vc.credential-id.display.locale", "en"),
                         new OID4VCClient(null, "did:web:test.org",
@@ -75,7 +75,7 @@ public class OID4VCClientRegistrationProviderTest {
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setDisplay(new DisplayObject().setLocale("en").setName("Another"))
-                                        .setTypes(List.of("VerifiableCredential", "AnotherCredential"))),
+                                        .setScope("AnotherCredential")),
                                 null, null)
                 },
                 {
@@ -83,11 +83,11 @@ public class OID4VCClientRegistrationProviderTest {
                         Map.of(
                                 "vc.first-id.expiry_in_s", "100",
                                 "vc.first-id.format", Format.JWT_VC.toString(),
-                                "vc.first-id.types", "VerifiableCredential,AnotherCredential",
+                                "vc.first-id.scope", "AnotherCredential",
                                 "vc.first-id.display.name", "First",
                                 "vc.first-id.display.locale", "en",
                                 "vc.second-id.format", Format.SD_JWT_VC.toString(),
-                                "vc.second-id.types", "MyType",
+                                "vc.second-id.scope", "MyType",
                                 "vc.second-id.display.name", "Second Credential",
                                 "vc.second-id.display.locale", "de"),
                         new OID4VCClient(null, "did:web:test.org",
@@ -96,12 +96,12 @@ public class OID4VCClientRegistrationProviderTest {
                                                 .setFormat(Format.JWT_VC)
                                                 .setExpiryInSeconds(100l)
                                                 .setDisplay(new DisplayObject().setLocale("en").setName("First"))
-                                                .setTypes(List.of("VerifiableCredential", "AnotherCredential")),
+                                                .setScope("AnotherCredential"),
                                         new SupportedCredential()
                                                 .setId("second-id")
                                                 .setFormat(Format.SD_JWT_VC)
                                                 .setDisplay(new DisplayObject().setLocale("de").setName("Second Credential"))
-                                                .setTypes(List.of("MyType"))),
+                                                .setScope("MyType")),
                                 null, null)
                 }
         });

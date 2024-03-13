@@ -6,8 +6,6 @@ import org.keycloak.protocol.oid4vc.OID4VCAbstractWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.wellknown.WellKnownProvider;
 
-import java.net.URL;
-
 /**
  * {@link  WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
  * the Credential Issuer Metadata as defined by the OID4VCI protocol

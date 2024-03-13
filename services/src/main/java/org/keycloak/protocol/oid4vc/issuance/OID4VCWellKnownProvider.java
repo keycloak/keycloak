@@ -1,3 +1,20 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -5,13 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.OID4VCAbstractWellKnownProvider;
 import org.keycloak.protocol.oidc.OIDCWellKnownProvider;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.GRANT_TYPE_PRE_AUTHORIZED_CODE;
 
 /**
  * Extension of the OIDC Wellknown Provider to also support the pre-authorized grant type
@@ -44,7 +60,7 @@ public class OID4VCWellKnownProvider extends OID4VCAbstractWellKnownProvider {
                         grantTypesObject, new TypeReference<List<String>>() {
                         })).orElse(new ArrayList<>());
         // newly invented by OID4VCI and supported by this implementation
-        supportedGrantTypes.add(GRANT_TYPE_PRE_AUTHORIZED_CODE);
+        supportedGrantTypes.add(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
         configAsMap.put("grant_types_supported", supportedGrantTypes);
         configAsMap.put("credential_endpoint", getCredentialsEndpoint(keycloakSession.getContext()));
 

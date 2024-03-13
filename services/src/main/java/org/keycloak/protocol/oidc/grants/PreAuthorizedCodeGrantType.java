@@ -7,6 +7,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
@@ -22,17 +23,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
 
     private static final Logger LOGGER = Logger.getLogger(PreAuthorizedCodeGrantType.class);
 
-    public static final String PROVIDER_ID = "pre-authorization_code";
-    public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
-
     @Override
-    public String getGrantType() {
-        return GRANT_TYPE;
-    }
-
-    @Override
-    public Response process() {
+    public Response process(Context context) {
         LOGGER.debug("Process grant request for preauthorized.");
+        setContext(context);
+
         String code = formParams.getFirst(OAuth2Constants.CODE);
 
         if (code == null) {
@@ -52,9 +47,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
                     Response.Status.BAD_REQUEST);
         }
         AuthenticatedClientSessionModel clientSession = result.getClientSession();
-
         var sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
+        // set the client as retrieved from the pre-authorized session
+        session.getContext().setClient(result.getClientSession().getClient());
 
         AccessToken accessToken = tokenManager.createClientAccessToken(session,
                 clientSession.getRealm(),
@@ -77,16 +73,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
         return cors.allowAllOrigins().builder(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE)).build();
     }
 
-    @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        LOGGER.debugf("Pre-Authorized supported");
-        return new PreAuthorizedCodeGrantType();
-    }
-
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
-    }
 
     @Override
     public boolean isSupported(Config.Scope config) {
@@ -95,6 +81,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.CIBA);
+        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
+
+    @Override
+    public EventType getEventType() {
+        return EventType.CODE_TO_TOKEN;
+    }
+
+
 }
