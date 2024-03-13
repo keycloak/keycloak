@@ -32,7 +32,7 @@ import org.keycloak.models.UserModel;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaUpdate25_0_0_FederatedTermsAndConditionsRequiredAction extends CustomKeycloakTask {
+public class JpaUpdate24_0_2_FederatedTermsAndConditionsRequiredAction extends CustomKeycloakTask {
 
     private static final String TERMS_AND_CONDITION_LEGACY_ALIAS = "terms_and_conditions";
 
