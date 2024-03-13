@@ -17,8 +17,8 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="25.0.0-27228">
-        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_FederatedTermsAndConditionsRequiredAction"/>
+    <changeSet author="keycloak" id="24.0.2-27228">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate24_0_2_FederatedTermsAndConditionsRequiredAction"/>
     </changeSet>
 
 </databaseChangeLog>
