@@ -127,7 +127,7 @@ When importing a realm at startup, you are able to use placeholders to resolve v
 
 In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
 
-== Importing and Exporting via the Admin Console
+== Importing and Exporting by using the Admin Console
 
 You can also import and export a realm using the Admin Console. This functionality is
 different from the other CLI options described in previous sections because the Admin Console offers only the capability to
