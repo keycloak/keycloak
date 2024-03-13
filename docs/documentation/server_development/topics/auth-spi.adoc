@@ -151,7 +151,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 
 In this section, we'll take a look at the Authenticator interface.
 For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".
-This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of {project_name}.
+This example is fully implemented and contained in the {quickstartRepo_link}[{quickstartRepo_name}] repository under `extension/authenticator`.
 
 To create an authenticator, you must at minimum implement the org.keycloak.authentication.AuthenticatorFactory and Authenticator interfaces.
 The Authenticator interface defines the logic. The AuthenticatorFactory is responsible for creating instances of an Authenticator.
