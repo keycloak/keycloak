@@ -223,9 +223,11 @@ If your provider needs additional dependencies not already provided by Keycloak 
 [NOTE]
 ====
 Provider JARs are not loaded in isolated classloaders, so do not include resources or classes in your provider JARs that conflict with built-in resources or classes. 
-In particular the inclusion of an application.properties file will cause auto-build to fail if the provider JAR is removed. 
-If you have included conflicting classes, you will see a split package warning in the start log for the server. That should be resolved by removing or repackaging the offending classes. 
-However there is no warning if you have conflicting resource files. You should either ensure that your JAR's resource files have path names that contain something unique to that provider, 
+In particular the inclusion of an application.properties file or overriding the commons-lang3 dependency will cause auto-build to fail if the provider JAR is removed. 
+If you have included conflicting classes, you may see a split package warning in the start log for the server. Unfortunately not all built-in lib jars are checked by the split package warning logic,
+so you'll need to check the lib directory JARs before bundling or including a transitive dependency. Should there be a conflict, that can be resolved by removing or repackaging the offending classes.
+
+There is no warning if you have conflicting resource files. You should either ensure that your JAR's resource files have path names that contain something unique to that provider, 
 or you can check for the existence of `some.file` in the JAR contents under the `"install root"/lib/lib/main` directory with something like:
  
 [source,bash]
