@@ -53,6 +53,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
         AuthenticatedClientSessionModel clientSession = result.getClientSession();
         DefaultClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
+        // set the client as retrieved from the pre-authorized session
+        session.getContext().setClient(result.getClientSession().getClient());
 
 
         // set the client as retrieved from the pre-authorized session
