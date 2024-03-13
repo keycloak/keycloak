@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 public interface OrganizationProvider extends Provider {
@@ -33,19 +32,7 @@ public interface OrganizationProvider extends Provider {
      * @throws ModelDuplicateException If there is already an organization with the given name 
      * @return Model of the created organization.
      */
-    default OrganizationModel createOrganization(RealmModel realm, String name) {
-        return createOrganization(realm, null, name);
-    }
-
-    /**
-     * Creates a new organization with given {@code id} and {@code name} to the given realm.
-     * @param realm Realm owning this organization.
-     * @param id Id of the organization.
-     * @param name String name of the organization.
-     * @throws ModelDuplicateException If there is already an organization with the given id or name
-     * @return Model of the created organization.
-     */
-    OrganizationModel createOrganization(RealmModel realm, String id, String name);
+    OrganizationModel createOrganization(RealmModel realm, String name);
 
     /**
      * Removes the given organization from the given realm.
@@ -67,38 +54,6 @@ public interface OrganizationProvider extends Provider {
      * @param realm Realm.
      * @return Stream of the organizations. Never returns {@code null}.
      */
-    default Stream<OrganizationModel> getOrganizationsStream(RealmModel realm) {
-        return getOrganizationsStream(realm, null, null);
-    }
+    Stream<OrganizationModel> getOrganizationsStream(RealmModel realm);
 
-    /**
-     * Returns the organizations of the given realm as a stream.
-     * @param realm Realm.
-     * @param first First result to return. Ignored if negative or {@code null}.
-     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of the roles. Never returns {@code null}.
-     */
-    Stream<OrganizationModel> getOrganizationsStream(RealmModel realm, Integer first, Integer max);
-
-    /**
-     * Obtains users that belong to the given organization.
-     *
-     * @param realm a reference to the realm.
-     * @param organization a reference to the organization.
-     * @return a non-null {@link Stream} of users that belong to the organization.
-     */
-    default Stream<UserModel> getMembersStream(RealmModel realm, OrganizationModel organization) {
-        return getMembersStream(realm, organization, null, null);
-    }
-
-    /**
-     * Obtains users that belong to the given organization.
-     *
-     * @param realm a reference to the realm.
-     * @param organization a reference to the organization.
-     * @param first first result to return. Ignored if negative, zero, or {@code null}.
-     * @param max  maximum number of results to return. Ignored if negative or {@code null}.
-     * @return a non-null {@link Stream} of users that belong to the organization.
-     */
-    Stream<UserModel> getMembersStream(RealmModel realm, OrganizationModel group, Integer first, Integer max);
 }
