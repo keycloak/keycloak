@@ -35,6 +35,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -46,6 +47,8 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -227,6 +230,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                 @Override
                                 public UserModel getUser() {
+                                    if (Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
+                                        return LightweightUserAdapter.fromString(session, realm, entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+                                    }
                                     return session.users().getUserById(session.realms().getRealm(entity.getRealmId()), entity.getUser());
                                 }
 

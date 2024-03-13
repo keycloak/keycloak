@@ -25,12 +25,15 @@ import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -166,7 +169,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public UserModel getUser() {
         if (user == null) {
-            user = session.users().getUserById(realm, userId);
+            if (LightweightUserAdapter.isLightweightUser(userId)) {
+                user = LightweightUserAdapter.fromString(session, realm, getData().getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
+            } else {
+                user = session.users().getUserById(realm, userId);
+            }
         }
         return user;
     }

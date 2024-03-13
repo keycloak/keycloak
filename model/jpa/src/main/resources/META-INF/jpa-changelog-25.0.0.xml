@@ -21,7 +21,9 @@
         <addColumn tableName="OFFLINE_USER_SESSION">
             <column name="BROKER_SESSION_ID" type="VARCHAR(2048)" />
         </addColumn>
-        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" unique="true">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
+            <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
+            At least we would need to add the offline flag -->
             <column name="BROKER_SESSION_ID" />
             <column name="REALM_ID" />
         </createIndex>
