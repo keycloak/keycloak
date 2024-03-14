@@ -1,4 +1,4 @@
-import { ValidatedOptions } from "@patternfly/react-core";
+import { TextAreaProps, ValidatedOptions } from "@patternfly/react-core";
 import {
   FieldPath,
   FieldValues,
@@ -12,14 +12,12 @@ import { KeycloakTextArea } from "./keycloak-text-area/KeycloakTextArea";
 export type TextAreaControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = UseControllerProps<T, P> & {
-  label: string;
-  labelIcon?: string;
-  isDisabled?: boolean;
-  readOnly?: boolean;
-  defaultValue?: PathValue<T, P>;
-  rows?: number;
-};
+> = UseControllerProps<T, P> &
+  TextAreaProps & {
+    label: string;
+    labelIcon?: string;
+    isDisabled?: boolean;
+  };
 
 export const TextAreaControl = <
   T extends FieldValues,
@@ -42,7 +40,6 @@ export const TextAreaControl = <
       labelIcon={props.labelIcon}
       name={props.name}
       error={fieldState.error}
-      readOnly={props.readOnly}
     >
       <KeycloakTextArea
         isRequired={required}
@@ -52,8 +49,6 @@ export const TextAreaControl = <
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
         isDisabled={props.isDisabled}
-        readOnly={props.readOnly}
-        rows={props.rows}
         {...field}
       />
     </FormLabel>
