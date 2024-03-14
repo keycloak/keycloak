@@ -408,8 +408,9 @@ This can be done by configuring the hash iterations explicitly in the password p
 == Expected increased overall CPU usage and temporary increased database activity
 
 The Concepts for sizing CPU and memory resources in the {project_name} High Availability guide have been updated to reflect the new hashing defaults.
-While the CPU usage per password-based login in our tests increased by 33% (which includes both the changed password hashing and unchanged TLS connection handling), the overall CPU increase should be around 10% to 15%.
-This is due to the averaging effect of {project_name}'s other activities like refreshing access tokens and client credential grants, still this depends on the unique workload of an installation.
+The CPU usage per password-based login in our tests increased by the factor of five, which includes both the changed password hashing and unchanged TLS connection handling.
+The overall CPU increase should be around the factor of two to three due to the averaging effect of {project_name}'s other activities like refreshing access tokens and client credential grants.
+Still, this depends on the unique workload of an installation.
 
 After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
 As this clears the user from {project_name}'s internal cache, you will also see an increased read activity on the database level.
