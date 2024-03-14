@@ -518,7 +518,10 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         setTimeOffset(86400);
 
         // Remove expired sessions. This will remove "normal" userSession
-        testingClient.testing().removeUserSessions("test");
+        // TODO - after persistent online sessions this will remove all sessions
+        // testingClient.testing().removeUserSessions("test");
+        // New alternative: Remove the one session, but even that shouldn't be necessary due to the timeoffset above
+        // testingClient.testing().removeUserSession("test", tokenResponse.getSessionState());
 
         // Refresh with the offline token
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
