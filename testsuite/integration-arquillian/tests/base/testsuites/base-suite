@@ -29,6 +29,7 @@ model,6
 oauth,6
 oid4vc,6
 oidc,6
+organization,3
 policy,6
 providers,4
 runonserver,6

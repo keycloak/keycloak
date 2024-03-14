@@ -17,6 +17,7 @@
 package org.keycloak.organization;
 
 import java.util.stream.Stream;
+
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -29,10 +30,12 @@ public interface OrganizationProvider extends Provider {
      * The internal ID of the organization will be created automatically.
      * @param realm Realm owning this organization.
      * @param name String name of the organization.
-     * @throws ModelDuplicateException If there is already an organization with the given name 
+     * @throws ModelDuplicateException If there is already an organization with the given name
      * @return Model of the created organization.
      */
     OrganizationModel createOrganization(RealmModel realm, String name);
+
+    OrganizationModel getOrganizationById(RealmModel realm, String id);
 
     /**
      * Removes the given organization from the given realm.
@@ -55,5 +58,4 @@ public interface OrganizationProvider extends Provider {
      * @return Stream of the organizations. Never returns {@code null}.
      */
     Stream<OrganizationModel> getOrganizationsStream(RealmModel realm);
-
 }
