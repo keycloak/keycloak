@@ -29,7 +29,7 @@ When enforcing the requirements of the FAPI CIBA specification, there is a need 
 
 ==== Open Finance Brasil Financial-grade API Security Profile
 
-{project_name} is compliant with the https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/82083996/EN+Open+Finance+Brasil+Financial-grade+API+Security+Profile+1.0+Implementers+Draft+3[Open Finance Brasil Financial-grade API Security Profile 1.0 Implementers Draft 3].
+{project_name} is compliant with the https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/245760001/EN+Open+Finance+Brasil+Financial-grade+API+Security+Profile+1.0+Implementers+Draft+3[Open Finance Brasil Financial-grade API Security Profile 1.0 Implementers Draft 3].
 This one is stricter in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#_client_policies[Client Policies]
 in the more strict way to enforce some of the requirements. Especially:
 
