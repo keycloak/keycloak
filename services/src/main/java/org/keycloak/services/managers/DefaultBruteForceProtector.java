@@ -200,7 +200,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 int notBefore = (int) (currentTime / 1000) + waitSeconds;
                 logger.debugv("set notBefore: {0}", notBefore);
                 userLoginFailure.setFailedLoginNotBefore(notBefore);
-                sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT);
+                sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT, event.clientConnection);
             }
         }
 
@@ -217,7 +217,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             user.setEnabled(false);
             user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
             // Send event
-            sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+            sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT, event.clientConnection);
         }
     }
 
@@ -236,8 +236,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         return realm;
     }
 
-    protected void sendEvent(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure, EventType type) {
-        EventBuilder builder = new EventBuilder(realm, session)
+    protected void sendEvent(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure, EventType type, ClientConnection clientConnection) {
+        EventBuilder builder = new EventBuilder(realm, session, clientConnection)
                 .ipAddress(userLoginFailure.getLastIPFailure())
                 .event(type)
                 .detail(Details.REASON, "brute_force_attack detected")
