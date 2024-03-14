@@ -8,7 +8,7 @@ However, some OpenID Connect / OAuth2 adapters, and especially older {project_na
 
 For example, the parameter will be always present in the browser URL after successful authentication to the client application.
 In these cases, it may be useful to disable adding the `iss` parameter to the authentication response. This can be done
-for the particular client in the {project_name} Admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
+for the particular client in the {project_name} Admin Console, in client details in the section with `OpenID Connect Compatibility Modes`,
 described in <<_compatibility_with_older_adapters>>. Dedicated `Exclude Issuer From Authentication Response` switch exists,
 which can be turned on to prevent adding the `iss` parameter to the authentication response.
 
@@ -19,13 +19,12 @@ As `+*+` is a natural wildcard character in LDAP, it works in all places, while 
 worked at the beginning and the end of the search string. Starting with this release the only
 wildcard character is `+*+` which work consistently across all providers in all places in the search
 string. All special characters in a specific provider like `%` and `+_+` for JPA are escaped. For exact
-search, with added quotes e.g. `+"w*ord"+`, the behavior remains the same as in previous releases.
+search, with added quotes such as `+"w*ord"+`, the behavior remains the same as in previous releases.
 
 = Language files for themes default to UTF-8 encoding
-
 This release now follows the standard mechanisms of Java and later, which assumes resource bundle files to be encoded in UTF-8.
 
-Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported and is ignored.
+Previous versions of {project_name} supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported and is ignored.
 
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
 If you are using a different encoding, convert the files to UTF-8.
@@ -155,7 +154,7 @@ Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm,
 
 * new field `subGroupCount` added to inform client how many subgroups are on any given group
 * `subGroups` list is now only populated on queries that request hierarchy data
-  * This field is populated from the "bottom up" so can't be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm}/groups/{group_id}/children`
+  * This field is populated from the "bottom up" so cannot be relied on for getting all subgroups for a group. Use a `GroupProvider` or request the subgroups from `GET {keycloak server}/realms/{realm}/groups/{group_id}/children`
 
 = New endpoint for Group Admin API
 
@@ -170,7 +169,7 @@ The endpoint `POST {keycloak server}/realms/{realm}/partial-export` and the corr
 
 = Removal of the options to trim the event's details length
 
-Since this release, Keycloak supports long value for `EventEntity` details column. Therefore, it no longer supports options for trimming event detail length `--spi-events-store-jpa-max-detail-length` and `--spi-events-store-jpa-max-field-length`.
+Since this release, {project_name} supports long value for `EventEntity` details column. Therefore, it no longer supports options for trimming event detail length `--spi-events-store-jpa-max-detail-length` and `--spi-events-store-jpa-max-field-length`.
 
 = User Profile updates
 
@@ -178,7 +177,7 @@ This release includes many fixes and updates that are related to user profile as
 Minor changes exist for the SPI such as the newly added method `boolean isEnabled(RealmModel realm)` on `UserProfileProvider` interface. Also
 some user profile classes and some validator related classes (but not builtin validator implementations) were moved from `keycloak-server-spi-private` to
 `keycloak-server-spi` module. However, the packages for java classes remain the same. You might be affected in some corner cases, such as when you
-are overriding the built-in implementation with your own `UserProfileProvider` implementation However, note that `UserProfileProvider` is an unsupported SPI.
+are overriding the built-in implementation with your own `UserProfileProvider` implementation. However, note that `UserProfileProvider` is an unsupported SPI.
 
 ifeval::[{project_community}==true]
 = Removal of the Map Store
@@ -191,8 +190,8 @@ The modules `keycloak-model-map*` have been removed.
 endif::[]
 
 = Removed namespaces from our translations
-We moved all translations into one file for the admin-ui, if you have made your own translations or extended the admin ui you will need to migrate them to this new format.
-Also if you have "overrides" in your database you'll have to remove the namespace from the keys.
+All translations are moved into one file for the Admin Console. If you have made your own translations or extended the Admin Console you will need to migrate them to this new format.
+Also if you have "overrides" in your database, you will have to remove the namespace from the keys.
 Some keys are the same only in different namespaces, this is most obvious to help.
 In these cases we have postfix the key with `Help`.
 
