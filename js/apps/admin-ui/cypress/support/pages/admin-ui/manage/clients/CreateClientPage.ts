@@ -1,8 +1,8 @@
+import Select from "../../../../forms/Select";
 import CommonPage from "../../../CommonPage";
 
 export default class CreateClientPage extends CommonPage {
-  #clientTypeDrpDwn = ".pf-c-select__toggle";
-  #clientTypeList = ".pf-c-select__toggle + ul";
+  #clientTypeDrpDwn = "#protocol";
   #clientIdInput = "#clientId";
   #clientIdError = "#clientId + div";
   #clientNameInput = "#name";
@@ -31,7 +31,7 @@ export default class CreateClientPage extends CommonPage {
   #firstWebOriginsInput = "webOrigins0";
   #adminUrlInput = "adminUrl";
 
-  #loginThemeDrpDwn = "#loginTheme";
+  #loginThemeDrpDwn = "#login_theme";
   #loginThemeList = 'ul[aria-label="Login theme"]';
   #consentRequiredSwitch = '[for="kc-consent-switch"] > .pf-c-switch__toggle';
   #consentRequiredSwitchInput = "#kc-consent-switch";
@@ -60,8 +60,7 @@ export default class CreateClientPage extends CommonPage {
 
   //#region General Settings
   selectClientType(clientType: string) {
-    cy.get(this.#clientTypeDrpDwn).click();
-    cy.get(this.#clientTypeList).findByTestId(`option-${clientType}`).click();
+    Select.selectItem(cy.get(this.#clientTypeDrpDwn), clientType);
 
     return this;
   }

@@ -1,3 +1,4 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   Checkbox,
   FormGroup,
@@ -8,13 +9,12 @@ import {
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
-import { FormFields } from "../ClientDetails";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { FormFields } from "../ClientDetails";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -276,66 +276,20 @@ export const CapabilityConfig = ({
       )}
       {protocol === "saml" && (
         <>
-          <FormGroup
-            labelIcon={
-              <HelpItem
-                helpText={t("encryptAssertionsHelp")}
-                fieldLabelId="encryptAssertions"
-              />
-            }
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.encrypt",
+            )}
             label={t("encryptAssertions")}
-            fieldId="kc-encrypt"
-            hasNoPaddingTop
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.encrypt",
-              )}
-              control={control}
-              defaultValue={false}
-              render={({ field }) => (
-                <Switch
-                  data-testid="encrypt"
-                  id="kc-encrypt"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("encryptAssertions")}
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            labelIcon={
-              <HelpItem
-                helpText={t("clientSignatureHelp")}
-                fieldLabelId="clientSignature"
-              />
-            }
+            labelIcon={t("encryptAssertionsHelp")}
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.client.signature",
+            )}
             label={t("clientSignature")}
-            fieldId="kc-client-signature"
-            hasNoPaddingTop
-          >
-            <Controller
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.client.signature",
-              )}
-              control={control}
-              defaultValue={false}
-              render={({ field }) => (
-                <Switch
-                  data-testid="client-signature"
-                  id="kc-client-signature"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("clientSignature")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("clientSignatureHelp")}
+          />
         </>
       )}
     </FormAccess>
