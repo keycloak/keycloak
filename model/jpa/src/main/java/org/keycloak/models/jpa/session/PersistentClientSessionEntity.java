@@ -24,6 +24,8 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 import java.io.Serializable;
 
 /**
@@ -76,6 +78,9 @@ public class PersistentClientSessionEntity {
 
     @Column(name="TIMESTAMP")
     protected int timestamp;
+
+    @Version
+    private int version;
 
     @Id
     @Column(name = "OFFLINE_FLAG")

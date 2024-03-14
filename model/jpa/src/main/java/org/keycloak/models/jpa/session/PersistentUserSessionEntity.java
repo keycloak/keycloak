@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.session;
 
+import jakarta.persistence.Version;
 import org.keycloak.storage.jpa.KeyUtils;
 
 import jakarta.persistence.Column;
@@ -82,6 +83,9 @@ public class PersistentUserSessionEntity {
 
     @Column(name = "BROKER_SESSION_ID")
     protected String brokerSessionId;
+
+    @Version
+    private int version;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
