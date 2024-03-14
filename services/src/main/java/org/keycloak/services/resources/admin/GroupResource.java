@@ -162,11 +162,10 @@ public class GroupResource {
         @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
-        return group.getSubGroupsStream(null, null)
-            .filter(g -> canViewGlobal || auth.groups().canView(g))
-            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)))
-            .skip(first)
-            .limit(max);
+        return StreamsUtil.paginatedStream(
+            group.getSubGroupsStream()
+            .filter(g -> canViewGlobal || auth.groups().canView(g)), first, max)
+            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 
     /**
