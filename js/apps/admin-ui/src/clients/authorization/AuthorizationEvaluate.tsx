@@ -17,6 +17,7 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  Switch,
   Title,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -32,7 +33,6 @@ import {
   KeyValueType,
   keyValueToArray,
 } from "../../components/key-value-form/key-value-convert";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -279,12 +279,25 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
-              <DefaultSwitchControl
-                name="applyToResourceType"
+              <FormGroup
                 label={t("applyToResourceType")}
-                labelIcon={t("applyToResourceTypeHelp")}
-                onChange={setApplyToResourceType}
-              />
+                fieldId="applyToResourceType"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("applyToResourceTypeHelp")}
+                    fieldLabelId="applyToResourceType"
+                  />
+                }
+              >
+                <Switch
+                  id="applyToResource-switch"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={applyToResourceType}
+                  onChange={setApplyToResourceType}
+                  aria-label={t("applyToResourceType")}
+                />
+              </FormGroup>
               {!applyToResourceType ? (
                 <FormGroup
                   label={t("resourcesAndScopes")}

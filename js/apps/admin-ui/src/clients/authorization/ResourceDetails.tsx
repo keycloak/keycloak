@@ -230,6 +230,7 @@ export default function ResourceDetails() {
               name="icon_uri"
               label={t("iconUri")}
               labelIcon={t("iconUriHelp")}
+              type="url"
             />
             <DefaultSwitchControl
               name="ownerManagedAccess"

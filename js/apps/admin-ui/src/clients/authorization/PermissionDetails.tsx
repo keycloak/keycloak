@@ -254,8 +254,10 @@ export default function PermissionDetails() {
                 label={t("resourceType")}
                 labelIcon={t("resourceTypeHelp")}
                 rules={{
-                  required:
-                    permissionType === "scope" ? t("required") : undefined,
+                  required: {
+                    value: permissionType === "scope" ? true : false,
+                    message: t("required"),
+                  },
                 }}
               />
             ) : (
