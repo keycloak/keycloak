@@ -220,6 +220,8 @@ Providers are registered with the server by simply copying the JAR file to the `
 
 If your provider needs additional dependencies not already provided by Keycloak copy these to the `providers` directory.
 
+After registering new providers or dependencies Keycloak needs to be re-built with a non-optimized start or the `kc.[sh|bat] build` command.
+
 [NOTE]
 ====
 Provider JARs are not loaded in isolated classloaders, so do not include resources or classes in your provider JARs that conflict with built-in resources or classes. 
@@ -234,9 +236,17 @@ or you can check for the existence of `some.file` in the JAR contents under the 
 ----
 find . -type f -name "*.jar" -exec unzip -l {} \; | grep some.file
 ----
+
+If you find that your server will not start due to a `NoSuchFileException` error related to a removed provider JAR, then run:
+
+[source,bash]
+----
+./kc.sh -Dquarkus.launch.rebuild=true
+----
+
+This will force Quarkus to rebuild the classloading related index files. From there you should be able to perform a non-optimized start or build without an exception.
 ====    
 
-After registering new providers or dependencies Keycloak needs to be re-built with a non-optimized start or the `kc.[sh|bat] build` command.
 
 ==== Disabling a provider
 
