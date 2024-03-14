@@ -281,6 +281,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
+        if (getTransaction(offline).isScheduledForRemove(id)) {
+            return null;
+        }
+
         // Try to recover from potentially lost offline-sessions by attempting to fetch and re-import
         // the offline session information from the PersistenceProvider.
         UserSessionEntity userSessionEntityFromPersistenceProvider = getUserSessionEntityFromPersistenceProvider(realm, id, offline);
@@ -326,6 +330,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     private UserSessionEntity importUserSession(RealmModel realm, boolean offline, UserSessionModel persistentUserSession) {
 
         String sessionId = persistentUserSession.getId();
+
+        if (getTransaction(offline).isScheduledForRemove(sessionId)) {
+            return null;
+        }
 
         UserSessionEntity ispnUserSessionEntity = getUserSessionEntity(realm, sessionId, offline);
         // entry is already present in the cache, no need to import
@@ -645,7 +653,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return wrap(userSession, client, clientSessionEntityFromCache, offline);
         }
 
-        if (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+        if (!getClientSessionTransaction(offline).isScheduledForRemove(UUID.fromString(clientSessionId)) && (offline || Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS))) {
             log.debugf("Offline client session is not found in cache, try to load from db, userSession [%s] clientSessionId [%s] clientId [%s]", userSession.getId(), clientSessionId, client.getClientId());
             return getClientSessionEntityFromPersistenceProvider(userSession, client, offline);
         }
