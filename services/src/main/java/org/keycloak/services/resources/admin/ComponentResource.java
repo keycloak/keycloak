@@ -122,7 +122,7 @@ public class ComponentResource {
                     try {
                         return ModelToRepresentation.toRepresentation(session, component, false);
                     } catch (Exception e) {
-                        logger.error("Failed to get component list for component model" + component.getName() + "of realm " + realm.getName());
+                        logger.error("Failed to get component list for component model " + component.getName() + " of realm " + realm.getName());
                         return ModelToRepresentation.toRepresentationWithoutConfig(component);
                     }
                 });
