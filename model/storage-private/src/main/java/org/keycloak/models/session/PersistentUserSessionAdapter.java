@@ -43,7 +43,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     private final PersistentUserSessionModel model;
     private UserModel user;
     private String userId;
-    private final RealmModel realm;
+    private RealmModel realm;
     private KeycloakSession session;
     private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
@@ -67,6 +67,8 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             private int lastSessionRefresh;
             private boolean offline;
             private String data;
+            private String realmId;
+            private String userId;
 
             public String getUserSessionId() {
                 return userSessionId;
@@ -106,6 +108,14 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
             public void setData(String data) {
                 this.data = data;
+            }
+
+            public void setRealmId(String realmId) {
+                this.realmId = realmId;
+            }
+
+            public void setUserId(String userId) {
+                this.userId = userId;
             }
         };
         this.model.setStarted(other.getStarted());
@@ -313,6 +323,40 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public String toString() {
         return getId();
+    }
+
+    public void setRealm(RealmModel realm) {
+        this.realm = realm;
+        model.setRealmId(realm.getId());
+    }
+
+    public void setUser(UserModel user) {
+        this.user = user;
+        model.setUserId(user.getId());
+    }
+
+    public void setIpAddress(String ipAddress) {
+        getData().setIpAddress(ipAddress);
+    }
+
+    public void setAuthMethod(String authMethod) {
+        getData().setAuthMethod(authMethod);
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        getData().setRememberMe(rememberMe);
+    }
+
+    public void setStarted(int started) {
+        getData().setStarted(started);
+    }
+
+    public void setBrokerSessionId(String brokerSessionId) {
+        getData().setBrokerSessionId(brokerSessionId);
+    }
+
+    public void setBrokerUserId(String brokerUserId) {
+        getData().setBrokerUserId(brokerUserId);
     }
 
     protected static class PersistentUserSessionData {

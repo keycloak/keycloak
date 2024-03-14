@@ -41,4 +41,8 @@ public interface PersistentUserSessionModel {
     String getData();
 
     void setData(String data);
+
+    void setRealmId(String realmId);
+
+    void setUserId(String userId);
 }

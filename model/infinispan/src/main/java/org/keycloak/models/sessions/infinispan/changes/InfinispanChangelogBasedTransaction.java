@@ -352,7 +352,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                             public String put(String key, String value) {
                                                 String oldValue = userSessionModel.getNotes().get(key);
                                                 userSessionModel.setNote(key, value);
-                                                userSessionModel.getUpdatedModel();
                                                 return oldValue;
                                             }
 
@@ -397,7 +396,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setRealmId(String realmId) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setRealm(session.realms().getRealm(realmId));
                                     }
 
                                     @Override
@@ -416,8 +415,8 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                     }
 
                                     @Override
-                                    public void setUser(String user) {
-                                        throw new IllegalStateException("not supported");
+                                    public void setUser(String userId) {
+                                        userSessionModel.setUser(session.users().getUserById(realm, userId));
                                     }
 
                                     @Override
@@ -427,7 +426,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setLoginUsername(String loginUsername) {
-                                        throw new IllegalStateException("not supported");
+                                        // TODO: ignored. Will not be stored in the offline session
                                     }
 
                                     @Override
@@ -437,7 +436,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setIpAddress(String ipAddress) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setIpAddress(ipAddress);
                                     }
 
                                     @Override
@@ -447,7 +446,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setAuthMethod(String authMethod) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setAuthMethod(authMethod);
                                     }
 
                                     @Override
@@ -457,7 +456,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setRememberMe(boolean rememberMe) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setRememberMe(rememberMe);
                                     }
 
                                     @Override
@@ -467,7 +466,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setStarted(int started) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setStarted(started);
                                     }
 
                                     @Override
@@ -498,7 +497,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setBrokerSessionId(String brokerSessionId) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setBrokerSessionId(brokerSessionId);
                                     }
 
                                     @Override
@@ -508,7 +507,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                     @Override
                                     public void setBrokerUserId(String brokerUserId) {
-                                        throw new IllegalStateException("not supported");
+                                        userSessionModel.setBrokerUserId(brokerUserId);
                                     }
 
                                     @Override
@@ -522,6 +521,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                         session.getProvider(UserSessionPersisterProvider.class).removeUserSession(entry.getKey().toString(), false);
                                     }
                                 });
+                                userSessionModel.getUpdatedModel();
                             }
                         }
                     } catch (Exception e) {
