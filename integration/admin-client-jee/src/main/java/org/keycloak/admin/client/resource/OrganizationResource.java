@@ -14,9 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.organization;
 
-import org.keycloak.provider.ProviderFactory;
+package org.keycloak.admin.client.resource;
 
-public interface OrganizationProviderFactory extends ProviderFactory<OrganizationProvider> {
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.representations.idm.OrganizationRepresentation;
+
+public interface OrganizationResource {
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    OrganizationRepresentation toRepresentation();
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response update(OrganizationRepresentation organization);
+
+    @DELETE
+    Response delete();
 }
