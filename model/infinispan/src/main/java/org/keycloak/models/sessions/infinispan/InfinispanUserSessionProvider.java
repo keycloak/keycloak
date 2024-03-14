@@ -591,6 +591,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                             .filter(predicate.toModelPredicate())
                             .map(persistentUserSession -> (UserSessionModel) wrap(realm, importUserSession(realm, offline, persistentUserSession), offline))
                             .filter(Objects::nonNull);
+                } else {
+                    return Stream.empty();
                 }
             }
 
