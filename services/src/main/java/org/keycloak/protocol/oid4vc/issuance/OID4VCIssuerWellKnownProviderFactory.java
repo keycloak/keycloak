@@ -34,13 +34,11 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  */
 public class OID4VCIssuerWellKnownProviderFactory implements WellKnownProviderFactory, OID4VCEnvironmentProviderFactory {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static final String PROVIDER_ID = "openid-credential-issuer";
 
     @Override
     public WellKnownProvider create(KeycloakSession session) {
-        return new OID4VCIssuerWellKnownProvider(session, OBJECT_MAPPER);
+        return new OID4VCIssuerWellKnownProvider(session);
     }
 
     @Override

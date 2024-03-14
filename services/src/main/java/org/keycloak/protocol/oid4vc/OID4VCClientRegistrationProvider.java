@@ -28,6 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -44,7 +45,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Provides the client-registration functionality for OID4VP-clients.
+ * Provides the client-registration functionality for OID4VC-clients.
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -52,19 +53,16 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCClientRegistrationProvider.class);
 
-    public static final String VC_KEY = "vc";
+    private static final String VC_KEY = "vc";
 
     public OID4VCClientRegistrationProvider(KeycloakSession session) {
         super(session);
     }
 
-    // CUD implementations for the SIOP-2 client
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createOID4VCClient(OID4VCClient client) {
-        LOGGER.infof("Create siop client %s", client);
         ClientRepresentation clientRepresentation = toClientRepresentation(client);
         validate(clientRepresentation);
 
@@ -95,18 +93,16 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
     }
 
     /**
-     * Validates the clientrepresentation to fulfill the requirement of a OID4VP client
-     *
-     * @param client
+     * Validates the clientRepresentation to fulfill the requirement of an OID4VC client
      */
     public static void validate(ClientRepresentation client) {
         String did = client.getClientId();
         if (did == null) {
-            throw new ErrorResponseException("no_did", "A client did needs to be configured for SIOP-2 clients",
+            throw new ErrorResponseException("no_did", "A client did needs to be configured for OID4VC clients",
                     Response.Status.BAD_REQUEST);
         }
         if (!did.startsWith("did:")) {
-            throw new ErrorResponseException("invalid_did", "The client did is not a valid did.",
+            throw new ErrorResponseException("invalid_did", "The client id is not a did.",
                     Response.Status.BAD_REQUEST);
         }
     }
@@ -115,7 +111,7 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
      * Translate an incoming {@link OID4VCClient} into a keycloak native {@link ClientRepresentation}.
      *
      * @param oid4VCClient pojo, containing the SIOP-2 client parameters
-     * @return a clientrepresentation, fitting keycloaks internal model
+     * @return a clientRepresentation, fitting keycloaks internal model
      */
     protected static ClientRepresentation toClientRepresentation(OID4VCClient oid4VCClient) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();

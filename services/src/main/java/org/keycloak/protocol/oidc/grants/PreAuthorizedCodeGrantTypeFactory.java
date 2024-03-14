@@ -30,7 +30,6 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
     public void close() {
     }
 
-
     @Override
     public String getId() {
         return GRANT_TYPE;

@@ -59,10 +59,14 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     public static final String PROTOCOL_ID = "oid4vc";
 
+    private static final String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
+    private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
+    private static final int DEFAULT_CODE_LIFESPAN_S = 30;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLIENT_ROLES_MAPPER = "client-roles";
-    private static final String SUBJECT_ID_MAPPER = "subject-id";
     private static final String USERNAME_MAPPER = "username";
+    private static final String SUBJECT_ID_MAPPER = "subject-id";
     private static final String EMAIL_MAPPER = "email";
     private static final String LAST_NAME_MAPPER = "last-name";
     private static final String FIRST_NAME_MAPPER = "first-name";
@@ -114,8 +118,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
                 .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
 
-        String issuerDid = Optional.ofNullable(keycloakSession.getContext().getRealm().getAttribute("issuerDid"))
+        RealmModel realmModel = keycloakSession.getContext().getRealm();
+        String issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
                 .orElseThrow(() -> new VCIssuerException("No issuerDid  configured."));
+        int preAuthorizedCodeLifespan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
+                .map(Integer::valueOf)
+                .orElse(DEFAULT_CODE_LIFESPAN_S);
 
         return new OID4VCIssuerEndpoint(
                 keycloakSession,
@@ -123,7 +131,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 signingServices,
                 new AppAuthManager.BearerTokenAuthenticator(keycloakSession),
                 OBJECT_MAPPER,
-                new OffsetTimeProvider());
+                new OffsetTimeProvider(),
+                preAuthorizedCodeLifespan);
     }
 
     @Override

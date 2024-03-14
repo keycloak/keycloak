@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -31,6 +33,9 @@ public class CredentialIssuer {
 
     @JsonProperty("credential_endpoint")
     private String credentialEndpoint;
+
+    @JsonProperty("authorization_servers")
+    private List<String> authorizationServers;
 
     @JsonProperty("batch_credential_endpoint")
     private String batchCredentialEndpoint;
@@ -82,6 +87,15 @@ public class CredentialIssuer {
 
     public CredentialIssuer setDisplay(DisplayObject display) {
         this.display = display;
+        return this;
+    }
+
+    public List<String> getAuthorizationServers() {
+        return authorizationServers;
+    }
+
+    public CredentialIssuer setAuthorizationServers(List<String> authorizationServers) {
+        this.authorizationServers = authorizationServers;
         return this;
     }
 }

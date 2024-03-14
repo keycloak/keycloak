@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oid4vc;
-
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
+package org.keycloak.protocol.oid4vc.model;
 
 import java.util.List;
 

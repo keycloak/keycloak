@@ -65,18 +65,6 @@ public class OID4VCClientRegistrationProviderFactory implements ClientRegistrati
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        ProviderConfigProperty issuerDid = new ProviderConfigProperty();
-        issuerDid.setName("issuer_did");
-        issuerDid.setHelpText("DID to be used for issuing verifiable credentials.");
-        issuerDid.setType(ProviderConfigProperty.STRING_TYPE);
-        issuerDid.setLabel("Issuer DID");
-
-        ProviderConfigProperty keyPath = new ProviderConfigProperty();
-        keyPath.setName("key_path");
-        keyPath.setHelpText("Path to read the signing key from.");
-        keyPath.setType(ProviderConfigProperty.STRING_TYPE);
-        keyPath.setLabel("Key Path");
-
-        return List.of(issuerDid, keyPath);
+        return List.of();
     }
 }

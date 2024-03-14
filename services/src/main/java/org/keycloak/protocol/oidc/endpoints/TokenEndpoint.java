@@ -133,7 +133,8 @@ public class TokenEndpoint {
         checkRealm();
         checkGrantType();
 
-        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)// pre-authorized grants are not necessarily used by known clients.
+        if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
+                // pre-authorized grants are not necessarily used by known clients.
                 && !grantType.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
