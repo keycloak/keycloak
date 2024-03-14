@@ -26,7 +26,13 @@ export type SelectControlProps<
   P extends FieldPath<T> = FieldPath<T>,
 > = Omit<
   SelectProps,
-  "name" | "onToggle" | "selections" | "onSelect" | "onClear" | "isOpen"
+  | "name"
+  | "onToggle"
+  | "selections"
+  | "onSelect"
+  | "onClear"
+  | "isOpen"
+  | "onFilter"
 > &
   UseControllerProps<T, P> & {
     name: string;
@@ -34,6 +40,7 @@ export type SelectControlProps<
     options: string[] | SelectControlOption[];
     labelIcon?: string;
     controller: Omit<ControllerProps, "name" | "render">;
+    onFilter?: (value: string) => void;
   };
 
 export const SelectControl = <
@@ -46,6 +53,7 @@ export const SelectControl = <
   controller,
   variant = SelectVariant.single,
   labelIcon,
+  onFilter,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -53,6 +61,15 @@ export const SelectControl = <
     formState: { errors },
   } = useFormContext();
   const [open, setOpen] = useState(false);
+  const convert = () =>
+    options.map((option) => (
+      <SelectOption
+        key={typeof option === "string" ? option : option.key}
+        value={typeof option === "string" ? option : option.key}
+      >
+        {typeof option === "string" ? option : option.value}
+      </SelectOption>
+    ));
   return (
     <FormLabel
       name={name}
@@ -98,20 +115,17 @@ export const SelectControl = <
                   }
                 : undefined
             }
+            onFilter={(_, value) => {
+              onFilter?.(value);
+              return convert();
+            }}
             isOpen={open}
             variant={variant}
             validated={
               errors[name] ? ValidatedOptions.error : ValidatedOptions.default
             }
           >
-            {options.map((option) => (
-              <SelectOption
-                key={typeof option === "string" ? option : option.key}
-                value={typeof option === "string" ? option : option.key}
-              >
-                {typeof option === "string" ? option : option.value}
-              </SelectOption>
-            ))}
+            {convert()}
           </Select>
         )}
       />
