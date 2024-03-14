@@ -5,14 +5,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
-import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

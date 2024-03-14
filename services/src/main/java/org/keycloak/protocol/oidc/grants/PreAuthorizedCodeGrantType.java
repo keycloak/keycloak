@@ -6,11 +6,13 @@ import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.AccessToken;
@@ -18,6 +20,8 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.utils.MediaType;
+
+import java.util.UUID;
 
 public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements EnvironmentDependentProviderFactory {
 
@@ -47,8 +51,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
                     Response.Status.BAD_REQUEST);
         }
         AuthenticatedClientSessionModel clientSession = result.getClientSession();
-        var sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
+        DefaultClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
+
+
         // set the client as retrieved from the pre-authorized session
         session.getContext().setClient(result.getClientSession().getClient());
 
@@ -89,5 +95,19 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase implements E
         return EventType.CODE_TO_TOKEN;
     }
 
-
+    /**
+     * Create a pre-authorized Code for the given client session.
+     *
+     * @param session                    - keycloak session to be used
+     * @param authenticatedClientSession - client session to be persisted
+     * @param expirationTime             - expiration time of the code, the code should be short-lifed
+     * @return the pre-authorized code
+     */
+    public static String getPreAuthorizedCode(KeycloakSession session, AuthenticatedClientSessionModel authenticatedClientSession, int expirationTime) {
+        String codeId = UUID.randomUUID().toString();
+        String nonce = SecretGenerator.getInstance().randomString();
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null,
+                authenticatedClientSession.getUserSession().getId());
+        return OAuth2CodeParser.persistCode(session, authenticatedClientSession, oAuth2Code);
+    }
 }

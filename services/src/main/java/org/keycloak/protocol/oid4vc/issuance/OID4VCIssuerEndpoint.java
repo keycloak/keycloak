@@ -19,12 +19,10 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -34,16 +32,13 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oid4vc.OID4VCAbstractWellKnownProvider;
-import org.keycloak.protocol.oid4vc.OID4VCClient;
+import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPMapper;
@@ -60,6 +55,7 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.AppAuthManager;
@@ -67,10 +63,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
 
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -96,6 +89,8 @@ public class OID4VCIssuerEndpoint {
     private final TimeProvider timeProvider;
 
     private final String issuerDid;
+    // lifespan of the preAuthorizedCodes in seconds
+    private final int preAuthorizedCodeLifeSpan;
 
     private final Map<Format, VerifiableCredentialsSigningService> signingServices;
 
@@ -103,13 +98,14 @@ public class OID4VCIssuerEndpoint {
                                 String issuerDid,
                                 Map<Format, VerifiableCredentialsSigningService> signingServices,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
-                                ObjectMapper objectMapper, TimeProvider timeProvider) {
+                                ObjectMapper objectMapper, TimeProvider timeProvider, int preAuthorizedCodeLifeSpan) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
         this.objectMapper = objectMapper;
         this.timeProvider = timeProvider;
         this.issuerDid = issuerDid;
         this.signingServices = signingServices;
+        this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
 
     }
 
@@ -121,8 +117,9 @@ public class OID4VCIssuerEndpoint {
     @Path("credential-offer-uri")
     public Response getCredentialOfferURI(@QueryParam("credentialId") String vcId) {
 
-        Map<String, SupportedCredential> credentialsMap = OID4VCAbstractWellKnownProvider
-                .getSupportedCredentials(session);
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+
+        Map<String, SupportedCredential> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
 
         LOGGER.debugf("Get an offer for %s", vcId);
         if (!credentialsMap.containsKey(vcId)) {
@@ -139,14 +136,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
 
-        String nonce = generateAuthorizationCode();
-
-        AuthenticationManager.AuthResult authResult = getAuthResult();
-        UserSessionModel userSessionModel = getUserSessionModel();
-
-        AuthenticatedClientSessionModel clientSession = userSessionModel.
-                getAuthenticatedClientSessionByClient(
-                        authResult.getClient().getId());
+        String nonce = getNonce();
         try {
             clientSession.setNote(nonce, objectMapper.writeValueAsString(supportedCredential));
         } catch (JsonProcessingException e) {
@@ -155,10 +145,9 @@ public class OID4VCIssuerEndpoint {
         }
 
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
-                .setIssuer(OID4VCAbstractWellKnownProvider.getIssuer(session.getContext()))
+                .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
                 .setNonce(nonce);
 
-        LOGGER.debugf("Responding with nonce: %s", nonce);
         return Response.ok()
                 .entity(credentialOfferURI)
                 .build();
@@ -172,25 +161,33 @@ public class OID4VCIssuerEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("credential-offer/{nonce}")
     public Response getCredentialOffer(@PathParam("nonce") String nonce) {
+        if (nonce == null) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+        }
 
-        OAuth2CodeParser.ParseResult result = parseNonce(nonce);
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+
+        String note = clientSession.getNote(nonce);
+        if (note == null) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
+        }
 
         SupportedCredential offeredCredential;
         try {
-            offeredCredential = objectMapper.readValue(result.getClientSession().getNote(nonce),
+            offeredCredential = objectMapper.readValue(note,
                     SupportedCredential.class);
             LOGGER.debugf("Creating an offer for %s - %s", offeredCredential.getScope(),
                     offeredCredential.getFormat());
-            result.getClientSession().removeNote(nonce);
+            clientSession.removeNote(nonce);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert SupportedCredential JSON to POJO: %s", e);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
         }
 
-        String preAuthorizedCode = generateAuthorizationCodeForClientSession(result.getClientSession());
+        String preAuthorizedCode = generateAuthorizationCodeForClientSession(clientSession);
 
         CredentialsOffer theOffer = new CredentialsOffer()
-                .setCredentialIssuer(OID4VCAbstractWellKnownProvider.getIssuer(session.getContext()))
+                .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
                 .setCredentials(List.of(offeredCredential))
                 .setGrants(
                         new PreAuthorizedGrant()
@@ -224,7 +221,7 @@ public class OID4VCIssuerEndpoint {
         String requestedCredential = credentialRequestVO.getCredentialIdentifier();
 
         SupportedCredential supportedCredential = Optional
-                .ofNullable(OID4VCAbstractWellKnownProvider.getSupportedCredentials(this.session)
+                .ofNullable(OID4VCIssuerWellKnownProvider.getSupportedCredentials(this.session)
                         .get(requestedCredential))
                 .orElseThrow(
                         () -> {
@@ -247,6 +244,20 @@ public class OID4VCIssuerEndpoint {
         }
         return Response.ok().entity(responseVO)
                 .build();
+    }
+
+    @NotNull
+    private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
+        AuthenticationManager.AuthResult authResult = getAuthResult();
+        UserSessionModel userSessionModel = authResult.getSession();
+
+        AuthenticatedClientSessionModel clientSession = userSessionModel.
+                getAuthenticatedClientSessionByClient(
+                        authResult.getClient().getId());
+        if (clientSession == null) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+        }
+        return clientSession;
     }
 
     // return the current usersession model
@@ -292,35 +303,13 @@ public class OID4VCIssuerEndpoint {
                 .toList();
     }
 
-    private OAuth2CodeParser.ParseResult parseNonce(String nonce) throws BadRequestException {
-        EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session,
-                session.getContext().getConnection());
-        OAuth2CodeParser.ParseResult result = OAuth2CodeParser.parseCode(session, nonce,
-                session.getContext().getRealm(),
-                eventBuilder);
-        if (result.isExpiredCode() || result.isIllegalCode()) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
-        }
-        return result;
-    }
-
-    private String generateAuthorizationCode() {
-        AuthenticationManager.AuthResult authResult = getAuthResult();
-        UserSessionModel userSessionModel = getUserSessionModel();
-        AuthenticatedClientSessionModel clientSessionModel = userSessionModel.
-                getAuthenticatedClientSessionByClient(authResult.getClient().getId());
-        return generateAuthorizationCodeForClientSession(clientSessionModel);
+    private String getNonce() {
+        return SecretGenerator.getInstance().randomString();
     }
 
     private String generateAuthorizationCodeForClientSession(AuthenticatedClientSessionModel clientSessionModel) {
-        int expiration = timeProvider.currentTimeSeconds() + clientSessionModel.getUserSession().getRealm().getAccessCodeLifespan();
-
-        String codeId = UUID.randomUUID().toString();
-        String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expiration, nonce, null, null, null, null,
-                clientSessionModel.getUserSession().getId());
-        LOGGER.debugf("Persist code for clientSession %s", clientSessionModel.getClient().getId());
-        return OAuth2CodeParser.persistCode(session, clientSessionModel, oAuth2Code);
+        int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
+        return PreAuthorizedCodeGrantType.getPreAuthorizedCode(session, clientSessionModel, expiration);
     }
 
     private Response getErrorResponse(ErrorType errorType) {
@@ -333,19 +322,18 @@ public class OID4VCIssuerEndpoint {
     private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
         LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
 
-        Optional.ofNullable(vcType).filter(type -> !type.isEmpty()).orElseThrow(() ->
-                new BadRequestException("No VerifiableCredential-Type was provided in the request.")
-        );
+        Optional.ofNullable(vcType)
+                .filter(type -> !type.isEmpty())
+                .orElseThrow(() ->
+                        new BadRequestException("No VerifiableCredential-Type was provided in the request.")
+                );
 
-        List<OID4VCClient> oid4VCClients = getOID4VCClientsFromSession()
+        return getOID4VCClientsFromSession()
                 .stream()
                 .filter(oid4VCClient -> oid4VCClient.getSupportedVCTypes()
                         .stream()
                         .anyMatch(supportedCredential -> supportedCredential.getScope().equals(vcType)))
                 .toList();
-
-
-        return oid4VCClients;
     }
 
     private ClientModel getClient(String clientId) {
