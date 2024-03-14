@@ -28,6 +28,7 @@ import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -197,7 +198,8 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
-                persistUserAndClientSession(entry, sessionUpdates, merged, sessionWrapper, realm);
+                Retry.executeWithBackoff(iteration -> persistUserAndClientSession(entry, sessionUpdates, merged, sessionWrapper, realm),
+                        10, 10);
             }
 
             if (merged != null) {
