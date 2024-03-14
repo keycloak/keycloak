@@ -22,7 +22,10 @@ const allTimes: TimeUnit[] = [
   { unit: "day", label: "times.days", multiplier: 86400 },
 ];
 
-export type TimeSelectorProps = Omit<TextInputProps, "onChange"> &
+export type TimeSelectorProps = Omit<
+  TextInputProps,
+  "onChange" | "defaultValue"
+> &
   Pick<DropdownProps, "menuAppendTo"> & {
     value?: number;
     units?: Unit[];
