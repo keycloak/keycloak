@@ -8,7 +8,7 @@ title="Enabling {project_name} Health checks"
 summary="Learn how to enable and use {project_name} health checks"
 includedOptions="health-enabled">
 
-{project_name} has built in support for health checks. This {section} describes how to enable and use the Keycloak health checks.
+{project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
 
 == {project_name} health check endpoints
 
