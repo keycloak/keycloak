@@ -71,6 +71,7 @@ public class SingleFileExportProvider implements ExportProvider {
                 @Override
                 protected void runExportImportTask(KeycloakSession session) throws IOException {
                     Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
+                            .peek(realm -> session.getContext().setRealm(realm))
                             .map(realm -> ExportUtils.exportRealm(session, realm, true, true));
 
                     writeToFile(realms);
@@ -88,6 +89,7 @@ public class SingleFileExportProvider implements ExportProvider {
             protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
                 Objects.requireNonNull(realm, "realm not found by realm name '" + realmName + "'");
+                session.getContext().setRealm(realm);
                 RealmRepresentation realmRep = ExportUtils.exportRealm(session, realm, true, true);
                 writeToFile(realmRep);
             }
