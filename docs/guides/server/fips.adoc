@@ -38,7 +38,7 @@ When {project_name} executes in fips mode, it will use the BCFIPS bits instead o
 === BouncyCastle FIPS bits
 
 BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-java/[BouncyCastle official page]. Then you can add them to the directory
-`KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle Keycloak dependencies. The supported BCFIPS bits needed are:
+`KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle {project_name} dependencies. The supported BCFIPS bits needed are:
 
 * `bc-fips-1.0.2.3.jar`
 * `bctls-fips-1.0.18.jar`
@@ -271,6 +271,6 @@ If you are still restricted to running {project_name} on such a system, you can 
 at least the setup is closer to it. It can be done by providing a custom security file with only an overriden list of security providers as described earlier. For a list of recommended providers, 
 see the https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[OpenJDK 17 documentation].
 
-You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related Keycloak packages as described in the Keycloak startup command earlier.
+You can check the {project_name} server log at startup to see if the correct security providers are used. TRACE logging should be enabled for crypto-related {project_name} packages as described in the Keycloak startup command earlier.
 
 </@tmpl.guide>
