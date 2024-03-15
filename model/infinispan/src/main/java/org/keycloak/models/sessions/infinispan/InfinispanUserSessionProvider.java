@@ -472,7 +472,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private AuthenticatedClientSessionAdapter getClientSessionEntityFromPersistenceProvider(UserSessionModel userSession, ClientModel client, boolean offline) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        AuthenticatedClientSessionModel clientSession = persister.loadClientSession(session.getContext().getRealm(), client, userSession, offline);
+        AuthenticatedClientSessionModel clientSession = persister.loadClientSession(userSession.getRealm(), client, userSession, offline);
 
         if (clientSession == null) {
             return null;
