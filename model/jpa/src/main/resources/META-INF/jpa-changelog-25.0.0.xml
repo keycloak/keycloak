@@ -19,12 +19,18 @@
 
     <changeSet author="keycloak" id="25.0.0-xxx">
         <addColumn tableName="OFFLINE_USER_SESSION">
-            <column name="BROKER_SESSION_ID" type="VARCHAR(2048)" />
-            <column name="VERSION" type="INT" defaultValue="0" />
+            <!-- length(broker_session_id) + length(realm_id) <= 1700 for mssql -->
+            <column name="BROKER_SESSION_ID" type="VARCHAR(1024)" />
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
         </addColumn>
         <addColumn tableName="OFFLINE_CLIENT_SESSION">
-            <column name="VERSION" type="INT" defaultValue="0" />
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
         </addColumn>
+        <modifySql dbms="mssql">
+            <!-- ensure that existing rows also get the new values on mssql -->
+            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
     </changeSet>
     <changeSet author="keycloak" id="25.0.0-xxx-2-mysql">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
