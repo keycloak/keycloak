@@ -123,7 +123,7 @@ public interface GroupModel extends RoleMapperModel {
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     default Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        Stream<GroupModel> allSubgorupsGroups = getSubGroupsStream().filter(group -> {
+        Stream<GroupModel> allSubgroupsGroups = getSubGroupsStream().filter(group -> {
             if (search == null || search.isEmpty()) return true;
             if (Boolean.TRUE.equals(exact)) {
                 return group.getName().equals(search);
@@ -134,14 +134,14 @@ public interface GroupModel extends RoleMapperModel {
 
         // Copied over from StreamsUtil from server-spi-private which is not available here
         if (firstResult != null && firstResult > 0) {
-            allSubgorupsGroups = allSubgorupsGroups.skip(firstResult);
+            allSubgroupsGroups = allSubgroupsGroups.skip(firstResult);
         }
 
         if (maxResults != null && maxResults >= 0) {
-            allSubgorupsGroups = allSubgorupsGroups.limit(maxResults);
+            allSubgroupsGroups = allSubgroupsGroups.limit(maxResults);
         }
 
-        return allSubgorupsGroups;
+        return allSubgroupsGroups;
     }
 
     /**
