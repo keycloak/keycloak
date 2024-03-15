@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class OID4VPTargetRoleMapper extends OID4VPMapper {
+public class OID4VPTargetRoleMapper extends OID4VCMapper {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VPTargetRoleMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
