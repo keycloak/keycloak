@@ -146,7 +146,7 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 
 Similarly, you can also store Quarkus properties in a Java KeyStore.
 
-Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by Keycloak, defining that property key in `quarkus.properties` has no effect. The Keycloak configuration value takes precedence over the Quarkus property value.
+Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by {project_Name}, defining that property key in `quarkus.properties` has no effect. The {project_Name} configuration value takes precedence over the Quarkus property value.
 
 === Using special characters in values
 

@@ -25,7 +25,7 @@ Use the `--help` command line option for each command to see the available optio
 Some of the configuration options are build time configuration options.
 As default, {project_name} will re-build automatically for the `export` and `import` commands if it detects a change of a build time parameter.
 
-If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have Keycloak skip the build check for a faster startup time.
+If you have built an optimized version of {project_name} with the `build` command as outlined in <@links.server id="configuration"/>, use the command line option `--optimized` to have {project_name} skip the build check for a faster startup time.
 When doing this, remove the build time options from the command line and keep only the runtime options.
 
 == Exporting a Realm to a Directory
