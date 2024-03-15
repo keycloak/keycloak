@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * A supported credential, as used in the Credentials Issuer Metadata in OID4VCI
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SupportedCredential {
 
@@ -41,10 +45,9 @@ public class SupportedCredential {
     @JsonIgnore
     private static final String CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY = "cryptographic_suites_supported";
     @JsonIgnore
-    private static final String DISPLAY_KEY = "display";
+    private static final String CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY = "credential_signing_alg_values_supported";
     @JsonIgnore
-    private static final String EXPIRY_KEY = "expiry_in_s";
-
+    private static final String DISPLAY_KEY = "display";
     private String id;
 
     @JsonProperty(FORMAT_KEY)
@@ -59,11 +62,11 @@ public class SupportedCredential {
     @JsonProperty(CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY)
     private List<String> cryptographicSuitesSupported;
 
+    @JsonProperty(CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY)
+    private List<String> credentialSigningAlgValuesSupported;
+
     @JsonProperty(DISPLAY_KEY)
     private DisplayObject display;
-
-    @JsonProperty(EXPIRY_KEY)
-    private Long expiryInSeconds;
 
     public Format getFormat() {
         return format;
@@ -122,12 +125,12 @@ public class SupportedCredential {
         return this;
     }
 
-    public Long getExpiryInSeconds() {
-        return expiryInSeconds;
+    public List<String> getCredentialSigningAlgValuesSupported() {
+        return credentialSigningAlgValuesSupported;
     }
 
-    public SupportedCredential setExpiryInSeconds(Long expiryInSeconds) {
-        this.expiryInSeconds = expiryInSeconds;
+    public SupportedCredential setCredentialSigningAlgValuesSupported(List<String> credentialSigningAlgValuesSupported) {
+        this.credentialSigningAlgValuesSupported = credentialSigningAlgValuesSupported;
         return this;
     }
 
@@ -139,12 +142,15 @@ public class SupportedCredential {
                 dotNotation.put(id + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY, String.join(",", cryptographicBindingMethodsSupported)));
         Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
                 dotNotation.put(id + DOT_SEPERATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY, String.join(",", cryptographicSuitesSupported)));
-        Optional.ofNullable(expiryInSeconds).ifPresent(expiryInSeconds -> dotNotation.put(id + DOT_SEPERATOR + EXPIRY_KEY, String.valueOf(expiryInSeconds)));
+        Optional.ofNullable(cryptographicSuitesSupported).ifPresent(types ->
+                dotNotation.put(id + DOT_SEPERATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY, String.join(",", credentialSigningAlgValuesSupported)));
 
         Map<String, String> dotNotatedDisplay = Optional.ofNullable(display)
                 .map(DisplayObject::toDotNotation)
                 .orElse(Map.of());
-        dotNotatedDisplay.forEach((key, value) -> dotNotation.put(id + DOT_SEPERATOR + DISPLAY_KEY + "." + key, value));
+        dotNotatedDisplay.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .forEach(entry -> dotNotation.put(id + DOT_SEPERATOR + DISPLAY_KEY + "." + entry.getKey(), entry.getValue()));
         return dotNotation;
     }
 
@@ -153,7 +159,6 @@ public class SupportedCredential {
         SupportedCredential supportedCredential = new SupportedCredential().setId(credentialId);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredential::setFormat);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + SCOPE_KEY)).ifPresent(supportedCredential::setScope);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + EXPIRY_KEY)).map(Long::valueOf).ifPresent(supportedCredential::setExpiryInSeconds);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
                 .map(cbms -> cbms.split(","))
                 .map(Arrays::asList)
@@ -162,6 +167,10 @@ public class SupportedCredential {
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
                 .ifPresent(supportedCredential::setCryptographicSuitesSupported);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY))
+                .map(css -> css.split(","))
+                .map(Arrays::asList)
+                .ifPresent(supportedCredential::setCredentialSigningAlgValuesSupported);
         Map<String, String> displayMap = new HashMap<>();
         dotNotated.entrySet().forEach(entry -> {
             String key = entry.getKey();
@@ -187,8 +196,9 @@ public class SupportedCredential {
             return false;
         if (getCryptographicSuitesSupported() != null ? !getCryptographicSuitesSupported().equals(that.getCryptographicSuitesSupported()) : that.getCryptographicSuitesSupported() != null)
             return false;
-        if (getDisplay() != null ? !getDisplay().equals(that.getDisplay()) : that.getDisplay() != null) return false;
-        return getExpiryInSeconds() != null ? getExpiryInSeconds().equals(that.getExpiryInSeconds()) : that.getExpiryInSeconds() == null;
+        if (getCredentialSigningAlgValuesSupported() != null ? !getCredentialSigningAlgValuesSupported().equals(that.getCredentialSigningAlgValuesSupported()) : that.getCredentialSigningAlgValuesSupported() != null)
+            return false;
+        return getDisplay() != null ? getDisplay().equals(that.getDisplay()) : that.getDisplay() == null;
     }
 
     @Override
@@ -198,8 +208,8 @@ public class SupportedCredential {
         result = 31 * result + (getScope() != null ? getScope().hashCode() : 0);
         result = 31 * result + (getCryptographicBindingMethodsSupported() != null ? getCryptographicBindingMethodsSupported().hashCode() : 0);
         result = 31 * result + (getCryptographicSuitesSupported() != null ? getCryptographicSuitesSupported().hashCode() : 0);
+        result = 31 * result + (getCredentialSigningAlgValuesSupported() != null ? getCredentialSigningAlgValuesSupported().hashCode() : 0);
         result = 31 * result + (getDisplay() != null ? getDisplay().hashCode() : 0);
-        result = 31 * result + (getExpiryInSeconds() != null ? getExpiryInSeconds().hashCode() : 0);
         return result;
     }
 }
