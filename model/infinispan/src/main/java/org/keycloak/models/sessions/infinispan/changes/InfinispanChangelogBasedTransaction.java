@@ -36,7 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -653,7 +653,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                 @Override
                                 public ClientModel getClient() {
-                                    return session.clients().getClientById(session.realms().getRealm(entity.getRealmId()), entity.getClientId());
+                                    return new ClientModelLazyDelegate(() -> null) {
+                                        @Override
+                                        public String getId() {
+                                            return entity.getClientId();
+                                        }
+                                    };
                                 }
 
                                 @Override
