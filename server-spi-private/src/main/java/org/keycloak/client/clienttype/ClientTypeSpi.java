@@ -34,7 +34,7 @@ public class ClientTypeSpi implements Spi {
 
     @Override
     public String getName() {
-        return "client-type";
+        return "clientType";
     }
 
     @Override

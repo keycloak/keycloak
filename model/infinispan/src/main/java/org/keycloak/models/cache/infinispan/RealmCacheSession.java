@@ -18,7 +18,9 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
@@ -1195,7 +1197,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (invalidations.contains(delegate.getId())) return delegate;
         StorageId storageId = new StorageId(delegate.getId());
         CachedClient cached = null;
-        ClientAdapter adapter = null;
+        ClientModel adapter = null;
 
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
@@ -1209,7 +1211,11 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
 
             cached = new CachedClient(revision, realm, delegate);
-            adapter = new ClientAdapter(realm, cached, this);
+            if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+                adapter = toClientModel(realm, cached);
+            } else {
+                adapter = new ClientAdapter(realm, cached, this);
+            }
 
             long lifespan = model.getLifespan();
             if (lifespan > 0) {
@@ -1219,7 +1225,11 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
         } else {
             cached = new CachedClient(revision, realm, delegate);
-            adapter = new ClientAdapter(realm, cached, this);
+            if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+                adapter = toClientModel(realm, cached);
+            } else {
+                adapter = new ClientAdapter(realm, cached, this);
+            }
             cache.addRevisioned(cached, startupRevision);
         }
 
@@ -1247,9 +1257,18 @@ public class RealmCacheSession implements CacheRealmProvider {
                 return getClientDelegate().getClientById(realm, cached.getId());
             }
         }
-        ClientAdapter adapter = new ClientAdapter(realm, cached, this);
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+            return toClientModel(realm, cached);
+        } else {
+            return new ClientAdapter(realm, cached, this);
+        }
+    }
 
-        return adapter;
+    private ClientModel toClientModel(RealmModel realm, CachedClient cached) {
+        ClientAdapter client = new ClientAdapter(realm, cached, this);
+
+        ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+        return mgr.augmentClient(client);
     }
 
     @Override

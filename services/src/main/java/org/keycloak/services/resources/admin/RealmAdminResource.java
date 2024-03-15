@@ -61,6 +61,7 @@ import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -1221,4 +1222,11 @@ public class RealmAdminResource {
         ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
         return new ClientProfilesResource(session, auth);
     }
+
+    @Path("client-types")
+    public ClientTypesResource getClientTypesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_TYPES);
+        return new ClientTypesResource(session.getProvider(ClientTypeManager.class), realm, auth);
+    }
+
 }
