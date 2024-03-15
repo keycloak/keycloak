@@ -111,8 +111,8 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
     /**
      * Translate an incoming {@link OID4VCClient} into a keycloak native {@link ClientRepresentation}.
      *
-     * @param oid4VCClient pojo, containing the SIOP-2 client parameters
-     * @return a clientRepresentation, fitting keycloaks internal model
+     * @param oid4VCClient pojo, containing the oid4vc client parameters
+     * @return a clientRepresentation
      */
     protected static ClientRepresentation toClientRepresentation(OID4VCClient oid4VCClient) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
