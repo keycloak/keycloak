@@ -187,22 +187,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public String getCurrentRefreshToken() {
-        return null; // Information not persisted.
+        return null; // TODO: persist at least for online sessions, if not for all
     }
 
     @Override
     public void setCurrentRefreshToken(String currentRefreshToken) {
-        // Information not persisted.
+        // TODO: persist at least for online sessions, if not for all
     }
 
     @Override
     public int getCurrentRefreshTokenUseCount() {
-        return 0; // Information not persisted.
+        return 0; // TODO: persist at least for online sessions, if not for all
     }
 
     @Override
     public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        // Information not persisted.
+        // TODO: persist at least for online sessions, if not for all
     }
 
     @Override
