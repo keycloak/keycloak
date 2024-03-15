@@ -20,8 +20,6 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

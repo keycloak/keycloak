@@ -44,6 +44,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -113,7 +114,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     @Override
     public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
 
-        Map<Format, VerifiableCredentialsSigningService> signingServices = new HashMap<>();
+        Map<Format, VerifiableCredentialsSigningService> signingServices = new EnumMap<>(Format.class);
         RealmModel realm = keycloakSession.getContext().getRealm();
         realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
                 .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
@@ -156,7 +157,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
-      //no-op
+        //no-op
     }
 
     @Override

@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;

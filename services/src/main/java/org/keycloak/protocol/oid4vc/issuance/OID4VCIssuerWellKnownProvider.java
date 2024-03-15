@@ -18,18 +18,16 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
