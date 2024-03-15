@@ -19,7 +19,7 @@ package org.keycloak.protocol.oid4vc.model;
 
 
 /**
- * Enum to handle potential errors in issuing credentials
+ * Enum to provide potential proof types for holder-binding
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */

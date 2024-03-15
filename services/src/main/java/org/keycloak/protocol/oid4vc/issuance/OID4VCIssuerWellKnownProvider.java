@@ -1,9 +1,27 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
@@ -30,7 +48,6 @@ import java.util.stream.Collectors;
  */
 public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
-    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
     private final KeycloakSession keycloakSession;
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
@@ -51,17 +68,22 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(keycloakSession.getContext())));
     }
 
+    /**
+     * Return the supported credentials from the current session.
+     * It will take into account the configured {@link VerifiableCredentialsSigningService}'s and there supported format
+     * and the credentials supported by the clients available in the session.
+     */
     public static Map<String, SupportedCredential> getSupportedCredentials(KeycloakSession keycloakSession) {
-        LOGGER.debug("Get supported credentials.");
-        var realm = keycloakSession.getContext().getRealm();
+
+        RealmModel realm = keycloakSession.getContext().getRealm();
         List<Format> supportedFormats = realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
                 .map(cm ->
                         keycloakSession
                                 .getKeycloakSessionFactory()
                                 .getProviderFactory(VerifiableCredentialsSigningService.class, cm.getProviderId())
                 )
-                .filter(pf -> pf instanceof VCSigningServiceProviderFactory)
-                .map(sspf -> (VCSigningServiceProviderFactory) sspf)
+                .filter(VCSigningServiceProviderFactory.class::isInstance)
+                .map(VCSigningServiceProviderFactory.class::cast)
                 .map(VCSigningServiceProviderFactory::supportedFormat)
                 .toList();
 
@@ -69,7 +91,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .getRealm()
                 .getClientsStream()
                 .filter(cm -> cm.getProtocol() != null)
-                .filter(cm -> cm.getProtocol().equals(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID))
+                .filter(cm -> cm.getProtocol().equals(OID4VCLoginProtocolFactory.PROTOCOL_ID))
                 .map(cm -> OID4VCClientRegistrationProvider.fromClientAttributes(cm.getClientId(), cm.getAttributes()))
                 .map(OID4VCClient::getSupportedVCTypes)
                 .flatMap(List::stream)
@@ -79,6 +101,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     }
 
+    /**
+     * Return the url of the issuer.
+     */
     public static String getIssuer(KeycloakContext context) {
         UriInfo frontendUriInfo = context.getUri(UrlType.FRONTEND);
         return Urls.realmIssuer(frontendUriInfo.getBaseUri(),
@@ -86,6 +111,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     }
 
+    /**
+     * Return the credentials endpoint address
+     */
     public static String getCredentialsEndpoint(KeycloakContext context) {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH;
     }

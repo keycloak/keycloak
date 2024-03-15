@@ -33,6 +33,7 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
+import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
         validate(clientRepresentation);
 
         ClientRepresentation cr = create(
-                new OID4VCClientRegistrationContext(session, clientRepresentation, this));
+                new DefaultClientRegistrationContext(session, clientRepresentation, this));
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(cr.getClientId()).build();
         return Response.created(uri).entity(cr).build();
     }
@@ -81,7 +82,7 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
         ClientRepresentation clientRepresentation = toClientRepresentation(client);
         validate(clientRepresentation);
         clientRepresentation = update(clientDid,
-                new OID4VCClientRegistrationContext(session, clientRepresentation, this));
+                new DefaultClientRegistrationContext(session, clientRepresentation, this));
         return Response.ok(clientRepresentation).build();
     }
 
@@ -115,7 +116,7 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
      */
     protected static ClientRepresentation toClientRepresentation(OID4VCClient oid4VCClient) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
-        clientRepresentation.setProtocol(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID);
+        clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
 
         clientRepresentation.setId(Optional.ofNullable(oid4VCClient.getId()).orElse(UUID.randomUUID().toString()));
         clientRepresentation.setClientId(oid4VCClient.getClientDid());

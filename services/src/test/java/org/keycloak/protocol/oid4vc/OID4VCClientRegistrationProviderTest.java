@@ -23,35 +23,19 @@ public class OID4VCClientRegistrationProviderTest {
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Single Supported Credential with format, single-type and expiry.",
+                        "Single Supported Credential with format and single-type.",
                         Map.of(
-                                "vc.credential-id.expiry_in_s", "100",
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "VerifiableCredential"),
                         new OID4VCClient(null, "did:web:test.org",
                                 List.of(new SupportedCredential()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
-                                        .setExpiryInSeconds(100l)
                                         .setScope("VerifiableCredential")),
                                 null, null)
                 },
                 {
-                        "Single Supported Credential with format, multi-type and expiry.",
-                        Map.of(
-                                "vc.credential-id.expiry_in_s", "100",
-                                "vc.credential-id.format", Format.JWT_VC.toString(),
-                                "vc.credential-id.scope", "AnotherCredential"),
-                        new OID4VCClient(null, "did:web:test.org",
-                                List.of(new SupportedCredential()
-                                        .setId("credential-id")
-                                        .setFormat(Format.JWT_VC)
-                                        .setExpiryInSeconds(100l)
-                                        .setScope("AnotherCredential")),
-                                null, null)
-                },
-                {
-                        "Single Supported Credential with format, multi-type and no expiry.",
+                        "Single Supported Credential with format and multi-type.",
                         Map.of(
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "AnotherCredential"),
@@ -63,7 +47,7 @@ public class OID4VCClientRegistrationProviderTest {
                                 null, null)
                 },
                 {
-                        "Single Supported Credential with format, multi-type, no expiry and a display object.",
+                        "Single Supported Credential with format, multi-type and a display object.",
                         Map.of(
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "AnotherCredential",
@@ -80,7 +64,6 @@ public class OID4VCClientRegistrationProviderTest {
                 {
                         "Multiple Supported Credentials.",
                         Map.of(
-                                "vc.first-id.expiry_in_s", "100",
                                 "vc.first-id.format", Format.JWT_VC.toString(),
                                 "vc.first-id.scope", "AnotherCredential",
                                 "vc.first-id.display.name", "First",
@@ -93,7 +76,6 @@ public class OID4VCClientRegistrationProviderTest {
                                 List.of(new SupportedCredential()
                                                 .setId("first-id")
                                                 .setFormat(Format.JWT_VC)
-                                                .setExpiryInSeconds(100l)
                                                 .setDisplay(new DisplayObject().setLocale("en").setName("First"))
                                                 .setScope("AnotherCredential"),
                                         new SupportedCredential()

@@ -34,9 +34,9 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPSubjectIdMapper;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPTargetRoleMapper;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPUserAttributeMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -75,12 +75,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void init(Config.Scope config) {
-        builtins.put(CLIENT_ROLES_MAPPER, OID4VPTargetRoleMapper.create("id", "client roles"));
-        builtins.put(SUBJECT_ID_MAPPER, OID4VPSubjectIdMapper.create("subject id", "id"));
-        builtins.put(USERNAME_MAPPER, OID4VPUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
-        builtins.put(EMAIL_MAPPER, OID4VPUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
-        builtins.put(FIRST_NAME_MAPPER, OID4VPUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
-        builtins.put(LAST_NAME_MAPPER, OID4VPUserAttributeMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
+        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("id", "client roles"));
+        builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
+        builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
+        builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
+        builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
+        builtins.put(LAST_NAME_MAPPER, OID4VCUserAttributeMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
     }
 
     @Override
@@ -120,7 +120,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         RealmModel realmModel = keycloakSession.getContext().getRealm();
         String issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
-                .orElseThrow(() -> new VCIssuerException("No issuerDid  configured."));
+                .orElseThrow(() -> new VCIssuerException("No issuer-did  configured."));
         int preAuthorizedCodeLifespan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CODE_LIFESPAN_S);
@@ -156,13 +156,12 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
-        // validate before setting the defaults
-        OID4VCClientRegistrationProvider.validate(rep);
+      //no-op
     }
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new OID4VCLoginProtocol(session);
+        return null;
     }
 
     @Override

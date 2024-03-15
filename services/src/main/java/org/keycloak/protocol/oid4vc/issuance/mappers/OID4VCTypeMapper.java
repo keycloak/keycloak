@@ -17,9 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -35,14 +38,14 @@ import java.util.Set;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class OID4VPTypeMapper extends OID4VPMapper {
+public class OID4VCTypeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-vc-type-mapper";
     public static final String TYPE_KEY = "vcTypeProperty";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VPTypeMapper() {
+    public OID4VCTypeMapper() {
         super();
         ProviderConfigProperty vcTypePropertyNameConfig = new ProviderConfigProperty();
         vcTypePropertyNameConfig.setName(TYPE_KEY);
@@ -58,13 +61,13 @@ public class OID4VPTypeMapper extends OID4VPMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public static ProtocolMapperModel create(String name, String subjectId) {
+    public static ProtocolMapperModel create(String name) {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
         configMap.put(SUPPORTED_CREDENTIALS_KEY, "VerifiableCredential");
         mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID);
+        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
         return mapperModel;
     }
@@ -93,6 +96,11 @@ public class OID4VPTypeMapper extends OID4VPMapper {
     @Override
     public String getHelpText() {
         return "Assigns a type to the credential.";
+    }
+
+    @Override
+    public ProtocolMapper create(KeycloakSession session) {
+        return new OID4VCTypeMapper();
     }
 
     @Override

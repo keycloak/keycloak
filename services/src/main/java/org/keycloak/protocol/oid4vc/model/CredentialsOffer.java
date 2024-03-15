@@ -22,15 +22,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+/**
+ * Represents a CredentialsOffer according to the OID4VCI Spec
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialsOffer {
 
     @JsonProperty("credential_issuer")
     private String credentialIssuer;
 
-    //Either the id of a credential, offered in the issuer metadata or a supported credential object
-    private List<Object> credentials;
+    //ids of credentials as offered in the issuer metadata
+    @JsonProperty("credential_configuration_ids")
+    private List<String> credentialConfigurationIds;
 
+    // current implementation only supports pre-authorized codes.
     private PreAuthorizedGrant grants;
 
     public String getCredentialIssuer() {
@@ -42,12 +50,12 @@ public class CredentialsOffer {
         return this;
     }
 
-    public List<Object> getCredentials() {
-        return credentials;
+    public List<String> getCredentialConfigurationIds() {
+        return credentialConfigurationIds;
     }
 
-    public CredentialsOffer setCredentials(List<Object> credentials) {
-        this.credentials = credentials;
+    public CredentialsOffer setCredentialConfigurationIds(List<String> credentialConfigurationIds) {
+        this.credentialConfigurationIds = credentialConfigurationIds;
         return this;
     }
 
