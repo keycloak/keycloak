@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -35,11 +35,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * Base class for OID4VP Mappers, to provide common configuration and functionality for all of them
+ * Base class for OID4VC Mappers, to provide common configuration and functionality for all of them
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public abstract class OID4VPMapper implements ProtocolMapper {
+public abstract class OID4VCMapper implements ProtocolMapper {
 
     protected static final String SUPPORTED_CREDENTIALS_KEY = "supportedCredentialTypes";
 
@@ -47,7 +47,7 @@ public abstract class OID4VPMapper implements ProtocolMapper {
 
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
 
-    protected OID4VPMapper() {
+    protected OID4VCMapper() {
         ProviderConfigProperty supportedCredentialsConfig = new ProviderConfigProperty();
         supportedCredentialsConfig.setType(ProviderConfigProperty.STRING_TYPE);
         supportedCredentialsConfig.setLabel("Supported Credential Types");
@@ -66,21 +66,16 @@ public abstract class OID4VPMapper implements ProtocolMapper {
         return Stream.concat(OID4VC_CONFIG_PROPERTIES.stream(), getIndividualConfigProperties().stream()).toList();
     }
 
-    public OID4VPMapper setMapperModel(ProtocolMapperModel mapperModel) {
+    public OID4VCMapper setMapperModel(ProtocolMapperModel mapperModel) {
         this.mapperModel = mapperModel;
         return this;
     }
 
     @Override
     public String getProtocol() {
-        return OID4VCClientRegistrationProviderFactory.PROTOCOL_ID;
+        return OID4VCLoginProtocolFactory.PROTOCOL_ID;
     }
-
-    @Override
-    public ProtocolMapper create(KeycloakSession session) {
-        throw new OID4VPMapperException("UNSUPPORTED METHOD");
-    }
-
+    
     @Override
     public String getDisplayCategory() {
         return "OID4VC Mapper";

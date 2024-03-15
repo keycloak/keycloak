@@ -29,6 +29,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -178,7 +179,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
     public static ClientRepresentation getTestClient(String clientId) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setClientId(clientId);
-        clientRepresentation.setProtocol(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID);
+        clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         clientRepresentation.setEnabled(true);
         clientRepresentation.setAttributes(Map.of(
                 "vc.test-credential.expiry_in_s", "100",

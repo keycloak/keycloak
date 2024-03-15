@@ -21,9 +21,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.net.URL;
 
+/**
+ * Holds all information required to build a uri to a credentials offer.
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialOfferURI {
-
     private String issuer;
     private String nonce;
 

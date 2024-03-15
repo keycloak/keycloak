@@ -20,16 +20,17 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Represents a CredentialResponse according to the OID4VCI Spec
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-response}
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialResponse {
 
-    private Format format;
-
     // concrete type depends on the format
     private Object credential;
-
-    @JsonProperty("acceptance_token")
-    private String acceptanceToken;
 
     @JsonProperty("c_nonce")
     private String cNonce;
@@ -37,14 +38,8 @@ public class CredentialResponse {
     @JsonProperty("c_nonce_expires_in")
     private String cNonceExpiresIn;
 
-    public Format getFormat() {
-        return format;
-    }
-
-    public CredentialResponse setFormat(Format format) {
-        this.format = format;
-        return this;
-    }
+    @JsonProperty("notification_id")
+    private String notificationId;
 
     public Object getCredential() {
         return credential;
@@ -52,15 +47,6 @@ public class CredentialResponse {
 
     public CredentialResponse setCredential(Object credential) {
         this.credential = credential;
-        return this;
-    }
-
-    public String getAcceptanceToken() {
-        return acceptanceToken;
-    }
-
-    public CredentialResponse setAcceptanceToken(String acceptanceToken) {
-        this.acceptanceToken = acceptanceToken;
         return this;
     }
 
@@ -79,6 +65,15 @@ public class CredentialResponse {
 
     public CredentialResponse setcNonceExpiresIn(String cNonceExpiresIn) {
         this.cNonceExpiresIn = cNonceExpiresIn;
+        return this;
+    }
+
+    public String getNotificationId() {
+        return notificationId;
+    }
+
+    public CredentialResponse setNotificationId(String notificationId) {
+        this.notificationId = notificationId;
         return this;
     }
 }

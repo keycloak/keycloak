@@ -25,6 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialIssuer {
 

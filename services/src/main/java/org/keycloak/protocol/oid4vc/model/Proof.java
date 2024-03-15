@@ -20,6 +20,12 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Proof to be used in the Credential Request(to allow holder binding) according to OID4VCI
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request}
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Proof {
 

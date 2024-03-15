@@ -21,6 +21,9 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+/**
+ * Interface for all OID4VC related provider factories, to ensure usage of the same feature flag.
+ */
 public interface OID4VCEnvironmentProviderFactory extends EnvironmentDependentProviderFactory {
 
     @Override

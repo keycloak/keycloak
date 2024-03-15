@@ -38,11 +38,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
-import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPMapper;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VPMapperFactory;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -56,8 +56,7 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.MediaType;
@@ -68,8 +67,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -83,6 +83,7 @@ public class OID4VCIssuerEndpoint {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
     public static final String CREDENTIAL_PATH = "credential";
+    public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
     private final KeycloakSession session;
     private final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator;
     private final ObjectMapper objectMapper;
@@ -110,7 +111,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Provides URI to the OID4VCI compliant credentials offer
+     * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -136,7 +137,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
 
-        String nonce = getNonce();
+        String nonce = generateNonce();
         try {
             clientSession.setNote(nonce, objectMapper.writeValueAsString(supportedCredential));
         } catch (JsonProcessingException e) {
@@ -145,7 +146,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         CredentialOfferURI credentialOfferURI = new CredentialOfferURI()
-                .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
+                .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(nonce);
 
         return Response.ok()
@@ -159,7 +160,7 @@ public class OID4VCIssuerEndpoint {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("credential-offer/{nonce}")
+    @Path(CREDENTIAL_OFFER_PATH + "{nonce}")
     public Response getCredentialOffer(@PathParam("nonce") String nonce) {
         if (nonce == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
@@ -188,7 +189,7 @@ public class OID4VCIssuerEndpoint {
 
         CredentialsOffer theOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentials(List.of(offeredCredential))
+                .setCredentialConfigurationIds(List.of(offeredCredential.getId()))
                 .setGrants(
                         new PreAuthorizedGrant()
                                 .setPreAuthorizedCode(
@@ -204,7 +205,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Requests a credential from the issuer
+     * Returns a verifiable credential
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -234,7 +235,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
         }
 
-        CredentialResponse responseVO = new CredentialResponse().setFormat(credentialRequestVO.getFormat());
+        CredentialResponse responseVO = new CredentialResponse();
 
         Object theCredential = getCredential(userSessionModel, supportedCredential.getScope(), credentialRequestVO.getFormat());
         switch (requestedFormat) {
@@ -260,7 +261,7 @@ public class OID4VCIssuerEndpoint {
         return clientSession;
     }
 
-    // return the current usersession model
+    // return the current UserSessionModel
     private UserSessionModel getUserSessionModel() {
         return getAuthResult(
                 new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN))).getSession();
@@ -279,12 +280,39 @@ public class OID4VCIssuerEndpoint {
         return authResult;
     }
 
-    protected Object getCredential(UserSessionModel userSessionModel, String vcType, Format format) {
+    /**
+     * Get a signed credential
+     *
+     * @param userSessionModel userSession to create the credential for
+     * @param vcType           type of the credential to be created
+     * @param format           format of the credential to be created
+     * @return the signed credential
+     */
+    private Object getCredential(UserSessionModel userSessionModel, String vcType, Format format) {
 
         List<OID4VCClient> clients = getClientsOfType(vcType, format);
-        List<OID4VPMapper> protocolMappers = getProtocolMappers(clients)
+
+        Map<String, OID4VCMapper> mapperMap = session.getAllProviders(OID4VCMapper.class)
                 .stream()
-                .map(OID4VPMapperFactory::createOID4VCMapper)
+                .collect(Collectors.toMap(ProviderFactory::getId, mapper -> mapper, (m1, m2) -> m1));
+
+        List<OID4VCMapper> protocolMappers = getProtocolMappers(clients)
+                .stream()
+                .map(pm -> {
+                    OID4VCMapper mapperFactory = mapperMap.get(pm.getProtocolMapper());
+                    if (mapperFactory == null) {
+                        LOGGER.warnf("No protocol mapper %s is registered.", pm.getProtocolMapper());
+                        return null;
+                    }
+                    ProtocolMapper protocolMapper = mapperFactory.create(session);
+                    if (protocolMapper instanceof OID4VCMapper oid4VCMapper) {
+                        oid4VCMapper.setMapperModel(pm);
+                        return oid4VCMapper;
+                    }
+                    LOGGER.warnf("The protocol mapper %s is not an instance of OID4VCMapper.", protocolMapper.getId());
+                    return null;
+                })
+                .filter(Objects::nonNull)
                 .toList();
 
         VerifiableCredential credentialToSign = getVCToSign(protocolMappers, vcType, userSessionModel);
@@ -303,7 +331,7 @@ public class OID4VCIssuerEndpoint {
                 .toList();
     }
 
-    private String getNonce() {
+    private String generateNonce() {
         return SecretGenerator.getInstance().randomString();
     }
 
@@ -318,6 +346,7 @@ public class OID4VCIssuerEndpoint {
         return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
     }
 
+    // Return all {@link  OID4VCClient}s that support the given type and format
     @NotNull
     private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
         LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
@@ -345,13 +374,14 @@ public class OID4VCIssuerEndpoint {
         return session.clients().getClientsStream(session.getContext().getRealm())
                 .filter(clientModel -> clientModel.getProtocol() != null)
                 .filter(clientModel -> clientModel.getProtocol()
-                        .equals(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID))
+                        .equals(OID4VCLoginProtocolFactory.PROTOCOL_ID))
                 .map(clientModel -> OID4VCClientRegistrationProvider.fromClientAttributes(clientModel.getClientId(), clientModel.getAttributes()))
                 .toList();
     }
 
+    // builds the unsigned credential by applying all protocol mappers.
     @NotNull
-    private VerifiableCredential getVCToSign(List<OID4VPMapper> protocolMappers, String vcType,
+    private VerifiableCredential getVCToSign(List<OID4VCMapper> protocolMappers, String vcType,
                                              UserSessionModel userSessionModel) {
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
@@ -362,16 +392,13 @@ public class OID4VCIssuerEndpoint {
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
                 .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, userSessionModel));
-        LOGGER.debugf("Will set %s", subjectClaims);
 
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
                 .forEach(mapper -> mapper.setClaimsForCredential(vc, userSessionModel));
 
-        if (vc.getId() == null && vc.getAdditionalProperties().get("id") == null) {
-            vc.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
-        }
+        LOGGER.debugf("The credential to sign is: %s", vc);
         return vc;
     }
 }

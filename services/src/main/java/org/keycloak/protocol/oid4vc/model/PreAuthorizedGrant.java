@@ -20,6 +20,13 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Container for the pre-authorized code to be used in a Credential Offer
+ *
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
+ *
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PreAuthorizedGrant {
 

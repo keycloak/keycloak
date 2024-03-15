@@ -19,6 +19,11 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+/**
+ *  Represents an error response, containing the error type as defined by OID4VCI
+ *
+ *  @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
 

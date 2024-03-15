@@ -21,10 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.Role;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -42,9 +45,9 @@ import java.util.stream.Collectors;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class OID4VPTargetRoleMapper extends OID4VCMapper {
+public class OID4VCTargetRoleMapper extends OID4VCMapper {
 
-    private static final Logger LOGGER = Logger.getLogger(OID4VPTargetRoleMapper.class);
+    private static final Logger LOGGER = Logger.getLogger(OID4VCTargetRoleMapper.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final String MAPPER_ID = "oid4vc-target-role-mapper";
@@ -53,7 +56,7 @@ public class OID4VPTargetRoleMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VPTargetRoleMapper() {
+    public OID4VCTargetRoleMapper() {
         super();
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
@@ -86,9 +89,14 @@ public class OID4VPTargetRoleMapper extends OID4VCMapper {
         configMap.put(SUBJECT_PROPERTY_CONFIG_KEY, "roles");
         configMap.put(CLIENT_CONFIG_KEY, clientId);
         mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID);
+        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
         return mapperModel;
+    }
+
+    @Override
+    public ProtocolMapper create(KeycloakSession session) {
+        return new OID4VCTargetRoleMapper();
     }
 
     @Override
@@ -107,9 +115,8 @@ public class OID4VPTargetRoleMapper extends OID4VCMapper {
                                     UserSessionModel userSessionModel) {
         String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
         String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
-        LOGGER.infof("Client is %s", client);
         ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
-        if (clientModel == null || !clientModel.getProtocol().equals(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID)) {
+        if (clientModel == null || !clientModel.getProtocol().equals(OID4VCLoginProtocolFactory.PROTOCOL_ID)) {
             return;
         }
 

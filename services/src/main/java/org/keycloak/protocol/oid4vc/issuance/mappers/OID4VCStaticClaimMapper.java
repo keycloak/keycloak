@@ -17,9 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -33,7 +36,7 @@ import java.util.Map;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
-public class OID4VPStaticClaimMapper extends OID4VPMapper {
+public class OID4VCStaticClaimMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-static-claim-mapper";
 
@@ -42,7 +45,7 @@ public class OID4VPStaticClaimMapper extends OID4VPMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VPStaticClaimMapper() {
+    public OID4VCStaticClaimMapper() {
         super();
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
@@ -55,7 +58,6 @@ public class OID4VPStaticClaimMapper extends OID4VPMapper {
         claimValueConfig.setName(STATIC_CLAIM_KEY);
         claimValueConfig.setLabel("Static Claim Value");
         claimValueConfig.setHelpText("Value to be set for the property.");
-        // TODO: check how to allow multitypes in the future
         claimValueConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(claimValueConfig);
     }
@@ -67,12 +69,13 @@ public class OID4VPStaticClaimMapper extends OID4VPMapper {
         configMap.put(SUBJECT_PROPERTY_CONFIG_KEY, propertyName);
         configMap.put(STATIC_CLAIM_KEY, value);
         mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCClientRegistrationProviderFactory.PROTOCOL_ID);
+        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
         return mapperModel;
     }
 
-    @Override protected List<ProviderConfigProperty> getIndividualConfigProperties() {
+    @Override
+    protected List<ProviderConfigProperty> getIndividualConfigProperties() {
         return CONFIG_PROPERTIES;
     }
 
@@ -81,21 +84,30 @@ public class OID4VPStaticClaimMapper extends OID4VPMapper {
         // nothing to do for the mapper.
     }
 
-    @Override public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    @Override
+    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
         String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
         String staticValue = mapperModel.getConfig().get(STATIC_CLAIM_KEY);
         claims.put(propertyName, staticValue);
     }
 
-    @Override public String getDisplayType() {
+    @Override
+    public String getDisplayType() {
         return "Static Claim Mapper";
     }
 
-    @Override public String getHelpText() {
+    @Override
+    public String getHelpText() {
         return "Allows to set static values for the credential subject.";
     }
 
-    @Override public String getId() {
+    @Override
+    public ProtocolMapper create(KeycloakSession session) {
+        return new OID4VCStaticClaimMapper();
+    }
+
+    @Override
+    public String getId() {
         return MAPPER_ID;
     }
 }
