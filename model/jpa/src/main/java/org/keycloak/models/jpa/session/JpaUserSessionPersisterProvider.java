@@ -271,6 +271,30 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
 
+        offlineStr = offlineToString(false);
+
+        expiredOffline = Time.currentTime() - realm.getClientSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+
+        // prefer client session timeout if set
+        expiredClientOffline = expiredOffline;
+        if (realm.getClientSessionIdleTimeout() > 0) {
+            expiredClientOffline = Time.currentTime() - realm.getClientSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        }
+
+        cs = em.createNamedQuery("deleteExpiredClientSessions")
+                .setParameter("realmId", realm.getId())
+                .setParameter("lastSessionRefresh", expiredClientOffline)
+                .setParameter("offline", offlineStr)
+                .executeUpdate();
+
+        us = em.createNamedQuery("deleteExpiredUserSessions")
+                .setParameter("realmId", realm.getId())
+                .setParameter("lastSessionRefresh", expiredOffline)
+                .setParameter("offline", offlineStr)
+                .executeUpdate();
+
+        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+
     }
 
     @Override
