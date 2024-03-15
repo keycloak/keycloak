@@ -152,9 +152,9 @@ public class UsersResource {
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().commit();
-            }
+//            if (session.getTransactionManager().isActive()) {
+//                session.getTransactionManager().commit();
+//            }
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {

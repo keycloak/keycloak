@@ -34,12 +34,10 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
-public class OrganizationTest extends AbstractAdminTest {
+public class OrganizationTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdate() {
@@ -94,27 +92,5 @@ public class OrganizationTest extends AbstractAdminTest {
             organization.toRepresentation();
             fail("should be deleted");
         } catch (NotFoundException ignore) {}
-    }
-
-    private OrganizationRepresentation createRepresentation() {
-        return createRepresentation("neworg");
-    }
-
-    private OrganizationRepresentation createRepresentation(String name) {
-        OrganizationRepresentation org = new OrganizationRepresentation();
-
-        org.setName(name);
-
-        String id;
-
-        try (Response response = testRealm().organizations().create(org)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            id = ApiUtil.getCreatedId(response);
-        }
-
-        org.setId(id);
-        getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
-
-        return org;
     }
 }

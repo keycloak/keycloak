@@ -25,6 +25,9 @@
             <column name="REALM_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="GROUP_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
             <column name="NAME" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -32,6 +35,7 @@
 
         <addPrimaryKey columnNames="ID" tableName="ORGANIZATION"/>
         <addUniqueConstraint tableName="ORGANIZATION" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
+        <addUniqueConstraint tableName="ORGANIZATION" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
     </changeSet>
 
 </databaseChangeLog>

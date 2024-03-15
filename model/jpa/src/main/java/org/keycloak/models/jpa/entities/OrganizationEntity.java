@@ -45,6 +45,9 @@ public class OrganizationEntity {
     @Column(name="NAME")
     protected String name;
 
+    @Column(name = "GROUP_ID")
+    private String groupId;
+
     public String getId() {
         return id;
     }
@@ -67,6 +70,14 @@ public class OrganizationEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     @Override

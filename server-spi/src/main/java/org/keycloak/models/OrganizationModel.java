@@ -25,4 +25,5 @@ public interface OrganizationModel {
 
     String getName();
 
+    boolean addMember(UserModel member);
 }

@@ -25,6 +25,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -35,24 +37,38 @@ import org.keycloak.organization.OrganizationProvider;
 public class JpaOrganizationProvider implements OrganizationProvider {
 
     private final EntityManager em;
+    private final GroupProvider groupProvider;
+    private final KeycloakSession session;
 
     public JpaOrganizationProvider(KeycloakSession session) {
+        this.session = session;
         JpaConnectionProvider jpaProvider = session.getProvider(JpaConnectionProvider.class);
         this.em = jpaProvider.getEntityManager();
+        groupProvider = session.groups();
     }
 
     @Override
     public OrganizationModel createOrganization(RealmModel realm, String name) {
         throwExceptionIfRealmIsNull(realm);
+
+        String groupName = "org-" + name;
+        GroupModel group = groupProvider.getGroupByName(realm, null, name);
+
+        if (group != null) {
+            throw new IllegalArgumentException("A group with the same already exist and it is bound to different organization");
+        }
+
         OrganizationEntity entity = new OrganizationEntity();
 
         entity.setId(KeycloakModelUtils.generateId());
         entity.setRealmId(realm.getId());
         entity.setName(name);
+        group = groupProvider.createGroup(realm, entity.getId(), groupName);
+        entity.setGroupId(group.getId());
 
         em.persist(entity);
 
-        return new OrganizationAdapter(entity);
+        return new OrganizationAdapter(entity, session);
     }
 
     @Override
@@ -65,6 +81,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         if (!toRemove.getRealm().equals(realm.getId())) {
             throw new IllegalArgumentException("Organization [" + organization.getId() + " does not belong to realm [" + realm.getId() + "]");
         }
+
+        GroupModel group = session.groups().getGroupById(realm, toRemove.getGroupId());
+        session.groups().removeGroup(realm, group);
+        //TODO: delete users
 
         em.remove(toRemove.getEntity());
 
@@ -111,7 +131,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return null;
         }
 
-        return new OrganizationAdapter(entity);
+        return new OrganizationAdapter(entity, session);
     }
 
     private void throwExceptionIfOrganizationIsNull(OrganizationModel organization) {
