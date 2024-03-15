@@ -12,6 +12,7 @@ env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.32.0
   KUBERNETES_VERSION: v1.27.10 # OCP 4.14
+  MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
   run:
@@ -72,7 +73,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -116,7 +117,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -159,6 +160,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
+          start args: --memory=${{ env.MINIKUBE_MEMORY }}
 
       - name: Install OPM
         uses: redhat-actions/openshift-tools-installer@v1
