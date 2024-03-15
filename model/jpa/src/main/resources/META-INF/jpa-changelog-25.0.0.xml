@@ -28,9 +28,15 @@
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
             <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
             At least we would need to add the offline flag -->
-            <column name="BROKER_SESSION_ID" />
+            <column name="BROKER_SESSION_ID(255)" valueComputed="BROKER_SESSION_ID(255)" />
             <column name="REALM_ID" />
         </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="BROKER_SESSION_ID(255)" with="(value::varchar(250))" />
+        </modifySql>
+        <modifySql dbms="oracle">
+            <replace replace="BROKER_SESSION_ID(255)" with="SUBSTR(BROKER_SESSION_ID, 1, 250)" />
+        </modifySql>
     </changeSet>
 
     <changeSet author="keycloak" id="25.0.0-org">
