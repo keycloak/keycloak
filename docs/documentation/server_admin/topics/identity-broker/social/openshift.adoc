@@ -38,8 +38,8 @@ grantMethod: prompt <4>
 ==== OpenShift 4
 
 .Prerequisites
-. A certificate of the OpenShift 4 instance stored in the Keycloak Truststore.
-. A Keycloak server configured in order to use the truststore. For more information, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
+. A certificate of the OpenShift 4 instance stored in the {project_name} Truststore.
+. A {project_name} server configured in order to use the truststore. For more information, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
 
 .Procedure
 . Click *Identity Providers* in the menu.
