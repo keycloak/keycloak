@@ -28,10 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ConfigurationValidationHelper;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.time.Clock;
 
 /**
  * Provider Factory to create {@link  VerifiableCredentialsSigningService}s

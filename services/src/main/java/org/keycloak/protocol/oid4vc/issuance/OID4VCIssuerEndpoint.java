@@ -39,9 +39,8 @@ import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.OID4VCClientRegistrationProvider;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
@@ -51,6 +50,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredential;
@@ -351,11 +351,9 @@ public class OID4VCIssuerEndpoint {
     private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
         LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
 
-        Optional.ofNullable(vcType)
-                .filter(type -> !type.isEmpty())
-                .orElseThrow(() ->
-                        new BadRequestException("No VerifiableCredential-Type was provided in the request.")
-                );
+        if (Optional.ofNullable(vcType).filter(type -> !type.isEmpty()).isEmpty()) {
+            throw new BadRequestException("No VerifiableCredential-Type was provided in the request.");
+        }
 
         return getOID4VCClientsFromSession()
                 .stream()

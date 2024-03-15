@@ -19,8 +19,6 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.net.URL;
-
 /**
  * Holds all information required to build a uri to a credentials offer.
  *
