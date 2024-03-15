@@ -48,8 +48,9 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-
-import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
+import org.keycloak.models.utils.RealmModelDelegate;
+import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.models.utils.UserSessionModelDelegate;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -230,7 +231,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                 @Override
                                 public RealmModel getRealm() {
-                                    return session.realms().getRealm(entity.getRealmId());
+                                    return new RealmModelDelegate(null) {
+                                        @Override
+                                        public String getId() {
+                                            return entity.getRealmId();
+                                        }
+                                    };
                                 }
 
                                 @Override
@@ -245,10 +251,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                 @Override
                                 public UserModel getUser() {
-                                    if (Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS) && entity.getNotes().containsKey(SESSION_NOTE_LIGHTWEIGHT_USER)) {
-                                        return LightweightUserAdapter.fromString(session, realm, entity.getNotes().get(SESSION_NOTE_LIGHTWEIGHT_USER));
-                                    }
-                                    return session.users().getUserById(session.realms().getRealm(entity.getRealmId()), entity.getUser());
+                                    return new UserModelDelegate(null) {
+                                        @Override
+                                        public String getId() {
+                                            return entity.getUser();
+                                        }
+                                    };
                                 }
 
                                 @Override
@@ -580,115 +588,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                                 @Override
                                 public UserSessionModel getUserSession() {
-                                    return new UserSessionModel() {
+                                    return new UserSessionModelDelegate(null) {
                                         @Override
                                         public String getId() {
                                             return entity.getUserSessionId();
-                                        }
-
-                                        @Override
-                                        public RealmModel getRealm() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getBrokerSessionId() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getBrokerUserId() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public UserModel getUser() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getLoginUsername() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getIpAddress() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getAuthMethod() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public boolean isRememberMe() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public int getStarted() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public int getLastSessionRefresh() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void setLastSessionRefresh(int seconds) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public boolean isOffline() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public String getNote(String name) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void setNote(String name, String value) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void removeNote(String name) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public Map<String, String> getNotes() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public State getState() {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void setState(State state) {
-                                            throw new IllegalStateException("not implemented");
-                                        }
-
-                                        @Override
-                                        public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-                                            throw new IllegalStateException("not implemented");
                                         }
                                     };
                                 }

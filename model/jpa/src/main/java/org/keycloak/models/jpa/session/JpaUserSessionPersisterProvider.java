@@ -592,6 +592,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             public void setUserId(String userId) {
                 entity.setUserId(userId);
             }
+
+            @Override
+            public void setBrokerSessionId(String brokerSessionId) {
+                entity.setBrokerSessionId(brokerSessionId);
+            }
         };
 
         Map<String, AuthenticatedClientSessionModel> clientSessions = new HashMap<>();

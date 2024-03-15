@@ -45,4 +45,7 @@ public interface PersistentUserSessionModel {
     void setRealmId(String realmId);
 
     void setUserId(String userId);
+
+    void setBrokerSessionId(String brokerSessionId);
+
 }
