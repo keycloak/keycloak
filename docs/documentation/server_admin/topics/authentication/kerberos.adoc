@@ -161,10 +161,6 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
     deserializedGssCredential, GSSContext.DEFAULT_LIFETIME);
 ----
 
-ifeval::[{project_community}==true]
-Examples of this code exist in `examples/kerberos` in the {project_name} example distribution or demo distribution download. You can also check the example sources directly https://github.com/keycloak/keycloak/tree/main/examples/kerberos[here].
-endif::[]
-
 [NOTE]
 ====
 Configure `forwardable` Kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
