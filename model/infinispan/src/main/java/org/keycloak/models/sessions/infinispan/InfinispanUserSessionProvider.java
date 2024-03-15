@@ -396,8 +396,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 if (user != null) {
                     return persister.loadUserSessionsStream(realm, user, offline, 0, null)
                             .filter(predicate.toModelPredicate())
-                            .map(persistentUserSession -> (UserSessionModel) wrap(realm, importUserSession(realm, offline, persistentUserSession), offline))
-                            .filter(Objects::nonNull);
+                            .map(s -> importUserSession(realm, offline, s))
+                            .filter(Objects::nonNull)
+                            .map(s -> wrap(realm, s, offline));
                 } else {
                     return Stream.empty();
                 }
@@ -415,8 +416,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 return userModel != null ?
                         persister.loadUserSessionsStream(realm, userModel, offline, 0, null)
                                 .filter(predicate.toModelPredicate())
-                                .map(persistentUserSession -> (UserSessionModel) wrap(realm, importUserSession(realm, offline, persistentUserSession), offline))
-                                .filter(Objects::nonNull):
+                                .map(s -> importUserSession(realm, offline, s))
+                                .filter(Objects::nonNull)
+                                .map(s -> wrap(realm, s, offline)) :
                         Stream.empty();
             }
 
@@ -424,16 +426,18 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 ClientModel client = session.clients().getClientById(realm, predicate.getClient());
                 return persister.loadUserSessionsStream(realm, client, offline, 0, null)
                         .filter(predicate.toModelPredicate())
-                        .map(persistentUserSession -> (UserSessionModel) wrap(realm, importUserSession(realm, offline, persistentUserSession), offline))
-                        .filter(Objects::nonNull);
+                        .map(s -> importUserSession(realm, offline, s))
+                        .filter(Objects::nonNull)
+                        .map(s -> wrap(realm, s, offline));
             }
 
             if (predicate.getBrokerSessionId() != null && !offline) {
                 // we haven't yet migrated the old offline entries, so they don't have a brokerSessionId yet
                 return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), offline))
                         .filter(predicate.toModelPredicate())
-                        .map(persistentUserSession -> (UserSessionModel) wrap(realm, importUserSession(realm, offline, persistentUserSession), offline))
-                        .filter(Objects::nonNull);
+                        .map(s -> importUserSession(realm, offline, s))
+                        .filter(Objects::nonNull)
+                        .map(s -> wrap(realm, s, offline));
             }
 
             throw new ModelException("For offline sessions, only lookup by userId, brokerUserId and client is supported");
