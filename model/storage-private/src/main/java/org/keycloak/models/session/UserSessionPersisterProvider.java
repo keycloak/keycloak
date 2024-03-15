@@ -139,4 +139,12 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline);
 
+    /**
+     * Remove the online user sessions for this realm.
+     */
+    default void removeUserSessions(RealmModel realm, boolean offline) {
+        throw new IllegalArgumentException("not supported");
+        // TODO: remove default implementation
+    }
+
 }

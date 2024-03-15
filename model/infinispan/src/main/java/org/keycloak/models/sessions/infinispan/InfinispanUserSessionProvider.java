@@ -680,8 +680,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
 
-        // TODO: This now removes all online +  offline sessions from the store. Need to provide a new interface here to keep the old behavior of only removing online sessions,
-        session.getProvider(UserSessionPersisterProvider.class).onRealmRemoved(realm);
+        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, false);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
