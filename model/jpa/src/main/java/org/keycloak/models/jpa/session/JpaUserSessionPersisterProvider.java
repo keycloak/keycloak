@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa.session;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -253,7 +254,24 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
         }
 
-        String offlineStr = offlineToString(true);
+        expire(realm, expiredClientOffline, expiredOffline, true);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+
+            int expired = Time.currentTime() - realm.getSsoSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+
+            // prefer client session timeout if set
+            int expiredClient = expired;
+            if (realm.getClientSessionIdleTimeout() > 0) {
+                expiredClient = Time.currentTime() - realm.getClientSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+            }
+
+            expire(realm, expiredClient, expired, false);
+        }
+    }
+
+    private void expire(RealmModel realm, int expiredClientOffline, int expiredOffline, boolean offline) {
+        String offlineStr = offlineToString(offline);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
@@ -270,7 +288,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .executeUpdate();
 
         logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
-
     }
 
     @Override
