@@ -701,7 +701,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                                 public String put(String key, String value) {
                                                     String oldValue = clientSessionModel.getNotes().get(key);
                                                     clientSessionModel.setNote(key, value);
-                                                    clientSessionModel.getUpdatedModel();
                                                     return oldValue;
                                                 }
                                             };
@@ -824,6 +823,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                                             session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
                                         }
                                     });
+                                    clientSessionModel.getUpdatedModel();
                                 }
                             } else {
                                 session.getProvider(UserSessionPersisterProvider.class).removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
