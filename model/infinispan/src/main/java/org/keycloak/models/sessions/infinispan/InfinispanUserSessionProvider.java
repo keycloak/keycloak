@@ -956,7 +956,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         if (importWithExpiration) {
             importSessionsWithExpiration(sessionsById, cache,
                     offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
-                    offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs, offline);
+                    offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
         } else {
             Retry.executeWithBackoff((int iteration) -> {
                 cache.putAll(sessionsById);
@@ -973,7 +973,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             if (importWithExpiration) {
                 importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
                         offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs, offline);
+                        offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
             } else {
                 Retry.executeWithBackoff((int iteration) -> {
 
@@ -1000,7 +1000,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,
                     offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs, offline);
+                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
         } else {
             Retry.executeWithBackoff((int iteration) -> {
                 clientSessCache.putAll(clientSessionsById);
@@ -1017,7 +1017,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             if (importWithExpiration) {
                 importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
                         offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs, offline);
+                        offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
             } else {
                 Retry.executeWithBackoff((int iteration) -> {
 
@@ -1040,7 +1040,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private <T extends SessionEntity> void importSessionsWithExpiration(Map<? extends Object, SessionEntityWrapper<T>> sessionsById,
                                                                         BasicCache cache, SessionFunction<T> lifespanMsCalculator,
-                                                                        SessionFunction<T> maxIdleTimeMsCalculator, boolean offline) {
+                                                                        SessionFunction<T> maxIdleTimeMsCalculator) {
         sessionsById.forEach((id, sessionEntityWrapper) -> {
 
             T sessionEntity = sessionEntityWrapper.getEntity();
@@ -1069,12 +1069,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                     }, 10, 10);
                 } else {
                     cache.put(id, sessionEntityWrapper, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
-                }
-            } else {
-                if (offline || Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)) {
-                    UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-                    persister.removeUserSession(id.toString(), offline);
-                    cache.remove(id);
                 }
             }
         });
