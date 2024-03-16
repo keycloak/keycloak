@@ -187,22 +187,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public String getCurrentRefreshToken() {
-        return null; // TODO: persist at least for online sessions, if not for all
+        return getData().getCurrentRefreshToken();
     }
 
     @Override
     public void setCurrentRefreshToken(String currentRefreshToken) {
-        // TODO: persist at least for online sessions, if not for all
+        getData().setCurrentRefreshToken(currentRefreshToken);
     }
 
     @Override
     public int getCurrentRefreshTokenUseCount() {
-        return 0; // TODO: persist at least for online sessions, if not for all
+        return getData().getCurrentRefreshTokenUseCount();
     }
 
     @Override
     public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-        // TODO: persist at least for online sessions, if not for all
+        getData().setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
     }
 
     @Override
@@ -299,7 +299,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         private Set<String> protocolMappers;
         @JsonProperty("roles")
         private Set<String> roles;
-
+        @JsonProperty("currentRefreshToken")
+        private String currentRefreshToken;
+        @JsonProperty("currentRefreshTokenUseCount")
+        private int currentRefreshTokenUseCount;
 
         public String getAuthMethod() {
             return authMethod;
@@ -371,6 +374,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
         public void setRoles(Set<String> roles) {
             this.roles = roles;
+        }
+
+        public String getCurrentRefreshToken() {
+            return currentRefreshToken;
+        }
+
+        public void setCurrentRefreshToken(String currentRefreshToken) {
+            this.currentRefreshToken = currentRefreshToken;
+        }
+
+        public int getCurrentRefreshTokenUseCount() {
+            return currentRefreshTokenUseCount;
+        }
+
+        public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+            this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
         }
     }
 }
