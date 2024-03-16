@@ -26,6 +26,13 @@
         <addColumn tableName="OFFLINE_CLIENT_SESSION">
             <column name="VERSION" type="INT" defaultValueNumeric="0" />
         </addColumn>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH" >
+            <!-- optimize this index for range queries for expire sessions -->
+            <!-- it should also distribute hot segments across realms and online/offline -->
+            <column name="REALM_ID" />
+            <column name="OFFLINE_FLAG" />
+            <column name="LAST_SESSION_REFRESH" />
+        </createIndex>
         <modifySql dbms="mssql">
             <!-- ensure that existing rows also get the new values on mssql -->
             <!-- https://github.com/liquibase/liquibase/issues/4644 -->
