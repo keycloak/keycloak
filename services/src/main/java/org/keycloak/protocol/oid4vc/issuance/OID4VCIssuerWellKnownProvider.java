@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 /**
  * {@link  WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
  * the Credential Issuer Metadata as defined by the OID4VCI protocol
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-10.2.2}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
