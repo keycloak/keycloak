@@ -74,7 +74,7 @@ public abstract class OID4VCMapper implements ProtocolMapper {
     public String getProtocol() {
         return OID4VCLoginProtocolFactory.PROTOCOL_ID;
     }
-    
+
     @Override
     public String getDisplayCategory() {
         return "OID4VC Mapper";
