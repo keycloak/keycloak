@@ -44,8 +44,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VCSubjectIdMapper() {
-        super();
+    static {
         ProviderConfigProperty idPropertyNameConfig = new ProviderConfigProperty();
         idPropertyNameConfig.setName(ID_KEY);
         idPropertyNameConfig.setLabel("ID Property Name");
@@ -53,7 +52,6 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         idPropertyNameConfig.setDefaultValue("id");
         idPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(idPropertyNameConfig);
-
     }
 
     @Override

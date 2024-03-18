@@ -46,7 +46,7 @@ public abstract class OID4VCMapper implements ProtocolMapper {
 
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
 
-    protected OID4VCMapper() {
+    static {
         ProviderConfigProperty supportedCredentialsConfig = new ProviderConfigProperty();
         supportedCredentialsConfig.setType(ProviderConfigProperty.STRING_TYPE);
         supportedCredentialsConfig.setLabel("Supported Credential Types");
@@ -74,7 +74,7 @@ public abstract class OID4VCMapper implements ProtocolMapper {
     public String getProtocol() {
         return OID4VCLoginProtocolFactory.PROTOCOL_ID;
     }
-    
+
     @Override
     public String getDisplayCategory() {
         return "OID4VC Mapper";
