@@ -49,8 +49,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VCUserAttributeMapper() {
-        super();
+    static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
         subjectPropertyNameConfig.setLabel("Attribute Property Name");

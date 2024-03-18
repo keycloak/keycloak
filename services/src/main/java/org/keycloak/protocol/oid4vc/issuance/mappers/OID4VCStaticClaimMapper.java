@@ -44,8 +44,7 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VCStaticClaimMapper() {
-        super();
+    static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(SUBJECT_PROPERTY_CONFIG_KEY);
         subjectPropertyNameConfig.setLabel("Static Claim Property Name");

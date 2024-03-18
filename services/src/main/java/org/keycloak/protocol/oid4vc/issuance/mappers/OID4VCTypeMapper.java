@@ -44,15 +44,13 @@ public class OID4VCTypeMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VCTypeMapper() {
-        super();
+    static {
         ProviderConfigProperty vcTypePropertyNameConfig = new ProviderConfigProperty();
         vcTypePropertyNameConfig.setName(TYPE_KEY);
         vcTypePropertyNameConfig.setLabel("Verifiable Credential Type");
         vcTypePropertyNameConfig.setHelpText("Type of the credential.");
         vcTypePropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(vcTypePropertyNameConfig);
-
     }
 
     @Override

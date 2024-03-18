@@ -44,8 +44,7 @@ public class OID4VCContextMapper extends OID4VCMapper {
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
-    public OID4VCContextMapper() {
-        super();
+    static {
         ProviderConfigProperty contextPropertyNameConfig = new ProviderConfigProperty();
         contextPropertyNameConfig.setName(TYPE_KEY);
         contextPropertyNameConfig.setLabel("Verifiable Credentials Context");
@@ -53,8 +52,8 @@ public class OID4VCContextMapper extends OID4VCMapper {
         contextPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         contextPropertyNameConfig.setDefaultValue("https://www.w3.org/2018/credentials/v1");
         CONFIG_PROPERTIES.add(contextPropertyNameConfig);
-
     }
+
 
     @Override
     protected List<ProviderConfigProperty> getIndividualConfigProperties() {
