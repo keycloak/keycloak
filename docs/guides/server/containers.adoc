@@ -9,7 +9,7 @@ title="Running {project_name} in a container"
 summary="Learn how to run {project_name} from a container image"
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
-This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a {project_name} container.
+This {section} describes how to optimize and run the {project_name} container image to provide the best experience running a container.
 
 <@profile.ifProduct>
 
@@ -82,7 +82,7 @@ RUN /opt/keycloak/bin/kc.sh build
 
 === Installing additional RPM packages
 
-If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`, you will notice that `+microdnf+`, `+dnf+`, and even `+rpm+` are not installed. Also, very few packages are available, only enough for a `+bash+` shell, and to run Keycloak itself. This is due to security hardening measures, which reduce the attack surface of the Keycloak container.
+If you try to install new software in a stage `+FROM quay.io/keycloak/keycloak+`, you will notice that `+microdnf+`, `+dnf+`, and even `+rpm+` are not installed. Also, very few packages are available, only enough for a `+bash+` shell, and to run {project_name} itself. This is due to security hardening measures, which reduce the attack surface of the {project_name} container.
 
 First, consider if your use case can be implemented in a different way, and so avoid installing new RPMs into the final container:
 
@@ -216,7 +216,7 @@ This approach significantly increases startup time and creates an image that is 
 
 == Importing A Realm On Startup
 
-The {project_name} containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
+The {project_name} containers have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the {project_name} container will import that data on startup! This may only make sense to do in Dev mode.
 
 [source,bash,subs="attributes+"]
 ----
@@ -236,7 +236,7 @@ This behavior is achieved by JVM options `-XX:MaxRAMPercentage=70`, and `-XX:Ini
 
 The `-XX:MaxRAMPercentage` option represents the maximum heap size as 70% of the total container memory.
 The `-XX:InitialRAMPercentage` option represents the initial heap size as 50% of the total container memory.
-These values were chosen based on a deeper analysis of Keycloak memory management.
+These values were chosen based on a deeper analysis of {project_name} memory management.
 
 The JVM options related to the heap might be overridden by setting the environment variable `JAVA_OPTS_KC_HEAP`.
 You can find the default values of the `JAVA_OPTS_KC_HEAP` in the source code of the `kc.sh`, or `kc.bat` script.
