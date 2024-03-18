@@ -120,7 +120,7 @@ To specify a different minimum or maximum length, change the unmanaged attribute
 WARNING: {project_name} caches user-related objects in its internal caches.
 The longer the attributes are, the more memory the cache consumes.
 Therefore, limiting the size of the length attributes is recommended.
-Consider storing large objects outside Keycloak and reference them by ID or URL.
+Consider storing large objects outside {project_Name} and reference them by ID or URL.
 
 == Managing the User Profile
 
