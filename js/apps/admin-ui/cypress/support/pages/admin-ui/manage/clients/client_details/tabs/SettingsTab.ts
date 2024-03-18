@@ -11,19 +11,20 @@ export enum NameIdFormat {
 const masthead = new Masthead();
 
 export default class SettingsTab extends PageObject {
-  #samlNameIdFormat = "#samlNameIdFormat";
-  #forceNameIdFormat = "forceNameIdFormat";
-  #forcePostBinding = "forcePostBinding";
-  #forceArtifactBinding = "forceArtifactBinding";
-  #includeAuthnStatement = "includeAuthnStatement";
-  #includeOneTimeUseCondition = "includeOneTimeUseCondition";
-  #optimizeLookup = "optimizeLookup";
+  #samlNameIdFormat = "#saml_name_id_format";
+  #forceNameIdFormat = "attributes.saml_force_name_id_format";
+  #forcePostBinding = "attributes.saml🍺force🍺post🍺binding";
+  #forceArtifactBinding = "attributes.saml🍺artifact🍺binding";
+  #includeAuthnStatement = "attributes.saml🍺authnstatement";
+  #includeOneTimeUseCondition = "attributes.saml🍺onetimeuse🍺condition";
+  #optimizeLookup = "attributes.saml🍺server🍺signature🍺keyinfo🍺ext";
 
-  #signDocumentsSwitch = "signDocuments";
-  #signAssertionsSwitch = "signAssertions";
-  #signatureAlgorithm = "#signatureAlgorithm";
-  #signatureKeyName = "#signatureKeyName";
-  #canonicalization = "#canonicalization";
+  #signDocumentsSwitch = "attributes.saml🍺server🍺signature";
+  #signAssertionsSwitch = "attributes.saml🍺assertion🍺signature";
+  #signatureAlgorithm = "#saml🍺signature🍺algorithm";
+  #signatureKeyName =
+    "#saml🍺server🍺signature🍺keyinfo🍺xmlSigKeyInfoKeyNameTransformer";
+  #canonicalization = "#saml_signature_canonicalization_method";
 
   #loginTheme = "#loginTheme";
   #consentSwitch = "#kc-consent-switch";
