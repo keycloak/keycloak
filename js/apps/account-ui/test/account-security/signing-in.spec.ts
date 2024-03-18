@@ -21,26 +21,22 @@ test.describe("Signing in", () => {
     page.getByTestId("account-security/signing-in").click();
 
     await expect(
-      page
-        .getByTestId("basic-authentication/credential-list")
-        .getByRole("listitem"),
+      page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
-      page
-        .getByTestId("basic-authentication/credential-list")
-        .getByRole("listitem"),
+      page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toContainText("My password");
-    await expect(page.getByTestId("basic-authentication/create")).toBeHidden();
+    await expect(page.getByTestId("password/create")).toBeHidden();
 
     await expect(
-      page.getByTestId("two-factor/credential-list").getByRole("listitem"),
+      page.getByTestId("otp/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
-      page.getByTestId("two-factor/credential-list").getByRole("listitem"),
+      page.getByTestId("otp/credential-list").getByRole("listitem"),
     ).toContainText("not set up");
-    await expect(page.getByTestId("two-factor/create")).toBeVisible();
+    await expect(page.getByTestId("otp/create")).toBeVisible();
 
-    await page.getByTestId("two-factor/create").click();
+    await page.getByTestId("otp/create").click();
     await expect(page.locator("#kc-page-title")).toContainText(
       "Mobile Authenticator Setup",
     );
@@ -65,26 +61,22 @@ test.describe("Signing in 2", () => {
     page.getByTestId("account-security/signing-in").click();
 
     await expect(
-      page
-        .getByTestId("basic-authentication/credential-list")
-        .getByRole("listitem"),
+      page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
-      page
-        .getByTestId("basic-authentication/credential-list")
-        .getByRole("listitem"),
+      page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toContainText("not set up");
-    await expect(page.getByTestId("basic-authentication/create")).toBeVisible();
+    await expect(page.getByTestId("password/create")).toBeVisible();
 
     await expect(
-      page.getByTestId("two-factor/credential-list").getByRole("listitem"),
+      page.getByTestId("otp/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
-      page.getByTestId("two-factor/credential-list").getByRole("listitem"),
+      page.getByTestId("otp/credential-list").getByRole("listitem"),
     ).toContainText("not set up");
-    await expect(page.getByTestId("two-factor/create")).toBeVisible();
+    await expect(page.getByTestId("otp/create")).toBeVisible();
 
-    await page.getByTestId("basic-authentication/create").click();
+    await page.getByTestId("password/create").click();
     await expect(page.locator("#kc-page-title")).toContainText(
       "Update password",
     );
