@@ -53,3 +53,4 @@ org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCStaticClaimMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTypeMapper
+org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCContextMapper

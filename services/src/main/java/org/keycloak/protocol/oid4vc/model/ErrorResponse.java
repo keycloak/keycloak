@@ -18,16 +18,26 @@
 package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- *  Represents an error response, containing the error type as defined by OID4VCI
+ * Represents an error response, containing the error type as defined by OID4VCI
  *
- *  @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
 
     private ErrorType error;
+
+    @JsonProperty("error_description")
+    private String errorDescription;
+
+    @JsonProperty("c_nonce")
+    private String cNonce;
+
+    @JsonProperty("c_nonce_expires_in")
+    private long cNonceExpiresIn;
 
     public ErrorType getError() {
         return error;
@@ -35,6 +45,33 @@ public class ErrorResponse {
 
     public ErrorResponse setError(ErrorType error) {
         this.error = error;
+        return this;
+    }
+
+    public String getErrorDescription() {
+        return errorDescription;
+    }
+
+    public ErrorResponse setErrorDescription(String errorDescription) {
+        this.errorDescription = errorDescription;
+        return this;
+    }
+
+    public String getcNonce() {
+        return cNonce;
+    }
+
+    public ErrorResponse setcNonce(String cNonce) {
+        this.cNonce = cNonce;
+        return this;
+    }
+
+    public long getcNonceExpiresIn() {
+        return cNonceExpiresIn;
+    }
+
+    public ErrorResponse setcNonceExpiresIn(long cNonceExpiresIn) {
+        this.cNonceExpiresIn = cNonceExpiresIn;
         return this;
     }
 }
