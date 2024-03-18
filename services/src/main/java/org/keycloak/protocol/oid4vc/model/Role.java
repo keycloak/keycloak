@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.google.common.collect.ImmutableSet;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
 
 import java.util.Objects;
@@ -36,7 +37,7 @@ public class Role {
     }
 
     public Role(Set<String> names, String target) {
-        this.names = names;
+        this.names = ImmutableSet.copyOf(names);
         this.target = target;
     }
 

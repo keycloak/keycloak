@@ -20,6 +20,7 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import java.util.Optional;
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata}
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SupportedCredential {
+public class SupportedCredentialConfiguration {
 
     private static final String DOT_SEPERATOR = ".";
 
@@ -72,7 +73,7 @@ public class SupportedCredential {
         return format;
     }
 
-    public SupportedCredential setFormat(Format format) {
+    public SupportedCredentialConfiguration setFormat(Format format) {
         this.format = format;
         return this;
     }
@@ -81,7 +82,7 @@ public class SupportedCredential {
         return scope;
     }
 
-    public SupportedCredential setScope(String scope) {
+    public SupportedCredentialConfiguration setScope(String scope) {
         this.scope = scope;
         return this;
     }
@@ -90,8 +91,8 @@ public class SupportedCredential {
         return cryptographicBindingMethodsSupported;
     }
 
-    public SupportedCredential setCryptographicBindingMethodsSupported(List<String> cryptographicBindingMethodsSupported) {
-        this.cryptographicBindingMethodsSupported = cryptographicBindingMethodsSupported;
+    public SupportedCredentialConfiguration setCryptographicBindingMethodsSupported(List<String> cryptographicBindingMethodsSupported) {
+        this.cryptographicBindingMethodsSupported = ImmutableList.copyOf(cryptographicBindingMethodsSupported);
         return this;
     }
 
@@ -99,8 +100,8 @@ public class SupportedCredential {
         return cryptographicSuitesSupported;
     }
 
-    public SupportedCredential setCryptographicSuitesSupported(List<String> cryptographicSuitesSupported) {
-        this.cryptographicSuitesSupported = cryptographicSuitesSupported;
+    public SupportedCredentialConfiguration setCryptographicSuitesSupported(List<String> cryptographicSuitesSupported) {
+        this.cryptographicSuitesSupported = ImmutableList.copyOf(cryptographicSuitesSupported);
         return this;
     }
 
@@ -108,7 +109,7 @@ public class SupportedCredential {
         return display;
     }
 
-    public SupportedCredential setDisplay(DisplayObject display) {
+    public SupportedCredentialConfiguration setDisplay(DisplayObject display) {
         this.display = display;
         return this;
     }
@@ -117,7 +118,7 @@ public class SupportedCredential {
         return id;
     }
 
-    public SupportedCredential setId(String id) {
+    public SupportedCredentialConfiguration setId(String id) {
         if (id.contains(".")) {
             throw new IllegalArgumentException("dots are not supported as part of the supported credentials id.");
         }
@@ -129,8 +130,8 @@ public class SupportedCredential {
         return credentialSigningAlgValuesSupported;
     }
 
-    public SupportedCredential setCredentialSigningAlgValuesSupported(List<String> credentialSigningAlgValuesSupported) {
-        this.credentialSigningAlgValuesSupported = credentialSigningAlgValuesSupported;
+    public SupportedCredentialConfiguration setCredentialSigningAlgValuesSupported(List<String> credentialSigningAlgValuesSupported) {
+        this.credentialSigningAlgValuesSupported = ImmutableList.copyOf(credentialSigningAlgValuesSupported);
         return this;
     }
 
@@ -154,23 +155,23 @@ public class SupportedCredential {
         return dotNotation;
     }
 
-    public static SupportedCredential fromDotNotation(String credentialId, Map<String, String> dotNotated) {
+    public static SupportedCredentialConfiguration fromDotNotation(String credentialId, Map<String, String> dotNotated) {
 
-        SupportedCredential supportedCredential = new SupportedCredential().setId(credentialId);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredential::setFormat);
-        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + SCOPE_KEY)).ifPresent(supportedCredential::setScope);
+        SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration().setId(credentialId);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + FORMAT_KEY)).map(Format::fromString).ifPresent(supportedCredentialConfiguration::setFormat);
+        Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + SCOPE_KEY)).ifPresent(supportedCredentialConfiguration::setScope);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED_KEY))
                 .map(cbms -> cbms.split(","))
                 .map(Arrays::asList)
-                .ifPresent(supportedCredential::setCryptographicBindingMethodsSupported);
+                .ifPresent(supportedCredentialConfiguration::setCryptographicBindingMethodsSupported);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CRYPTOGRAPHIC_SUITES_SUPPORTED_KEY))
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
-                .ifPresent(supportedCredential::setCryptographicSuitesSupported);
+                .ifPresent(supportedCredentialConfiguration::setCryptographicSuitesSupported);
         Optional.ofNullable(dotNotated.get(credentialId + DOT_SEPERATOR + CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY))
                 .map(css -> css.split(","))
                 .map(Arrays::asList)
-                .ifPresent(supportedCredential::setCredentialSigningAlgValuesSupported);
+                .ifPresent(supportedCredentialConfiguration::setCredentialSigningAlgValuesSupported);
         Map<String, String> displayMap = new HashMap<>();
         dotNotated.entrySet().forEach(entry -> {
             String key = entry.getKey();
@@ -179,15 +180,15 @@ public class SupportedCredential {
             }
         });
         if (!displayMap.isEmpty()) {
-            supportedCredential.setDisplay(DisplayObject.fromDotNotation(displayMap));
+            supportedCredentialConfiguration.setDisplay(DisplayObject.fromDotNotation(displayMap));
         }
-        return supportedCredential;
+        return supportedCredentialConfiguration;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SupportedCredential that)) return false;
+        if (!(o instanceof SupportedCredentialConfiguration that)) return false;
 
         if (getId() != null ? !getId().equals(that.getId()) : that.getId() != null) return false;
         if (getFormat() != that.getFormat()) return false;

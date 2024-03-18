@@ -6,7 +6,7 @@ import org.junit.runners.Parameterized;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,7 +28,7 @@ public class OID4VCClientRegistrationProviderTest {
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "VerifiableCredential"),
                         new OID4VCClient(null, "did:web:test.org",
-                                List.of(new SupportedCredential()
+                                List.of(new SupportedCredentialConfiguration()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setScope("VerifiableCredential")),
@@ -40,7 +40,7 @@ public class OID4VCClientRegistrationProviderTest {
                                 "vc.credential-id.format", Format.JWT_VC.toString(),
                                 "vc.credential-id.scope", "AnotherCredential"),
                         new OID4VCClient(null, "did:web:test.org",
-                                List.of(new SupportedCredential()
+                                List.of(new SupportedCredentialConfiguration()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setScope("AnotherCredential")),
@@ -54,7 +54,7 @@ public class OID4VCClientRegistrationProviderTest {
                                 "vc.credential-id.display.name", "Another",
                                 "vc.credential-id.display.locale", "en"),
                         new OID4VCClient(null, "did:web:test.org",
-                                List.of(new SupportedCredential()
+                                List.of(new SupportedCredentialConfiguration()
                                         .setId("credential-id")
                                         .setFormat(Format.JWT_VC)
                                         .setDisplay(new DisplayObject().setLocale("en").setName("Another"))
@@ -73,12 +73,12 @@ public class OID4VCClientRegistrationProviderTest {
                                 "vc.second-id.display.name", "Second Credential",
                                 "vc.second-id.display.locale", "de"),
                         new OID4VCClient(null, "did:web:test.org",
-                                List.of(new SupportedCredential()
+                                List.of(new SupportedCredentialConfiguration()
                                                 .setId("first-id")
                                                 .setFormat(Format.JWT_VC)
                                                 .setDisplay(new DisplayObject().setLocale("en").setName("First"))
                                                 .setScope("AnotherCredential"),
-                                        new SupportedCredential()
+                                        new SupportedCredentialConfiguration()
                                                 .setId("second-id")
                                                 .setFormat(Format.SD_JWT_VC)
                                                 .setDisplay(new DisplayObject().setLocale("de").setName("Second Credential"))

@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
@@ -127,7 +127,7 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
 
         Map<String, String> clientAttributes = oid4VCClient.getSupportedVCTypes()
                 .stream()
-                .map(SupportedCredential::toDotNotation)
+                .map(SupportedCredentialConfiguration::toDotNotation)
                 .flatMap(dotNotated -> dotNotated.entrySet().stream())
                 .collect(Collectors.toMap(entry -> VC_KEY + "." + entry.getKey(), Map.Entry::getValue, (e1, e2) -> e1));
 
@@ -159,11 +159,11 @@ public class OID4VCClientRegistrationProvider extends AbstractClientRegistration
                 });
 
 
-        List<SupportedCredential> supportedCredentials = supportedCredentialIds
+        List<SupportedCredentialConfiguration> supportedCredentialConfigurations = supportedCredentialIds
                 .stream()
-                .map(id -> SupportedCredential.fromDotNotation(id, attributes))
+                .map(id -> SupportedCredentialConfiguration.fromDotNotation(id, attributes))
                 .toList();
 
-        return oid4VCClient.setSupportedVCTypes(supportedCredentials);
+        return oid4VCClient.setSupportedVCTypes(supportedCredentialConfigurations);
     }
 }

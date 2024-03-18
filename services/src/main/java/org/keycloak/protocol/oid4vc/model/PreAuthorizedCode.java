@@ -31,8 +31,15 @@ public class PreAuthorizedCode {
 
     @JsonProperty("pre-authorized_code")
     private String preAuthorizedCode;
-    @JsonProperty("pre-user_pin_required")
-    private boolean userPinRequired;
+
+    @JsonProperty("tx_code")
+    private TxCode txCode;
+
+    @JsonProperty("interval")
+    private long interval;
+
+    @JsonProperty("authorization_server")
+    private String authorizationServer;
 
     public String getPreAuthorizedCode() {
         return preAuthorizedCode;
@@ -43,12 +50,30 @@ public class PreAuthorizedCode {
         return this;
     }
 
-    public boolean getUserPinRequired() {
-        return userPinRequired;
+    public TxCode getTxCode() {
+        return txCode;
     }
 
-    public PreAuthorizedCode setUserPinRequired(boolean userPinRequired) {
-        this.userPinRequired = userPinRequired;
+    public PreAuthorizedCode setTxCode(TxCode txCode) {
+        this.txCode = txCode;
+        return this;
+    }
+
+    public long getInterval() {
+        return interval;
+    }
+
+    public PreAuthorizedCode setInterval(long interval) {
+        this.interval = interval;
+        return this;
+    }
+
+    public String getAuthorizationServer() {
+        return authorizationServer;
+    }
+
+    public PreAuthorizedCode setAuthorizationServer(String authorizationServer) {
+        this.authorizationServer = authorizationServer;
         return this;
     }
 }

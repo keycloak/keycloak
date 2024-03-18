@@ -28,7 +28,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSignin
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
@@ -71,7 +71,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * It will take into account the configured {@link VerifiableCredentialsSigningService}'s and there supported format
      * and the credentials supported by the clients available in the session.
      */
-    public static Map<String, SupportedCredential> getSupportedCredentials(KeycloakSession keycloakSession) {
+    public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
 
         RealmModel realm = keycloakSession.getContext().getRealm();
         List<Format> supportedFormats = realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
@@ -95,7 +95,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .flatMap(List::stream)
                 .filter(sc -> supportedFormats.contains(sc.getFormat()))
                 .distinct()
-                .collect(Collectors.toMap(SupportedCredential::getId, sc -> sc, (sc1, sc2) -> sc1));
+                .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
 
     }
 

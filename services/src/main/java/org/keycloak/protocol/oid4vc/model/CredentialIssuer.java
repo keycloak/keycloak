@@ -44,8 +44,11 @@ public class CredentialIssuer {
     @JsonProperty("batch_credential_endpoint")
     private String batchCredentialEndpoint;
 
+    @JsonProperty("notification_endpoint")
+    private String notificationEndpoint;
+
     @JsonProperty("credential_configurations_supported")
-    private Map<String, SupportedCredential> credentialsSupported;
+    private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
     private DisplayObject display;
 
@@ -76,11 +79,11 @@ public class CredentialIssuer {
         return this;
     }
 
-    public Map<String, SupportedCredential> getCredentialsSupported() {
+    public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
         return credentialsSupported;
     }
 
-    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredential> credentialsSupported) {
+    public CredentialIssuer setCredentialsSupported(Map<String, SupportedCredentialConfiguration> credentialsSupported) {
         this.credentialsSupported = credentialsSupported;
         return this;
     }
@@ -102,4 +105,14 @@ public class CredentialIssuer {
         this.authorizationServers = authorizationServers;
         return this;
     }
+
+    public String getNotificationEndpoint() {
+        return notificationEndpoint;
+    }
+
+    public CredentialIssuer setNotificationEndpoint(String notificationEndpoint) {
+        this.notificationEndpoint = notificationEndpoint;
+        return this;
+    }
 }
+

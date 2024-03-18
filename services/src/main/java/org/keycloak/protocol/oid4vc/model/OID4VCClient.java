@@ -38,7 +38,7 @@ public class OID4VCClient {
     /**
      * Comma-separated list of supported credentials types
      */
-    private List<SupportedCredential> supportedVCTypes;
+    private List<SupportedCredentialConfiguration> supportedVCTypes;
     /**
      * Description of the client, will f.e. be displayed in the admin-console
      */
@@ -51,7 +51,7 @@ public class OID4VCClient {
     public OID4VCClient() {
     }
 
-    public OID4VCClient(String id, String clientDid, List<SupportedCredential> supportedVCTypes, String description, String name) {
+    public OID4VCClient(String id, String clientDid, List<SupportedCredentialConfiguration> supportedVCTypes, String description, String name) {
         this.id = id;
         this.clientDid = clientDid;
         this.supportedVCTypes = supportedVCTypes;
@@ -77,11 +77,11 @@ public class OID4VCClient {
         return this;
     }
 
-    public List<SupportedCredential> getSupportedVCTypes() {
+    public List<SupportedCredentialConfiguration> getSupportedVCTypes() {
         return supportedVCTypes;
     }
 
-    public OID4VCClient setSupportedVCTypes(List<SupportedCredential> supportedVCTypes) {
+    public OID4VCClient setSupportedVCTypes(List<SupportedCredentialConfiguration> supportedVCTypes) {
         this.supportedVCTypes = supportedVCTypes;
         return this;
     }

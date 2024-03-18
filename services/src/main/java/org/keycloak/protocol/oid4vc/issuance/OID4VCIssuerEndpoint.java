@@ -53,7 +53,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.provider.ProviderFactory;
@@ -116,11 +116,11 @@ public class OID4VCIssuerEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("credential-offer-uri")
-    public Response getCredentialOfferURI(@QueryParam("credentialId") String vcId) {
+    public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId) {
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
 
-        Map<String, SupportedCredential> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
+        Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
 
         LOGGER.debugf("Get an offer for %s", vcId);
         if (!credentialsMap.containsKey(vcId)) {
@@ -128,18 +128,18 @@ public class OID4VCIssuerEndpoint {
             LOGGER.debugf("Supported credentials are %s.", credentialsMap);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
         }
-        SupportedCredential supportedCredential = credentialsMap.get(vcId);
-        Format format = supportedCredential.getFormat();
+        SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
+        Format format = supportedCredentialConfiguration.getFormat();
 
         // check that the user is allowed to get such credential
-        if (getClientsOfType(supportedCredential.getScope(), format).isEmpty()) {
-            LOGGER.debugf("No OID4VP-Client supporting type %s registered.", supportedCredential.getScope());
+        if (getClientsOfType(supportedCredentialConfiguration.getScope(), format).isEmpty()) {
+            LOGGER.debugf("No OID4VP-Client supporting type %s registered.", supportedCredentialConfiguration.getScope());
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
         }
 
         String nonce = generateNonce();
         try {
-            clientSession.setNote(nonce, objectMapper.writeValueAsString(supportedCredential));
+            clientSession.setNote(nonce, objectMapper.writeValueAsString(supportedCredentialConfiguration));
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert Supported Credential POJO to JSON: %s", e.getMessage());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
@@ -173,10 +173,10 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_REQUEST));
         }
 
-        SupportedCredential offeredCredential;
+        SupportedCredentialConfiguration offeredCredential;
         try {
             offeredCredential = objectMapper.readValue(note,
-                    SupportedCredential.class);
+                    SupportedCredentialConfiguration.class);
             LOGGER.debugf("Creating an offer for %s - %s", offeredCredential.getScope(),
                     offeredCredential.getFormat());
             clientSession.removeNote(nonce);
@@ -194,9 +194,7 @@ public class OID4VCIssuerEndpoint {
                         new PreAuthorizedGrant()
                                 .setPreAuthorizedCode(
                                         new PreAuthorizedCode()
-                                                .setPreAuthorizedCode(preAuthorizedCode)
-                                                // not yet supported
-                                                .setUserPinRequired(false)));
+                                                .setPreAuthorizedCode(preAuthorizedCode)));
 
         LOGGER.debugf("Responding with offer: %s", theOffer);
         return Response.ok()
@@ -221,7 +219,7 @@ public class OID4VCIssuerEndpoint {
         Format requestedFormat = credentialRequestVO.getFormat();
         String requestedCredential = credentialRequestVO.getCredentialIdentifier();
 
-        SupportedCredential supportedCredential = Optional
+        SupportedCredentialConfiguration supportedCredentialConfiguration = Optional
                 .ofNullable(OID4VCIssuerWellKnownProvider.getSupportedCredentials(this.session)
                         .get(requestedCredential))
                 .orElseThrow(
@@ -230,14 +228,14 @@ public class OID4VCIssuerEndpoint {
                             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
                         });
 
-        if (!supportedCredential.getFormat().equals(requestedFormat)) {
+        if (!supportedCredentialConfiguration.getFormat().equals(requestedFormat)) {
             LOGGER.debugf("Format %s is not supported for credential %s.", requestedFormat, requestedCredential);
             throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT));
         }
 
         CredentialResponse responseVO = new CredentialResponse();
 
-        Object theCredential = getCredential(userSessionModel, supportedCredential.getScope(), credentialRequestVO.getFormat());
+        Object theCredential = getCredential(userSessionModel, supportedCredentialConfiguration.getScope(), credentialRequestVO.getFormat());
         switch (requestedFormat) {
             case LDP_VC, JWT_VC, SD_JWT_VC -> responseVO.setCredential(theCredential);
             default -> throw new BadRequestException(

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -17,21 +16,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
-import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -42,18 +33,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.ErrorResponse;
-import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.SupportedCredential;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -61,17 +45,13 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.util.JsonSerialization;
-import org.testcontainers.shaded.org.checkerframework.checker.units.qual.C;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -233,11 +213,11 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
 
-                    SupportedCredential supportedCredential = new SupportedCredential()
+                    SupportedCredentialConfiguration supportedCredentialConfiguration = new SupportedCredentialConfiguration()
                             .setId("test-credential")
                             .setScope("VerifiableCredential")
                             .setFormat(Format.JWT_VC);
-                    String nonce = prepareNonce(authenticator, OBJECT_MAPPER.writeValueAsString(supportedCredential));
+                    String nonce = prepareNonce(authenticator, OBJECT_MAPPER.writeValueAsString(supportedCredentialConfiguration));
 
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(nonce);
@@ -251,7 +231,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
                     List<String> supportedCredentials = credentialsOffer.getCredentialConfigurationIds();
                     assertEquals("Exactly one credential should have been returned.", 1, supportedCredentials.size());
                     String offeredCredentialId = supportedCredentials.get(0);
-                    assertEquals("The credential should be as defined in the note.", supportedCredential.getId(), offeredCredentialId);
+                    assertEquals("The credential should be as defined in the note.", supportedCredentialConfiguration.getId(), offeredCredentialId);
 
                     PreAuthorizedGrant grant = credentialsOffer.getGrants();
                     assertNotNull("The grant should be included.", grant);
@@ -368,7 +348,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         String token = getBearerToken(oauth);
 
         // 1. Retrieving the credential-offer-uri
-        HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME) + "credential-offer-uri?credentialId=test-credential");
+        HttpGet getCredentialOfferURI = new HttpGet(getBasePath(TEST_REALM_NAME) + "credential-offer-uri?credential_configuration_id=test-credential");
         getCredentialOfferURI.addHeader("Authorization", "Bearer " + token);
         CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
 
@@ -458,7 +438,7 @@ public class OID4VCIssuerEndpointTest extends OID4VCTest {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm + "/protocol/oid4vc/";
     }
 
-    private void requestOffer(String token, String credentialEndpoint, SupportedCredential offeredCredential) throws IOException {
+    private void requestOffer(String token, String credentialEndpoint, SupportedCredentialConfiguration offeredCredential) throws IOException {
         CredentialRequest request = new CredentialRequest();
         request.setFormat(offeredCredential.getFormat());
         request.setCredentialIdentifier(offeredCredential.getId());
