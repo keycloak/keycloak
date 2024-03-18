@@ -1,6 +1,12 @@
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
+<html x-init="initMode()" x-data="{
+            initMode() {
+                $watch('$store.darkMode.on', (val) => localStorage.setItem('keycloak-darkmode', val));
+                window.matchMedia('(prefers-color-scheme: dark)').onchange = (event) => Alpine.store('darkMode').set(event.matches);
+            } }"
+    :class="$store.darkMode.on ? 'pf-v5-theme-dark' : ''"
+    class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
 
 <head>
     <meta charset="utf-8">
@@ -50,22 +56,6 @@
               "${authenticationSession.tabId}",
               "${url.ssoLoginInOtherTabsUrl}"
             );
-
-            const DARK_MODE_CLASS = "pf-v5-theme-dark";
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-            updateDarkMode(mediaQuery.matches);
-            mediaQuery.addEventListener((event) => updateDarkMode(event.matches));
-
-            function updateDarkMode(isEnabled) {
-                const { classList } = document.documentElement;
-                
-                if (isEnabled) {
-                    classList.add(DARK_MODE_CLASS);
-                } else {
-                    classList.remove(DARK_MODE_CLASS);
-                }
-            }
         </script>
     </#if>
 </head>
@@ -237,11 +227,28 @@
         <#nested "socialProviders">
       </footer>
     </main>
+    <div class="pf-v5-l-flex pf-m-column pf-m-gap-lg pf-v5-m-dir-ltr dark-mode-toggle">
+        <label class="pf-v5-c-switch" for="dark-mode-switch" data-ouia-component-type="PF5/Switch" data-ouia-safe="true">
+            <input id="dark-mode-switch" class="pf-v5-c-switch__input" type="checkbox" aria-labelledby="dark-mode-switch-on" aria-label="" x-model="$store.darkMode.on">
+            <span class="pf-v5-c-switch__toggle"></span>
+            <span class="pf-v5-c-switch__label pf-m-on" id="dark-mode-switch-on" aria-hidden="true">🔆</span>
+            <span class="pf-v5-c-switch__label pf-m-off" id="dark-mode-switch-off" aria-hidden="true">🌙</span>
+        </label>
+    </div>
   </div>
 </div>
 <script type="module">
     import Alpine from "alpinejs";
 
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('darkMode', {
+            on: localStorage.getItem('keycloak-darkmode') === null ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches : localStorage.getItem('keycloak-darkmode') === 'true',
+
+            set(value) {
+                this.on = value
+            }
+        })
+    })
     Alpine.start();
 </script>
 </body>

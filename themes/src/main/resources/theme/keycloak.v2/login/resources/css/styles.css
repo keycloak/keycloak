@@ -27,3 +27,10 @@ div.kc-logo-text {
 div.kc-logo-text span {
     display: none;
 }
+
+.dark-mode-toggle {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    padding: var(--pf-v5-global--spacer--lg);
+}
