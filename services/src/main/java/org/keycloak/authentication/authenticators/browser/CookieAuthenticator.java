@@ -52,7 +52,7 @@ public class CookieAuthenticator implements Authenticator {
             LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
             authSession.setAuthNote(Constants.LOA_MAP, authResult.getSession().getNote(Constants.LOA_MAP));
             context.setUser(authResult.getUser());
-            AcrStore acrStore = new AcrStore(authSession);
+            AcrStore acrStore = new AcrStore(context.getSession(), authSession);
 
             // Cookie re-authentication is skipped if re-authentication is required
             if (protocol.requireReauthentication(authResult.getSession(), authSession)) {
@@ -65,10 +65,15 @@ public class CookieAuthenticator implements Authenticator {
                 int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication();
                 AuthenticatorUtils.updateCompletedExecutions(context.getAuthenticationSession(), authResult.getSession(), context.getExecution().getId());
 
-                if (acrStore.getRequestedLevelOfAuthentication() > previouslyAuthenticatedLevel) {
+                if (acrStore.getRequestedLevelOfAuthentication(context.getTopLevelFlow()) > previouslyAuthenticatedLevel) {
                     // Step-up authentication, we keep the loa from the existing user session.
                     // The cookie alone is not enough and other authentications must follow.
                     acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
+
+                    if (authSession.getClientNote(Constants.KC_ACTION) != null) {
+                        context.setForwardedInfoMessage(Messages.AUTHENTICATE_STRONG);
+                    }
+
                     context.attempted();
                 } else {
                     // Cookie only authentication

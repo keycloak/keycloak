@@ -38,14 +38,14 @@ public interface RequiredActionProvider extends Provider {
     default InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.NOT_SUPPORTED;
     }
-    
+
     /**
      * Callback to let the action know that an application-initiated action
      * was canceled.
-     * 
+     *
      * @param session The Keycloak session.
      * @param authSession The authentication session.
-     * 
+     *
      */
     default void initiatedActionCanceled(KeycloakSession session, AuthenticationSessionModel authSession) {
         return;

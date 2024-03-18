@@ -35,6 +35,7 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.utils.SigningInPageUtils;
+import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
@@ -64,6 +65,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
+
+    @Page
+    private DeleteCredentialPage deleteCredentialPage;
 
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;
@@ -186,7 +190,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     protected void testRemoveCredential(SigningInPage.UserCredential userCredential) {
         AbstractPatternFlyAlert.waitUntilHidden();
-        SigningInPageUtils.testRemoveCredential(signingInPage, userCredential);
+        SigningInPageUtils.testRemoveCredential(signingInPage, deleteCredentialPage, userCredential);
     }
 
     protected SigningInPage.UserCredential getNewestUserCredential(SigningInPage.CredentialType credentialType) {

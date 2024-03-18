@@ -358,6 +358,11 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public AuthenticationFlowModel getTopLevelFlow() {
+            return AuthenticatorUtil.getTopParentFlow(realm, execution);
+        }
+
+        @Override
         public AuthenticatorConfigModel getAuthenticatorConfig() {
             if (execution.getAuthenticatorConfig() == null) return null;
             if (authenticatorConfig != null) return authenticatorConfig;

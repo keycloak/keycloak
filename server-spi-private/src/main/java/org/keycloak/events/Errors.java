@@ -120,4 +120,8 @@ public interface Errors {
     String SLOW_DOWN = "slow_down";
     String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
 
+    String CREDENTIAL_NOT_FOUND = "credential_not_found";
+    String MISSING_CREDENTIAL_ID = "missing_credential_id";
+    String DELETE_CREDENTIAL_FAILED = "delete_credential_failed";
+
 }
