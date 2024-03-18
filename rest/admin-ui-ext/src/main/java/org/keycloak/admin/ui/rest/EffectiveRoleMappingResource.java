@@ -154,7 +154,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
                 user.getGroupsStream()
                         .flatMap(g -> addParents(g))
                         .flatMap(GroupModel::getRoleMappingsStream)))
-                .filter(auth.roles()::canMapRole));
+        );
     }
 
     @GET
