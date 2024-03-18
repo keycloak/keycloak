@@ -138,7 +138,7 @@ export function UserDataTable() {
     return (
       <Switch
         id={user.id}
-        aria-label="Message when on"
+        aria-label="User when enabled"
         isChecked={user.enabled}
         hasCheckIcon
         onChange={handleChange}
