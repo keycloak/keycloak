@@ -4,7 +4,6 @@ import { parseResponse } from "./parse-response";
 import {
   ClientRepresentation,
   CredentialContainer,
-  CredentialRepresentation,
   DeviceRepresentation,
   Group,
   LinkedAccountRepresentation,
@@ -97,15 +96,6 @@ export async function getCredentials({ signal, context }: CallOptions) {
     signal,
   });
   return parseResponse<CredentialContainer[]>(response);
-}
-
-export async function deleteCredentials(
-  context: KeycloakContext,
-  credential: CredentialRepresentation,
-) {
-  return request("/credentials/" + credential.id, context, {
-    method: "DELETE",
-  });
 }
 
 export async function getLinkedAccounts({ signal, context }: CallOptions) {

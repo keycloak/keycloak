@@ -24,8 +24,12 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.common.util.reflections.Types;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -41,6 +45,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
 import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
@@ -133,6 +138,29 @@ public class AuthenticatorUtil {
     }
 
     /**
+     * Useful if we need to find top-level flow from executionModel
+     *
+     * @param realm
+     * @param executionModel
+     * @return Top parent flow corresponding to given executionModel.
+     */
+    public static AuthenticationFlowModel getTopParentFlow(RealmModel realm, AuthenticationExecutionModel executionModel) {
+        if (executionModel.getParentFlow() != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(executionModel.getParentFlow());
+            if (flow == null) throw new IllegalStateException("Flow '" + executionModel.getParentFlow() + "' referenced from execution '" + executionModel.getId() + "' not found in realm " + realm.getName());
+            if (flow.isTopLevel()) return flow;
+
+            AuthenticationExecutionModel execution = realm.getAuthenticationExecutionByFlowId(flow.getId());
+            if (execution == null) throw new IllegalStateException("Not found execution referenced by flow '" + flow.getId() + "' in realm " + realm.getName());
+            return getTopParentFlow(realm, execution);
+        } else {
+            throw new IllegalStateException("Execution '" + executionModel.getId() + "' does not have parent flow in realm " + realm.getName());
+        }
+    }
+
+
+
+    /**
      * Logouts all sessions that are different to the current authentication session
      * managed in the action context.
      *
@@ -173,5 +201,15 @@ public class AuthenticatorUtil {
                             .user(s.getUser())
                             .success();
                 });
+    }
+
+    /**
+     * @param session
+     * @return all credential providers available
+     */
+    public static Stream<CredentialProvider> getCredentialProviders(KeycloakSession session) {
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
+                .filter(f -> Types.supports(CredentialProvider.class, f, CredentialProviderFactory.class))
+                .map(f -> session.getProvider(CredentialProvider.class, f.getId()));
     }
 }

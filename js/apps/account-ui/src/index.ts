@@ -42,7 +42,6 @@ export { SharedWith } from "./resources/SharedWith";
 export { ShareTheResource } from "./resources/ShareTheResource";
 export {
   deleteConsent,
-  deleteCredentials,
   deleteSession,
   getApplications,
   getCredentials,

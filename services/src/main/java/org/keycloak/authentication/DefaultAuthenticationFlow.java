@@ -586,6 +586,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 .filter(Objects::nonNull)
                 .filter(AuthenticationFlowCallback.class::isInstance)
                 .map(AuthenticationFlowCallback.class::cast)
-                .forEach(AuthenticationFlowCallback::onTopFlowSuccess);
+                .forEach(callback -> callback.onTopFlowSuccess(flow));
     }
 }
