@@ -2,6 +2,9 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { Switch } from "@patternfly/react-core";
+import { toUserRepresentation } from "../../user/form-state";
+
 import {
   AlertVariant,
   Button,
@@ -111,6 +114,37 @@ export function UserDataTable() {
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+
+  const handleChange = async (
+    checked: boolean,
+    event: React.FormEvent<HTMLInputElement>,
+  ) => {
+    try {
+      await adminClient.users.update(
+        { id: event.currentTarget.id },
+        toUserRepresentation({
+          enabled: checked,
+        }),
+      );
+      refresh();
+    } catch (error) {
+      console.log(error);
+      refresh();
+    }
+  };
+
+  // eslint-disable-next-line react/no-unstable-nested-components
+  const ToggleEnabled = (user: UserRepresentation) => {
+    return (
+      <Switch
+        id={user.id}
+        aria-label="Message when on"
+        isChecked={user.enabled}
+        hasCheckIcon
+        onChange={handleChange}
+      />
+    );
+  };
 
   useFetch(
     async () => {
@@ -390,6 +424,11 @@ export function UserDataTable() {
             name: "firstName",
             displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "Enable",
+            displayKey: "Enable",
+            cellRenderer: ToggleEnabled,
           },
         ]}
       />
