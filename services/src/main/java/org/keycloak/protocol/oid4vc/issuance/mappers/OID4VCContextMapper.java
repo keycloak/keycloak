@@ -60,17 +60,6 @@ public class OID4VCContextMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public static ProtocolMapperModel create(String name) {
-        var mapperModel = new ProtocolMapperModel();
-        mapperModel.setName(name);
-        Map<String, String> configMap = new HashMap<>();
-        configMap.put(SUPPORTED_CREDENTIALS_KEY, "VerifiableCredential");
-        mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        mapperModel.setProtocolMapper(MAPPER_ID);
-        return mapperModel;
-    }
-
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,
                                        UserSessionModel userSessionModel) {
         // remove duplicates

@@ -60,18 +60,6 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
         CONFIG_PROPERTIES.add(claimValueConfig);
     }
 
-    public static ProtocolMapperModel create(String mapperName, String propertyName, String value) {
-        var mapperModel = new ProtocolMapperModel();
-        mapperModel.setName(mapperName);
-        Map<String, String> configMap = new HashMap<>();
-        configMap.put(SUBJECT_PROPERTY_CONFIG_KEY, propertyName);
-        configMap.put(STATIC_CLAIM_KEY, value);
-        mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        mapperModel.setProtocolMapper(MAPPER_ID);
-        return mapperModel;
-    }
-
     @Override
     protected List<ProviderConfigProperty> getIndividualConfigProperties() {
         return CONFIG_PROPERTIES;

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -41,6 +42,7 @@ public class OID4VCTypeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-vc-type-mapper";
     public static final String TYPE_KEY = "vcTypeProperty";
+    public static final String DEFAULT_VC_TYPE = "VerifiableCredential";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
@@ -58,17 +60,6 @@ public class OID4VCTypeMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public static ProtocolMapperModel create(String name) {
-        var mapperModel = new ProtocolMapperModel();
-        mapperModel.setName(name);
-        Map<String, String> configMap = new HashMap<>();
-        configMap.put(SUPPORTED_CREDENTIALS_KEY, "VerifiableCredential");
-        mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        mapperModel.setProtocolMapper(MAPPER_ID);
-        return mapperModel;
-    }
-
     public void setClaimsForCredential(VerifiableCredential verifiableCredential,
                                        UserSessionModel userSessionModel) {
         // remove duplicates
@@ -76,7 +67,7 @@ public class OID4VCTypeMapper extends OID4VCMapper {
         if (verifiableCredential.getType() != null) {
             types = new HashSet<>(verifiableCredential.getType());
         }
-        types.add(mapperModel.getConfig().get(TYPE_KEY));
+        types.add(Optional.ofNullable(mapperModel.getConfig().get(TYPE_KEY)).orElse(DEFAULT_VC_TYPE));
         verifiableCredential.setType(new ArrayList<>(types));
     }
 

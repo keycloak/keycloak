@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class CredentialsOffer {
     }
 
     public CredentialsOffer setCredentialConfigurationIds(List<String> credentialConfigurationIds) {
-        this.credentialConfigurationIds = credentialConfigurationIds;
+        this.credentialConfigurationIds = ImmutableList.copyOf(credentialConfigurationIds);
         return this;
     }
 
