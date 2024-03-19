@@ -137,7 +137,7 @@ export const AddTranslationsDialog = ({
     toggleDialog();
   };
 
-  const isRequiredTranslationAvailable = useWatch({
+  const isRequiredTranslation = useWatch({
     control: form.control,
     name: "translations.0.value",
   });
@@ -155,7 +155,7 @@ export const AddTranslationsDialog = ({
           variant="primary"
           type="submit"
           form="add-translation"
-          isDisabled={!isValid || !isRequiredTranslationAvailable}
+          isDisabled={!isValid || !isRequiredTranslation}
         >
           {t("addTranslationDialogOkBtn")}
         </Button>,
