@@ -57,7 +57,7 @@ public class JSSETruststoreConfigurator {
         }
 
         if (sslFactory == null) {
-            synchronized (this) {
+            synchronized(this) {
                 if (sslFactory == null) {
                     try {
                         SSLContext sslctx = SSLContext.getInstance("TLS");

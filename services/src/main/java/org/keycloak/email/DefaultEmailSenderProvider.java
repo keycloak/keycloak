@@ -99,6 +99,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
             if (starttls || tls || auth){
                 props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
+
                 setupTruststore(props);    
             }
 
@@ -184,18 +185,17 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private void setupTruststore(Properties props) {
-         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-         
-         if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
-            props.setProperty("mail.smtp.ssl.trust", "*");
-            props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
-         }
-         
-         SSLSocketFactory factory = configurator.getSSLSocketFactory();
-         if (factory != null) {
-             props.put("mail.smtp.ssl.socketFactory", factory);
-         }
- 
+        JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
+        
+        if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+           props.setProperty("mail.smtp.ssl.trust", "*");
+           props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
+        }
+        
+        SSLSocketFactory factory = configurator.getSSLSocketFactory();
+        if (factory != null) {
+            props.put("mail.smtp.ssl.socketFactory", factory);
+        }
     }
 
     @Override
