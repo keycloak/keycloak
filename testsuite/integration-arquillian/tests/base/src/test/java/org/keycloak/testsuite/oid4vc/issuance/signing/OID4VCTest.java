@@ -195,6 +195,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         );
         return clientRepresentation;
     }
+    protected ComponentExportRepresentation getEdDSAKeyProvider() {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("eddsa-generated");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("eddsa-generated");
 
     protected ComponentExportRepresentation getEdDSAKeyProvider() {
         ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
