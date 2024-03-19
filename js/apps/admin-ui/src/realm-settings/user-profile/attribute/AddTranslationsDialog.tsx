@@ -116,10 +116,7 @@ export const AddTranslationsDialog = ({
   }, [combinedLocales, translationKey, setValue]);
 
   const handleOk = () => {
-    const formData = getValues() as {
-      key: string;
-      translations: TranslationForm[];
-    };
+    const formData = getValues() as Translations;
 
     const updatedTranslations = formData.translations.map((translation) => {
       if (translation.locale === filter) {
