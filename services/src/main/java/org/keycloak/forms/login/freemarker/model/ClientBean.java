@@ -17,6 +17,7 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.ResolveRelative;
@@ -29,12 +30,22 @@ import java.util.Map;
  */
 public class ClientBean {
 
+    protected static final String[] ATTRIBUTES_ALLOWED = { "logoUrl", "policyUri", "tosUri" };
+
     private KeycloakSession session;
     protected ClientModel client;
+    protected Map<String,String> attributes;
 
     public ClientBean(KeycloakSession session, ClientModel client) {
         this.session = session;
         this.client = client;
+        ImmutableMap.Builder<String,String> builder = new ImmutableMap.Builder<>();
+        if (client.getAttributes() != null) {
+          for (String key : ATTRIBUTES_ALLOWED) {
+            builder.put(key, client.getAttributes().get(key));
+          }
+        }
+        this.attributes = builder.build();
     }
 
     public String getClientId() {
@@ -54,10 +65,10 @@ public class ClientBean {
     }
 
     public Map<String,String> getAttributes(){
-        return client.getAttributes();
+        return attributes;
     }
 
     public String getAttribute(String key){
-        return client.getAttribute(key);
+        return attributes.get(key);
     }
 }
