@@ -19,6 +19,7 @@ package org.keycloak.email;
 
 import jakarta.mail.internet.MimeUtility;
 import org.jboss.logging.Logger;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
@@ -182,7 +183,12 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private void setupTruststore(Properties props) {
          JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-
+         
+         if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            props.setProperty("mail.smtp.ssl.trust", "*");
+            props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
+         }
+         
          SSLSocketFactory factory = configurator.getSSLSocketFactory();
          if (factory != null) {
              props.put("mail.smtp.ssl.socketFactory", factory);
