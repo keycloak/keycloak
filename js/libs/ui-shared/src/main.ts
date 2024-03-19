@@ -20,6 +20,7 @@ export {
   setUserProfileServerError,
   isUserProfileError,
   label,
+  beerify,
   debeerify,
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
