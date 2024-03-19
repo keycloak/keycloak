@@ -190,12 +190,10 @@
         <dependency>
             <groupId>com.apicatalog</groupId>
             <artifactId>titanium-json-ld</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.setl</groupId>
             <artifactId>rdf-urdna</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
