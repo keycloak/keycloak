@@ -175,7 +175,7 @@ export const AttributeGeneralSettings = ({
           translationKey={
             editMode
               ? attributeDisplayName
-              : "${profile.attributes." + `${newAttributeName}}`
+              : "profile.attributes." + `${newAttributeName}`
           }
           onTranslationsAdded={handleTranslationsAdded}
           toggleDialog={handleToggleDialog}
