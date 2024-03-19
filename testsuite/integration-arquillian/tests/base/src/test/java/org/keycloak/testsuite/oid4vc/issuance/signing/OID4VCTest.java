@@ -196,6 +196,20 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return clientRepresentation;
     }
 
+    protected ComponentExportRepresentation getEdDSAKeyProvider() {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("eddsa-generated");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("eddsa-generated");
+
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                        Map.of(
+                                "eddsaEllipticCurveKey", List.of("Ed25519"))
+                )
+        );
+        return componentExportRepresentation;
+    }
+
     public static ProtocolMapperRepresentation getRoleMapper(String clientId) {
         ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
         protocolMapperRepresentation.setName("role-mapper");
