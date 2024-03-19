@@ -1,3 +1,14 @@
+= Argon2 password hashing provider
+
+Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
+and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
+
+In {project_name} 24 the default hashing iterations for PBKDF2 were increased from 27.5K to 210K, resulting in a more than
+10 times increase in the amount of CPU time required to generate a password hash. With Argon2 it is possible to achieve
+better security, with almost the same CPU time as previous releases of {project_name}. One downside is Argon2 requires more
+memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in Keycloak requires 7MB
+per-hashing request.
+
 = Deprecated cookie methods removed
 
 The following methods for setting custom cookies have been removed:

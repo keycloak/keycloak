@@ -18,7 +18,10 @@ package org.keycloak.testsuite.forms;
 
 import jakarta.ws.rs.BadRequestException;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -27,15 +30,19 @@ import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
+import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -67,6 +74,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AppPage appPage;
 
     @Test
     public void testSetInvalidProvider() throws Exception {
@@ -196,6 +206,35 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
         assertEncoded(credential, "password", credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", Pbkdf2PasswordHashProviderFactory.DEFAULT_ITERATIONS);
+    }
+
+    @Test
+    public void testArgon2() {
+        Assume.assumeTrue("Argon2 tests skipped in FIPS mode", AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED);
+
+        setPasswordPolicy("hashAlgorithm(" + Argon2PasswordHashProviderFactory.ID + ")");
+        String username = "testArgon2";
+        createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+        PasswordCredentialData data = credential.getPasswordCredentialData();
+
+        Assert.assertEquals("argon2", data.getAlgorithm());
+        Assert.assertEquals(5, data.getHashIterations());
+        Assert.assertEquals("1.3", data.getAdditionalParameters().getFirst("version"));
+        Assert.assertEquals("id", data.getAdditionalParameters().getFirst("type"));
+        Assert.assertEquals("32", data.getAdditionalParameters().getFirst("hashLength"));
+        Assert.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
+        Assert.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
+
+        loginPage.open();
+        loginPage.login("testArgon2", "invalid");
+        loginPage.assertCurrent();
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        loginPage.login("testArgon2", "password");
+
+        appPage.assertCurrent();
     }
 
     @Test
