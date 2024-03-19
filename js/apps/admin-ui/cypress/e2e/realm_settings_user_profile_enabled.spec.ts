@@ -156,10 +156,10 @@ describe("User profile tabs", () => {
     it("Removes three validators with the editor", () => {
       getUserProfileTab();
       getJsonEditorTab();
-      userProfileTab.typeJSON(removedThree).saveJSON();
-      masthead.checkNotificationMessage(
-        "User profile settings successfully updated.",
-      );
+      userProfileTab
+        .typeJSON(removedThree)
+        .saveJSON()
+        .assertNotificationUpdated();
     });
   });
 
@@ -185,7 +185,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeFieldExists(attrName, false)
-        .setUsername("testuser7")
+        .setUsername(`testuser7-${uuid()}`)
         .create()
         .assertNotificationCreated()
         .assertAttributeFieldExists(attrName, false);
@@ -251,7 +251,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeFieldExists(attrName, true)
-        .setUsername("testuser10")
+        .setUsername(`testuser10-${uuid()}`)
         .create()
         .assertNotificationCreated()
         .assertAttributeFieldExists(attrName, true);
@@ -270,7 +270,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeLabel(attrName, attrName)
-        .setUsername("testuser11")
+        .setUsername(`testuser11-${uuid()}`)
         .create()
         .assertValidationErrorRequired(attrName);
 
@@ -293,7 +293,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertAttributeLabel(attrName, attrName)
-        .setUsername("testuser12")
+        .setUsername(`testuser12-${uuid()}`)
         .setAttributeValue(attrName, "MyAttribute")
         .create()
         .assertNotificationCreated();
@@ -306,7 +306,8 @@ describe("User profile tabs", () => {
       getAttributesGroupTab()
         .clickOnCreatesAttributesGroupButton()
         .createAttributeGroup(group, group)
-        .saveAttributesGroupCreation();
+        .saveAttributesGroupCreation()
+        .assertNotificationUpdated();
 
       getAttributesTab();
       userProfileTab
@@ -320,7 +321,7 @@ describe("User profile tabs", () => {
       createUserPage
         .goToCreateUser()
         .assertGroupDisplayName(group, group)
-        .setUsername("testuser14")
+        .setUsername(`testuser14-${uuid()}`)
         .create()
         .assertNotificationCreated();
 
@@ -342,7 +343,8 @@ describe("User profile tabs", () => {
       getAttributesGroupTab()
         .clickOnCreatesAttributesGroupButton()
         .createAttributeGroup(group, group)
-        .saveAttributesGroupCreation();
+        .saveAttributesGroupCreation()
+        .assertNotificationUpdated();
 
       createAttributeDefinition(attrName, (attrConfigurer) =>
         attrConfigurer.setAllAttributePermissions(),
@@ -361,7 +363,7 @@ describe("User profile tabs", () => {
         .goToCreateUser()
         .assertGroupDisplayName(group, group)
         .assertAttributeLabel(attrName, attrName)
-        .setUsername("testuser13")
+        .setUsername(`testuser13-${uuid()}`)
         .setAttributeValue(attrName, initialAttrValue)
         .create()
         .assertNotificationCreated()
