@@ -23,6 +23,8 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -86,11 +88,20 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
     public String updatePassword(String codeId) {
         changePasswordPage.changePassword("new-password", "new-password");
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PASSWORD);
+        AssertEvents.ExpectedEvent expectedEvent1 = events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         if (codeId != null) {
-            expectedEvent.detail(Details.CODE_ID, codeId);
+            expectedEvent1.detail(Details.CODE_ID, codeId);
         }
-        return expectedEvent.assertEvent().getDetails().get(Details.CODE_ID);
+        EventRepresentation eventRep1 = expectedEvent1.assertEvent();
+
+        AssertEvents.ExpectedEvent expectedEvent2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        if (codeId != null) {
+            expectedEvent2.detail(Details.CODE_ID, codeId);
+        }
+        EventRepresentation eventRep2 = expectedEvent2.assertEvent();
+
+        Assert.assertEquals(eventRep1.getDetails().get(Details.CODE_ID), eventRep2.getDetails().get(Details.CODE_ID));
+        return eventRep2.getDetails().get(Details.CODE_ID);
     }
 
     public String updateProfile(String codeId) {

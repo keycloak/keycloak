@@ -218,13 +218,22 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
-        EventRepresentation eventRep = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+        EventRepresentation eventRep1 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
                 .user(userId)
                 .detail(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
                 .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
                 .assertEvent();
-        String credentialId = eventRep.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+        EventRepresentation eventRep2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userId)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
+                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
+                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
+                .assertEvent();
+        String credentialId1 = eventRep1.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+        String credentialId2 = eventRep2.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+
+        assertThat(credentialId1, equalTo(credentialId2));
 
         assertThat(userRes.credentials().stream()
                 .filter(cred -> cred.getType().equals(credType))
@@ -250,7 +259,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                 .user(userId)
                 .client("account")
                 .assertEvent();
-        return credentialId;
+        return credentialId2;
     }
 
     protected void checkTryAnotherWay() {
