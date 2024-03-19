@@ -37,6 +37,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
 @Provider
@@ -44,15 +46,19 @@ public class OrganizationResource {
 
     private final KeycloakSession session;
     private final OrganizationProvider provider;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
     public OrganizationResource() {
         // needed for registering to the JAX-RS stack
-        this(null);
+        this(null, null, null);
     }
 
-    public OrganizationResource(KeycloakSession session) {
+    public OrganizationResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.provider = session == null ? null : session.getProvider(OrganizationProvider.class);
+        this.auth = auth;
+        this.adminEvent = adminEvent;
     }
 
     @POST
@@ -108,6 +114,14 @@ public class OrganizationResource {
         toModel(organization, model);
 
         return Response.noContent().build();
+    }
+
+    @Path("{id}/members")
+    public OrganizationMemberResource members(@PathParam("id") String id) {
+        RealmModel realm = session.getContext().getRealm();
+        OrganizationModel model = getOrganization(realm, id);
+
+        return new OrganizationMemberResource(session, model, auth, adminEvent);
     }
 
     private OrganizationModel getOrganization(RealmModel realm, String id) {

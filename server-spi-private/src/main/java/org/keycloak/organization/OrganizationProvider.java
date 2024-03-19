@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 public interface OrganizationProvider extends Provider {
@@ -35,6 +36,13 @@ public interface OrganizationProvider extends Provider {
      */
     OrganizationModel createOrganization(RealmModel realm, String name);
 
+    /**
+     * Returns a {@link OrganizationModel} by its {@code id};
+     *
+     * @param realm the realm
+     * @param id the id of an organization
+     * @return the organization with the given {@code id}
+     */
     OrganizationModel getOrganizationById(RealmModel realm, String id);
 
     /**
@@ -53,9 +61,47 @@ public interface OrganizationProvider extends Provider {
     void removeOrganizations(RealmModel realm);
 
     /**
+     * Adds the give {@link UserModel} as a member of the given {@link OrganizationModel}.
+     *
+     * @param realm the realm
+     * @param organization the organization
+     * @param user the user
+     * @return {@code true} if the user was added as a member. Otherwise, returns {@code false}
+     */
+    boolean addOrganizationMember(RealmModel realm, OrganizationModel organization, UserModel user);
+
+    /**
      * Returns the organizations of the given realm as a stream.
      * @param realm Realm.
      * @return Stream of the organizations. Never returns {@code null}.
      */
     Stream<OrganizationModel> getOrganizationsStream(RealmModel realm);
+
+    /**
+     * Returns the members of a given {@code organization}.
+     *
+     * @param realm the realm
+     * @param organization the organization
+     * @return the organization with the given {@code id}
+     */
+    Stream<UserModel> getMembersStream(RealmModel realm, OrganizationModel organization);
+
+    /**
+     * Returns the member of an {@code organization} by its {@code id}.
+     *
+     * @param realm the realm
+     * @param organization the organization
+     * @param id the member id
+     * @return the organization with the given {@code id}
+     */
+    UserModel getMemberById(RealmModel realm, OrganizationModel organization, String id);
+
+    /**
+     * Returns the {@link OrganizationModel} that a {@code member} belongs to.
+     *
+     * @param realm the realm
+     * @param member the member of a organization
+     * @return the organization the {@code member} belongs to
+     */
+    OrganizationModel getOrganizationByMember(RealmModel realm, UserModel member);
 }
