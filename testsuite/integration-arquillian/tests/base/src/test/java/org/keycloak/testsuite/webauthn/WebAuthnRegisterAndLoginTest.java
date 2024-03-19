@@ -31,6 +31,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterF
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -58,11 +59,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.events.EventType.CUSTOM_REQUIRED_ACTION;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
@@ -127,13 +128,22 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             // confirm that registration is successfully completed
             userId = events.expectRegister(username, email).assertEvent().getUserId();
             // confirm registration event
-            EventRepresentation eventRep = events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
+            EventRepresentation eventRep1 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
                     .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
                     .assertEvent();
-            String regPubKeyCredentialId = eventRep.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+            EventRepresentation eventRep2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
+                    .assertEvent();
+            String regPubKeyCredentialId1 = eventRep1.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+            String regPubKeyCredentialId2 = eventRep2.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
+
+            assertThat(regPubKeyCredentialId1, equalTo(regPubKeyCredentialId2));
 
             // confirm login event
             String sessionId = events.expectLogin()
@@ -176,7 +186,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             // confirm login event
             sessionId = events.expectLogin()
                     .user(userId)
-                    .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId2)
                     .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString())
                     .assertEvent().getSessionId();
 
@@ -235,7 +245,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             webAuthnRegisterPage.assertCurrent();
 
-            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
+                    .assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
@@ -246,7 +261,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             appPage.assertCurrent();
 
-            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL)
+                    .assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL)

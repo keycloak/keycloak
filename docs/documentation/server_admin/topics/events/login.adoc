@@ -123,14 +123,20 @@ image:images/search-user-event.png[Search user event]
 |Send Password Reset
 |{project_name} sends a password reset email.
 
-|Update Password
+|Update Password (deprecated)
 |The password for an account changes.
 
-|Update TOTP
+|Update Credential
+|The password or (time-based) one-time Password (OTP/TOTP) settings for an account changes.
+
+|Update TOTP (deprecated)
 |The Time-based One-time Password (TOTP) settings for an account changes.
 
-|Remove TOTP
+|Remove TOTP (deprecated)
 |{project_name} removes TOTP from an account.
+
+|Remove Credential
+|{project_name} removes a credential from an account.
 
 |Send Verify Email
 |{project_name} sends an email verification email.
@@ -191,6 +197,8 @@ The Email Event Listener sends a message to the user's email address when an eve
 * Update Password.
 * Update Time-based One-time Password (TOTP).
 * Remove One-time Password (OTP).
+* Update Credential.
+* Remove Credential.
 
 The following conditions need to be met for an email to be sent:
 
@@ -217,6 +225,6 @@ You can exclude events by using the `--spi-events-listener-email-exclude-events`
 
 [source,bash]
 ----
-kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_TOTP,REMOVE_TOTP
+kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_CREDENTIAL,REMOVE_CREDENTIAL
 ----
 

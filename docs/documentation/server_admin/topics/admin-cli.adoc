@@ -99,7 +99,7 @@ When you log in with the Admin CLI, you specify:
 * A realm
 * A user name
 
-Another option is to specify a clientId only, which creates a unique service account for you to use. 
+Another option is to specify a clientId only, which creates a unique service account for you to use.
 
 When you log in using a user name, use a password for the specified user. When you log in using a clientId, you need the client secret only, not the user password. You can also use the `Signed JWT` rather than the client secret.
 
@@ -119,7 +119,7 @@ The second mechanism authenticates each command invocation for the duration of t
 For example, when performing an operation, specify all the information required for authentication.
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin 
+$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin
 ----
 
 Run the `kcadm.sh help` command for more information on using the Admin CLI.
@@ -131,9 +131,9 @@ If you do not specify the --password option (it is generally recommended to not 
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
-By default, the Admin CLI maintains a configuration file named `kcadm.config`. {project_name} places this file in the user's home directory. 
-In Linux-based systems, the full pathname is `$HOME/.keycloak/kcadm.config`. 
-In Windows, the full pathname is `%HOMEPATH%\.keycloak\kcadm.config`. 
+By default, the Admin CLI maintains a configuration file named `kcadm.config`. {project_name} places this file in the user's home directory.
+In Linux-based systems, the full pathname is `$HOME/.keycloak/kcadm.config`.
+In Windows, the full pathname is `%HOMEPATH%\.keycloak\kcadm.config`.
 
 You can use the `--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
 
@@ -199,7 +199,7 @@ The `create` and `update` commands send a JSON body to the server. You can use `
 
 [NOTE]
 ====
-The value in name=value pairs used in --set, -s options, are assumed to be JSON. If it cannot be parsed as valid JSON, then it will be sent to the server as a text value. 
+The value in name=value pairs used in --set, -s options, are assumed to be JSON. If it cannot be parsed as valid JSON, then it will be sent to the server as a text value.
 
 If the value is enclosed in quotes after shell processing, but is not valid JSON, the quotes will be stripped and the rest of the value will be sent as text. This behavior is deprecated, please consider specifying your value without quotes or a valid JSON string literal with double quotes.
 ====
@@ -492,13 +492,13 @@ You can turn on storage for all available ERROR events, not including auditing e
 +
 [options="nowrap"]
 ----
-$ kcadm.sh update events/config -r demorealm -s eventsEnabled=true -s 'enabledEventTypes=["LOGIN_ERROR","REGISTER_ERROR","LOGOUT_ERROR","CODE_TO_TOKEN_ERROR","CLIENT_LOGIN_ERROR","FEDERATED_IDENTITY_LINK_ERROR","REMOVE_FEDERATED_IDENTITY_ERROR","UPDATE_EMAIL_ERROR","UPDATE_PROFILE_ERROR","UPDATE_PASSWORD_ERROR","UPDATE_TOTP_ERROR","VERIFY_EMAIL_ERROR","REMOVE_TOTP_ERROR","SEND_VERIFY_EMAIL_ERROR","SEND_RESET_PASSWORD_ERROR","SEND_IDENTITY_PROVIDER_LINK_ERROR","RESET_PASSWORD_ERROR","IDENTITY_PROVIDER_FIRST_LOGIN_ERROR","IDENTITY_PROVIDER_POST_LOGIN_ERROR","CUSTOM_REQUIRED_ACTION_ERROR","EXECUTE_ACTIONS_ERROR","CLIENT_REGISTER_ERROR","CLIENT_UPDATE_ERROR","CLIENT_DELETE_ERROR"]' -s eventsExpiration=172800
+$ kcadm.sh update events/config -r demorealm -s eventsEnabled=true -s 'enabledEventTypes=["LOGIN_ERROR","REGISTER_ERROR","LOGOUT_ERROR","CODE_TO_TOKEN_ERROR","CLIENT_LOGIN_ERROR","FEDERATED_IDENTITY_LINK_ERROR","REMOVE_FEDERATED_IDENTITY_ERROR","UPDATE_EMAIL_ERROR","UPDATE_PROFILE_ERROR","UPDATE_PASSWORD_ERROR","UPDATE_TOTP_ERROR","UPDATE_CREDENTIAL_ERROR","VERIFY_EMAIL_ERROR","REMOVE_TOTP_ERROR","REMOVE_CREDENTIAL_ERROR","SEND_VERIFY_EMAIL_ERROR","SEND_RESET_PASSWORD_ERROR","SEND_IDENTITY_PROVIDER_LINK_ERROR","RESET_PASSWORD_ERROR","IDENTITY_PROVIDER_FIRST_LOGIN_ERROR","IDENTITY_PROVIDER_POST_LOGIN_ERROR","CUSTOM_REQUIRED_ACTION_ERROR","EXECUTE_ACTIONS_ERROR","CLIENT_REGISTER_ERROR","CLIENT_UPDATE_ERROR","CLIENT_DELETE_ERROR"]' -s eventsExpiration=172800
 ----
 * Windows:
 +
 [options="nowrap"]
 ----
-c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
+c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"UPDATE_CREDENTIAL_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"REMOVE_CREDENTIAL_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
 ----
 
 You can reset stored event types to *all available event types*. Setting the value to an empty list is the same as enumerating all.
@@ -1218,7 +1218,7 @@ $ kcadm.sh remove-roles -r demorealm --uusername testuser --cclientid realm-mana
 [discrete]
 ==== Listing a user's sessions
 
-. Identify the user's ID, 
+. Identify the user's ID,
 . Use the ID to compose an endpoint URI, such as `users/ID/sessions`.
 . Use the `get` command to retrieve a list of the user's sessions.
 +
@@ -1406,7 +1406,7 @@ $ kcadm.sh get-roles -r demorealm --gname Group --available
 
 Use the `get-roles` command to list assigned, available, and effective client roles for a group.
 
-. Specify the target group by name (`--gname` option) or ID (`--gid` option), 
+. Specify the target group by name (`--gname` option) or ID (`--gid` option),
 . Specify the client by the clientId attribute (`--cclientid` option) or ID (`--id` option) to list *assigned* client roles for the user.
 +
 For example:
@@ -1895,7 +1895,7 @@ $ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r demo
 ==== Updating configuration for an execution
 
 . Get the execution for the flow.
-. Get the flow's `authenticationConfig` attribute. 
+. Get the flow's `authenticationConfig` attribute.
 . Note the config ID from the attribute.
 . Run the `update` command on the `authentication/config/ID` endpoint.
 
