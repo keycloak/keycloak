@@ -69,6 +69,7 @@ export const AuthorizationExport = () => {
           name="authDetails"
           label={t("authDetails")}
           labelIcon={t("authDetailsHelp")}
+          resizeOrientation="vertical"
           defaultValue={code!}
           readOnly
           rows={10}
