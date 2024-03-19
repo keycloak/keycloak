@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.List;
 
 /**
@@ -82,7 +84,7 @@ public class OID4VCClient {
     }
 
     public OID4VCClient setSupportedVCTypes(List<SupportedCredentialConfiguration> supportedVCTypes) {
-        this.supportedVCTypes = supportedVCTypes;
+        this.supportedVCTypes = ImmutableList.copyOf(supportedVCTypes);
         return this;
     }
 
