@@ -44,6 +44,7 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -210,7 +211,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         //POST request to http://localhost:8180/auth/realms/test/protocol/openid-connect/auth;
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
         Response response = client.target(b.build(oauth.getRealm())).request().post(oauth.getLoginEntityForPOST());
-        
+
         assertThat(response.getStatus(), is(equalTo(200)));
         assertThat(response, Matchers.body(containsString("Sign in")));
 
@@ -531,7 +532,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
             setTimeOffset(0);
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
             String currentUrl = driver.getCurrentUrl();
             String pageSource = driver.getPageSource();
@@ -710,14 +712,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             //login without remember me
             loginPage.setRememberMe(false);
             loginPage.login("login-test", "password");
-            
+
             // Expire session
             loginEvent = events.expectLogin().user(userId)
                                                    .detail(Details.USERNAME, "login-test")
                                                    .assertEvent();
             sessionId = loginEvent.getSessionId();
             testingClient.testing().removeUserSession("test", sessionId);
-            
+
             // Assert rememberMe not checked nor username/email prefilled
             loginPage.open();
             assertFalse(loginPage.isRememberMeChecked());
@@ -726,7 +728,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setRememberMe(false);
         }
     }
-    
+
     @Test
     // KEYCLOAK-3181
     public void loginWithEmailUserAndRememberMe() {
@@ -752,7 +754,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
-            
+
             Assert.assertEquals("login@test.com", loginPage.getUsername());
 
             loginPage.setRememberMe(false);

@@ -30,6 +30,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -784,7 +785,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.updatePasswords("password", "password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
 
         userRepresentation = testRealm().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());
