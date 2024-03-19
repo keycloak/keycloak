@@ -186,7 +186,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private void setupTruststore(Properties props) {
         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-                
+
         SSLSocketFactory factory = configurator.getSSLSocketFactory();
         if (factory != null) {
             props.put("mail.smtp.ssl.socketFactory", factory);
