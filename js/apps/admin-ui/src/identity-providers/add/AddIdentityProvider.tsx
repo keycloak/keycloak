@@ -26,7 +26,7 @@ import { GeneralSettings } from "./GeneralSettings";
 export default function AddIdentityProvider() {
   const { t } = useTranslation();
   const { providerId } = useParams<IdentityProviderCreateParams>();
-  const form = useForm<IdentityProviderRepresentation>();
+  const form = useForm<IdentityProviderRepresentation>({ mode: "onChange" });
   const serverInfo = useServerInfo();
 
   const providerInfo = useMemo(() => {
@@ -48,7 +48,7 @@ export default function AddIdentityProvider() {
 
   const {
     handleSubmit,
-    formState: { isDirty },
+    formState: { isValid },
   } = form;
 
   const { addAlert, addError } = useAlerts();
@@ -100,7 +100,7 @@ export default function AddIdentityProvider() {
           </FormProvider>
           <ActionGroup>
             <Button
-              isDisabled={!isDirty}
+              isDisabled={!isValid}
               variant="primary"
               type="submit"
               data-testid="createProvider"

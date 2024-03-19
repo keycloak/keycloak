@@ -6,7 +6,7 @@ const masthead = new Masthead();
 export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #redirectUriGroup = ".pf-c-clipboard-copy__group";
   protected clientIdInput = "#kc-client-id";
-  protected clientSecretInput = "#kc-client-secret";
+  protected clientSecretInput = "config.clientSecret";
   #displayOrderInput = "#kc-display-order";
   #addBtn = "createProvider";
   #cancelBtn = "cancel";
@@ -22,12 +22,20 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   };
 
   public typeClientId(clientId: string) {
-    cy.get(this.clientIdInput).type(clientId).blur();
+    if (clientId) {
+      cy.get(this.clientIdInput).type(clientId);
+    } else {
+      cy.get(this.clientIdInput).clear();
+    }
     return this;
   }
 
   public typeClientSecret(clientSecret: string) {
-    cy.get(this.clientSecretInput).type(clientSecret).blur();
+    if (clientSecret) {
+      cy.findByTestId(this.clientSecretInput).type(clientSecret);
+    } else {
+      cy.findByTestId(this.clientSecretInput).clear();
+    }
     return this;
   }
 
@@ -38,7 +46,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public clickShowPassword() {
-    cy.get(this.clientSecretInput).parent().find("button").click();
+    cy.findByTestId(this.clientSecretInput).parent().find("button").click();
     return this;
   }
 
@@ -68,12 +76,12 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertClientSecretInputEqual(text: string) {
-    cy.get(this.clientSecretInput).should("have.text", text);
+    cy.findByTestId(this.clientSecretInput).should("have.text", text);
     return this;
   }
 
   public assertDisplayOrderInputEqual(text: string) {
-    cy.get(this.clientSecretInput).should("have.text", text);
+    cy.findByTestId(this.clientSecretInput).should("have.text", text);
     return this;
   }
 
@@ -124,7 +132,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       "have.value",
       this.testData["ClientId"] + idpName,
     );
-    cy.get(this.clientSecretInput).should("contain.value", "****");
+    cy.findByTestId(this.clientSecretInput).should("contain.value", "****");
     cy.get(this.#displayOrderInput).should(
       "have.value",
       this.testData["DisplayOrder"],

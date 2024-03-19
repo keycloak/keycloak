@@ -1,14 +1,13 @@
-import { forwardRef, MutableRefObject, Ref, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Button, InputGroup } from "@patternfly/react-core";
 import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
-
+import { forwardRef, MutableRefObject, Ref, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   KeycloakTextInput,
   KeycloakTextInputProps,
 } from "../keycloak-text-input/KeycloakTextInput";
 
-type PasswordInputProps = KeycloakTextInputProps & {
+export type PasswordInputProps = KeycloakTextInputProps & {
   hasReveal?: boolean;
 };
 
