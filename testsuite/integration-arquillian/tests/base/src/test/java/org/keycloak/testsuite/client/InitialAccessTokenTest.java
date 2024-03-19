@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.crypto.Algorithm;
@@ -148,6 +149,22 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
+    }
+
+    @Test
+    public void createViaAlternativeDomain() throws ClientRegistrationException {
+        String alternativeContextRoot = "http://keycloak.127.0.0.1.nip.io:" + System.getProperty("auth.server.http.port");
+        ClientRegistration alternativeReg = ClientRegistration.create().url(alternativeContextRoot + "/auth", "test").build();
+
+        ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
+        alternativeReg.auth(Auth.token(response));
+
+        ClientRepresentation rep = new ClientRepresentation();
+
+        setTimeOffset(10);
+
+        ClientRepresentation created = alternativeReg.create(rep);
+        Assert.assertNotNull(created);
     }
 
 }

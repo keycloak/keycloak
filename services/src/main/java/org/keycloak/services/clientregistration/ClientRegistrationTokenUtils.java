@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.function.Predicate;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -85,7 +86,7 @@ public class ClientRegistrationTokenUtils {
         return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
-    public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token) {
+    public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token, Predicate<JsonWebToken> mustVerifyIssuer) {
         if (token == null) {
             return TokenVerification.error(new RuntimeException("Missing token"));
         }
@@ -93,8 +94,9 @@ public class ClientRegistrationTokenUtils {
         String kid;
         JsonWebToken jwt;
         try {
+            TokenVerifier.Predicate<JsonWebToken> realmUrlCheck = jsonWebToken -> !mustVerifyIssuer.test(jsonWebToken) || new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)).test(jsonWebToken);
             TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
-                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
+                    .withChecks(realmUrlCheck, TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);

@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.function.Predicate;
 import org.jboss.resteasy.spi.Failure;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
@@ -89,7 +90,12 @@ public class ClientRegistrationAuth {
 
         token = split[1];
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token);
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(
+                session,
+                realm,
+                token,
+                Predicate.<JsonWebToken>not(ClientRegistrationAuth::isRegistrationAccessToken)
+                        .and(Predicate.not(ClientRegistrationAuth::isInitialAccessToken)));
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }
@@ -121,10 +127,19 @@ public class ClientRegistrationAuth {
     }
 
     public boolean isInitialAccessToken() {
+        return isInitialAccessToken(jwt);
+    }
+
+    private static boolean isInitialAccessToken(JsonWebToken jwt) {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType());
     }
 
+
     public boolean isRegistrationAccessToken() {
+        return isRegistrationAccessToken(jwt);
+    }
+
+    private static boolean isRegistrationAccessToken(JsonWebToken jwt) {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
     }
 

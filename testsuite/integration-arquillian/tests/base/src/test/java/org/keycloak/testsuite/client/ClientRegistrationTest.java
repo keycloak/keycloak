@@ -753,4 +753,24 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
             }
         }
     }
+
+    @Test
+    public void registerClientInMasterRealmViaAlternativeDomain() throws Exception {
+        String alternativeContextRoot = "http://keycloak.127.0.0.1.nip.io:" + System.getProperty("auth.server.http.port");
+        ClientRegistration alternativeReg = ClientRegistration.create().url(alternativeContextRoot + "/auth", "master").build();
+
+        String token = oauth.doGrantAccessTokenRequest("master", "admin", "admin", null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+        alternativeReg.auth(Auth.token(token));
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        try {
+            alternativeReg.create(client);
+            fail("Expected 401");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
 }

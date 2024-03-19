@@ -20,6 +20,7 @@ package org.keycloak.testsuite.client;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -62,22 +63,26 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
 
+	private ClientRepresentation assertRead(ClientRegistration reg, String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
+		if (expectSuccess) {
+			reg.auth(Auth.token(registrationAccess));
+			ClientRepresentation rep = reg.get(id);
+			assertNotNull(rep);
+			return rep;
+		} else {
+			reg.auth(Auth.token(registrationAccess));
+			try {
+				reg.get(client.getClientId());
+				fail("Expected 403");
+			} catch (Exception e) {
+				assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+			}
+		}
+		return null;
+	}
+
     private ClientRepresentation assertRead(String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
-        if (expectSuccess) {
-            reg.auth(Auth.token(registrationAccess));
-            ClientRepresentation rep = reg.get(id);
-            assertNotNull(rep);
-            return rep;
-        } else {
-            reg.auth(Auth.token(registrationAccess));
-            try {
-                reg.get(client.getClientId());
-                fail("Expected 403");
-            } catch (Exception e) {
-                assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-            }
-        }
-        return null;
+        return assertRead(reg, id, registrationAccess, expectSuccess);
     }
 
     @Test
@@ -174,4 +179,13 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         assertNotNull(getClient(client.getId()));
     }
 
+	@Test
+	public void getClientViaAlternativeDomain() throws ClientRegistrationException {
+		setTimeOffset(10);
+
+		String alternativeContextRoot = "http://keycloak.127.0.0.1.nip.io:" + System.getProperty("auth.server.http.port");
+		ClientRegistration alternativeReg = ClientRegistration.create().url(alternativeContextRoot + "/auth", "test").build();
+
+		assertRead(alternativeReg, client.getClientId(), client.getRegistrationAccessToken(), true);
+	}
 }
