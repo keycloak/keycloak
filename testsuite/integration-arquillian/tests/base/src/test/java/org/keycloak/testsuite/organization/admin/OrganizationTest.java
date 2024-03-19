@@ -34,16 +34,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
-public class OrganizationTest extends AbstractAdminTest {
+public class OrganizationTest extends AbstractOrganizationTest {
 
     @Test
     public void testUpdate() {
-        OrganizationRepresentation expected = createRepresentation();
+        OrganizationRepresentation expected = createOrganization();
 
         assertEquals("neworg", expected.getName());
         expected.setName("acme");
@@ -61,7 +59,7 @@ public class OrganizationTest extends AbstractAdminTest {
 
     @Test
     public void testGet() {
-        OrganizationRepresentation expected = createRepresentation();
+        OrganizationRepresentation expected = createOrganization();
         OrganizationRepresentation existing = testRealm().organizations().get(expected.getId()).toRepresentation();
         assertNotNull(existing);
         assertEquals(expected.getId(), existing.getId());
@@ -73,7 +71,7 @@ public class OrganizationTest extends AbstractAdminTest {
         List<OrganizationRepresentation> expected = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
-            expected.add(createRepresentation("org-" + i));
+            expected.add(createOrganization("kc.org." + i));
         }
 
         List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
@@ -83,7 +81,7 @@ public class OrganizationTest extends AbstractAdminTest {
 
     @Test
     public void testDelete() {
-        OrganizationRepresentation expected = createRepresentation();
+        OrganizationRepresentation expected = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
 
         try (Response response = organization.delete()) {
@@ -94,27 +92,5 @@ public class OrganizationTest extends AbstractAdminTest {
             organization.toRepresentation();
             fail("should be deleted");
         } catch (NotFoundException ignore) {}
-    }
-
-    private OrganizationRepresentation createRepresentation() {
-        return createRepresentation("neworg");
-    }
-
-    private OrganizationRepresentation createRepresentation(String name) {
-        OrganizationRepresentation org = new OrganizationRepresentation();
-
-        org.setName(name);
-
-        String id;
-
-        try (Response response = testRealm().organizations().create(org)) {
-            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
-            id = ApiUtil.getCreatedId(response);
-        }
-
-        org.setId(id);
-        getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
-
-        return org;
     }
 }

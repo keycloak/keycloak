@@ -29,7 +29,6 @@ import jakarta.persistence.Table;
 @Table(name="ORGANIZATION")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="deleteByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="getByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId")
 })
 public class OrganizationEntity {
@@ -41,6 +40,9 @@ public class OrganizationEntity {
 
     @Column(name = "REALM_ID")
     private String realmId;
+
+    @Column(name = "GROUP_ID")
+    private String groupId;
 
     @Column(name="NAME")
     protected String name;
@@ -59,6 +61,14 @@ public class OrganizationEntity {
 
     public void setRealmId(String realm) {
         this.realmId = realm;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public String getName() {

@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.admin.client.resource;
 
-public interface OrganizationModel {
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.representations.idm.UserRepresentation;
 
-    String USER_ORGANIZATION_ATTRIBUTE = "kc.org";
+public interface OrganizationMemberResource {
 
-    String getId();
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    UserRepresentation toRepresentation();
 
-    void setName(String name);
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response update(UserRepresentation organization);
 
-    String getName();
+    @DELETE
+    Response delete();
 }
