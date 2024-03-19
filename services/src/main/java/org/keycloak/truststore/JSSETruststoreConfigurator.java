@@ -52,6 +52,18 @@ public class JSSETruststoreConfigurator {
             return null;
         }
 
+        if(getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            return new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            };
+        }
+
         if (sslFactory == null) {
             synchronized(this) {
                 if (sslFactory == null) {
