@@ -42,7 +42,10 @@ public class ClientBean {
         ImmutableMap.Builder<String,String> builder = new ImmutableMap.Builder<>();
         if (client.getAttributes() != null) {
           for (String key : ATTRIBUTES_ALLOWED) {
-            builder.put(key, client.getAttributes().get(key));
+            String val = client.getAttributes().get(key);
+            if (val != null) {
+              builder.put(key, val);
+            }
           }
         }
         this.attributes = builder.build();
