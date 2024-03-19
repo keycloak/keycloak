@@ -186,7 +186,8 @@ export default class CreateUserPage {
   }
 
   setAttributeValue(attrName: string, value: string) {
-    cy.findByTestId(attrName).clear().type(value);
+    cy.findByTestId(attrName).as("attr").clear();
+    cy.get("@attr").type(value);
 
     return this;
   }
