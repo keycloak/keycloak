@@ -38,8 +38,7 @@ public class JSSETruststoreConfigurator {
 
     public JSSETruststoreConfigurator(KeycloakSession session) {
         KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
-        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory
-                .getProviderFactory(TruststoreProvider.class, "file");
+        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class, "file");
 
         provider = truststoreFactory.create(session);
         if (provider != null && provider.getTruststore() == null) {

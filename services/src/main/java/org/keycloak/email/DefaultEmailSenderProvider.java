@@ -100,7 +100,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             if (starttls || tls || auth){
                 props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
 
-                setupTruststore(props);    
+                setupTruststore(props);
             }
 
             props.setProperty("mail.smtp.timeout", "10000");
