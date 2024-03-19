@@ -61,6 +61,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.utils.GroupUtils;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 /**
  * @resource Groups
  * @author Bill Burke
@@ -162,8 +164,9 @@ public class GroupResource {
         @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
         boolean canViewGlobal = auth.groups().canView();
-        return group.getSubGroupsStream(first, max)
-            .filter(g -> canViewGlobal || auth.groups().canView(g))
+        return paginatedStream(
+            group.getSubGroupsStream()
+            .filter(g -> canViewGlobal || auth.groups().canView(g)), first, max)
             .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 

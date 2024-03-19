@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -71,7 +72,7 @@ public class AdminConsolePermissionsCalculatedTest extends AbstractKeycloakTest 
 
             String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami?currentRealm=master";
 
-            JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
+            JsonNode jsonNode = SimpleHttpDefault.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
 
             assertTrue("Permissions for " + Config.getAdminRealm() + " realm.", jsonNode.at("/realm_access/" + Config.getAdminRealm()).isArray());
         }

@@ -50,6 +50,7 @@ import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FI
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY;
+import static org.keycloak.config.CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
@@ -110,6 +111,12 @@ public class CacheManagerFactory {
         if (metricsEnabled) {
             builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
             builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
+            builder.getGlobalConfigurationBuilder().cacheContainer().statistics(true);
+            builder.getGlobalConfigurationBuilder().metrics().namesAsTags(true);
+            if (booleanProperty(CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY)) {
+                builder.getGlobalConfigurationBuilder().metrics().histograms(true);
+            }
+            builder.getNamedConfigurationBuilders().forEach((s, configurationBuilder) -> configurationBuilder.statistics().enabled(true));
         }
 
         // For Infinispan 10, we go with the JBoss marshalling.
@@ -244,11 +251,7 @@ public class CacheManagerFactory {
                                 .saslMechanism(SCRAM_SHA_512)
                         .addServer()
                             .host(cacheRemoteHost)
-                            .port(cacheRemotePort)
-                        // This is a workaround for the following issue https://github.com/keycloak/keycloak/issues/27117 and should be removed when the issue is fixed
-                        .async().enable().modificationQueueSize(1024)
-                        // end of workaround
-                ;
+                            .port(cacheRemotePort);
             });
         }
     }

@@ -10,15 +10,12 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  Switch,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
+import { HelpItem, TextControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -26,7 +23,6 @@ import { FormAccess } from "../../components/form/FormAccess";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -35,9 +31,9 @@ import { useParams } from "../../utils/useParams";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
 import { ScopePicker } from "./ScopePicker";
-
-import "./resource-details.css";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAccess } from "../../context/access/Access";
+import "./resource-details.css";
 
 type SubmittedResource = Omit<
   ResourceRepresentation,
@@ -58,13 +54,7 @@ export default function ResourceDetails() {
   const form = useForm<SubmittedResource>({
     mode: "onChange",
   });
-  const {
-    register,
-    formState: { errors },
-    control,
-    setValue,
-    handleSubmit,
-  } = form;
+  const { setValue, handleSubmit } = form;
 
   const { id, resourceId, realm } = useParams<ResourceDetailsParams>();
   const navigate = useNavigate();
@@ -197,68 +187,30 @@ export default function ResourceDetails() {
             className="keycloak__resource-details__form"
             onSubmit={handleSubmit(submit)}
           >
-            <FormGroup
+            <TextControl
+              name={resourceId ? "owner.name" : ""}
               label={t("owner")}
-              fieldId="owner"
-              labelIcon={
-                <HelpItem helpText={t("ownerHelp")} fieldLabelId="owner" />
-              }
-            >
-              <KeycloakTextInput
-                id="owner"
-                value={client.clientId}
-                isReadOnly
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("ownerHelp")}
+              defaultValue={client.clientId}
+              readOnly
+            />
+            <TextControl
+              name={"name"}
               label={t("name")}
-              fieldId="name"
-              labelIcon={
-                <HelpItem
-                  helpText={t("resourceNameHelp")}
-                  fieldLabelId="name"
-                />
-              }
-              helperTextInvalid={t("required")}
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              isRequired
-            >
-              <KeycloakTextInput
-                id="name"
-                validated={
-                  errors.name
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...register("name", { required: true })}
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("resourceNameHelp")}
+              rules={{ required: t("required") }}
+            />
+            <TextControl
+              name="displayName"
               label={t("displayName")}
-              fieldId="displayName"
-              labelIcon={
-                <HelpItem helpText={t("displayNameHelp")} fieldLabelId="name" />
-              }
-            >
-              <KeycloakTextInput
-                id="displayName"
-                {...register("displayName")}
-              />
-            </FormGroup>
-            <FormGroup
+              labelIcon={t("displayNameHelp")}
+              rules={{ required: t("required") }}
+            />
+            <TextControl
+              name="type"
               label={t("type")}
-              fieldId="type"
-              labelIcon={
-                <HelpItem
-                  helpText={t("resourceDetailsTypeHelp")}
-                  fieldLabelId="type"
-                />
-              }
-            >
-              <KeycloakTextInput id="type" {...register("type")} />
-            </FormGroup>
+              labelIcon={t("resourceDetailsTypeHelp")}
+            />
             <FormGroup
               label={t("uris")}
               fieldId="uris"
@@ -274,47 +226,17 @@ export default function ResourceDetails() {
               />
             </FormGroup>
             <ScopePicker clientId={id} />
-            <FormGroup
+            <TextControl
+              name="icon_uri"
               label={t("iconUri")}
-              fieldId="iconUri"
-              labelIcon={
-                <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
-              }
-            >
-              <KeycloakTextInput
-                id="iconUri"
-                type="url"
-                {...register("icon_uri")}
-              />
-            </FormGroup>
-            <FormGroup
-              hasNoPaddingTop
+              labelIcon={t("iconUriHelp")}
+              type="url"
+            />
+            <DefaultSwitchControl
+              name="ownerManagedAccess"
               label={t("ownerManagedAccess")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("ownerManagedAccessHelp")}
-                  fieldLabelId="ownerManagedAccess"
-                />
-              }
-              fieldId="ownerManagedAccess"
-            >
-              <Controller
-                name="ownerManagedAccess"
-                control={control}
-                defaultValue={false}
-                render={({ field }) => (
-                  <Switch
-                    id="ownerManagedAccess"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value}
-                    onChange={field.onChange}
-                    aria-label={t("ownerManagedAccess")}
-                  />
-                )}
-              />
-            </FormGroup>
-
+              labelIcon={t("ownerManagedAccessHelp")}
+            />
             <FormGroup
               hasNoPaddingTop
               label={t("resourceAttribute")}

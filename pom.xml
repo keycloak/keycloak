@@ -45,8 +45,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.8.1</quarkus.version>
-        <quarkus.build.version>3.8.1</quarkus.build.version>
+        <quarkus.version>3.8.2</quarkus.version>
+        <quarkus.build.version>3.8.2</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -97,7 +97,7 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.25.Final</infinispan.version>
+        <infinispan.version>14.0.27.Final</infinispan.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -146,6 +146,10 @@
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
 
+        <!-- json-ld processing for oid4vci ld-proofs -->
+        <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
+        <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
+
         <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.25.1</liquibase.version>
         <!-- matches quarkus 3.7.1 version and but also the pax.web.version, hence we can't rely on quarkus bom -->
@@ -161,7 +165,7 @@
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
         <aurora-postgresql.version>15.5</aurora-postgresql.version>
-        <aws-jdbc-wrapper.version>2.3.4</aws-jdbc-wrapper.version>
+        <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.2</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
         <mariadb-jdbc.version>3.3.3</mariadb-jdbc.version>
@@ -1664,6 +1668,17 @@
                 <scope>test</scope>
                 <version>${version.org.wildfly.glow}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.apicatalog</groupId>
+                <artifactId>titanium-json-ld</artifactId>
+                <version>${com.apicatalog.titanium-json-ld.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.setl</groupId>
+                <artifactId>rdf-urdna</artifactId>
+                <version>${io.setl.rdf-urdna.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1891,18 +1906,6 @@
             </activation>
             <modules>
                 <module>testsuite</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>examples</id>
-            <activation>
-                <property>
-                    <name>!skipExamples</name>
-                </property>
-            </activation>
-            <modules>
-                <module>examples</module>
             </modules>
         </profile>
 

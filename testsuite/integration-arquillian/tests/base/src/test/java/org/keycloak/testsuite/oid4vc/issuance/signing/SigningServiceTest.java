@@ -52,7 +52,6 @@ import java.util.UUID;
  */
 public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
 
-    private static final Logger LOGGER = Logger.getLogger(SigningServiceTest.class);
     protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     protected static final URI TEST_DID = URI.create("did:web:test.org");
     protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
@@ -164,7 +163,7 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
 
     protected static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
         // we only set one key to the realm, thus can just take the first one
-        // if run inside the testsuite, configure is called seperated from the test itself, thus we cannot just take
+        // if run inside the testsuite, configure is called separated from the test itself, thus we cannot just take
         // the key from the `configureTestRealm` method.
         return keycloakSession
                 .keys()
@@ -172,6 +171,21 @@ public abstract class SigningServiceTest extends AbstractTestRealmKeycloakTest {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No key was configured"));
     }
+
+    protected ComponentExportRepresentation getEdDSAKeyProvider() {
+        ComponentExportRepresentation componentExportRepresentation = new ComponentExportRepresentation();
+        componentExportRepresentation.setName("eddsa-generated");
+        componentExportRepresentation.setId(UUID.randomUUID().toString());
+        componentExportRepresentation.setProviderId("eddsa-generated");
+
+        componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
+                        Map.of(
+                                "eddsaEllipticCurveKey", List.of("Ed25519"))
+                )
+        );
+        return componentExportRepresentation;
+    }
+
 
     static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;

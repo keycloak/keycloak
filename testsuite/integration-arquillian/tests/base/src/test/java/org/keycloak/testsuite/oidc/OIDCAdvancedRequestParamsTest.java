@@ -73,6 +73,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AppPage;
@@ -1436,11 +1437,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     private String createEncryptedRequestObject(String encAlg) throws IOException, JWEException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = null;
 
@@ -1523,11 +1524,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = jweHeader.getKeyId();
 

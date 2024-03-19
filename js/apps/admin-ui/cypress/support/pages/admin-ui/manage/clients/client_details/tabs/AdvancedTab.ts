@@ -10,7 +10,7 @@ export default class AdvancedTab extends PageObject {
     '[aria-label="Registered cluster nodes"] [aria-label="Actions"]';
   #deleteClusterNodeBtn =
     '[aria-label="Registered cluster nodes"] [role="menu"] button';
-  #nodeHostInput = "#nodeHost";
+  #nodeHostInput = "node";
   #addNodeConfirmBtn = "#add-node-confirm";
 
   #accessTokenSignatureAlgorithmInput = "#accessTokenSignatureAlgorithm";
@@ -30,10 +30,11 @@ export default class AdvancedTab extends PageObject {
     "#useRefreshTokenForClientCredentialsGrant";
   #useLowerCaseBearerTypeSwitch = "#useLowerCaseBearerType";
 
-  #oAuthMutualSwitch = "#oAuthMutual-switch";
+  #oAuthMutualSwitch =
+    "attributes.tls🍺client🍺certificate🍺bound🍺access🍺tokens";
   #keyForCodeExchangeInput = "#keyForCodeExchange";
   #pushedAuthorizationRequestRequiredSwitch =
-    "#pushedAuthorizationRequestRequired";
+    "attributes.require🍺pushed🍺authorization🍺requests";
 
   #browserFlowInput = "#browserFlow";
   #directGrantInput = "#directGrant";
@@ -73,7 +74,7 @@ export default class AdvancedTab extends PageObject {
   }
 
   fillHost(host: string) {
-    cy.get(this.#nodeHostInput).type(host);
+    cy.findByTestId(this.#nodeHostInput).type(host);
     return this;
   }
 
@@ -173,24 +174,26 @@ export default class AdvancedTab extends PageObject {
   }
 
   clickAdvancedSwitches() {
-    cy.get(this.#oAuthMutualSwitch).parent().click();
-    cy.get(this.#pushedAuthorizationRequestRequiredSwitch).parent().click();
+    cy.findByTestId(this.#oAuthMutualSwitch).parent().click();
+    cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch)
+      .parent()
+      .click();
     return this;
   }
 
   checkAdvancedSwitchesOn() {
-    cy.get(this.#oAuthMutualSwitch).scrollIntoView();
-    this.assertSwitchStateOn(cy.get(this.#oAuthMutualSwitch));
+    cy.findByTestId(this.#oAuthMutualSwitch).scrollIntoView();
+    this.assertSwitchStateOn(cy.findByTestId(this.#oAuthMutualSwitch));
     this.assertSwitchStateOn(
-      cy.get(this.#pushedAuthorizationRequestRequiredSwitch),
+      cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }
 
   checkAdvancedSwitchesOff() {
-    this.assertSwitchStateOff(cy.get(this.#oAuthMutualSwitch));
+    this.assertSwitchStateOff(cy.findByTestId(this.#oAuthMutualSwitch));
     this.assertSwitchStateOff(
-      cy.get(this.#pushedAuthorizationRequestRequiredSwitch),
+      cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }

@@ -119,8 +119,7 @@ public final class DefaultUserProfile implements UserProfile {
                 String name = attribute.getKey();
                 List<String> currentValue = user.getAttributeStream(name)
                         .filter(Objects::nonNull).collect(Collectors.toList());
-                List<String> updatedValue = attribute.getValue().stream()
-                        .filter(StringUtil::isNotBlank).collect(Collectors.toList());
+                List<String> updatedValue = attribute.getValue();
 
                 if (CollectionUtil.collectionEquals(currentValue, updatedValue)) {
                     continue;
@@ -132,7 +131,11 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                user.setAttribute(name, updatedValue);
+                if (updatedValue.stream().allMatch(StringUtil::isBlank)) {
+                    user.removeAttribute(name);
+                } else {
+                    user.setAttribute(name, updatedValue.stream().filter(StringUtil::isNotBlank).collect(Collectors.toList()));
+                }
 
                 if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
                     user.setEmailVerified(false);

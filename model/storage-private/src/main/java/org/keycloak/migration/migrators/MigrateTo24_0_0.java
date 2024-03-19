@@ -116,6 +116,6 @@ public class MigrateTo24_0_0 implements Migration {
            return;
         }
         realm.setFirstBrokerLoginFlow(flow);
-        LOG.debugf("Flow '%s' has been bound to realm %s as 'First broker login' flow", realm.getName());
+        LOG.debugf("Flow '%s' has been bound to realm %s as 'First broker login' flow", flow.getId(), realm.getName());
     }
 }

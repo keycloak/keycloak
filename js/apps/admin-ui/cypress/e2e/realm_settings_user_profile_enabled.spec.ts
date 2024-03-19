@@ -218,7 +218,7 @@ describe("User profile tabs", () => {
       sidebarPage.goToUsers();
       createUserPage
         .goToCreateUser()
-        .setAttributeValue(emailAttributeName, "testuser8@gmail.com")
+        .setAttributeValue(emailAttributeName, `testuser8-${uuid()}@gmail.com`)
         .assertAttributeFieldExists(attrName, false)
         .create()
         .assertNotificationCreated();
@@ -226,7 +226,7 @@ describe("User profile tabs", () => {
       // Edit user
       createUserPage
         .assertAttributeFieldExists(attrName, false)
-        .setAttributeValue(emailAttributeName, "testuser9@gmail.com")
+        .setAttributeValue(emailAttributeName, `testuser9-${uuid()}@gmail.com`)
         .update()
         .assertNotificationUpdated();
     });

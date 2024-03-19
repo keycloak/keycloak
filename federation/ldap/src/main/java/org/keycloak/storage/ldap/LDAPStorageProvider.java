@@ -62,6 +62,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
@@ -648,37 +649,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return importUserFromLDAP(session, realm, ldapUser, true);
     }
 
-    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, boolean duplicates) {
-        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
-
-        UserModel imported;
-        if (model.isImportEnabled()) {
-            // Search if there is already an existing user, which means the username might have changed in LDAP without Keycloak knowing about it
-            UserModel existingLocalUser = UserStoragePrivateUtil.userLocalStorage(session)
-                    .searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid()).findFirst().orElse(null);
-            if(existingLocalUser != null){
-                imported = existingLocalUser;
-                // Need to evict the existing user from cache
-                if (UserStorageUtil.userCache(session) != null) {
-                    UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
-                }
-                if (!duplicates) {
-                    // if duplicates are not wanted return null
-                    return null;
-                }
-            } else {
-                imported = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, ldapUsername);
-            }
-
-        } else {
-            InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());
-            adapter.addDefaults();
-            imported = adapter;
-        }
-        imported.setEnabled(true);
-
-        UserModel finalImported = imported;
+    private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
+        user.setEnabled(true);
         realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortDesc())
                 .forEachOrdered(mapperModel -> {
@@ -686,15 +658,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
                     }
                     LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    ldapMapper.onImportUserFromLDAP(ldapUser, finalImported, realm, true);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
                 });
 
         String userDN = ldapUser.getDn().toString();
-        if (model.isImportEnabled()) imported.setFederationLink(model.getId());
-        imported.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
-        imported.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, userDN);
+        if (model.isImportEnabled()) user.setFederationLink(model.getId());
+        user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
+        user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, userDN);
         if(getLdapIdentityStore().getConfig().isTrustEmail()){
-            imported.setEmailVerified(true);
+            user.setEmailVerified(true);
         }
         if (kerberosConfig.isAllowKerberosAuthentication() && kerberosConfig.getKerberosPrincipalAttribute() != null) {
             String kerberosPrincipal = ldapUser.getAttributeAsString(kerberosConfig.getKerberosPrincipalAttribute());
@@ -702,11 +674,56 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 logger.warnf("Kerberos principal attribute not found on LDAP user [%s]. Configured kerberos principal attribute name is [%s]", ldapUser.getDn(), kerberosConfig.getKerberosPrincipalAttribute());
             } else {
                 KerberosPrincipal kerberosPrinc = new KerberosPrincipal(kerberosPrincipal);
-                imported.setSingleAttribute(KerberosConstants.KERBEROS_PRINCIPAL, kerberosPrinc.toString());
+                user.setSingleAttribute(KerberosConstants.KERBEROS_PRINCIPAL, kerberosPrinc.toString());
             }
         }
-        logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
-                ldapUser.getUuid(), userDN);
+        logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]",
+                user.getUsername(), user.getEmail(), ldapUser.getUuid(), userDN);
+    }
+
+    protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, boolean forcedImport) {
+        String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
+        LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+
+        UserModel imported = null;
+        UserModel existingLocalUser = null;
+        final UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
+        try {
+            if (model.isImportEnabled()) {
+                // Search if there is already an existing user, which means the username might have changed in LDAP without Keycloak knowing about it
+                existingLocalUser = userProvider.searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid())
+                        .findFirst().orElse(null);
+                if (existingLocalUser != null) {
+                    imported = existingLocalUser;
+                    // Need to evict the existing user from cache
+                    if (UserStorageUtil.userCache(session) != null) {
+                        UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
+                    }
+                    if (!forcedImport) {
+                        // if import is not forced return null as it was already imported
+                        return null;
+                    }
+                } else {
+                    imported = userProvider.addUser(realm, ldapUsername);
+                }
+            } else {
+                InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());
+                adapter.addDefaults();
+                imported = adapter;
+            }
+            doImportUser(realm, imported, ldapUser);
+        } catch (ModelDuplicateException e) {
+            logger.warnf(e, "Duplicated user importing from LDAP. LDAP Entry DN: [%s], LDAP_ID: [%s]", ldapUser.getDn(), ldapUser.getUuid());
+            if (!forcedImport && existingLocalUser == null) {
+                // try to continue if import was not forced, delete created db user if necessary
+                if (model.isImportEnabled() && imported != null) {
+                    userProvider.removeUser(realm, imported);
+                }
+                return null;
+            }
+            throw e;
+        }
+
         UserModel proxy = proxy(realm, imported, ldapUser, false);
         return proxy;
     }
