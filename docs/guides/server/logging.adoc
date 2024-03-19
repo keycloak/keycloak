@@ -167,7 +167,7 @@ Logging to a file is disabled by default. To enable it, enter the following comm
 
 <@kc.start parameters="--log=\"console,file\""/>
 
-A log file named `keycloak.log` is created inside the `data/log` directory of your Keycloak installation.
+A log file named `keycloak.log` is created inside the `data/log` directory of your {project_name} installation.
 
 === Configuring the location and name of the log file
 

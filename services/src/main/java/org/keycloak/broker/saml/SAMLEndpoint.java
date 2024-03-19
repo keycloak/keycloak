@@ -329,8 +329,20 @@ public class SAMLEndpoint {
         }
 
         protected Response logoutRequest(LogoutRequestType request, String relayState) {
-            String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
+            if (request.getNameID() == null && request.getBaseID() == null && request.getEncryptedID() == null){
+                logger.error("SAML IdP Logout request must contain at least one of BaseID, NameID and EncryptedID");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_LOGOUT_FAILURE);
+            }
+
             if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
+                if (request.getNameID() == null){
+                    //TODO this need to be implemented
+                    logger.error("SAML IdP Logout request contains BaseID or EncryptedID without Session Index");
+                    event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                    return ErrorPage.error(session, null, Response.Status.NOT_IMPLEMENTED, Messages.IDENTITY_PROVIDER_LOGOUT_FAILURE);
+                }
+                String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
                 AtomicReference<LogoutRequestType> ref = new AtomicReference<>(request);
                 session.sessions().getUserSessionByBrokerUserIdStream(realm, brokerUserId)
                         .filter(userSession -> userSession.getState() != UserSessionModel.State.LOGGING_OUT &&

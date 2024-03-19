@@ -288,4 +288,7 @@ public interface RealmResource {
 
     @Path("client-policies/profiles")
     ClientPoliciesProfilesResource clientPoliciesProfilesResource();
+
+    @Path("organizations")
+    OrganizationsResource organizations();
 }

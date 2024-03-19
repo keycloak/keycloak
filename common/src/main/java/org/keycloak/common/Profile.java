@@ -108,8 +108,6 @@ public class Profile {
 
         CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
 
-        OFFLINE_SESSION_PRELOADING("Offline session preloading", Type.DEPRECATED),
-
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
