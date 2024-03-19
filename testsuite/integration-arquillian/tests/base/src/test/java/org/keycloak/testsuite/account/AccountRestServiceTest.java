@@ -107,7 +107,7 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AccountRestServiceTest extends AbstractRestServiceTest {
-    
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -227,7 +227,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         UserRepresentation user = getUser(false);
         assertNull(user.getUserProfileMetadata());
     }
-    
+
     protected static UserProfileAttributeMetadata getUserProfileAttributeMetadata(UserRepresentation user, String attName) {
         if(user.getUserProfileMetadata() == null)
             return null;
@@ -238,7 +238,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
         return null;
     }
-    
+
     protected static UserProfileAttributeMetadata assertUserProfileAttributeMetadata(UserRepresentation user, String attName, String displayName, boolean required, boolean readOnly) {
         UserProfileAttributeMetadata uam = getUserProfileAttributeMetadata(user, attName);
 
@@ -310,7 +310,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
 
     }
-    
+
     /**
      * Reproducer for bugs KEYCLOAK-17424 and KEYCLOAK-17582
      */
@@ -323,13 +323,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             realmRep.setRegistrationEmailAsUsername(false);
             adminClient.realm("test").update(realmRep);
-            
+
             //set flag over adminClient to initial value
             UserResource userResource = adminClient.realm("test").users().get(user.getId());
             org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
             ur.setEmailVerified(true);
             userResource.update(ur);
-            //make sure flag is correct before the test 
+            //make sure flag is correct before the test
             user = getUser();
             assertEquals(true, user.isEmailVerified());
 
@@ -339,7 +339,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(originalEmail, user.getEmail());
             assertEquals(true, user.isEmailVerified());
 
-            
+
             // Update email - flag must be reset to false
             user.setEmail("bobby@localhost");
             user = updateAndGet(user);
@@ -402,7 +402,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .detail(Details.UPDATED_LAST_NAME, "Simpsons")
                 .assertEvent();
             events.assertEmpty();
-            
+
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
             realmRep.setEditUsernameAllowed(true);
@@ -417,7 +417,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(204, response.getStatus());
         }
     }
-        
+
     @Test
     public void testUpdateProfile() throws IOException {
         String userProfileCfg = "{\"attributes\": ["
@@ -455,7 +455,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("val1", user.getAttributes().get("attr1").get(0));
             assertEquals(1, user.getAttributes().get("attr2").size());
             assertEquals("val2", user.getAttributes().get("attr2").get(0));
-            
+
             // Update attributes
             user.getAttributes().remove("attr1");
             user.getAttributes().get("attr2").add("val3");
@@ -637,7 +637,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             throw e;
         }
     }
-    
+
     protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
         SimpleHttp a = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
         try {
@@ -886,6 +886,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .user(user.toRepresentation().getId())
                 .detail(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
                 .detail(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .assertEvent();
+        events.expect(EventType.REMOVE_CREDENTIAL)
+                .client("account")
+                .user(user.toRepresentation().getId())
+                .detail(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
+                .detail(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .assertEvent();
         events.assertEmpty();
     }

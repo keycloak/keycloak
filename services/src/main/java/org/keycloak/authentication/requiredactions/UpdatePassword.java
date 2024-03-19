@@ -45,6 +45,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -147,13 +148,18 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         UserModel user = context.getUser();
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        event.event(EventType.UPDATE_PASSWORD);
+
+        event.event(EventType.UPDATE_CREDENTIAL);
+        event.detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.PASSWORD);
+        EventBuilder deprecatedEvent = event.clone().event(EventType.UPDATE_PASSWORD);
+
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
-        EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
+        EventBuilder errorEvent = event.clone().event(EventType.UPDATE_CREDENTIAL_ERROR)
                 .client(authSession.getClient())
                 .user(authSession.getAuthenticatedUser());
+        EventBuilder deprecatedErrorEvent = errorEvent.clone().event(EventType.UPDATE_PASSWORD_ERROR);
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
@@ -162,6 +168,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_MISSING);
+            deprecatedErrorEvent.error(Errors.PASSWORD_MISSING);
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
@@ -170,6 +177,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
+            deprecatedErrorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
             return;
         }
 
@@ -180,8 +188,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         try {
             user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
             context.success();
+            deprecatedEvent.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
+            deprecatedErrorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(me.getMessage(), me.getParameters())
@@ -190,6 +200,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         } catch (Exception ape) {
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
+            deprecatedErrorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(ape.getMessage())
