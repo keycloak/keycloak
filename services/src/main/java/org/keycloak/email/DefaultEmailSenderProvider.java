@@ -19,7 +19,6 @@ package org.keycloak.email;
 
 import jakarta.mail.internet.MimeUtility;
 import org.jboss.logging.Logger;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
@@ -39,9 +38,6 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeMessage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.security.cert.X509Certificate;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
