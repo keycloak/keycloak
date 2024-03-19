@@ -17,12 +17,15 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -35,7 +38,8 @@ public class JSSETruststoreConfigurator {
 
     public JSSETruststoreConfigurator(KeycloakSession session) {
         KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
-        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class, "file");
+        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory
+                .getProviderFactory(TruststoreProvider.class, "file");
 
         provider = truststoreFactory.create(session);
         if (provider != null && provider.getTruststore() == null) {
@@ -52,20 +56,8 @@ public class JSSETruststoreConfigurator {
             return null;
         }
 
-        if(getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
-            return new X509TrustManager() {
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            };
-        }
-
         if (sslFactory == null) {
-            synchronized(this) {
+            synchronized (this) {
                 if (sslFactory == null) {
                     try {
                         SSLContext sslctx = SSLContext.getInstance("TLS");
@@ -83,6 +75,22 @@ public class JSSETruststoreConfigurator {
     public TrustManager[] getTrustManagers() {
         if (provider == null) {
             return null;
+        }
+
+        if (getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            return new TrustManager[] {
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
         }
 
         if (tm == null) {
