@@ -412,7 +412,7 @@ public class TokenManager {
         //if scope parameter is not null, remove every scope that is not part of scope parameter
         if (scopeParameter != null && ! scopeParameter.isEmpty()) {
             Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
-            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc))
+            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc) || sc.equals(OAuth2Constants.OFFLINE_ACCESS))
                     .collect(Collectors.joining(" "));
         }
 
