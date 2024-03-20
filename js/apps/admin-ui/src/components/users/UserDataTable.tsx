@@ -140,7 +140,6 @@ export function UserDataTable() {
         id={user.id}
         aria-label="User when enabled"
         isChecked={user.enabled}
-        hasCheckIcon
         onChange={handleChange}
       />
     );
