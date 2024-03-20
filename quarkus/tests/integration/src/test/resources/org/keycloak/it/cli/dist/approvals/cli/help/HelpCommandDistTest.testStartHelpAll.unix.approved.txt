@@ -107,8 +107,7 @@ Database:
 Transaction:
 
 --transaction-xa-enabled <true|false>
-                     If set to false, Keycloak uses a non-XA datasource in case the database does
-                       not support XA transactions. Default: true.
+                     If set to true, XA datasources will be used. Default: false.
 
 Feature:
 
