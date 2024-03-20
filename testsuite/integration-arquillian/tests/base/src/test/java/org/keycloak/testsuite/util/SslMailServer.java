@@ -64,7 +64,7 @@ public class SslMailServer {
 
     private static Map<String, String> serverConfiguration = new HashMap<>();
 
-    
+
     public static void start() {
         smtpServer = new SMTPServer(messageHandlerFactory);
         smtpServer.setHostName(HOST);
