@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.HttpMethod;
@@ -659,7 +660,12 @@ public class AuthorizationTokenService {
                     ResourcePermission resourcePermission = addPermission(request, resourceServer, authorization,
                             permissionsToEvaluate, limit,
                             requestedScopesModel, grantedResource);
-                    
+                    if (resourcePermission != null) {
+                        Collection<Scope> permissionScopes = resourcePermission.getScopes();
+                        if (permissionScopes != null) {
+                            permissionScopes.retainAll(scopes);
+                        }
+                    }
                     // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
                     resourcePermission.setGranted(true);
                 }
