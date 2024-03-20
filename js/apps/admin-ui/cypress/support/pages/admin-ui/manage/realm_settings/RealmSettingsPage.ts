@@ -443,7 +443,7 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   toggleSwitch(switchName: string, waitFor: boolean | undefined = true) {
-    cy.intercept("/admin/realms/*").as("load");
+    cy.intercept("/admin/realms/**/profile").as("load");
     cy.findByTestId(switchName).click({ force: true });
     if (waitFor) {
       cy.wait("@load");
