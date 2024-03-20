@@ -32,7 +32,7 @@ public class Proof {
     @JsonProperty("proof_type")
     private ProofType proofType;
 
-    private String jwt;
+    private Object proofObject;
 
     public ProofType getProofType() {
         return proofType;
@@ -43,12 +43,12 @@ public class Proof {
         return this;
     }
 
-    public String getJwt() {
-        return jwt;
+    public Object getProofObject() {
+        return proofObject;
     }
 
-    public Proof setJwt(String jwt) {
-        this.jwt = jwt;
+    public Proof setProofObject(Object proofObject) {
+        this.proofObject = proofObject;
         return this;
     }
 }
