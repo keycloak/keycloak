@@ -99,7 +99,7 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        boolean isXaEnabled = xaEnabledConfigValue != null && Boolean.parseBoolean(xaEnabledConfigValue.getValue());
 
         Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
 
