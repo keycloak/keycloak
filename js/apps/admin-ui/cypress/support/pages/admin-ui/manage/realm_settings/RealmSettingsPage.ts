@@ -222,7 +222,7 @@ export default class RealmSettingsPage extends CommonPage {
   #eventListenersSaveBtn = "saveEventListenerBtn";
   #eventListenersRevertBtn = "revertEventListenerBtn";
   #eventListenersInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
-  #eventListenersDrpDwnOption = ".pf-c-select__menu-item";
+  #eventListenersDrpDwnOption = ".pf-c-select__menu";
   #eventListenersDrwDwnSelect =
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   #eventListenerRemove = '[data-ouia-component-id="Remove"]';
@@ -267,7 +267,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#modalDialogBodyText).contains(
       "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
     );
-    cy.findByTestId(this.modalConfirm).contains("Disable").click();
+    cy.findByTestId(this.modalConfirm).click();
   }
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();

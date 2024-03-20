@@ -34,7 +34,7 @@ A production environment should protect itself from an overload situation, so th
 One way of doing this is rejecting additional requests once a certain threshold is reached.
 
 Load shedding should be implemented on all levels, including the load balancers in your environment.
-In addition to that, there is a feature in Keycloak to limit the number of requests that can't be processed right away and need to be queued.
+In addition to that, there is a feature in {project_Name} to limit the number of requests that can't be processed right away and need to be queued.
 By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.

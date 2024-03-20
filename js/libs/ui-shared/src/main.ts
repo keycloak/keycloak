@@ -23,8 +23,11 @@ export {
   setUserProfileServerError,
   isUserProfileError,
   label,
+  beerify,
   debeerify,
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";
 export { FormPanel } from "./scroll-form/FormPanel";
+export { PasswordControl } from "./controls/PasswordControl";
+export { PasswordInput } from "./controls/PasswordInput";

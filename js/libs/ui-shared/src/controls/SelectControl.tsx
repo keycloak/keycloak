@@ -61,15 +61,21 @@ export const SelectControl = <
     formState: { errors },
   } = useFormContext();
   const [open, setOpen] = useState(false);
-  const convert = () =>
-    options.map((option) => (
-      <SelectOption
-        key={typeof option === "string" ? option : option.key}
-        value={typeof option === "string" ? option : option.key}
-      >
-        {typeof option === "string" ? option : option.value}
-      </SelectOption>
-    ));
+  const convert = (prefix: string = "") => {
+    const lowercasePrefix = prefix.toLowerCase();
+    return options
+      .filter((option) =>
+        option.toString().toLowerCase().startsWith(lowercasePrefix),
+      )
+      .map((option) => (
+        <SelectOption
+          key={typeof option === "string" ? option : option.key}
+          value={typeof option === "string" ? option : option.key}
+        >
+          {typeof option === "string" ? option : option.value}
+        </SelectOption>
+      ));
+  };
   return (
     <FormLabel
       name={name}
@@ -90,7 +96,11 @@ export const SelectControl = <
             selections={
               typeof options[0] !== "string"
                 ? (options as SelectControlOption[])
-                    .filter((o) => value === o.key)
+                    .filter((o) =>
+                      Array.isArray(value)
+                        ? value.includes(o.key)
+                        : value === o.key,
+                    )
                     .map((o) => o.value)
                 : value
             }
@@ -117,7 +127,7 @@ export const SelectControl = <
             }
             onFilter={(_, value) => {
               onFilter?.(value);
-              return convert();
+              return convert(value);
             }}
             isOpen={open}
             variant={variant}
