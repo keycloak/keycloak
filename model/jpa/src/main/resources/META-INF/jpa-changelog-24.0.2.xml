@@ -21,4 +21,23 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate24_0_2_FederatedTermsAndConditionsRequiredAction"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="24.0.2-27967-drop-index-if-present">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <and>
+                <dbms type="oracle"/>
+                <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+            </and>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="24.0.2-27967-reindex">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="oracle"/>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
