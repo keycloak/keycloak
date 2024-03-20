@@ -86,8 +86,14 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       if (!config?.attributes) return;
 
       const translationsToDelete = config.attributes.find(
-        (attribute) => attribute.name === attributeToDelete,
+        (attribute: UserProfileAttribute) =>
+          attribute.name === attributeToDelete,
       )?.displayName;
+
+      const formattedTranslationsToDelete = translationsToDelete?.substring(
+        2,
+        translationsToDelete.length - 1,
+      );
 
       try {
         await Promise.all(
@@ -103,7 +109,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
                 await adminClient.realms.deleteRealmLocalizationTexts({
                   realm: realmName,
                   selectedLocale: locale,
-                  key: translationsToDelete,
+                  key: formattedTranslationsToDelete,
                 });
 
                 const updatedData =
@@ -120,7 +126,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         );
 
         const updatedAttributes = config.attributes.filter(
-          (attribute) => attribute.name !== attributeToDelete,
+          (attribute: UserProfileAttribute) =>
+            attribute.name !== attributeToDelete,
         );
 
         save(
