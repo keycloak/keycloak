@@ -267,7 +267,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#modalDialogBodyText).contains(
       "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
     );
-    cy.findByTestId(this.modalConfirm).contains("Disable").click();
+    cy.findByTestId(this.modalConfirm).click();
   }
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
