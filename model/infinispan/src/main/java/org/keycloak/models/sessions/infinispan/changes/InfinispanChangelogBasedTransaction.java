@@ -41,9 +41,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
-    private final KeycloakSession kcSession;
+    protected final KeycloakSession kcSession;
     private final String cacheName;
-    private final Cache<K, SessionEntityWrapper<V>> cache;
+    protected final Cache<K, SessionEntityWrapper<V>> cache;
     private final RemoteCacheInvoker remoteCacheInvoker;
 
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();

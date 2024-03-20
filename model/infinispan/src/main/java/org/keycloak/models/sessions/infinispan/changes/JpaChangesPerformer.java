@@ -69,8 +69,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     private TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor() {
         return switch (cacheName) {
-            case "sessions" -> this::processUserSessionUpdate;
-            case "clientSessions" -> this::processClientSessionUpdate;
+            case "sessions", "offlineSessions" -> this::processUserSessionUpdate;
+            case "clientSessions", "offlineClientSessions" -> this::processClientSessionUpdate;
             default -> throw new IllegalStateException("Unexpected value: " + cacheName);
         };
     }

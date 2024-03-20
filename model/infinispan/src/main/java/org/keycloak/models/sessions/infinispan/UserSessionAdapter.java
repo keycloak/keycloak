@@ -359,7 +359,8 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         return getId().hashCode();
     }
 
-    UserSessionEntity getEntity() {
+    // TODO: This should not be public
+    public UserSessionEntity getEntity() {
         return entity;
     }
 
