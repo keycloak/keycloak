@@ -1,7 +1,11 @@
 import { Select, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
-import { Options, UserProfileFieldProps } from "./UserProfileFields";
+import {
+  OptionLabel,
+  Options,
+  UserProfileFieldProps,
+} from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
 import {
   UserFormFields,
@@ -10,7 +14,6 @@ import {
   unWrap,
 } from "./utils";
 
-type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = (props: UserProfileFieldProps) => {
   const { t, form, inputType, attribute } = props;
   const [open, setOpen] = useState(false);
