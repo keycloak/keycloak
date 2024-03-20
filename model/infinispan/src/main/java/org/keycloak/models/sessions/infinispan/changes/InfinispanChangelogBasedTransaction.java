@@ -64,10 +64,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     private final Cache<K, SessionEntityWrapper<V>> cache;
     private final RemoteCacheInvoker remoteCacheInvoker;
 
-    private final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
+    protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
-    private final SessionFunction<V> lifespanMsLoader;
-    private final SessionFunction<V> maxIdleTimeMsLoader;
+    protected final SessionFunction<V> lifespanMsLoader;
+    protected final SessionFunction<V> maxIdleTimeMsLoader;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
                                                SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
