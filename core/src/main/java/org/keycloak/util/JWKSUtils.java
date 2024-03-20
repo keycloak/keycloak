@@ -27,6 +27,7 @@ import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.crypto.HashUtils;
 
@@ -124,6 +125,9 @@ public class JWKSUtils {
         keyWrapper.setKid(jwk.getKeyId());
         if (jwk.getAlgorithm() != null) {
             keyWrapper.setAlgorithm(jwk.getAlgorithm());
+        }
+        if (jwk.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
+            keyWrapper.setCurve((String) jwk.getOtherClaims().get(OKPPublicJWK.CRV));
         }
         keyWrapper.setType(jwk.getKeyType());
         keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));

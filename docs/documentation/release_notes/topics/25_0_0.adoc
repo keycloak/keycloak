@@ -1,0 +1,7 @@
+= Deprecated cookie methods removed
+
+The following methods for setting custom cookies have been removed:
+
+* `LocaleSelectorProvider.KEYCLOAK_LOCALE` - replaced by `CookieType.LOCALE`
+* `HttpCookie` - replaced by `NewCookie.Builder`
+* `HttpResponse.setCookieIfAbsent(HttpCookie cookie)` - replaced by `HttpResponse.setCookieIfAbsent(NewCookie cookie)`

@@ -25,6 +25,7 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -56,7 +57,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
@@ -108,9 +108,6 @@ public class IdentityProvidersResource {
 
     /**
      * Import identity provider from uploaded JSON file
-     *
-     * @return
-     * @throws IOException
      */
     @POST
     @Path("import-config")
@@ -125,10 +122,9 @@ public class IdentityProvidersResource {
             throw new BadRequestException();
         }
         String providerId = formDataMap.getFirst("providerId").asString();
-        InputStream inputStream = formDataMap.getFirst("file").asInputStream();
-        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, inputStream);
-        return config;
+        String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
+        IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
+        return providerFactory.parseConfig(session, config);
     }
 
     /**
@@ -149,25 +145,17 @@ public class IdentityProvidersResource {
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
-        
-        ReservedCharValidator.validate((String)data.get("alias"));
-        
+
+        ReservedCharValidator.validateNoSpace((String)data.get("alias"));
+
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
-        try {
-            IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-            Map<String, String> config;
-            config = providerFactory.parseConfig(session, inputStream);
-            // add the URL just if needed by the identity provider
-            config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
-            return config;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-            }
-        }
+        String file = session.getProvider(HttpClientProvider.class).getString(from);
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
+        Map<String, String> config = providerFactory.parseConfig(session, file);
+        // add the URL just if needed by the identity provider
+        config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
+        return config;
     }
 
     /**
@@ -239,7 +227,7 @@ public class IdentityProvidersResource {
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
-        ReservedCharValidator.validate(representation.getAlias());
+        ReservedCharValidator.validateNoSpace(representation.getAlias());
         
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);

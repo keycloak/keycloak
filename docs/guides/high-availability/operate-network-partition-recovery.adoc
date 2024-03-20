@@ -3,9 +3,7 @@
 
 <@tmpl.guide
 title="Recover from an out-of-sync passive site"
-summary="This describes the automatic and operational procedures necessary"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
+summary="This describes the automatic and operational procedures necessary" >
 
 This {section} describes the procedures required to synchronize the secondary site with the primary site in a setup as outlined in <@links.ha id="concepts-active-passive-sync" /> together with the blueprints outlined in <@links.ha id="bblocks-active-passive-sync" />.
 

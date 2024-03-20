@@ -5,7 +5,6 @@ import {
   ButtonVariant,
   Dropdown,
   DropdownItem,
-  DropdownToggle,
   InputGroup,
   KebabToggle,
   SearchInput,
@@ -19,8 +18,11 @@ import { useAccess } from "../../context/access/Access";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
 import { UserAttribute } from "./UserDataTable";
 import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
+import DropdownPanel from "../dropdown-panel/DropdownPanel";
 
 type UserDataTableToolbarItemsProps = {
+  searchDropdownOpen: boolean;
+  setSearchDropdownOpen: (open: boolean) => void;
   realm: RealmRepresentation;
   hasSelectedRows: boolean;
   toggleDeleteDialog: () => void;
@@ -40,6 +42,8 @@ type UserDataTableToolbarItemsProps = {
 };
 
 export function UserDataTableToolbarItems({
+  searchDropdownOpen,
+  setSearchDropdownOpen,
   realm,
   hasSelectedRows,
   toggleDeleteDialog,
@@ -59,7 +63,6 @@ export function UserDataTableToolbarItems({
 }: UserDataTableToolbarItemsProps) {
   const { t } = useTranslation();
   const [kebabOpen, setKebabOpen] = useState(false);
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
 
   const { hasAccess } = useAccess();
 
@@ -119,34 +122,30 @@ export function UserDataTableToolbarItems({
   const attributeSearchInput = () => {
     return (
       <>
-        <Dropdown
-          id="user-attribute-search-select"
-          data-testid="UserAttributeSearchSelector"
-          toggle={
-            <DropdownToggle
-              data-testid="userAttributeSearchSelectorToggle"
-              onToggle={(isOpen) => {
-                setSearchDropdownOpen(isOpen);
-              }}
-              className="keycloak__user_attribute_search_selector_dropdown__toggle"
-            >
-              {t("selectAttributes")}
-            </DropdownToggle>
-          }
-          isOpen={searchDropdownOpen}
+        <DropdownPanel
+          buttonText={t("selectAttributes")}
+          setSearchDropdownOpen={setSearchDropdownOpen}
+          searchDropdownOpen={searchDropdownOpen}
+          width="15vw"
         >
           <UserDataTableAttributeSearchForm
             activeFilters={activeFilters}
             setActiveFilters={setActiveFilters}
             profile={profile}
             createAttributeSearchChips={createAttributeSearchChips}
-            searchUserWithAttributes={searchUserWithAttributes}
+            searchUserWithAttributes={() => {
+              searchUserWithAttributes();
+              setSearchDropdownOpen(false);
+            }}
           />
-        </Dropdown>
+        </DropdownPanel>
         <Button
           icon={<ArrowRightIcon />}
           variant="control"
-          onClick={searchUserWithAttributes}
+          onClick={() => {
+            searchUserWithAttributes();
+            setSearchDropdownOpen(false);
+          }}
           aria-label={t("searchAttributes")}
         />
       </>

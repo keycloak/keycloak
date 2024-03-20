@@ -19,10 +19,18 @@ package org.keycloak.testsuite.actions;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -37,10 +45,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -48,6 +59,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.utils.StringUtil;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -321,6 +334,56 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     }
 
     @Test
+    public void updateProfileDuplicateUsernameWithEmail() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", "password", "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("user1@local.org").firstName("New first").lastName("New last").email("new@email.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("user1@local.org", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileDuplicatedEmailWithUsername() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", "password", "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last")
+                .email("user1@local.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("user1@local.com", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+
+        events.assertEmpty();
+    }
+
+    @Test
     public void updateProfileExpiredCookies() {
         loginPage.open();
         loginPage.login("john-doh@localhost", "password");
@@ -381,6 +444,110 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         } finally {
             upConfig.setUnmanagedAttributePolicy(null);
             upResource.update(upConfig);
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(HtmlUnitDriver.class) // we can't yet run modern JavaScript using HtmlUnit
+    public void testMultivaluedAttributes() {
+        UserProfileResource userProfile = testRealm().users().userProfile();
+        UPConfig configuration = userProfile.getConfiguration();
+
+        try {
+            UPConfig testUpConfig = configuration.clone();
+            List<String> attributes = List.of("foo", "bar", "zar");
+            List<String> values = IntStream.range(0, 5).mapToObj(Integer::toString).collect(Collectors.toList());
+
+            for (String attribute : attributes) {
+                testUpConfig.addOrReplaceAttribute(
+                        new UPAttribute(attribute, true, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)))
+                );
+            }
+
+            userProfile.update(testUpConfig);
+
+            loginPage.open();
+            loginPage.login("john-doh@localhost", "password");
+            updateProfilePage.assertCurrent();
+
+            for (String attribute : attributes) {
+                updateProfilePage.assertCurrent();
+
+                // add multiple values
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.toArray()));
+
+                // make sure multiple values are properly rendered
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                for (String value : values) {
+                    assertEquals(value, updateProfilePage.getAttribute(attribute + "-" + value));
+                }
+
+                // remove multiple values, only the last value should be kept as you can't remove the last one
+                for (String value : values) {
+                    updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.get(values.size() - 1)));
+
+                // make sure adding/removing within the same context works
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+                for (String value : values) {
+                    assertEquals(value, updateProfilePage.getAttribute(attribute + "-" + value));
+                }
+                for (String value : values) {
+                    updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                }
+                // make sure the last attribute is set with a value
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
+                    updateProfilePage.setAttribute(attribute + "-0", values.get(values.size() - 1));
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.get(values.size() - 1)));
+
+                // at the end the attribute is set with multiple values
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+
+                // restart the update profile flow
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+            }
+
+            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+
+            // all attributes should be set with multiple values
+            for (String attribute : attributes) {
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.toArray()));
+            }
+        } finally {
+            userProfile.update(configuration);
         }
     }
 

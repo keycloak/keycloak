@@ -83,16 +83,6 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
      */
     WORKER_RESULT createFailedWorkerResult(LOADER_CONTEXT loaderContext, WORKER_CONTEXT workerContext);
 
-
-    /**
-     * This will be called on nodes to check if loading is finished. It allows loader to notify that loading is finished for some reason.
-     *
-     * @param initializer
-     * @return
-     */
-    boolean isFinished(BaseCacheInitializer initializer);
-
-
     /**
      * Callback triggered on cluster coordinator once it recognize that all sessions were successfully loaded
      *

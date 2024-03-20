@@ -35,9 +35,9 @@ export default class SettingsTab extends PageObject {
 
   #redirectUris = "redirectUris";
 
-  #idpInitiatedSsoUrlName = "idpInitiatedSsoUrlName";
-  #idpInitiatedSsoRelayState = "idpInitiatedSsoRelayState";
-  #masterSamlProcessingUrl = "masterSamlProcessingUrl";
+  #idpInitiatedSsoUrlName = "attributes.saml_idp_initiated_sso_url_name";
+  #idpInitiatedSsoRelayState = "attributes.saml_idp_initiated_sso_relay_state";
+  #masterSamlProcessingUrl = "adminUrl";
 
   public clickSaveBtn() {
     cy.findByTestId(this.#saveBtn).click();

@@ -21,7 +21,6 @@ include::spring-boot-adapter.adoc[]
 
 ifeval::[{project_community}==true]
 include::tomcat-adapter.adoc[]
-include::jetty9-adapter.adoc[]
 include::spring-security-adapter.adoc[]
 endif::[]
 

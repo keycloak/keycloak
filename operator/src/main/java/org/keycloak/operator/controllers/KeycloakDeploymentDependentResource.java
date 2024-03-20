@@ -16,21 +16,23 @@
  */
 package org.keycloak.operator.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.PodResourceClaim;
 import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecFluent.TemplateNested;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -42,11 +44,14 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -62,10 +67,17 @@ import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
 
+import static org.keycloak.operator.Utils.addResources;
+import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+
+    private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
+    private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
+
+    public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
     public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
 
@@ -77,13 +89,20 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     Config operatorConfig;
 
     @Inject
-    WatchedSecrets watchedSecrets;
+    WatchedResources watchedResources;
 
     @Inject
     KeycloakDistConfigurator distConfigurator;
 
+    private boolean useServiceCaCrt;
+
     public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
+        useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
+    }
+
+    public void setUseServiceCaCrt(boolean useServiceCaCrt) {
+        this.useServiceCaCrt = useServiceCaCrt;
     }
 
     @Override
@@ -93,19 +112,23 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
-        addTruststores(primary, baseDeployment, allSecrets);
+        Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        addTruststores(primary, baseDeployment, kcContainer, allSecrets);
         addEnvVars(baseDeployment, primary, allSecrets);
+        addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
+        Optional.ofNullable(primary.getSpec().getCacheSpec())
+                .ifPresent(c -> configureCache(primary, baseDeployment, kcContainer, c, context.getClient()));
 
         if (!allSecrets.isEmpty()) {
-            watchedSecrets.annotateDeployment(new ArrayList<>(allSecrets), primary, baseDeployment);
+            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
         }
 
         StatefulSet existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
         if (existingDeployment == null) {
-            Log.info("No existing Deployment found, using the default");
+            Log.debug("No existing Deployment found, using the default");
         }
         else {
-            Log.info("Existing Deployment found, handling migration");
+            Log.debug("Existing Deployment found, handling migration");
 
             // version 22 changed the match labels, account for older versions
             if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
@@ -119,8 +142,34 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return baseDeployment;
     }
 
-    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
-        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+    private void configureCache(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client) {
+        Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
+            if (configFile.getName() == null || configFile.getKey() == null) {
+                throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
+            }
+
+            var volume = new VolumeBuilder()
+                    .withName(CACHE_CONFIG_FILE_MOUNT_NAME)
+                    .withNewConfigMap()
+                    .withName(configFile.getName())
+                    .withOptional(configFile.getOptional())
+                    .endConfigMap()
+                    .build();
+
+            var volumeMount = new VolumeMountBuilder()
+                    .withName(volume.getName())
+                    .withMountPath(Constants.CACHE_CONFIG_FOLDER)
+                    .build();
+
+            deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+            kcContainer.getVolumeMounts().add(0, volumeMount);
+
+            // currently the only configmap we're watching
+            watchedResources.annotateDeployment(List.of(configFile.getName()), ConfigMap.class, deployment, client);
+        });
+    }
+
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets) {
         for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
             // for now we'll assume only secrets, later we can support configmaps
             TruststoreSource source = truststore.getSecret();
@@ -163,18 +212,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
         kcContainer.getVolumeMounts().add(0, volumeMount);
         allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
-    }
-
-    @Override
-    protected void onCreated(Keycloak primary, StatefulSet created, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(created);
-        super.onCreated(primary, created, context);
-    }
-
-    @Override
-    protected void onUpdated(Keycloak primary, StatefulSet updated, StatefulSet actual, Context<Keycloak> context) {
-        watchedSecrets.addLabelsToWatchedSecrets(updated);
-        super.onUpdated(primary, updated, actual, context);
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet, Keycloak keycloak) {
@@ -226,12 +263,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
-        ContainersNested<SpecNested<TemplateNested<io.fabric8.kubernetes.api.model.apps.StatefulSetFluent.SpecNested<StatefulSetBuilder>>>> containerBuilder = null;
-        if (specBuilder.buildContainers().isEmpty()) {
-            containerBuilder = specBuilder.addNewContainer();
-        } else {
-            containerBuilder = specBuilder.editFirstContainer();
-        }
+        var containerBuilder = specBuilder.buildContainers().isEmpty() ? specBuilder.addNewContainer() : specBuilder.editFirstContainer();
 
         containerBuilder.withName("keycloak");
 
@@ -328,8 +360,21 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
+        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
+
+        if (useServiceCaCrt) {
+            truststores += "," + SERVICE_CA_CRT;
+        }
+
         // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").build());
+        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
+
+        // TODO remove this once the --proxy option is finally removed from Keycloak
+        // not strictly necessary as --proxy-headers take precedence over --proxy but at least removes the warning
+        // about deprecated --proxy option in use
+        if (varMap.containsKey(getKeycloakOptionEnvVarName("proxy-headers"))) {
+            varMap.remove(getKeycloakOptionEnvVarName("proxy"));
+        }
 
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
@@ -339,7 +384,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName)
                 .filter(n -> !n.equals(adminSecretName)).collect(Collectors.toCollection(TreeSet::new));
 
-        Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
+        Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
 
         allSecrets.addAll(serverConfigSecretsNames);
     }
@@ -358,7 +403,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
                 .map(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(v.getName()));
+                    var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
                         envBuilder.withValueFrom(

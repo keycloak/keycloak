@@ -30,6 +30,11 @@ public class UserSessionUtil {
 
     public static UserSessionModel findValidSession(KeycloakSession session, RealmModel realm, AccessToken token, EventBuilder event, ClientModel client) {
         OAuth2Error error = new OAuth2Error().json(false).realm(realm);
+        return findValidSession(session, realm, token, event, client, error);
+    }
+
+    public static UserSessionModel findValidSession(KeycloakSession session, RealmModel realm,
+            AccessToken token, EventBuilder event, ClientModel client, OAuth2Error error) {
         if (token.getSessionState() == null) {
             return createTransientSessionForClient(session, realm, token, client, event);
         }

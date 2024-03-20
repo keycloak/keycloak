@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Concepts to automate {jdgserver_name} CLI commands"
 summary="{jdgserver_name} CLI commands can be automated by creating a `Batch` CR instance."
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 include::partials/infinispan/infinispan-attributes.adoc[]
@@ -17,7 +15,7 @@ When interacting with an external {jdgserver_name} in Kubernetes, the `Batch` CR
 Use this when automating interactions on Kubernetes.
 This avoids providing usernames and passwords and checking shell script outputs and their status.
 
-For human interactive interactions, the CLI shell might still be a better fit.
+For human interactions, the CLI shell might still be a better fit.
 
 == Example
 

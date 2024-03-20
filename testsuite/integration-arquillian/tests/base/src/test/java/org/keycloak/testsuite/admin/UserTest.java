@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
-import jakarta.ws.rs.WebApplicationException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -93,6 +93,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
@@ -102,6 +103,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -111,6 +113,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -122,6 +125,8 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -132,6 +137,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -319,6 +325,39 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void createDuplicatedUsernameWithEmail() {
+        createUser("user1@local.com", "user1@local.org");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1@local.org");
+        user.setEmail("user2@localhost");
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void createDuplicatedEmailWithUsername() {
+        createUser("user1@local.com", "user1@local.org");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setEmail("user1@local.com");
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+        }
+    }
+
     //KEYCLOAK-14611
     @Test
     public void createDuplicateEmailWithExistingDuplicates() {
@@ -346,7 +385,7 @@ public class UserTest extends AbstractAdminTest {
         try (Response response = realm.users().create(user)) {
             assertEquals(409, response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
     }
@@ -894,6 +933,47 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(1, users.size());
             assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
         }
+    }
+
+    @Test
+    public void storeAndReadUserWithLongAttributeValue() {
+        String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
+
+        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com",
+                user -> user.setAttributes(Map.of("attr", List.of(longValue)))));
+
+        List<UserRepresentation> users = realm.users().search("user1", true);
+
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getAttributes().get("attr").get(0), equalTo(longValue));
+
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com",
+                user -> user.setAttributes(Map.of("attr", List.of(longValue + "a"))))));
+        assertThat(ex.getResponse().getStatusInfo().getStatusCode(), equalTo(400));
+        assertThat(ex.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("error-invalid-length"));
+    }
+
+    @Test
+    public void searchByLongAttributes() {
+        // random string with suffix that makes it case-sensitive and distinct
+        String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
+        String longValue2 = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "v";
+
+        getCleanup().addUserId(createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com",
+                user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of("v2")))));
+        getCleanup().addUserId(createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", 
+                user -> user.setAttributes(Map.of("test1", List.of(longValue, "v2"), "test2", List.of(longValue2)))));
+        getCleanup().addUserId(createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", 
+                user -> user.setAttributes(Map.of("test2", List.of(longValue, "v3"), "test4", List.of("v4")))));
+
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+                containsInAnyOrder("user1", "user2"));
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()), 
+                contains("user2"));
+
+        //case-insensitive search
+        assertThat(realm.users().searchByAttributes(mapToSearchQuery(Map.of("test1", longValue, "test2", longValue2.toLowerCase(Locale.ENGLISH)))).stream().map(UserRepresentation::getUsername).collect(Collectors.toList()),
+                contains("user2"));
     }
 
     @Test
@@ -1635,9 +1715,11 @@ public class UserTest extends AbstractAdminTest {
             user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
             updateUser(realm.users().get(user1Id), user1);
             Assert.fail("Not supposed to successfully update user");
-        } catch (BadRequestException bre) {
+        } catch (BadRequestException expected) {
             // Expected
             assertAdminEvents.assertEmpty();
+            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("updateReadOnlyAttributesRejectedMessage", error.getErrorMessage());
         }
 
         // The same test as before, but with the case-sensitivity used
@@ -2570,7 +2652,7 @@ public class UserTest extends AbstractAdminTest {
             assertThat(e.getResponse().getStatus(), is(409));
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
     }
@@ -3667,6 +3749,7 @@ public class UserTest extends AbstractAdminTest {
     private UPAttribute createAttributeMetadata(String name) {
         UPAttribute attribute = new UPAttribute();
         attribute.setName(name);
+        attribute.setMultivalued(true);
         UPAttributePermissions permissions = new UPAttributePermissions();
         permissions.setEdit(Set.of("user", "admin"));
         attribute.setPermissions(permissions);

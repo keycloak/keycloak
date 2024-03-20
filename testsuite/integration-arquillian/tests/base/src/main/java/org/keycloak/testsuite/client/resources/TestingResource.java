@@ -310,6 +310,12 @@ public interface TestingResource {
     String runOnServer(String runOnServer);
 
     @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    Response runOnServerWithResponse(String runOnServer);
+
+    @POST
     @Path("/run-model-test-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)

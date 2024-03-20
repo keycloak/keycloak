@@ -27,6 +27,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -133,7 +134,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     }
     
     private SortedSet<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {
-        return SimpleHttp.doGet(getAccountUrl("linked-accounts"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<SortedSet<LinkedAccountRepresentation>>() {});
+        return SimpleHttpDefault.doGet(getAccountUrl("linked-accounts"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<SortedSet<LinkedAccountRepresentation>>() {});
     }
     
     private LinkedAccountRepresentation findLinkedAccount(String providerAlias) throws IOException {
@@ -147,7 +148,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     @Test
     
     public void testBuildLinkedAccountUri() throws IOException {
-        AccountLinkUriRepresentation rep = SimpleHttp.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
+        AccountLinkUriRepresentation rep = SimpleHttpDefault.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
                                        .auth(tokenUtil.getToken())
                                        .asJson(new TypeReference<AccountLinkUriRepresentation>() {});
         URI brokerUri = rep.getAccountLinkUri();
@@ -198,7 +199,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     @Test
     public void testRemoveLinkedAccount() throws IOException {
         assertTrue(findLinkedAccount("github").isConnected());
-        SimpleHttp.doDelete(getAccountUrl("linked-accounts/github"), client).auth(tokenUtil.getToken()).acceptJson().asResponse();
+        SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/github"), client).auth(tokenUtil.getToken()).acceptJson().asResponse();
         assertFalse(findLinkedAccount("github").isConnected());
     }
     

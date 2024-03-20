@@ -48,9 +48,9 @@ export default class ListingPage extends CommonElements {
   #listHeaderSecondaryBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
   #previousPageBtn =
-    "div[class=pf-c-pagination__nav-control] button[data-action=previous]:visible";
+    ".pf-c-pagination:not([class*=pf-m-bottom]) button[data-action=previous]";
   #nextPageBtn =
-    "div[class=pf-c-pagination__nav-control] button[data-action=next]:visible";
+    ".pf-c-pagination:not([class*=pf-m-bottom]) button[data-action=next]";
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
   #table = "table[aria-label]";
   #filterSessionDropdownButton = ".pf-c-select button:nth-child(1)";
@@ -72,7 +72,12 @@ export default class ListingPage extends CommonElements {
   }
 
   showNextPageTableItems() {
-    cy.get(this.#nextPageBtn).first().click();
+    cy.get("body").then(($body) => {
+      if (!$body.find('[data-testid="' + this.#nextPageBtn + '"]').length) {
+        cy.get(this.#nextPageBtn).scrollIntoView();
+        cy.get(this.#nextPageBtn).click();
+      }
+    });
 
     return this;
   }

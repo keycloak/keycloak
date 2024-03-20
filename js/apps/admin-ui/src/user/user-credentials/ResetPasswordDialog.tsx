@@ -1,28 +1,28 @@
+import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   ButtonVariant,
   Form,
   FormGroup,
-  Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { PasswordInput } from "ui-shared";
 import { adminClient } from "../../admin-client";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
 import useToggle from "../../utils/useToggle";
 
 type ResetPasswordDialogProps = {
   user: UserRepresentation;
   isResetPassword: boolean;
+  onAddRequiredActions?: (requiredActions: string[]) => void;
   refresh: () => void;
   onClose: () => void;
 };
@@ -42,22 +42,23 @@ const credFormDefaultValues: CredentialsForm = {
 export const ResetPasswordDialog = ({
   user,
   isResetPassword,
+  onAddRequiredActions,
   refresh,
   onClose,
 }: ResetPasswordDialogProps) => {
   const { t } = useTranslation();
+  const form = useForm<CredentialsForm>({
+    defaultValues: credFormDefaultValues,
+    mode: "onChange",
+  });
   const {
     register,
-    control,
     formState: { isValid, errors },
     watch,
     handleSubmit,
     clearErrors,
     setError,
-  } = useForm<CredentialsForm>({
-    defaultValues: credFormDefaultValues,
-    mode: "onChange",
-  });
+  } = form;
 
   const [confirm, toggle] = useToggle(true);
   const password = watch("password", "");
@@ -88,6 +89,9 @@ export const ResetPasswordDialog = ({
           value: password,
         },
       });
+      if (temporaryPassword) {
+        onAddRequiredActions?.([RequiredActionAlias.UPDATE_PASSWORD]);
+      }
       const credentials = await adminClient.users.getCredentials({
         id: user.id!,
       });
@@ -195,32 +199,14 @@ export const ResetPasswordDialog = ({
               })}
             />
           </FormGroup>
-          <FormGroup
-            label={t("temporaryPassword")}
-            labelIcon={
-              <HelpItem
-                helpText={t("temporaryPasswordHelpText")}
-                fieldLabelId="temporaryPassword"
-              />
-            }
-            fieldId="kc-temporaryPassword"
-          >
-            <Controller
+          <FormProvider {...form}>
+            <DefaultSwitchControl
               name="temporaryPassword"
-              defaultValue={true}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  className="kc-temporaryPassword"
-                  onChange={field.onChange}
-                  isChecked={field.value}
-                  label={t("on")}
-                  labelOff={t("off")}
-                  aria-label={t("temporaryPassword")}
-                />
-              )}
+              label={t("temporaryPassword")}
+              labelIcon={t("temporaryPasswordHelpText")}
+              defaultValue="true"
             />
-          </FormGroup>
+          </FormProvider>
         </Form>
       </ConfirmDialogModal>
     </>

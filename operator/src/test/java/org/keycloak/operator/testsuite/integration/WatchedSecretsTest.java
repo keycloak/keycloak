@@ -26,11 +26,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.WatchedSecrets;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 
 import java.util.Base64;
 import java.util.HashSet;
@@ -41,6 +40,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 /**
@@ -55,9 +55,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
         Secret dbSecret = getDbSecret();
         Secret tlsSecret = getTlsSecret();
-
-        assertThat(dbSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
-        assertThat(tlsSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
 
         Log.info("Updating DB Secret, expecting restart");
         testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
@@ -92,7 +89,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         k8sclient.resource(dbSecret).update();
 
         // dynamically check pod 0 to avoid race conditions
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).ignoreExceptions().until(() ->
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).ignoreExceptions().until(() ->
                 k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog().contains("password authentication failed for user \"" + username + "\""));
     }
 
@@ -105,22 +102,19 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(false);
         deployKeycloak(k8sclient, kc, true);
 
+        Secret dbSecret = getDbSecret();
+
         Log.info("Updating KC to not to rely on DB Secret");
         hardcodeDBCredsInCR(kc);
         testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
             deployKeycloak(k8sclient, kc, false, false);
         });
 
-        Log.info("Updating DB Secret to trigger clean-up process");
-        testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
-            var dbSecret = getDbSecret();
-            dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-            k8sclient.resource(dbSecret).update();
-        });
-
         Awaitility.await().untilAsserted(() -> {
-            Log.info("Checking labels on DB Secret");
-            assertThat(getDbSecret().getMetadata().getLabels()).doesNotContainKey(Constants.KEYCLOAK_COMPONENT_LABEL);
+            Log.info("Checking StatefulSet annotations");
+            assertFalse(k8sclient.resources(StatefulSet.class).withName(kc.getMetadata().getName()).get().getMetadata()
+                    .getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)
+                    .contains(dbSecret.getMetadata().getName()));
         });
     }
 

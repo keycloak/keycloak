@@ -25,11 +25,11 @@ export default class CreateClientPage extends CommonPage {
   #deviceAuthGrantChkBx = "#kc-oauth-device-authorization-grant";
   #serviceAccountRolesChkBx = "#kc-flow-service-account";
 
-  #rootUrlInput = "#kc-root-url";
-  #homeUrlInput = "#kc-home-url";
+  #rootUrlInput = "rootUrl";
+  #homeUrlInput = "baseUrl";
   #firstValidRedirectUrlInput = "redirectUris0";
   #firstWebOriginsInput = "webOrigins0";
-  #adminUrlInput = "#kc-admin-url";
+  #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#loginTheme";
   #loginThemeList = 'ul[aria-label="Login theme"]';
@@ -42,8 +42,8 @@ export default class CreateClientPage extends CommonPage {
   #frontChannelLogoutSwitch =
     '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
   #frontChannelLogoutSwitchInput = "#kc-frontchannelLogout-switch";
-  #frontChannelLogoutInput = "#frontchannelLogoutUrl";
-  #backChannelLogoutInput = "#backchannelLogoutUrl";
+  #frontChannelLogoutInput = "frontchannelLogoutUrl";
+  #backChannelLogoutInput = "backchannelLogoutUrl";
   #backChannelLogoutRequiredSwitchInput = "#backchannelLogoutSessionRequired";
   #backChannelLogoutRevoqueSwitch =
     '.pf-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-c-switch__toggle';
@@ -227,12 +227,12 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkAccessSettingsElements() {
-    cy.get(this.#adminUrlInput).scrollIntoView();
-    cy.get(this.#rootUrlInput).should("not.be.disabled");
-    cy.get(this.#homeUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).scrollIntoView();
+    cy.findByTestId(this.#rootUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#homeUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstValidRedirectUrlInput).should("not.be.disabled");
     cy.findByTestId(this.#firstWebOriginsInput).should("not.be.disabled");
-    cy.get(this.#adminUrlInput).should("not.be.disabled");
+    cy.findByTestId(this.#adminUrlInput).should("not.be.disabled");
 
     return this;
   }
@@ -267,17 +267,17 @@ export default class CreateClientPage extends CommonPage {
   checkLogoutSettingsElements() {
     cy.get(this.#backChannelLogoutRevoqueSwitch).scrollIntoView();
     cy.get(this.#frontChannelLogoutSwitchInput).should("not.be.disabled");
-    cy.get(this.#frontChannelLogoutInput).should("not.be.disabled");
-    cy.get(this.#backChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#backChannelLogoutInput).should("not.be.disabled");
     cy.get(this.#backChannelLogoutRequiredSwitchInput).should(
       "not.be.disabled",
     );
     cy.get(this.#backChannelLogoutRevoqueSwitchInput).should("not.be.disabled");
 
     cy.get(this.#frontChannelLogoutSwitch).click();
-    cy.get(this.#frontChannelLogoutInput).should("not.exist");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.exist");
     cy.get(this.#frontChannelLogoutSwitch).click();
-    cy.get(this.#frontChannelLogoutInput).should("not.be.disabled");
+    cy.findByTestId(this.#frontChannelLogoutInput).should("not.be.disabled");
 
     return this;
   }

@@ -17,26 +17,19 @@
 
 package org.keycloak.services;
 
+import jakarta.ws.rs.core.NewCookie;
+import org.keycloak.http.HttpResponse;
+
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import org.keycloak.http.HttpCookie;
-import org.keycloak.http.HttpResponse;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-
-public class HttpResponseImpl implements HttpResponse, KeycloakTransaction {
+public class HttpResponseImpl implements HttpResponse {
 
     private final org.jboss.resteasy.spi.HttpResponse delegate;
-    private Set<HttpCookie> cookies;
-    private boolean transactionActive;
-    private boolean writeCookiesOnTransactionComplete;
+    private Set<NewCookie> newCookies;
 
-    public HttpResponseImpl(KeycloakSession session, org.jboss.resteasy.spi.HttpResponse delegate) {
+    public HttpResponseImpl(org.jboss.resteasy.spi.HttpResponse delegate) {
         this.delegate = delegate;
-        session.getTransactionManager().enlistAfterCompletion(this);
     }
 
     @Override
@@ -51,104 +44,27 @@ public class HttpResponseImpl implements HttpResponse, KeycloakTransaction {
 
     @Override
     public void addHeader(String name, String value) {
-        checkCommitted();
         delegate.getOutputHeaders().add(name, value);
     }
 
     @Override
     public void setHeader(String name, String value) {
-        checkCommitted();
         delegate.getOutputHeaders().putSingle(name, value);
     }
 
     @Override
-    public void setCookieIfAbsent(HttpCookie cookie) {
-        if (cookie == null) {
+    public void setCookieIfAbsent(NewCookie newCookie) {
+        if (newCookie == null) {
             throw new IllegalArgumentException("Cookie is null");
         }
 
-        if (cookies == null) {
-            cookies = new HashSet<>();
+        if (newCookies == null) {
+            newCookies = new HashSet<>();
         }
 
-        if (cookies.add(cookie)) {
-            if (writeCookiesOnTransactionComplete) {
-                // cookies are written after transaction completes
-                return;
-            }
-
-            addHeader(HttpHeaders.SET_COOKIE, cookie.toHeaderValue());
+        if (newCookies.add(newCookie)) {
+            delegate.addNewCookie(newCookie);
         }
     }
 
-    @Override
-    public void setWriteCookiesOnTransactionComplete() {
-        this.writeCookiesOnTransactionComplete = true;
-    }
-
-    /**
-     * Validate that the response has not been committed.
-     * If the response is already committed, the headers and part of the response have been sent already.
-     * Therefore, additional headers including cookies won't be delivered to the caller.
-     */
-    private void checkCommitted() {
-        if (delegate.isCommitted()) {
-            throw new IllegalStateException("response already committed, can't be changed");
-        }
-    }
-
-    @Override
-    public void begin() {
-        transactionActive = true;
-    }
-
-    @Override
-    public void commit() {
-        if (!transactionActive) {
-            throw new IllegalStateException("Transaction not active. Response already committed or rolled back");
-        }
-
-        try {
-            addCookiesAfterTransaction();
-        } finally {
-            close();
-        }
-    }
-
-    @Override
-    public void rollback() {
-        close();
-    }
-
-    @Override
-    public void setRollbackOnly() {
-
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return false;
-    }
-
-    @Override
-    public boolean isActive() {
-        return transactionActive;
-    }
-
-    private void close() {
-        transactionActive = false;
-        cookies = null;
-    }
-
-    private void addCookiesAfterTransaction() {
-        if (cookies == null || !writeCookiesOnTransactionComplete) {
-            return;
-        }
-
-        // Ensure that cookies are only added when the transaction is complete, as otherwise cookies will be set for
-        // error pages, or will be added twice when running retries.
-        for (HttpCookie cookie : cookies) {
-            addHeader(HttpHeaders.SET_COOKIE, cookie.toHeaderValue());
-        }
-    }
 }

@@ -1,10 +1,8 @@
 mvn:keycloak-quarkus-dist:keycloak
 mvn:keycloak-api-docs-dist:keycloak-api-docs
 
-mvn:keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
 mvn:keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
 
-mvn:keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter
 mvn:keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
 
 mvn:documentation/keycloak-documentation:keycloak-documentation

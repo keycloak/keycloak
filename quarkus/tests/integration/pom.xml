@@ -63,7 +63,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-fips</artifactId>
-            <version>${bouncycastle.pkixfips.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

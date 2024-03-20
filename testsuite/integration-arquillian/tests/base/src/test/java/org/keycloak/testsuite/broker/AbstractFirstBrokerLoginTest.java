@@ -15,18 +15,22 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -44,8 +48,11 @@ import org.openqa.selenium.support.PageFactory;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -430,6 +437,68 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPage.resetPassword();
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword();
+        assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
+        assertEquals(1, MailServer.getReceivedMessages().length);
+        MimeMessage message = MailServer.getLastReceivedMessage();
+        String linkFromMail = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "credentials", false);
+
+        driver.navigate().to(linkFromMail.trim());
+
+        // Need to update password now
+        this.passwordUpdatePage.assertCurrent();
+        this.passwordUpdatePage.changePassword("password", "password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        assertNumFederatedIdentities(existingUser, 1);
+    }
+
+    /**
+     * Reset password during first broker login should work without `AbstractIdpAuthenticator.EXISTING_USER_INFO` set.
+     *
+     * This session note is only set by {@link org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticator}
+     * or {@link org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticator}. However,
+     * the reset password feature should work without them.
+     *
+     * For more info see https://github.com/keycloak/keycloak/issues/26323 .
+     */
+    @Test
+    public void testResetPasswordDuringFirstBrokerFlowWithoutExistingUserAuthenticator() throws InterruptedException {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setResetPasswordAllowed(true);
+
+        realm.update(realmRep);
+
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        configureSMTPServer();
+
+        this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword("consumer");
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
         assertEquals(1, MailServer.getReceivedMessages().length);
         MimeMessage message = MailServer.getLastReceivedMessage();
@@ -953,6 +1022,44 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "your email address has been verified already.", false);
     }
 
+    @Test
+    public void testLinkAccountByEmailVerificationToEmailVerifiedUser() {
+        // set up a user with verified email
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        UserResource userResource = realm.users().get(createUser("consumer"));
+        UserRepresentation consumerUser = userResource.toRepresentation();
+
+        consumerUser.setEmail(bc.getUserEmail());
+        consumerUser.setEmailVerified(true);
+        userResource.update(consumerUser);
+        configureSMTPServer();
+
+        // begin login with idp
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        logInWithBroker(bc);
+
+        // update account profile
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+
+        // idp confirm link
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ", false);
+        driver.navigate().to(url);
+
+        assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
+        assertTrue(adminClient.realm(bc.consumerRealmName()).users().get(consumerUser.getId()).toRepresentation().isEmailVerified());
+        assertNumFederatedIdentities(consumerUser.getId(), 1);
+    }
+
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationResendEmail
@@ -1310,6 +1417,42 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
+    }
+
+    /*
+     * test linking the user with an existing read-token role from the federation provider
+     * when AddReadTokenRoleOnCreate was enabled for the IdP.
+     */
+    @Test
+    public void testDuplicatedGrantReadTokenRoleWithUserFederationProvider() {
+        try {
+            // setup federation provider
+            ComponentRepresentation component = new ComponentRepresentation();
+            component.setName("memory");
+            component.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+            component.setProviderType(UserStorageProvider.class.getName());
+            component.setConfig(new MultivaluedHashMap<>());
+            component.getConfig().putSingle("priority", Integer.toString(0));
+            component.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
+            adminClient.realm(bc.consumerRealmName()).components().add(component);
+
+            // grant read-token role first
+            String username = bc.getUserLogin();
+            String createdId = createUser(username);
+            testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
+
+            // enable read token role on create
+            IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+            idpRep.setAddReadTokenRoleOnCreate(true);
+            identityProviderResource.update(idpRep);
+
+            // auto link when first broker login flow
+            testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
+            logInAsUserInIDP();
+            assertNumFederatedIdentities(createdId, 1);
+        } finally {
+            removeUserByUsername(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        }
     }
 
     private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {

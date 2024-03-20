@@ -43,6 +43,10 @@ spec:
     adminUrl: https://www.my-admin-hostname.org:8448/something
     strict: true
     strictBackchannel: true
+  cache:
+    configMapFile:
+      name: my-config-map
+      key: file.xml
   features:
     enabled:
       - docker
@@ -52,6 +56,19 @@ spec:
       - step-up-authentication
   transaction:
     xaEnabled: false
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500M"
+    limits:
+      cpu: "2"
+      memory: "1500M"
+  proxy:
+    headers: forwarded
+  truststores:
+    x:
+      secret:
+        name: my-secret
   unsupported:
     podTemplate:
       metadata:

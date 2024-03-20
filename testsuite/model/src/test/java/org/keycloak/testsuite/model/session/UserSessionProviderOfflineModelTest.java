@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.model.session;
 
 import org.hamcrest.Matchers;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
+import org.infinispan.context.Flag;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -334,12 +336,6 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
     @Test
     public void testOfflineSessionLazyLoadingPropagationBetweenNodes() throws InterruptedException {
-        // This test is only unstable after setting "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase" to "true" and
-        // CrossDC is enabled.
-        // This is tracked in https://github.com/keycloak/keycloak/issues/14020 to be resolved.
-        Assume.assumeFalse(Objects.equals(CONFIG.scope("userSessions.infinispan").get("preloadOfflineSessionsFromDatabase"), "true") &&
-                Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
-
         // as one thread fills this list and the others read it, ensure that it is synchronized to avoid side effects
         List<UserSessionModel> offlineUserSessions = Collections.synchronizedList(new LinkedList<>());
         List<AuthenticatedClientSessionModel> offlineClientSessions = Collections.synchronizedList(new LinkedList<>());
@@ -466,6 +462,46 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 Assert.assertNotNull(offlineClientSession);
                 Assert.assertEquals(offlineUserSession.getLastSessionRefresh(), offlineClientSession.getTimestamp());
             });
+            return null;
+        });
+    }
+
+    @Test
+    public void testOfflineSessionLifespanOverride() {
+        // skip the test for CrossDC
+        Assume.assumeFalse(Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
+
+        createOfflineSessions("user1", 2, new LinkedList<>(), new LinkedList<>());
+
+        reinitializeKeycloakSessionFactory();
+
+        withRealm(realmId, (session, realm) -> {
+            InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+
+            // skip remote cache load as we are only interested in embedded caches
+            AdvancedCache offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+            AdvancedCache offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
+
+            Assert.assertEquals(0, offlineUSCache.size());
+            Assert.assertEquals(0, offlineCSCache.size());
+
+            // lazy load offline user sessions from DB => this should also import user and client sessions to the caches
+            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
+
+            // check sessions were imported to the caches
+            Assert.assertEquals(2, offlineUSCache.size());
+            Assert.assertEquals(4, offlineCSCache.size());
+
+            // lifespan override set to 12h (43200s)
+            setTimeOffset(44000);
+
+            // check sessions were evicted from the caches
+            Assert.assertEquals(0, offlineUSCache.size());
+            Assert.assertEquals(0, offlineCSCache.size());
+
+            // sessions should still be in the DB
+            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
+
             return null;
         });
     }

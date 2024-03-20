@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc.endpoints.request;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -39,7 +38,6 @@ import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 
@@ -98,10 +96,8 @@ public class AuthorizationEndpointRequestParserProcessor {
                     if (requestUri == null) {
                         throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
                     }
-                    try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUri)) {
-                        String retrievedRequest = StreamUtil.readString(is);
-                        new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
-                    }
+                    String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
+                    new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
                 }
             }
 

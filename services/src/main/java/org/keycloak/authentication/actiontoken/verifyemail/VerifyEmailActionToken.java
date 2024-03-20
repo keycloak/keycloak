@@ -34,6 +34,9 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
 
+    @JsonProperty(JSON_FIELD_REDIRECT_URI)
+    private String redirectUri;
+
     public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String email, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         setEmail(email);
@@ -51,17 +54,11 @@ public class VerifyEmailActionToken extends DefaultActionToken {
         this.originalAuthenticationSessionId = originalAuthenticationSessionId;
     }
 
-    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
     public String getRedirectUri() {
-        return (String) getOtherClaims().get(JSON_FIELD_REDIRECT_URI);
+        return redirectUri;
     }
 
-    @JsonProperty(value = JSON_FIELD_REDIRECT_URI)
-    public final void setRedirectUri(String redirectUri) {
-        if (redirectUri == null) {
-            getOtherClaims().remove(JSON_FIELD_REDIRECT_URI);
-        } else {
-            setOtherClaims(JSON_FIELD_REDIRECT_URI, redirectUri);
-        }
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
     }
 }

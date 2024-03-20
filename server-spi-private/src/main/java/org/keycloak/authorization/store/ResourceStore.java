@@ -19,7 +19,6 @@ package org.keycloak.authorization.store;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.RealmModel;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -61,45 +60,45 @@ public interface ResourceStore {
     /**
      * Removes a {@link Resource} instance, with the given {@code id} from the persistent storage.
      *
-     * @param realm the realm. Cannot be {@code null}.
      * @param id the identifier of an existing resource instance
      */
-    void delete(RealmModel realm, String id);
+    void delete(String id);
 
     /**
      * Returns a {@link Resource} instance based on its identifier.
      *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer the resource server. Ignored if {@code null}
-     * @param id the identifier of an existing resource instance
+     * @param id             the identifier of an existing resource instance
      * @return the resource instance with the given identifier or null if no instance was found
      */
-    Resource findById(RealmModel realm, ResourceServer resourceServer, String id);
+    Resource findById(ResourceServer resourceServer, String id);
 
     /**
      * Finds all {@link Resource} instances with the given {@code ownerId}.
      *
-     *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer resource server. Ignored if {@code null}
-     * @param ownerId the identifier of the owner
+     * @param ownerId        the identifier of the owner
      * @return a list with all resource instances owned by the given owner
      */
-    default List<Resource> findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId) {
+    default List<Resource> findByOwner(ResourceServer resourceServer, String ownerId) {
         List<Resource> list = new LinkedList<>();
 
-        findByOwner(realm, resourceServer, ownerId, list::add);
+        findByOwner(resourceServer, ownerId, list::add);
 
         return list;
     }
-    void findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer);
+
+    /**
+     * Effectively the same method as {@link #findByOwner(ResourceServer, String)}, however in the end
+     * the {@code consumer} is fed with the result.
+     *
+     */
+    void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param resourceServer the identifier of the resource server. Cannot be {@code null}.
+     * @param resourceServer the identifier of the resource server. Searches for resources without a resourceServer if {@code null}.
      * @return a list with all resources associated with the given resource server
      */
     List<Resource> findByResourceServer(ResourceServer resourceServer);
@@ -107,23 +106,20 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer the identifier of the resource server. Ignored if {@code null}.
-     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
-     * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param attributes     a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
+     * @param firstResult    first result to return. Ignored if negative or {@code null}.
+     * @param maxResults     maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list with all resources associated with the given resource server
-     *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
+    List<Resource> find(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Finds all {@link Resource} associated with a given scope.
      *
      *
-     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param resourceServer the resource server. Searches for resources without a resourceServer if {@code null}.
      * @param scopes one or more scope identifiers
      * @return a list of resources associated with the given scope(s)
      */
@@ -139,7 +135,7 @@ public interface ResourceStore {
     /**
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
-     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param resourceServer the resource server. Searches for resources without a resourceServer if {@code null}.
      * @param name the name of the resource
      * @return a resource with the given name
      */
@@ -150,7 +146,7 @@ public interface ResourceStore {
     /**
      * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
      *
-     * @param resourceServer the identifier of the resource server. Cannot be {@code null}.
+     * @param resourceServer the identifier of the resource server. Searches for resources without a resourceServer if {@code null}.
      * @param name the name of the resource
      * @param ownerId the owner id
      * @return a resource with the given name
@@ -158,10 +154,10 @@ public interface ResourceStore {
     Resource findByName(ResourceServer resourceServer, String name, String ownerId);
 
     /**
-     * Finds all {@link Resource} from {@link ResourceServer} with the given type.
+     * Finds all {@link Resource} associated with the {@link ResourceServer} with the given type.
      *
      *
-     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param resourceServer the resource server. Searches for resources without a resourceServer if {@code null}.
      * @param type the type of the resource
      * @return a list of resources with the given type
      */
@@ -176,7 +172,7 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} from {@link ResourceServer} with the given type.
      *
-     * @param resourceServer the resource server id. Cannot be {@code null}.
+     * @param resourceServer the resource server id. Searches for resources without a resourceServer if {@code null}.
      * @param type the type of the resource
      * @param consumer the result consumer
      * @return a list of resources with the given type
@@ -186,7 +182,7 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} with the given type.
      *
-     * @param resourceServer the resource server id. Cannot be {@code null}
+     * @param resourceServer the resource server id. Searches for resources without a resourceServer if {@code null}.
      * @param type the type of the resource
      * @param owner the resource owner or null for any resource with a given type
      * @param consumer the result consumer
@@ -197,7 +193,7 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} by type where client represented by the {@code resourceServer} is not the owner
      *
-     * @param resourceServer the resourceServer. Cannot be {@code null}.
+     * @param resourceServer the resourceServer. Searches for resources without a resourceServer if {@code null}.
      * @param type searched type
      * @param consumer a consumer that will be fed with the resulting resources
      */

@@ -191,7 +191,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         RealmRepresentation permissionRealm = testContext.getTestRealmReps().stream().filter(realm -> {
             return realm.getRealm().equals(REALM_NAME);
         }).findFirst().get();
-        adminClient.realms().create(permissionRealm);
+        importRealm(permissionRealm);
 
         removeTestUsers();
         createTestUsers();
@@ -2057,7 +2057,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
     }
 
     private void assertGettersEmpty(RealmRepresentation rep) {
-        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty");
+        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty", "getDisplayNameHtml", 
+            "getDisplayName", "getDefaultLocale", "getSupportedLocales");
     }
 
     private void assertGettersEmpty(ClientRepresentation rep) {

@@ -52,6 +52,7 @@ import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
+import org.keycloak.userprofile.validator.MultiValueValidator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
@@ -105,7 +106,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
 
-        if (user != null && user.getServiceAccountClientLink() != null) {
+        if (isServiceAccountUser(user)) {
             return new LegacyAttributes(context, attributes, user, metadata, session);
         }
         return new DefaultAttributes(context, attributes, user, metadata, session);
@@ -201,8 +202,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         Optional<ComponentModel> component = getComponentModel();
 
         if (component.isPresent()) {
-            UPConfig cfg = getConfigFromComponentModel(component.get()).clone();
-            return cfg == null ? parsedDefaultRawConfig.clone() : cfg;
+            UPConfig cfg = getConfigFromComponentModel(component.get());
+
+            if (cfg == null) {
+                cfg = parsedDefaultRawConfig;
+            }
+
+            return cfg.clone();
         }
 
         return parsedDefaultRawConfig.clone();
@@ -280,13 +286,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
             if (rc != null) {
                 if (rc.isAlways() || context.isRoleForContext(rc.getRoles())) {
-                    required = AttributeMetadata.ALWAYS_TRUE;
+                    // service accounts does not require common attributes
+                    required = c -> !isServiceAccountUser(c.getUser());
 
                     // If scopes are configured, we will use scope-based selector and require the attribute just if scope is
                     // in current authenticationSession (either default scope or by 'scope' parameter)
                     if (rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                         if (context.canBeAuthFlowContext()) {
-                            required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                            required = (c) -> !isServiceAccountUser(c.getUser()) && requestedScopePredicate(c, rc.getScopes());
                         } else {
                             // Scopes not available for admin and account contexts
                             required = AttributeMetadata.ALWAYS_FALSE;
@@ -295,7 +302,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 } else if (context.canBeAuthFlowContext() && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
                     // for contexts executed from auth flow and with configured scopes requirement
                     // we have to create required validation with scopes based selector
-                    required = (c) -> requestedScopePredicate(c, rc.getScopes());
+                    required = (c) -> !isServiceAccountUser(c.getUser()) && requestedScopePredicate(c, rc.getScopes());
                 }
             }
 
@@ -335,6 +342,13 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
 
+            // make sure managed attributes single-valued are constrained to a single value
+            if (!attrConfig.isMultivalued() && validators.stream().map(AttributeValidatorMetadata::getValidatorId).noneMatch(MultiValueValidator.ID::equals)) {
+                validators.add(new AttributeValidatorMetadata(MultiValueValidator.ID, ValidatorConfig.builder()
+                        .config("max", "1")
+                        .build()));
+            }
+
             if (isBuiltInAttribute(attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
@@ -353,21 +367,22 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
 
                 if (UserModel.EMAIL.equals(attributeName)) {
-                    if (context.isAdminContext()) {
-                        required = new Predicate<AttributeContext>() {
-                            @Override
-                            public boolean test(AttributeContext context) {
-                                UserModel user = context.getUser();
+                    Predicate<AttributeContext> requiredFromConfig = required;
+                    required = new Predicate<AttributeContext>() {
+                        @Override
+                        public boolean test(AttributeContext context) {
+                            UserModel user = context.getUser();
 
-                                if (user != null && user.getServiceAccountClientLink() != null) {
-                                    return false;
-                                }
-
-                                RealmModel realm = context.getSession().getContext().getRealm();
-                                return realm.isRegistrationEmailAsUsername();
+                            if (isServiceAccountUser(user)) {
+                                return false;
                             }
-                        };
-                    }
+
+                            if (requiredFromConfig.test(context)) return true;
+
+                            RealmModel realm = context.getSession().getContext().getRealm();
+                            return realm.isRegistrationEmailAsUsername();
+                        }
+                    };
                 }
 
                 List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
@@ -384,13 +399,15 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addReadCondition(readAllowed)
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
-                            .setRequired(required);
+                            .setRequired(required)
+                            .setMultivalued(attrConfig.isMultivalued());
                 }
             } else {
                 decoratedMetadata.addAttribute(attributeName, guiOrder, validators, selector, writeAllowed, required, readAllowed)
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
-                        .setAttributeGroupMetadata(groupMetadata);
+                        .setAttributeGroupMetadata(groupMetadata)
+                        .setMultivalued(attrConfig.isMultivalued());
             }
         }
 
@@ -435,19 +452,25 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return ac -> ac.getContext().isRoleForContext(viewRoles) || canEdit.test(ac);
     }
 
+    private boolean isServiceAccountUser(UserModel user) {
+        return user != null && user.getServiceAccountClientLink() != null;
+    }
+
     /**
      * Get parsed config file configured in model. Default one used if not configured.
      */
-    protected UPConfig getParsedConfig(String rawConfig) {
-        if (!isBlank(rawConfig)) {
-            try {
-                return UPConfigUtils.parseConfig(rawConfig);
-            } catch (IOException e) {
-                throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
-            }
+    protected UPConfig parseConfigOrDefault(ComponentModel component) {
+        String rawConfig = component.get(UP_COMPONENT_CONFIG_KEY);
+
+        if (isBlank(rawConfig)) {
+            return parsedDefaultRawConfig;
         }
 
-        return null;
+        try {
+            return UPConfigUtils.parseConfig(rawConfig);
+        } catch (IOException e) {
+            throw new RuntimeException("UserProfile configuration for realm '" + session.getContext().getRealm().getName() + "' is invalid:" + e.getMessage(), e);
+        }
     }
 
     /**
@@ -471,22 +494,27 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     }
 
     private UPConfig getConfigFromComponentModel(ComponentModel model) {
-        if (model == null)
-            return null;
+        UPConfig cached = getParsedConfigFromCache(model);
 
-        UPConfig cfg = model.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
-        if (cfg != null) {
-            return cfg;
+        if (cached == null) {
+            cached = parseAndCacheConfig(model);
         }
 
-        String rawConfig = model.get(UP_COMPONENT_CONFIG_KEY);
-        if (rawConfig == null) {
+        return cached;
+    }
+
+    private UPConfig parseAndCacheConfig(ComponentModel model) {
+        UPConfig cfg = parseConfigOrDefault(model);
+        model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
+        return cfg;
+    }
+
+    private UPConfig getParsedConfigFromCache(ComponentModel component) {
+        if (component == null) {
             return null;
-        } else {
-            cfg = getParsedConfig(rawConfig);
-            model.setNote(PARSED_UP_CONFIG_COMPONENT_KEY, cfg);
-            return cfg;
         }
+
+        return component.getNote(PARSED_UP_CONFIG_COMPONENT_KEY);
     }
 
     private void removeConfigJsonFromComponentModel(ComponentModel model) {

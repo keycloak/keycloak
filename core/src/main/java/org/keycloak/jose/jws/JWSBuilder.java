@@ -18,6 +18,7 @@
 package org.keycloak.jose.jws;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -76,7 +77,13 @@ public class JWSBuilder {
 
     protected String encodeHeader(String sigAlgName) {
         StringBuilder builder = new StringBuilder("{");
-        builder.append("\"alg\":\"").append(sigAlgName).append("\"");
+
+        if (org.keycloak.crypto.Algorithm.Ed25519.equals(sigAlgName) || org.keycloak.crypto.Algorithm.Ed448.equals(sigAlgName)) {
+            builder.append("\"alg\":\"").append(org.keycloak.crypto.Algorithm.EdDSA).append("\"");
+            builder.append(",\"crv\":\"").append(sigAlgName).append("\"");
+        } else {
+            builder.append("\"alg\":\"").append(sigAlgName).append("\"");
+        }
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");

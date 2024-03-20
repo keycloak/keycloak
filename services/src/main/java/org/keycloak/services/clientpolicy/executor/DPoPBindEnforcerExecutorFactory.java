@@ -28,7 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorProviderFactory, EnvironmentDependentProviderFactory {
+public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "dpop-bind-enforcer";
 
@@ -67,10 +67,5 @@ public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorPro
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return Collections.singletonList(AUTO_CONFIGURE_PROPERTY);
-    }
-
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Feature.DPOP);
     }
 }

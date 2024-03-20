@@ -1,11 +1,11 @@
 export default class CreateProviderPage {
   #github = "github";
   #clientIdField = "clientId";
-  #clientIdError = "#kc-client-secret-helper";
-  #clientSecretField = "clientSecret";
+  #clientIdError = "#config\\.clientSecret-helper";
+  #clientSecretField = "config.clientSecret";
   #displayName = "displayName";
   #discoveryEndpoint = "discoveryEndpoint";
-  #authorizationUrl = "authorizationUrl";
+  #authorizationUrl = "config.authorizationUrl";
   #addButton = "createProvider";
   #saveButton = "idp-details-save";
   #ssoServiceUrl = "sso-service-url";

@@ -72,7 +72,7 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
     }
 
     protected static void setDefaultConfiguration(KeycloakSession session) {
-        setConfiguration(session, UPConfigUtils.readDefaultConfig());
+        setConfiguration(session, UPConfigUtils.readSystemDefaultConfig());
     }
 
     protected static void setConfiguration(KeycloakSession session, String config) {

@@ -12,16 +12,13 @@ import {
   Divider,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem, SelectControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -65,7 +62,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
 
   const [secret, setSecret] = useState("");
   const [accessToken, setAccessToken] = useState("");
-  const [open, isOpen] = useState(false);
+
+  const selectedProvider = providers.find(
+    (provider) => provider.id === clientAuthenticatorType,
+  );
 
   useFetch(
     () =>
@@ -143,47 +143,18 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
         <AccessTokenConfirm />
         <Card isFlat>
           <CardBody>
-            <FormGroup
+            <SelectControl
+              name="clientAuthenticatorType"
               label={t("clientAuthenticator")}
-              fieldId="kc-client-authenticator-type"
-              labelIcon={
-                <HelpItem
-                  helpText={t("clientAuthenticatorTypeHelp")}
-                  fieldLabelId="clientAuthenticator"
-                />
-              }
-            >
-              <Controller
-                name="clientAuthenticatorType"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <Select
-                    toggleId="kc-client-authenticator-type"
-                    required
-                    onToggle={isOpen}
-                    onSelect={(_, value) => {
-                      field.onChange(value as string);
-                      isOpen(false);
-                    }}
-                    selections={field.value}
-                    variant={SelectVariant.single}
-                    aria-label={t("clientAuthenticator")}
-                    isOpen={open}
-                  >
-                    {providers.map((option) => (
-                      <SelectOption
-                        selected={option.id === field.value}
-                        key={option.id}
-                        value={option.id}
-                      >
-                        {option.displayName}
-                      </SelectOption>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormGroup>
+              labelIcon={t("clientAuthenticatorTypeHelp")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={providers.map(({ id, displayName }) => ({
+                key: id!,
+                value: displayName || id!,
+              }))}
+            />
             {(clientAuthenticatorType === "client-jwt" ||
               clientAuthenticatorType === "client-secret-jwt") && (
               <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
@@ -200,17 +171,17 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               </Button>
             </ActionGroup>
           </CardBody>
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && <Divider />}
-          {(clientAuthenticatorType === "client-secret" ||
-            clientAuthenticatorType === "client-secret-jwt") && (
-            <CardBody>
-              <ClientSecret
-                client={client}
-                secret={secret}
-                toggle={toggleClientSecretConfirm}
-              />
-            </CardBody>
+          {selectedProvider?.supportsSecret && (
+            <>
+              <Divider />
+              <CardBody>
+                <ClientSecret
+                  client={client}
+                  secret={secret}
+                  toggle={toggleClientSecretConfirm}
+                />
+              </CardBody>
+            </>
           )}
         </Card>
         <Card isFlat>

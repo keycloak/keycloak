@@ -28,7 +28,10 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.userprofile.UserProfileProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -88,6 +91,17 @@ public class ApplianceBootstrap {
 
         session.getContext().setRealm(realm);
         DefaultKeyProviders.createProviders(realm);
+
+        // In master realm the UP config is more relaxed
+        // firstName, lastName and email are not required (all attributes except username)
+        UserProfileProvider UserProfileProvider = session.getProvider(UserProfileProvider.class);
+        UPConfig upConfig = UserProfileProvider.getConfiguration();
+        for (UPAttribute attr : upConfig.getAttributes()) {
+            if (!UserModel.USERNAME.equals(attr.getName())) {
+                attr.setRequired(null);
+            }
+        }
+        UserProfileProvider.setConfiguration(upConfig);
 
         return true;
     }

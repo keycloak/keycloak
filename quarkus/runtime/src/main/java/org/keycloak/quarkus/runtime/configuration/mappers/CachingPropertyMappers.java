@@ -9,6 +9,7 @@ import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 final class CachingPropertyMappers {
@@ -30,7 +31,41 @@ final class CachingPropertyMappers {
                         .to("kc.spi-connections-infinispan-quarkus-config-file")
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .paramLabel("file")
-                        .build()
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                        .paramLabel("file")
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
+                        .paramLabel("file")
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_HOST)
+                        .paramLabel("hostname")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_PORT)
+                        .paramLabel("port")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_USERNAME)
+                        .paramLabel("username")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_PASSWORD)
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+
+                fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .build(),
+
         };
     }
 
@@ -51,5 +86,33 @@ final class CachingPropertyMappers {
         }
 
         return of(pathPrefix + value.get());
+    }
+
+    private static String getDefaultKeystorePathValue() {
+        String homeDir = Environment.getHomeDir();
+
+        if (homeDir != null) {
+            File file = Paths.get(homeDir, "conf", "cache-mtls-keystore.p12").toFile();
+
+            if (file.exists()) {
+                return file.getAbsolutePath();
+            }
+        }
+
+        return null;
+    }
+
+    private static String getDefaultTruststorePathValue() {
+        String homeDir = Environment.getHomeDir();
+
+        if (homeDir != null) {
+            File file = Paths.get(homeDir, "conf", "cache-mtls-truststore.p12").toFile();
+
+            if (file.exists()) {
+                return file.getAbsolutePath();
+            }
+        }
+
+        return null;
     }
 }

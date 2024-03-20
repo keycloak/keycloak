@@ -262,7 +262,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public void assertStopped() {
         try {
             if (keycloak != null) {
-                keycloak.onExit().get(1, TimeUnit.MINUTES);
+                keycloak.onExit().get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -270,9 +270,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            LOG.warn("Process did not exit within a minute as expected, will attempt a thread dump");
+            LOG.warn("Process did not exit as expected, will attempt a thread dump");
             threadDump();
-            LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
+            throw new RuntimeException(e);
         }
     }
 
@@ -293,9 +293,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
                 threadDump();
-                LOG.warn("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
-                LOG.warn("TODO: this should be a hard error / re-diagnosed after https://issues.redhat.com/browse/JBTM-3830 is pulled into Keycloak");
-                return;
+                throw new IllegalStateException(
+                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
 
             if (!keycloak.isAlive()) {

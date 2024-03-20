@@ -24,7 +24,6 @@ import java.util.Locale;
 
 public interface LocaleSelectorProvider extends Provider {
 
-    String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
     String KC_LOCALE_PARAM = "kc_locale";
 
     String CLIENT_REQUEST_LOCALE = "locale_client_requested";

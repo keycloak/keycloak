@@ -12,7 +12,7 @@ import { FormLabel } from "./FormLabel";
 export type SwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = SwitchProps &
+> = Omit<SwitchProps, "name" | "defaultValue" | "ref"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
@@ -28,10 +28,12 @@ export const SwitchControl = <
 >(
   props: SwitchControlProps<T, P>,
 ) => {
-  const defaultValue = props.defaultValue ?? (false as PathValue<T, P>);
+  const fallbackValue = props.stringify ? "false" : false;
+  const defaultValue = props.defaultValue ?? (fallbackValue as PathValue<T, P>);
   const { control } = useFormContext();
   return (
     <FormLabel
+      hasNoPaddingTop
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
@@ -43,10 +45,10 @@ export const SwitchControl = <
         defaultValue={defaultValue}
         render={({ field: { onChange, value } }) => (
           <Switch
+            {...props}
             id={props.name}
             data-testid={props.name}
             label={props.labelOn}
-            labelOff={props.labelOff}
             isChecked={props.stringify ? value === "true" : value}
             onChange={(checked, e) => {
               const value = props.stringify ? checked.toString() : checked;

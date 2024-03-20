@@ -42,7 +42,7 @@ public interface UserProfileResource {
 
     @GET
     @Path("/metadata")
-    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     UserProfileMetadata getMetadata();
 
     /**

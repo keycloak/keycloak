@@ -21,6 +21,8 @@ import static java.util.Objects.requireNonNull;
 
 import jakarta.ws.rs.core.CacheControl;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -65,10 +67,8 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
@@ -106,7 +106,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
@@ -584,10 +583,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/get-sso-cookie")
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
-        Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        if (cookie == null) return null;
-        return cookie.getValue();
+        return session.getProvider(CookieProvider.class).get(CookieType.IDENTITY);
     }
 
 

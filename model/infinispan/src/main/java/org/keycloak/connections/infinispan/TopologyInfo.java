@@ -20,7 +20,6 @@ package org.keycloak.connections.infinispan;
 import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.infinispan.Cache;
 import org.infinispan.distribution.DistributionManager;
@@ -55,10 +54,16 @@ public class TopologyInfo {
     private final boolean isGeneratedNodeName;
 
 
-    public TopologyInfo(EmbeddedCacheManager cacheManager, Config.Scope config, boolean embedded) {
+    public TopologyInfo(EmbeddedCacheManager cacheManager, Config.Scope config, boolean embedded, String providerId) {
         String siteName;
         String nodeName;
         boolean isGeneratedNodeName = false;
+
+        if (System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME) != null) {
+            throw new IllegalArgumentException(
+                    String.format("System property %s is in use. Use --spi-connections-infinispan-%s-site-name config option instead",
+                            InfinispanConnectionProvider.JBOSS_SITE_NAME, providerId));
+        }
 
         if (!embedded) {
             Transport transport = cacheManager.getTransport();
@@ -66,11 +71,11 @@ public class TopologyInfo {
                 nodeName = transport.getAddress().toString();
                 siteName = cacheManager.getCacheManagerConfiguration().transport().siteId();
                 if (siteName == null) {
-                    siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+                    siteName = config.get("siteName");
                 }
             } else {
                 nodeName = System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME);
-                siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+                siteName = config.get("siteName");
             }
             if (nodeName == null || nodeName.equals("localhost")) {
                 isGeneratedNodeName = true;
@@ -84,7 +89,7 @@ public class TopologyInfo {
                 nodeName = null;
             }
 
-            siteName = config.get("siteName", System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME));
+            siteName = config.get("siteName");
             if (siteName != null && siteName.isEmpty()) {
                 siteName = null;
             }

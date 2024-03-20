@@ -42,8 +42,7 @@ public class HttpDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
     public void maxQueuedRequestsTest(KeycloakDistribution dist) {
-        dist.setQuarkusProperty("quarkus.thread-pool.max-threads", "1");
-        dist.run("start-dev", "--http-max-queued-requests=1");
+        dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
         // run requests async
         List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();

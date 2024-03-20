@@ -1,11 +1,6 @@
 import PageObject from "../../../../components/PageObject";
 
 export default class AdvancedTab extends PageObject {
-  #setToNowBtn = "#setToNow";
-  #clearBtn = "#clear";
-  #pushBtn = "#push";
-  #notBeforeInput = "#kc-not-before";
-
   #clusterNodesExpandBtn =
     ".pf-c-expandable-section .pf-c-expandable-section__toggle";
   #testClusterAvailability = "#testClusterAvailability";
@@ -15,7 +10,7 @@ export default class AdvancedTab extends PageObject {
     '[aria-label="Registered cluster nodes"] [aria-label="Actions"]';
   #deleteClusterNodeBtn =
     '[aria-label="Registered cluster nodes"] [role="menu"] button';
-  #nodeHostInput = "#nodeHost";
+  #nodeHostInput = "node";
   #addNodeConfirmBtn = "#add-node-confirm";
 
   #accessTokenSignatureAlgorithmInput = "#accessTokenSignatureAlgorithm";
@@ -35,51 +30,19 @@ export default class AdvancedTab extends PageObject {
     "#useRefreshTokenForClientCredentialsGrant";
   #useLowerCaseBearerTypeSwitch = "#useLowerCaseBearerType";
 
-  #oAuthMutualSwitch = "#oAuthMutual-switch";
+  #oAuthMutualSwitch =
+    "attributes.tls🍺client🍺certificate🍺bound🍺access🍺tokens";
   #keyForCodeExchangeInput = "#keyForCodeExchange";
   #pushedAuthorizationRequestRequiredSwitch =
-    "#pushedAuthorizationRequestRequired";
+    "attributes.require🍺pushed🍺authorization🍺requests";
 
   #browserFlowInput = "#browserFlow";
   #directGrantInput = "#directGrant";
 
   #jumpToOIDCCompatabilitySettings =
-    "jump-link-open-id-connect-compatibility-modes";
+    "jump-link-openid-connect-compatibility-modes";
   #jumpToAdvancedSettings = "jump-link-advanced-settings";
   #jumpToAuthFlowOverride = "jump-link-authentication-flow-overrides";
-
-  setRevocationToNow() {
-    cy.get(this.#setToNowBtn).click();
-    return this;
-  }
-
-  clearRevocation() {
-    cy.get(this.#clearBtn).click();
-    return this;
-  }
-
-  pushRevocation() {
-    cy.get(this.#pushBtn).click();
-    return this;
-  }
-
-  checkRevacationIsNone() {
-    cy.get(this.#notBeforeInput).should("have.value", "None");
-
-    return this;
-  }
-
-  checkRevocationIsSetToNow() {
-    cy.get(this.#notBeforeInput).should(
-      "have.value",
-      new Date().toLocaleString("en-US", {
-        dateStyle: "long",
-        timeStyle: "short",
-      }),
-    );
-
-    return this;
-  }
 
   expandClusterNode() {
     cy.get(this.#clusterNodesExpandBtn).click();
@@ -111,7 +74,7 @@ export default class AdvancedTab extends PageObject {
   }
 
   fillHost(host: string) {
-    cy.get(this.#nodeHostInput).type(host);
+    cy.findByTestId(this.#nodeHostInput).type(host);
     return this;
   }
 
@@ -211,24 +174,26 @@ export default class AdvancedTab extends PageObject {
   }
 
   clickAdvancedSwitches() {
-    cy.get(this.#oAuthMutualSwitch).parent().click();
-    cy.get(this.#pushedAuthorizationRequestRequiredSwitch).parent().click();
+    cy.findByTestId(this.#oAuthMutualSwitch).parent().click();
+    cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch)
+      .parent()
+      .click();
     return this;
   }
 
   checkAdvancedSwitchesOn() {
-    cy.get(this.#oAuthMutualSwitch).scrollIntoView();
-    this.assertSwitchStateOn(cy.get(this.#oAuthMutualSwitch));
+    cy.findByTestId(this.#oAuthMutualSwitch).scrollIntoView();
+    this.assertSwitchStateOn(cy.findByTestId(this.#oAuthMutualSwitch));
     this.assertSwitchStateOn(
-      cy.get(this.#pushedAuthorizationRequestRequiredSwitch),
+      cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }
 
   checkAdvancedSwitchesOff() {
-    this.assertSwitchStateOff(cy.get(this.#oAuthMutualSwitch));
+    this.assertSwitchStateOff(cy.findByTestId(this.#oAuthMutualSwitch));
     this.assertSwitchStateOff(
-      cy.get(this.#pushedAuthorizationRequestRequiredSwitch),
+      cy.findByTestId(this.#pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }

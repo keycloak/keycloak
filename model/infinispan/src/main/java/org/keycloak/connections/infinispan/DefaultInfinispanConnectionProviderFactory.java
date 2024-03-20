@@ -46,9 +46,12 @@ import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -225,7 +228,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
         cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
 
-        this.topologyInfo = new TopologyInfo(cacheManager, config, false);
+        this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
 
         logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheManager);
 
@@ -239,7 +242,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         boolean async = config.getBoolean("async", false);
         boolean useKeycloakTimeService = config.getBoolean("useKeycloakTimeService", false);
 
-        this.topologyInfo = new TopologyInfo(cacheManager, config, true);
+        this.topologyInfo = new TopologyInfo(cacheManager, config, true, getId());
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));

@@ -90,9 +90,7 @@ import jakarta.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -156,9 +154,6 @@ public class SAMLEndpoint {
     private final ClientConnection clientConnection;
 
     private final HttpHeaders headers;
-
-    public static final String ENCRYPTION_DEPRECATED_MODE_PROPERTY = "keycloak.saml.deprecated.encryption";
-    private final boolean DEPRECATED_ENCRYPTION = Boolean.getBoolean(ENCRYPTION_DEPRECATED_MODE_PROPERTY);
 
 
     public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
@@ -334,8 +329,20 @@ public class SAMLEndpoint {
         }
 
         protected Response logoutRequest(LogoutRequestType request, String relayState) {
-            String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
+            if (request.getNameID() == null && request.getBaseID() == null && request.getEncryptedID() == null){
+                logger.error("SAML IdP Logout request must contain at least one of BaseID, NameID and EncryptedID");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_LOGOUT_FAILURE);
+            }
+
             if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
+                if (request.getNameID() == null){
+                    //TODO this need to be implemented
+                    logger.error("SAML IdP Logout request contains BaseID or EncryptedID without Session Index");
+                    event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                    return ErrorPage.error(session, null, Response.Status.NOT_IMPLEMENTED, Messages.IDENTITY_PROVIDER_LOGOUT_FAILURE);
+                }
+                String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
                 AtomicReference<LogoutRequestType> ref = new AtomicReference<>(request);
                 session.sessions().getUserSessionByBrokerUserIdStream(realm, brokerUserId)
                         .filter(userSession -> userSession.getState() != UserSessionModel.State.LOGGING_OUT &&
@@ -460,17 +467,6 @@ public class SAMLEndpoint {
                 if (assertionIsEncrypted) {
                     try {
                         XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
-                        /* This code is deprecated and will be removed in Keycloak 24 */
-                        if (DEPRECATED_ENCRYPTION) {
-                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                            final XMLEncryptionUtil.DecryptionKeyLocator tmp = decryptionKeyLocator;
-                            decryptionKeyLocator = data -> {
-                                List<PrivateKey> result = new ArrayList<>(tmp.getKeys(data));
-                                result.add(keys.getPrivateKey());
-                                return result;
-                            };
-                        }
-                        /* End of deprecated code */
                         assertionElement = AssertionUtil.decryptAssertion(responseType, decryptionKeyLocator);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML assertion. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the assertion encrypted by identity provider '%s'", realm.getName(), config.getAlias());
@@ -518,17 +514,6 @@ public class SAMLEndpoint {
                 if (AssertionUtil.isIdEncrypted(responseType)) {
                     try {
                         XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
-                        /* This code is deprecated and will be removed in Keycloak 24 */
-                        if (DEPRECATED_ENCRYPTION) {
-                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                            final XMLEncryptionUtil.DecryptionKeyLocator tmp = decryptionKeyLocator;
-                            decryptionKeyLocator = data -> {
-                                List<PrivateKey> result = new ArrayList<>(tmp.getKeys(data));
-                                result.add(keys.getPrivateKey());
-                                return result;
-                            };
-                        }
-                        /* End of deprecated code */
                         AssertionUtil.decryptId(responseType, decryptionKeyLocator);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML encryptedId. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the encryptedId encrypted by identity provider '%s'", realm.getName(), config.getAlias());
@@ -685,7 +670,7 @@ public class SAMLEndpoint {
                     && statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
-                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             if (! destinationValidator.validate(getExpectedDestination(config.getAlias(), clientId), statusResponse.getDestination())) {

@@ -36,6 +36,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,6 +88,12 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
                 representation.setRoles(new HashSet<>(
                         Arrays.asList(JsonSerialization.readValue(roles, RolePolicyRepresentation.RoleDefinition[].class))));
             }
+
+            String fetchRoles = policy.getConfig().get("fetchRoles");
+
+            if (StringUtil.isNotBlank(fetchRoles)) {
+                representation.setFetchRoles(Boolean.parseBoolean(fetchRoles));
+            }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);
         }
@@ -116,6 +123,11 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles during import", cause);
         }
+        String fetchRoles = representation.getConfig().get("fetchRoles");
+
+        if (StringUtil.isNotBlank(fetchRoles)) {
+            policy.putConfig("fetchRoles", fetchRoles);
+        }
     }
 
     @Override
@@ -139,10 +151,17 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
             throw new RuntimeException("Failed to export role policy [" + policy.getName() + "]", cause);
         }
 
+        String fetchRoles = policy.getConfig().get("fetchRoles");
+
+        if (StringUtil.isNotBlank(fetchRoles)) {
+            config.put("fetchRoles", fetchRoles);
+        }
+
         representation.setConfig(config);
     }
 
     private void updateRoles(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
+        policy.putConfig("fetchRoles", String.valueOf(representation.isFetchRoles()));
         updateRoles(policy, authorization, representation.getRoles());
     }
 
@@ -246,7 +265,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
                 try {
                     if (roles.isEmpty()) {
-                        policyStore.delete(clientModel.getRealm(), policy.getId());
+                        policyStore.delete(policy.getId());
                     } else {
                         policy.putConfig("roles", JsonSerialization.writeValueAsString(roles));
                     }

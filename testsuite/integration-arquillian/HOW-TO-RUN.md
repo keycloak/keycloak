@@ -58,7 +58,6 @@ When running in embedded mode, the `build` phase happens every time the server i
 There are a few limitations when running tests. The well-known limitations are:
 
 * FIPS tests not working
-* Deploying script providers not working. Probably any test deploying JAR files.
 * Re-starting the server during a test execution is taking too much metaspace. Need more investigation.
 
 ## Debugging - tips & tricks
@@ -634,7 +633,7 @@ and argument: `-p 8181`
 
 Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers,
 and 1 frontend loadbalancer server node that sits in front of all servers.
-The browser usually communicates directly with the frontent node and the test controls where the HTTP requests
+The browser usually communicates directly with the frontend node and the test controls where the HTTP requests
 land by adjusting load balancer configuration (e.g. to direct the traffic to only a single DC).
 
 For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
@@ -1005,4 +1004,26 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
 KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+```
+
+## Aurora DB Tests
+To run the Aurora DB tests on a local machine, do the following:
+
+1. Provision an Aurora DB:
+```bash
+AURORA_CLUSTER="example-cluster"
+AURORA_REGION=eu-west-1
+AURORA_PASSWORD=TODO
+source ./.github/scripts/aws/rds/aurora_create.sh
+```
+
+2. Execute the store integration tests:
+```bash
+TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+mvn test -Pauth-server-quarkus -Pdb-aurora-postgres -Dtest=$TESTS  -Dauth.server.db.host=$AURORA_ENDPOINT -Dkeycloak.connectionsJpa.password=$AURORA_PASSWORD -pl testsuite/integration-arquillian/tests/base
+```
+
+3. Teardown Aurora DB instance:
+```bash
+./.github/scripts/aws/rds/aurora_delete.sh
 ```

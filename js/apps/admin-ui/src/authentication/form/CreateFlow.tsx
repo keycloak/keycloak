@@ -68,7 +68,8 @@ export default function CreateFlow() {
               name="providerId"
               label={t("flowType")}
               labelIcon={t("topLevelFlowTypeHelp")}
-              controller={{ defaultValue: "" }}
+              aria-label={t("selectFlowType")}
+              controller={{ defaultValue: TYPES[0] }}
               options={TYPES.map((type) => ({
                 key: type,
                 value: t(`top-level-flow-type.${type}`),

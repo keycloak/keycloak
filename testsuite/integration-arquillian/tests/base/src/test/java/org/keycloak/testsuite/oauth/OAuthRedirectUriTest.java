@@ -39,6 +39,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -301,10 +302,10 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         CloseableHttpClient client = HttpClients.custom().setDefaultRequestConfig(globalConfig).setDefaultCookieStore(cookieStore).build();
 
         try {
-            String loginPage = SimpleHttp.doGet(loginUrl, client).asString();
+            String loginPage = SimpleHttpDefault.doGet(loginUrl, client).asString();
 
             String formAction = loginPage.split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-            SimpleHttp.Response response = SimpleHttp.doPost(formAction, client).param("username", "test-user@localhost").param("password", "password").asResponse();
+            SimpleHttp.Response response = SimpleHttpDefault.doPost(formAction, client).param("username", "test-user@localhost").param("password", "password").asResponse();
 
             response.getStatus();
             assertThat(response.getFirstHeader("Location"), Matchers.startsWith("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login"));

@@ -73,7 +73,7 @@ describe("User creation", () => {
 
     createUserPage.createUser(itemId);
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -95,7 +95,7 @@ describe("User creation", () => {
 
     createUserPage.joinGroups();
 
-    createUserPage.save();
+    createUserPage.create();
 
     masthead.checkNotificationMessage("The user has been created");
   });
@@ -109,7 +109,7 @@ describe("User creation", () => {
     createUserPage.createUser(itemIdWithCred);
 
     userDetailsPage.fillUserData();
-    createUserPage.save();
+    createUserPage.create();
     masthead.checkNotificationMessage("The user has been created");
     sidebarPage.waitForPageLoad();
 
@@ -162,6 +162,20 @@ describe("User creation", () => {
       .save();
 
     masthead.checkNotificationMessage("The user has been saved");
+
+    attributesTab
+      .addAttribute("LDAP_ID", "value_test")
+      .addAttribute("LDAP_ID", "another_value_test")
+      .addAttribute("c", "d")
+      .save();
+
+    masthead.checkNotificationMessage("The user has not been saved: ");
+
+    cy.get(".pf-c-helper-text__item-text")
+      .filter(':contains("Update of read-only attribute rejected")')
+      .should("have.length", 2);
+
+    cy.reload();
 
     userDetailsPage.goToDetailsTab();
     attributesTab
@@ -493,7 +507,7 @@ describe("User creation", () => {
       createUserPage.goToCreateUser();
       createUserPage.createUser(a11yUser);
       userDetailsPage.fillUserData();
-      createUserPage.save();
+      createUserPage.create();
       cy.checkA11y();
     });
 

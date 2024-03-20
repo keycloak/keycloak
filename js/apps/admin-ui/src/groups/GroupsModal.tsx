@@ -4,17 +4,14 @@ import {
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
-  ValidatedOptions,
 } from "@patternfly/react-core";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { TextControl } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type GroupsModalProps = {
   id?: string;
@@ -31,13 +28,11 @@ export const GroupsModal = ({
 }: GroupsModalProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+
+  const form = useForm({
     defaultValues: { name: rename?.name },
   });
+  const { handleSubmit } = form;
 
   const submitForm = async (group: GroupRepresentation) => {
     group.name = group.name?.trim();
@@ -96,28 +91,16 @@ export const GroupsModal = ({
         </Button>,
       ]}
     >
-      <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
-        <FormGroup
-          name="create-modal-group"
-          label={t("name")}
-          fieldId="create-group-name"
-          helperTextInvalid={t("required")}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <KeycloakTextInput
-            data-testid="groupNameInput"
+      <FormProvider {...form}>
+        <Form id="group-form" isHorizontal onSubmit={handleSubmit(submitForm)}>
+          <TextControl
+            name="name"
+            label={t("name")}
+            rules={{ required: t("required") }}
             autoFocus
-            id="create-group-name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            {...register("name", { required: true })}
           />
-        </FormGroup>
-      </Form>
+        </Form>
+      </FormProvider>
     </Modal>
   );
 };

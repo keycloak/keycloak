@@ -28,6 +28,7 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -45,6 +46,22 @@ public final class Configuration {
 
     private Configuration() {
 
+    }
+
+    public static boolean isTrue(Option<Boolean> option) {
+        return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
+    }
+
+    public static boolean contains(Option<?> option, String value) {
+        return getOptionalValue(NS_KEYCLOAK_PREFIX + option.getKey())
+                .filter(f -> f.contains(value))
+                .isPresent();
+    }
+
+    public static boolean equals(Option<?> option, String value) {
+        return getOptionalValue(NS_KEYCLOAK_PREFIX + option.getKey())
+                .filter(f -> f.equals(value))
+                .isPresent();
     }
 
     public static synchronized SmallRyeConfig getConfig() {
@@ -222,13 +239,6 @@ public final class Configuration {
     }
 
     public static ConfigValue getCurrentBuiltTimeProperty(String name) {
-        PersistedConfigSource persistedConfigSource = PersistedConfigSource.getInstance();
-
-        try {
-            persistedConfigSource.enable(false);
-            return getConfigValue(name);
-        } finally {
-            persistedConfigSource.enable(true);
-        }
+        return PersistedConfigSource.getInstance().runWithDisabled(() -> getConfigValue(name));
     }
 }

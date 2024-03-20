@@ -4,6 +4,7 @@ import Masthead from "../../Masthead";
 const masthead = new Masthead();
 
 export enum LoginFlowOption {
+  empty = "",
   none = "None",
   browser = "browser",
   directGrant = "direct grant",
@@ -68,7 +69,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #doNotStoreUsers = "#doNotStoreUsers";
   #accountLinkingOnlySwitch = "#accountLinkingOnly";
   #hideOnLoginPageSwitch = "#hideOnLoginPage";
-  #firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
+  #firstLoginFlowSelect = "#firstBrokerLoginFlowAliasOverride";
   #postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   #syncModeSelect = "#syncMode";
   #essentialClaimSwitch = "#filteredByClaim";
@@ -78,10 +79,10 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #saveBtn = "idp-details-save";
   #revertBtn = "idp-details-revert";
 
-  #validateSignature = "#validateSignature";
-  #jwksSwitch = "#useJwksUrl";
-  #jwksUrl = "jwksUrl";
-  #pkceSwitch = "#pkceEnabled";
+  #validateSignature = "#config\\.validateSignature";
+  #jwksSwitch = "#config\\.useJwksUrl";
+  #jwksUrl = "config.jwksUrl";
+  #pkceSwitch = "#config\\.pkceEnabled";
   #pkceMethod = "#pkceMethod";
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
@@ -346,9 +347,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertOIDCUrl(url: string) {
     cy.findByTestId("jump-link-openid-connect-settings").click();
-    cy.findByTestId(url + "Url")
-      .clear()
-      .type("invalidUrl");
+    cy.findByTestId(`config.${url}Url`).clear();
+    cy.findByTestId(`config.${url}Url`).type("invalidUrl");
     this.clickSaveBtn();
     masthead.checkNotificationMessage(
       "Could not update the provider The url [" + url + "_url] is malformed",
@@ -496,9 +496,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertAccountLinkingOnlySwitchTurnedOn(false);
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
-    this.assertFirstLoginFlowSelectOptionEqual(
-      LoginFlowOption.firstBrokerLogin,
-    );
+    this.assertFirstLoginFlowSelectOptionEqual(LoginFlowOption.empty);
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
     this.assertClientAssertSigAlgSelectOptionEqual(

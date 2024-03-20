@@ -22,7 +22,6 @@ import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -46,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,11 +59,12 @@ import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NA
 public class CLITestExtension extends QuarkusMainTestExtension {
 
     private static final String SYS_PROPS = "sys-props";
-    private static final String KEY_VALUE_SEPARATOR = "[= ]";
+    private static final String KEY_VALUE_SEPARATOR = "[=]";
     private KeycloakDistribution dist;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
+    static String[] CLI_ARGS = new String[0];
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -73,13 +72,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
         getStore(context).put(SYS_PROPS, new HashMap<>(System.getProperties()));
 
-        if (launch != null) {
+        if (launch != null && distConfig == null) {
             for (String arg : launch.value()) {
                 if (arg.contains(CONFIG_FILE_SHORT_NAME) || arg.contains(CONFIG_FILE_LONG_NAME)) {
                     Pattern kvSeparator = Pattern.compile(KEY_VALUE_SEPARATOR);
                     String[] cfKeyValue = kvSeparator.split(arg);
                     setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, cfKeyValue[1]);
-                } else if (distConfig == null && arg.startsWith("-D")) {
+                } else if (arg.startsWith("-D")) {
                     // allow setting system properties from JVM tests
                     int keyValueSeparator = arg.indexOf('=');
 
@@ -98,11 +97,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         infinispanContainer = configureExternalInfinispan(context);
 
         if (distConfig != null) {
-            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
-
             if (dist == null) {
-                dist = createDistribution(distConfig, getLegacyStoreConfig(context), getDatabaseConfig(context));
+                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
+
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), true);
 
             copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
             copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
@@ -116,6 +115,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 result = dist.run(Stream.concat(List.of(launch.value()).stream(), List.of(distConfig.defaultOptions()).stream()).collect(Collectors.toList()));
             }
         } else {
+            CLI_ARGS = launch == null ? new String[] {} : launch.value();
             configureProfile(context);
             super.beforeEach(context);
         }
@@ -125,8 +125,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         return context.getStore(Namespace.create(context.getRequiredTestClass(), context.getRequiredTestMethod()));
     }
 
-    private static LegacyStore getLegacyStoreConfig(ExtensionContext context) {
-        return context.getTestClass().get().getDeclaredAnnotation(LegacyStore.class);
+    private static Storage getStoreConfig(ExtensionContext context) {
+        return context.getTestClass().get().getDeclaredAnnotation(Storage.class);
     }
 
     private void copyTestProvider(TestProvider provider) {
@@ -163,10 +163,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
     }
 
-    private void onKeepServerAlive(KeepServerAlive annotation) {
+    private void onKeepServerAlive(KeepServerAlive annotation, boolean setting) {
         if(annotation != null && dist != null) {
             try {
-                dist.setManualStop(true);
+                dist.setManualStop(setting);
             } catch (Exception cause) {
                 throw new RuntimeException("Error when invoking " + annotation, cause);
             }
@@ -177,12 +177,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null) {
-            if (distConfig.keepAlive()) {
-                dist.stop();
-            }
+        if (dist != null) {
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
+            dist.stop();
 
-            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+            if (distConfig != null && DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
                 dist = null;
             }
         }
@@ -201,7 +200,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             databaseContainer.stop();
             databaseContainer = null;
         }
-        if (infinispanContainer != null && infinispanContainer.isRunning()) {
+        if (infinispanContainer != null) {
             infinispanContainer.stop();
         }
         result = null;
@@ -227,7 +226,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
         if (distConfig != null) {
             if (BEFORE_ALL.equals(distConfig.reInstall())) {
-                dist = createDistribution(distConfig, getLegacyStoreConfig(context), getDatabaseConfig(context));
+                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
         } else {
             forceTestLaunchMode();
@@ -245,8 +244,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         super.afterAll(context);
     }
 
-    private KeycloakDistribution createDistribution(DistributionTest config, LegacyStore legacyStoreConfig, WithDatabase databaseConfig) {
-        return new KeycloakDistributionDecorator(legacyStoreConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
+    private KeycloakDistribution createDistribution(DistributionTest config, Storage storeConfig, WithDatabase databaseConfig) {
+        return new KeycloakDistributionDecorator(storeConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
     @Override

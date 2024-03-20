@@ -21,7 +21,7 @@ export type NumberControlOption = {
 export type NumberControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = Omit<NumberInputProps, "name"> &
+> = Omit<NumberInputProps, "name" | "isRequired" | "required"> &
   UseControllerProps<T, P> & {
     name: string;
     label?: string;

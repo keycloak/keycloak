@@ -20,6 +20,8 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.quarkus.runtime.Environment;
@@ -42,8 +44,11 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
  * from Keycloak (e.g.: database) is mapped to multiple properties in Quarkus.
  *
  * <p>This interceptor must execute after the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} so that expressions
- * are properly resolved before executing this interceptor. Hence, leaving the default priority.
+ * are properly resolved before executing this interceptor.
+ * <p>
+ * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
+@Priority(Priorities.APPLICATION - 10)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static ThreadLocal<Boolean> disable = new ThreadLocal<>();

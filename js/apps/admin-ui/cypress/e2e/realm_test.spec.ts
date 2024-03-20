@@ -34,21 +34,18 @@ describe("Realm tests", () => {
     ),
   );
 
-  it("should fail creating Master realm", () => {
+  it("should fail creating duplicated or empty name realm", () => {
     sidebarPage.goToCreateRealm();
+
+    createRealmPage.createRealm().verifyRealmNameFieldInvalid();
+
     createRealmPage.fillRealmName("master").createRealm();
 
     masthead.checkNotificationMessage(
       "Could not create realm Conflict detected. See logs for details",
     );
+
     createRealmPage.cancelRealmCreation();
-  });
-
-  it("should fail creating realm with empty name", () => {
-    sidebarPage.goToCreateRealm();
-    createRealmPage.createRealm();
-
-    createRealmPage.verifyRealmNameFieldInvalid();
   });
 
   it("should create Test realm", () => {
@@ -63,24 +60,29 @@ describe("Realm tests", () => {
     masthead.checkNotificationMessage("Realm created successfully");
   });
 
-  it("should create Test Disabled realm", () => {
+  it("CRUD test of Disabled realm", () => {
     sidebarPage.goToCreateRealm();
     sidebarPage.waitForPageLoad();
 
     createRealmPage.fillRealmName(testDisabledName).createRealm();
-    createRealmPage.disableRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
-  });
 
-  it("Should cancel deleting Test Disabled realm", () => {
+    cy.reload();
+    sidebarPage.goToRealm(testDisabledName).goToRealmSettings();
+
+    createRealmPage.disableRealm();
+    modalUtils.confirmModal();
+
+    masthead.checkNotificationMessage("Realm successfully updated");
+
     sidebarPage.goToRealm(testDisabledName).goToRealmSettings();
     realmSettings.clickActionMenu();
     cy.findByText("Delete").click();
     modalUtils.cancelModal();
-  });
 
-  it("Should delete Test Disabled realm", () => {
+    cy.reload();
+    sidebarPage.waitForPageLoad();
     sidebarPage.goToRealm(testDisabledName).goToRealmSettings();
     realmSettings.clickActionMenu();
     cy.findByText("Delete").click();
@@ -88,7 +90,7 @@ describe("Realm tests", () => {
     masthead.checkNotificationMessage("The realm has been deleted");
 
     // Show current realms
-    sidebarPage.showCurrentRealms(2);
+    sidebarPage.realmExists("Test-Disabled", false);
   });
 
   it("should create realm from new a realm", () => {

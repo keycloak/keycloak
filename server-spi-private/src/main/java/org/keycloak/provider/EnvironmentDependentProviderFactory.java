@@ -31,7 +31,10 @@ public interface EnvironmentDependentProviderFactory {
      * @return <code>true</code> if the provider is supported and should be available, <code>false</code> otherwise
      * @deprecated Prefer overriding/using the {@link #isSupported(Config.Scope)} method.
      */
-    boolean isSupported();
+    @Deprecated
+    default boolean isSupported() {
+        return false;
+    }
 
     /**
      * An alternative to {@link #isSupported()} method to check if the provider is supported based on the

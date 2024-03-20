@@ -32,7 +32,7 @@ function checkAuthState(authSessionId, tabId, loginRestartUrl) {
   // Attempt to parse the auth state as JSON.
   let authState;
   try {
-    authState = JSON.parse(authStateRaw);
+    authState = JSON.parse(decodeURIComponent(authStateRaw));
   } catch (error) {
     // The auth state is not valid JSON, exit.
     return;
@@ -64,12 +64,11 @@ function getAuthState() {
 }
 
 function getCookieByName(name) {
-  const cookies = new Map();
-
   for (const cookie of document.cookie.split(";")) {
     const [key, value] = cookie.split("=").map((value) => value.trim());
-    cookies.set(key, value);
+    if (key === name) {
+      return value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+    }
   }
-
-  return cookies.get(name) ?? null;
+  return null;
 }

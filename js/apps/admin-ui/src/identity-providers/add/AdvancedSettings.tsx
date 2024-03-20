@@ -26,7 +26,8 @@ const LoginFlow = ({
   field,
   label,
   defaultValue,
-}: FieldProps & { defaultValue: string }) => {
+  labelForEmpty = "none",
+}: FieldProps & { defaultValue: string; labelForEmpty?: string }) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
 
@@ -59,7 +60,7 @@ const LoginFlow = ({
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("none")}
+            selections={field.value || t(labelForEmpty)}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -68,7 +69,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("none")}
+                      {t(labelForEmpty)}
                     </SelectOption>,
                   ]
                 : []),
@@ -232,8 +233,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       )}
       <LoginFlow
         field="firstBrokerLoginFlowAlias"
-        label="firstBrokerLoginFlowAlias"
-        defaultValue="fist broker login"
+        label="firstBrokerLoginFlowAliasOverride"
+        defaultValue=""
+        labelForEmpty=""
       />
       <LoginFlow
         field="postBrokerLoginFlowAlias"

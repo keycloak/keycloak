@@ -158,17 +158,27 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get client authenticator providers Returns a stream of client authenticator providers.")
     public Stream<Map<String, Object>> getClientAuthenticatorProviders() {
         auth.realm().requireViewClientAuthenticatorProviders();
+        Stream<ProviderFactory> factories =  session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class);
 
-        return buildProviderMetadata(session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class));
+        return factories.map(factory -> {
+            Map<String, Object> data = new HashMap<>();
+            buildProviderMetadataHelper(data, factory);
+            data.put("supportsSecret", ((ClientAuthenticatorFactory) factory).supportsSecret());
+            return data;
+        });
+    }
+
+    private void buildProviderMetadataHelper(Map<String, Object> data, ProviderFactory factory) {
+        data.put("id", factory.getId());
+        ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory) factory;
+        data.put("description", configured.getHelpText());
+        data.put("displayName", configured.getDisplayType());
     }
 
     public Stream<Map<String, Object>> buildProviderMetadata(Stream<ProviderFactory> factories) {
         return factories.map(factory -> {
             Map<String, Object> data = new HashMap<>();
-            data.put("id", factory.getId());
-            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
-            data.put("description", configured.getHelpText());
-            data.put("displayName", configured.getDisplayType());
+            buildProviderMetadataHelper(data, factory);
             return data;
         });
     }
@@ -340,10 +350,13 @@ public class AuthenticationManagementResource {
     public void deleteFlow(@Parameter(description = "Flow id") @PathParam("id") String id) {
         auth.realm().requireManageRealm();
 
-        KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, realm.getAuthenticationFlowById(id),
-                () -> {
-                    throw new NotFoundException("Could not find flow with id");
-                },
+        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
+        if (flow == null) {
+            throw new NotFoundException("Flow not found");
+        }
+
+        KeycloakModelUtils.deepDeleteAuthenticationFlow(session, realm, flow,
+                () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("Can't delete built in flow");
                 }
@@ -378,8 +391,9 @@ public class AuthenticationManagementResource {
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
             logger.debug("flow not found: " + flowAlias);
-            return Response.status(NOT_FOUND).build();
+            throw new NotFoundException("Flow not found");
         }
+
         AuthenticationFlowModel copy = copyFlow(session, realm, flow, newName);
 
         data.put("id", copy.getId());
@@ -652,8 +666,7 @@ public class AuthenticationManagementResource {
                 rep.setRequirement(execution.getRequirement().name());
                 rep.setFlowId(execution.getFlowId());
                 result.add(rep);
-                AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
-                recurseExecutions(subFlow, result, level + 1);
+                recurseExecutions(flowRef, result, level + 1);
             } else {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
@@ -934,19 +947,19 @@ public class AuthenticationManagementResource {
         if (model == null) {
             session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
-
         }
+
         AuthenticationFlowModel parentFlow = getParentFlow(model);
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to remove execution from a built in flow");
         }
 
-        if(model.getFlowId() != null) {
-        	AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(model.getFlowId());
-        	realm.removeAuthenticationFlow(nonTopLevelFlow);
-        }
-
-        realm.removeAuthenticatorExecution(model);
+        KeycloakModelUtils.deepDeleteAuthenticationExecutor(session, realm, model,
+                () -> {}, // allow deleting even with missing references
+                () -> {
+                    throw new BadRequestException("It is illegal to remove execution from a built in flow");
+                }
+        );
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();
     }

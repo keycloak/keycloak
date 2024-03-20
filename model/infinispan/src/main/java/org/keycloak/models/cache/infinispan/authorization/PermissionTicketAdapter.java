@@ -22,7 +22,6 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPermissionTicket;
 
 /**
@@ -43,8 +42,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public PermissionTicket getDelegateForUpdate() {
         if (updated == null) {
-            ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
-            updated = cacheSession.getPermissionTicketStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, cached.getId());
+            ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+            updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
             cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         }
@@ -71,8 +70,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
-        updated = cacheSession.getPermissionTicketStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServer, cached.getId());
+        ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+        updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -123,13 +122,13 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
 
     @Override
     public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
+        return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
     }
 
     @Override
     public Policy getPolicy() {
         if (isUpdated()) return updated.getPolicy();
-        return cacheSession.getPolicyStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId()), cached.getPolicy());
+        return cacheSession.getPolicyStore().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getPolicy());
     }
 
     @Override
@@ -141,12 +140,12 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
 
     @Override
     public Resource getResource() {
-        return cacheSession.getResourceStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getResourceId());
+        return cacheSession.getResourceStore().findById(getResourceServer(), cached.getResourceId());
     }
 
     @Override
     public Scope getScope() {
-        return cacheSession.getScopeStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, getResourceServer(), cached.getScopeId());
+        return cacheSession.getScopeStore().findById(getResourceServer(), cached.getScopeId());
     }
 
     @Override

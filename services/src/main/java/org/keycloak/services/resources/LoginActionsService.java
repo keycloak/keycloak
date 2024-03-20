@@ -76,6 +76,8 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -87,7 +89,6 @@ import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
-import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -422,6 +423,7 @@ public class LoginActionsService {
                                         @QueryParam(SESSION_CODE) String code,
                                         @QueryParam(Constants.EXECUTION) String execution,
                                         @QueryParam(Constants.CLIENT_ID) String clientId,
+                                        @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
         ClientModel client = realm.getClientByClientId(clientId);
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
@@ -435,7 +437,7 @@ public class LoginActionsService {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
-            authSession = createAuthenticationSessionForClient(clientId);
+            authSession = createAuthenticationSessionForClient(clientId, redirectUri);
             return processResetCredentials(false, null, authSession, null);
         }
 
@@ -443,31 +445,50 @@ public class LoginActionsService {
         return resetCredentials(authSessionId, code, execution, clientId, tabId);
     }
 
-    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID)
+    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID, String redirectUriParam)
             throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
-        ClientModel client = session.clients().getClientByClientId(realm, clientID);
-        String redirectUri;
+        ClientModel client;
+        String redirectUri = null;
 
-        if (client == null) {
+        if (clientID == null) {
+            if (redirectUriParam != null) {
+                logger.warn("Unsupported to send 'redirect_uri' parameter without providing 'client_id' parameter.");
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+            }
             client = SystemClientUtil.getSystemClient(realm);
             redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
         } else {
-            redirectUri = RedirectUtils.getFirstValidRedirectUri(session, client.getRootUrl(), client.getRedirectUris());
+            client = session.clients().getClientByClientId(realm, clientID);
+            if (client == null) {
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            }
+            if (!client.isEnabled()) {
+                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
+            }
+            if (redirectUriParam != null) {
+                redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client);
+                if (redirectUri == null) {
+                    throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+                }
+            }
         }
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
         authSession = rootAuthSession.createAuthenticationSession(client);
 
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
-        authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
+        if (redirectUri != null) {
+            authSession.setRedirectUri(redirectUri);
+            authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
+        } else {
+            authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        }
         return authSession;
     }
 
@@ -754,7 +775,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
+        AuthenticationManager.expireIdentityCookie(session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
@@ -828,7 +849,15 @@ public class LoginActionsService {
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, authSession);
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
 
-        String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
+        String flowId;
+        if (firstBrokerLogin) {
+            flowId = brokerContext.getIdpConfig().getFirstBrokerLoginFlowId();
+            if (flowId == null) {
+                flowId = realm.getFirstBrokerLoginFlow().getId();
+            }
+        } else {
+            flowId = brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
+        }
         if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);
             String message = "Flow not configured for identity provider";

@@ -73,6 +73,7 @@ export default interface RealmRepresentation {
   loginWithEmailAllowed?: boolean;
   maxDeltaTimeSeconds?: number;
   maxFailureWaitSeconds?: number;
+  maxTemporaryLockouts?: number;
   minimumQuickLoginWaitSeconds?: number;
   notBefore?: number;
   oauth2DeviceCodeLifespan?: number;

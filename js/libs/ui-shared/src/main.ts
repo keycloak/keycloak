@@ -1,7 +1,10 @@
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
 export { SelectControl } from "./controls/SelectControl";
 export type { SelectControlOption } from "./controls/SelectControl";
-export { SwitchControl } from "./controls/SwitchControl";
+export {
+  SwitchControl,
+  type SwitchControlProps,
+} from "./controls/SwitchControl";
 export { TextControl } from "./controls/TextControl";
 export { TextAreaControl } from "./controls/TextAreaControl";
 export { NumberControl } from "./controls/NumberControl";
@@ -20,7 +23,11 @@ export {
   setUserProfileServerError,
   isUserProfileError,
   label,
+  beerify,
+  debeerify,
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";
 export { FormPanel } from "./scroll-form/FormPanel";
+export { PasswordControl } from "./controls/PasswordControl";
+export { PasswordInput } from "./controls/PasswordInput";

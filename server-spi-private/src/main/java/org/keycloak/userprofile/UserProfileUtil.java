@@ -151,7 +151,8 @@ public class UserProfileUtil {
                 profile.getAttributes().isReadOnly(am.getName()),
                 group,
                 am.getAnnotations(),
-                toValidatorMetadata(am, session));
+                toValidatorMetadata(am, session),
+                am.isMultivalued());
     }
 
     private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){

@@ -20,7 +20,6 @@ import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
@@ -36,7 +35,7 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
     private EntityManager em;
     private StoreFactory storeFactory;
 
-    public ResourceServerAdapter(RealmModel realm, ResourceServerEntity entity, EntityManager em, StoreFactory storeFactory) {
+    public ResourceServerAdapter(ResourceServerEntity entity, EntityManager em, StoreFactory storeFactory) {
         super(storeFactory);
         this.entity = entity;
         this.em = em;
@@ -91,11 +90,6 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
     @Override
     public String getClientId() {
         return getId();
-    }
-
-    @Override
-    public RealmModel getRealm() {
-        return null;
     }
 
     @Override

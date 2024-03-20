@@ -60,11 +60,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -120,7 +120,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
     public Response exchange(TokenExchangeContext context) {
         this.formParams = context.getFormParams();
         this.session = context.getSession();
-        this.cors = (Cors)context.getCors();
+        this.cors = context.getCors();
         this.realm = context.getRealm();
         this.client = context.getClient();
         this.event = context.getEvent();
@@ -365,12 +365,17 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             scope = Arrays.stream(scope.split(" ")).filter(s -> "openid".equals(s) || (targetClientScopes.contains(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) ? s.split(":")[0] : s))).collect(Collectors.joining(" "));
         }
 
-        switch (requestedTokenType) {
-            case OAuth2Constants.ACCESS_TOKEN_TYPE:
-            case OAuth2Constants.REFRESH_TOKEN_TYPE:
-                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
-            case OAuth2Constants.SAML2_TOKEN_TYPE:
-                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+        try {
+            session.getContext().setClient(targetClient);
+            switch (requestedTokenType) {
+                case OAuth2Constants.ACCESS_TOKEN_TYPE:
+                case OAuth2Constants.REFRESH_TOKEN_TYPE:
+                    return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+                case OAuth2Constants.SAML2_TOKEN_TYPE:
+                    return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient);
+            }
+        } finally {
+            session.getContext().setClient(client);
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);

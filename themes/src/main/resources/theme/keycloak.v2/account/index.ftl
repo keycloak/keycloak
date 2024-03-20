@@ -127,7 +127,7 @@
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256', promiseType: 'native'}).then((authenticated) => {
+            keycloak.init({onLoad: 'check-sso'}).then((authenticated) => {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {

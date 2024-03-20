@@ -73,7 +73,7 @@ public class ResourcesService extends AbstractResourceService {
             filters.put(org.keycloak.authorization.model.Resource.FilterOption.NAME, new String[] { name });
         }
 
-        return queryResponse((f, m) -> resourceStore.find(auth.getRealm(), null, filters, f, m).stream()
+        return queryResponse((f, m) -> resourceStore.find(null, filters, f, m).stream()
                 .map(resource -> new Resource(resource, user, provider)), first, max);
     }
 
@@ -90,7 +90,7 @@ public class ResourcesService extends AbstractResourceService {
     public Response getSharedWithMe(@QueryParam("name") String name,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
-        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getRealm(), auth.getUser().getId(), name, f, m), false)
+        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getUser().getId(), name, f, m), false)
                 .stream(), first, max);
     }
 
@@ -108,7 +108,7 @@ public class ResourcesService extends AbstractResourceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSharedWithOthers(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
         return queryResponse(
-                (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getRealm(), auth.getUser().getId(), f, m), true)
+                (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getUser().getId(), f, m), true)
                         .stream(), first, max);
     }
 
@@ -123,7 +123,7 @@ public class ResourcesService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
 
-        final List<PermissionTicket> permissionTickets = ticketStore.find(auth.getRealm(), null, filters, null, null);
+        final List<PermissionTicket> permissionTickets = ticketStore.find(null, filters, null, null);
 
         final List<ResourcePermission> resourceList = new ArrayList<>(permissionTickets.size());
         for (PermissionTicket ticket : permissionTickets) {
@@ -138,7 +138,7 @@ public class ResourcesService extends AbstractResourceService {
 
     @Path("{id}")
     public Object getResource(@PathParam("id") String id) {
-        org.keycloak.authorization.model.Resource resource = resourceStore.findById(auth.getRealm(), null, id);
+        org.keycloak.authorization.model.Resource resource = resourceStore.findById(null, id);
 
         if (resource == null) {
             throw new NotFoundException("resource_not_found");
@@ -167,7 +167,7 @@ public class ResourcesService extends AbstractResourceService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
                 filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-                tickets = ticketStore.find(auth.getRealm(), resource.getResourceServer(), filters, null, null);
+                tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
             } else {
                 tickets = ticketStore.findGranted(resource.getResourceServer(), resource.getName(), user.getId());
             }

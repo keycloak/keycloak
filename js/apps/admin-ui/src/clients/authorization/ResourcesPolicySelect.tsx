@@ -261,7 +261,7 @@ export const ResourcesPolicySelect = ({
               setSearch("");
             }}
             isOpen={open}
-            aria-labelledby={t(name)}
+            aria-label={t(name)}
             isDisabled={!!preSelected}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}

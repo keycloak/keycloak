@@ -98,15 +98,18 @@ spec:
     - name: spi-email-template-mycustomprovider-enabled
       value: true # plain text value
 ----
+NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
+       For details on various configuration formats, see <@links.server id="configuration"/>.
 
 === Secret References
 
 Secret References are used by some dedicated options in the Keycloak CR, such as `tlsSecret`, or as a value in `additionalOptions`.
 
-When specifying a Secret Reference, make sure that a Secret containing the referenced keys is present in the same namespace as the CR referencing it.
-Along with the {project_name} Server Deployment, the Operator adds special labels to the referenced Secrets to watch for changes.
+Similarly ConfigMap References are used by options such as the `configMapFile`.
 
-When a referenced Secret is modified, the Operator performs a rolling restart of the {project_name} Deployment to pick up the changes.
+When specifying a Secret or ConfigMap Reference, make sure that a Secret or ConfigMap containing the referenced keys is present in the same namespace as the CR referencing it.
+
+The operator will poll approximately every minute for changes to referenced Secrets or ConfigMaps. When a meaningful change is detected, the Operator performs a rolling restart of the {project_name} Deployment to pick up the changes.
 
 === Unsupported features
 
@@ -167,5 +170,40 @@ spec:
     strict: false
     strictBackchannel: false
 ----
+
+=== Resource requirements
+
+The Keycloak CR allows specifying the `resources` options for managing compute resources for the {project_name} container.
+It provides the ability to request and limit resources independently for the main Keycloak deployment via the Keycloak CR, and for the realm import Job via the Realm Import CR.
+
+When no values are specified, the default `requests` memory is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
+These values were chosen based on a deeper analysis of {project_name} memory management.
+
+If no values are specified in the Realm Import CR, it falls back to the values specified in the Keycloak CR, or to the defaults as defined above.
+
+You can specify your custom values based on your requirements as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  resources:
+    requests:
+      cpu: 1200m
+      memory: 896Mi
+    limits:
+      cpu: 6
+      memory: 3Gi
+----
+
+Moreover, the {project_name} container manages the heap size more effectively by providing relative values for the heap size.
+It is achieved by providing certain JVM options.
+
+For more details, check the
+https://www.keycloak.org/server/containers[Running Keycloak in a container].
 
 </@tmpl.guide>

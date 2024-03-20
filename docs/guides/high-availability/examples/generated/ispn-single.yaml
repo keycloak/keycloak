@@ -52,6 +52,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -72,6 +73,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -92,6 +94,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -112,6 +115,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -132,6 +136,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -152,6 +157,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -172,6 +178,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -192,6 +199,7 @@ spec:
       mode: "SYNC"
       owners: "2"
       statistics: "true"
+      remoteTimeout: 14000
       stateTransfer:
         chunkSize: 16
       
@@ -216,11 +224,11 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:14.0.16.Final
+  image: quay.io/infinispan/server:14.0.27.Final
   configListener:
     enabled: false
   container:
-    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000'
+    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=15000'
   logging:
     categories:
       org.infinispan: info

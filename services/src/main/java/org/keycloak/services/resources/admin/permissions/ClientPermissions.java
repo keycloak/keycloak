@@ -178,7 +178,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
 
     }
@@ -194,7 +194,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(client));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override

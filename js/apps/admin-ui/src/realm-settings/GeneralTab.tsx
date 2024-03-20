@@ -121,10 +121,6 @@ export const RealmSettingsGeneralTab = ({
             control={control}
             rules={{
               required: { value: true, message: t("required") },
-              pattern: {
-                value: /^[a-zA-Z0-9-_]+$/,
-                message: t("invalidRealmName"),
-              },
             }}
             defaultValue=""
             render={({ field }) => (
@@ -273,6 +269,7 @@ export const RealmSettingsGeneralTab = ({
             selections={userProfileConfig?.unmanagedAttributePolicy}
             variant={SelectVariant.single}
             isOpen={isUnmanagedAttributeOpen}
+            aria-label={t("selectUnmanagedAttributePolicy")}
           >
             {unmanagedAttributePolicies.map((policy) => (
               <SelectOption key={policy} value={policy}>

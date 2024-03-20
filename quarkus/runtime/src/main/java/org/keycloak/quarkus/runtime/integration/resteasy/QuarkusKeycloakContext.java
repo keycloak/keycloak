@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import io.vertx.core.http.HttpServerRequest;
 import org.jboss.resteasy.reactive.server.core.CurrentRequestManager;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.keycloak.common.ClientConnection;
@@ -25,8 +26,6 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakContext;
-
-import io.vertx.core.http.HttpServerRequest;
 
 public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
 
@@ -43,7 +42,7 @@ public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
 
     @Override
     protected HttpResponse createHttpResponse() {
-        return new QuarkusHttpResponse(getSession(), getResteasyReactiveRequestContext());
+        return new QuarkusHttpResponse(getResteasyReactiveRequestContext());
     }
 
     @Override

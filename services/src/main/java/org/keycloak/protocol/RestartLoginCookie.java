@@ -21,19 +21,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
-import org.keycloak.common.ClientConnection;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -120,24 +116,18 @@ public class RestartLoginCookie implements Token {
         }
     }
 
-    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, AuthenticationSessionModel authSession) {
+    public static void setRestartCookie(KeycloakSession session, AuthenticationSessionModel authSession) {
         RestartLoginCookie restart = new RestartLoginCookie(authSession);
         String encoded = session.tokens().encode(restart);
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, session);
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_RESTART, encoded);
     }
 
-    public static void expireRestartCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
-        KeycloakContext context = session.getContext();
-        ClientConnection connection = context.getConnection();
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true, session);
+    public static void expireRestartCookie(KeycloakSession session) {
+        session.getProvider(CookieProvider.class).expire(CookieType.AUTH_RESTART);
     }
 
-    public static Cookie getRestartCookie(KeycloakSession session){
-        Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
+    public static String getRestartCookie(KeycloakSession session){
+        String cook = session.getProvider(CookieProvider.class).get(CookieType.AUTH_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
             return null;
@@ -147,10 +137,7 @@ public class RestartLoginCookie implements Token {
 
     public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
                                                             RootAuthenticationSessionModel rootSession, String expectedClientId,
-                                                            Cookie cook) throws Exception {
-
-        String encodedCookie = cook.getValue();
-
+                                                            String encodedCookie) throws Exception {
         RestartLoginCookie cookie = session.tokens().decode(encodedCookie, RestartLoginCookie.class);
         if (cookie == null) {
             logger.debug("Failed to verify encoded RestartLoginCookie");

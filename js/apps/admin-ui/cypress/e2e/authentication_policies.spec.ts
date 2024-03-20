@@ -12,6 +12,7 @@ describe("Policies", () => {
 
   describe("OTP policies tab", () => {
     const otpPoliciesPage = new OTPPolicies();
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -27,12 +28,16 @@ describe("Policies", () => {
       );
       otpPoliciesPage.setPolicyType("hotp").increaseInitialCounter().save();
       masthead.checkNotificationMessage("OTP policy successfully updated");
-      otpPoliciesPage.checkSupportedApplications("FreeOTP");
+      otpPoliciesPage.checkSupportedApplications(
+        "FreeOTP",
+        "Google Authenticator",
+      );
     });
   });
 
   describe("Webauthn policies tabs", () => {
     const webauthnPage = new WebAuthnPolicies();
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();

@@ -44,6 +44,7 @@ import "./user-credentials.css";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
+  setUser: (user: UserRepresentation) => void;
 };
 
 type ExpandableCredentialRepresentation = {
@@ -52,7 +53,7 @@ type ExpandableCredentialRepresentation = {
   isExpanded: boolean;
 };
 
-export const UserCredentials = ({ user }: UserCredentialsProps) => {
+export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
@@ -286,6 +287,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     }
   };
 
+  const onAddRequiredActions = (requiredActions: string[]) => {
+    setUser({
+      ...user,
+      requiredActions: [...(user.requiredActions ?? []), ...requiredActions],
+    });
+  };
+
   const onDragEnd = ({ target }: ReactDragEvent) => {
     if (!(target instanceof HTMLTableRowElement)) {
       return;
@@ -357,6 +365,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         <ResetPasswordDialog
           user={user}
           isResetPassword={isResetPassword}
+          onAddRequiredActions={onAddRequiredActions}
           refresh={refresh}
           onClose={() => setIsOpen(false)}
         />

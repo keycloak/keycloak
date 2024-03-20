@@ -3,9 +3,7 @@
 
 <@tmpl.guide
 title="Building blocks active-passive deployments"
-summary="Overview of building blocks, alternatives and not considered options"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269" >
+summary="Overview of building blocks, alternatives and not considered options" >
 
 The following building blocks are needed to set up an active-passive deployment with synchronous replication.
 
@@ -60,7 +58,7 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 == Load balancer
 
-A load balancer which checks the `/lb-check` URl of the {project_name} deployment in each site.
+A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site.
 
 *Blueprint:* <@links.ha id="deploy-aws-route53-loadbalancer"/>.
 

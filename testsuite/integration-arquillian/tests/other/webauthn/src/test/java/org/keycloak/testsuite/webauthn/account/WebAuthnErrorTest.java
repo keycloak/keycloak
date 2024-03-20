@@ -82,7 +82,7 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
             WaitUtils.pause((timeoutSec + 1) * 1000);
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Security key."));
+            assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Passkey."));
         }
     }
 }

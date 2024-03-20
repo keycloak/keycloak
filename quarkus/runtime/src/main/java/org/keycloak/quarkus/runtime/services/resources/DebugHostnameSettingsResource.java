@@ -23,7 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.services.Urls;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
@@ -37,6 +37,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+@Provider
 @Path("/realms")
 @EndpointDisabled(name = "kc.hostname-debug", stringValue = "false", disableIfMissing = true)
 public class DebugHostnameSettingsResource {

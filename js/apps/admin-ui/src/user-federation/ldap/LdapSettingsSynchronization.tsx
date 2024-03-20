@@ -1,10 +1,8 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem, TextControl } from "ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSynchronizationProps = {
@@ -24,7 +22,7 @@ export const LdapSettingsSynchronization = ({
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
 
   return (
-    <>
+    <FormProvider {...form}>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("synchronizationSettings")}
@@ -32,6 +30,7 @@ export const LdapSettingsSynchronization = ({
           showDescription={showSectionDescription}
         />
       )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           hasNoPaddingTop
@@ -91,21 +90,13 @@ export const LdapSettingsSynchronization = ({
             )}
           />
         </FormGroup>
-        <FormGroup
+        <TextControl
+          name="config.batchSizeForSync.0"
+          type="number"
+          min={0}
           label={t("batchSize")}
-          labelIcon={
-            <HelpItem helpText={t("batchSizeHelp")} fieldLabelId="batchSize" />
-          }
-          fieldId="kc-batch-size"
-        >
-          <KeycloakTextInput
-            type="number"
-            min={0}
-            id="kc-batch-size"
-            data-testid="batch-size"
-            {...form.register("config.batchSizeForSync.0")}
-          />
-        </FormGroup>
+          labelIcon={t("batchSizeHelp")}
+        />
         <FormGroup
           label={t("periodicFullSync")}
           labelIcon={
@@ -133,29 +124,17 @@ export const LdapSettingsSynchronization = ({
                 aria-label={t("periodicFullSync")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
         {watchPeriodicSync && (
-          <FormGroup
-            hasNoPaddingTop
+          <TextControl
+            name="config.fullSyncPeriod.0"
             label={t("fullSyncPeriod")}
-            labelIcon={
-              <HelpItem
-                helpText={t("fullSyncPeriodHelp")}
-                fieldLabelId="fullSyncPeriod"
-              />
-            }
-            fieldId="kc-full-sync-period"
-          >
-            <KeycloakTextInput
-              type="number"
-              min={-1}
-              defaultValue={604800}
-              id="kc-full-sync-period"
-              data-testid="full-sync-period"
-              {...form.register("config.fullSyncPeriod.0")}
-            />
-          </FormGroup>
+            labelIcon={t("fullSyncPeriodHelp")}
+            type="number"
+            min={-1}
+            defaultValue={604800}
+          />
         )}
         <FormGroup
           label={t("periodicChangedUsersSync")}
@@ -184,31 +163,19 @@ export const LdapSettingsSynchronization = ({
                 aria-label={t("periodicChangedUsersSync")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
         {watchChangedSync && (
-          <FormGroup
+          <TextControl
+            name="config.changedSyncPeriod.0"
             label={t("changedUsersSyncPeriod")}
-            labelIcon={
-              <HelpItem
-                helpText={t("changedUsersSyncHelp")}
-                fieldLabelId="changedUsersSyncPeriod"
-              />
-            }
-            fieldId="kc-changed-users-sync-period"
-            hasNoPaddingTop
-          >
-            <KeycloakTextInput
-              type="number"
-              min={-1}
-              defaultValue={86400}
-              id="kc-changed-users-sync-period"
-              data-testid="changed-users-sync-period"
-              {...form.register("config.changedSyncPeriod.0")}
-            />
-          </FormGroup>
+            labelIcon={t("changedUsersSyncHelp")}
+            type="number"
+            min={-1}
+            defaultValue={86400}
+          />
         )}
       </FormAccess>
-    </>
+    </FormProvider>
   );
 };

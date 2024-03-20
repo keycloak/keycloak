@@ -126,6 +126,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
         private String keyType = KeyType.RSA;
         private String keyAlgorithm;
         private KeyUse keyUse = KeyUse.SIG;
+        private String curve;
 
         // Kid will be randomly generated (based on the key hash) if not provided here
         private String kid;
@@ -192,6 +193,14 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setKid(String kid) {
             this.kid = kid;
+        }
+
+        public String getCurve() {
+            return curve;
+        }
+
+        public void setCurve(String curve) {
+            this.curve = curve;
         }
     }
 }

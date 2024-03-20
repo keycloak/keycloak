@@ -104,6 +104,7 @@ export function UserDataTable() {
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const [searchType, setSearchType] = useState<SearchType>("default");
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<UserAttribute[]>([]);
   const [profile, setProfile] = useState<UserProfileConfig>({});
   const [query, setQuery] = useState("");
@@ -153,7 +154,7 @@ export function UserDataTable() {
       params.search = searchParam;
     }
 
-    if (!listUsers && !searchParam) {
+    if (!listUsers && !(params.search || params.q)) {
       return [];
     }
 
@@ -277,6 +278,8 @@ export function UserDataTable() {
   const toolbar = () => {
     return (
       <UserDataTableToolbarItems
+        searchDropdownOpen={searchDropdownOpen}
+        setSearchDropdownOpen={setSearchDropdownOpen}
         realm={realm}
         hasSelectedRows={selectedRows.length === 0}
         toggleDeleteDialog={toggleDeleteDialog}

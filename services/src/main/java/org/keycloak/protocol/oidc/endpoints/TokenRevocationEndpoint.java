@@ -51,10 +51,10 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -266,7 +266,7 @@ public class TokenRevocationEndpoint {
     private void revokeAccessToken() {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         int currentTime = Time.currentTime();
-        long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
+        long lifespanInSecs = Math.max(token.getExp() - currentTime + 1, 10);
         singleUseStore.put(token.getId() + SingleUseObjectProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
     }
 }

@@ -1,6 +1,6 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant } from "@patternfly/react-core";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -34,10 +34,10 @@ export default function CreateClientRole() {
         ...role,
       });
 
-      const createdRole = await adminClient.clients.findRole({
+      const createdRole = (await adminClient.clients.findRole({
         id: clientId!,
         roleName: role.name!,
-      });
+      }))!;
 
       addAlert(t("roleCreated"), AlertVariant.success);
       navigate(
@@ -54,16 +54,17 @@ export default function CreateClientRole() {
   };
 
   return (
-    <RoleForm
-      form={form}
-      onSubmit={onSubmit}
-      cancelLink={toClient({
-        realm,
-        clientId: clientId!,
-        tab: "roles",
-      })}
-      role="manage-clients"
-      editMode={false}
-    />
+    <FormProvider {...form}>
+      <RoleForm
+        onSubmit={onSubmit}
+        cancelLink={toClient({
+          realm,
+          clientId: clientId!,
+          tab: "roles",
+        })}
+        role="manage-clients"
+        editMode={false}
+      />
+    </FormProvider>
   );
 }

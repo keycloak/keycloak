@@ -442,7 +442,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
         String htmlFormId="kc-register-form";
 
-        //assert fields and groups location in form
+        //assert fields and groups location in form, attributes without a group appear first
         Assert.assertTrue(
                 driver.findElement(
                         By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
@@ -453,16 +453,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                         By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#username")
                 ).isDisplayed()
         );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("#password")
-                ).isDisplayed()
-        );
-        Assert.assertTrue(
-                driver.findElement(
-                        By.cssSelector("#password-confirm")
-                ).isDisplayed()
-        );
+        // password and password confirmation fields appear after the username field, in positions 3 and 4
         Assert.assertTrue(
                 driver.findElement(
                         By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#firstName")

@@ -65,6 +65,11 @@ public class KeycloakDistConfiguratorTest {
     }
 
     @Test
+    public void cache() {
+        testFirstClassCitizen(Map.of("cache-config-file", "cache/file.xml"));
+    }
+
+    @Test
     public void http() {
         final Map<String, String> expectedValues = Map.of(
                 "http-enabled", "true",
@@ -128,6 +133,15 @@ public class KeycloakDistConfiguratorTest {
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_ADMIN_URL");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT");
         assertEnvVarNotPresent(envVars, "KC_HOSTNAME_STRICT_BACKCHANNEL");
+    }
+
+    @Test
+    public void proxy() {
+        final Map<String, String> expectedValues = Map.of(
+                "proxy-headers", "forwarded"
+        );
+
+        testFirstClassCitizen(expectedValues);
     }
 
     /* UTILS */

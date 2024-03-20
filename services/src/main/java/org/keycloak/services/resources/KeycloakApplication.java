@@ -71,6 +71,8 @@ import java.util.Set;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ *
+ * Note: the classes and singletons are not used by Quarkus - see the KeycloakProcessor to do exclusions
  */
 public class KeycloakApplication extends Application {
 
@@ -318,10 +320,7 @@ public class KeycloakApplication extends Application {
                                 if (users.getUserByUsername(realm, userRep.getUsername()) != null) {
                                     ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                                 } else {
-                                    UserModel user = users.addUser(realm, userRep.getUsername());
-                                    user.setEnabled(userRep.isEnabled());
-                                    RepresentationToModel.createCredentials(userRep, session, realm, user, false);
-                                    RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                    UserModel user = RepresentationToModel.createUser(session, realm, userRep);
                                     ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                                 }
                             });

@@ -17,6 +17,7 @@
 
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.smallrye.config.ConfigMapping;
 
 import java.util.Map;
@@ -24,7 +25,7 @@ import java.util.Map;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@ConfigMapping(prefix = "operator")
+@ConfigMapping(prefix = "kc.operator")
 public interface Config {
     Keycloak keycloak();
 
@@ -32,7 +33,18 @@ public interface Config {
         String image();
         String imagePullPolicy();
         boolean startOptimized();
+        int pollIntervalSeconds();
 
+        ResourceRequirements resources();
         Map<String, String> podLabels();
+    }
+
+    interface ResourceRequirements {
+        Resources requests();
+        Resources limits();
+
+        interface Resources {
+            Quantity memory();
+        }
     }
 }

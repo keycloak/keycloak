@@ -32,6 +32,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
 
+import org.keycloak.operator.Config;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
@@ -50,14 +51,16 @@ dependents = {
 public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport> {
 
     @Inject
+    Config config;
+
+    @Inject
     KubernetesClient client;
 
     volatile KeycloakRealmImportJobDependentResource jobDependentResource;
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
-        this.jobDependentResource = new KeycloakRealmImportJobDependentResource();
-        this.jobDependentResource.setKubernetesClient(context.getClient());
+        this.jobDependentResource = new KeycloakRealmImportJobDependentResource(config);
         return EventSourceInitializer.nameEventSourcesFromDependentResource(context, jobDependentResource);
     }
 

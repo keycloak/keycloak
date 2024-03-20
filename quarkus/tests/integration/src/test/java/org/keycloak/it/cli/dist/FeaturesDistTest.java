@@ -10,7 +10,6 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -25,10 +24,9 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@LegacyStore
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz:v1, client-secret-rotation:v1, dpop:v1, multi-site:v1, recovery-codes:v1, scripts:v1, token-exchange:v1, update-email:v1";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz:v1, client-secret-rotation:v1, dpop:v1, recovery-codes:v1, scripts:v1, token-exchange:v1, update-email:v1";
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {

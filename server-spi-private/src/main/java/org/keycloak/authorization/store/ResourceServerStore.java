@@ -19,7 +19,6 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 
 /**
  * A {@link ResourceServerStore} is responsible to manage the persistence of {@link ResourceServer} instances.
@@ -47,13 +46,10 @@ public interface ResourceServerStore {
     /**
      * Returns a {@link ResourceServer} instance based on its identifier.
      *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param id the identifier of an existing resource server instance
-     *
      * @return the resource server instance with the given identifier or null if no instance was found
      */
-    ResourceServer findById(RealmModel realm, String id);
+    ResourceServer findById(String id);
 
     /**
      * Returns a {@link ResourceServer} instance based on a client.

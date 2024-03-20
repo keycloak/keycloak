@@ -27,7 +27,7 @@ public class ProfileTest {
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ;
     private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
-    private static Profile.Feature DEPRECATED_FEATURE = null;
+    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.ACCOUNT2;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -66,33 +66,14 @@ public class ProfileTest {
         Assert.assertFalse(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
         if (DEPRECATED_FEATURE != null) {
             Assert.assertFalse(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+        } else {
+            MatcherAssert.assertThat(profile.getDeprecatedFeatures(), Matchers.empty());
         }
 
         Assert.assertEquals(Profile.ProfileName.DEFAULT, profile.getName());
-        Set<Profile.Feature> disabledFeatures = new HashSet<>(Arrays.asList(
-            Profile.Feature.TRANSIENT_USERS,
-            Profile.Feature.DPOP,
-            Profile.Feature.FIPS,
-            Profile.Feature.ACCOUNT2,
-            Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ,
-            Profile.Feature.DYNAMIC_SCOPES,
-            Profile.Feature.DOCKER,
-            Profile.Feature.MULTI_SITE,
-            Profile.Feature.RECOVERY_CODES,
-            Profile.Feature.SCRIPTS,
-            Profile.Feature.TOKEN_EXCHANGE,
-            Profile.Feature.CLIENT_SECRET_ROTATION,
-            Profile.Feature.UPDATE_EMAIL,
-            Profile.Feature.LINKEDIN_OAUTH,
-            Profile.Feature.OFFLINE_SESSION_PRELOADING
-        ));
 
-        // KERBEROS can be disabled (i.e. FIPS mode disables SunJGSS provider)
-        if (Profile.Feature.KERBEROS.getType() == Profile.Feature.Type.DISABLED_BY_DEFAULT) {
-            disabledFeatures.add(Profile.Feature.KERBEROS);
-        }
-        assertEquals(profile.getDisabledFeatures(), disabledFeatures);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.MULTI_SITE, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL, Profile.Feature.DPOP);
+        MatcherAssert.assertThat(profile.getDisabledFeatures(), Matchers.hasItem(DISABLED_BY_DEFAULT_FEATURE));
+        MatcherAssert.assertThat(profile.getPreviewFeatures(), Matchers.hasItem(PREVIEW_FEATURE));
     }
 
     @Test

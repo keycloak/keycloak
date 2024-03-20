@@ -27,7 +27,7 @@ export default class RealmSettingsPage extends CommonPage {
   adminThemeList = "#kc-admin-ui-theme + ul";
   selectEmailTheme = "#kc-email-theme";
   emailThemeList = "#kc-email-theme + ul";
-  hostInput = "#kc-host";
+  hostInput = "smtpServer.host";
   ssoSessionIdleSelectMenu = "#kc-sso-session-idle-select-menu";
   ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu > div > ul";
   ssoSessionMaxSelectMenu = "#kc-sso-session-max-select-menu";
@@ -71,18 +71,19 @@ export default class RealmSettingsPage extends CommonPage {
   forgotPwdSwitch = "forgot-pw-switch";
   rememberMeSwitch = "remember-me-switch";
   emailAsUsernameSwitch = "email-as-username-switch";
+  editUsernameSwitch = "edit-username-switch";
   loginWithEmailSwitch = "login-with-email-switch";
   duplicateEmailsSwitch = "duplicate-emails-switch";
   verifyEmailSwitch = "verify-email-switch";
   authSwitch = "email-authentication-switch";
-  fromInput = "sender-email-address";
+  fromInput = "smtpServer.from";
   enableSslCheck = "enable-ssl";
   enableStartTlsCheck = "enable-start-tls";
   addProviderDropdown = "addProviderDropdown";
   activeSwitch = "active";
   enabledSwitch = "enabled";
   addProviderButton = "add-provider-button";
-  displayName = "name-input";
+  displayName = "name";
   enableEvents = "eventsEnabled";
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
@@ -96,9 +97,9 @@ export default class RealmSettingsPage extends CommonPage {
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
   addBundleButton = "add-translationBtn";
-  confirmAddBundle = "add-bundle-confirm-button";
-  keyInput = "key-input";
-  valueInput = "value-input";
+  confirmAddTranslation = "add-translation-confirm-button";
+  keyInput = "key";
+  valueInput = "value";
   deleteAction = "delete-action";
   modalConfirm = "confirm";
   ssoSessionIdleInput = "sso-session-idle-input";
@@ -172,8 +173,8 @@ export default class RealmSettingsPage extends CommonPage {
   #jsonEditorSelect = "jsonEditor-profilesView";
   #formViewSelectPolicies = "formView-policiesView";
   #jsonEditorSelectPolicies = "jsonEditor-policiesView";
-  #newClientProfileNameInput = "client-profile-name";
-  #newClientProfileDescriptionInput = "client-profile-description";
+  #newClientProfileNameInput = "name";
+  #newClientProfileDescriptionInput = "description";
   #saveNewClientProfileBtn = "saveCreateProfile";
   #cancelNewClientProfile = "cancelCreateProfile";
   #createPolicyEmptyStateBtn = "no-client-policies-empty-action";
@@ -221,7 +222,7 @@ export default class RealmSettingsPage extends CommonPage {
   #eventListenersSaveBtn = "saveEventListenerBtn";
   #eventListenersRevertBtn = "revertEventListenerBtn";
   #eventListenersInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
-  #eventListenersDrpDwnOption = ".pf-c-select__menu-item";
+  #eventListenersDrpDwnOption = ".pf-c-select__menu";
   #eventListenersDrwDwnSelect =
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   #eventListenerRemove = '[data-ouia-component-id="Remove"]';
@@ -233,9 +234,9 @@ export default class RealmSettingsPage extends CommonPage {
   #frontEndURL = "#kc-frontend-url";
   #requireSSL = "#kc-require-ssl";
   #unmanagedAttributes = "#kc-user-profile-unmanaged-attribute-policy";
-  #fromDisplayName = "from-display-name";
-  #replyToEmail = "#kc-reply-to";
-  #port = "#kc-port";
+  #fromDisplayName = "smtpServer.fromDisplayName";
+  #replyToEmail = "smtpServer.replyTo";
+  #port = "smtpServer.port";
 
   #publicKeyBtn = ".kc-keys-list > tbody > tr > td > .button-wrapper > button";
   #localizationLocalesSubTab = "rs-localization-locales-tab";
@@ -266,7 +267,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get(this.#modalDialogBodyText).contains(
       "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
     );
-    cy.findByTestId(this.modalConfirm).contains("Disable").click();
+    cy.findByTestId(this.modalConfirm).click();
   }
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -299,7 +300,8 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   fillHostField(host: string) {
-    cy.get(this.hostInput).clear().type(host);
+    cy.findByTestId(this.hostInput).clear();
+    cy.findByTestId(this.hostInput).type(host);
     return this;
   }
 
@@ -338,11 +340,13 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   fillReplyToEmail(email: string) {
-    cy.get(this.#replyToEmail).clear().type(email);
+    cy.findByTestId(this.#replyToEmail).clear();
+    cy.findByTestId(this.#replyToEmail).type(email);
   }
 
   fillPort(port: string) {
-    cy.get(this.#port).clear().type(port);
+    cy.findByTestId(this.#port).clear();
+    cy.findByTestId(this.#port).type(port);
   }
 
   fillFrontendURL(url: string) {
@@ -448,6 +452,22 @@ export default class RealmSettingsPage extends CommonPage {
     return this;
   }
 
+  assertSwitch(switchName: string, on: boolean) {
+    cy.findByTestId(switchName).should("have.value", on ? "on" : "off");
+
+    return this;
+  }
+
+  setSwitch(switchName: string, on: boolean) {
+    if (on) {
+      cy.findByTestId(switchName).check({ force: true });
+    } else {
+      cy.findByTestId(switchName).uncheck({ force: true });
+    }
+
+    return this;
+  }
+
   toggleCheck(switchName: string) {
     cy.findByTestId(switchName).click();
 
@@ -474,7 +494,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.keyInput).type(key);
     cy.findByTestId(this.valueInput).type(value);
 
-    cy.findByTestId(this.confirmAddBundle).click({ force: true });
+    cy.findByTestId(this.confirmAddTranslation).click({ force: true });
 
     return this;
   }

@@ -1149,8 +1149,20 @@ public class GroupTest extends AbstractGroupTest {
         List<GroupRepresentation> allGroups = realm.groups().groups();
         assertEquals(20, allGroups.size());
 
-        List<GroupRepresentation> slice = realm.groups().groups(5, 7);
+        List<GroupRepresentation> slice = realm.groups().groups(0, 7);
         assertEquals(7, slice.size());
+
+        slice = realm.groups().groups(null, 7);
+        assertEquals(7, slice.size());
+
+        slice = realm.groups().groups(10, null);
+        assertEquals(10, slice.size());
+
+        slice = realm.groups().groups(5, 7);
+        assertEquals(7, slice.size());
+
+        slice = realm.groups().groups(15, 7);
+        assertEquals(5, slice.size());
 
         List<GroupRepresentation> search = realm.groups().groups("group1",0,20);
         assertEquals(11, search.size());

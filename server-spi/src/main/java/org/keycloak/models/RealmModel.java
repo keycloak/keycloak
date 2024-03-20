@@ -119,15 +119,15 @@ public interface RealmModel extends RoleContainerModel {
     String getAttribute(String name);
     default Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
     }
     default Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Long.valueOf(v) : defaultValue;
     }
     default Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
     }
     Map<String, String> getAttributes();
 
@@ -136,6 +136,8 @@ public interface RealmModel extends RoleContainerModel {
     void setBruteForceProtected(boolean value);
     boolean isPermanentLockout();
     void setPermanentLockout(boolean val);
+    int getMaxTemporaryLockouts();
+    void setMaxTemporaryLockouts(int val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
@@ -372,6 +374,9 @@ public interface RealmModel extends RoleContainerModel {
 
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
+
+    AuthenticationFlowModel getFirstBrokerLoginFlow();
+    void setFirstBrokerLoginFlow(AuthenticationFlowModel flow);
 
     /**
      * Returns authentications flows as a stream.

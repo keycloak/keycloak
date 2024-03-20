@@ -1,21 +1,16 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
+import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
@@ -30,13 +25,11 @@ export default function NewRealmForm() {
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { errors },
-  } = useForm<RealmRepresentation>({ mode: "onChange" });
+  const form = useForm<RealmRepresentation>({
+    mode: "onChange",
+  });
+
+  const { handleSubmit, setValue } = form;
 
   const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
@@ -64,60 +57,38 @@ export default function NewRealmForm() {
     <>
       <ViewHeader titleKey="createRealm" subKey="realmExplain" />
       <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="view-realm"
-          isReadOnly={!whoAmI.canCreateRealm()}
-        >
-          <JsonFileUpload
-            id="kc-realm-filename"
-            allowEditingUploadedText
-            onChange={handleFileChange}
-          />
-          <FormGroup
-            label={t("realmNameField")}
-            isRequired
-            fieldId="kc-realm-name"
-            validated={errors.realm ? "error" : "default"}
-            helperTextInvalid={errors.realm?.message}
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            onSubmit={handleSubmit(save)}
+            role="view-realm"
+            isReadOnly={!whoAmI.canCreateRealm()}
           >
-            <KeycloakTextInput
-              isRequired
-              id="kc-realm-name"
-              validated={errors.realm ? "error" : "default"}
-              {...register("realm", {
-                required: { value: true, message: t("required") },
-              })}
+            <JsonFileUpload
+              id="kc-realm-filename"
+              allowEditingUploadedText
+              onChange={handleFileChange}
             />
-          </FormGroup>
-          <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">
-            <Controller
+            <TextControl
+              name="realm"
+              label={t("realmNameField")}
+              rules={{ required: t("required") }}
+            />
+            <DefaultSwitchControl
               name="enabled"
+              label={t("enabled")}
               defaultValue={true}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="kc-realm-enabled-switch"
-                  name="enabled"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("enabled")}
-                />
-              )}
             />
-          </FormGroup>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("create")}
-            </Button>
-            <Button variant="link" onClick={() => navigate(-1)}>
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+            <ActionGroup>
+              <Button variant="primary" type="submit">
+                {t("create")}
+              </Button>
+              <Button variant="link" onClick={() => navigate(-1)}>
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

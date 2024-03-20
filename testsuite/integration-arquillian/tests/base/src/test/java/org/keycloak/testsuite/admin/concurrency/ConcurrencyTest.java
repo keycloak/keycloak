@@ -235,17 +235,11 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             c = realm.groups().group(id).toRepresentation();
             assertNotNull(c);
 
-            boolean retry = true;
-            int i = 0;
-            do {
-                List<String> groups = realm.groups().groups().stream()
-                    .map(GroupRepresentation::getName)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-                retry = !groups.contains(name);
-                i++;
-            } while(retry && i < 3);
-            assertFalse("Group " + name + " [" + id + "] " + " not found in group list", retry);
+            assertTrue("Group " + name + " [" + id + "] " + " not found in group list",
+                    realm.groups().groups().stream()
+                            .map(GroupRepresentation::getName)
+                            .filter(Objects::nonNull)
+                            .anyMatch(name::equals));
         }
     }
 

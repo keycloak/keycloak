@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -274,7 +275,7 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
     private void assertWelcomePage(String expectedAdminUrl) throws IOException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/", client);
+            SimpleHttp get = SimpleHttpDefault.doGet(AUTH_SERVER_ROOT + "/", client);
 
             for (Map.Entry<String, String> entry : createRequestHeaders(expectedAdminUrl).entrySet()) {
                 get.header(entry.getKey(), entry.getValue());
@@ -288,7 +289,7 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
     private void assertOldAdminPageJsPathSetCorrectly(String realm, String expectedAdminUrl) throws IOException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
+            SimpleHttp get = SimpleHttpDefault.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
 
             for (Map.Entry<String, String> entry : createRequestHeaders(expectedAdminUrl).entrySet()) {
                 get.header(entry.getKey(), entry.getValue());
@@ -302,7 +303,7 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
     private void assertAdminPage(String realm, String expectedFrontendUrl, String expectedAdminUrl) throws IOException, URISyntaxException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
+            SimpleHttp get = SimpleHttpDefault.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
 
             for (Map.Entry<String, String> entry : createRequestHeaders(expectedAdminUrl).entrySet()) {
                 get.header(entry.getKey(), entry.getValue());

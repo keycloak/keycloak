@@ -2,7 +2,6 @@ package org.keycloak.admin.ui.rest;
 
 import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.GET;
@@ -15,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.admin.ui.rest.model.RealmNameRepresentation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ForbiddenException;
@@ -37,26 +37,32 @@ public class UIRealmsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
-            summary = "Lists only the names of the realms",
-            description = "Returns a list of realm names based on what the caller is allowed to view"
+            summary = "Lists only the names and display names of the realms",
+            description = "Returns a list of realms containing only their name and displayName" +
+                    " based on what the caller is allowed to view"
     )
     @APIResponse(
             responseCode = "200",
             description = "",
             content = {@Content(
                     schema = @Schema(
-                            implementation = String.class,
+                            implementation = RealmNameRepresentation.class,
                             type = SchemaType.ARRAY
                     )
             )}
     )
-    public Stream<String> getRealmNames() {
-        Stream<String> realms = session.realms().getRealmsStream()
-                                .filter(realm -> {
-                                    RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
-                                    return eval.canView(realm) || eval.isAdmin(realm);
-                                  })
-                                .map(RealmModel::getName);
+    public Stream<RealmNameRepresentation> getRealms() {
+        Stream<RealmNameRepresentation> realms = session.realms().getRealmsStream()
+                .filter(realm -> {
+                    RealmsPermissionEvaluator eval = AdminPermissions.realms(session, auth.adminAuth());
+                    return eval.canView(realm) || eval.isAdmin(realm);
+                })
+                .map((RealmModel realm) -> {
+                    RealmNameRepresentation realmNameRep = new RealmNameRepresentation();
+                    realmNameRep.setDisplayName(realm.getDisplayName());
+                    realmNameRep.setName(realm.getName());
+                    return realmNameRep;
+                });
         return throwIfEmpty(realms, new ForbiddenException());
     }
 }

@@ -25,7 +25,6 @@ import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 
 import jakarta.persistence.EntityManager;
@@ -58,7 +57,7 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
         this.entityManager.persist(entity);
 
-        return new ResourceServerAdapter(client.getRealm(), entity, entityManager, provider.getStoreFactory());
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
@@ -122,14 +121,14 @@ public class JPAResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public ResourceServer findById(RealmModel realm, String id) {
+    public ResourceServer findById(String id) {
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return null;
-        return new ResourceServerAdapter(provider.getRealm(), entity, entityManager, provider.getStoreFactory());
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public ResourceServer findByClient(ClientModel client) {
-        return findById(JPAAuthorizationStoreFactory.NULL_REALM, client.getId());
+        return findById(client.getId());
     }
 }

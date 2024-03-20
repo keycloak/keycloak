@@ -4,8 +4,6 @@
 <@tmpl.guide
 title="Deploy {jdgserver_name} for HA with the {jdgserver_name} Operator"
 summary="Building block for an {jdgserver_name} deployment on Kubernetes"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/25269"
 tileVisible="false" >
 
 include::partials/infinispan/infinispan-attributes.adoc[]

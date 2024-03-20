@@ -3,19 +3,16 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  FormGroup,
   PageSection,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
+import { TextAreaControl } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { useFetch } from "../../utils/useFetch";
 import { prettyPrintJSON } from "../../util";
 import { useParams } from "../../utils/useParams";
@@ -68,25 +65,14 @@ export const AuthorizationExport = () => {
         role="manage-authorization"
         className="pf-u-mt-lg"
       >
-        <FormGroup
+        <TextAreaControl
+          name="authDetails"
           label={t("authDetails")}
-          labelIcon={
-            <HelpItem
-              helpText={t("authDetailsHelp")}
-              fieldLabelId="authDetails"
-            />
-          }
-          fieldId="client"
-        >
-          <KeycloakTextArea
-            id="authorizationDetails"
-            readOnly
-            resizeOrientation="vertical"
-            value={code}
-            aria-label={t("authDetails")}
-            rows={10}
-          />
-        </FormGroup>
+          labelIcon={t("authDetailsHelp")}
+          defaultValue={code!}
+          readOnly
+          rows={10}
+        />
         <ActionGroup>
           <Button
             data-testid="authorization-export-download"

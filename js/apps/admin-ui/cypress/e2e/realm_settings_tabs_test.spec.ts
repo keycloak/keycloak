@@ -101,13 +101,15 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.fillReplyToEmail("replyTo@email.com");
     realmSettingsPage.fillPort("10");
     cy.findByTestId("email-tab-save").click();
-    cy.get("#kc-display-name-helper").contains("You must enter a valid email.");
-    cy.get("#kc-host-helper").contains("Required field");
+    cy.get("#smtpServer\\.from-helper").contains(
+      "You must enter a valid email.",
+    );
+    cy.get("#smtpServer\\.host-helper").contains("Required field");
 
     cy.findByTestId("email-tab-revert").click();
-    cy.findByTestId("sender-email-address").should("be.empty");
-    cy.findByTestId("from-display-name").should("be.empty");
-    cy.get("#kc-port").should("be.empty");
+    cy.findByTestId("smtpServer.from").should("be.empty");
+    cy.findByTestId("smtpServer.fromDisplayName").should("be.empty");
+    cy.findByTestId("smtpServer.port").should("be.empty");
 
     realmSettingsPage.addSenderEmail("example@example.com");
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);
@@ -138,6 +140,7 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Realm header settings- update all inputs", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
@@ -152,11 +155,15 @@ describe("Realm settings tabs tests", () => {
       realmSettingsPage.saveSecurityDefensesHeaders();
       masthead.checkNotificationMessage("Realm successfully updated");
     });
+
     it("Brute force detection- update values", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.goToSecurityDefensesTab();
       realmSettingsPage.goToSecurityDefensesBruteForceTab();
-      cy.get("#bruteForceProtected").click({ force: true });
+      cy.get("#kc-brute-force-mode").click();
+      cy.findByTestId("select-brute-force-mode")
+        .contains("Lockout temporarily")
+        .click();
       cy.findByTestId("waitIncrementSeconds").type("1");
       cy.findByTestId("maxFailureWaitSeconds").type("1");
       cy.findByTestId("maxDeltaTimeSeconds").type("1");
@@ -199,7 +206,7 @@ describe("Realm settings tabs tests", () => {
       addBundle();
 
       masthead.checkNotificationMessage(
-        "Success! The message bundle has been added.",
+        "Success! The translation has been added.",
       );
 
       cy.findByTestId("editable-rows-table")
@@ -209,9 +216,7 @@ describe("Realm settings tabs tests", () => {
       cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Realm Overrides - Search for and delete bundle", () => {
@@ -229,11 +234,9 @@ describe("Realm settings tabs tests", () => {
 
       cy.findByTestId("selectAll").click();
       cy.get('[data-testid="toolbar-deleteBtn"] button').click();
-      cy.findByTestId("delete-selected-bundleBtn").click();
+      cy.findByTestId("delete-selected-TranslationBtn").click();
       cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Realm Overrides - Edit and cancel edit message bundle", () => {
@@ -243,12 +246,15 @@ describe("Realm settings tabs tests", () => {
 
       addBundle();
 
-      cy.findByTestId("editUserLabelBtn-0").click();
-      cy.findByTestId("editUserLabelCancelBtn-0").click();
+      cy.findByTestId("editTranslationBtn-0").click();
+      cy.findByTestId("editTranslationCancelBtn-0").click();
 
-      cy.findByTestId("editUserLabelBtn-0").click();
-      cy.findByTestId("editUserLabelInput-0").click().clear().type("def");
-      cy.findByTestId("editUserLabelAcceptBtn-0").click();
+      cy.findByTestId("editTranslationBtn-0").click();
+      cy.findByTestId("editTranslationValueInput-0")
+        .click()
+        .clear()
+        .type("def");
+      cy.findByTestId("editTranslationAcceptBtn-0").click();
 
       cy.findByTestId("editable-rows-table")
         .contains("td", "def")
@@ -258,9 +264,7 @@ describe("Realm settings tabs tests", () => {
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 
-      masthead.checkNotificationMessage(
-        "Successfully removed message(s) from the bundle.",
-      );
+      masthead.checkNotificationMessage("Successfully removed translation(s).");
     });
 
     it("Effective Message Bundles - Check before search message", () => {

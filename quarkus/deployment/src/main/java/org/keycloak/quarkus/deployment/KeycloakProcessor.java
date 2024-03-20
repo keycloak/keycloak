@@ -17,9 +17,12 @@
 
 package org.keycloak.quarkus.deployment;
 
+import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.agroal.spi.JdbcDriverBuildItem;
+import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
+import io.quarkus.arc.processor.AnnotationsTransformer;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
@@ -29,7 +32,6 @@ import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
@@ -43,8 +45,8 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
-import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
+import org.eclipse.microprofile.health.Readiness;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
@@ -57,7 +59,6 @@ import org.jboss.jandex.MethodInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.processor.scanning.MethodScanner;
-import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -67,6 +68,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -82,8 +85,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.integration.health.ReactiveLivenessHandler;
-import org.keycloak.quarkus.runtime.integration.health.ReactiveReadinessHandler;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -94,15 +95,17 @@ import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
-import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
-import org.keycloak.quarkus.runtime.services.health.KeycloakReadyAsyncHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.LoadBalancerResource;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
 import org.keycloak.theme.FolderThemeProviderFactory;
@@ -112,6 +115,7 @@ import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
+import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
@@ -124,6 +128,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -134,7 +139,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
@@ -144,8 +148,6 @@ import java.util.logging.Handler;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
-import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
@@ -153,7 +155,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getProper
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
-import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.quarkus.runtime.storage.legacy.database.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -260,11 +262,32 @@ class KeycloakProcessor {
     }
 
     /**
+     * Parse the default configuration for the User Profile provider
+     */
+    @BuildStep
+    @Produce(UserProfileBuildItem.class)
+    UserProfileBuildItem parseDefaultUserProfileConfig() {
+        UPConfig defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        logger.debug("Parsing default configuration for the User Profile provider");
+        return new UserProfileBuildItem(defaultConfig);
+    }
+
+    /**
+     * Set the default configuration to the User Profile provider
+     */
+    @BuildStep
+    @Consume(ProfileBuildItem.class)
+    @Record(ExecutionTime.STATIC_INIT)
+    void setDefaultUserProfileConfig(KeycloakRecorder recorder, UserProfileBuildItem configuration) {
+        recorder.setDefaultUserProfileConfiguration(configuration.getDefaultConfig());
+    }
+
+    /**
      * <p>Configures the persistence unit for Quarkus.
      *
      * <p>The {@code hibernate-orm} extension expects that the dialect is statically
      * set to the persistence unit if there is any from the classpath and we use this method to obtain the dialect from the configuration
-     * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be 
+     * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be
      * allowed to set any additional defaults that we think that makes sense.
      *
      * @param config
@@ -437,9 +460,9 @@ class KeycloakProcessor {
                 .map(ParsedPersistenceXmlDescriptor::getName)
                 .filter(Predicate.not("keycloak-default"::equals)).forEach((String unitName) -> {
                     NamedJpaConnectionProviderFactory factory = new NamedJpaConnectionProviderFactory();
-                    
+
                     factory.setUnitName(unitName);
-                    
+
                     factories.get(spi).get(JpaConnectionProvider.class).put(unitName, NamedJpaConnectionProviderFactory.class);
                     preConfiguredProviders.put(unitName, factory);
                 });
@@ -557,8 +580,8 @@ class KeycloakProcessor {
     }
 
     /**
-     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
-     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
+     * This will cause quarkus to include specified modules in the jandex index. For example keycloak-services is needed as it includes
+     * most of the JAX-RS resources, which are required to register Resteasy builtin providers.
      * Similar reason is liquibase
      *
      * @param indexDependencyBuildItemBuildProducer
@@ -576,50 +599,24 @@ class KeycloakProcessor {
     }
 
     @BuildStep
-    void disableMetricsEndpoint(BuildProducer<RouteBuildItem> routes) {
-        if (!isMetricsEnabled()) {
-            routes.produce(RouteBuildItem.builder().route(DEFAULT_METRICS_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
+    void disableHealthCheckBean(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        if (!isHealthEnabled() || !isMetricsEnabled()) {
+            // disables the single check we provide which depends on metrics enabled
+            ClassInfo disabledBean = index.getIndex()
+                    .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
+            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
         }
     }
 
+    // We can't use quarkus.datasource.health.enabled=false as that would remove the DataSourceHealthCheck from CDI and
+    // it can't be instantiated via constructor as it now includes some field injection points. So we just make it a regular
+    // bean without the @Readiness annotation so it won't be used as a health check on it's own.
     @BuildStep
-    void disableHealthEndpoint(BuildProducer<RouteBuildItem> routes, BuildProducer<BuildTimeConditionBuildItem> removeBeans,
-            CombinedIndexBuildItem index) {
-        boolean healthDisabled = !isHealthEnabled();
-
-        if (healthDisabled) {
-            routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
-        } else {
-            // local solution until https://github.com/quarkusio/quarkus/issues/35099 is available in Quarkus
-            if (!isHealthClassicProbesEnabled()) {
-                routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(new ReactiveLivenessHandler()).build());
-                routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/ready")).handler(new ReactiveReadinessHandler()).build());
-            }
-        }
-
-        boolean metricsDisabled = !isMetricsEnabled();
-
-        if (healthDisabled || metricsDisabled) {
-            // disables the single check we provide which depends on metrics enabled
-            ClassInfo disabledBean1 = index.getIndex()
-                    .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean1.asClass(), false));
-            ClassInfo disabledBean2 = index.getIndex()
-                    .getClassByName(DotName.createSimple(KeycloakReadyAsyncHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean2.asClass(), false));
-        } else {
-            if (isHealthClassicProbesEnabled()) {
-                // disable new async check
-                ClassInfo disabledBean2 = index.getIndex()
-                        .getClassByName(DotName.createSimple(KeycloakReadyAsyncHealthCheck.class.getName()));
-                removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean2.asClass(), false));
-            } else {
-                // disable old classic check
-                ClassInfo disabledBean1 = index.getIndex()
-                        .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-                removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean1.asClass(), false));
-            }
-        }
+    AnnotationsTransformerBuildItem disableDefaultDataSourceHealthCheck() {
+        return new AnnotationsTransformerBuildItem(AnnotationsTransformer.appliedToClass()
+                .whenClass(c -> c.name().equals(DotName.createSimple(DataSourceHealthCheck.class)))
+                .thenTransform(t -> t.remove(
+                        a -> a.name().equals(DotName.createSimple(Readiness.class)))));
     }
 
     @BuildStep
@@ -628,6 +625,21 @@ class KeycloakProcessor {
             BuildProducer<MethodScannerBuildItem> scanner) {
         buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                 KeycloakApplication.class.getName())), false));
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    AdminRoot.class.getName())), false));
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.JS_ADAPTER)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    JsResource.class.getName())), false));
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
+            buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
+                    LoadBalancerResource.class.getName())), false));
+        }
 
         KeycloakHandlerChainCustomizer chainCustomizer = new KeycloakHandlerChainCustomizer();
 
@@ -640,7 +652,6 @@ class KeycloakProcessor {
         }));
     }
 
-    @Consume(BootstrapConfigSetupCompleteBuildItem.class)
     @Consume(ProfileBuildItem.class)
     @Produce(CryptoProviderInitBuildItem.class)
     @BuildStep
@@ -686,12 +697,12 @@ class KeycloakProcessor {
                 }
             }
 
-            Map<String, ProviderFactory> deployedScriptProviders = loadDeployedScriptProviders(classLoader, spi);
+            Map<String, ProviderFactory<?>> deployedScriptProviders = loadDeployedScriptProviders(classLoader, spi);
 
             loadedFactories.addAll(deployedScriptProviders.values());
             preConfiguredProviders.putAll(deployedScriptProviders);
 
-            for (ProviderFactory factory : loadedFactories) {
+            for (ProviderFactory<?> factory : loadedFactories) {
                 if (IGNORED_PROVIDER_FACTORY.contains(factory.getClass())) {
                     continue;
                 }
@@ -716,31 +727,29 @@ class KeycloakProcessor {
         return factories;
     }
 
-    private Map<String, ProviderFactory> loadDeployedScriptProviders(ClassLoader classLoader, Spi spi) {
-        Map<String, ProviderFactory> providers = new HashMap<>();
+    private Map<String, ProviderFactory<?>> loadDeployedScriptProviders(ClassLoader classLoader, Spi spi) {
+        Map<String, ProviderFactory<?>> providers = new HashMap<>();
 
         if (supportsDeployeableScripts(spi)) {
             try {
-                Enumeration<URL> urls = classLoader.getResources(KEYCLOAK_SCRIPTS_JSON_PATH);
+                Enumeration<URL> descriptorsUrls = classLoader.getResources(KEYCLOAK_SCRIPTS_JSON_PATH);
 
-                while (urls.hasMoreElements()) {
-                    URL url = urls.nextElement();
-                    int fileSeparator = url.getFile().indexOf(JAR_FILE_SEPARATOR);
+                while (descriptorsUrls.hasMoreElements()) {
+                    URL url = descriptorsUrls.nextElement();
+                    List<ScriptProviderDescriptor> descriptors = getScriptProviderDescriptorsFromJarFile(url);
 
-                    if (fileSeparator != -1) {
-                        JarFile jarFile = new JarFile(url.getFile().substring("file:".length(), fileSeparator));
-                        JarEntry descriptorEntry = jarFile.getJarEntry(KEYCLOAK_SCRIPTS_JSON_PATH);
-                        ScriptProviderDescriptor descriptor;
+                    if (!Environment.isDistribution()) {
+                        // script providers are only loaded from classpath when running embedded
+                        descriptors = new ArrayList<>(descriptors);
+                        descriptors.addAll(getScriptProviderDescriptorsFromClassPath(url));
+                    }
 
-                        try (InputStream is = jarFile.getInputStream(descriptorEntry)) {
-                            descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);
-                        }
-
+                    for (ScriptProviderDescriptor descriptor : descriptors) {
                         for (Entry<String, List<ScriptProviderMetadata>> entry : descriptor.getProviders().entrySet()) {
                             if (isScriptForSpi(spi, entry.getKey())) {
                                 for (ScriptProviderMetadata metadata : entry.getValue()) {
-                                    ProviderFactory provider = createDeployableScriptProvider(jarFile, entry, metadata);
-                                    providers.put(metadata.getId(), provider);
+                                    ProviderFactory<?> factory = DEPLOYEABLE_SCRIPT_PROVIDERS.get(entry.getKey()).apply(metadata);
+                                    providers.put(metadata.getId(), factory);
                                 }
                             }
                         }
@@ -754,31 +763,89 @@ class KeycloakProcessor {
         return providers;
     }
 
-    private ProviderFactory createDeployableScriptProvider(JarFile jarFile, Entry<String, List<ScriptProviderMetadata>> entry,
-            ScriptProviderMetadata metadata) throws IOException {
-        String fileName = metadata.getFileName();
+    private List<ScriptProviderDescriptor> getScriptProviderDescriptorsFromClassPath(URL url) throws IOException {
+        String file = url.getFile();
 
-        if (fileName == null) {
-            throw new RuntimeException("You must provide the script file name");
+        if (!file.endsWith(".json")) {
+            return List.of();
         }
 
-        JarEntry scriptFile = jarFile.getJarEntry(fileName);
+        List<ScriptProviderDescriptor> descriptors = new ArrayList<>();
 
-        try (InputStream in = jarFile.getInputStream(scriptFile)) {
-            metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
+        try (InputStream is = url.openStream()) {
+            ScriptProviderDescriptor descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);
+
+            configureScriptDescriptor(descriptor, fileName -> {
+                // descriptor is at META-INF/
+                Path basePath = Path.of(url.getPath()).getParent().getParent();
+
+                try {
+                    return basePath.resolve(fileName).toUri().toURL().openStream();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read script file from: " + fileName);
+                }
+            });
+            descriptors.add(descriptor);
         }
 
-        metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+        return descriptors;
+    }
 
-        String name = metadata.getName();
+    private List<ScriptProviderDescriptor> getScriptProviderDescriptorsFromJarFile(URL url) throws IOException {
+        String file = url.getFile();
 
-        if (name == null) {
-            name = fileName;
+        if (!file.contains(JAR_FILE_SEPARATOR)) {
+            return List.of();
         }
 
-        metadata.setName(name);
+        List<ScriptProviderDescriptor> descriptors = new ArrayList<>();
 
-        return DEPLOYEABLE_SCRIPT_PROVIDERS.get(entry.getKey()).apply(metadata);
+        try (JarFile jarFile = new JarFile(file.substring("file:".length(), file.indexOf(JAR_FILE_SEPARATOR)))) {
+            JarEntry descriptorEntry = jarFile.getJarEntry(KEYCLOAK_SCRIPTS_JSON_PATH);
+
+            try (InputStream is = jarFile.getInputStream(descriptorEntry)) {
+                ScriptProviderDescriptor descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);
+
+                configureScriptDescriptor(descriptor, fileName -> {
+                    try {
+                        JarEntry scriptFile = jarFile.getJarEntry(fileName);
+                        return jarFile.getInputStream(scriptFile);
+                    } catch (IOException cause) {
+                        throw new RuntimeException("Failed to read script file from file: " + fileName, cause);
+                    }
+                });
+
+                descriptors.add(descriptor);
+            }
+        }
+
+        return descriptors;
+    }
+
+    private static void configureScriptDescriptor(ScriptProviderDescriptor descriptor, Function<String, InputStream> jsFileLoader) throws IOException {
+        for (List<ScriptProviderMetadata> metadatas : descriptor.getProviders().values()) {
+            for (ScriptProviderMetadata metadata : metadatas) {
+                String fileName = metadata.getFileName();
+
+                if (fileName == null) {
+                    throw new RuntimeException("You must provide the script file name");
+                }
+
+                try (InputStream in = jsFileLoader.apply(fileName)) {
+                    metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
+                }
+
+                metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+
+                String name = metadata.getName();
+
+                if (name == null) {
+                    name = fileName;
+                }
+
+                metadata.setName(name);
+            }
+        }
     }
 
     private boolean isScriptForSpi(Spi spi, String type) {
@@ -850,15 +917,11 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
+        return Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
     }
 
     private boolean isHealthEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
-    }
-
-    private boolean isHealthClassicProbesEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-classic-probes-enabled")).orElse(false);
+        return Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {

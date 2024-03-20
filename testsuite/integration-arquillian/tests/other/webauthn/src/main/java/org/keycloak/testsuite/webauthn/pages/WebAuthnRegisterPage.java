@@ -21,6 +21,7 @@ import org.hamcrest.CoreMatchers;
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
@@ -67,7 +68,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
         if (!isRegisterAlertPresent(ALERT_DEFAULT_TIMEOUT)) {
-            throw new TimeoutException("Cannot register Security Key due to missing prompt for registration");
+            throw new TimeoutException("Cannot register Passkey due to missing prompt for registration");
         }
 
         Alert promptDialog = driver.switchTo().alert();
@@ -85,7 +86,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
             // label edit after registering authenticator by .create()
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(seconds));
             Alert promptDialog = wait.until(ExpectedConditions.alertIsPresent());
-            assertThat(promptDialog.getText(), CoreMatchers.is("Please input your registered authenticator's label"));
+            assertThat(promptDialog.getText(), CoreMatchers.is("Please input your registered passkey's label"));
             return true;
         } catch (TimeoutException e) {
             return false;
@@ -114,8 +115,8 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
     @Override
     public boolean isCurrent() {
         final String formTitle = getFormTitle();
-        return formTitle != null && formTitle.equals("Security Key Registration") &&
-                driver.getPageSource().contains("navigator.credentials.create");
+        return formTitle != null && formTitle.equals("Passkey Registration") &&
+                driver.findElement(By.id("registerWebAuthn")).isDisplayed();
     }
 
     @Override

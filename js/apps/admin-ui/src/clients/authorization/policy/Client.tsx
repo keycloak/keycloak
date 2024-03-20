@@ -88,6 +88,7 @@ export const Client = () => {
             onToggle={(open) => setOpen(open)}
             isOpen={open}
             selections={field.value}
+            aria-label={t("selectClients")}
             onFilter={(_, value) => {
               setSearch(value);
               return convert(clients);

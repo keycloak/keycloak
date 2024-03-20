@@ -246,7 +246,7 @@ export const KeyBasedAttributeInput = ({
         <Tr>
           <Td>
             <Button
-              aria-label={t("addAttribute")}
+              aria-label={t("addAttribute", { label: t("attribute") })}
               id={`${name}-plus-icon`}
               variant="link"
               className="kc-attributes__plus-icon"
@@ -258,7 +258,7 @@ export const KeyBasedAttributeInput = ({
               isDisabled={!watchLastValue}
               data-testid="attribute-add-row"
             >
-              {t("addAttribute")}
+              {t("addAttribute", { label: t("attribute") })}
             </Button>
           </Td>
         </Tr>

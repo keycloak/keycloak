@@ -18,7 +18,7 @@ describe("Masthead tests", () => {
     it("Go to account console and back to admin console", () => {
       sidebarPage.waitForPageLoad();
       masthead.accountManagement();
-      cy.url().should("contain", "/realms/master/account/");
+      cy.url().should("contain", "/realms/master/account");
     });
 
     it("Sign out reachs to log in screen", () => {

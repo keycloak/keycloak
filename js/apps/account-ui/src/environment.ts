@@ -1,3 +1,6 @@
+import { matchPath } from "react-router-dom";
+import { DEFAULT_REALM, ROOT_PATH } from "./constants";
+
 export type Feature = {
   isRegistrationEmailAsUsername: boolean;
   isEditUserNameAllowed: boolean;
@@ -15,6 +18,8 @@ export type Feature = {
 export type Environment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
+  /** The URL to the root of the account console. */
+  baseUrl: string;
   /** The realm used to authenticate the user to the Account Console. */
   realm: string;
   /** The identifier of the client used to authenticate the user to the Account Console. */
@@ -31,11 +36,13 @@ export type Environment = {
   features: Feature;
 };
 
-// The default environment, used during development.
-const realm = new URLSearchParams(window.location.search).get("realm");
+// Detect the current realm from the URL.
+const match = matchPath(ROOT_PATH, location.pathname);
+
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  realm: realm || "master",
+  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account`,
+  realm: match?.params.realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",

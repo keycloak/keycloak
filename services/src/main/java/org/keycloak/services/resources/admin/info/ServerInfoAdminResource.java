@@ -232,8 +232,10 @@ public class ServerInfoAdminResource {
                 !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) && 
                 !Profile.isFeatureEnabled(Profile.Feature.ADMIN2);
-        
-        if (filterAccountV2 || filterAdminV2) {
+        boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN2);
+
+        if (filterAccountV2 || filterAdminV2 || filterLoginV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
         }

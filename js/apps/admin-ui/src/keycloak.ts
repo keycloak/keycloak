@@ -11,7 +11,6 @@ export const keycloak = new Keycloak({
 export async function initKeycloak() {
   const authenticated = await keycloak.init({
     onLoad: "check-sso",
-    pkceMethod: "S256",
   });
 
   // Force the user to login if not authenticated.

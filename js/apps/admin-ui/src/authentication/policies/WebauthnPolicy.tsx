@@ -39,6 +39,7 @@ const SIGNATURE_ALGORITHMS = [
   "RS256",
   "RS384",
   "RS512",
+  "Ed25519",
   "RS1",
 ] as const;
 const ATTESTATION_PREFERENCE = [

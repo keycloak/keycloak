@@ -219,7 +219,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     @UncaughtServerErrorExpected
     public void testFeatureDisabled() throws Exception {
-        checkFeature(Response.Status.NOT_IMPLEMENTED.getStatusCode());
+        checkFeature(Response.Status.BAD_REQUEST.getStatusCode());
     }
 
     @Test
@@ -863,7 +863,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     private void checkFeature(int statusCode) throws Exception {
         String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, PARENT2_USERNAME, "password", null, PARENT_CLIENT, "password").getAccessToken();
 
-        if (statusCode != Response.Status.NOT_IMPLEMENTED.getStatusCode()) {
+        if (statusCode != Response.Status.BAD_REQUEST.getStatusCode()) {
             Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
         }
 
@@ -888,7 +888,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
                         ));
                 Assert.assertEquals(statusCode, response.getStatus());
 
-                if (statusCode != Response.Status.NOT_IMPLEMENTED.getStatusCode()) {
+                if (statusCode != Response.Status.BAD_REQUEST.getStatusCode()) {
                     AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
                     String idToken = tokenResponse.getIdToken();
                     Assert.assertNotNull(idToken);

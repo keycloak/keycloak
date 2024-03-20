@@ -34,6 +34,10 @@ import { MoveDialog } from "./MoveDialog";
 
 import "./group-tree.css";
 
+type ExtendedTreeViewDataItem = TreeViewDataItem & {
+  access?: Record<string, boolean>;
+};
+
 type GroupTreeContextMenuProps = {
   group: GroupRepresentation;
   refresh: () => void;
@@ -137,7 +141,7 @@ export const GroupTree = ({
   const { addAlert } = useAlerts();
   const { hasAccess } = useAccess();
 
-  const [data, setData] = useState<TreeViewDataItem[]>();
+  const [data, setData] = useState<ExtendedTreeViewDataItem[]>();
   const { subGroups, clear } = useSubGroups();
 
   const [search, setSearch] = useState("");
@@ -147,7 +151,7 @@ export const GroupTree = ({
   const prefMax = useRef(20);
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
-  const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
+  const [activeItem, setActiveItem] = useState<ExtendedTreeViewDataItem>();
 
   const [firstSub, setFirstSub] = useState(0);
 
@@ -160,7 +164,7 @@ export const GroupTree = ({
   const mapGroup = (
     group: GroupRepresentation,
     refresh: () => void,
-  ): TreeViewDataItem => {
+  ): ExtendedTreeViewDataItem => {
     return {
       id: group.id,
       name: (
@@ -168,6 +172,7 @@ export const GroupTree = ({
           <span>{group.name}</span>
         </Tooltip>
       ),
+      access: group.access || {},
       children:
         group.subGroups && group.subGroups.length > 0
           ? group.subGroups.map((g) => mapGroup(g, refresh))
@@ -250,9 +255,9 @@ export const GroupTree = ({
   );
 
   const findGroup = (
-    groups: TreeViewDataItem[],
+    groups: ExtendedTreeViewDataItem[],
     id: string,
-    path: TreeViewDataItem[],
+    path: ExtendedTreeViewDataItem[],
   ) => {
     for (let index = 0; index < groups.length; index++) {
       const group = groups[index];
@@ -316,8 +321,11 @@ export const GroupTree = ({
             const path = findGroup(data, item.id!, []);
             if (!subGroups.every(({ id }) => path.find((t) => t.id === id)))
               clear();
-
-            if (canViewDetails || subGroups.at(-1)?.access?.view) {
+            if (
+              canViewDetails ||
+              path.at(-1)?.access?.view ||
+              subGroups.at(-1)?.access?.view
+            ) {
               navigate(
                 toGroups({
                   realm,

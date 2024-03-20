@@ -9,8 +9,8 @@ export default class IdentityProviderLinksTab {
   #availableProvidersSection = ".kc-available-idps";
   #linkAccountBtn = ".pf-c-button.pf-m-link";
   #linkAccountModalIdentityProviderInput = "idpNameInput";
-  #linkAccountModalUserIdInput = "userIdInput";
-  #linkAccountModalUsernameInput = "usernameInput";
+  #linkAccountModalUserIdInput = "userId";
+  #linkAccountModalUsernameInput = "userName";
 
   public clickLinkAccount(idpName: string) {
     cy.get(this.#availableProvidersSection + " tr")

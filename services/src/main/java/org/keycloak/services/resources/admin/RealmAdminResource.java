@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,8 +116,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
-import org.keycloak.storage.LegacyStoreSyncEvent;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -382,6 +380,10 @@ public class RealmAdminResource {
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
+            rep.setDefaultLocale(realm.getDefaultLocale());
+            rep.setDisplayName(realm.getDisplayName());
+            rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+            rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
@@ -447,7 +449,7 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            StoreSyncEvent.fire(session, realm, false);
 
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();

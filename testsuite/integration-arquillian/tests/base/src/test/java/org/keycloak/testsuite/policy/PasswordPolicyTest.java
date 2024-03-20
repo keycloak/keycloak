@@ -19,6 +19,7 @@ package org.keycloak.testsuite.policy;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -48,6 +49,15 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PasswordPolicyTest extends AbstractKeycloakTest {
+
+    @Test
+    public void testDefaultPasswordPolicySettings() {
+        testingClient.server("passwordPolicy").run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicy passwordPolicy = realmModel.getPasswordPolicy();
+            Assert.assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.ID, passwordPolicy.getHashAlgorithm());
+        });
+    }
 
     @Test
     public void testLength() {

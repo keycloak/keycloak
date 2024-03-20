@@ -52,7 +52,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
-    private GenericContainer getKeycloakContainer() {
+    private GenericContainer<?> getKeycloakContainer() {
         File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
 
         if (!distributionFile.exists()) {
@@ -77,7 +77,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             image = new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
         }
 
-        return new GenericContainer(image)
+        return new GenericContainer<>(image)
                 .withEnv(envVars)
                 .withExposedPorts(8080)
                 .withStartupAttempts(1)
@@ -113,6 +113,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             LOGGER.warn("Failed to start Keycloak container", cause);
         } finally {
             if (!manualStop) {
+                stop();
                 envVars.clear();
             }
         }
@@ -181,7 +182,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private void cleanupContainer() {
         if (containerId != null) {
             try {
-                final String finalContainerId = containerId;
                 Runnable reaper = new Runnable() {
                     @Override
                     public void run() {
@@ -253,7 +253,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (type.isInstance(this)) {
-            return (D) this;
+            return type.cast(this);
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
