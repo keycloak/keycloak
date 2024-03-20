@@ -237,9 +237,11 @@ You may also take advantage of the new server-side handling of truststores by us
 spec:
   truststores:
     mystore:
+      name: mystore
       secret:
         name: mystore-secret
     myotherstore:
+      name: myotherstore
       secret:
         name: myotherstore-secret
 ----
