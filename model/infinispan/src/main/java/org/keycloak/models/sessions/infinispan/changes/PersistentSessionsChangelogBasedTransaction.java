@@ -33,7 +33,7 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
 
     private final List<SessionChangesPerformer<K, V>> changesPerformers;
 
-    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
+    public PersistentSessionsChangelogBasedTransaction(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker, SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, boolean offline) {
         super(session, cache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader);
 
         if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
@@ -41,7 +41,7 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
         }
 
         changesPerformers = List.of(
-                new JpaChangesPerformer<>(session, cache.getName()),
+                new JpaChangesPerformer<>(session, cache.getName(), offline),
                 new EmbeddedCachesChangesPerformer<>(cache),
                 new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
         );

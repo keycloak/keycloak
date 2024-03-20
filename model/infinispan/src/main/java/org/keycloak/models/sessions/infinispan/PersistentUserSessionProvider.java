@@ -65,7 +65,6 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.UserModelDelegate;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -73,7 +72,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -84,7 +82,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
@@ -92,7 +89,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class PersistentUserSessionProvider implements UserSessionProvider {
+public class PersistentUserSessionProvider implements UserSessionProvider, SessionRefreshStore {
 
     private static final Logger log = Logger.getLogger(PersistentUserSessionProvider.class);
 
@@ -133,6 +130,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
                                          SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster,
                                          SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            throw new IllegalStateException("Persistent user sessions are not enabled");
+        }
+
         this.session = session;
 
         this.sessionCache = sessionCache;
@@ -140,14 +141,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
         this.offlineSessionCache = offlineSessionCache;
         this.offlineClientSessionCache = offlineClientSessionCache;
 
-        this.sessionTx = Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)
-                ? new PersistentSessionsChangelogBasedTransaction<>(session, sessionCache, remoteCacheInvoker, SessionTimeouts::getUserSessionMaxIdleMs, SessionTimeouts::getUserSessionLifespanMs)
-                : new InfinispanChangelogBasedTransaction<>(session, sessionCache, remoteCacheInvoker, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+        this.sessionTx = new PersistentSessionsChangelogBasedTransaction<>(session, sessionCache, remoteCacheInvoker, SessionTimeouts::getUserSessionMaxIdleMs, SessionTimeouts::getUserSessionLifespanMs);
         this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, remoteCacheInvoker, offlineSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineSessionMaxIdleMs);
 
-        this.clientSessionTx = Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)
-                ? new PersistentSessionsChangelogBasedTransaction<>(session, clientSessionCache, remoteCacheInvoker, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs)
-                : new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, remoteCacheInvoker, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
+        this.clientSessionTx = new PersistentSessionsChangelogBasedTransaction<>(session, clientSessionCache, remoteCacheInvoker, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
         this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, remoteCacheInvoker, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
@@ -183,15 +180,18 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
         return offline ? offlineClientSessionTx : clientSessionTx;
     }
 
-    protected CrossDCLastSessionRefreshStore getLastSessionRefreshStore() {
+    @Override
+    public CrossDCLastSessionRefreshStore getLastSessionRefreshStore() {
         return lastSessionRefreshStore;
     }
 
-    protected CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore() {
+    @Override
+    public CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore() {
         return offlineLastSessionRefreshStore;
     }
 
-    protected PersisterLastSessionRefreshStore getPersisterLastSessionRefreshStore() {
+    @Override
+    public PersisterLastSessionRefreshStore getPersisterLastSessionRefreshStore() {
         return persisterLastSessionRefreshStore;
     }
 
@@ -278,10 +278,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
         UserSessionEntity userSessionEntityFromCache = getUserSessionEntity(realm, id, offline);
         if (userSessionEntityFromCache != null) {
             return wrap(realm, userSessionEntityFromCache, offline);
-        }
-
-        if (!Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)) {
-            return null;
         }
 
         if (getTransaction(offline).isScheduledForRemove(id)) {
@@ -382,82 +378,68 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
 
 
     protected Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserSessionPredicate predicate, boolean offline) {
+        // fetch the offline user-sessions from the persistence provider
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        if (predicate.getUserId() != null) {
+            UserModel user;
+            if (LightweightUserAdapter.isLightweightUser(predicate.getUserId())) {
+              user = new UserModelDelegate(null) {
+                  @Override
+                  public String getId() {
+                      return predicate.getUserId();
+                  }
+              };
+            } else {
+              user = session.users().getUserById(realm, predicate.getUserId());
+            }
+            if (user != null) {
+                return persister.loadUserSessionsStream(realm, user, offline, 0, null)
+                        .filter(predicate.toModelPredicate())
+                        .map(s -> importUserSession(realm, offline, s))
+                        .filter(Objects::nonNull)
+                        .map(s -> wrap(realm, s, offline));
+            } else {
+                return Stream.empty();
+            }
+        }
 
-        if (offline || Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)) {
+        if (predicate.getBrokerUserId() != null) {
+            String[] idpAliasSessionId = predicate.getBrokerUserId().split("\\.");
 
-            // fetch the offline user-sessions from the persistence provider
-            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            if (predicate.getUserId() != null) {
-                UserModel user;
-                if (LightweightUserAdapter.isLightweightUser(predicate.getUserId())) {
-                  user = new UserModelDelegate(null) {
-                      @Override
-                      public String getId() {
-                          return predicate.getUserId();
-                      }
-                  };
-                } else {
-                  user = session.users().getUserById(realm, predicate.getUserId());
-                }
-                if (user != null) {
-                    return persister.loadUserSessionsStream(realm, user, offline, 0, null)
+            Map<String, String> attributes = new HashMap<>();
+            attributes.put(UserModel.IDP_ALIAS, idpAliasSessionId[0]);
+            attributes.put(UserModel.IDP_USER_ID, idpAliasSessionId[1]);
+
+            UserProvider userProvider = session.getProvider(UserProvider.class);
+            UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);
+            return userModel != null ?
+                    persister.loadUserSessionsStream(realm, userModel, offline, 0, null)
                             .filter(predicate.toModelPredicate())
                             .map(s -> importUserSession(realm, offline, s))
                             .filter(Objects::nonNull)
-                            .map(s -> wrap(realm, s, offline));
-                } else {
-                    return Stream.empty();
-                }
-            }
-
-            if (predicate.getBrokerUserId() != null) {
-                String[] idpAliasSessionId = predicate.getBrokerUserId().split("\\.");
-
-                Map<String, String> attributes = new HashMap<>();
-                attributes.put(UserModel.IDP_ALIAS, idpAliasSessionId[0]);
-                attributes.put(UserModel.IDP_USER_ID, idpAliasSessionId[1]);
-
-                UserProvider userProvider = session.getProvider(UserProvider.class);
-                UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);
-                return userModel != null ?
-                        persister.loadUserSessionsStream(realm, userModel, offline, 0, null)
-                                .filter(predicate.toModelPredicate())
-                                .map(s -> importUserSession(realm, offline, s))
-                                .filter(Objects::nonNull)
-                                .map(s -> wrap(realm, s, offline)) :
-                        Stream.empty();
-            }
-
-            if (predicate.getClient() != null) {
-                ClientModel client = session.clients().getClientById(realm, predicate.getClient());
-                return persister.loadUserSessionsStream(realm, client, offline, 0, null)
-                        .filter(predicate.toModelPredicate())
-                        .map(s -> importUserSession(realm, offline, s))
-                        .filter(Objects::nonNull)
-                        .map(s -> wrap(realm, s, offline));
-            }
-
-            if (predicate.getBrokerSessionId() != null && !offline) {
-                // we haven't yet migrated the old offline entries, so they don't have a brokerSessionId yet
-                return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), offline))
-                        .filter(predicate.toModelPredicate())
-                        .map(s -> importUserSession(realm, offline, s))
-                        .filter(Objects::nonNull)
-                        .map(s -> wrap(realm, s, offline));
-            }
-
-            throw new ModelException("For offline sessions, only lookup by userId, brokerUserId and client is supported");
+                            .map(s -> wrap(realm, s, offline)) :
+                    Stream.empty();
         }
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
+        if (predicate.getClient() != null) {
+            ClientModel client = session.clients().getClientById(realm, predicate.getClient());
+            return persister.loadUserSessionsStream(realm, client, offline, 0, null)
+                    .filter(predicate.toModelPredicate())
+                    .map(s -> importUserSession(realm, offline, s))
+                    .filter(Objects::nonNull)
+                    .map(s -> wrap(realm, s, offline));
+        }
 
-        // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
-        // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        return StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
-                .map(Mappers.userSessionEntity())
-                .map(entity -> this.wrap(realm, entity, offline))
-                .filter(Objects::nonNull).map(Function.identity());
+        if (predicate.getBrokerSessionId() != null && !offline) {
+            // we haven't yet migrated the old offline entries, so they don't have a brokerSessionId yet
+            return Stream.of(persister.loadUserSessionsStreamByBrokerSessionId(realm, predicate.getBrokerSessionId(), offline))
+                    .filter(predicate.toModelPredicate())
+                    .map(s -> importUserSession(realm, offline, s))
+                    .filter(Objects::nonNull)
+                    .map(s -> wrap(realm, s, offline));
+        }
+
+        throw new ModelException("For offline sessions, only lookup by userId, brokerUserId and client is supported");
     }
 
     @Override
@@ -472,7 +454,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
             return wrap(userSession, client, clientSessionEntityFromCache, offline);
         }
 
-        if (!getClientSessionTransaction(offline).isScheduledForRemove(UUID.fromString(clientSessionId)) && (offline || Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS))) {
+        if (!getClientSessionTransaction(offline).isScheduledForRemove(UUID.fromString(clientSessionId))) {
             log.debugf("Offline client session is not found in cache, try to load from db, userSession [%s] clientSessionId [%s] clientId [%s]", userSession.getId(), clientSessionId, client.getClientId());
             return getClientSessionEntityFromPersistenceProvider(userSession, client, offline);
         }
@@ -614,34 +596,14 @@ public class PersistentUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
-
-        if (offline || Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)) {
-            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCountsByClients(realm, offline);
-        }
-
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
-        return cache.entrySet().stream()
-                .filter(UserSessionPredicate.create(realm.getId()))
-                .map(Mappers.authClientSessionSetMapper())
-                .flatMap((Serializable & Function<Set<String>, Stream<? extends String>>) Mappers::toStream)
-                .collect(
-                        CacheCollectors.serializableCollector(
-                                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
-                        )
-                );
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        return persister.getUserSessionsCountsByClients(realm, offline);
     }
 
     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
-
-        if (offline || Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS)) {
-            // fetch the actual offline user session count from the database
-            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCount(realm, client, offline);
-        }
-
-        return getUserSessionsStream(realm, UserSessionPredicate.create(realm.getId()).client(client.getId()), offline).count();
+        // fetch the actual offline user session count from the database
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        return persister.getUserSessionsCount(realm, client, offline);
     }
 
     @Override

@@ -43,14 +43,14 @@ import java.util.UUID;
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final KeycloakSession kcSession;
-    private final InfinispanUserSessionProvider provider;
+    private final SessionRefreshStore provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private boolean offline;
 
-    public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, InfinispanUserSessionProvider provider,
+    public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, SessionRefreshStore provider,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
                                              InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {

@@ -51,12 +51,14 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     private final KeycloakSession session;
     private final String cacheName;
+    private final boolean offline;
     private final List<Consumer<KeycloakSession>> changes = new LinkedList<>();
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
 
-    public JpaChangesPerformer(KeycloakSession session, String cacheName) {
+    public JpaChangesPerformer(KeycloakSession session, String cacheName, boolean offline) {
         this.session = session;
         this.cacheName = cacheName;
+        this.offline = offline;
         processor = processor();
     }
 
@@ -456,7 +458,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
                 @Override
                 public boolean isOffline() {
-                    return false;
+                    return offline;
                 }
 
                 @Override
@@ -596,7 +598,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
                     @Override
                     public void setLoginUsername(String loginUsername) {
-                        // TODO: ignored. Will not be stored in the offline session
+                        // TODO: We need to add this field to the database since online sessions contain this field
                     }
 
                     @Override
