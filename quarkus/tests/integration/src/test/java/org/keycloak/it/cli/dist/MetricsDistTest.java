@@ -48,6 +48,7 @@ public class MetricsDistTest {
         when().get("/metrics").then()
                 .statusCode(200)
                 .body(containsString("jvm_gc_"))
+                .body(containsString("http_server_active_requests"))
                 .body(containsString("vendor_statistics_hit_ratio"))
                 .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")));
 
