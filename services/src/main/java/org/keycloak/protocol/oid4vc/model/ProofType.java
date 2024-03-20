@@ -26,7 +26,8 @@ package org.keycloak.protocol.oid4vc.model;
 public enum ProofType {
 
     JWT("jwt"),
-    LD_PROOF("ld_proof");
+    LD_PROOF("ldp_vp"),
+    CWT("cwt");
 
     private final String value;
 
