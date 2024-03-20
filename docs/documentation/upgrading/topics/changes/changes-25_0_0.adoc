@@ -22,6 +22,18 @@ Users can configure this limit by setting the provider configuration option `spi
 bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
 ----
 
+= Hostname Verification Policy
+
+The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead. 
+
+Behavior supported by WILDCARD, that is not supported by DEFAULT:
+* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). 
+* allows matching against well known public suffixes - e.g. foo.co.gl may match *.co.gl
+
+Behavior supported by STRICT, that is not supported by DEFAULT:
+* STRICT uses a small exclusion list for 2 or 3 letter domain names ending in a 2 letter top level (*.XXX.YY) when determining if a wildcard matches. Instead DEFAULT uses a more complete list of public suffix rules and exclusions from https://publicsuffix.org/list/
+
+It is not expected that you should be relying upon these behaviors from the WILDCARD or STRICT options.
 
 = Removed a model module
 
