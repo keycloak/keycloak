@@ -333,8 +333,8 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@types/chai':
-        specifier: ^4.3.12
-        version: 4.3.12
+        specifier: ^4.3.13
+        version: 4.3.13
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -2103,8 +2103,8 @@ packages:
     resolution: {integrity: sha512-0Z6Tr7wjKJIk4OUEjVUQMtyunLDy339vcMaj38Kpj6jM2OE1p3S4kXExKZ7a3uXQAPCoy3sbrP1wibDKaf39oA==}
     dev: true
 
-  /@types/chai@4.3.12:
-    resolution: {integrity: sha512-zNKDHG/1yxm8Il6uCCVsm+dRdEsJlFoDu73X17y09bId6UwoYww+vFBsAcRzl8knM1sab3Dp1VRikFQwDOtDDw==}
+  /@types/chai@4.3.13:
+    resolution: {integrity: sha512-+LxQEbg4BDUf88utmhpUpTyYn1zHao443aGnXIAQak9ZMt9Rtsic0Oig0OS1xyIqdDXc5uMekoC6NaiUlkT/qA==}
     dev: true
 
   /@types/d3-array@3.2.0:
