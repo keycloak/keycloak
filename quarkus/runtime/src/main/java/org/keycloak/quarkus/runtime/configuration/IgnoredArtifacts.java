@@ -120,18 +120,31 @@ public class IgnoredArtifacts {
             .collect(Collectors.toUnmodifiableSet());
 
     private static Set<String> jdbcDrivers() {
-        final Database.Vendor vendor = Configuration.getOptionalValue("quarkus.datasource.db-kind")
-                .flatMap(Database::getVendorByDbKind)
-                .orElse(Database.Vendor.H2);
+        final Set<Database.Vendor> vendorsOfAllDatasources = new HashSet<>();
 
-        final Set<String> jdbcArtifacts = switch (vendor) {
-            case H2 -> JDBC_H2;
-            case MYSQL -> JDBC_MYSQL;
-            case MARIADB -> JDBC_MARIADB;
-            case POSTGRES -> JDBC_POSTGRES;
-            case MSSQL -> JDBC_MSSQL;
-            case ORACLE -> JDBC_ORACLE;
-        };
+        Configuration.getConfig().getPropertyNames().forEach(p -> {
+            if (p.startsWith("quarkus.datasource.") && p.endsWith(".db-kind")) {
+                Configuration.getOptionalValue(p)
+                        .flatMap(Database::getVendor)
+                        .ifPresent(vendorsOfAllDatasources::add);
+            }
+        });
+
+        if (vendorsOfAllDatasources.isEmpty()) {
+            vendorsOfAllDatasources.add(Database.Vendor.H2);
+        }
+
+        final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
+                .map(vendor -> switch (vendor) {
+                    case H2 -> JDBC_H2;
+                    case MYSQL -> JDBC_MYSQL;
+                    case MARIADB -> JDBC_MARIADB;
+                    case POSTGRES -> JDBC_POSTGRES;
+                    case MSSQL -> JDBC_MSSQL;
+                    case ORACLE -> JDBC_ORACLE;
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
 
         final Set<String> allJdbcDrivers = new HashSet<>(JDBC_DRIVERS);
         allJdbcDrivers.removeAll(jdbcArtifacts);
