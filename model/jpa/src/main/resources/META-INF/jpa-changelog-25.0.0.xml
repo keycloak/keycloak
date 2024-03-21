@@ -33,6 +33,10 @@
             <column name="OFFLINE_FLAG" />
             <column name="LAST_SESSION_REFRESH" />
         </createIndex>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_CREATEDON" />
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD" />
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS" />
+        <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD" />
         <modifySql dbms="mssql">
             <!-- ensure that existing rows also get the new values on mssql -->
             <!-- https://github.com/liquibase/liquibase/issues/4644 -->
