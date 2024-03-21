@@ -54,6 +54,8 @@ export type UserProfileFieldProps = {
   renderer?: (attribute: UserProfileAttributeMetadata) => ReactNode;
 };
 
+export type OptionLabel = Record<string, string> | undefined;
+
 export const FIELDS: {
   [type in InputType]: (props: UserProfileFieldProps) => JSX.Element;
 } = {
