@@ -57,7 +57,10 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
+import org.keycloak.models.sessions.infinispan.stream.Mappers;
+import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
+import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.UserModelDelegate;
@@ -69,7 +72,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -545,6 +551,52 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, true);
     }
 
+    protected void onRemoveUserSessionsEvent(String realmId) {
+        removeLocalUserSessions(realmId, false);
+        removeLocalUserSessions(realmId, true);
+    }
+
+    // public for usage in the testsuite
+    public void removeLocalUserSessions(String realmId, boolean offline) {
+        FuturesHelper futures = new FuturesHelper();
+
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(cache);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(clientSessionCache);
+
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
+
+        final AtomicInteger userSessionsSize = new AtomicInteger();
+
+        localCacheStoreIgnore
+                .entrySet()
+                .stream()
+                .filter(SessionPredicate.create(realmId))
+                .map(Mappers.userSessionEntity())
+                .forEach(new Consumer<UserSessionEntity>() {
+
+                    @Override
+                    public void accept(UserSessionEntity userSessionEntity) {
+                        userSessionsSize.incrementAndGet();
+
+                        // Remove session from remoteCache too. Use removeAsync for better perf
+                        Future future = localCache.removeAsync(userSessionEntity.getId());
+                        futures.addTask(future);
+                        userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
+                            Future f = localClientSessionCache.removeAsync(clientSessionId);
+                            futures.addTask(f);
+                        });
+                    }
+
+                });
+
+
+        futures.waitForAllToFinish();
+
+        log.debugf("Removed %d sessions in realm %s. Offline: %b", (Object) userSessionsSize.get(), realmId, offline);
+    }
+
     @Override
     public void onRealmRemoved(RealmModel realm) {
         // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
@@ -558,6 +610,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
+    protected void onRealmRemovedEvent(String realmId) {
+        removeLocalUserSessions(realmId, true);
+        removeLocalUserSessions(realmId, false);
+    }
+
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
 //        clusterEventsSenderTx.addEvent(
@@ -569,6 +626,20 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
+    protected void onClientRemovedEvent(String realmId, String clientUuid) {
+        // Nothing for now. userSession.getAuthenticatedClientSessions() will check lazily if particular client exists and update userSession on-the-fly.
+    }
+
+
+    protected void onUserRemoved(RealmModel realm, UserModel user) {
+        removeUserSessions(realm, user, true);
+        removeUserSessions(realm, user, false);
+
+        UserSessionPersisterProvider persisterProvider = session.getProvider(UserSessionPersisterProvider.class);
+        if (persisterProvider != null) {
+            persisterProvider.onUserRemoved(realm, user);
+        }
+    }
 
     @Override
     public void close() {

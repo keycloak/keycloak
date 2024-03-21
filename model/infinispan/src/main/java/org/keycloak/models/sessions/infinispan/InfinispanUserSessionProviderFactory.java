@@ -165,8 +165,15 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 } else if (event instanceof UserModel.UserRemovedEvent) {
                     UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
 
-                    InfinispanUserSessionProvider provider = (InfinispanUserSessionProvider) userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
-                    provider.onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                    UserSessionProvider provider1 = userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
+                    if (provider1 instanceof InfinispanUserSessionProvider) {
+                        ((InfinispanUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                    } else if (provider1 instanceof PersistentUserSessionProvider) {
+                        ((PersistentUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                    } else {
+                        throw new IllegalStateException("Unknown provider type: " + provider1.getClass());
+                    }
+
                 } else if (event instanceof ResetTimeOffsetEvent) {
                     if (persisterLastSessionRefreshStore != null) {
                         persisterLastSessionRefreshStore.reset();
@@ -229,6 +236,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             protected void eventReceived(KeycloakSession session, UserSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
                 if (provider instanceof InfinispanUserSessionProvider) {
                     ((InfinispanUserSessionProvider) provider).onRealmRemovedEvent(sessionEvent.getRealmId());
+                } else if (provider instanceof PersistentUserSessionProvider) {
+                    ((PersistentUserSessionProvider) provider).onRealmRemovedEvent(sessionEvent.getRealmId());
                 }
             }
 
@@ -241,6 +250,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             protected void eventReceived(KeycloakSession session, UserSessionProvider provider, ClientRemovedSessionEvent sessionEvent) {
                 if (provider instanceof InfinispanUserSessionProvider) {
                     ((InfinispanUserSessionProvider) provider).onClientRemovedEvent(sessionEvent.getRealmId(), sessionEvent.getClientUuid());
+                } else if (provider instanceof PersistentUserSessionProvider) {
+                    ((PersistentUserSessionProvider) provider).onClientRemovedEvent(sessionEvent.getRealmId(), sessionEvent.getClientUuid());
                 }
             }
 
@@ -253,6 +264,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             protected void eventReceived(KeycloakSession session, UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {
                 if (provider instanceof InfinispanUserSessionProvider) {
                     ((InfinispanUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
+                } else if (provider instanceof PersistentUserSessionProvider) {
+                    ((PersistentUserSessionProvider) provider).onRemoveUserSessionsEvent(sessionEvent.getRealmId());
                 }
             }
 
