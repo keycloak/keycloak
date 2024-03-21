@@ -203,7 +203,6 @@ spec:
 Moreover, the {project_name} container manages the heap size more effectively by providing relative values for the heap size.
 It is achieved by providing certain JVM options.
 
-For more details, check the
-https://www.keycloak.org/server/containers[Running Keycloak in a container].
+For more details, see <@links.server id="containers" />.
 
 </@tmpl.guide>
