@@ -42,13 +42,6 @@ public class AuthenticationSelectionOption {
         return credentialTypeMetadata == null ? authExec.getAuthenticator() + "-help-text" : credentialTypeMetadata.getHelpText();
     }
 
-    public String getIconCssClass() {
-        // For now, we won't allow to retrieve "iconCssClass" from the AuthenticatorFactory. We will see in the future if we need
-        // this capability for authenticator factories, which authenticators don't implement credentialProvider
-        return credentialTypeMetadata == null ? CredentialTypeMetadata.DEFAULT_ICON_CSS_CLASS : credentialTypeMetadata.getIconCssClass();
-    }
-
-
     @Override
     public String toString() {
         return " authSelection - " + authExec.getAuthenticator();

@@ -294,7 +294,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR)
                 .displayName("webauthn-display-name")
                 .helpText("webauthn-help-text")
-                .iconCssClass("kcAuthenticatorWebAuthnClass")
                 .createAction(WebAuthnRegisterFactory.PROVIDER_ID)
                 .removeable(true)
                 .build(session);

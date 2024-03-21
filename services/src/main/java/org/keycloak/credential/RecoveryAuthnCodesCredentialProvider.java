@@ -55,8 +55,9 @@ public class RecoveryAuthnCodesCredentialProvider
     @Override
     public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
         CredentialTypeMetadata.CredentialTypeMetadataBuilder builder = CredentialTypeMetadata.builder().type(getType())
-                .category(CredentialTypeMetadata.Category.TWO_FACTOR).displayName("recovery-authn-codes-display-name")
-                .helpText("recovery-authn-codes-help-text").iconCssClass("kcAuthenticatorRecoveryAuthnCodesClass")
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName("recovery-authn-codes-display-name")
+                .helpText("recovery-authn-codes-help-text")
                 .removeable(true);
         UserModel user = metadataContext.getUser();
         builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());

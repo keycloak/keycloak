@@ -30,15 +30,11 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
 
     private static final Logger logger = Logger.getLogger(CredentialTypeMetadata.class);
 
-    public static final String DEFAULT_ICON_CSS_CLASS = "kcAuthenticatorDefaultClass";
-
     private String type;
 
     private String displayName;
 
     private String helpText;
-
-    private String iconCssClass = DEFAULT_ICON_CSS_CLASS;
 
     private String createAction;
 
@@ -110,26 +106,6 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
     }
 
     /**
-     * Return the icon CSS, which can be used to display icon, which represents this particular authenticator.
-     *
-     * The icon will be displayed on various places. For example the "Select authenticator" screen during login, where user can select from
-     * various authentication mechanisms for two-factor or passwordless authentication.
-     *
-     * The returned value can be either:
-     * - Key of the property, which will reference the actual CSS in the themes.properties file. For example if you return "kcAuthenticatorWebAuthnClass"
-     *   from this method, then your themes.properties should have the property like for example "kcAuthenticatorWebAuthnClass=fa fa-key list-view-pf-icon-lg" .
-     *   This would mean that "fa fa-key list-view-pf-icon-lg" will be the actual CSS used.
-     * - the icon CSS class directly. For example you can return "fa fa-key list-view-pf-icon-lg" directly for the above example with WebAuthn.
-     *   This alternative is fine just if your authenticator can use same CSS class for all the themes.
-     *
-     * If you don't expect your authenticator to need icon (for example it will never be shown in the "select authenticator" screen), then
-     * it is fine to keep the default value.
-     */
-    public String getIconCssClass() {
-        return iconCssClass;
-    }
-
-    /**
      * @return the providerID of the required action, which can be used by the user to create new credential of our type. Null if there is no
      * action for creating credential. For example we're creating credential in case of "otp" type, but we're updating credential
      * in case of type "password"
@@ -196,11 +172,6 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             return this;
         }
 
-        public CredentialTypeMetadataBuilder iconCssClass(String iconCssClass) {
-            instance.iconCssClass = iconCssClass;
-            return this;
-        }
-
         public CredentialTypeMetadataBuilder createAction(String createAction) {
             instance.createAction = createAction;
             return this;
@@ -230,7 +201,6 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             assertNotNull(instance.type, "type");
             assertNotNull(instance.displayName, "displayName");
             assertNotNull(instance.helpText, "helpText");
-            assertNotNull(instance.iconCssClass, "iconCssClass");
             assertNotNull(instance.removeable, "removeable");
             assertNotNull(instance.category, "category");
 

@@ -144,7 +144,6 @@ export interface CredentialTypeMetadata {
   type: string;
   displayName: string;
   helpText: string;
-  iconCssClass: string;
   createAction: string;
   updateAction: string;
   removeable: boolean;
@@ -156,7 +155,6 @@ export interface CredentialContainer {
   category: string;
   displayName: string;
   helptext: string;
-  iconCssClass: string;
   createAction: string;
   updateAction: string;
   removeable: boolean;

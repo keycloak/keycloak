@@ -137,7 +137,6 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR)
                 .displayName("otp-display-name")
                 .helpText("otp-help-text")
-                .iconCssClass("kcAuthenticatorOTPClass")
                 .createAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString())
                 .removeable(true)
                 .build(session);
