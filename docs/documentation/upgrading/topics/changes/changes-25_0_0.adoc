@@ -3,6 +3,19 @@
 Metrics for the embedded caches are now enabled by default.
 To enable histograms for latencies, set the option `cache-metrics-histograms-enabled` to `true`.
 
+= Metrics for HTTP endpoints enabled by default
+
+The metrics provided by {project_name} now include HTTP server metrics starting with `http_server`.
+See below for some examples.
+
+[source]
+----
+http_server_active_requests 1.0
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 0.048717142
+----
+
+
 = Nonce claim is only added to the ID token
 
 The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
