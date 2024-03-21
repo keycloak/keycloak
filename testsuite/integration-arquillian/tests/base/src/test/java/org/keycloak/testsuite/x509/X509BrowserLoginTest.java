@@ -18,11 +18,8 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
@@ -48,7 +45,6 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
 import org.keycloak.testsuite.util.DroneUtils;
-import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -57,18 +53,6 @@ import org.openqa.selenium.WebDriver;
  */
 
 public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
-
-
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
-
-
-    @Before
-    public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
-    }
-
 
     @Test
     public void loginAsUserFromCertSubjectEmail() throws Exception {

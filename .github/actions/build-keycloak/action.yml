@@ -24,10 +24,6 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
-
     - id: frontend-plugin-cache
       name: Frontend Plugin Cache
       uses: ./.github/actions/frontend-plugin-cache

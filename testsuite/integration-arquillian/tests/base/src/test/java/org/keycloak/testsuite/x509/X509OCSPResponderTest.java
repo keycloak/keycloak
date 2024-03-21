@@ -19,7 +19,6 @@
 package org.keycloak.testsuite.x509;
 
 import com.google.common.base.Charsets;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,8 +43,6 @@ import java.nio.file.Paths;
 import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.openqa.selenium.WebDriver;
 
 /**
  * Verifies Certificate revocation using OCSP responder.
@@ -63,15 +60,6 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     private static final int OCSP_RESPONDER_PORT = 8888;
 
     private Undertow ocspResponder;
-
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
-
-    @Before
-    public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
-    }
 
     @Test
     public void loginFailedOnOCSPResponderRevocationCheck() throws Exception {

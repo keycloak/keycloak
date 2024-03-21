@@ -18,14 +18,13 @@
 
 package org.keycloak.testsuite.x509;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -53,26 +52,17 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
-import org.keycloak.testsuite.updaters.SetSystemProperty;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileConstants;
-import org.openqa.selenium.WebDriver;
 
-import jakarta.ws.rs.core.Response;
-import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -125,8 +115,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     protected AuthenticationExecutionInfoRepresentation directGrantExecution;
 
-    private static SetSystemProperty phantomjsCliArgs;
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -134,15 +122,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     @Page
-    @PhantomJSBrowser
     protected AppPage appPage;
 
     @Page
-    @PhantomJSBrowser
     protected X509IdentityConfirmationPage loginConfirmationPage;
 
     @Page
-    @PhantomJSBrowser
     protected LoginPage loginPage;
 
 
@@ -155,43 +140,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     public void validateConfiguration() {
         Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
     }
-
-
-    @BeforeClass
-    public static void onBeforeTestClass() {
-        configurePhantomJS("/ca.crt", "/client.crt", "/client.key", "password");
-    }
-
-    @AfterClass
-    public static void onAfterTestClass() {
-        phantomjsCliArgs.revert();
-    }
-
-    /**
-     * Setup phantom JS to be used for mutual TLS testing. All file paths are relative to "authServerHome"
-     *
-     * @param certificatesPath
-     * @param clientCertificateFile
-     * @param clientKeyFile
-     * @param clientKeyPassword
-     */
-    protected static void configurePhantomJS(String certificatesPath, String clientCertificateFile, String clientKeyFile, String clientKeyPassword) {
-        String authServerHome = getAuthServerHome();
-
-        if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
-            StringBuilder cliArgs = new StringBuilder();
-
-            cliArgs.append("--ignore-ssl-errors=true ");
-            cliArgs.append("--web-security=false ");
-            cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
-            cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
-            cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
-            cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
-
-            phantomjsCliArgs = new SetSystemProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
-        }
-    }
-
 
     private static boolean isAuthServerJBoss() {
         return Boolean.parseBoolean(System.getProperty("auth.server.jboss"));
@@ -527,33 +475,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         user.setEnabled(enabled);
 
         updateUser(user);
-    }
-
-
-    public void replaceDefaultWebDriver(WebDriver driver) {
-        this.driver = driver;
-        DroneUtils.addWebDriver(driver);
-
-        List<Field> allFields = new ArrayList<>();
-
-        // Add all fields of this class and superclasses
-        Class<?> testClass = this.getClass();
-        while (AbstractX509AuthenticationTest.class.isAssignableFrom(testClass)) {
-            allFields.addAll(Arrays.asList(testClass.getDeclaredFields()));
-            allFields.addAll(Arrays.asList(testClass.getFields()));
-            testClass = testClass.getSuperclass();
-        }
-
-        for (Field f : allFields) {
-            if (f.getAnnotation(Page.class) != null) {
-                try {
-                    AbstractPage page = (AbstractPage) f.get(this);
-                    page.setDriver(driver);
-                } catch (IllegalAccessException e) {
-                    throw new IllegalStateException("Could not replace the driver in " + f, e);
-                }
-            }
-        }
     }
 
 

@@ -77,8 +77,6 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
 
     @Before
     public void beforeConsoleProtectionTest() throws IOException, OperationException {
-        Assume.assumeTrue("This testClass doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         try (OnlineManagementClient clientWorkerNodeClient = AppServerTestEnricher.getManagementClient()) {
 
             Operations operations = new Operations(clientWorkerNodeClient);
