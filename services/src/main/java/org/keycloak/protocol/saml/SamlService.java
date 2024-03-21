@@ -27,7 +27,6 @@ import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
@@ -197,7 +196,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             return null;
         }
-        
+
         protected boolean isDestinationRequired() {
             return true;
         }
@@ -935,7 +934,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 RealmsResource.protocolUrl(uriInfo).path(SamlService.ARTIFACT_RESOLUTION_SERVICE_PATH)
                         .build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
-                true, 
+                true,
                 signingKeys);
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
@@ -1085,7 +1084,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     "ArtifactResolve message: %s", DocumentUtil.asString(soapBodyContents));
             return Soap.createFault().reason("").detail("").build();
         }
-        
+
         try {
             return artifactResolve(artifactResolveType, samlDocumentHolder);
         } catch (Exception e) {
@@ -1168,7 +1167,7 @@ public class SamlService extends AuthorizationEndpointBase {
             logger.errorf("Artifact to resolve was null");
             return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
         }
-        
+
         ArtifactResolver artifactResolver = getArtifactResolver(artifact);
 
         if (artifactResolver == null) {
@@ -1252,7 +1251,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         return artifactResponseMessage(artifactResolveMessage, artifactResponseDocument, clientModel);
     }
-    
+
     private Response emptyArtifactResponseMessage(ArtifactResolveType artifactResolveMessage, ClientModel clientModel) throws ProcessingException, ConfigurationException {
         return emptyArtifactResponseMessage(artifactResolveMessage, clientModel, JBossSAMLURIConstants.STATUS_SUCCESS.getUri());
     }
@@ -1271,7 +1270,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         return artifactResponseMessage(artifactResolveMessage, artifactResponseDocument, clientModel);
     }
-    
+
     private Response artifactResponseMessage(ArtifactResolveType artifactResolveMessage, Document artifactResponseDocument, ClientModel clientModel) throws ProcessingException, ConfigurationException {
         // Add "inResponseTo" to artifactResponse
         if (artifactResolveMessage.getID() != null && !artifactResolveMessage.getID().trim().isEmpty()){
@@ -1279,7 +1278,7 @@ public class SamlService extends AuthorizationEndpointBase {
             artifactResponseElement.setAttribute("InResponseTo", artifactResolveMessage.getID());
         }
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder(session);
-        
+
         if (clientModel != null) {
             SamlClient samlClient = new SamlClient(clientModel);
 
@@ -1379,17 +1378,17 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
 
+        @Override
         public void run(KeycloakSession session){
             // Initialize context
-            Resteasy.pushContext(UriInfo.class, uri);
+            session.getContext().putContextObject(UriInfo.class, uri);
 
             KeycloakTransaction tx = session.getTransactionManager();
-            Resteasy.pushContext(KeycloakTransaction.class, tx);
+            session.getContext().putContextObject(KeycloakTransaction.class, tx);
 
-            Resteasy.pushContext(KeycloakSession.class, session);
-            Resteasy.pushContext(HttpRequest.class, request);
-            Resteasy.pushContext(HttpResponse.class, response);
-            Resteasy.pushContext(ClientConnection.class, connection);
+            session.getContext().putContextObject(HttpRequest.class, request);
+            session.getContext().putContextObject(HttpResponse.class, response);
+            session.getContext().putContextObject(ClientConnection.class, connection);
 
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = realmManager.getRealm(realmId);
@@ -1424,7 +1423,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     if (logger.isTraceEnabled()) {
                         logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
                     }
-                    
+
                     ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
 
                     if (art.getAny() == null) {

@@ -37,8 +37,8 @@ public abstract class AbstractRequestFilter {
         tx.begin();
 
         try {
-            Resteasy.pushContext(ClientConnection.class, clientConnection);
             Resteasy.pushContext(KeycloakSession.class, session);
+            session.getContext().putContextObject(ClientConnection.class, clientConnection);
 
             next.accept(session);
         } catch (Exception e) {
@@ -48,6 +48,7 @@ public abstract class AbstractRequestFilter {
             if (isAutoClose()) {
                 close(session);
             }
+            Resteasy.clearContextData();
         }
     }
 
@@ -62,7 +63,7 @@ public abstract class AbstractRequestFilter {
     /**
      * <p>Indicates whether or not resources should be close as part of the execution of the {@link #filter(ClientConnection, Consumer)}
      * method.
-     * 
+     *
      * @return true if resources should be close automatically. Otherwise, false.
      */
     protected boolean isAutoClose() {

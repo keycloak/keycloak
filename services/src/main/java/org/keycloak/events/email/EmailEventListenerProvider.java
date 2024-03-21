@@ -69,7 +69,7 @@ public class EmailEventListenerProvider implements EventListenerProvider {
             }
         }
     }
-    
+
     private void sendEmail(Event event) {
         HttpRequest request = session.getContext().getHttpRequest();
 
@@ -88,7 +88,7 @@ public class EmailEventListenerProvider implements EventListenerProvider {
                     context.setClient(client);
                 }
 
-                Resteasy.pushContext(HttpRequest.class, request);
+                session.getContext().putContextObject(HttpRequest.class, request);
 
                 UserModel user = session.users().getUserById(realm, event.getUserId());
 

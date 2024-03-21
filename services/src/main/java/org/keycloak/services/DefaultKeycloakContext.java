@@ -19,7 +19,6 @@ package org.keycloak.services;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.locale.LocaleSelectorProvider;
@@ -36,6 +35,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,6 +53,8 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private AuthenticationSessionModel authenticationSession;
     private HttpRequest request;
     private HttpResponse response;
+
+    private ConcurrentHashMap<Class<?>, Object> context = new ConcurrentHashMap<>();
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
@@ -98,7 +100,12 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public <T> T getContextObject(Class<T> clazz) {
-        return Resteasy.getContextData(clazz);
+        return (T) context.get(clazz);
+    }
+
+    @Override
+    public <T> T putContextObject(Class<T> clazz, T object) {
+        return (T) this.context.put(clazz, object);
     }
 
     @Override

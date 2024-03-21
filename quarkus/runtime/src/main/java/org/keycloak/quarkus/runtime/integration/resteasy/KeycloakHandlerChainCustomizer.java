@@ -32,7 +32,7 @@ import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
 public final class KeycloakHandlerChainCustomizer implements HandlerChainCustomizer {
 
-    private final CreateSessionHandler TRANSACTIONAL_SESSION_HANDLER = new CreateSessionHandler();
+    private final CreateTransactionHandler TRANSACTIONAL_SESSION_HANDLER = new CreateTransactionHandler();
 
     private final FormBodyHandler formBodyHandler = new FormBodyHandler(true, () -> Runnable::run, Set.of());
 

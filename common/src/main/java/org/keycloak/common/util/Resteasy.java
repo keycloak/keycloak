@@ -17,6 +17,9 @@
 
 package org.keycloak.common.util;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
@@ -35,8 +38,18 @@ public final class Resteasy {
     private static ResteasyProvider provider;
 
     static {
-        provider = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator().next();
+        Iterator<ResteasyProvider> iter = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator();
+        if (iter.hasNext()) {
+            provider = iter.next();
+        }
     }
+
+    private static final ThreadLocal<Map<Class<?>, Object>> contextualData = new ThreadLocal<Map<Class<?>, Object>>() {
+        @Override
+        protected Map<Class<?>, Object> initialValue() {
+            return new HashMap<>();
+        };
+    };
 
     public static ResteasyProvider getProvider() {
         return provider;
@@ -44,29 +57,33 @@ public final class Resteasy {
 
     /**
      * Push the given {@code instance} with type/key {@code type} to the Resteasy context associated with the current thread.
-     * 
-     * @param type the type/key to associate the {@code instance} with 
+     *
+     * @param type the type/key to associate the {@code instance} with
      * @param instance the instance
      */
     public static void pushContext(Class type, Object instance) {
-        provider.pushContext(type, instance);
-    }
-
-    /**
-     * Lookup the instance associated with the given type/key {@code type} from the Resteasy context associated with the current thread.
-     *
-     * @param type the type/key to lookup 
-     * @return the instance associated with the given {@code type} or null if non-existent.                
-     */
-    public static <R> R getContextData(Class<R> type) {
-        return provider.getContextData(type);
+        contextualData.get().put(type, instance);
     }
 
     /**
      * Clear the Resteasy context associated with the current thread.
      */
     public static void clearContextData() {
-        provider.clearContextData();
+        contextualData.remove();
+    }
+
+    /**
+     * Lookup the instance associated with the given type/key {@code type} from the Resteasy context associated with the current thread, or from the provider.
+     *
+     * @param type the type/key to lookup
+     * @return the instance associated with the given {@code type} or null if non-existent.
+     */
+    public static <R> R getContextData(Class<R> type) {
+        R result = (R) contextualData.get().get(type);
+        if (result != null) {
+            return result;
+        }
+        return provider.getContextData(type);
     }
 
     /**
@@ -74,9 +91,11 @@ public final class Resteasy {
      *
      * @param type the type/key to associate the {@code instance} with
      * @param instance the instance
+     * @deprecated use {@link #pushContext(Class, Object)}
      */
+    @Deprecated
     public static void pushDefaultContextObject(Class type, Object instance) {
-        provider.pushDefaultContextObject(type, instance);
+        pushContext(type, instance);
     }
 
 }

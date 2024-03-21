@@ -68,17 +68,19 @@ public interface KeycloakContext {
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);
-    
+
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
-     * 
+     *
      * @return current AuthenticationSessionModel or null
      */
-    AuthenticationSessionModel getAuthenticationSession(); 
-    
+    AuthenticationSessionModel getAuthenticationSession();
+
     void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     HttpRequest getHttpRequest();
 
     HttpResponse getHttpResponse();
+
+    <T> T putContextObject(Class<T> clazz, T object);
 }

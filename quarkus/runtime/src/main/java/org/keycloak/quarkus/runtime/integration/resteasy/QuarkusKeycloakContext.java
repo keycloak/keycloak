@@ -27,6 +27,8 @@ import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakContext;
 
+import java.util.Optional;
+
 public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
 
     private ClientConnection clientConnection;
@@ -48,7 +50,8 @@ public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
     @Override
     public ClientConnection getConnection() {
         if (clientConnection == null) {
-            ClientConnection contextualObject = Resteasy.getContextData(ClientConnection.class);
+            ClientConnection contextualObject = Optional.ofNullable(Resteasy.getContextData(KeycloakSession.class))
+                    .map(session -> session.getContext().getContextObject(ClientConnection.class)).orElse(null);
 
             if (contextualObject == null) {
                 ResteasyReactiveRequestContext requestContext = getResteasyReactiveRequestContext();

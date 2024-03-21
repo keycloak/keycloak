@@ -17,19 +17,14 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
-import static org.keycloak.common.util.Resteasy.clearContextData;
-
-import jakarta.ws.rs.container.CompletionCallback;
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
-
 import io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext;
 import io.vertx.ext.web.RoutingContext;
 
-public final class CreateSessionHandler implements ServerRestHandler, TransactionalSessionHandler, CompletionCallback {
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
+import org.keycloak.models.KeycloakSession;
+
+public final class CreateTransactionHandler implements ServerRestHandler {
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
@@ -37,23 +32,9 @@ public final class CreateSessionHandler implements ServerRestHandler, Transactio
         RoutingContext routingContext = context.getContext();
         KeycloakSession currentSession = routingContext.get(KeycloakSession.class.getName());
 
-        if (currentSession == null) {
-            // this handler might be invoked multiple times when resolving sub-resources
-            // make sure the session is created once
-            KeycloakSession session = create();
-            routingContext.put(KeycloakSession.class.getName(), session);
-            context.registerCompletionCallback(this);
-            Resteasy.pushContext(KeycloakSession.class, session);
+        if (currentSession != null && !currentSession.getTransactionManager().isActive()) {
+            currentSession.getTransactionManager().begin();
         }
     }
 
-    @Override
-    public void onComplete(Throwable throwable) {
-        try {
-            close(Resteasy.getContextData(KeycloakSession.class));
-        } catch (Exception e) {
-
-        }
-        clearContextData();
-    }
 }
