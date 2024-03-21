@@ -52,11 +52,13 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:latest
+          image: postgres:15
           volumeMounts:
             - mountPath: /data
               name: cache-volume
           env:
+            - name: POSTGRES_USER
+              value: testuser
             - name: POSTGRES_PASSWORD
               value: testpassword
             - name: PGDATA
