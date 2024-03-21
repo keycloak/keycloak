@@ -31,9 +31,10 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.MessageBodyReader;
 import jakarta.ws.rs.ext.Providers;
+
+import org.jboss.resteasy.core.ResteasyContext;
 import org.jboss.resteasy.reactive.server.multipart.FormValue;
 import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.services.FormPartValueImpl;
@@ -75,7 +76,7 @@ public class HttpRequestImpl implements HttpRequest {
                 return new MultivaluedHashMap<>();
             }
 
-            Providers providers = Resteasy.getContextData(Providers.class);
+            Providers providers = ResteasyContext.getContextData(Providers.class);
             MessageBodyReader<MultipartFormDataInput> multiPartProvider = providers.getMessageBodyReader(
                     MultipartFormDataInput.class, null, null, MULTIPART_FORM_DATA_TYPE);
             MultipartFormDataInput inputs = multiPartProvider

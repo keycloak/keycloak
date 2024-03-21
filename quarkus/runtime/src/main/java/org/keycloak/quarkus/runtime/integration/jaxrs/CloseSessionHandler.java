@@ -30,12 +30,12 @@ import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
+import org.keycloak.services.DefaultKeycloakSession;
 
 @Provider
 @PreMatching
 @Priority(1)
-public class CloseSessionHandler implements ContainerResponseFilter, TransactionalSessionHandler {
+public class CloseSessionHandler implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -66,6 +66,9 @@ public class CloseSessionHandler implements ContainerResponseFilter, Transaction
     }
 
     private void closeSession() {
-        close(Resteasy.getContextData(KeycloakSession.class));
+        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        if (session != null && !DefaultKeycloakSession.class.cast(session).isClosed()) {
+            session.close();
+        }
     }
 }

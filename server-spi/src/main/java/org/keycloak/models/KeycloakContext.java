@@ -55,7 +55,15 @@ public interface KeycloakContext {
 
     HttpHeaders getRequestHeaders();
 
-    <T> T getContextObject(Class<T> clazz);
+    /**
+     * Will always return null. You should not need access to a general context object.
+     *
+     * @deprecated
+     */
+    @Deprecated(forRemoval = true)
+    default <T> T getContextObject(Class<T> clazz) {
+        return null;
+    }
 
     RealmModel getRealm();
 
@@ -68,17 +76,23 @@ public interface KeycloakContext {
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);
-    
+
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
-     * 
+     *
      * @return current AuthenticationSessionModel or null
      */
-    AuthenticationSessionModel getAuthenticationSession(); 
-    
+    AuthenticationSessionModel getAuthenticationSession();
+
     void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     HttpRequest getHttpRequest();
 
     HttpResponse getHttpResponse();
+
+    void setConnection(ClientConnection clientConnection);
+
+    void setHttpRequest(HttpRequest httpRequest);
+
+    void setHttpResponse(HttpResponse httpResponse);
 }
