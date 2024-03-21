@@ -116,6 +116,7 @@ export default class RealmSettingsPage extends CommonPage {
   revokeRefreshTokenSwitch = "revoke-refresh-token-switch";
   accessTokenLifespanInput = "access-token-lifespan-input";
   accessTokenLifespanImplicitInput = "access-token-lifespan-implicit-input";
+  parRequestUriLifespanInput = "par-request-uri-lifespan-input";
   clientLoginTimeoutInput = "client-login-timeout-input";
   offlineSessionMaxInput = "offline-session-max-input";
   userInitiatedActionLifespanInput = "user-initiated-action-lifespan";
@@ -128,6 +129,10 @@ export default class RealmSettingsPage extends CommonPage {
   accessTokenLifespanSelectMenu = "#kc-access-token-lifespan-select-menu";
   accessTokenLifespanSelectMenuList =
     "#kc-access-token-lifespan-select-menu > div > ul";
+
+  parRequestUriLifespanSelectMenu = "#par-request-uri-lifespan-select-menu";
+  parRequestUriLifespanSelectMenuList =
+    "#par-request-uri-lifespan-select-menu > div > ul";
 
   accessTokenLifespanImplicitSelectMenu =
     "#kc-access-token-lifespan-implicit-select-menu";
@@ -631,6 +636,12 @@ export default class RealmSettingsPage extends CommonPage {
       this.accessTokenLifespanImplicitSelectMenu,
       this.accessTokenLifespanImplicitSelectMenuList,
     );
+    cy.findByTestId("parRequestUriLifespan").clear().type("2");
+    this.changeTimeUnit(
+      "Hours",
+      this.parRequestUriLifespanSelectMenu,
+      this.parRequestUriLifespanSelectMenuList,
+    );
 
     cy.findByTestId(this.clientLoginTimeoutInput).clear().type("3");
     this.changeTimeUnit(
@@ -1014,16 +1025,16 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.#jsonEditorReloadBtn).click();
 
     cy.get(this.#jsonEditor).type(`{pageup}{del} [{
-      "name": "Reload", 
+      "name": "Reload",
     }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
 
     cy.findByTestId(this.#jsonEditorReloadBtn).click();
 
     cy.get(this.#jsonEditor).type(`{pageup}{del} [{
-      "name": "Test", 
+      "name": "Test",
       "description": "Test Description",
       "enabled": false,
-      "conditions": [], 
+      "conditions": [],
       "profiles": [],
     }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
 

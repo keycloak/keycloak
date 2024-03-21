@@ -346,6 +346,10 @@ describe("Realm settings events tab tests", () => {
       "have.value",
       1,
     );
+    cy.findByTestId(realmSettingsPage.parRequestUriLifespanInput).should(
+      "have.value",
+      2,
+    );
     cy.findByTestId(realmSettingsPage.accessTokenLifespanImplicitInput).should(
       "have.value",
       2,
