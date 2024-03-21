@@ -107,18 +107,7 @@ public class KeycloakRecorder {
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, boolean metricsEnabled, ShutdownContext shutdownContext) {
         try {
             CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(config, metricsEnabled);
-
-            shutdownContext.addShutdownTask(new Runnable() {
-                @Override
-                public void run() {
-                    DefaultCacheManager cacheManager = cacheManagerFactory.getOrCreate();
-
-                    if (cacheManager != null) {
-                        cacheManager.stop();
-                    }
-                }
-            });
-
+            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);

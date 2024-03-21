@@ -201,9 +201,8 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             // check if single-use object/action token is available on all nodes
             inComittedTransaction(session -> {
                 SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-                while (singleUseStore.get(key) == null || singleUseStore.get(actionTokenKey.get()) == null) {
-                    sleep(1000);
-                }
+                eventually(() -> "key not found: " + key, () -> singleUseStore.get(key) != null);
+                eventually(() -> "key not found: " + actionTokenKey.get(), () -> singleUseStore.get(actionTokenKey.get()) != null);
                 replicationDone.countDown();
             });
 
@@ -226,9 +225,8 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             inComittedTransaction(session -> {
                 SingleUseObjectProvider singleUseStore = session.singleUseObjects();
 
-                while (singleUseStore.get(key) != null && singleUseStore.get(actionTokenKey.get()) != null) {
-                   sleep(1000);
-                }
+                eventually(() -> "key found: " + key, () -> singleUseStore.get(key) == null);
+                eventually(() -> "key found: " + actionTokenKey.get(), () -> singleUseStore.get(actionTokenKey.get()) == null);
             });
         });
     }

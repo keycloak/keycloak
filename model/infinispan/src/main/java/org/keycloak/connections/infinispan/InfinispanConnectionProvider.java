@@ -17,10 +17,13 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.util.List;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
+
+import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,7 +52,7 @@ public interface InfinispanConnectionProvider extends Provider {
     String ACTION_TOKEN_CACHE = "actionTokens";
     int ACTION_TOKEN_CACHE_DEFAULT_MAX = -1;
     int ACTION_TOKEN_MAX_IDLE_SECONDS = -1;
-    long ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS = 5 * 60 * 1000l;
+    long ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS = 5 * 60 * 1000L;
 
     String KEYS_CACHE_NAME = "keys";
     int KEYS_CACHE_DEFAULT_MAX = 1000;
@@ -126,5 +129,27 @@ public interface InfinispanConnectionProvider extends Provider {
      * @return Information about cluster topology
      */
     TopologyInfo getTopologyInfo();
+
+    /**
+     * Returns an executor that will run the given tasks on a blocking thread as required.
+     * <p>
+     * The Infinispan block {@link Executor} is used to execute blocking operation, like I/O.
+     * If Virtual Threads are enabled, this will be an executor with Virtual Threads.
+     *
+     * @param name The name for trace logging purpose.
+     * @return The Infinispan blocking {@link Executor}.
+     */
+    Executor getExecutor(String name);
+
+    /**
+     * Syntactic sugar to get a {@link RemoteCache}.
+     *
+     * @see InfinispanConnectionProvider#getRemoteCache(String)
+     */
+    static <K, V> RemoteCache<K, V> getRemoteCache(KeycloakSessionFactory factory, String cacheName) {
+        try (var session = factory.create()) {
+            return session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(cacheName);
+        }
+    }
 
 }

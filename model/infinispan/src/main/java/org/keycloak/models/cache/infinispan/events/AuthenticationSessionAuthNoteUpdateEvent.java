@@ -90,7 +90,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
     @Override
     public String toString() {
         return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, tabId=%s, clientUUID=%s, authNotesFragment=%s ]",
-                authSessionId, clientUUID, authNotesFragment);
+                authSessionId, tabId, clientUUID, authNotesFragment);
     }
 
     public static class ExternalizerImpl implements Externalizer<AuthenticationSessionAuthNoteUpdateEvent> {

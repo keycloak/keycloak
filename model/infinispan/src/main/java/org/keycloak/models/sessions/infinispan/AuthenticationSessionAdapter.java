@@ -46,7 +46,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     private final KeycloakSession session;
     private final RootAuthenticationSessionAdapter parent;
     private final String tabId;
-    private AuthenticationSessionEntity entity;
+    private final AuthenticationSessionEntity entity;
 
     public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
         this.session = session;
@@ -157,9 +157,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public Map<String, String> getClientNotes() {
         if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getClientNotes());
-        return copy;
+        return new ConcurrentHashMap<>(entity.getClientNotes());
     }
 
     @Override
@@ -221,11 +219,9 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public Map<String, String> getUserSessionNotes() {
         if (entity.getUserSessionNotes() == null) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
-        ConcurrentHashMap<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getUserSessionNotes());
-        return copy;
+        return new ConcurrentHashMap<>(entity.getUserSessionNotes());
     }
 
     @Override
@@ -237,9 +233,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public Set<String> getRequiredActions() {
-        Set<String> copy = new HashSet<>();
-        copy.addAll(entity.getRequiredActions());
-        return copy;
+        return new HashSet<>(entity.getRequiredActions());
     }
 
     @Override
@@ -336,9 +330,8 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof AuthenticationSessionModel)) return false;
+        if (!(o instanceof AuthenticationSessionModel that)) return false;
 
-        AuthenticationSessionModel that = (AuthenticationSessionModel) o;
         return that.getTabId().equals(getTabId());
     }
 
