@@ -23,6 +23,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -94,13 +95,29 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private InfinispanKeyGenerator keyGenerator;
 
     @Override
-    public InfinispanUserSessionProvider create(KeycloakSession session) {
+    public UserSessionProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            return new PersistentUserSessionProvider(
+                    session,
+                    remoteCacheInvoker,
+                    lastSessionRefreshStore,
+                    offlineLastSessionRefreshStore,
+                    persisterLastSessionRefreshStore,
+                    keyGenerator,
+                    cache,
+                    offlineSessionsCache,
+                    clientSessionCache,
+                    offlineClientSessionsCache,
+                    this::deriveOfflineSessionCacheEntryLifespanMs,
+                    this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+            );
+        }
         return new InfinispanUserSessionProvider(
                 session,
                 remoteCacheInvoker,
