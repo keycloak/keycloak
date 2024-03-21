@@ -28,9 +28,10 @@ It is still possible to directly set your own `javax.net.ssl` truststore System 
 
 You may refine how hostnames are verified by TLS connections with the `tls-hostname-verifier` property.
 
-* `WILDCARD` (the default) allows wildcards in subdomain names, such as *.foo.com.
+* `DEFAULT` (the default) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with rules and exclusions for public suffixes based upon https://publicsuffix.org/list/
 * `ANY` means that the hostname is not verified.
-* When using `STRICT`, the Common Name (CN) must match the hostname exactly.
+* `WILDCARD` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). Use DEFAULT instead.
+* `STRICT` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with some limited exclusions. Use DEFAULT instead.
 +
 Please note that this setting does not apply to LDAP secure connections, which require strict hostname checking.
 

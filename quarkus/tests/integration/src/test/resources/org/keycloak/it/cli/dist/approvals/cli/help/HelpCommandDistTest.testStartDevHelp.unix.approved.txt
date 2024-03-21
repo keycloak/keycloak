@@ -256,7 +256,8 @@ Truststore:
 
 --tls-hostname-verifier <tls-hostname-verifier>
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
-                       Possible values are: ANY, WILDCARD, STRICT. Default: WILDCARD.
+                       Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
+                       DEFAULT. Default: DEFAULT.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12 or pfx file extensions), PEM files, or directories
                        containing those files that will be used as a system truststore.
