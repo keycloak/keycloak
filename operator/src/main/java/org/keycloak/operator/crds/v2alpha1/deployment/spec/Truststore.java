@@ -21,12 +21,13 @@ import io.fabric8.generator.annotation.Required;
 import io.sundr.builder.annotations.Buildable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class Truststore {
 
-    @Required
+    @JsonPropertyDescription("Not used. To be removed in later versions.")
     private String name;
     @Required
     private TruststoreSource secret;
