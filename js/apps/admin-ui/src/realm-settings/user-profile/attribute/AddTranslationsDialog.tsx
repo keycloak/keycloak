@@ -116,7 +116,7 @@ export const AddTranslationsDialog = ({
   }, [combinedLocales, translationKey, setValue]);
 
   const handleOk = () => {
-    const formData = getValues() as Translations;
+    const formData = getValues();
 
     const updatedTranslations = formData.translations.map((translation) => {
       if (translation.locale === filter) {
@@ -255,12 +255,12 @@ export const AddTranslationsDialog = ({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {filteredLocales.map((locale) => {
+                        {filteredLocales.map((locale, index) => {
                           const rowIndex = combinedLocales.findIndex(
                             (combinedLocale) => combinedLocale === locale,
                           );
                           return (
-                            <Tr key={rowIndex}>
+                            <Tr key={index}>
                               <Td
                                 className="pf-m-sm pf-u-px-sm"
                                 dataLabel={t("supportedLanguage")}

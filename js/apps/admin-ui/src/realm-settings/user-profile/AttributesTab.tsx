@@ -86,10 +86,10 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       if (!config?.attributes) return;
 
       const translationsToDelete = config.attributes.find(
-        (attribute: UserProfileAttribute) =>
-          attribute.name === attributeToDelete,
+        (attribute) => attribute.name === attributeToDelete,
       )?.displayName;
 
+      // Remove the the `${}` from translationsToDelete string
       const formattedTranslationsToDelete = translationsToDelete?.substring(
         2,
         translationsToDelete.length - 1,
@@ -126,8 +126,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         );
 
         const updatedAttributes = config.attributes.filter(
-          (attribute: UserProfileAttribute) =>
-            attribute.name !== attributeToDelete,
+          (attribute) => attribute.name !== attributeToDelete,
         );
 
         save(
