@@ -227,35 +227,49 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         provider.clear();
 
         for (Spi spi : spis) {
-            String defaultProvider = Config.getProvider(spi.getName());
-            if (defaultProvider != null) {
-                if (getProviderFactory(spi.getProviderClass(), defaultProvider) == null) {
-                    throw new RuntimeException("Failed to find provider " + defaultProvider + " for " + spi.getName());
+            String provider = Config.getProvider(spi.getName());
+            if (provider != null) {
+                if (getProviderFactory(spi.getProviderClass(), provider) == null) {
+                    throw new RuntimeException("Failed to find provider " + provider + " for " + spi.getName());
                 }
+                this.provider.put(spi.getProviderClass(), provider);
             } else {
                 Map<String, ProviderFactory> factories = factoriesMap.get(spi.getProviderClass());
-                if (factories != null && factories.size() == 1) {
-                    defaultProvider = factories.values().iterator().next().getId();
-                }
-
-                if (defaultProvider == null) {
-                    Optional<ProviderFactory> highestPriority = factories.values().stream().max(Comparator.comparing(ProviderFactory::order));
-                    if (highestPriority.isPresent() && highestPriority.get().order() > 0) {
-                        defaultProvider = highestPriority.get().getId();
-                    }
-                }
-
-                if (defaultProvider == null && factories.containsKey("default")) {
-                    defaultProvider = "default";
+                String defaultProvider = resolveDefaultProvider(factories, spi);
+                if (defaultProvider != null) {
+                    this.provider.put(spi.getProviderClass(), defaultProvider);
                 }
             }
+        }
+    }
 
-            if (defaultProvider != null) {
-                this.provider.put(spi.getProviderClass(), defaultProvider);
-                logger.debugv("Set default provider for {0} to {1}", spi.getName(), defaultProvider);
-            } else {
-                logger.debugv("No default provider for {0}", spi.getName());
+    public static String resolveDefaultProvider(Map<String, ProviderFactory> factories, Spi spi) {
+        if (factories == null) {
+            return null;
+        }
+
+        String defaultProvider = Config.getDefaultProvider(spi.getName());
+        if (defaultProvider != null) {
+            if (!factories.containsKey(defaultProvider)) {
+                throw new RuntimeException("Failed to find provider " + defaultProvider + " for " + spi.getName());
             }
+        } else if (factories.size() == 1) {
+            defaultProvider = factories.values().iterator().next().getId();
+        } else {
+            Optional<ProviderFactory> highestPriority = factories.values().stream().filter(p -> p.order() > 0).max(Comparator.comparing(ProviderFactory::order));
+            if (highestPriority.isPresent()) {
+                defaultProvider = highestPriority.get().getId();
+            } else if (factories.containsKey("default")) {
+                defaultProvider = "default";
+            }
+        }
+
+        if (defaultProvider != null) {
+            logger.debugv("Set default provider for {0} to {1}", spi.getName(), defaultProvider);
+            return defaultProvider;
+        } else {
+            logger.debugv("No default provider for {0}", spi.getName());
+            return null;
         }
     }
 

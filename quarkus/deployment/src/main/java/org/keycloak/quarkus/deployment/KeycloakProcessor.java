@@ -101,6 +101,7 @@ import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFac
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.JsResource;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -881,38 +882,19 @@ class KeycloakProcessor {
     private void checkProviders(Spi spi,
                                 Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap,
                                 Map<Class<? extends Provider>, String> defaultProviders) {
-        String defaultProvider = Config.getProvider(spi.getName());
-
-        if (defaultProvider != null) {
+        String provider = Config.getProvider(spi.getName());
+        if (provider != null) {
             Map<String, ProviderFactory> map = factoriesMap.get(spi.getProviderClass());
-            if (map == null || map.get(defaultProvider) == null) {
-                throw new RuntimeException("Failed to find provider " + defaultProvider + " for " + spi.getName());
+            if (map == null || map.get(provider) == null) {
+                throw new RuntimeException("Failed to find provider " + provider + " for " + spi.getName());
             }
+            defaultProviders.put(spi.getProviderClass(), provider);
         } else {
             Map<String, ProviderFactory> factories = factoriesMap.get(spi.getProviderClass());
-            if (factories != null && factories.size() == 1) {
-                defaultProvider = factories.values().iterator().next().getId();
+            String defaultProvider = DefaultKeycloakSessionFactory.resolveDefaultProvider(factories, spi);
+            if (defaultProvider != null) {
+                defaultProviders.put(spi.getProviderClass(), defaultProvider);
             }
-
-            if (factories != null) {
-                if (defaultProvider == null) {
-                    Optional<ProviderFactory> highestPriority = factories.values().stream()
-                            .max(Comparator.comparing(ProviderFactory::order));
-                    if (highestPriority.isPresent() && highestPriority.get().order() > 0) {
-                        defaultProvider = highestPriority.get().getId();
-                    }
-                }
-            }
-
-            if (defaultProvider == null && (factories == null || factories.containsKey("default"))) {
-                defaultProvider = "default";
-            }
-        }
-
-        if (defaultProvider != null) {
-            defaultProviders.put(spi.getProviderClass(), defaultProvider);
-        } else {
-            logger.debugv("No default provider for {0}", spi.getName());
         }
     }
 
