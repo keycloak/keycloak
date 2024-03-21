@@ -34,6 +34,8 @@ or <<_extensions_jpa,Extending the datamodel with custom JPA entities>>.
 
 For details on how to package and deploy a custom provider, refer to the <<_providers,Service Provider Interfaces>> chapter.
 
+NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
+
 [[_extensions_spi]]
 === Add your own custom SPI
 
