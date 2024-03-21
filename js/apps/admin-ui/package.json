@@ -109,7 +109,7 @@
     "lightningcss": "^1.24.1",
     "ts-node": "^10.9.2",
     "uuid": "^9.0.1",
-    "vite": "^5.1.6",
+    "vite": "^5.2.2",
     "vite-plugin-checker": "^0.6.4",
     "vitest": "^1.4.0"
   }
