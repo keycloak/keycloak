@@ -17,6 +17,40 @@
 
 package org.keycloak.quarkus.runtime;
 
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.ShutdownContext;
+import io.quarkus.runtime.annotations.Recorder;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import liquibase.Scope;
+import liquibase.servicelocator.ServiceLocator;
+import org.hibernate.cfg.AvailableSettings;
+import org.infinispan.commons.util.FileLookupFactory;
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.TruststoreOptions;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
+import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
+import org.keycloak.truststore.TruststoreBuilder;
+import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -30,44 +64,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
-import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
-import liquibase.Scope;
-
-import org.hibernate.cfg.AvailableSettings;
-import org.infinispan.commons.util.FileLookupFactory;
-import org.infinispan.manager.DefaultCacheManager;
-
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.config.MetricsOptions;
-import org.keycloak.config.TruststoreOptions;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
-import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.theme.ClasspathThemeProviderFactory;
-import org.keycloak.truststore.TruststoreBuilder;
-
-import io.quarkus.runtime.RuntimeValue;
-import io.quarkus.runtime.ShutdownContext;
-import io.quarkus.runtime.annotations.Recorder;
-import liquibase.servicelocator.ServiceLocator;
-import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 
@@ -109,8 +105,9 @@ public class KeycloakRecorder {
 
     public void configureLiquibase(Map<String, List<String>> services) {
         ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
-        if (locator instanceof FastServiceLocator)
+        if (locator instanceof FastServiceLocator) {
             ((FastServiceLocator) locator).initServices(services);
+        }
     }
 
     public void configSessionFactory(
@@ -123,17 +120,8 @@ public class KeycloakRecorder {
 
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(ShutdownContext shutdownContext) {
         try {
-            boolean isMetricsEnabled = Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
-            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile(), isMetricsEnabled);
-
-            shutdownContext.addShutdownTask(() -> {
-                DefaultCacheManager cacheManager = cacheManagerFactory.getOrCreate();
-
-                if (cacheManager != null) {
-                    cacheManager.stop();
-                }
-            });
-
+            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(getInfinispanConfigFile(), Configuration.isTrue(MetricsOptions.METRICS_ENABLED));
+            shutdownContext.addShutdownTask(cacheManagerFactory::shutdown);
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -28,7 +28,12 @@ import io.quarkus.arc.Arc;
 public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
 
     @Override
-    public <C> C getCacheManager(Config.Scope config) {
-        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreate();
+    public <C> C getEmbeddedCacheManager(Config.Scope config) {
+        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreateEmbeddedCacheManager();
+    }
+
+    @Override
+    public <C> C getRemoteCacheManager(Config.Scope config) {
+        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreateRemoteCacheManager();
     }
 }
