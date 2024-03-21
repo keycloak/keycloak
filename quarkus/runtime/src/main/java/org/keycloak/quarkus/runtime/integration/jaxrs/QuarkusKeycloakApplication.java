@@ -27,8 +27,6 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.services.resources.KeycloakApplication;
 
-import java.util.Set;
-
 import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
@@ -59,13 +57,4 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         // no need to load config provider because we force quarkus impl
     }
 
-    @Override
-    public Set<Object> getSingletons() {
-        return Set.of();
-    }
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of();
-    }
 }

@@ -30,9 +30,9 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.HttpRequestImpl;
+import org.keycloak.services.resteasy.HttpRequestImpl;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
 /**
  * <p>Little test class for RedirectUtils methods.</p>
@@ -49,9 +49,9 @@ public class RedirectUtilsTest {
         ResteasyContext.getContextDataMap().put(HttpRequest.class, httpRequest);
         Profile.defaults();
         CryptoIntegration.init(CryptoProvider.class.getClassLoader());
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        session = new DefaultKeycloakSession(sessionFactory);
+        session = new ResteasyKeycloakSession(sessionFactory);
     }
 
     @Test

@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,6 +53,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultComponentFactoryProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.timer.TimerSpi;
@@ -304,7 +305,7 @@ public abstract class KeycloakModelTest {
 
         LOG.debugf("Creating factory %d in %s using the following configuration:\n    %s", factoryIndex, threadName, CONFIG);
 
-        DefaultKeycloakSessionFactory res = new DefaultKeycloakSessionFactory() {
+        DefaultKeycloakSessionFactory res = new ResteasyKeycloakSessionFactory() {
 
             @Override
             public void init() {
