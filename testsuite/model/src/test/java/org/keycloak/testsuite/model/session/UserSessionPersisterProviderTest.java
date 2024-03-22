@@ -264,7 +264,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionModel userSession = session.sessions().createUserSession(null, fooRealm, session.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             userSessionID.set(userSession.getId());
 
-            createClientSession(session, realmId, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
+            createClientSession(session, fooRealm.getId(), fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
         });
 
         inComittedTransaction(session -> {
@@ -305,8 +305,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionModel userSession = session.sessions().createUserSession(null, fooRealm, session.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             userSessionID.set(userSession.getId());
 
-            createClientSession(session, realmId, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
-            createClientSession(session, realmId, fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state");
+            createClientSession(session, fooRealm.getId(), fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
+            createClientSession(session, fooRealm.getId(), fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state");
         });
 
         inComittedTransaction(session -> {
