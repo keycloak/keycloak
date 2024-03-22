@@ -147,6 +147,11 @@ public class SoapTest {
             }
 
             @Override
+            public String getDefaultProvider(String spi) {
+                return null;
+            }
+
+            @Override
             public Config.Scope scope(String... scope) {
                 if (scope.length == 2 && "connectionsHttpClient".equals(scope[0]) && "default".equals(scope[1])) {
                     return ScopeUtil.createScope(Collections.singletonMap("proxy-mappings", "localhost;http://localhost:8281"));
