@@ -41,7 +41,7 @@ const match = matchPath(ROOT_PATH, location.pathname);
 
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account`,
+  baseUrl: `http://localhost:8180/realms/${match?.params.realm ?? DEFAULT_REALM}/account/`,
   realm: match?.params.realm ?? DEFAULT_REALM,
   clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
