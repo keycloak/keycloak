@@ -47,7 +47,7 @@ describe("Clients SAML tests", () => {
     it("should save force name id format", () => {
       cy.get(".pf-c-jump-links__list").contains("SAML capabilities").click();
 
-      cy.findByTestId("forceNameIdFormat").click({
+      cy.findByTestId("attributes.saml🍺force🍺post🍺binding").click({
         force: true,
       });
       cy.findByTestId("settings-save").click();
