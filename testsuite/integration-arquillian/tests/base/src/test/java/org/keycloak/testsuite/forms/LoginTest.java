@@ -45,8 +45,11 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -63,6 +66,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -1030,4 +1034,35 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         }
 
     }
+
+    @Test
+    public void testFrontChannelLogoutCustomCSP() throws Exception {
+        // this test makes only sense using a real browser (chrome, firefox)
+        // phantomjs does not manage the CSP header, that's why it is here and not in oauth
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(adminClient.realm(oauth.getRealm()))
+                .setBrowserSecurityHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey(),
+                        "frame-src 'keycloak.org'; frame-ancestors 'self'; object-src 'none'; style-src 'self';")
+                .update();
+             ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setName("My Testing App")
+                .setFrontchannelLogout(true)
+                .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, oauth.APP_ROOT + "/admin/frontchannelLogout")
+                .update()) {
+            oauth.clientSessionState("client-session");
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString).build();
+            driver.navigate().to(logoutUrl);
+            LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
+            Assert.assertNotNull(logoutToken);
+            IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
+            Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+            assertTrue(driver.getTitle().equals("Logging out"));
+            assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            assertTrue(driver.getPageSource().contains("My Testing App"));
+        }
+     }
 }

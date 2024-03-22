@@ -106,22 +106,24 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
 
         // TODO This will be refactored as part of introducing a more strict CSP header
         if (options != null) {
-            ContentSecurityPolicyBuilder csp = ContentSecurityPolicyBuilder.create();
+            ContentSecurityPolicyBuilder csp = ContentSecurityPolicyBuilder.create(
+                    headers.getFirst(CONTENT_SECURITY_POLICY.getHeaderName()).toString());
 
             if (options.isAllowAnyFrameAncestor()) {
                 headers.remove(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName());
 
-                csp.frameAncestors(null);
+                if (csp.isDefaultFrameAncestors()) {
+                    // only remove frame ancestors if defined to default 'self'
+                    csp.frameAncestors(null);
+                }
             }
 
             String allowedFrameSrc = options.getAllowedFrameSrc();
             if (allowedFrameSrc != null) {
-                csp.frameSrc(allowedFrameSrc);
+                csp.addFrameSrc(allowedFrameSrc);
             }
 
-            if (CONTENT_SECURITY_POLICY.getDefaultValue().equals(headers.getFirst(CONTENT_SECURITY_POLICY.getHeaderName()))) {
-                headers.putSingle(CONTENT_SECURITY_POLICY.getHeaderName(), csp.build());
-            }
+            headers.putSingle(CONTENT_SECURITY_POLICY.getHeaderName(), csp.build());
         }
     }
 
