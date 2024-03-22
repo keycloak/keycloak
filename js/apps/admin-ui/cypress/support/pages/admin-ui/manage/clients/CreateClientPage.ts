@@ -32,12 +32,14 @@ export default class CreateClientPage extends CommonPage {
   #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#login_theme";
-  #loginThemeList = 'ul[aria-label="Login theme"]';
-  #consentRequiredSwitch = '[for="kc-consent-switch"] > .pf-c-switch__toggle';
-  #consentRequiredSwitchInput = "#kc-consent-switch";
-  #displayClientOnScreenSwitch = '[for="kc-display-on-client-switch"]';
-  #displayClientOnScreenSwitchInput = "#kc-display-on-client-switch";
-  #clientConsentScreenText = "#kc-consent-screen-text";
+  #loginThemeList = 'ul[class="pf-c-select__menu"]';
+  #consentRequiredSwitch = '[for="consentRequired"] .pf-c-switch__toggle';
+  #consentRequiredSwitchInput = "#consentRequired";
+  #displayClientOnScreenSwitch =
+    '[for="attributes.display🍺on🍺consent🍺screen"].pf-c-switch';
+  #displayClientOnScreenSwitchInput =
+    "#attributes\\.display🍺on🍺consent🍺screen";
+  #clientConsentScreenText = "attributes.consent🍺screen🍺text";
 
   #frontChannelLogoutSwitch =
     '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
@@ -237,11 +239,11 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkLoginSettingsElements() {
-    cy.get(this.#clientConsentScreenText).scrollIntoView();
+    cy.findByTestId(this.#clientConsentScreenText).scrollIntoView();
     cy.get(this.#loginThemeDrpDwn).should("not.be.disabled");
     cy.get(this.#consentRequiredSwitchInput).should("not.be.disabled");
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#loginThemeDrpDwn).click();
     cy.get(this.#loginThemeList).findByText("base").should("exist");
@@ -250,13 +252,13 @@ export default class CreateClientPage extends CommonPage {
 
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("not.be.disabled");
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("not.be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("not.be.disabled");
 
     cy.get(this.#displayClientOnScreenSwitch).click();
-    cy.get(this.#clientConsentScreenText).should("be.disabled");
+    cy.findByTestId(this.#clientConsentScreenText).should("be.disabled");
     cy.get(this.#consentRequiredSwitch).click();
     cy.get(this.#displayClientOnScreenSwitchInput).should("be.disabled");
 
