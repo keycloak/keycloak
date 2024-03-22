@@ -6,6 +6,8 @@ import org.keycloak.models.credential.dto.PasswordSecretData;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class PasswordCredentialModel extends CredentialModel {
 
@@ -25,7 +27,11 @@ public class PasswordCredentialModel extends CredentialModel {
     }
 
     public static PasswordCredentialModel createFromValues(String algorithm, byte[] salt, int hashIterations, String encodedPassword){
-        PasswordCredentialData credentialData = new PasswordCredentialData(hashIterations, algorithm);
+        return createFromValues(algorithm, salt, hashIterations, null, encodedPassword);
+    }
+
+    public static PasswordCredentialModel createFromValues(String algorithm, byte[] salt, int hashIterations, Map<String, List<String>> additionalParameters, String encodedPassword){
+        PasswordCredentialData credentialData = new PasswordCredentialData(hashIterations, algorithm, additionalParameters);
         PasswordSecretData secretData = new PasswordSecretData(encodedPassword, salt);
 
         PasswordCredentialModel passwordCredentialModel = new PasswordCredentialModel(credentialData, secretData);
