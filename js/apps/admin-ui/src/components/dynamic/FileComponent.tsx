@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FileUpload } from "../json-file-upload/patternfly/FileUpload";
 import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";

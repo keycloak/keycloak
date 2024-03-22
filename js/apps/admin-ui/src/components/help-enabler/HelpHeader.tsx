@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import helpUrls from "../../help-urls";
-import { useHelp } from "ui-shared";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 
 import "./help-header.css";
 

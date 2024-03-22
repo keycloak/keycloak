@@ -1,6 +1,10 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { createNamedContext, useRequiredContext, label } from "ui-shared";
+import {
+  createNamedContext,
+  useRequiredContext,
+  label,
+} from "@keycloak/keycloak-ui-shared";
 
 import { keycloak } from "../keycloak";
 import { useFetch } from "../utils/useFetch";

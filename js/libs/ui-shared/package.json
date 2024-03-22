@@ -1,12 +1,13 @@
 {
-  "name": "ui-shared",
+  "name": "@keycloak/keycloak-ui-shared",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
-  "main": "./dist/ui-shared.js",
-  "types": "./dist/ui-shared.d.ts",
+  "main": "./dist/keycloak-ui-shared.js",
+  "types": "./dist/keycloak-ui-shared.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/ui-shared.js",
-      "types": "./dist/ui-shared.d.ts"
+      "import": "./dist/keycloak-ui-shared.js",
+      "types": "./dist/keycloak-ui-shared.d.ts"
     }
   },
   "files": [

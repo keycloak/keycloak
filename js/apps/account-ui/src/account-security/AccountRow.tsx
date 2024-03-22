@@ -11,7 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { LinkIcon, UnlinkIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
-import { IconMapper, useAlerts } from "ui-shared";
+import { IconMapper, useAlerts } from "@keycloak/keycloak-ui-shared";
 import { linkAccount, unLinkAccount } from "../api/methods";
 import { LinkedAccountRepresentation } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";

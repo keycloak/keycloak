@@ -11,7 +11,7 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";

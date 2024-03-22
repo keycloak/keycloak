@@ -1,7 +1,7 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";

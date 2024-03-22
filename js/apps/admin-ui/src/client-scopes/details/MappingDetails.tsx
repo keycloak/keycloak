@@ -13,7 +13,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { KeycloakTextInput, TextControl } from "ui-shared";
+import { KeycloakTextInput, TextControl } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";

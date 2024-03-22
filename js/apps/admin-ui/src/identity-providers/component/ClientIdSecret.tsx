@@ -2,7 +2,7 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, PasswordControl } from "ui-shared";
+import { HelpItem, PasswordControl } from "@keycloak/keycloak-ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const ClientIdSecret = ({

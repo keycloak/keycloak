@@ -2,7 +2,7 @@ import { ActionGroup, Button } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { ApplicationUrls } from "./ApplicationUrls";
 
 type FineGrainSamlEndpointConfigProps = {

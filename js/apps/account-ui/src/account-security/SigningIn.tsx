@@ -17,7 +17,7 @@ import {
 } from "@patternfly/react-core";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ContinueCancelModal, useAlerts } from "ui-shared";
+import { ContinueCancelModal, useAlerts } from "@keycloak/keycloak-ui-shared";
 import { deleteCredentials, getCredentials } from "../api/methods";
 import {
   CredentialContainer,

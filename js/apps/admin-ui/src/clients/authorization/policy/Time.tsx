@@ -14,7 +14,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 const DATE_TIME_FORMAT = /(\d\d\d\d-\d\d-\d\d)? (\d\d?):(\d\d?)/;
 const padDateSegment = (value: number) => value.toString().padStart(2, "0");

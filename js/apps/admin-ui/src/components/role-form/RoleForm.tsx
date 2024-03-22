@@ -2,7 +2,7 @@ import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import { SubmitHandler, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, To } from "react-router-dom";
-import { TextAreaControl, TextControl } from "ui-shared";
+import { TextAreaControl, TextControl } from "@keycloak/keycloak-ui-shared";
 
 import { FormAccess } from "../form/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";

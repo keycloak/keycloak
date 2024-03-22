@@ -22,7 +22,7 @@ import {
   SwitchControl,
   TextControl,
   UserProfileFields,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { useAlerts } from "../components/alert/Alerts";

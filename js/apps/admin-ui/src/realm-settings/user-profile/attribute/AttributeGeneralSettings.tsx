@@ -18,7 +18,7 @@ import { isEqual } from "lodash-es";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";

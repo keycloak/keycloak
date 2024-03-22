@@ -3,7 +3,7 @@ import {
   KeycloakProvider,
   Translations,
   TranslationsProvider,
-} from "keycloak-masthead";
+} from "@keycloak/keycloak-masthead";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useHref } from "react-router-dom";

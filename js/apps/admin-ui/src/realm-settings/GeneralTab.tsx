@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../admin-client";
 import { FormattedLink } from "../components/external-link/FormattedLink";

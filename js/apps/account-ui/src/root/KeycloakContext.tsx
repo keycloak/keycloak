@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlertProvider, Help } from "ui-shared";
+import { AlertProvider, Help } from "@keycloak/keycloak-ui-shared";
 import { Environment } from "../environment";
 import { ErrorPage } from "./ErrorPage";
 

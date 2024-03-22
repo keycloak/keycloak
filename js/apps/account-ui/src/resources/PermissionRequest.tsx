@@ -18,7 +18,7 @@ import {
 } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "ui-shared";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { fetchPermission, updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";

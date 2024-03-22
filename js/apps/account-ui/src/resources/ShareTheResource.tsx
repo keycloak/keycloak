@@ -17,7 +17,11 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
+import {
+  KeycloakTextInput,
+  SelectControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 import { useEnvironment } from "../root/KeycloakContext";

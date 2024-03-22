@@ -14,7 +14,7 @@ import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { ScrollForm } from "ui-shared";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";

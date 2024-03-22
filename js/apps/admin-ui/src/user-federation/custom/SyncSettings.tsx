@@ -1,7 +1,7 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 
 export const SyncSettings = () => {
   const { t } = useTranslation();
