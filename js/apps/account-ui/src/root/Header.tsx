@@ -13,22 +13,22 @@ import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { Button } from "@patternfly/react-core";
 
 import style from "./header.module.css";
+import { environment } from "../environment";
 
 const ReferrerLink = () => {
   const { t } = useTranslation();
-  const searchParams = new URLSearchParams(location.search);
 
-  return searchParams.has("referrer_uri") ? (
+  return environment.referrer_uri ? (
     <Button
       data-testid="referrer-link"
       component="a"
-      href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
+      href={environment.referrer_uri!.replace("_hash_", "#")}
       variant="link"
       icon={<ExternalLinkSquareAltIcon />}
       iconPosition="right"
       isInline
     >
-      {t("backTo", { app: searchParams.get("referrer") })}
+      {t("backTo", { app: environment.referrer })}
     </Button>
   ) : null;
 };
