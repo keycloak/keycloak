@@ -9,6 +9,7 @@ import {
 
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { FormLabel } from "./FormLabel";
+import { ReactNode } from "react";
 
 export type TextControlProps<
   T extends FieldValues,
@@ -16,7 +17,7 @@ export type TextControlProps<
 > = UseControllerProps<T, P> &
   Omit<TextInputProps, "name" | "isRequired" | "required"> & {
     label: string;
-    labelIcon?: string;
+    labelIcon?: string | ReactNode;
     isDisabled?: boolean;
     helperText?: string;
   };
