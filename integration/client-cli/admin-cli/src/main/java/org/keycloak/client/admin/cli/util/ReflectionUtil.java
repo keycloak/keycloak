@@ -18,9 +18,6 @@ package org.keycloak.client.admin.cli.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -127,54 +124,21 @@ public class ReflectionUtil {
         list.remove(index);
     }
 
-    private static JsonNode valueToJsonNode(String val) {
-        // try get value as JSON object
+    static JsonNode valueToJsonNode(String val) {
+        // try get value as JSON
         try {
-            return MAPPER.readValue(val, ObjectNode.class);
+            return MAPPER.readTree(val);
         } catch (Exception ignored) {
         }
 
-        // try get value as JSON array
-        try {
-            return MAPPER.readValue(val, ArrayNode.class);
-        } catch (Exception ignored) {
-        }
-
-        if (isBoolean(val)) {
-            return BooleanNode.valueOf(Boolean.valueOf(val));
-        } else if (isInteger(val)) {
-            return LongNode.valueOf(Long.valueOf(val));
-        } else if (isNumber(val)) {
-            return DoubleNode.valueOf(Double.valueOf(val));
-        } else if (isQuoted(val)) {
+        // legacy behavior, check for quoted / invalid json - to be removed
+        if (isQuoted(val)) {
             return TextNode.valueOf(unquote(val));
         }
 
         return TextNode.valueOf(val);
     }
-
-    private static boolean isInteger(String val) {
-        try {
-            Long.valueOf(val);
-            return true;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private static boolean isNumber(String val) {
-        try {
-            Double.valueOf(val);
-            return true;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private static boolean isBoolean(String val) {
-        return "false".equals(val) || "true".equals(val);
-    }
-
+    
     private static boolean isQuoted(String val) {
         return val.startsWith("'") || val.startsWith("\"");
     }
