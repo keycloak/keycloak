@@ -854,8 +854,8 @@ describe("Clients test", () => {
 
       advancedTab.revertAuthFlowOverride();
       advancedTab.jumpToAuthFlow();
-      advancedTab.checkBrowserFlowInput("");
-      advancedTab.checkDirectGrantInput("");
+      advancedTab.checkBrowserFlowInput("Choose...");
+      advancedTab.checkDirectGrantInput("Choose...");
       advancedTab.selectBrowserFlowInput("browser");
       advancedTab.selectDirectGrantInput("docker auth");
 
