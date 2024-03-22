@@ -19,7 +19,6 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -245,7 +244,6 @@ public class OID4VCIssuerEndpoint {
                 .build();
     }
 
-    @NotNull
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
         AuthenticationManager.AuthResult authResult = getAuthResult();
         UserSessionModel userSessionModel = authResult.getSession();
@@ -345,7 +343,6 @@ public class OID4VCIssuerEndpoint {
     }
 
     // Return all {@link  OID4VCClient}s that support the given type and format
-    @NotNull
     private List<OID4VCClient> getClientsOfType(String vcType, Format format) {
         LOGGER.debugf("Retrieve all clients of type %s, supporting format %s", vcType, format.toString());
 
@@ -365,7 +362,6 @@ public class OID4VCIssuerEndpoint {
         return session.clients().getClientByClientId(session.getContext().getRealm(), clientId);
     }
 
-    @NotNull
     private List<OID4VCClient> getOID4VCClientsFromSession() {
         return session.clients().getClientsStream(session.getContext().getRealm())
                 .filter(clientModel -> clientModel.getProtocol() != null)
@@ -376,7 +372,6 @@ public class OID4VCIssuerEndpoint {
     }
 
     // builds the unsigned credential by applying all protocol mappers.
-    @NotNull
     private VerifiableCredential getVCToSign(List<OID4VCMapper> protocolMappers, String vcType,
                                              UserSessionModel userSessionModel) {
         // set the required claims

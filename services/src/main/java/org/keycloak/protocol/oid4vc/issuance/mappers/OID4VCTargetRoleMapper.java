@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.constraints.NotNull;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -142,7 +141,6 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
         }
     }
 
-    @NotNull
     private Role toRolesClaim(ClientRoleModel crm) {
         Set<String> roleNames = crm
                 .getRoleModels()
