@@ -15,6 +15,8 @@ http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",u
 http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 0.048717142
 ----
 
+Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).
+Read more about histograms in the https://prometheus.io/docs/concepts/metric_types/#histogram[Prometheus documentation about histograms] on how to use the additional metrics series provided in `http_server_requests_seconds_bucket`.
 
 = Nonce claim is only added to the ID token
 

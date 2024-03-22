@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Enabling {project_name} Metrics"
 summary="Learn how to enable and expose metrics from the server"
-includedOptions="metrics-enabled">
+includedOptions="metrics-enabled http-metrics-* cache-metrics-*">
 
 {project_name} has built in support for metrics. This {section} describes how to enable and configure server metrics.
 
