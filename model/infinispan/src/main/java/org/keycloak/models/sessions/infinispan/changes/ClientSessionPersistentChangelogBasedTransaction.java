@@ -112,12 +112,12 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);
-        entity.setClientId(clientId);
 
         entity.setAction(clientSession.getAction());
         entity.setAuthMethod(clientSession.getProtocol());
 
         entity.setNotes(clientSession.getNotes() == null ? new ConcurrentHashMap<>() : clientSession.getNotes());
+        entity.setClientId(clientId);
         entity.setRedirectUri(clientSession.getRedirectUri());
         entity.setTimestamp(clientSession.getTimestamp());
 
