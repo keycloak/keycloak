@@ -32,6 +32,7 @@ public class ScriptProviderDescriptor {
     public static final String MAPPERS = "mappers";
 
     public static final String SAML_MAPPERS = "saml-mappers";
+    public static final String SAML_IDP_MAPPERS = "saml-idp-mappers";
 
     private Map<String, List<ScriptProviderMetadata>> providers = new HashMap<>();
 
@@ -61,6 +62,11 @@ public class ScriptProviderDescriptor {
         providers.put(SAML_MAPPERS, metadata);
     }
 
+    @JsonSetter(SAML_IDP_MAPPERS)
+    public void setSAMLIdPMappers(List<ScriptProviderMetadata> metadata) {
+        providers.put(SAML_IDP_MAPPERS, metadata);
+    }
+
     public void addAuthenticator(String name, String fileName) {
         addProvider(AUTHENTICATORS, name, fileName, null);
     }
@@ -86,5 +92,9 @@ public class ScriptProviderDescriptor {
 
     public void addSAMLMapper(String name, String fileName) {
         addProvider(SAML_MAPPERS, name, fileName, null);
+    }
+
+    public void addSAMLIdPMapper(String name, String fileName) {
+        addProvider(SAML_IDP_MAPPERS, name, fileName, null);
     }
 }
