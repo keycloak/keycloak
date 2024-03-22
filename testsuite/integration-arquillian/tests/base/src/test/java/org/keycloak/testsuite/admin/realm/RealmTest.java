@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.realm;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -86,15 +87,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -213,6 +219,44 @@ public class RealmTest extends AbstractAdminTest {
         assertThat(clients, containsInAnyOrder("account", "account-console", "admin-cli", "broker", "realm-management", "security-admin-console"));
 
         adminClient.realms().realm("new-realm").remove();
+
+        Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
+    }
+
+    @Test
+    public void createRealmWithValidConsoleUris() {
+        var realmNameWithSpaces = "new realm";
+
+        getCleanup()
+                .addCleanup(() -> adminClient.realms().realm(realmNameWithSpaces).remove());
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(realmNameWithSpaces);
+
+        adminClient.realms().create(rep);
+
+        Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME, realmNameWithSpaces);
+
+        final var urlPlaceHolders = ImmutableSet.of("${authBaseUrl}", "${authAdminUrl}");
+
+        List<String> clientUris = adminClient.realms()
+                .realm(realmNameWithSpaces)
+                .clients()
+                .findAll()
+                .stream()
+                .flatMap(client -> Stream.concat(Stream.concat(Stream.concat(
+                        client.getRedirectUris().stream(),
+                        Stream.of(client.getBaseUrl())),
+                        Stream.of(client.getRootUrl())),
+                        Stream.of(client.getAdminUrl())))
+                .filter(Objects::nonNull)
+                .filter(uri -> !urlPlaceHolders.contains(uri))
+                .collect(Collectors.toList());
+
+        assertThat(clientUris, not(empty()));
+        assertThat(clientUris, everyItem(containsString("/new%20realm/")));
+
+        adminClient.realms().realm(realmNameWithSpaces).remove();
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
