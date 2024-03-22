@@ -1,4 +1,6 @@
-= Argon2 password hashing provider
+= Argon2 password hashing
+
+Argon2 is now the default password hashing algorithm used by {project_name}
 
 Argon2 was the winner of the [2015 password hashing competition](https://en.wikipedia.org/wiki/Password_Hashing_Competition)
 and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id).
@@ -6,7 +8,7 @@ and is the recommended hashing algorithm by [OWASP](https://cheatsheetseries.owa
 In {project_name} 24 the default hashing iterations for PBKDF2 were increased from 27.5K to 210K, resulting in a more than
 10 times increase in the amount of CPU time required to generate a password hash. With Argon2 it is possible to achieve
 better security, with almost the same CPU time as previous releases of {project_name}. One downside is Argon2 requires more
-memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in Keycloak requires 7MB
+memory, which is a requirement to be resistant against GPU attacks. The defaults for Argon2 in {project_name} requires 7MB
 per-hashing request.
 
 = Deprecated cookie methods removed
@@ -19,4 +21,4 @@ The following methods for setting custom cookies have been removed:
 
 = Searching by user attribute no longer case insensitive
 
-When searching for users by user attribute, Keycloak no longer searches for user attribute names forcing lower case comparisons. The goal of this change was to speed up searches by using Keycloak's native index on the user attribute table. If your database collation is case-insensitive, your search results will stay the same. If your database collation is case-sensitive, you might see less search results than before.
+When searching for users by user attribute, {project_name} no longer searches for user attribute names forcing lower case comparisons. The goal of this change was to speed up searches by using {project_name}'s native index on the user attribute table. If your database collation is case-insensitive, your search results will stay the same. If your database collation is case-sensitive, you might see less search results than before.

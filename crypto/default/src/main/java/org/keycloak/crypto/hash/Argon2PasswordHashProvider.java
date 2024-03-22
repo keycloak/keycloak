@@ -1,6 +1,7 @@
 package org.keycloak.crypto.hash;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -21,6 +22,8 @@ import static org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory.TYPE_KE
 import static org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory.VERSION_KEY;
 
 public class Argon2PasswordHashProvider implements PasswordHashProvider {
+
+    private static final Logger logger = Logger.getLogger(Argon2PasswordHashProvider.class);
     private final String version;
     private final String type;
     private final int hashLength;
@@ -56,7 +59,14 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
      * policy.
      */
     @Override
-    public PasswordCredentialModel encodedCredential(String rawPassword, int ignoredIterationsFromPasswordPolicy) {
+    public PasswordCredentialModel encodedCredential(String rawPassword, int iterations) {
+        if (iterations == -1) {
+            iterations = this.iterations;
+        } else if (iterations > 100) {
+            logger.warn("Iterations for Argon should be less than 100, using default");
+            iterations = this.iterations;
+        }
+
         byte[] salt = Salt.generateSalt();
         String encoded = encode(rawPassword, salt, version, type, hashLength, parallelism, memory, iterations);
 

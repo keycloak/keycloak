@@ -151,7 +151,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             hashProvider.encode(userCredentialModel.getValue(), policy.getHashIterations(), newPassword);
 
             // Test expected values of credentialModel
-            assertEquals(newPassword.getAlgorithm(), Pbkdf2Sha512PasswordHashProviderFactory.ID);
+            assertNotNull(newPassword.getAlgorithm());
             assertNotNull(newPassword.getValue());
             assertNotNull(newPassword.getSalt());
 

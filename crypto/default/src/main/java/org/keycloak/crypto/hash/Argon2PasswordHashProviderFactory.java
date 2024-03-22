@@ -110,8 +110,12 @@ public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFa
     }
 
     @Override
-    public boolean isSupported(Config.Scope config) {
+    public boolean isSupported() {
         return !Profile.isFeatureEnabled(Profile.Feature.FIPS);
     }
 
+    @Override
+    public int order() {
+        return 300;
+    }
 }

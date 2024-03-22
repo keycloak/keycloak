@@ -87,6 +87,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.DefaultPasswordHash;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.MailUtils;
@@ -524,8 +525,8 @@ public class UserTest extends AbstractAdminTest {
         CredentialModel credential = fetchCredentials("user_rawpw");
         assertNotNull("Expecting credential", credential);
         PasswordCredentialModel pcm = PasswordCredentialModel.createFromCredentialModel(credential);
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.ID, pcm.getPasswordCredentialData().getAlgorithm());
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS, pcm.getPasswordCredentialData().getHashIterations());
+        assertEquals(DefaultPasswordHash.getDefaultAlgorithm(), pcm.getPasswordCredentialData().getAlgorithm());
+        assertEquals(DefaultPasswordHash.getDefaultIterations(), pcm.getPasswordCredentialData().getHashIterations());
         assertNotEquals("ABCD", pcm.getPasswordSecretData().getValue());
         assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
     }
@@ -2774,8 +2775,8 @@ public class UserTest extends AbstractAdminTest {
         PasswordCredentialModel credential = PasswordCredentialModel
                 .createFromCredentialModel(fetchCredentials("user_rawpw"));
         assertNotNull("Expecting credential", credential);
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS, credential.getPasswordCredentialData().getHashIterations());
+        assertEquals(DefaultPasswordHash.getDefaultAlgorithm(), credential.getPasswordCredentialData().getAlgorithm());
+        assertEquals(DefaultPasswordHash.getDefaultIterations(), credential.getPasswordCredentialData().getHashIterations());
         assertNotEquals("ABCD", credential.getPasswordSecretData().getValue());
         assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
 
@@ -2792,8 +2793,8 @@ public class UserTest extends AbstractAdminTest {
         PasswordCredentialModel updatedCredential = PasswordCredentialModel
                 .createFromCredentialModel(fetchCredentials("user_rawpw"));
         assertNotNull("Expecting credential", updatedCredential);
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.ID, updatedCredential.getPasswordCredentialData().getAlgorithm());
-        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.DEFAULT_ITERATIONS, updatedCredential.getPasswordCredentialData().getHashIterations());
+        assertEquals(DefaultPasswordHash.getDefaultAlgorithm(), updatedCredential.getPasswordCredentialData().getAlgorithm());
+        assertEquals(DefaultPasswordHash.getDefaultIterations(), updatedCredential.getPasswordCredentialData().getHashIterations());
         assertNotEquals("EFGH", updatedCredential.getPasswordSecretData().getValue());
         assertEquals(CredentialRepresentation.PASSWORD, updatedCredential.getType());
     }
