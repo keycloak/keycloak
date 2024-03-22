@@ -93,14 +93,13 @@ export const GroupPickerDialog = ({
             throw new Error(t("notFound"));
           }
         }
-        if (group?.id) {
-          const args: SubGroupQuery = {
-            first: first,
-            max: max + 1,
-            parentId: group.id,
-          };
-          groups = await adminClient.groups.listSubGroups(args);
-        }
+
+        const args: SubGroupQuery = {
+          first: first,
+          max: max + 1,
+          parentId: groupId,
+        };
+        groups = await adminClient.groups.listSubGroups(args);
       }
 
       if (id) {
@@ -115,15 +114,16 @@ export const GroupPickerDialog = ({
       setJoinedGroups(existingUserGroups || []);
       if (selectedGroup) {
         setNavigation([...navigation, selectedGroup]);
+        setCount(selectedGroup.subGroupCount!);
       }
 
-      if (groups) {
-        groups.forEach((group: SelectableGroup) => {
-          group.checked = !!selectedRows.find((r) => r.id === group.id);
-        });
-        setGroups(groups);
+      groups.forEach((group: SelectableGroup) => {
+        group.checked = !!selectedRows.find((r) => r.id === group.id);
+      });
+      setGroups(groups);
+      if (isSearching) {
+        setCount(countGroups(groups));
       }
-      setCount(isSearching ? countGroups(groups || []) : groups?.length || 0);
     },
     [groupId, filter, first, max],
   );
@@ -222,10 +222,8 @@ export const GroupPickerDialog = ({
           ))}
         </Breadcrumb>
         <DataList aria-label={t("groups")} isCompact>
-          {groups
-            .slice(groupId ? first : 0, max + (groupId ? first : 0))
-            .map((group: SelectableGroup) => (
-              <Fragment key={group.id}>
+          {groups.map((group: SelectableGroup) => (
+            <Fragment key={group.id}>
                 {(!isSearching || group.name?.includes(filter)) && (
                   <GroupRow
                     key={group.id}
@@ -240,23 +238,23 @@ export const GroupPickerDialog = ({
                     canBrowse={canBrowse}
                   />
                 )}
-                {isSearching &&
-                  group.subGroups?.map((g) => (
-                    <GroupRow
-                      key={g.id}
-                      group={g}
-                      isRowDisabled={isRowDisabled}
-                      onSelect={setGroupId}
-                      type={type}
-                      isSearching={isSearching}
-                      setIsSearching={setIsSearching}
-                      selectedRows={selectedRows}
-                      setSelectedRows={setSelectedRows}
-                      canBrowse={canBrowse}
-                    />
-                  ))}
-              </Fragment>
-            ))}
+              {isSearching &&
+                group.subGroups?.map((g) => (
+                  <GroupRow
+                    key={g.id}
+                    group={g}
+                    isRowDisabled={isRowDisabled}
+                    onSelect={setGroupId}
+                    type={type}
+                    isSearching={isSearching}
+                    setIsSearching={setIsSearching}
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    canBrowse={canBrowse}
+                  />
+                ))}
+            </Fragment>
+          ))}
         </DataList>
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
@@ -363,7 +361,7 @@ const GroupRow = ({
           aria-label={t("groupName")}
           isPlainButtonAction
         >
-          {(canBrowse || type === "selectOne") && (
+          {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
             <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>
