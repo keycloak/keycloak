@@ -204,11 +204,7 @@ export const RealmSettingsLoginTab = ({
               data-testid="duplicate-emails-switch"
               label={t("on")}
               labelOff={t("off")}
-              isChecked={
-                realm.duplicateEmailsAllowed ||
-                (realm.loginWithEmailAllowed &&
-                  realm.registrationEmailAsUsername)
-              }
+              isChecked={realm.duplicateEmailsAllowed}
               onChange={(value) => {
                 updateSwitchValue({
                   duplicateEmailsAllowed: value,
