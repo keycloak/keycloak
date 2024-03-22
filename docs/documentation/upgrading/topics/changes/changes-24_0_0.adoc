@@ -183,6 +183,10 @@ The `+spi-truststore-file-*+` options and the truststore related options `+https
 
 The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
 
+A collateral effect of the changes is that now the truststore provider is always configured with some certificates (at least the default java trusted certificates are present). This new behavior can affect other parts of {project_name}.
+
+For example, *webauthn* registration can fail if *attestation conveyance* was configured to *Direct* validation. Previously, if the truststore provider was not configured the incoming certificate was not validated. But now this validation is always performed. The registration fails with `invalid cert path` error as the certificate chain sent by the dongle is not trusted by {project_name}. The Certificate Authorities of the authenticator need to be present in the truststore provider to correctly perform the attestation.
+
 = Deprecated `--proxy` option
 
 The `--proxy` option has been deprecated and will be removed in a future release. The following table explains how the deprecated option maps to supported options.
