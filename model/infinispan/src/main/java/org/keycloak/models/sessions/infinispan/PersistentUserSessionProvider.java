@@ -548,7 +548,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
 
         session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, false);
-        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, true);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
