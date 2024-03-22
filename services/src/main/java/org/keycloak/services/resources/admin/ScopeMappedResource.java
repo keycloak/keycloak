@@ -224,7 +224,7 @@ public class ScopeMappedResource {
         }
 
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRoleById(role.getId());
+            RoleModel roleModel = role.getId() != null ? realm.getRoleById(role.getId()) : realm.getRole(role.getName());
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
@@ -258,7 +258,7 @@ public class ScopeMappedResource {
                     .collect(Collectors.toList());
        } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRoleById(role.getId());
+                RoleModel roleModel = role.getId() != null ? realm.getRoleById(role.getId()) : realm.getRole(role.getName());
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
