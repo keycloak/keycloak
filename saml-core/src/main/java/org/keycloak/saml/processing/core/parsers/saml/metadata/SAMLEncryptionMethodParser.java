@@ -64,7 +64,15 @@ public class SAMLEncryptionMethodParser extends AbstractStaxSamlMetadataParser<E
                 break;
 
             default:
-                throw LOGGER.parserUnknownTag(StaxParserUtil.getElementName(elementDetail), elementDetail.getLocation());
+                {
+                    EncryptionMethodType.EncryptionMethod encMethod = target.getEncryptionMethod();
+                    if (encMethod == null) {
+                        encMethod = new EncryptionMethodType.EncryptionMethod();
+                        target.setEncryptionMethod(encMethod);
+                    }
+                    encMethod.addAny(StaxParserUtil.getDOMElement(xmlEventReader));
+                }
+
         }
     }
 }
