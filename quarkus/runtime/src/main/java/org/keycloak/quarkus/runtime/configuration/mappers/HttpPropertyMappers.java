@@ -114,6 +114,13 @@ public final class HttpPropertyMappers {
                         .to("quarkus.thread-pool.max-threads")
                         .transformer(HttpPropertyMappers::resolveMaxThreads)
                         .paramLabel("threads")
+                        .build(),
+                fromOption(HttpOptions.HTTP_METRICS_HISTOGRAMS_ENABLED)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .build(),
+                fromOption(HttpOptions.HTTP_METRICS_SLOS)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .paramLabel("list of buckets")
                         .build()
         };
     }
