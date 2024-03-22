@@ -114,6 +114,27 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testPasswordRehashedToDefaultProviderIfHashAlgorithmRemoved() {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
+
+        String username = "testPasswordRehashedToDefaultProviderIfHashAlgorithmRemoved";
+        createUser(username);
+
+        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+
+        setPasswordPolicy("");
+
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
+
+        assertEquals(Pbkdf2Sha512PasswordHashProviderFactory.ID, credential.getPasswordCredentialData().getAlgorithm());
+    }
+
+    @Test
     public void testPasswordRehashedOnIterationsChanged() throws Exception {
         setPasswordPolicy("hashIterations(10000)");
 

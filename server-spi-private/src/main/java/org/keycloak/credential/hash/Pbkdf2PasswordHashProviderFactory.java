@@ -55,4 +55,9 @@ public class Pbkdf2PasswordHashProviderFactory extends AbstractPbkdf2PasswordHas
     public String getId() {
         return ID;
     }
+
+    @Override
+    public int order() {
+        return -100;
+    }
 }

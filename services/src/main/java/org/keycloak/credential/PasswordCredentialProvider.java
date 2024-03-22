@@ -124,12 +124,16 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
 
     protected PasswordHashProvider getHashProvider(PasswordPolicy policy) {
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-        if (hash == null) {
-            logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
-            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
+        if (policy != null && policy.getHashAlgorithm() != null) {
+            PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
+            if (provider != null) {
+                return provider;
+            } else {
+                logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
+            }
         }
-        return hash;
+
+        return session.getProvider(PasswordHashProvider.class);
     }
 
     @Override
@@ -183,29 +187,34 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 logger.debugv("Failed password validation for user {0} ", user.getUsername());
                 return false;
             }
-            PasswordPolicy policy = realm.getPasswordPolicy();
-            if (policy == null) {
-                return true;
-            }
-            hash = getHashProvider(policy);
-            if (hash == null) {
-                return true;
-            }
-            if (hash.policyCheck(policy, password)) {
-                return true;
-            }
 
-            PasswordCredentialModel newPassword = hash.encodedCredential(input.getChallengeResponse(), policy.getHashIterations());
-            newPassword.setId(password.getId());
-            newPassword.setCreatedDate(password.getCreatedDate());
-            newPassword.setUserLabel(password.getUserLabel());
-            user.credentialManager().updateStoredCredential(newPassword);
+            rehashPasswordIfRequired(session, realm, user, input, password);
         } catch (Throwable t) {
             logger.warn("Error when validating user password", t);
             return false;
         }
 
         return true;
+    }
+
+    private void rehashPasswordIfRequired(KeycloakSession session, RealmModel realm, UserModel user, CredentialInput input, PasswordCredentialModel password) {
+        PasswordPolicy passwordPolicy = realm.getPasswordPolicy();
+        PasswordHashProvider provider;
+        if (passwordPolicy != null && passwordPolicy.getHashAlgorithm() != null) {
+            provider = session.getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
+        } else {
+            provider = session.getProvider(PasswordHashProvider.class);
+        }
+
+        if (!provider.policyCheck(passwordPolicy, password)) {
+            int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
+
+            PasswordCredentialModel newPassword = provider.encodedCredential(input.getChallengeResponse(), iterations);
+            newPassword.setId(password.getId());
+            newPassword.setCreatedDate(password.getCreatedDate());
+            newPassword.setUserLabel(password.getUserLabel());
+            user.credentialManager().updateStoredCredential(newPassword);
+        }
     }
 
     @Override
