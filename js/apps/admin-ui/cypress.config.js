@@ -13,11 +13,6 @@ export default defineConfig({
   defaultCommandTimeout: 30000,
   numTestsKeptInMemory: 30,
   experimentalMemoryManagement: true,
-
-  retries: {
-    runMode: 3,
-  },
-
   e2e: {
     baseUrl: "http://localhost:8080",
     slowTestThreshold: 30000,
