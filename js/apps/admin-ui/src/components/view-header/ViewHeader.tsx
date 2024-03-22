@@ -26,7 +26,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { FormattedLink } from "../external-link/FormattedLink";
-import { useHelp, HelpItem } from "ui-shared";
+import { useHelp, HelpItem } from "@keycloak/keycloak-ui-shared";
 import "../../help-urls";
 
 export type ViewHeaderProps = {

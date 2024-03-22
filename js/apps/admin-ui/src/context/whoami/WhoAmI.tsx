@@ -1,7 +1,10 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { PropsWithChildren, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import environment from "../../environment";

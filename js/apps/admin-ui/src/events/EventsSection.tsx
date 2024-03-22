@@ -50,7 +50,7 @@ import { useFetch } from "../utils/useFetch";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import { EventsTab, toEvents } from "./routes/Events";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 import "./events.css";
 

@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, NumberControl } from "ui-shared";
+import { HelpItem, NumberControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertToFormValues } from "../../util";
 import { Time } from "./Time";

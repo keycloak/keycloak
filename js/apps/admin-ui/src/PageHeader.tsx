@@ -18,7 +18,7 @@ import { BarsIcon, EllipsisVIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
-import { useHelp } from "ui-shared";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useRealm } from "./context/realm-context/RealmContext";

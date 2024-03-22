@@ -11,7 +11,7 @@ import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";

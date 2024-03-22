@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";

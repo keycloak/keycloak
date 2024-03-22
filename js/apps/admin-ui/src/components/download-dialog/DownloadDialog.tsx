@@ -15,7 +15,7 @@ import {
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem, useHelp } from "ui-shared";
+import { HelpItem, useHelp } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";

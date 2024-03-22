@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";

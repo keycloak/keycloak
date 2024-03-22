@@ -1,6 +1,9 @@
 import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useMatch } from "react-router-dom";
-import { createNamedContext, useRequiredContext } from "ui-shared";
+import {
+  createNamedContext,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";

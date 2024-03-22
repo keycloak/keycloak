@@ -3,7 +3,7 @@ import { ActionGroup, Button } from "@patternfly/react-core";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useFetch } from "../../utils/useFetch";

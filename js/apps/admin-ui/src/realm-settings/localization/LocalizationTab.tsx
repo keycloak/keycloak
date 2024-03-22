@@ -16,7 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";

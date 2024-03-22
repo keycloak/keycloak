@@ -1,6 +1,6 @@
 import { Path, PathValue } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";

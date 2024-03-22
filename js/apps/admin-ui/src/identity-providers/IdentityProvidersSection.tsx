@@ -25,7 +25,7 @@ import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { IconMapper } from "ui-shared";
+import { IconMapper } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

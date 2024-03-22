@@ -5,7 +5,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";

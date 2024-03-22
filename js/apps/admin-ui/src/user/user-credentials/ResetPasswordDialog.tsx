@@ -8,7 +8,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, PasswordInput } from "ui-shared";
+import { FormErrorText, PasswordInput } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";

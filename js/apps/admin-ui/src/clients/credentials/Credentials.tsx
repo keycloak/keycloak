@@ -18,7 +18,7 @@ import {
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, SelectControl } from "ui-shared";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";

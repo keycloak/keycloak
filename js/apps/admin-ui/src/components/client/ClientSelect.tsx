@@ -3,7 +3,7 @@ import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/
 import { SelectProps, SelectVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";

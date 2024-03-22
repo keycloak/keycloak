@@ -172,6 +172,25 @@
                     </replacements>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>pack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>pack --pack-destination=target</arguments>
+                            <systemPropertyVariables>
+                                <LIB>true</LIB>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

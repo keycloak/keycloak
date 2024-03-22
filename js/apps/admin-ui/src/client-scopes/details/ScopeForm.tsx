@@ -5,7 +5,11 @@ import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { SelectControl, TextAreaControl, TextControl } from "ui-shared";
+import {
+  SelectControl,
+  TextAreaControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";

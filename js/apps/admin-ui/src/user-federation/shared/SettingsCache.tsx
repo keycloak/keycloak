@@ -9,7 +9,7 @@ import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 

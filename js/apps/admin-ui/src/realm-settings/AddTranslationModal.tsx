@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 
 type AddTranslationModalProps = {

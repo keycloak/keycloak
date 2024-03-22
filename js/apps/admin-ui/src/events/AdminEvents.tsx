@@ -29,7 +29,7 @@ import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { adminClient } from "../admin-client";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";

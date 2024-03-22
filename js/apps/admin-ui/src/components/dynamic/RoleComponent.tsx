@@ -7,9 +7,9 @@ import {
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem } from "ui-shared";
 
 import useToggle from "../../utils/useToggle";
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../role-mapping/RoleMapping";
 import { convertToName } from "./DynamicComponents";

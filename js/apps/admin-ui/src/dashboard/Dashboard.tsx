@@ -35,7 +35,7 @@ import FeatureRepresentation, {
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { HelpItem, label } from "ui-shared";
+import { HelpItem, label } from "@keycloak/keycloak-ui-shared";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";

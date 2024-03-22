@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ClientDescription } from "../ClientDescription";

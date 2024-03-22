@@ -13,7 +13,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";

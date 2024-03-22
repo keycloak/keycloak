@@ -15,7 +15,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../util";
 

@@ -4,7 +4,7 @@ import { Dropdown, DropdownToggle } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, TextControl } from "ui-shared";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../../utils/useToggle";
 
 import "./search-dropdown.css";

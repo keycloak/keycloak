@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "ui-shared";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";

@@ -21,7 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormPanel, HelpItem } from "ui-shared";
+import { FormPanel, HelpItem } from "@keycloak/keycloak-ui-shared";
 
 import { FormAccess } from "../components/form/FormAccess";
 import {

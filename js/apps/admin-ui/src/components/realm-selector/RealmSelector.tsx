@@ -20,7 +20,7 @@ import { CheckIcon } from "@patternfly/react-icons";
 import { Fragment, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useHref } from "react-router-dom";
-import { label } from "ui-shared";
+import { label } from "@keycloak/keycloak-ui-shared";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useRealms } from "../../context/RealmsContext";

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SwitchControl, TextControl } from "ui-shared";
+import { SwitchControl, TextControl } from "@keycloak/keycloak-ui-shared";
 
 export const Regex = () => {
   const { t } = useTranslation();

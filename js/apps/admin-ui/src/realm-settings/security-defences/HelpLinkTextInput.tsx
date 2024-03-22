@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
-import { TextControl } from "ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 
 type HelpLinkTextInputProps = {

@@ -3,7 +3,11 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormErrorText, HelpItem, TextControl } from "ui-shared";
+import {
+  FormErrorText,
+  HelpItem,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
