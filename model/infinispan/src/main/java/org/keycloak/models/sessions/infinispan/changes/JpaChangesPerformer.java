@@ -598,7 +598,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
                     @Override
                     public void setLoginUsername(String loginUsername) {
-                        // TODO: We need to add this field to the database since online sessions contain this field
+                        userSessionModel.setLoginUsername(loginUsername);
                     }
 
                     @Override

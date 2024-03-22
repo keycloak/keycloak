@@ -215,7 +215,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        return getUser().getUsername();
+        if (isOffline()) {
+            return getUser().getUsername();
+        } else {
+            return getData().getLoginUsername();
+        }
     }
 
     @Override
@@ -322,6 +326,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     }
 
     @Override
+    public void setLoginUsername(String loginUsername) {
+        getData().setLoginUsername(loginUsername);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserSessionModel)) return false;
@@ -402,6 +411,9 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
         @JsonProperty("state")
         private String state;
 
+        @JsonProperty("loginUsername")
+        private String loginUsername;
+
         public String getBrokerSessionId() {
             return brokerSessionId;
         }
@@ -466,6 +478,14 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
         public void setState(String state) {
             this.state = state;
+        }
+
+        public void setLoginUsername(String loginUsername) {
+            this.loginUsername = loginUsername;
+        }
+
+        public String getLoginUsername() {
+            return loginUsername;
         }
     }
 }
