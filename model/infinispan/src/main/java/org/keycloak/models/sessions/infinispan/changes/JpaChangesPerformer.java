@@ -90,7 +90,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
         if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
             AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
-            userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+            userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), offline);
         } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
             AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
             userSessionPersister.createClientSession(new AuthenticatedClientSessionModel() {
@@ -223,13 +223,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 public void setProtocol(String method) {
                     throw new IllegalStateException("not implemented");
                 }
-            }, false);
+            }, offline);
         } else {
             AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
             ClientModel client = innerSession.clients().getClientById(realm, entity.getClientId());
-            PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entity.getUserSessionId(), false);
+            PersistentUserSessionAdapter userSession = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entity.getUserSessionId(), offline);
             if (userSession != null) {
-                PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) userSessionPersister.loadClientSession(realm, client, userSession, false);
+                PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) userSessionPersister.loadClientSession(realm, client, userSession, offline);
                 if (clientSessionModel != null) {
                     AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity(entity.getId()) {
                         @Override
@@ -363,13 +363,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
                         vSessionUpdateTask.runUpdate((V) authenticatedClientSessionEntity);
                         if (vSessionUpdateTask.getOperation((V) authenticatedClientSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
-                            userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+                            userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), offline);
                         }
                     });
                     clientSessionModel.getUpdatedModel();
                 }
             } else {
-                userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), false);
+                userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), offline);
             }
         }
 
@@ -382,7 +382,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         UserSessionPersisterProvider userSessionPersister = innerSession.getProvider(UserSessionPersisterProvider.class);
 
         if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.REMOVE) {
-            userSessionPersister.removeUserSession(entry.getKey().toString(), false);
+            userSessionPersister.removeUserSession(entry.getKey().toString(), offline);
         } else if (merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD || merged.getOperation(sessionWrapper.getEntity()) == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT){
             UserSessionEntity entity = (UserSessionEntity) sessionWrapper.getEntity();
             userSessionPersister.createUserSession(new UserSessionModel() {
@@ -506,9 +506,9 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
                     throw new IllegalStateException("not implemented");
                 }
-            }, false);
+            }, offline);
         } else {
-            PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entry.getKey().toString(), false);
+            PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entry.getKey().toString(), offline);
             if (userSessionModel != null) {
                 UserSessionEntity userSessionEntity = new UserSessionEntity() {
                     @Override
@@ -690,7 +690,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 sessionUpdates.getUpdateTasks().forEach(vSessionUpdateTask -> {
                     vSessionUpdateTask.runUpdate((V) userSessionEntity);
                     if (vSessionUpdateTask.getOperation((V)userSessionEntity) == SessionUpdateTask.CacheOperation.REMOVE) {
-                        userSessionPersister.removeUserSession(entry.getKey().toString(), false);
+                        userSessionPersister.removeUserSession(entry.getKey().toString(), offline);
                     }
                 });
                 userSessionModel.getUpdatedModel();
