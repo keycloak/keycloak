@@ -18,13 +18,18 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.it.cli.dist.GelfRemovedTest.INCLUDE_GELF_PROPERTY;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.approvaltests.Approvals;
 import org.approvaltests.namer.NamedEnvironment;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -171,9 +176,20 @@ public class HelpCommandDistTest {
     }
 
     private void assertHelp(CLIResult result) {
-        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
+        try {
             // normalize the output to prevent changes around the feature toggles to mark the output to differ
             String output = result.getOutput().replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>");
+
+            String osName = System.getProperty("os.name");
+            if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
+                // On Windows, all output should have at least one "kc.bat" in it.
+                MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
+                output = output.replaceAll("kc.bat", "kc.sh");
+                output = output.replaceAll(Pattern.quote("data\\log\\"), "data/log/");
+                // line wrap which looks differently due to ".bat" vs. ".sh"
+                output = output.replaceAll("including\nbuild ", "including build\n");
+            }
+
             Approvals.verify(output);
         } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
