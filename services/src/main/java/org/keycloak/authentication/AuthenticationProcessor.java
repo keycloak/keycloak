@@ -80,6 +80,8 @@ public class AuthenticationProcessor {
     public static final String CURRENT_AUTHENTICATION_EXECUTION = "current.authentication.execution";
     public static final String LAST_PROCESSED_EXECUTION = "last.processed.execution";
     public static final String CURRENT_FLOW_PATH = "current.flow.path";
+    public static final String CLIENT_FLOW_ID = "client.flow.id";
+    public static final String CLIENT_AUTHENTICATION_EXECUTION = "client.authentication.execution";
     public static final String FORKED_FROM = "forked.from";
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
@@ -268,6 +270,10 @@ public class AuthenticationProcessor {
 
     public String getFlowPath() {
         return flowPath;
+    }
+
+    public String getFlowId() {
+        return flowId;
     }
 
     public void setAutheticatedUser(UserModel user) {
@@ -478,6 +484,11 @@ public class AuthenticationProcessor {
         @Override
         public String getFlowPath() {
             return AuthenticationProcessor.this.getFlowPath();
+        }
+
+        @Override
+        public String getFlowId() {
+            return AuthenticationProcessor.this.getFlowId();
         }
 
         @Override
@@ -860,6 +871,7 @@ public class AuthenticationProcessor {
     }
 
     public AuthenticationFlow createFlowExecution(String flowId, AuthenticationExecutionModel execution) {
+
         AuthenticationFlowModel flow = realm.getAuthenticationFlowById(flowId);
         if (flow == null) {
             logger.error("Unknown flow to execute with");
@@ -925,7 +937,14 @@ public class AuthenticationProcessor {
         authSession.setAuthenticatedUser(null);
         authSession.clearExecutionStatus();
         authSession.clearUserSessionNotes();
+        String client_execution = authSession.getAuthNote(AuthenticationProcessor.CLIENT_AUTHENTICATION_EXECUTION);
+        String client_flow = authSession.getAuthNote(AuthenticationProcessor.CLIENT_FLOW_ID);
         authSession.clearAuthNotes();
+        //keep CLIENT_AUTHENTICATION_EXECUTION and CLIENT_FLOW_ID if they exist
+        if (client_execution != null)
+            authSession.setAuthNote(AuthenticationProcessor.CLIENT_AUTHENTICATION_EXECUTION,client_execution);
+        if (client_flow != null)
+            authSession.setAuthNote(AuthenticationProcessor.CLIENT_FLOW_ID,client_flow);
 
         Set<String> requiredActions = authSession.getRequiredActions();
         for (String reqAction : requiredActions) {

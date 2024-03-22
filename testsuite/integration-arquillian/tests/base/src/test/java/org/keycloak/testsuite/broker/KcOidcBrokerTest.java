@@ -421,6 +421,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
                 loginTotpPage.assertCurrent();
                 loginTotpPage.login(totp.generateTOTP(totpSecret));
+                //return to client flow -> otp has been configured -> ask again
+                loginTotpPage.login(totp.generateTOTP(totpSecret));
 
                 assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
             } finally {

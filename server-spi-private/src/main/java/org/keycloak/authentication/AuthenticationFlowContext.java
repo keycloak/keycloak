@@ -75,6 +75,11 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     String getFlowPath();
 
     /**
+     * @return flow id
+     */
+    String getFlowId();
+
+    /**
      * Create a Freemarker form builder that presets the user, action URI, and a generated access code
      *
      * @return

@@ -23,6 +23,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -75,11 +76,13 @@ public class IdentityProviderAuthenticator implements Authenticator {
     }
 
     private void redirect(AuthenticationFlowContext context, String providerId) {
-        Optional<IdentityProviderModel> idp = context.getRealm().getIdentityProvidersStream()
+       Optional<IdentityProviderModel> idp = context.getRealm().getIdentityProvidersStream()
                 .filter(IdentityProviderModel::isEnabled)
                 .filter(identityProvider -> Objects.equals(providerId, identityProvider.getAlias()))
                 .findFirst();
         if (idp.isPresent()) {
+            context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_FLOW_ID, context.getFlowId());
+            context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
             String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
             String clientId = context.getAuthenticationSession().getClient().getClientId();
             String tabId = context.getAuthenticationSession().getTabId();
@@ -102,6 +105,9 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        //BROKER_USER_ID not null user have been login with Idp -> return success
+        if (context.getAuthenticationSession().getUserSessionNotes().get(Details.IDENTITY_PROVIDER_USERNAME) != null)
+            context.success();
     }
 
     @Override
