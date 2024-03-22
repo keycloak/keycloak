@@ -125,6 +125,15 @@ HTTP(S):
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
+--http-metrics-histograms-enabled <true|false>
+                     Enables a histogram with default buckets for the duration of HTTP server
+                       requests. Default: false. Available only when metrics are enabled.
+--http-metrics-slos <list of buckets>
+                     Service level objectives for HTTP server requests. Use this instead of the
+                       default histogram, or use it in combination to add additional buckets.
+                       Specify a list of comma-separated values defined in milliseconds. Example
+                       with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000
+                       Available only when metrics are enabled.
 --http-pool-max-threads <threads>
                      The maximum number of threads. If this is not specified then it will be
                        automatically sized to the greatest of 8 * the number of available
