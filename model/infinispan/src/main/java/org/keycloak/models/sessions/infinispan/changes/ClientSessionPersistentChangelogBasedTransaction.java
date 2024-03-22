@@ -32,6 +32,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -132,17 +133,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
         entity.setTimestamp(userSession.getLastSessionRefresh());
 
-        // TODO: Check if we need to check this
-//        if (checkExpiration) {
-//            SessionFunction<AuthenticatedClientSessionEntity> lifespanChecker = offline
-//                    ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs;
-//            SessionFunction<AuthenticatedClientSessionEntity> idleTimeoutChecker = offline
-//                    ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
-//            if (idleTimeoutChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
-//                    || lifespanChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
-//                return null;
-//            }
-//        }
+        if (maxIdleTimeMsLoader.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
+                || lifespanMsLoader.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+            return null;
+        }
 
         final UUID clientSessionId = entity.getId();
 
