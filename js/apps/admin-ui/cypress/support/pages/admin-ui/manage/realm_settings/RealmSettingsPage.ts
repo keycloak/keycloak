@@ -636,7 +636,7 @@ export default class RealmSettingsPage extends CommonPage {
       this.accessTokenLifespanImplicitSelectMenu,
       this.accessTokenLifespanImplicitSelectMenuList,
     );
-    cy.findByTestId("parRequestUriLifespan").clear().type("2");
+    cy.findByTestId("par-request-uri-lifespan-input").clear().type("2");
     this.changeTimeUnit(
       "Hours",
       this.parRequestUriLifespanSelectMenu,
