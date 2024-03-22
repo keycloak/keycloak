@@ -86,6 +86,10 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.RSA1_5, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_PKCS1v1_5));
         providers.put(CryptoConstants.RSA_OAEP, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP));
         providers.put(CryptoConstants.RSA_OAEP_256, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256)));
+        providers.put(CryptoConstants.ECDH_ES, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A128KW, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A192KW, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A256KW, new BCFIPSEcdhEsAlgorithmProvider());
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
