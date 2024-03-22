@@ -45,6 +45,6 @@ public class JaxRsDistTest {
         assertEquals(200, when().get("/").getStatusCode());
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> cliResult.assertMessage("Request GET / has context request true has keycloaksession false"));
+                () -> cliResult.assertMessage("Request GET / has context request true has keycloaksession true"));
     }
 }
