@@ -920,7 +920,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .auth(tokenUtil.getToken())
                 .asResponse()) {
             assertEquals(400, response.getStatus());
-            Assert.assertEquals("Credential type password cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
+            Assert.assertEquals("Credential type cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
         }
 
         // Remove password from the user now

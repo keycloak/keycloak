@@ -40,6 +40,10 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_BEARER = "Bearer";
 
+    // JWT Access Token types from https://datatracker.ietf.org/doc/html/rfc9068#section-2.1
+    public static final String TOKEN_TYPE_JWT_ACCESS_TOKEN = "at+jwt";
+    public static final String TOKEN_TYPE_JWT_ACCESS_TOKEN_PREFIXED = "application/" + TOKEN_TYPE_JWT_ACCESS_TOKEN;
+
     public static final String TOKEN_TYPE_KEYCLOAK_ID = "Serialized-ID";
 
     public static final String TOKEN_TYPE_ID = "ID";

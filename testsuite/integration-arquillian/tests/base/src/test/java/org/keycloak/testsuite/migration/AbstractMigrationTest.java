@@ -86,7 +86,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -361,6 +360,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo22_0_0() {
         testRhssoThemes(migrationRealm);
         testHttpChallengeFlow(migrationRealm);
+    }
+
+    protected void testMigrationTo22_0_10() {
+        testDeleteCredentialActionAvailable(migrationRealm);
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -877,6 +880,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             for (RequiredActionProviderRepresentation action : actions) {
                 if (action.getAlias().equals("update_user_locale")) {
                     assertEquals(1000, action.getPriority());
+                } else if (action.getAlias().equals("delete_credential")) {
+                    assertEquals(100, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1041,6 +1046,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo22_x() {
         testMigrationTo22_0_0();
+        testMigrationTo22_0_10();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
@@ -1146,5 +1152,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         log.info("testing realm attributes migration");
         Map<String, String> realmAttributes = migrationRealm.toRepresentation().getAttributes();
         assertEquals("custom_value", realmAttributes.get("custom_attribute"));
+    }
+
+    private void testDeleteCredentialActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("delete_credential");
+        assertNotNull(rep);
+        assertEquals("delete_credential", rep.getAlias());
+        assertEquals("delete_credential", rep.getProviderId());
+        assertEquals("Delete Credential", rep.getName());
+        assertEquals(100, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
     }
 }
