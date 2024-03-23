@@ -43,6 +43,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
@@ -51,12 +52,14 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -957,6 +960,22 @@ public class AuthenticationProcessor {
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
+    // Recreate new root auth session and new auth session from the given auth session.
+    public static AuthenticationSessionModel recreate(KeycloakSession session, AuthenticationSessionModel authSession) {
+        AuthenticationSessionManager authenticationSessionManager =  new AuthenticationSessionManager(session);
+        RootAuthenticationSessionModel rootAuthenticationSession = authenticationSessionManager.createAuthenticationSession(authSession.getRealm(), true);
+        AuthenticationSessionModel newAuthSession = rootAuthenticationSession.createAuthenticationSession(authSession.getClient());
+        newAuthSession.setRedirectUri(authSession.getRedirectUri());
+        newAuthSession.setProtocol(authSession.getProtocol());
+
+        for (Map.Entry<String, String> clientNote : authSession.getClientNotes().entrySet()) {
+            newAuthSession.setClientNote(clientNote.getKey(), clientNote.getValue());
+        }
+
+        authenticationSessionManager.removeAuthenticationSession(authSession.getRealm(), authSession, true);
+        RestartLoginCookie.setRestartCookie(session, authSession);
+        return newAuthSession;
+    }
 
     // Clone new authentication session from the given authSession. New authenticationSession will have same parent (rootSession) and will use same client
     public static AuthenticationSessionModel clone(KeycloakSession session, AuthenticationSessionModel authSession) {
