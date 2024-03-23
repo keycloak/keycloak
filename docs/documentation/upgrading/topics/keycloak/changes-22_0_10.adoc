@@ -1,0 +1,7 @@
+= Changes in redirect URI verification when using wildcards
+
+Because of security concerns, the redirect URI verification now performs a exact string matching (no wildcard involved) if the passed redirect uri contains a `userinfo` part or its `path` accesses parent directory (`/../`).
+
+The full wildcard `*` can still be used as a valid redirect in development for http(s) URIs with those characteristics. In production environments a exact valid redirect URI without wildcard needs to be configured for any URI of that type.
+
+Please note that wildcard valid redirect URIs are not recommended for production and not covered by the OAuth 2.0 specification.
