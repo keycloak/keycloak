@@ -245,12 +245,13 @@ public class LoginActionsService {
             if (userSession != null) {
                 logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
                 AuthenticationManager.backchannelLogout(session, userSession, false);
+                authSession = AuthenticationProcessor.recreate(session, authSession);
             }
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);
 
-        URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), tabId, AuthenticationProcessor.getClientData(session, authSession));
+        URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
     }
