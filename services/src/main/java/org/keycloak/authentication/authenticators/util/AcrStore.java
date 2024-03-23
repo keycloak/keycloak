@@ -20,17 +20,27 @@ package org.keycloak.authentication.authenticators.util;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.CredentialAction;
+import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+
+import static org.keycloak.models.Constants.NO_LOA;
 
 /**
  * CRUD data in the authentication session, which are related to step-up authentication
@@ -41,9 +51,11 @@ public class AcrStore {
 
     private static final Logger logger = Logger.getLogger(AcrStore.class);
 
+    private final KeycloakSession session;
     private final AuthenticationSessionModel authSession;
 
-    public AcrStore(AuthenticationSessionModel authSession) {
+    public AcrStore(KeycloakSession session, AuthenticationSessionModel authSession) {
+        this.session = session;
         this.authSession = authSession;
     }
 
@@ -53,21 +65,73 @@ public class AcrStore {
     }
 
 
-    public int getRequestedLevelOfAuthentication() {
+    public int getRequestedLevelOfAuthentication(AuthenticationFlowModel executionModel) {
         String requiredLoa = authSession.getClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION);
-        return requiredLoa == null ? Constants.NO_LOA : Integer.parseInt(requiredLoa);
+        int requestedLoaByClient = requiredLoa == null ? NO_LOA : Integer.parseInt(requiredLoa);
+        int requestedLoaByKcAction = getRequestedLevelOfAuthenticationByKcAction(executionModel);
+        logger.tracef("Level requested by client: %d, level requested by kc_action parameter: %d", requestedLoaByClient, requestedLoaByKcAction);
+        return Math.max(requestedLoaByClient, requestedLoaByKcAction);
     }
 
+    //
+    private int getRequestedLevelOfAuthenticationByKcAction(AuthenticationFlowModel topLevelFlow) {
+        RealmModel realm = authSession.getRealm();
+        UserModel user = authSession.getAuthenticatedUser();
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (user != null && kcAction != null) {
+            RequiredActionProvider reqAction = session.getProvider(RequiredActionProvider.class, kcAction);
+            if (reqAction instanceof CredentialAction) {
+                String credentialType = ((CredentialAction) reqAction).getCredentialType(session, authSession);
+                if (credentialType != null) {
+                    Map<String, Integer> credentialTypesToLoa = LoAUtil.getCredentialTypesToLoAMap(session, realm, topLevelFlow);
 
-    public boolean isLevelOfAuthenticationSatisfiedFromCurrentAuthentication() {
-        return getRequestedLevelOfAuthentication()
+                    Integer credentialTypeLevel = credentialTypesToLoa.get(credentialType);
+                    if (credentialTypeLevel != null) {
+                        // We check if user has any credentials of given type available. For instance if user doesn't yet have any 2nd-factor configured, we don't request level2 from him
+                        MultivaluedHashMap<Integer, String> loaToCredentialTypes = reverse(credentialTypesToLoa);
+                        return getHighestLevelAvailableForUser(user, loaToCredentialTypes, credentialTypeLevel);
+                    }
+                }
+            }
+        }
+        return NO_LOA;
+    }
+
+    private MultivaluedHashMap<Integer, String> reverse(Map<String, Integer> orig) {
+        MultivaluedHashMap<Integer, String> reverse = new MultivaluedHashMap<>();
+        orig.forEach((key, value) -> reverse.add(value, key));
+        return reverse;
+    }
+
+    private Integer getHighestLevelAvailableForUser(UserModel user, MultivaluedHashMap<Integer, String> loaToCredentialTypes, int levelToTry) {
+        if (levelToTry <= NO_LOA) return levelToTry;
+
+        List<String> currentLevelCredentialTypes = loaToCredentialTypes.get(levelToTry);
+        if (currentLevelCredentialTypes == null || currentLevelCredentialTypes.isEmpty()) {
+            // No credentials required for authentication on this level
+            return levelToTry;
+        }
+
+        boolean hasCredentialOfLevel = user.credentialManager().getStoredCredentialsStream()
+                .anyMatch(credentialModel -> currentLevelCredentialTypes.contains(credentialModel.getType()));
+        if (hasCredentialOfLevel) {
+            logger.tracef("User %s has credential of level %d available", user.getUsername(), levelToTry);
+            return levelToTry;
+        } else {
+            // Fallback to lower level
+            return getHighestLevelAvailableForUser(user, loaToCredentialTypes, levelToTry - 1);
+        }
+    }
+
+    public boolean isLevelOfAuthenticationSatisfiedFromCurrentAuthentication(AuthenticationFlowModel topFlow) {
+        return getRequestedLevelOfAuthentication(topFlow)
                 <= getAuthenticatedLevelCurrentAuthentication();
     }
 
 
     public static int getCurrentLevelOfAuthentication(AuthenticatedClientSessionModel clientSession) {
         String clientSessionLoaNote = clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return clientSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(clientSessionLoaNote);
+        return clientSessionLoaNote == null ? NO_LOA : Integer.parseInt(clientSessionLoaNote);
     }
 
 
@@ -101,7 +165,7 @@ public class AcrStore {
      */
     public int getLevelOfAuthenticationFromCurrentAuthentication() {
         String authSessionLoaNote = authSession.getAuthNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return authSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(authSessionLoaNote);
+        return authSessionLoaNote == null ? NO_LOA : Integer.parseInt(authSessionLoaNote);
     }
 
 
@@ -137,7 +201,7 @@ public class AcrStore {
 
     private int getAuthenticatedLevelCurrentAuthentication() {
         String authSessionLoaNote = authSession.getAuthNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return authSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(authSessionLoaNote);
+        return authSessionLoaNote == null ? NO_LOA : Integer.parseInt(authSessionLoaNote);
     }
 
     /**
@@ -146,7 +210,7 @@ public class AcrStore {
     public int getHighestAuthenticatedLevelFromPreviousAuthentication() {
         // No map found. User was not yet authenticated in this session
         Map<Integer, Integer> levels = getCurrentAuthenticatedLevelsMap();
-        if (levels == null || levels.isEmpty()) return Constants.NO_LOA;
+        if (levels == null || levels.isEmpty()) return NO_LOA;
 
         // Map was already saved, so it is SSO authentication at minimum. Using "0" level as the minimum level in this case
         int maxLevel = Constants.MINIMUM_LOA;

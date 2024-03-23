@@ -38,6 +38,7 @@ import org.keycloak.migration.migrators.MigrateTo21_0_0;
 import org.keycloak.migration.migrators.MigrateTo22_0_0;
 import org.keycloak.migration.migrators.MigrateTo23_0_0;
 import org.keycloak.migration.migrators.MigrateTo24_0_0;
+import org.keycloak.migration.migrators.MigrateTo24_0_3;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -113,7 +114,8 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo21_0_0(),
             new MigrateTo22_0_0(),
             new MigrateTo23_0_0(),
-            new MigrateTo24_0_0()
+            new MigrateTo24_0_0(),
+            new MigrateTo24_0_3()
     };
 
     private final KeycloakSession session;

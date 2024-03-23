@@ -363,7 +363,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     public static void performActionOnParameters(AuthorizationEndpointRequest request, BiConsumer<String, String> paramAction) {
         paramAction.accept(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
-        paramAction.accept(Constants.KC_ACTION, request.getAction());
+
+        String kcAction = request.getAction();
+        String kcActionParameter = null;
+        if (kcAction != null && kcAction.contains(":")) {
+            String[] splits = kcAction.split(":");
+            kcAction = splits[0];
+            kcActionParameter = splits[1];
+        }
+        paramAction.accept(Constants.KC_ACTION, kcAction);
+        paramAction.accept(Constants.KC_ACTION_PARAMETER, kcActionParameter);
+
         paramAction.accept(OAuth2Constants.DISPLAY, request.getDisplay());
         paramAction.accept(OIDCLoginProtocol.ACR_PARAM, request.getAcr());
         paramAction.accept(OIDCLoginProtocol.CLAIMS_PARAM, request.getClaims());
