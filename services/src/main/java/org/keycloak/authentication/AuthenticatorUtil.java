@@ -21,6 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
@@ -136,28 +139,39 @@ public class AuthenticatorUtil {
      * @param context The required action context
      */
     public static void logoutOtherSessions(RequiredActionContext context) {
+        EventBuilder event = context.getEvent().clone()
+                .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, context.getAction());
         logoutOtherSessions(context.getSession(), context.getRealm(), context.getUser(),
-                context.getAuthenticationSession(), context.getConnection(), context.getHttpRequest());
+                context.getAuthenticationSession(), context.getConnection(), context.getHttpRequest(), event);
     }
 
     /**
      * Logouts all sessions that are different to the current authentication session
      * managed in the action token context.
      *
+     * @param token The action token
      * @param context The required action token context
      */
-    public static void logoutOtherSessions(ActionTokenContext<? extends DefaultActionToken> context) {
+    public static void logoutOtherSessions(DefaultActionToken token, ActionTokenContext<? extends DefaultActionToken> context) {
+        EventBuilder event = context.getEvent().clone()
+                .detail(Details.LOGOUT_TRIGGERED_BY_ACTION_TOKEN, token.getActionId());
         logoutOtherSessions(context.getSession(), context.getRealm(), context.getAuthenticationSession().getAuthenticatedUser(),
-                context.getAuthenticationSession(), context.getClientConnection(), context.getRequest());
+                context.getAuthenticationSession(), context.getClientConnection(), context.getRequest(), event);
     }
 
     private static void logoutOtherSessions(KeycloakSession session, RealmModel realm, UserModel user,
-            AuthenticationSessionModel authSession, ClientConnection conn, HttpRequest req) {
+            AuthenticationSessionModel authSession, ClientConnection conn, HttpRequest req, EventBuilder event) {
         session.sessions().getUserSessionsStream(realm, user)
                 .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
-                        conn, req.getHttpHeaders(), true)
-                );
+                .forEach(s -> {
+                    AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
+                            conn, req.getHttpHeaders(), true);
+
+                    event.event(EventType.LOGOUT)
+                            .session(s)
+                            .user(s.getUser())
+                            .success();
+                });
     }
 }

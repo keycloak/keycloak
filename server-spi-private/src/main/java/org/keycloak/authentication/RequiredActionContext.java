@@ -50,6 +50,8 @@ public interface RequiredActionContext {
         ERROR
     }
 
+    String getAction();
+
     /**
      * Get the action URL for the required action.
      *
