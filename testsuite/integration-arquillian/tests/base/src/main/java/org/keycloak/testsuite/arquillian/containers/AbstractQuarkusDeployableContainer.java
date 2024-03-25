@@ -238,6 +238,9 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             }
         }
 
+        commands.removeIf("--optimized"::equals);
+        commands.add("--http-relative-path=/auth");
+
         commands.add(featuresOption.toString());
     }
 
