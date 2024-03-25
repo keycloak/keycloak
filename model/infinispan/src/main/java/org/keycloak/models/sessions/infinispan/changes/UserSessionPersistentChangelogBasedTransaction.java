@@ -19,10 +19,13 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
@@ -98,6 +101,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
         if (isScheduledForRemove(sessionId)) {
             return null;
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE)) {
+            return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);

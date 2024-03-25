@@ -19,11 +19,13 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -65,6 +67,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
+            if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, "sessions") || Objects.equals(cacheName, "clientSessions"))) {
+                throw new IllegalStateException("Can't load from cache");
+            }
+
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
@@ -95,9 +101,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity, persistenceState);
         updates.put(key, myUpdates);
 
-        // Run the update now, so reader in same transaction can see it
-        task.runUpdate(entity);
-        myUpdates.add(task);
+        if (task != null) {
+            // Run the update now, so reader in same transaction can see it
+            task.runUpdate(entity);
+            myUpdates.add(task);
+        }
     }
 
 

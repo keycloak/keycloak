@@ -113,6 +113,7 @@ public class Profile {
 
         // TODO: change to "PREVIEW" before merging
         PERSISTENT_USER_SESSIONS("Persistent user sessions across restarts and upgrades", Type.DEFAULT),
+        USER_SESSIONS_NO_CACHE("No caching for user sessions", Type.DEFAULT),
         
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 

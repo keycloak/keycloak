@@ -1020,6 +1020,54 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         return entity;
     }
 
+    public SessionEntityWrapper<UserSessionEntity> wrapPersistentEntity(RealmModel realm, boolean offline, UserSessionModel persistentUserSession) {
+        UserSessionEntity userSessionEntity = createUserSessionEntityInstance(persistentUserSession);
+
+        if (isUserSessionExpired(realm, userSessionEntity, offline)) {
+            return null;
+        }
+
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
+        userSessionUpdateTx.addTask(userSessionEntity.getId(), null, userSessionEntity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+
+        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
+
+        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
+            String clientUUID = entry.getKey();
+            AuthenticatedClientSessionEntity clientSession = createAuthenticatedClientSessionInstance(entry.getValue(),
+                    userSessionEntity.getRealmId(), clientUUID, offline);
+            clientSession.setUserSessionId(userSessionEntity.getId());
+
+            // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
+            // clientSession.setTimestamp(userSessionEntity.getLastSessionRefresh());
+
+            ClientModel client = session.clients().getClientById(realm, clientSession.getClientId());
+            if (isClientSessionExpired(realm, client, clientSession, offline)) {
+                continue;
+            }
+
+            // Update userSession entity with the clientSession
+            AuthenticatedClientSessionStore clientSessions = userSessionEntity.getAuthenticatedClientSessions();
+            clientSessions.put(clientUUID, clientSession.getId());
+            clientSessionUpdateTx.addTask(clientSession.getId(), null, clientSession, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        }
+
+        return sessionTx.get(realm, userSessionEntity.getId());
+
+    }
+
+    private boolean isClientSessionExpired(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {
+        SessionFunction<AuthenticatedClientSessionEntity> idleChecker = offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
+        SessionFunction<AuthenticatedClientSessionEntity> lifetimeChecker = offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
+        return idleChecker.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG || lifetimeChecker.apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG;
+    }
+
+    private boolean isUserSessionExpired(RealmModel realm, UserSessionEntity entity, boolean offline) {
+        SessionFunction<UserSessionEntity> idleChecker = offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs;
+        SessionFunction<UserSessionEntity> lifetimeChecker = offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs;
+        return idleChecker.apply(realm, null, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG || lifetimeChecker.apply(realm, null, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG;
+    }
+
     private static class RegisterClientSessionTask implements SessionUpdateTask<UserSessionEntity> {
 
         private final String clientUuid;

@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -43,11 +42,17 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             throw new IllegalStateException("Persistent user sessions are not enabled");
         }
 
-        changesPerformers = List.of(
-                new JpaChangesPerformer<>(session, cache.getName(), offline),
-                new EmbeddedCachesChangesPerformer<>(cache),
-                new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
-        );
+        if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE)) {
+            changesPerformers = List.of(
+                    new JpaChangesPerformer<>(session, cache.getName(), offline)
+            );
+        } else {
+            changesPerformers = List.of(
+                    new JpaChangesPerformer<>(session, cache.getName(), offline),
+                    new EmbeddedCachesChangesPerformer<>(cache),
+                    new RemoteCachesChangesPerformer<>(session, cache, remoteCacheInvoker)
+            );
+        }
     }
 
     @Override
