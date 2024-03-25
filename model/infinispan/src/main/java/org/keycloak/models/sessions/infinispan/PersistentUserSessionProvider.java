@@ -65,6 +65,7 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.UserModelDelegate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -200,7 +201,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
-        final UUID clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
+        final UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSession.getId(), client.getId());
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realm.getId());
         entity.setClientId(client.getId());
@@ -789,7 +790,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
                         String clientUUID = entry.getKey();
                         AuthenticatedClientSessionModel clientSession = entry.getValue();
-                        AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(clientSession,
+                        AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(userSessionEntityToImport.getId(), clientSession,
                                 userSessionEntityToImport.getRealmId(), clientUUID, offline);
                         clientSessionToImport.setUserSessionId(userSessionEntityToImport.getId());
 
@@ -970,7 +971,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                                                                   InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                                                                   InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                                                                   boolean offline, boolean checkExpiration) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(clientSession,
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(sessionToImportInto.getId(), clientSession,
                 sessionToImportInto.getRealm().getId(), clientSession.getClient().getId(), offline);
         entity.setUserSessionId(sessionToImportInto.getId());
 
@@ -1003,9 +1004,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
 
-    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(AuthenticatedClientSessionModel clientSession,
+    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId, boolean offline) {
-        final UUID clientSessionId = keyGenerator.generateKeyUUID(session, getClientSessionCache(offline));
+        final UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);
 
@@ -1036,7 +1037,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
             String clientUUID = entry.getKey();
-            AuthenticatedClientSessionEntity clientSession = createAuthenticatedClientSessionInstance(entry.getValue(),
+            AuthenticatedClientSessionEntity clientSession = createAuthenticatedClientSessionInstance(persistentUserSession.getId(), entry.getValue(),
                     userSessionEntity.getRealmId(), clientUUID, offline);
             clientSession.setUserSessionId(userSessionEntity.getId());
 
@@ -1095,5 +1096,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
             return CrossDCMessageStatus.SYNC;
         }
+    }
+
+    public static UUID createClientSessionUUID(String userSessionId, String clientId) {
+        return UUID.nameUUIDFromBytes((userSessionId + clientId).getBytes(StandardCharsets.UTF_8));
     }
 }

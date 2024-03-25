@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -101,13 +102,13 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return authenticatedClientSessionEntitySessionEntityWrapper;
     }
 
-    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(AuthenticatedClientSessionModel clientSession,
+    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId) {
         UUID clientSessionId = null;
         if (clientSession.getId() != null) {
             clientSessionId = UUID.fromString(clientSession.getId());
         } else {
-            clientSessionId = keyGenerator.generateKeyUUID(kcSession, cache);
+            clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
         }
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
@@ -124,8 +125,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return entity;
     }
 
-    private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentUserSession) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(persistentUserSession,
+    private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentClientSession) {
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), persistentClientSession,
                 realm.getId(), client.getId());
 
         entity.setUserSessionId(userSession.getId());
