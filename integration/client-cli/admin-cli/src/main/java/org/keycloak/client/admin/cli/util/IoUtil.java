@@ -74,13 +74,15 @@ public class IoUtil {
     }
 
     public static String readSecret(String prompt) {
-        Console cons;
+        Console cons = System.console();
+        if (cons == null) {
+            throw new RuntimeException("Console is not active, but a password is required");
+        }
         char[] passwd;
-        if ((cons = System.console()) != null &&
-            (passwd = cons.readPassword("%s", prompt)) != null) {
+        if ((passwd = cons.readPassword("%s", prompt)) != null) {
             return new String(passwd);
         }
-        throw new RuntimeException("Console is not active, or no password provided");
+        throw new RuntimeException("No password provided");
     }
 
     public static String readFully(InputStream is) {
