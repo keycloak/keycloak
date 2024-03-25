@@ -158,26 +158,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         }
     }
 
-    public boolean isScheduledForRemove(K key) {
-        return isScheduledForRemove(updates.get(key));
-    }
-
-    private static <V extends SessionEntity> boolean isScheduledForRemove(SessionUpdatesList<V> myUpdates) {
-        if (myUpdates == null) {
-            return false;
-        }
-
-        V entity = myUpdates.getEntityWrapper().getEntity();
-
-        // If entity is scheduled for remove, we don't return it.
-        boolean scheduledForRemove = myUpdates.getUpdateTasks()
-                .stream()
-                .anyMatch(task -> task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE);
-
-        return scheduledForRemove;
-    }
-
-
     @Override
     protected void commitImpl() {
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {

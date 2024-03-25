@@ -27,6 +27,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
@@ -121,4 +122,23 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         LOG.debugf("user-session could not be found after import for sessionId=%s offline=%s", sessionId, offline);
         return null;
     }
+    public boolean isScheduledForRemove(String key) {
+        return isScheduledForRemove(updates.get(key));
+    }
+
+    private static <V extends SessionEntity> boolean isScheduledForRemove(SessionUpdatesList<V> myUpdates) {
+        if (myUpdates == null) {
+            return false;
+        }
+
+        V entity = myUpdates.getEntityWrapper().getEntity();
+
+        // If entity is scheduled for remove, we don't return it.
+        boolean scheduledForRemove = myUpdates.getUpdateTasks()
+                .stream()
+                .anyMatch(task -> task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE);
+
+        return scheduledForRemove;
+    }
+
 }
