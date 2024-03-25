@@ -2,19 +2,21 @@ import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-clie
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   FormGroup,
+  Switch,
+  TextInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, SelectControl } from "ui-shared";
+import { FormErrorText, HelpItem, SelectControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
@@ -160,7 +162,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                 }}
               />
@@ -180,14 +182,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-name"
             isRequired
-            validated={
-              errors.config?.claimFilterName
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-name"
               data-testid="claimFilterName"
@@ -198,6 +194,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterName", { required: true })}
             />
+            {errors.config?.claimFilterName && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
           <FormGroup
             label={t("claimFilterValue")}
@@ -209,14 +208,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             fieldId="kc-claim-filter-value"
             isRequired
-            validated={
-              errors.config?.claimFilterValue
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-value"
               data-testid="claimFilterValue"
@@ -227,6 +220,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               }
               {...register("config.claimFilterValue", { required: true })}
             />
+            {errors.config?.claimFilterValue && (
+              <FormErrorText message={t("required")} />
+            )}
           </FormGroup>
         </>
       )}
@@ -254,7 +250,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_event, value) => {
                   field.onChange(value.toString());
                   // if field is checked, set sync mode to import
                   if (value) {

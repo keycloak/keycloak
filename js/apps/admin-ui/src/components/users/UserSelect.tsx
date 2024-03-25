@@ -1,16 +1,16 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { debounce } from "lodash-es";
 import { useCallback, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useFetch } from "../../utils/useFetch";
@@ -83,8 +83,6 @@ export const UserSelect = ({
       isRequired={isRequired}
       labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
       fieldId={name!}
-      validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("required")}
     >
       <Controller
         name={name!}
@@ -129,6 +127,7 @@ export const UserSelect = ({
           </Select>
         )}
       />
+      {errors[name!] && <FormErrorText message={t("required")} />}
     </FormGroup>
   );
 };

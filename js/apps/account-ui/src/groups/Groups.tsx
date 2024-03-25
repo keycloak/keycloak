@@ -68,7 +68,7 @@ export const Groups = () => {
                     id="directMembership-checkbox"
                     data-testid="directMembership-checkbox"
                     isChecked={directMembership}
-                    onChange={(checked) => setDirectMembership(checked)}
+                    onChange={(_event, checked) => setDirectMembership(checked)}
                   />
                 </DataListCell>,
               ]}

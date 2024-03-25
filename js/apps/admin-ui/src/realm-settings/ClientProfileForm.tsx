@@ -11,7 +11,6 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
-  DropdownItem,
   Flex,
   FlexItem,
   Label,
@@ -19,6 +18,7 @@ import {
   Text,
   TextVariants,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { Fragment, useMemo, useState } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
@@ -217,7 +217,7 @@ export default function ClientProfileForm() {
       />
       <PageSection variant="light">
         <FormProvider {...form}>
-          <FormAccess isHorizontal role="view-realm" className="pf-u-mt-lg">
+          <FormAccess isHorizontal role="view-realm" className="pf-v5-u-mt-lg">
             <TextControl
               name="name"
               label={t("newClientProfileName")}

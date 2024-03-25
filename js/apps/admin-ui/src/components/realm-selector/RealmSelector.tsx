@@ -1,12 +1,6 @@
 import {
   Button,
-  ContextSelector,
-  ContextSelectorItem,
-  ContextSelectorItemProps,
   Divider,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Label,
   Spinner,
   Split,
@@ -14,6 +8,14 @@ import {
   Stack,
   StackItem,
 } from "@patternfly/react-core";
+import {
+  ContextSelector,
+  ContextSelectorItem,
+  ContextSelectorItemProps,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { CheckIcon } from "@patternfly/react-icons";
 import { Fragment, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -64,7 +66,7 @@ const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
       <SplitItem isFilled>
         <Stack>
           {displayName ? (
-            <StackItem className="pf-u-font-weight-bold" isFilled>
+            <StackItem className="pf-v5-u-font-weight-bold" isFilled>
               {label(t, displayName)}
             </StackItem>
           ) : null}
@@ -155,7 +157,7 @@ export const RealmSelector = () => {
       screenReaderLabel={label(t, realmDisplayName, realm)}
       onToggle={() => setOpen(!open)}
       searchInputValue={search}
-      onSearchInputChange={(value) => setSearch(value)}
+      onSearchInputChange={(event, value) => setSearch(value)}
       className="keycloak__realm_selector__context_selector"
       footer={
         whoAmI.canCreateRealm() && (

@@ -49,7 +49,7 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("excludeSessionStateFromAuthenticationResponse")}
             />
           )}
@@ -78,7 +78,7 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("excludeIssuerFromAuthenticationResponse")}
             />
           )}
@@ -107,7 +107,7 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokens")}
             />
           )}
@@ -136,7 +136,7 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("useRefreshTokenForClientCredentialsGrant")}
             />
           )}
@@ -165,7 +165,7 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("useLowerCaseBearerType")}
             />
           )}

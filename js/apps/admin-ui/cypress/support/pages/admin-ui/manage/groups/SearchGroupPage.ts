@@ -3,7 +3,7 @@ import GroupPage from "./GroupPage";
 
 export class SearchGroupPage extends GroupPage {
   #groupSearchField = "group-search";
-  #searchButton = "[data-testid='group-search'] > button";
+  #searchButton = "[data-testid='group-search'] button[type='submit']";
   #sidebarPage = new SidebarPage();
 
   public searchGroup(groupName: string) {
@@ -19,7 +19,7 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public goToGroupChildGroupsFromTree(item: string) {
-    cy.get(".pf-c-tree-view__content").contains(item).click();
+    cy.get(".pf-v5-c-tree-view__content").contains(item).click();
     this.#sidebarPage.waitForPageLoad();
     return this;
   }
@@ -35,7 +35,10 @@ export class SearchGroupPage extends GroupPage {
   }
 
   public checkTerm(searchTerm: string) {
-    cy.get(".pf-c-chip-group").children().contains(searchTerm).should("exist");
+    cy.get(".pf-v5-c-chip-group")
+      .children()
+      .contains(searchTerm)
+      .should("exist");
     return this;
   }
 }

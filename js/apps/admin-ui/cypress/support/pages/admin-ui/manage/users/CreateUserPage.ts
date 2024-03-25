@@ -86,12 +86,12 @@ export default class CreateUserPage {
   ) {
     this.#getSelectFieldButton(attrName).should(
       "have.class",
-      "pf-c-select__toggle",
+      "pf-v5-c-select__toggle",
     );
 
     const valueToCheck = expectedValue ? expectedValue : this.emptyOptionValue;
     this.#getSelectFieldButton(attrName)
-      .find(".pf-c-select__toggle-text")
+      .find(".pf-v5-c-select__toggle-text")
       .invoke("text")
       .should("eq", valueToCheck);
 
@@ -117,7 +117,7 @@ export default class CreateUserPage {
   #getSelectOptions(attrName: string) {
     return this.#getSelectFieldButton(attrName)
       .parent()
-      .find(".pf-c-select__menu-item");
+      .find(".pf-v5-c-select__menu-item");
   }
 
   #toggleSelectField(
@@ -160,7 +160,7 @@ export default class CreateUserPage {
   }
 
   assertAttributeLabel(attrName: string, expectedText: string) {
-    cy.get(`.pf-c-form__label[for='${attrName}'] .pf-c-form__label-text`)
+    cy.get(`.pf-v5-c-form__label[for='${attrName}'] .pf-v5-c-form__label-text`)
       .contains(expectedText)
       .should("exist");
 

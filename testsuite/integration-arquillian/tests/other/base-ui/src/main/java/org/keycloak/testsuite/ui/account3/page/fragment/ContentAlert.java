@@ -34,7 +34,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ContentAlert {
-    private static final String ROOT_ID = "//ul[@class='pf-c-alert-group pf-m-toast']/li[1]";
+    private static final String ROOT_ID = "//ul[@data-testid='alerts']/li[1]";
 
     //The first alert from the alert group is what we are interested in.
     @FindBy(xpath = ROOT_ID + "//div")
@@ -122,10 +122,10 @@ public class ContentAlert {
         @Root
         private WebElement root;
 
-        @FindBy(className = "pf-c-alert__title")
+        @FindBy(className = "pf-v5-c-alert__title")
         private WebElement messageElement;
 
-        @FindBy(className = "pf-c-alert__action")
+        @FindBy(className = "pf-v5-c-alert__action")
         private WebElement closeBtn;
 
         public WebElement getRoot() {

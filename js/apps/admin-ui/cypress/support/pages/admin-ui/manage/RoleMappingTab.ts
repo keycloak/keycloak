@@ -7,7 +7,7 @@ export default class RoleMappingTab {
     `no-roles-for-this-${type}-empty-action`;
   #assignRoleBtn = "assignRole";
   #unAssignBtn = "unAssignRole";
-  #unAssignDrpDwnBtn = '.pf-c-table__action li button[role="menuitem"]';
+  #unAssignDrpDwnBtn = '.pf-v5-c-table__action li button[role="menuitem"]';
   #assignBtn = "assign";
   #hideInheritedRolesBtn = "#hideInheritedRoles";
   #assignedRolesTable = "assigned-roles";
@@ -61,7 +61,7 @@ export default class RoleMappingTab {
   }
 
   selectRow(name: string, modal = false) {
-    cy.get(modal ? ".pf-c-modal-box " : "" + this.#namesColumn)
+    cy.get(modal ? ".pf-v5-c-modal-box " : "" + this.#namesColumn)
       .contains(name)
       .parent()
       .within(() => {

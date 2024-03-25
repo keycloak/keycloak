@@ -5,11 +5,13 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  ToolbarItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

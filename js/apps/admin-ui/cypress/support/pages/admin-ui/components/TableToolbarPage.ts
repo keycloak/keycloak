@@ -12,20 +12,21 @@ export default class TableToolbar extends CommonElements {
   #actionToggleBtn: string;
 
   constructor() {
-    super(".pf-c-toolbar:visible");
+    super(".pf-v5-c-toolbar:visible");
     this.#searchBtn =
       this.parentSelector + "button[aria-label='Search']:visible";
     this.#searchInput =
-      this.parentSelector + ".pf-c-text-input-group__text-input:visible";
+      this.parentSelector + ".pf-v5-c-text-input-group__text-input:visible";
     this.#changeTypeBtn = this.parentSelector + "#change-type-dropdown";
     this.#nextPageBtn = this.parentSelector + "button[data-action=next]";
     this.#previousPageBtn =
       this.parentSelector + "button[data-action=previous]";
     this.#searchTypeDropdownBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-dropdown__toggle";
+      this.parentSelector +
+      ".pf-v5-c-dropdown .keycloak__client-scopes__searchtype";
     this.#searchTypeSelectToggleBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-select__toggle";
-    this.#actionToggleBtn = this.dropdownToggleBtn + "[aria-label='Actions']";
+      this.parentSelector + "[class*='searchtype'] .pf-v5-c-select__toggle";
+    this.#actionToggleBtn = this.tableKebabBtn + "[aria-label='Actions']";
   }
 
   clickNextPageButton(isUpperButton = true) {
@@ -90,8 +91,8 @@ export default class TableToolbar extends CommonElements {
     return this;
   }
 
-  selectSearchType(itemName: Filter) {
-    cy.get(this.#searchTypeDropdownBtn).click();
+  selectSearchType(existingName: Filter, itemName: Filter) {
+    cy.contains("button", existingName).click();
     cy.get(this.dropdownMenuItem).contains(itemName).click();
     return this;
   }

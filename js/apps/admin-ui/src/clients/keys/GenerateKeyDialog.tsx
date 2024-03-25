@@ -68,7 +68,7 @@ export const KeyForm = ({
   ];
 
   return (
-    <Form className="pf-u-pt-lg">
+    <Form className="pf-v5-u-pt-lg">
       <SelectControl
         name="format"
         label={t("archiveFormat")}

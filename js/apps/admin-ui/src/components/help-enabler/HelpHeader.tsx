@@ -1,13 +1,15 @@
 import {
   Divider,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Split,
   SplitItem,
   Switch,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

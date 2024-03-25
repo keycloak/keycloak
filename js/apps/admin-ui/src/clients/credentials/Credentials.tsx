@@ -135,7 +135,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       <FormAccess
         onSubmit={handleSubmit(save)}
         isHorizontal
-        className="pf-u-mt-md"
+        className="pf-v5-u-mt-md"
         role="manage-clients"
         fineGrainedAccess={client.access?.configure}
       >

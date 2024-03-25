@@ -5,11 +5,11 @@ import {
   ButtonVariant,
   Form,
   FormGroup,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { PasswordInput } from "ui-shared";
+import { FormErrorText, PasswordInput } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -148,12 +148,6 @@ export const ResetPasswordDialog = ({
             name="password"
             label={t("password")}
             fieldId="password"
-            helperTextInvalid={t("required")}
-            validated={
-              errors.password
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
             isRequired
           >
             <PasswordInput
@@ -171,6 +165,7 @@ export const ResetPasswordDialog = ({
               }}
               {...rest}
             />
+            {errors.password && <FormErrorText message={t("required")} />}
           </FormGroup>
           <FormGroup
             name="passwordConfirmation"
@@ -180,12 +175,6 @@ export const ResetPasswordDialog = ({
                 : t("passwordConfirmation")
             }
             fieldId="passwordConfirmation"
-            helperTextInvalid={errors.passwordConfirmation?.message}
-            validated={
-              errors.passwordConfirmation
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
             isRequired
           >
             <PasswordInput
@@ -198,6 +187,11 @@ export const ResetPasswordDialog = ({
                   t("confirmPasswordDoesNotMatch").toString(),
               })}
             />
+            {errors.passwordConfirmation && (
+              <FormErrorText
+                message={errors.passwordConfirmation.message as string}
+              />
+            )}
           </FormGroup>
           <FormProvider {...form}>
             <DefaultSwitchControl

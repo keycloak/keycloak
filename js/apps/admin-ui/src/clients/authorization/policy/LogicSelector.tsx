@@ -37,7 +37,7 @@ export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {
                 name="logic"
                 onChange={() => field.onChange(type)}
                 label={t(`logicType.${type.toLowerCase()}`)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
                 isDisabled={isDisabled}
               />
             ))}

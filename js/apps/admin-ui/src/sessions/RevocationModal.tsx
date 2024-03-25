@@ -9,7 +9,7 @@ import {
   Modal,
   ModalVariant,
   TextContent,
-  ValidatedOptions,
+  TextInput,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -17,9 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { emailRegexPattern } from "../util";
 import { useFetch } from "../utils/useFetch";
 
 type RevocationModalProps = {
@@ -35,11 +33,7 @@ export const RevocationModal = ({
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit } = useForm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
   const [key, setKey] = useState(0);
@@ -195,14 +189,11 @@ export const RevocationModal = ({
           label={t("notBefore")}
           name="notBefore"
           fieldId="not-before"
-          validated={
-            errors.email ? ValidatedOptions.error : ValidatedOptions.default
-          }
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="not-before-input"
             autoFocus
-            isReadOnly
+            readOnly
             value={
               realm?.notBefore === 0
                 ? (t("none") as string)
@@ -210,13 +201,7 @@ export const RevocationModal = ({
             }
             type="text"
             id="not-before"
-            {...register("notBefore", {
-              required: true,
-              pattern: emailRegexPattern,
-            })}
-            validated={
-              errors.email ? ValidatedOptions.error : ValidatedOptions.default
-            }
+            {...register("notBefore")}
           />
         </FormGroup>
       </Form>

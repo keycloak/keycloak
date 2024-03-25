@@ -58,7 +58,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #storedTokensReadable = "#storedTokensReadable";
   #isAccessTokenJWT = "#isAccessTokenJWT";
   #acceptsPromptNoneForwardFromClientSwitch = "#acceptsPromptNone";
-  #advancedSettingsToggle = ".pf-c-expandable-section__toggle";
+  #advancedSettingsToggle = ".pf-v5-c-expandable-section__toggle";
   #passLoginHintSwitch = "#passLoginHint";
   #passMaxAgeSwitch = "#passMaxAge";
   #passCurrentLocaleSwitch = "#passCurrentLocale";
@@ -171,7 +171,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#firstLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
+      cy.get(".pf-v5-c-select__menu-item").contains(loginFlowOption),
     );
     return this;
   }
@@ -180,7 +180,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#postLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
+      cy.get(".pf-v5-c-select__menu-item").contains(loginFlowOption),
     );
     return this;
   }
@@ -191,7 +191,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#clientAssertionSigningAlg).click();
     super.clickSelectMenuItem(
       clientAssertionSigningAlg,
-      cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg),
+      cy.get(".pf-v5-c-select__menu-item").contains(clientAssertionSigningAlg),
     );
     return this;
   }
@@ -205,7 +205,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#syncModeSelect).click();
     super.clickSelectMenuItem(
       syncModeOption,
-      cy.get(".pf-c-select__menu-item").contains(syncModeOption),
+      cy.get(".pf-v5-c-select__menu-item").contains(syncModeOption),
     );
     return this;
   }
@@ -214,7 +214,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.#promptSelect).click();
     super.clickSelectMenuItem(
       promptOption,
-      cy.get(".pf-c-select__menu-item").contains(promptOption).parent(),
+      cy.get(".pf-v5-c-select__menu-item").contains(promptOption).parent(),
     );
     return this;
   }
@@ -393,7 +393,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(option)
       .click();
     return this;
@@ -403,7 +403,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAssertionSigningAlg)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(alg)
       .click();
     return this;
@@ -413,25 +413,25 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.findByTestId("jump-link-openid-connect-settings").click();
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(ClientAuthentication.post)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(ClientAuthentication.basicAuth)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(ClientAuthentication.jwt)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
     cy.get(this.#clientAuth)
       .click()
-      .get(".pf-c-select__menu-item")
+      .get(".pf-v5-c-select__menu-item")
       .contains(ClientAuthentication.jwtPrivKey)
       .click();
     cy.get(this.#jwtX509HeadersSwitch).should("exist");

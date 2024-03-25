@@ -93,7 +93,7 @@ test.describe("Account linking", () => {
       .click();
 
     // Expect an error shown that the account cannot be unlinked
-    await expect(page.getByLabel("Danger Alert")).toBeVisible();
+    await expect(page.getByTestId("alerts")).toBeVisible();
   });
 });
 

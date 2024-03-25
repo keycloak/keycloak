@@ -1,33 +1,39 @@
+export { AlertProvider, useAlerts } from "./alerts/Alerts";
+export { Help, useHelp } from "./context/HelpContext";
 export { ContinueCancelModal } from "./continue-cancel/ContinueCancelModal";
+export {
+  FormErrorText,
+  type FormErrorTextProps,
+} from "./controls/FormErrorText";
+export { HelpItem } from "./controls/HelpItem";
+export { NumberControl } from "./controls/NumberControl";
+export { PasswordControl } from "./controls/PasswordControl";
+export { PasswordInput } from "./controls/PasswordInput";
 export { SelectControl } from "./controls/SelectControl";
 export type { SelectControlOption } from "./controls/SelectControl";
 export {
   SwitchControl,
   type SwitchControlProps,
 } from "./controls/SwitchControl";
-export { TextControl } from "./controls/TextControl";
 export { TextAreaControl } from "./controls/TextAreaControl";
-export { NumberControl } from "./controls/NumberControl";
-export { HelpItem } from "./controls/HelpItem";
-export { useHelp, Help } from "./context/HelpContext";
-export { KeycloakTextInput } from "./keycloak-text-input/KeycloakTextInput";
-export { KeycloakTextArea } from "./controls/keycloak-text-area/KeycloakTextArea";
-export { AlertProvider, useAlerts } from "./alerts/Alerts";
+export { TextControl } from "./controls/TextControl";
+export {
+  KeycloakTextArea,
+  type KeycloakTextAreaProps,
+} from "./controls/keycloak-text-area/KeycloakTextArea";
 export { IconMapper } from "./icons/IconMapper";
-export { useStoredState } from "./utils/useStoredState";
-export { isDefined } from "./utils/isDefined";
-export { createNamedContext } from "./utils/createNamedContext";
-export { useRequiredContext } from "./utils/useRequiredContext";
+export { FormPanel } from "./scroll-form/FormPanel";
+export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";
 export { UserProfileFields } from "./user-profile/UserProfileFields";
 export {
-  setUserProfileServerError,
-  isUserProfileError,
-  label,
   beerify,
   debeerify,
+  isUserProfileError,
+  label,
+  setUserProfileServerError,
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
-export { ScrollForm, mainPageContentId } from "./scroll-form/ScrollForm";
-export { FormPanel } from "./scroll-form/FormPanel";
-export { PasswordControl } from "./controls/PasswordControl";
-export { PasswordInput } from "./controls/PasswordInput";
+export { createNamedContext } from "./utils/createNamedContext";
+export { isDefined } from "./utils/isDefined";
+export { useRequiredContext } from "./utils/useRequiredContext";
+export { useStoredState } from "./utils/useStoredState";

@@ -1,9 +1,9 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -35,7 +35,7 @@ export const ReqAuthnConstraints = () => {
               toggleId="comparison"
               required
               direction="up"
-              onToggle={(isExpanded) => setComparisonOpen(isExpanded)}
+              onToggle={(_event, isExpanded) => setComparisonOpen(isExpanded)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setComparisonOpen(false);

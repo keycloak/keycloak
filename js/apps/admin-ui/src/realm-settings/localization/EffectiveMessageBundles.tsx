@@ -8,19 +8,23 @@ import {
   FlexItem,
   Form,
   FormGroup,
+  Text,
+  TextContent,
+  TextInput,
+  TextVariants,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Text,
-  TextContent,
-  TextVariants,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
 import { adminClient } from "../../admin-client";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -29,7 +33,6 @@ import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../../i18n/i18n";
 import { localeToDisplayName } from "../../util";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 
 type EffectiveMessageBundlesProps = {
   defaultSupportedLocales: string[];
@@ -203,7 +206,7 @@ export const EffectiveMessageBundles = ({
         <FlexItem>
           <TextContent>
             <Text
-              className="pf-u-mb-md pf-u-mt-0 pf-u-mr-md"
+              className="pf-v5-u-mb-md pf-v5-u-mt-0 pf-v5-u-mr-md"
               component={TextVariants.p}
             >
               {t("effectiveMessageBundlesDescription")}
@@ -220,7 +223,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-u-w-25vw"
+              className="pf-v5-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
               onSubmit={(e) => e.preventDefault()}
             >
@@ -242,7 +245,7 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectThemesOpen}
+                      onToggle={(_event, val) => setSelectThemesOpen(val)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
@@ -307,7 +310,7 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectThemeTypeOpen}
+                      onToggle={(_event, val) => setSelectThemeTypeOpen(val)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
@@ -368,7 +371,7 @@ export const EffectiveMessageBundles = ({
                       }}
                       variant={SelectVariant.single}
                       typeAheadAriaLabel="Select"
-                      onToggle={setSelectLanguageOpen}
+                      onToggle={(_event, val) => setSelectLanguageOpen(val)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         field.onChange(selectedValue.toString());
@@ -424,7 +427,7 @@ export const EffectiveMessageBundles = ({
                   control={control}
                   render={({ field }) => (
                     <div>
-                      <KeycloakTextInput
+                      <TextInput
                         id="kc-hasWords"
                         data-testid="effective-message-bundles-hasWords-searchField"
                         value={field.value.join(" ")}
@@ -462,7 +465,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <ActionGroup className="pf-u-mt-sm">
+              <ActionGroup className="pf-v5-u-mt-sm">
                 <Button
                   variant={"primary"}
                   onClick={() => {
@@ -496,7 +499,7 @@ export const EffectiveMessageBundles = ({
                 ];
                 return (
                   <ChipGroup
-                    className="pf-u-mt-md pf-u-mr-md"
+                    className="pf-v5-u-mt-md pf-v5-u-mr-md"
                     key={key}
                     categoryName={filterLabels[key]}
                     isClosable
@@ -534,7 +537,7 @@ export const EffectiveMessageBundles = ({
   if (!searchPerformed) {
     return (
       <>
-        <div className="pf-u-py-lg pf-u-pl-md">
+        <div className="pf-v5-u-py-lg pf-v5-u-pl-md">
           {effectiveMessageBunldesSearchFormDisplay()}
         </div>
         <Divider />

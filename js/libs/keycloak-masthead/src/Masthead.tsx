@@ -1,15 +1,12 @@
+import { Avatar, AvatarProps, Brand, BrandProps } from "@patternfly/react-core";
 import {
-  Avatar,
-  AvatarProps,
-  Brand,
-  BrandProps,
   DropdownItem,
   PageHeader,
   PageHeaderProps,
   PageHeaderTools,
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { ReactNode } from "react";
 
 import { KeycloakDropdown } from "./KeycloakDropdown";
@@ -55,7 +52,7 @@ const KeycloakMasthead = ({
     extraItems.push(
       <DropdownItem
         key="manageAccount"
-        onClick={() => keycloak?.accountManagement()}
+        onClick={() => keycloak.accountManagement()}
       >
         {t("manageAccount")}
       </DropdownItem>,
@@ -63,13 +60,13 @@ const KeycloakMasthead = ({
   }
   if (hasLogout) {
     extraItems.push(
-      <DropdownItem key="signOut" onClick={() => keycloak?.logout()}>
+      <DropdownItem key="signOut" onClick={() => keycloak.logout()}>
         {t("signOut")}
       </DropdownItem>,
     );
   }
 
-  const picture = keycloak?.tokenParsed?.picture;
+  const picture = keycloak.tokenParsed?.picture;
   return (
     <PageHeader
       {...rest}
@@ -104,7 +101,7 @@ const KeycloakMasthead = ({
                 dropDownItems={[...dropdownItems, extraItems]}
                 title={
                   hasUsername
-                    ? loggedInUserName(keycloak?.tokenParsed, t)
+                    ? loggedInUserName(keycloak.tokenParsed, t)
                     : undefined
                 }
               />

@@ -140,7 +140,7 @@ public class MyResourcesPage extends AbstractLoggedInPage {
 
         final WebElement tab = sharedWithMe.findElement(By.xpath("./.."));
         //test to see that the tab is really clicked
-        assertEquals("pf-c-tabs__item pf-m-current", tab.getAttribute("class"));
+        assertEquals("pf-v5-c-tabs__item pf-m-current", tab.getAttribute("class"));
     }
 
     public boolean containsResource(String resourceName) {
@@ -150,15 +150,15 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     public void createShare(String userName) {
         driver.findElement(By.id("username")).sendKeys(userName);
         driver.findElement(By.id("add")).click();
-        driver.findElement(By.className("pf-c-select__toggle-typeahead")).click();
-        driver.findElement(By.xpath("//button[@class='pf-c-select__menu-item' and text()='Scope A']")).click();
+        driver.findElement(By.className("pf-v5-c-select__toggle-typeahead")).click();
+        driver.findElement(By.xpath("//button[@class='pf-v5-c-select__menu-item' and text()='Scope A']")).click();
         driver.findElement(By.id("done")).click();
         waitForModalFadeOut();
     }
 
     public void removeAllPermissions() {
         assertThat(getScopesTexts(), containsInAnyOrder("Scope A", "Scope B"));
-        driver.findElement(By.className("pf-c-select__toggle-clear")).click();
+        driver.findElement(By.className("pf-v5-c-select__toggle-clear")).click();
         driver.findElement(By.id("save-0")).click();
         driver.findElement(By.id("done")).click();
         waitForModalFadeOut();
@@ -173,10 +173,10 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     }
 
     private void waitForModalFadeIn() {
-        waitGui().until().element(By.className("pf-c-modal-box")).is().present();
+        waitGui().until().element(By.className("pf-v5-c-modal-box")).is().present();
     }
 
     private void waitForModalFadeOut() {
-        waitGui().until().element(By.className("pf-c-backdrop")).is().not().present();
+        waitGui().until().element(By.className("pf-v5-c-backdrop")).is().not().present();
     }
 }

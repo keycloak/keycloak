@@ -10,20 +10,24 @@ export default class CommonElements {
   protected dropdownToggleBtn;
   protected dropdownSelectToggleBtn;
   protected dropdownSelectToggleItem;
+  protected tableKebabBtn;
 
   constructor(parentSelector = "") {
     this.parentSelector = trim(parentSelector) + " ";
-    this.primaryBtn = this.parentSelector + ".pf-c-button.pf-m-primary";
-    this.secondaryBtn = this.parentSelector + ".pf-c-button.pf-m-secondary";
-    this.secondaryBtnLink = this.parentSelector + ".pf-c-button.pf-m-link";
+    this.primaryBtn = this.parentSelector + ".pf-v5-c-button.pf-m-primary";
+    this.secondaryBtn = this.parentSelector + ".pf-v5-c-button.pf-m-secondary";
+    this.secondaryBtnLink = this.parentSelector + ".pf-v5-c-button.pf-m-link";
     this.dropdownMenuItem =
-      this.parentSelector + ".pf-c-dropdown__menu .pf-c-dropdown__menu-item";
+      this.parentSelector +
+      ".pf-v5-c-dropdown__menu .pf-v5-c-dropdown__menu-item";
     this.selectMenuItem =
-      this.parentSelector + ".pf-c-select__menu .pf-c-select__menu-item";
-    this.dropdownToggleBtn = this.parentSelector + ".pf-c-dropdown__toggle";
-    this.dropdownSelectToggleBtn = this.parentSelector + ".pf-c-select__toggle";
+      this.parentSelector + ".pf-v5-c-select__menu .pf-v5-c-select__menu-item";
+    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-select__toggle";
+    this.tableKebabBtn = this.parentSelector + ".pf-v5-c-dropdown__toggle";
+    this.dropdownSelectToggleBtn =
+      this.parentSelector + ".pf-v5-c-select__toggle";
     this.dropdownSelectToggleItem =
-      this.parentSelector + ".pf-c-select__menu > li";
+      this.parentSelector + ".pf-v5-c-select__menu > li";
   }
 
   clickPrimaryBtn() {

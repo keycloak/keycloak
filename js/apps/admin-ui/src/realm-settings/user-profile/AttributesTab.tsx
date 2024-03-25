@@ -4,13 +4,15 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  Select,
-  SelectOption,
-  SelectVariant,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { uniqBy } from "lodash-es";
 import { useMemo, useState } from "react";

@@ -1,18 +1,11 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, TextControl } from "ui-shared";
+import { FormErrorText, HelpItem, TextControl } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
@@ -71,8 +64,6 @@ export const Group = () => {
           <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
         }
         fieldId="groups"
-        helperTextInvalid={t("requiredGroups")}
-        validated={errors.groups ? "error" : "default"}
         isRequired
       >
         <Controller
@@ -119,7 +110,7 @@ export const Group = () => {
           )}
         />
         {selectedGroups.length > 0 && (
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("groups")}</Th>
@@ -166,8 +157,9 @@ export const Group = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         )}
+        {errors.groups && <FormErrorText message={t("requiredGroups")} />}
       </FormGroup>
     </>
   );

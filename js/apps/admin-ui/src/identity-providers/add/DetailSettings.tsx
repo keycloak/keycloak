@@ -5,14 +5,16 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  DropdownItem,
-  DropdownSeparator,
   Form,
   PageSection,
   Tab,
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  DropdownItem,
+  DropdownSeparator,
+} from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import {
   Controller,
@@ -445,7 +447,7 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} />
-          <Form isHorizontal className="pf-u-py-lg">
+          <Form isHorizontal className="pf-v5-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
@@ -505,7 +507,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
@@ -514,7 +516,7 @@ export default function DetailSettings() {
           >
             <ScrollForm
               label={t("jumpToSection")}
-              className="pf-u-px-lg"
+              className="pf-v5-u-px-lg"
               sections={sections}
             />
           </Tab>

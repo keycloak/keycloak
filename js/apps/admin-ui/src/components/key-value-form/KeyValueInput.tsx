@@ -4,10 +4,12 @@ import {
   Button,
   EmptyState,
   EmptyStateBody,
+  EmptyStateFooter,
   Grid,
   GridItem,
   HelperText,
   HelperTextItem,
+  TextInput,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment } from "react";
@@ -19,7 +21,6 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { KeySelect } from "./KeySelect";
 import { ValueSelect } from "./ValueSelect";
 
@@ -66,11 +67,11 @@ export const KeyValueInput = ({
   return fields.length > 0 ? (
     <>
       <Grid hasGutter>
-        <GridItem className="pf-c-form__label" span={5}>
-          <span className="pf-c-form__label-text">{t("key")}</span>
+        <GridItem className="pf-v5-c-form__label" span={5}>
+          <span className="pf-v5-c-form__label-text">{t("key")}</span>
         </GridItem>
-        <GridItem className="pf-c-form__label" span={7}>
-          <span className="pf-c-form__label-text">{t("value")}</span>
+        <GridItem className="pf-v5-c-form__label" span={7}>
+          <span className="pf-v5-c-form__label-text">{t("value")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
           const error = (errors as any)[name]?.[index];
@@ -87,7 +88,7 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("keyPlaceholder")}
                     aria-label={t("key")}
                     data-testid={`${name}-key`}
@@ -114,7 +115,7 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("valuePlaceholder")}
                     aria-label={t("value")}
                     data-testid={`${name}-value`}
@@ -151,7 +152,7 @@ export const KeyValueInput = ({
         <ActionListItem>
           <Button
             data-testid={`${name}-add-row`}
-            className="pf-u-px-0 pf-u-mt-sm"
+            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
@@ -165,20 +166,22 @@ export const KeyValueInput = ({
   ) : (
     <EmptyState
       data-testid={`${name}-empty-state`}
-      className="pf-u-p-0"
+      className="pf-v5-u-p-0"
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
-      <Button
-        data-testid={`${name}-add-row`}
-        variant="link"
-        icon={<PlusCircleIcon />}
-        isSmall
-        onClick={appendNew}
-        isDisabled={isDisabled}
-      >
-        {t("addAttribute", { label })}
-      </Button>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+          isDisabled={isDisabled}
+        >
+          {t("addAttribute", { label })}
+        </Button>
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

@@ -5,6 +5,7 @@ import { get } from "lodash-es";
 import { PropsWithChildren, ReactNode } from "react";
 import { UseFormReturn } from "react-hook-form";
 
+import { FormErrorText } from "../controls/FormErrorText";
 import { HelpItem } from "../controls/HelpItem";
 import {
   UserFormFields,
@@ -33,16 +34,13 @@ export const UserProfileGroup = ({
   } = form;
 
   const component = renderer?.(attribute);
+  const error = get(errors, fieldName(attribute.name));
   return (
     <FormGroup
       key={attribute.name}
       label={labelAttribute(t, attribute) || ""}
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}
-      validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
-      helperTextInvalid={t(
-        get(errors, fieldName(attribute.name))?.message as string,
-      )}
       labelIcon={
         helpText ? (
           <HelpItem helpText={helpText} fieldLabelId={attribute.name!} />
@@ -56,6 +54,12 @@ export const UserProfileGroup = ({
         </InputGroup>
       ) : (
         children
+      )}
+      {error && (
+        <FormErrorText
+          data-testid={`${attribute.name}-helper`}
+          message={error.message as string}
+        />
       )}
     </FormGroup>
   );

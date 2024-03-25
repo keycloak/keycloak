@@ -7,7 +7,7 @@ const masthead = new Masthead();
 export default class IdentityProviderLinksTab {
   #linkedProvidersSection = ".kc-linked-idps";
   #availableProvidersSection = ".kc-available-idps";
-  #linkAccountBtn = ".pf-c-button.pf-m-link";
+  #linkAccountBtn = ".pf-v5-c-button.pf-m-link";
   #linkAccountModalIdentityProviderInput = "idpNameInput";
   #linkAccountModalUserIdInput = "userId";
   #linkAccountModalUsernameInput = "userName";

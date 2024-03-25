@@ -81,7 +81,7 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-enable-ldapv3-password"}
                 data-testid="ldapv3-password"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -111,7 +111,7 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-validate-password-policy"}
                 data-testid="password-policy"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -141,7 +141,7 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-trust-email"}
                 data-testid="trust-email"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

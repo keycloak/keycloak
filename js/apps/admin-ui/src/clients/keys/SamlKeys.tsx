@@ -87,7 +87,7 @@ const KeySection = ({
         />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
-        <TextContent className="pf-u-pb-lg">
+        <TextContent className="pf-v5-u-pb-lg">
           <Text>{t(`${title}Explain`)}</Text>
         </TextContent>
         <FormAccess role="manage-clients" isHorizontal>
@@ -110,7 +110,7 @@ const KeySection = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     const v = value.toString();
                     if (v === "true") {
                       onChanged(attr);

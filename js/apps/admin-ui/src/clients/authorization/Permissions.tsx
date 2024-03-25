@@ -5,16 +5,18 @@ import {
   AlertVariant,
   ButtonVariant,
   DescriptionList,
-  Dropdown,
-  DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
+  Dropdown,
+  DropdownItem,
+  DropdownSeparator,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
+import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -181,7 +183,7 @@ export const AuthorizationPermissions = ({
   const noData = permissions.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar
@@ -210,7 +212,7 @@ export const AuthorizationPermissions = ({
                     <DropdownToggle
                       onToggle={toggleCreate}
                       isDisabled={isDisabled}
-                      isPrimary
+                      toggleVariant="primary"
                       data-testid="permissionCreateDropdown"
                     >
                       {t("createPermission")}
@@ -254,7 +256,7 @@ export const AuthorizationPermissions = ({
                       {t("createScopeBasedPermission")}
                       {disabledCreate?.scopes && (
                         <Alert
-                          className="pf-u-mt-sm"
+                          className="pf-v5-u-mt-sm"
                           variant="warning"
                           isInline
                           isPlain
@@ -269,7 +271,7 @@ export const AuthorizationPermissions = ({
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -365,7 +367,7 @@ export const AuthorizationPermissions = ({
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

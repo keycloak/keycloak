@@ -69,7 +69,7 @@ export const EventConfigForm = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {

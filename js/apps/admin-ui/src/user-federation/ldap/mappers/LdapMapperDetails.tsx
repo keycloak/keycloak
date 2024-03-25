@@ -6,18 +6,22 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
+  TextInput,
+} from "@patternfly/react-core";
+import {
+  DropdownItem,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { HelpItem, TextControl } from "ui-shared";
+
 import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
@@ -27,7 +31,6 @@ import {
 } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
@@ -219,13 +222,13 @@ export default function LdapMapperDetails() {
               isDisabled={!isNew}
               rules={{ required: t("required") }}
             />
-            <KeycloakTextInput
+            <TextInput
               hidden
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
               data-testid="ldap-mapper-parentId"
               {...form.register("parentId")}
             />
-            <KeycloakTextInput
+            <TextInput
               hidden
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
               data-testid="ldap-mapper-provider-type"

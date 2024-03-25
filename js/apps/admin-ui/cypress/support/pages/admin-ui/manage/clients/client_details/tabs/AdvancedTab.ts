@@ -2,14 +2,14 @@ import PageObject from "../../../../components/PageObject";
 
 export default class AdvancedTab extends PageObject {
   #clusterNodesExpandBtn =
-    ".pf-c-expandable-section .pf-c-expandable-section__toggle";
+    ".pf-v5-c-expandable-section .pf-v5-c-expandable-section__toggle";
   #testClusterAvailability = "#testClusterAvailability";
   #emptyClusterElement = "empty-state";
   #registerNodeManuallyBtn = "no-nodes-registered-empty-action";
   #deleteClusterNodeDrpDwn =
-    '[aria-label="Registered cluster nodes"] [aria-label="Actions"]';
+    '[aria-label="Registered cluster nodes"] [aria-label="Kebab toggle"]';
   #deleteClusterNodeBtn =
-    '[aria-label="Registered cluster nodes"] [role="menu"] button';
+    '[aria-label="Registered cluster nodes"] [role="menu"] [type="button"]';
   #nodeHostInput = "node";
   #addNodeConfirmBtn = "#add-node-confirm";
 

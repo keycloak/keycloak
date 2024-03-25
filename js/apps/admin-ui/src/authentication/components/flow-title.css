@@ -3,7 +3,7 @@
   width: -moz-fit-content;
 }
 
-.keycloak__authentication__title .pf-c-card__body {
-  padding-bottom: var(--pf-global--spacer--sm);
-  padding-top: var(--pf-global--spacer--sm);
+.keycloak__authentication__title .pf-v5-c-card__body {
+  padding-bottom: var(--pf-v5-global--spacer--sm);
+  padding-top: var(--pf-v5-global--spacer--sm);
 }

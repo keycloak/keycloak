@@ -1,16 +1,16 @@
 
 
 div.keycloak_help-header-description {
-  padding-top: var(--pf-global--spacer--lg);
+  padding-top: var(--pf-v5-global--spacer--lg);
   overflow-wrap: break-word;
   white-space: normal;
-  color: var(--pf-c-dropdown__menu-item--Color);
+  color: var(--pf-v5-c-dropdown__menu-item--Color);
 }
 
 .keycloak_help-header-switch {
-  margin-left: var(--pf-global--spacer--xl);
+  margin-left: var(--pf-v5-global--spacer--xl);
 }
 
-.keycloak_help-header-switch .pf-c-switch__toggle::before {
-  background-color: var(--pf-c-switch__toggle-icon--Color);
+.keycloak_help-header-switch .pf-v5-c-switch__toggle::before {
+  background-color: var(--pf-v5-c-switch__toggle-icon--Color);
 }

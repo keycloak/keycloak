@@ -1,11 +1,9 @@
+import { FormGroup, Split, SplitItem } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Split,
-  SplitItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -60,7 +58,7 @@ export const TokenLifespan = ({
             <SplitItem>
               <Select
                 variant={SelectVariant.single}
-                onToggle={setOpen}
+                onToggle={(_event, val) => setOpen(val)}
                 isOpen={open}
                 onSelect={(_, value) => {
                   field.onChange(value);

@@ -38,7 +38,7 @@ export const LinkedAccounts = () => {
     >
       <Stack hasGutter>
         <StackItem>
-          <Title headingLevel="h2" className="pf-u-mb-lg" size="xl">
+          <Title headingLevel="h2" className="pf-v5-u-mb-lg" size="xl">
             {t("linkedLoginProviders")}
           </Title>
           <DataList id="linked-idps" aria-label={t("linkedLoginProviders")}>
@@ -57,7 +57,11 @@ export const LinkedAccounts = () => {
           </DataList>
         </StackItem>
         <StackItem>
-          <Title headingLevel="h2" className="pf-u-mt-xl pf-u-mb-lg" size="xl">
+          <Title
+            headingLevel="h2"
+            className="pf-v5-u-mt-xl pf-v5-u-mb-lg"
+            size="xl"
+          >
             {t("unlinkedLoginProviders")}
           </Title>
           <DataList id="unlinked-idps" aria-label={t("unlinkedLoginProviders")}>
