@@ -104,7 +104,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
     String httpVerb;
 
-    @Option(names = {"-h", "--headers"}, description = "Set request header NAME to VALUE")
+    @Option(names = {"-h", "--header"}, description = "Set request header NAME to VALUE")
     List<String> rawHeaders = new LinkedList<>();
 
     // to maintain relative positions of set and delete operations
