@@ -12,19 +12,19 @@ export default class TableToolbar extends CommonElements {
   #actionToggleBtn: string;
 
   constructor() {
-    super(".pf-c-toolbar:visible");
+    super(".pf-v5-c-toolbar:visible");
     this.#searchBtn =
       this.parentSelector + "button[aria-label='Search']:visible";
     this.#searchInput =
-      this.parentSelector + ".pf-c-text-input-group__text-input:visible";
+      this.parentSelector + ".pf-v5-c-text-input-group__text-input:visible";
     this.#changeTypeBtn = this.parentSelector + "#change-type-dropdown";
     this.#nextPageBtn = this.parentSelector + "button[data-action=next]";
     this.#previousPageBtn =
       this.parentSelector + "button[data-action=previous]";
     this.#searchTypeDropdownBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-dropdown__toggle";
+      this.parentSelector + "[class*='searchtype'] .pf-v5-c-dropdown__toggle";
     this.#searchTypeSelectToggleBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-c-select__toggle";
+      this.parentSelector + "[class*='searchtype'] .pf-v5-c-select__toggle";
     this.#actionToggleBtn = this.dropdownToggleBtn + "[aria-label='Actions']";
   }
 

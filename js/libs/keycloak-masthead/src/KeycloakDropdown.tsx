@@ -4,7 +4,7 @@ import {
   DropdownProps,
   DropdownToggle,
   KebabToggle,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 
 type KeycloakDropdownProps = Omit<DropdownProps, "toggle"> & {
   isKebab?: boolean;
@@ -27,9 +27,13 @@ export const KeycloakDropdown = ({
       position="right"
       toggle={
         isKebab ? (
-          <KebabToggle onToggle={setOpen}>{title}</KebabToggle>
+          <KebabToggle onToggle={(_event, val) => setOpen(val)}>
+            {title}
+          </KebabToggle>
         ) : (
-          <DropdownToggle onToggle={setOpen}>{title}</DropdownToggle>
+          <DropdownToggle onToggle={(_event, val) => setOpen(val)}>
+            {title}
+          </DropdownToggle>
         )
       }
       isOpen={open}

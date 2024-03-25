@@ -1,3 +1,17 @@
+import styles from "@patternfly/react-styles/css/components/DataList/data-list";
+import {
+  ActionsColumn,
+  IAction,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  type TableProps,
+} from "@patternfly/react-table";
+import type { ThInfoType } from "@patternfly/react-table/dist/esm/components/Table/base/types";
+import { get } from "lodash-es";
 import {
   DragEvent as ReactDragEvent,
   ReactNode,
@@ -6,20 +20,6 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash-es";
-import {
-  ActionsColumn,
-  IAction,
-  TableComposable,
-  TableComposableProps,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
-import { ThInfoType } from "@patternfly/react-table/components/Table/base/types";
-import styles from "@patternfly/react-styles/css/components/DataList/data-list";
 
 export type Field<T> = {
   name: string;
@@ -30,7 +30,7 @@ export type Field<T> = {
 
 export type Action<T> = IAction & { isActionable?: (item: T) => boolean };
 
-type DraggableTableProps<T> = Omit<TableComposableProps, "data" | "ref"> & {
+type DraggableTableProps<T> = Omit<TableProps, "data" | "ref"> & {
   keyField: string;
   columns: Field<T>[];
   data: T[];
@@ -190,7 +190,7 @@ export function DraggableTable<T>({
   };
 
   return (
-    <TableComposable
+    <Table
       aria-label="Draggable table"
       className={state.dragging ? styles.modifiers.dragOver : ""}
       {...props}
@@ -250,6 +250,6 @@ export function DraggableTable<T>({
           </Tr>
         ))}
       </Tbody>
-    </TableComposable>
+    </Table>
   );
 }

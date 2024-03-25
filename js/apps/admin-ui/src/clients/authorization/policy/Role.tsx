@@ -1,24 +1,17 @@
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
+import { DefaultSwitchControl } from "../../../components/SwitchControl";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
 import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
-import { DefaultSwitchControl } from "../../../components/SwitchControl";
 
 export const Role = () => {
   const { t } = useTranslation();
@@ -67,8 +60,6 @@ export const Role = () => {
           <HelpItem helpText={t("policyRolesHelp")} fieldLabelId="roles" />
         }
         fieldId="roles"
-        helperTextInvalid={t("requiredRoles")}
-        validated={errors.roles ? "error" : "default"}
         isRequired
       >
         <Controller
@@ -112,7 +103,7 @@ export const Role = () => {
           )}
         />
         {selectedRoles.length > 0 && (
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("roles")}</Th>
@@ -162,8 +153,9 @@ export const Role = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         )}
+        {errors.roles && <FormErrorText message={t("requiredRoles")} />}
       </FormGroup>
       <DefaultSwitchControl
         name="fetchRoles"

@@ -3,14 +3,16 @@ import {
   ActionGroup,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Tab,
   TabTitleText,
   Tabs,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -93,7 +95,7 @@ export const LocalizationTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-u-mt-lg pf-u-ml-md"
+          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -113,7 +115,7 @@ export const LocalizationTab = ({
               render={({ field }) => (
                 <Switch
                   id="kc-l-internationalization"
-                  className="pf-u-mt-sm"
+                  className="pf-v5-u-mt-sm"
                   label={t("enabled")}
                   labelOff={t("disabled")}
                   isChecked={field.value}
@@ -141,7 +143,7 @@ export const LocalizationTab = ({
                   render={({ field }) => (
                     <Select
                       toggleId="kc-l-supported-locales"
-                      onToggle={(open) => {
+                      onToggle={(_event, open) => {
                         setSupportedLocalesOpen(open);
                       }}
                       onSelect={(_, v) => {

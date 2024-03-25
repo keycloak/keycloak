@@ -7,10 +7,10 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { SelectVariant } from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";

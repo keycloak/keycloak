@@ -204,7 +204,7 @@ describe("Realm settings tabs tests", () => {
 
       cy.get(realmSettingsPage.supportedLocalesTypeahead)
         .click()
-        .get(".pf-c-select__menu-item")
+        .get(".pf-v5-c-select__menu-item")
         .contains("Danish")
         .click();
       cy.get("#kc-l-supported-locales").click();
@@ -234,7 +234,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "123")
         .should("be.visible");
 
-      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.get('td.pf-v5-c-table__action button[aria-label="Actions"]').click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage("Successfully removed translation(s).");
@@ -281,7 +281,7 @@ describe("Realm settings tabs tests", () => {
         .contains("td", "def")
         .should("be.visible");
 
-      cy.get('td.pf-c-table__action button[aria-label="Actions"]').click();
+      cy.get('td.pf-v5-c-table__action button[aria-label="Actions"]').click();
       cy.contains("button", "Delete").click();
       cy.findByTestId("confirm").click();
 

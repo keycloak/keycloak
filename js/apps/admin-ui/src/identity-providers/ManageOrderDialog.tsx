@@ -108,7 +108,7 @@ export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
         </Button>,
       ]}
     >
-      <TextContent className="pf-u-pb-lg">
+      <TextContent className="pf-v5-u-pb-lg">
         <Text>{t("orderDialogIntro")}</Text>
       </TextContent>
 
@@ -116,11 +116,6 @@ export const ManageOrderDialog = ({ onClose }: ManageOrderDialogProps) => {
         aria-label={t("manageOrderTableAria")}
         data-testid="manageOrderDataList"
         isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
-        onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
       >
         {sortBy(providers, "config.guiOrder", "alias").map((provider) => (
           <DataListItem

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolbarItem } from "@patternfly/react-core";
 import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
   Select,
   SelectOption,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 
 import {
@@ -72,7 +72,10 @@ export const SearchDropdown = ({
     <Dropdown
       className="keycloak__client-scopes__searchtype"
       toggle={
-        <DropdownToggle id="toggle-id" onToggle={setSearchToggle}>
+        <DropdownToggle
+          id="toggle-id"
+          onToggle={(_event, val) => setSearchToggle(val)}
+        >
           <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
         </DropdownToggle>
       }
@@ -107,7 +110,7 @@ export const SearchToolbar = ({
           <ToolbarItem>
             <Select
               className="keycloak__client-scopes__searchtype"
-              onToggle={setOpen}
+              onToggle={(_event, val) => setOpen(val)}
               isOpen={open}
               selections={[
                 type === AllClientScopes.none
@@ -139,7 +142,7 @@ export const SearchToolbar = ({
           <ToolbarItem>
             <Select
               className="keycloak__client-scopes__searchtype"
-              onToggle={setOpen}
+              onToggle={(_event, val) => setOpen(val)}
               isOpen={open}
               selections={[t(`protocolTypes.${protocol}`)]}
               onSelect={(_, value) => {

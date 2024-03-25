@@ -1,4 +1,4 @@
-import { Wizard } from "@patternfly/react-core";
+import { Wizard } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";

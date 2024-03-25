@@ -29,41 +29,41 @@ export enum FilterSession {
 
 export default class ListingPage extends CommonElements {
   #searchInput =
-    ".pf-c-toolbar__item .pf-c-text-input-group__text-input:visible";
-  #tableToolbar = ".pf-c-toolbar";
+    ".pf-v5-c-toolbar__item .pf-v5-c-text-input-group__text-input:visible";
+  #tableToolbar = ".pf-v5-c-toolbar";
   #itemsRows = "table:visible";
   #deleteUserButton = "delete-user-btn";
   #emptyListImg = '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
   public emptyState = "empty-state";
-  #itemRowDrpDwn = ".pf-c-dropdown__toggle";
-  #itemRowSelect = ".pf-c-select__toggle:nth-child(1)";
-  #itemRowSelectItem = ".pf-c-select__menu-item";
-  #itemCheckbox = ".pf-c-table__check";
+  #itemRowDrpDwn = ".pf-v5-c-dropdown__toggle";
+  #itemRowSelect = ".pf-v5-c-select__toggle:nth-child(1)";
+  #itemRowSelectItem = ".pf-v5-c-select__menu-item";
+  #itemCheckbox = ".pf-v5-c-table__check";
   public exportBtn = '[role="menuitem"]:nth-child(1)';
   public deleteBtn = '[role="menuitem"]:nth-child(2)';
   #searchBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section button.pf-m-control:visible";
   #listHeaderPrimaryBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-primary:visible";
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section .pf-m-primary:visible";
   #listHeaderSecondaryBtn =
-    ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
+    ".pf-v5-c-page__main .pf-v5-c-toolbar__content-section .pf-m-link";
   #previousPageBtn =
-    ".pf-c-pagination:not([class*=pf-m-bottom]) button[data-action=previous]";
+    ".pf-v5-c-pagination:not([class*=pf-m-bottom]) button[data-action=previous]";
   #nextPageBtn =
-    ".pf-c-pagination:not([class*=pf-m-bottom]) button[data-action=next]";
+    ".pf-v5-c-pagination:not([class*=pf-m-bottom]) button[data-action=next]";
   public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
   #table = "table[aria-label]";
-  #filterSessionDropdownButton = ".pf-c-select button:nth-child(1)";
+  #filterSessionDropdownButton = ".pf-v5-c-select button:nth-child(1)";
   #filterDropdownButton = "[class*='searchtype'] button";
-  #dropdownItem = ".pf-c-dropdown__menu-item";
-  #changeTypeToButton = ".pf-c-select__toggle";
+  #dropdownItem = ".pf-v5-c-dropdown__menu-item";
+  #changeTypeToButton = ".pf-v5-c-select__toggle";
   #toolbarChangeType = "#change-type-dropdown";
   #tableNameColumnPrefix = "name-column-";
   #rowGroup = "table:visible tbody[role='rowgroup']";
   #tableHeaderCheckboxItemAllRows = "input[aria-label='Select all rows']";
 
   #searchBtnInModal =
-    ".pf-c-modal-box .pf-c-toolbar__content-section button.pf-m-control:visible";
+    ".pf-v5-c-modal-box .pf-v5-c-toolbar__content-section button.pf-m-control:visible";
 
   showPreviousPageTableItems() {
     cy.get(this.#previousPageBtn).first().click();
@@ -417,28 +417,32 @@ export default class ListingPage extends CommonElements {
 
   expandRow(index = 0) {
     this.#getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain'][id*='expandable']")
+      .find("[class='pf-v5-c-button pf-m-plain'][id*='expandable']")
       .click();
     return this;
   }
 
   collapseRow(index = 0) {
     this.#getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+      .find(
+        "[class='pf-v5-c-button pf-m-plain pf-m-expanded'][id*='expandable']",
+      )
       .click();
     return this;
   }
 
   assertExpandedRowContainText(index = 0, text: string) {
     this.#getRowGroup(index)
-      .find("tr[class='pf-c-table__expandable-row pf-m-expanded']")
+      .find("tr[class='pf-v5-c-table__expandable-row pf-m-expanded']")
       .should("contain.text", text);
     return this;
   }
 
   assertRowIsExpanded(index = 0, isExpanded: boolean) {
     this.#getRowGroup(index)
-      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+      .find(
+        "[class='pf-v5-c-button pf-m-plain pf-m-expanded'][id*='expandable']",
+      )
       .should((!isExpanded ? "not." : "") + "exist");
     return this;
   }

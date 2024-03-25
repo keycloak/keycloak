@@ -6,10 +6,6 @@ import {
   Button,
   ButtonVariant,
   CardTitle,
-  Dropdown,
-  DropdownGroup,
-  DropdownItem,
-  DropdownToggle,
   Gallery,
   PageSection,
   Split,
@@ -19,6 +15,12 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownGroup,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,7 +63,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
         <Badge
           key={`${identityProvider.providerId}-disabled`}
           isRead
-          className="pf-u-ml-sm"
+          className="pf-v5-u-ml-sm"
         >
           {t("disabled")}
         </Badge>
@@ -175,7 +177,7 @@ export default function IdentityProvidersSection() {
       />
       <PageSection
         variant={!hasProviders ? "default" : "light"}
-        className={!hasProviders ? "" : "pf-u-p-0"}
+        className={!hasProviders ? "" : "pf-v5-u-p-0"}
       >
         {!hasProviders && (
           <>
@@ -185,11 +187,11 @@ export default function IdentityProvidersSection() {
             {Object.keys(identityProviders).map((group) => (
               <Fragment key={group}>
                 <TextContent>
-                  <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+                  <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                     {group}:
                   </Text>
                 </TextContent>
-                <hr className="pf-u-mb-lg" />
+                <hr className="pf-v5-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard
@@ -227,7 +229,7 @@ export default function IdentityProvidersSection() {
                     toggle={
                       <DropdownToggle
                         onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        isPrimary
+                        toggleVariant="primary"
                       >
                         {t("addProvider")}
                       </DropdownToggle>

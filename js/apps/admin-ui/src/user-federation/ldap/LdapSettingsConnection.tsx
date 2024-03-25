@@ -3,11 +3,13 @@ import {
   AlertVariant,
   Button,
   FormGroup,
+  Switch,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
 import {
@@ -128,7 +130,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-enable-start-tls"}
                 data-testid="enable-start-tls"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -190,7 +192,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-connection-pooling"}
                 data-testid="connection-pooling"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

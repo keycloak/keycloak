@@ -8,15 +8,15 @@ export default class CreateClientPage extends CommonPage {
   #clientNameInput = "#name";
   #clientDescriptionInput = "#kc-description";
   #alwaysDisplayInUISwitch =
-    '[for="kc-always-display-in-ui-switch"] .pf-c-switch__toggle';
+    '[for="kc-always-display-in-ui-switch"] .pf-v5-c-switch__toggle';
   #frontchannelLogoutSwitch =
-    '[for="kc-frontchannelLogout-switch"] .pf-c-switch__toggle';
+    '[for="kc-frontchannelLogout-switch"] .pf-v5-c-switch__toggle';
 
   #clientAuthenticationSwitch =
-    '[for="kc-authentication-switch"] > .pf-c-switch__toggle';
+    '[for="kc-authentication-switch"] > .pf-v5-c-switch__toggle';
   #clientAuthenticationSwitchInput = "#kc-authentication-switch";
   #clientAuthorizationSwitch =
-    '[for="kc-authorization-switch"] > .pf-c-switch__toggle';
+    '[for="kc-authorization-switch"] > .pf-v5-c-switch__toggle';
   #clientAuthorizationSwitchInput = "#kc-authorization-switch";
   #standardFlowChkBx = "#kc-flow-standard";
   #directAccessChkBx = "#kc-flow-direct";
@@ -32,23 +32,23 @@ export default class CreateClientPage extends CommonPage {
   #adminUrlInput = "adminUrl";
 
   #loginThemeDrpDwn = "#login_theme";
-  #loginThemeList = 'ul[class="pf-c-select__menu"]';
-  #consentRequiredSwitch = '[for="consentRequired"] .pf-c-switch__toggle';
+  #loginThemeList = 'ul[class="pf-v5-c-select__menu"]';
+  #consentRequiredSwitch = '[for="consentRequired"] .pf-v5-c-switch__toggle';
   #consentRequiredSwitchInput = "#consentRequired";
   #displayClientOnScreenSwitch =
-    '[for="attributes.display🍺on🍺consent🍺screen"].pf-c-switch';
+    '[for="attributes.display🍺on🍺consent🍺screen"].pf-v5-c-switch';
   #displayClientOnScreenSwitchInput =
     "#attributes\\.display🍺on🍺consent🍺screen";
   #clientConsentScreenText = "attributes.consent🍺screen🍺text";
 
   #frontChannelLogoutSwitch =
-    '[for="kc-frontchannelLogout-switch"] > .pf-c-switch__toggle';
+    '[for="kc-frontchannelLogout-switch"] > .pf-v5-c-switch__toggle';
   #frontChannelLogoutSwitchInput = "#kc-frontchannelLogout-switch";
   #frontChannelLogoutInput = "frontchannelLogoutUrl";
   #backChannelLogoutInput = "backchannelLogoutUrl";
   #backChannelLogoutRequiredSwitchInput = "#backchannelLogoutSessionRequired";
   #backChannelLogoutRevoqueSwitch =
-    '.pf-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-c-switch__toggle';
+    '.pf-v5-c-form__group-control [for="backchannelLogoutRevokeOfflineSessions"] > .pf-v5-c-switch__toggle';
   #backChannelLogoutRevoqueSwitchInput =
     "#backchannelLogoutRevokeOfflineSessions";
 
@@ -113,7 +113,7 @@ export default class CreateClientPage extends CommonPage {
   }
 
   checkGeneralSettingsStepActive() {
-    cy.get(".pf-c-wizard__nav-link")
+    cy.get(".pf-v5-c-wizard__nav-link")
       .contains("General settings")
       .should("have.class", "pf-m-current");
 

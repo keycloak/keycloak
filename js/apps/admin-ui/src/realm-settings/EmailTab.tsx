@@ -99,7 +99,7 @@ export const RealmSettingsEmailTab = ({
           <FormAccess
             isHorizontal
             role="manage-realm"
-            className="pf-u-mt-lg"
+            className="pf-v5-u-mt-lg"
             onSubmit={handleSubmit(save)}
           >
             <TextControl
@@ -154,7 +154,7 @@ export const RealmSettingsEmailTab = ({
           <FormAccess
             isHorizontal
             role="manage-realm"
-            className="pf-u-mt-lg"
+            className="pf-v5-u-mt-lg"
             onSubmit={handleSubmit(save)}
           >
             <TextControl
@@ -180,7 +180,7 @@ export const RealmSettingsEmailTab = ({
                     data-testid="enable-ssl"
                     label={t("enableSSL")}
                     isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange("" + value)}
+                    onChange={(_event, value) => field.onChange("" + value)}
                   />
                 )}
               />
@@ -194,7 +194,7 @@ export const RealmSettingsEmailTab = ({
                     data-testid="enable-start-tls"
                     label={t("enableStartTLS")}
                     isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange("" + value)}
+                    onChange={(_event, value) => field.onChange("" + value)}
                   />
                 )}
               />

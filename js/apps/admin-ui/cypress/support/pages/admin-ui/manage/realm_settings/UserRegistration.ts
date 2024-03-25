@@ -44,7 +44,7 @@ export default class UserRegistration {
 
 export class GroupPickerDialog {
   #addButton = "add-button";
-  #title = ".pf-c-modal-box__title";
+  #title = ".pf-v5-c-modal-box__title";
 
   clickRow(groupName: string) {
     cy.findByTestId(groupName).within(() => cy.get("input").click());
@@ -52,7 +52,7 @@ export class GroupPickerDialog {
   }
 
   clickRoot() {
-    cy.get(".pf-c-breadcrumb__item > button").click();
+    cy.get(".pf-v5-c-breadcrumb__item > button").click();
     return this;
   }
 

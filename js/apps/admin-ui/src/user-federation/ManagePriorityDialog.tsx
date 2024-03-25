@@ -99,7 +99,7 @@ export const ManagePriorityDialog = ({
         </Button>,
       ]}
     >
-      <TextContent className="pf-u-pb-lg">
+      <TextContent className="pf-v5-u-pb-lg">
         <Text>{t("managePriorityInfo")}</Text>
       </TextContent>
 
@@ -107,11 +107,6 @@ export const ManagePriorityDialog = ({
         aria-label={t("manageOrderTableAria")}
         data-testid="manageOrderDataList"
         isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
-        onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
       >
         {sortBy(components, "config.priority", "name").map((component) => (
           <DataListItem

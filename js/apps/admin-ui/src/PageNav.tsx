@@ -5,6 +5,7 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,7 +47,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
         className={({ isActive }) =>
-          `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
+          `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
         }
       >
         {t(title)}
@@ -93,10 +94,9 @@ export const PageNav = () => {
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
   return (
-    <PageSidebar
-      className="keycloak__page_nav__nav"
-      nav={
-        <Nav onSelect={onSelect}>
+    <PageSidebar className="keycloak__page_nav__nav">
+      <PageSidebarBody>
+        <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
           <NavList>
             <NavItem className="keycloak__page_nav__nav_item__realm-selector">
               <RealmSelector />
@@ -132,7 +132,7 @@ export const PageNav = () => {
             </NavGroup>
           )}
         </Nav>
-      }
-    />
+      </PageSidebarBody>
+    </PageSidebar>
   );
 };

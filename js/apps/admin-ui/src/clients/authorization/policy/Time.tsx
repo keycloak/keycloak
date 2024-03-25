@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import {
   DatePicker,
   Flex,
@@ -11,10 +8,11 @@ import {
   Split,
   SplitItem,
   TimePicker,
-  ValidatedOptions,
 } from "@patternfly/react-core";
-
-import { HelpItem } from "ui-shared";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 const DATE_TIME_FORMAT = /(\d\d\d\d-\d\d-\d\d)? (\d\d?):(\d\d?)/;
 const padDateSegment = (value: number) => value.toString().padStart(2, "0");
@@ -172,7 +170,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(false)}
               label={t("notRepeat")}
-              className="pf-u-mb-md"
+              className="pf-v5-u-mb-md"
             />
           </FlexItem>
           <FlexItem>
@@ -183,7 +181,7 @@ export const Time = () => {
               name="repeat"
               onChange={() => setRepeat(true)}
               label={t("repeat")}
-              className="pf-u-mb-md"
+              className="pf-v5-u-mb-md"
             />
           </FlexItem>
         </Flex>
@@ -203,12 +201,9 @@ export const Time = () => {
           <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
         }
         isRequired
-        helperTextInvalid={t("required")}
-        validated={
-          errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
-        }
       >
         <DateTime name="notBefore" />
+        {errors.notBefore && <FormErrorText message={t("required")} />}
       </FormGroup>
       <FormGroup
         label={t("expireTime")}
@@ -217,14 +212,9 @@ export const Time = () => {
           <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
         }
         isRequired
-        helperTextInvalid={t("required")}
-        validated={
-          errors.notOnOrAfter
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
       >
         <DateTime name="notOnOrAfter" />
+        {errors.notOnOrAfter && <FormErrorText message={t("required")} />}
       </FormGroup>
     </>
   );

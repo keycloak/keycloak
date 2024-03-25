@@ -5,15 +5,16 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
+  TextInput,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { KeycloakTextInput, TextControl } from "ui-shared";
+import { TextControl } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";
@@ -200,7 +201,7 @@ export default function MappingDetails() {
             role="manage-clients"
           >
             <FormGroup label={t("mapperType")} fieldId="mapperType">
-              <KeycloakTextInput
+              <TextInput
                 type="text"
                 id="mapperType"
                 name="mapperType"

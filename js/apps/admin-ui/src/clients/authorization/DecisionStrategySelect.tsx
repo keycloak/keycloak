@@ -52,7 +52,7 @@ export const DecisionStrategySelect = ({
                 name="decisionStrategy"
                 onChange={() => field.onChange(strategy)}
                 label={t(`decisionStrategies.${strategy}`)}
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
               />
             ))}
           </>

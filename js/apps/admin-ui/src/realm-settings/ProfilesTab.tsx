@@ -179,7 +179,7 @@ export default function ProfilesTab() {
               onChange={() => setShow(false)}
               label={t("profilesConfigTypes.formView")}
               id="formView-profilesView"
-              className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
               data-testid="formView-profilesView"
             />
           </FlexItem>
@@ -249,7 +249,7 @@ export default function ProfilesTab() {
         />
       ) : (
         <FormGroup fieldId={"jsonEditor"}>
-          <div className="pf-u-mt-md pf-u-ml-lg">
+          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
             <CodeEditor
               isLineNumbersVisible
               isLanguageLabelVisible
@@ -263,10 +263,10 @@ export default function ProfilesTab() {
             />
           </div>
           <ActionGroup>
-            <div className="pf-u-mt-md">
+            <div className="pf-v5-u-mt-md">
               <Button
                 variant={ButtonVariant.primary}
-                className="pf-u-mr-md pf-u-ml-lg"
+                className="pf-v5-u-mr-md pf-v5-u-ml-lg"
                 onClick={save}
                 data-testid="jsonEditor-saveBtn"
               >

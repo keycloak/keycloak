@@ -7,7 +7,6 @@ import {
   Button,
   ButtonVariant,
   DataList,
-  DropdownItem,
   Label,
   PageSection,
   ToggleGroup,
@@ -16,6 +15,7 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -403,37 +403,7 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DataList
-                aria-label={t("flows")}
-                onDragFinish={(order) => {
-                  const withoutHeaderId = order.slice(1);
-                  setLiveText(
-                    t("onDragFinish", { list: dragged?.displayName }),
-                  );
-                  const change = executionList.getChange(
-                    dragged!,
-                    withoutHeaderId,
-                  );
-                  executeChange(dragged!, change);
-                }}
-                onDragStart={(id) => {
-                  const item = executionList.findExecution(id)!;
-                  setLiveText(t("onDragStart", { item: item.displayName }));
-                  setDragged(item);
-                  if (!item.isCollapsed) {
-                    item.isCollapsed = true;
-                    setExecutionList(executionList.clone());
-                  }
-                }}
-                onDragMove={() =>
-                  setLiveText(t("onDragMove", { item: dragged?.displayName }))
-                }
-                onDragCancel={() => setLiveText(t("onDragCancel"))}
-                itemOrder={[
-                  "header",
-                  ...executionList.order().map((ex) => ex.id!),
-                ]}
-              >
+              <DataList aria-label={t("flows")}>
                 <FlowHeader />
                 <>
                   {executionList.expandableList.map((execution) => (

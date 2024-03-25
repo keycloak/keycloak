@@ -1,37 +1,39 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  UnmanagedAttributePolicy,
+  UserProfileConfig,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
   ActionGroup,
   Button,
   ClipboardCopy,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
   Switch,
+  TextInput,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { FormErrorText, HelpItem } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
   convertAttributeNameToForm,
   convertToFormValues,
 } from "../util";
-import {
-  UnmanagedAttributePolicy,
-  UserProfileConfig,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { useFetch } from "../utils/useFetch";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 
@@ -98,7 +100,7 @@ export const RealmSettingsGeneralTab = ({
       <FormAccess
         isHorizontal
         role="manage-realm"
-        className="pf-u-mt-lg"
+        className="pf-v5-u-mt-lg"
         onSubmit={handleSubmit((data) => {
           if (
             UnmanagedAttributePolicy.Disabled ===
@@ -109,13 +111,7 @@ export const RealmSettingsGeneralTab = ({
           save({ ...data, upConfig: userProfileConfig });
         })}
       >
-        <FormGroup
-          label={t("realmId")}
-          fieldId="kc-realm-id"
-          isRequired
-          validated={errors.realm ? "error" : "default"}
-          helperTextInvalid={errors.realm?.message}
-        >
+        <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
           <Controller
             name="realm"
             control={control}
@@ -129,15 +125,15 @@ export const RealmSettingsGeneralTab = ({
               </ClipboardCopy>
             )}
           />
+          {errors.realm && (
+            <FormErrorText message={errors.realm.message as string} />
+          )}
         </FormGroup>
         <FormGroup label={t("displayName")} fieldId="kc-display-name">
-          <KeycloakTextInput
-            id="kc-display-name"
-            {...register("displayName")}
-          />
+          <TextInput id="kc-display-name" {...register("displayName")} />
         </FormGroup>
         <FormGroup label={t("htmlDisplayName")} fieldId="kc-html-display-name">
-          <KeycloakTextInput
+          <TextInput
             id="kc-html-display-name"
             {...register("displayNameHtml")}
           />
@@ -152,7 +148,7 @@ export const RealmSettingsGeneralTab = ({
             />
           }
         >
-          <KeycloakTextInput
+          <TextInput
             type="url"
             id="kc-frontend-url"
             {...register(convertAttributeNameToForm("attributes.frontendUrl"))}

@@ -4,9 +4,9 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -206,11 +206,11 @@ export default function PolicyDetails() {
             <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
-            <div className="pf-u-mt-md">
+            <div className="pf-v5-u-mt-md">
               <Button
                 isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
-                className="pf-u-mr-md"
+                className="pf-v5-u-mr-md"
                 type="submit"
                 data-testid="save"
               >

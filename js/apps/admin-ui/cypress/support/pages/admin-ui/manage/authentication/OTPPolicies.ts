@@ -11,7 +11,7 @@ export default class OTPPolicies {
 
   increaseInitialCounter() {
     cy.get(
-      '#otpPolicyInitialCounter > .pf-c-input-group > [aria-label="Plus"]',
+      '#otpPolicyInitialCounter > .pf-v5-c-input-group > [aria-label="Plus"]',
     ).click();
     return this;
   }

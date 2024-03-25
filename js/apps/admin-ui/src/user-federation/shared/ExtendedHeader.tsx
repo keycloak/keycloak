@@ -1,8 +1,8 @@
+import { AlertVariant } from "@patternfly/react-core";
 import {
-  AlertVariant,
   DropdownItem,
   DropdownSeparator,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
