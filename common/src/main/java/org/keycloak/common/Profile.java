@@ -111,9 +111,8 @@ public class Profile {
         HOSTNAME_V1("Hostname Options V1", Type.DEFAULT),
         //HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
 
-        // TODO: change to "PREVIEW" before merging
-        PERSISTENT_USER_SESSIONS("Persistent user sessions across restarts and upgrades", Type.DEFAULT),
-        USER_SESSIONS_NO_CACHE("No caching for user sessions", Type.DEFAULT),
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.PREVIEW),
+        USER_SESSIONS_NO_CACHE("No caching for online user sessions when they are persisted", Type.PREVIEW),
         
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 

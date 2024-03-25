@@ -108,7 +108,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         if (clientSession.getId() != null) {
             clientSessionId = UUID.fromString(clientSession.getId());
         } else {
-            clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
+            if (offline) {
+                clientSessionId = keyGenerator.generateKeyUUID(kcSession, cache);
+            } else {
+                clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
+            }
         }
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);

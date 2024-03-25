@@ -32,6 +32,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
 import java.util.Collections;
+import java.util.Objects;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -46,7 +47,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key) {
         SessionUpdatesList<UserSessionEntity> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            SessionEntityWrapper<UserSessionEntity> wrappedEntity = cache.get(key);
+            SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
+            if (!((Objects.equals(cache.getName(), USER_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), CLIENT_SESSION_CACHE_NAME)) && Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE))) {
+                wrappedEntity = cache.get(key);
+            }
             if (wrappedEntity == null) {
                 wrappedEntity = getSessionEntityFromPersister(realm, key);
             }

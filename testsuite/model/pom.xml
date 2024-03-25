@@ -207,6 +207,13 @@
         </profile>
 
         <profile>
+            <id>jpa+infinispan+persistentsessions</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa,PersistentUserSessions</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa+infinispan+client-storage</id>
             <properties>
                 <keycloak.model.parameters>Jpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>

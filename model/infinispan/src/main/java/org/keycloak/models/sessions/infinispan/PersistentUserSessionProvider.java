@@ -201,7 +201,12 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
-        final UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSession.getId(), client.getId());
+        final UUID clientSessionId;
+        if (userSession.isOffline()) {
+            clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
+        } else {
+            clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSession.getId(), client.getId());
+        }
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realm.getId());
         entity.setClientId(client.getId());
@@ -213,9 +218,19 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
         }
 
-        InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
+        UserSessionPersistentChangelogBasedTransaction userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
         AuthenticatedClientSessionAdapter adapter = new AuthenticatedClientSessionAdapter(session, this, entity, client, userSession, clientSessionUpdateTx, false);
+
+        if (Profile.isFeatureEnabled(Feature.USER_SESSIONS_NO_CACHE)) {
+            if (userSession.isOffline()) {
+                // If this is an offline session, and the referred online session doesn't exist anymore, don't register the client session in the transaction.
+                // Instead keep it transient and it will be added to the offline session only afterward. This is expected by SessionTimeoutsTest.testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh.
+                if (userSessionUpdateTx.get(realm, userSession.getId()) == null) {
+                    return adapter;
+                }
+            }
+        }
 
         // For now, the clientSession is considered transient in case that userSession was transient
         UserSessionModel.SessionPersistenceState persistenceState = userSession.getPersistenceState() != null ?
@@ -1006,7 +1021,12 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId, boolean offline) {
-        final UUID clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
+        final UUID clientSessionId;
+        if (offline) {
+            clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
+        } else {
+            clientSessionId = PersistentUserSessionProvider.createClientSessionUUID(userSessionId, clientId);
+        }
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);
 
