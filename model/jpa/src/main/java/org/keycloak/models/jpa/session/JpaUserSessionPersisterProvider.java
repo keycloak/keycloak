@@ -258,7 +258,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
 
-            int expired = Time.currentTime() - realm.getSsoSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+            int expired = Time.currentTime() - Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe()) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
             // prefer client session timeout if set
             int expiredClient = expired;
