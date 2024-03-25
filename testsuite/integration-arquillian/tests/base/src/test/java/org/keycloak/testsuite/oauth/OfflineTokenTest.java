@@ -522,6 +522,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // Refresh with the offline token
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
+        Assert.assertNull("received error " + tokenResponse.getError() + ", " + tokenResponse.getErrorDescription(), tokenResponse.getError());
 
         // Use accessToken to admin REST request
         try (Keycloak offlineTokenAdmin = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
