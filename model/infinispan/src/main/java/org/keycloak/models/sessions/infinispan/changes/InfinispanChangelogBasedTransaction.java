@@ -36,6 +36,9 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -67,7 +70,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, "sessions") || Objects.equals(cacheName, "clientSessions"))) {
+            if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE) && (Objects.equals(cacheName, USER_SESSION_CACHE_NAME) || Objects.equals(cacheName, CLIENT_SESSION_CACHE_NAME))) {
                 throw new IllegalStateException("Can't load from cache");
             }
 
