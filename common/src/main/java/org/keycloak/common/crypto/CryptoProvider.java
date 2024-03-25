@@ -54,6 +54,11 @@ public interface CryptoProvider {
      */
     CertificateUtilsProvider getCertificateUtils();
 
+    /**
+     * Write something
+     * @return
+     */
+    CRLProvider getCrlProvider();
 
     /**
      * Get PEMUtils implementation. Returned implementation can be dependent according to if we have
