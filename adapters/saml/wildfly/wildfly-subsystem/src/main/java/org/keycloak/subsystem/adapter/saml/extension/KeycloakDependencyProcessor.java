@@ -63,7 +63,10 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
          // Next phase, need to detect if this is a Keycloak deployment.  If not, don't add the modules.
 
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-        final ModuleLoader moduleLoader = Module.getBootModuleLoader();
+        ModuleLoader moduleLoader = Module.getCallerModuleLoader();
+        if (moduleLoader == null) {
+            moduleLoader = Module.getSystemModuleLoader();
+        }
 
         addCoreModules(moduleSpecification, moduleLoader);
         addCommonModules(moduleSpecification, moduleLoader);
