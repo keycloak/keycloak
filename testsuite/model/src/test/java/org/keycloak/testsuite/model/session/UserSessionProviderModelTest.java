@@ -101,8 +101,8 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
 
-            session.sessions().removeUserSession(realm, origSessions[0]);
-            session.sessions().removeUserSession(realm, origSessions[1]);
+            session.sessions().removeUserSession(realm, session.sessions().getUserSession(realm, origSessions[0].getId()));
+            session.sessions().removeUserSession(realm, session.sessions().getUserSession(realm, origSessions[1].getId()));
         });
 
         inComittedTransaction(session -> {
