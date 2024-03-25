@@ -318,7 +318,7 @@ jobs:
 
       - name: Run base tests
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh persistent-sessions`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.features=persistent-user-sessions,persistent-user-sessions-no-cache -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
