@@ -222,7 +222,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
         AuthenticatedClientSessionAdapter adapter = new AuthenticatedClientSessionAdapter(session, this, entity, client, userSession, clientSessionUpdateTx, false);
 
-        if (Profile.isFeatureEnabled(Feature.USER_SESSIONS_NO_CACHE)) {
+        if (Profile.isFeatureEnabled(Feature.PERSISTENT_USER_SESSIONS_NO_CACHE)) {
             if (userSession.isOffline()) {
                 // If this is an offline session, and the referred online session doesn't exist anymore, don't register the client session in the transaction.
                 // Instead keep it transient and it will be added to the offline session only afterward. This is expected by SessionTimeoutsTest.testOfflineUserClientIdleTimeoutSmallerThanSessionOneRefresh.

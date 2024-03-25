@@ -48,7 +48,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         SessionUpdatesList<UserSessionEntity> myUpdates = updates.get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<UserSessionEntity> wrappedEntity = null;
-            if (!((Objects.equals(cache.getName(), USER_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), CLIENT_SESSION_CACHE_NAME)) && Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE))) {
+            if (!((Objects.equals(cache.getName(), USER_SESSION_CACHE_NAME) || Objects.equals(cache.getName(), CLIENT_SESSION_CACHE_NAME)) && Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE))) {
                 wrappedEntity = cache.get(key);
             }
             if (wrappedEntity == null) {
@@ -111,7 +111,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             return null;
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE) && (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME))) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME))) {
             return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 

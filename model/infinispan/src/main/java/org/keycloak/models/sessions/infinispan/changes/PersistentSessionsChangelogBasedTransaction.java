@@ -45,7 +45,7 @@ public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEnt
             throw new IllegalStateException("Persistent user sessions are not enabled");
         }
 
-        if (Profile.isFeatureEnabled(Profile.Feature.USER_SESSIONS_NO_CACHE) && (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME))) {
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE) && (cache.getName().equals(USER_SESSION_CACHE_NAME) || cache.getName().equals(CLIENT_SESSION_CACHE_NAME))) {
             changesPerformers = List.of(
                     new JpaChangesPerformer<>(session, cache.getName(), offline)
             );

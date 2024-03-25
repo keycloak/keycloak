@@ -36,6 +36,6 @@ public class PersistentUserSessions extends KeycloakModelParameters {
 
     public static void updateConfigForJpa(Config cf) {
         System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS), "enabled");
-        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.USER_SESSIONS_NO_CACHE), "enabled");
+        System.getProperties().put(PropertiesProfileConfigResolver.getPropertyKey(Profile.Feature.PERSISTENT_USER_SESSIONS_NO_CACHE), "enabled");
     }
 }
