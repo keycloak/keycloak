@@ -25,16 +25,11 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -42,7 +37,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -65,6 +62,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -127,6 +125,9 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
         ClientModel target = realm.getClientByClientId("target");
         assertNotNull(target);
+
+//        ClientScopeModel tokenExchangeClientScope = realm.addClientScope("token-exchange");
+//        tokenExchangeClientScope.addProtocolMapper(HardcodedClaim.create("token-exchange", "token-exchange", "true","String", true, true, true));
 
         RoleModel impersonateRole = management.getRealmManagementClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
 
@@ -227,6 +228,25 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         serviceAccount.setSecret("secret");
         serviceAccount.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         serviceAccount.setFullScopeAllowed(false);
+//
+//        ClientModel serviceAccountSource = realm.addClient("source-service-account");
+//        serviceAccountSource.setClientId("source-service-account");
+//        serviceAccountSource.setPublicClient(false);
+//        serviceAccountSource.setServiceAccountsEnabled(true);
+//        serviceAccountSource.setEnabled(true);
+//        serviceAccountSource.setSecret("secret");
+//        serviceAccountSource.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+//        serviceAccountSource.setFullScopeAllowed(false);
+//        serviceAccountSource.addClientScope(tokenExchangeClientScope, false);
+//
+//        ClientModel serviceAccountTarget = realm.addClient("target-service-account");
+//        serviceAccountTarget.setClientId("target-service-account");
+//        serviceAccountTarget.setPublicClient(false);
+//        serviceAccountTarget.setServiceAccountsEnabled(true);
+//        serviceAccountTarget.setEnabled(true);
+//        serviceAccountTarget.setSecret("secret");
+//        serviceAccountTarget.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+//        serviceAccountTarget.setFullScopeAllowed(false);
 
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
@@ -255,6 +275,16 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+//        // permission for tokens with scope token-exchange
+//        ClientScopePolicyRepresentation clientScopePolicyRep = new ClientScopePolicyRepresentation();
+//        clientScopePolicyRep.setClientScopes(Set.of(new ClientScopePolicyRepresentation.ClientScopeDefinition(tokenExchangeClientScope.getId(), true)));
+//        clientScopePolicyRep.setName("with-token-exchange");
+//        clientScopePolicyRep.setLogic(Logic.POSITIVE);
+//        server = management.realmResourceServer();
+//        Policy clientScopePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientScopePolicyRep);
+//
+//        management.clients().exchangeToPermission(serviceAccountTarget).addAssociatedPolicy(clientScopePolicy);
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
