@@ -1016,6 +1016,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         entity.setClientId(clientId);
         entity.setRedirectUri(clientSession.getRedirectUri());
         entity.setTimestamp(clientSession.getTimestamp());
+        entity.setCurrentRefreshToken(clientSession.getCurrentRefreshToken());
+        entity.setCurrentRefreshTokenUseCount(clientSession.getCurrentRefreshTokenUseCount());
 
         return entity;
     }
