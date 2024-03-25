@@ -9,6 +9,7 @@ export enum Feature {
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",
   ClientTypes = "CLIENT_TYPES",
+  AssertionGrant = "ASSERTION_GRANT",
 }
 
 export default function useIsFeatureEnabled() {

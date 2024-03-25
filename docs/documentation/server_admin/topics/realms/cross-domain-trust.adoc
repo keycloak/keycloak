@@ -1,0 +1,21 @@
+[[cross_domain_trust]]
+=== Configuring Cross-Domain Trusts
+
+Cross-domain trusts can be defined at the realm level to specify trusted security domains external to Keycloak. This set of trusted
+domains is used by other features, such as the <<_assertion_grant,JWTs as Authorization Grants>> feature which allows external entities
+to request access tokens for users.
+
+To configure a trusted domain:
+
+. Go to `Realm settings`
+. Select the `Cross-Domain Trust` tab
+. Create a trusted domain entry
+. Save the changes
+
+Each cross-domain trust configuration contains 3 elements:
+
+* Issuer: The URI identifying this trusted domain. This value will be used to verify the issuer on assertions signed by this trusted domain.
+* Audience: The URI identifying the audience of assertions submitted by this trusted domain. This value will be used to verify the audience on assertions signed by this trusted domain.
+* Certificate: The base64 encoded X509 signing certificate of the trusted domain. This will be used to verify assertions signed by this trusted domain.
+
+image:images/cross-domain-trust-table.png[alt="Cross-Domain Trust Configuration Table"]
