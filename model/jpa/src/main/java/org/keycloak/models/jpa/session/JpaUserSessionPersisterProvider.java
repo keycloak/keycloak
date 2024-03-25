@@ -710,11 +710,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void removeUserSessions(RealmModel realm, boolean offline) {
+        em.createNamedQuery("deleteClientSessionsByRealmSessionType")
+                .setParameter("realmId", realm.getId())
+                .setParameter("offline", offlineToString(offline))
+                .executeUpdate();
         em.createNamedQuery("deleteUserSessionsByRealmSessionType")
                 .setParameter("realmId", realm.getId())
                 .setParameter("offline", offlineToString(offline))
                 .executeUpdate();
-        // TODO: also clean up client sessions
     }
 
 
