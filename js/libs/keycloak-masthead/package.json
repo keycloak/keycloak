@@ -51,7 +51,7 @@
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^5.2.2",
+    "vite": "^5.2.6",
     "vite-plugin-checker": "^0.6.4",
     "vite-plugin-dts": "^3.7.3"
   }
