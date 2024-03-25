@@ -27,7 +27,6 @@ import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar"
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
-import { countGroups } from "../../groups/components/GroupTree";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -79,7 +78,7 @@ export const GroupPickerDialog = ({
 
       if (!groupId) {
         const args: GroupQuery = {
-          first: first,
+          first,
           max: max + 1,
         };
         if (isSearching) {
@@ -95,8 +94,8 @@ export const GroupPickerDialog = ({
         }
 
         const args: SubGroupQuery = {
-          first: first,
-          max: max + 1,
+          first,
+          max,
           parentId: groupId,
         };
         groups = await adminClient.groups.listSubGroups(args);
@@ -121,8 +120,8 @@ export const GroupPickerDialog = ({
         group.checked = !!selectedRows.find((r) => r.id === group.id);
       });
       setGroups(groups);
-      if (isSearching) {
-        setCount(countGroups(groups));
+      if (isSearching || !groupId) {
+        setCount(groups.length);
       }
     },
     [groupId, filter, first, max],
@@ -222,7 +221,7 @@ export const GroupPickerDialog = ({
           ))}
         </Breadcrumb>
         <DataList aria-label={t("groups")} isCompact>
-          {groups.map((group: SelectableGroup) => (
+          {groups.slice(0, max).map((group: SelectableGroup) => (
             <Fragment key={group.id}>
               <GroupRow
                 key={group.id}
@@ -305,7 +304,10 @@ const GroupRow = ({
       onClick={(e) => {
         if (type === "selectOne") {
           onSelect(group.id!);
-        } else if ((e.target as HTMLInputElement).type !== "checkbox") {
+        } else if (
+          (e.target as HTMLInputElement).type !== "checkbox" &&
+          group.subGroupCount !== 0
+        ) {
           onSelect(group.id!);
           setIsSearching(false);
         }
