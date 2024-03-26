@@ -55,7 +55,7 @@ public class ProductPortalServlet extends HttpServlet {
         out.println("<html><head><title>Product Portal Page</title></head><body>");
 
         String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-                .queryParam("redirect_uri", "http://localhost:8181/product-portal").build("demo").toString();
+                .build("demo").toString();
         String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
                 .queryParam("referrer", "product-portal").build("demo").toString();
 
