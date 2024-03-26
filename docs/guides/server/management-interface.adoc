@@ -1,0 +1,64 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring {project_name} Management Interface"
+summary="Learn how to configure {project_name}'s management interface for endpoints like Metrics and Health checks."
+includedOptions="management-*">
+
+Management interface allows to access management endpoints via different HTTP server than the primary one.
+It provides the possibility to hide endpoints like `/metrics` or `/health` from the outside world and therefore harden the security.
+The biggest advantage might be seen in Kubernetes environments as the specific management port might not be exposed.
+
+== Configuring the Management interface
+
+=== {project_name} Distribution
+For the bare {project_name} distribution, the management interface is disabled and the `/metrics` and `/health` endpoints are accessible on the same port as common {project_name} endpoints.
+You can turn it on via {project_name} option `management-enabled`, or setting environment variable `KC_MANAGEMENT_ENABLED`.
+After that, these endpoints are exposed on port `9000`, by default.
+In order to change the port for the management interface, you can use the {project_name} option `management-port`, or environment variable `KC_MANAGEMENT_PORT`.
+
+Management interface also allows to change the relative path to the management interface, as the prefix path for the management endpoints can be changed.
+You can achieve it via {project_name} option `management-relative-path`, or environment variable `KC_MANAGEMENT_RELATIVE_PATH`.
+For instance, if you set the CLI option `--management-relative-path=/management`, the metrics and health endpoints will be accessed on the `/management/metrics` and `/management/health` paths.
+
+=== {project_name} Container
+The {project_name} builder image enables the management interface by default when running in a container.
+It allows to seamlessly use your custom image with {project_name} Operator.
+In order to prevent using the management interface, please set the `KC_MANAGEMENT_ENABLE` environment variable in your custom Dockerfile as follows:
+
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel} as builder
+
+# disable the management interface
+ENV KC_MANAGEMENT_ENABLE=false
+
+...
+----
+
+=== {project_name} Operator
+{project_name} Operator provides a few first-class citizen fields for the Keycloak CR.
+You can specify only the `port` and `relative-path` through the Keycloak CR as follows:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  management:
+    port: 9001
+    relativePath: /management
+----
+
+
+=== TLS support
+When the TLS is set for the main {project_name} server, the management interface will be accessible through the HTTPS as well.
+The management interface can run only either on HTTP, or HTTPS, not both as for the main server.
+Specific {project_name} management interface options with prefix `management-https-*` were provided for setting different TLS parameters for the management interface server.
+When these options are not explicitly set, the TLS parameters are inherited from the main HTTP server.
+
+</@tmpl.guide>
