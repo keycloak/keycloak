@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page;
+package org.keycloak.testsuite.webauthn.pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -212,8 +212,8 @@ public class SigningInPage extends AbstractLoggedInPage {
             String lastCreateAtText = getTextFromItem(CREATED_AT);
 
             return lastCreateAtText
-              .substring(lastCreatedAtLabel.length(), lastCreateAtText.length() - 1)  // remove label, drop last dot
-              .trim();
+                    .substring(lastCreatedAtLabel.length(), lastCreateAtText.length() - 1)  // remove label, drop last dot
+                    .trim();
         }
 
         public LocalDateTime getCreatedAt() {

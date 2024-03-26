@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page.fragment;
+package org.keycloak.testsuite.webauthn.pages.fragments;
 
 import org.openqa.selenium.WebElement;
 

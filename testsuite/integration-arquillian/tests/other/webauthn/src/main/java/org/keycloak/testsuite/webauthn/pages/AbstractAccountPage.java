@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page;
+package org.keycloak.testsuite.webauthn.pages;
 
 import org.keycloak.testsuite.auth.page.AuthRealm;
 

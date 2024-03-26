@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page;
+package org.keycloak.testsuite.webauthn.pages;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.ui.account3.page.fragment.ContentAlert;
-import org.keycloak.testsuite.ui.account3.page.fragment.ContinueCancelModal;
-import org.keycloak.testsuite.ui.account3.page.fragment.LoggedInPageHeader;
-import org.keycloak.testsuite.ui.account3.page.fragment.Sidebar;
+import org.keycloak.testsuite.webauthn.pages.fragments.ContentAlert;
+import org.keycloak.testsuite.webauthn.pages.fragments.ContinueCancelModal;
+import org.keycloak.testsuite.webauthn.pages.fragments.LoggedInPageHeader;
+import org.keycloak.testsuite.webauthn.pages.fragments.Sidebar;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -53,7 +53,7 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
 
     @FindBy(id = "refresh-page")
     private WebElement refreshPageBtn;
-    
+
     @FindBy(id = "brandLink")
     private WebElement brandLink;
 
