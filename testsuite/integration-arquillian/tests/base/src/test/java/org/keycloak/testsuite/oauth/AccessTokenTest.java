@@ -829,6 +829,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         ClientRepresentation clientRep = ApiUtil.findClientByClientId(realm, "test-app").toRepresentation();
         realm.clients().get(clientRep.getId()).addDefaultClientScope(clientScopeId);
         clientRep.setFullScopeAllowed(false);
+        clientRep = ApiUtil.findClientByClientId(realm, "test-app").toRepresentation();
         realm.clients().get(clientRep.getId()).update(clientRep);
 
         {
