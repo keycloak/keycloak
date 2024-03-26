@@ -21,7 +21,7 @@ export default class CommonElements {
       ".pf-v5-c-dropdown__menu .pf-v5-c-dropdown__menu-item";
     this.selectMenuItem =
       this.parentSelector + ".pf-v5-c-select__menu .pf-v5-c-select__menu-item";
-    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-dropdown__toggle";
+    this.dropdownToggleBtn = this.parentSelector + ".pf-v5-c-select__toggle";
     this.dropdownSelectToggleBtn =
       this.parentSelector + ".pf-v5-c-select__toggle";
     this.dropdownSelectToggleItem =

@@ -22,7 +22,7 @@ export default class TableToolbar extends CommonElements {
     this.#previousPageBtn =
       this.parentSelector + "button[data-action=previous]";
     this.#searchTypeDropdownBtn =
-      this.parentSelector + "[class*='searchtype'] .pf-v5-c-dropdown__toggle";
+      this.parentSelector + "[class*='searchtype'] .pf-v5-c-select__toggle";
     this.#searchTypeSelectToggleBtn =
       this.parentSelector + "[class*='searchtype'] .pf-v5-c-select__toggle";
     this.#actionToggleBtn = this.dropdownToggleBtn + "[aria-label='Actions']";
