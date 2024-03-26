@@ -110,15 +110,6 @@ UI testing is sometimes very tricky due to different demands and behaviours of d
 The base testsuite contains custom Arquillian extensions and most functional tests.
 The other test modules depend on this module.
 
-### Base UI Testsuite
-Contains most of the UI-focused tests that don't cover Admin Console, i.e. all the parts of the server that are intended to be accessed by an end user.
-The tests placed here are exclusively covering the UI functionality of the server, i.e. checking if all the page elements are visible, links clickable etc., and are focused on simplicity and stability.
-This differs them from other integration tests and Admin Console UI tests.
-
-They are designed to work with most of the desktop browsers (HtmlUnit included) as well as mobile browsers (Chrome on Android and Safari on iOS). Please see [HOW-TO-RUN.md](HOW-TO-RUN.md) for details on supported browsers.
-
-The tests are place in a separate module (`tests/other/base-ui`) and are disabled by default.
-
 #### Types of adapter tests
 
 1. Using *custom test servlets*

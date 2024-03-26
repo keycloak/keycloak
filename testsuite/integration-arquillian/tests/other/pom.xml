@@ -151,7 +151,6 @@
         <profile>
             <id>webauthn</id>
             <modules>
-                <module>base-ui</module>
                 <module>webauthn</module>
             </modules>
         </profile>

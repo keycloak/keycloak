@@ -26,7 +26,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.ui.account3.page.SigningInPage;
+import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.theme.DateTimeFormatterUtil;
 
@@ -49,8 +49,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.testsuite.ui.account3.page.utils.SigningInPageUtils.assertUserCredential;
-import static org.keycloak.testsuite.ui.account3.page.utils.SigningInPageUtils.testSetUpLink;
+import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.assertUserCredential;
+import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.testSetUpLink;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 

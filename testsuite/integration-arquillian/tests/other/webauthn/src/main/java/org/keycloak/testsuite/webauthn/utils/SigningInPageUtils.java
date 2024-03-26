@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page.utils;
+package org.keycloak.testsuite.webauthn.utils;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.ui.account3.page.AbstractLoggedInPage;
-import org.keycloak.testsuite.ui.account3.page.SigningInPage;
+import org.keycloak.testsuite.webauthn.pages.AbstractLoggedInPage;
+import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 
 import java.time.LocalDateTime;
 import java.util.List;
