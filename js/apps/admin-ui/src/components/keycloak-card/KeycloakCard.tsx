@@ -41,20 +41,16 @@ export const KeycloakCard = ({
     <Card isSelectable>
       <CardHeader
         actions={{
-          actions: (
-            <>
-              {dropdownItems && (
-                <Dropdown
-                  data-testid={`${title}-dropdown`}
-                  isPlain
-                  position={"right"}
-                  toggle={<KebabToggle onToggle={onDropdownToggle} />}
-                  isOpen={isDropdownOpen}
-                  dropdownItems={dropdownItems}
-                />
-              )}
-            </>
-          ),
+          actions: dropdownItems ? (
+            <Dropdown
+              data-testid={`${title}-dropdown`}
+              isPlain
+              position={"right"}
+              toggle={<KebabToggle onToggle={onDropdownToggle} />}
+              isOpen={isDropdownOpen}
+              dropdownItems={dropdownItems}
+            />
+          ) : undefined,
           hasNoOffset: false,
           className: undefined,
         }}

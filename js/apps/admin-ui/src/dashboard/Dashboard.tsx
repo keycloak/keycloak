@@ -69,10 +69,7 @@ const EmptyDashboard = () => {
           className="keycloak__dashboard_icon"
         />
         <EmptyStateHeader titleText={<>{t("welcome")}</>} headingLevel="h2" />
-        <EmptyStateHeader
-          titleText={<>{realmDisplayInfo}</>}
-          headingLevel="h1"
-        />
+        <EmptyStateHeader titleText={realmDisplayInfo} headingLevel="h1" />
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
     </PageSection>

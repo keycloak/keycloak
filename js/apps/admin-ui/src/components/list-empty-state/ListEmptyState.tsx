@@ -48,7 +48,7 @@ export const ListEmptyState = ({
       ) : (
         hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
       )}
-      <EmptyStateHeader titleText={<>{message}</>} headingLevel="h1" />
+      <EmptyStateHeader titleText={message} headingLevel="h1" />
       <EmptyStateBody>{instructions}</EmptyStateBody>
       <EmptyStateFooter>
         {primaryActionText && (
