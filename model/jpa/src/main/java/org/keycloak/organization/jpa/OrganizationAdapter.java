@@ -37,8 +37,7 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return entity.getId();
     }
 
-    @Override
-    public RealmModel getRealm() {
+    RealmModel getRealm() {
         return realm;
     }
 
