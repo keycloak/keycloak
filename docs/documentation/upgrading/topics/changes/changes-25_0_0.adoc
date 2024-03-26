@@ -63,7 +63,7 @@ The old behavior to preload offline sessions at startup is now removed after it 
 
 = kcadm Changes
 
-How kcadm parses and handles options and parameters has changed. Error messages from usage errors, the wronge option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
+How kcadm parses and handles options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
 
 = Removing custom user attribute indexes
 
