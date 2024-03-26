@@ -10,9 +10,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import java.util.Optional;
 
 import static java.util.Optional.of;
-import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class DatabasePropertyMappers {
 
@@ -31,7 +29,6 @@ final class DatabasePropertyMappers {
                         .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
-                        .transformer(DatabasePropertyMappers::resolveDatabaseVendor)
                         .to("quarkus.datasource.db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
@@ -111,23 +108,7 @@ final class DatabasePropertyMappers {
     }
 
     private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
-
-        if (databaseKind.isPresent()) {
-            return databaseKind;
-        }
-
-        addInitializationException(invalidDatabaseVendor(db.get(), Database.getDatabaseAliases()));
-
-        return of("h2");
-    }
-
-    private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (db.isEmpty()) {
-            return of("dev-file");
-        }
-
-        return db;
+        return Database.getDatabaseKind(db.get());
     }
 
     private static Optional<String> resolveUsername(Optional<String> value, ConfigSourceInterceptorContext context) {
