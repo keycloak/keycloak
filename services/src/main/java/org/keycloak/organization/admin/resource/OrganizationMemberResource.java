@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Objects;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -88,17 +89,19 @@ public class OrganizationMemberResource {
         Response response = usersResource.createUser(rep);
 
         if (Status.CREATED.getStatusCode() == response.getStatus()) {
-            return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), session -> {
-                RealmModel realm = session.getContext().getRealm();
-                UserModel member = session.users().getUserByUsername(realm, rep.getEmail());
-                OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            UserModel member = session.users().getUserByUsername(realm, rep.getEmail());
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
+            try {
                 if (provider.addOrganizationMember(realm, organization, member)) {
                     return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(member.getId()).build()).build();
                 }
+            } catch (ModelException me) {
+                throw new BadRequestException(me.getMessage());
+            }
 
-                throw new BadRequestException();
-            });
+            throw new BadRequestException();
         }
 
         return response;

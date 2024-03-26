@@ -41,8 +41,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -215,8 +215,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", null, "newuser1", "newuser1", true);
             try (Response resp = testRealm().users().create(newUser1)) {
                 Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
-                ErrorRepresentation error = resp.readEntity(ErrorRepresentation.class);
-                Assert.assertEquals("Could not create user", error.getErrorMessage());
+                OAuth2ErrorRepresentation error = resp.readEntity(OAuth2ErrorRepresentation.class);
+                Assert.assertEquals("unknown_error", error.getError());
             }
             Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
 
