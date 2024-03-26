@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jboss.resteasy.core.ResteasyContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -46,12 +45,12 @@ public class RedirectUtilsTest {
     @BeforeClass
     public static void beforeClass() {
         HttpRequest httpRequest = new HttpRequestImpl(MockHttpRequest.create("GET", URI.create("https://keycloak.org/"), URI.create("https://keycloak.org")));
-        ResteasyContext.getContextDataMap().put(HttpRequest.class, httpRequest);
         Profile.defaults();
         CryptoIntegration.init(CryptoProvider.class.getClassLoader());
         ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
         session = new ResteasyKeycloakSession(sessionFactory);
+        session.getContext().setHttpRequest(httpRequest);
     }
 
     @Test

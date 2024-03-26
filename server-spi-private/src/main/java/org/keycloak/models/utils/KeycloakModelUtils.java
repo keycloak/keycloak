@@ -25,6 +25,7 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -375,12 +376,15 @@ public final class KeycloakModelUtils {
         V result;
         try (KeycloakSession session = factory.create()) {
             session.getTransactionManager().begin();
+            KeycloakSession old = Resteasy.pushContext(KeycloakSession.class, session);
             try {
                 cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
+            } finally {
+                Resteasy.pushContext(KeycloakSession.class, old);
             }
         }
         return result;

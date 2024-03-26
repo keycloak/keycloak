@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resteasy;
 
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -30,12 +31,12 @@ public class ResteasyKeycloakContext extends DefaultKeycloakContext {
 
     @Override
     protected HttpRequest createHttpRequest() {
-        return new HttpRequestImpl(getContextObject(org.jboss.resteasy.spi.HttpRequest.class));
+        return new HttpRequestImpl(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpRequest.class));
     }
 
     @Override
     protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
+        return new HttpResponseImpl(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpResponse.class));
     }
 
 }

@@ -19,7 +19,6 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
@@ -76,7 +75,6 @@ public abstract class KeycloakApplication extends Application {
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-            logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
             loadConfig();
 
