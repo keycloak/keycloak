@@ -42,6 +42,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -447,7 +448,11 @@ public class SAMLEndpoint {
 
                 if (! isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
-                    return callback.error(statusMessage);
+                    if (Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(statusMessage)) {
+                        return callback.retryLogin(provider, authSession);
+                    } else {
+                        return callback.error(statusMessage);
+                    }
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
                     return callback.error(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);

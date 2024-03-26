@@ -83,7 +83,8 @@ public class IdentityProviderAuthenticator implements Authenticator {
             String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
             String clientId = context.getAuthenticationSession().getClient().getClientId();
             String tabId = context.getAuthenticationSession().getTabId();
-            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId);
+            String clientData = AuthenticationProcessor.getClientData(context.getSession(), context.getAuthenticationSession());
+            URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId, clientData);
             Response response = Response.seeOther(location)
                     .build();
             // will forward the request to the IDP with prompt=none if the IDP accepts forwards with prompt=none.

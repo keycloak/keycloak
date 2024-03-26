@@ -519,4 +519,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         }
         return false;
     }
+
+    @Override
+    public boolean supportsLongStateParameter() {
+        // SAML RelayState parameter has limits of 80 bytes per SAML specification
+        return false;
+    }
 }

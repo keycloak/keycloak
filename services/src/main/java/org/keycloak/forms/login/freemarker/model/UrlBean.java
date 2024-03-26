@@ -79,10 +79,6 @@ public class UrlBean {
         return Urls.realmRegisterPage(baseURI, realm).toString();
     }
 
-    public String getLoginUpdateProfileUrl() {
-        return Urls.loginActionUpdateProfile(baseURI, realm).toString();
-    }
-
     public String getLoginResetCredentialsUrl() {
         return Urls.loginResetCredentials(baseURI, realm).toString();
     }

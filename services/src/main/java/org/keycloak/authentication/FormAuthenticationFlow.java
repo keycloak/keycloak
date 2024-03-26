@@ -271,6 +271,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 .queryParam(Constants.EXECUTION, executionId)
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(processor.getSession(), processor.getAuthenticationSession()))
                 .build(processor.getRealm().getName());
     }
 

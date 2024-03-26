@@ -775,7 +775,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
-        events.expectLogin().client((String) null).user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .assertEvent();
     }
 
@@ -795,7 +795,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
                 .assertEvent();
     }
 
@@ -852,7 +851,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         events.expect(EventType.LOGIN_ERROR)
                 .user(new UserRepresentation())
-                .client(new ClientRepresentation())
                 .error(Errors.COOKIE_NOT_FOUND)
                 .assertEvent();
 
