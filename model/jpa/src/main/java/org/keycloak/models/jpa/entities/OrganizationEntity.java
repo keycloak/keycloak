@@ -29,7 +29,7 @@ import jakarta.persistence.Table;
 @Table(name="ORGANIZATION")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="getByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId")
+        @NamedQuery(name="getByRealm", query="select o from OrganizationEntity o where o.realmId = :realmId")
 })
 public class OrganizationEntity {
 
