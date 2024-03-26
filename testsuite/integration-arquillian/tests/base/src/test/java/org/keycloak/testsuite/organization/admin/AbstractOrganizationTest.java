@@ -27,14 +27,19 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.Users;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
+    protected String organizationName = "neworg";
+    protected String memberEmail = "jdoe@neworg.org";
+    protected String memberPassword = "password";
+
     protected OrganizationRepresentation createOrganization() {
-        return createOrganization("neworg");
+        return createOrganization(organizationName);
     }
 
     protected OrganizationRepresentation createOrganization(String name) {
@@ -56,7 +61,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected UserRepresentation addMember(OrganizationResource organization) {
-        return addMember(organization, "jdoe@neworg.org");
+        return addMember(organization, memberEmail);
     }
 
     protected UserRepresentation addMember(OrganizationResource organization, String email) {
@@ -64,6 +69,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
         expected.setEmail(email);
         expected.setUsername(expected.getEmail());
+        expected.setEnabled(true);
+        Users.setPasswordFor(expected, memberPassword);
 
         try (Response response = organization.members().addMember(expected)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());

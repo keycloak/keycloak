@@ -25,6 +25,7 @@ org.keycloak.protocol.oidc.mappers.RoleNameMapper
 org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
 org.keycloak.protocol.oidc.mappers.GroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper
+org.keycloak.protocol.oidc.mappers.OrganizationMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper
 org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper
 org.keycloak.protocol.oidc.mappers.AcrProtocolMapper

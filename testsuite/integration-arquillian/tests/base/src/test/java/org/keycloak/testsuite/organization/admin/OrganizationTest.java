@@ -43,7 +43,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testUpdate() {
         OrganizationRepresentation expected = createOrganization();
 
-        assertEquals("neworg", expected.getName());
+        assertEquals(organizationName, expected.getName());
         expected.setName("acme");
 
         OrganizationResource organization = testRealm().organizations().get(expected.getId());
