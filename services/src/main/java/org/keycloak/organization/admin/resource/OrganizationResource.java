@@ -34,7 +34,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -68,8 +67,7 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        RealmModel realm = session.getContext().getRealm();
-        OrganizationModel model = provider.createOrganization(realm, organization.getName());
+        OrganizationModel model = provider.create(organization.getName());
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -77,7 +75,7 @@ public class OrganizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<OrganizationRepresentation> get() {
-        return provider.getOrganizationsStream(session.getContext().getRealm()).map(this::toRepresentation);
+        return provider.getAllStream().map(this::toRepresentation);
     }
 
     @Path("{id}")
@@ -88,7 +86,7 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        return toRepresentation(getOrganization(session.getContext().getRealm(), id));
+        return toRepresentation(getOrganization(id));
     }
 
     @Path("{id}")
@@ -98,8 +96,7 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        RealmModel realm = session.getContext().getRealm();
-        provider.removeOrganization(realm, getOrganization(realm, id));
+        provider.remove(getOrganization(id));
 
         return Response.noContent().build();
     }
@@ -108,8 +105,7 @@ public class OrganizationResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") String id, OrganizationRepresentation organization) {
-        RealmModel realm = session.getContext().getRealm();
-        OrganizationModel model = getOrganization(realm, id);
+        OrganizationModel model = getOrganization(id);
 
         toModel(organization, model);
 
@@ -118,18 +114,16 @@ public class OrganizationResource {
 
     @Path("{id}/members")
     public OrganizationMemberResource members(@PathParam("id") String id) {
-        RealmModel realm = session.getContext().getRealm();
-        OrganizationModel model = getOrganization(realm, id);
-
-        return new OrganizationMemberResource(session, model, auth, adminEvent);
+        OrganizationModel organization = getOrganization(id);
+        return new OrganizationMemberResource(session, organization, auth, adminEvent);
     }
 
-    private OrganizationModel getOrganization(RealmModel realm, String id) {
+    private OrganizationModel getOrganization(String id) {
         if (id == null) {
             throw new BadRequestException();
         }
 
-        OrganizationModel model = provider.getOrganizationById(realm, id);
+        OrganizationModel model = provider.getById(id);
 
         if (model == null) {
             throw new NotFoundException();
