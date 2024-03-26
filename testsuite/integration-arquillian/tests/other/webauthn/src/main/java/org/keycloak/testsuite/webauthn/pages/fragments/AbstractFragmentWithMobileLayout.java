@@ -15,25 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.ui.account3.page;
+package org.keycloak.testsuite.webauthn.pages.fragments;
 
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public class ForbiddenPage extends AbstractLoggedInPage {
-    @FindBy(tagName = "main")
-    private WebElement mainTag;
+public abstract class AbstractFragmentWithMobileLayout {
+    @Drone
+    private WebDriver driver;
 
-    @Override
-    public String getPageId() {
-        return "forbidden";
-    }
+    private Boolean mobileLayout = null;
 
-    @Override
-    public boolean isCurrent() {
-        return mainTag.getText().contains("You do not have access rights to this request.");
+    abstract protected int getMobileWidth();
+
+    public boolean isMobileLayout() {
+        if (mobileLayout == null) {
+            mobileLayout = driver.manage().window().getSize().width <= getMobileWidth();
+        }
+        return mobileLayout;
     }
 }

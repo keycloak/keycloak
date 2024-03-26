@@ -24,11 +24,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-tests-base-ui</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.arquillian.extension</groupId>
             <artifactId>arquillian-drone-bom</artifactId>
             <version>${arquillian.drone.version}</version>
