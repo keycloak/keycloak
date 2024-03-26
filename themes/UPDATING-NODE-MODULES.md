@@ -11,15 +11,6 @@ git add package.json pnpm-lock.yaml
 cd -
 ```
 
-## For account console v2
-
-```bash
-cd src/main/resources/theme/keycloak.v2/account/src
-pnpm update --latest --interactive
-git add package.json pnpm-lock.yaml
-cd -
-```
-
 ## License Information
 
 Make sure to enter license information for new dependencies, as specified in `docs/dependency-license-information.md`. Javascript dependencies are included as `other` elements.

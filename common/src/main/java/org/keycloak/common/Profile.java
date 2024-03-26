@@ -50,8 +50,6 @@ public class Profile {
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
-        @Deprecated
-        ACCOUNT2("Account Console version 2", Type.DEPRECATED, Feature.ACCOUNT_API),
         ACCOUNT3("Account Console version 3", Type.DEFAULT, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),

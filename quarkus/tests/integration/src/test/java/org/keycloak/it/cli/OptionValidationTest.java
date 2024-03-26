@@ -47,14 +47,14 @@ public class OptionValidationTest {
     }
 
     @Test
-    @Launch({"build", "--features", "account2", "account3"})
+    @Launch({"build", "--features", "linkedin-oauth", "account3"})
     public void failMultipleMultiOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("Option '--features' (feature) expects one or more comma separated values without whitespace. Expected values are: "));
     }
 
     @Test
-    @Launch({"build", "--features", "xyz,account2"})
+    @Launch({"build", "--features", "xyz,account3"})
     public void failInvalidMultiOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("xyz is an unrecognized feature, it should be one of"));

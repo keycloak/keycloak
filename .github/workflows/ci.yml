@@ -578,42 +578,6 @@ jobs:
         with:
           job-id: fips-integration-tests-${{ matrix.mode }}
 
-  account-console-integration-tests:
-    name: Account Console IT
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 75
-    strategy:
-      matrix:
-        browser: [chrome]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run Account Console IT
-        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml 2>&1 | misc/log/trimmer.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: Account Console IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: account-console-integration-tests-${{ matrix.browser }}
-
   forms-integration-tests:
     name: Forms IT
     runs-on: ubuntu-latest
@@ -797,7 +761,6 @@ jobs:
       - clustering-integration-tests
       - fips-unit-tests
       - fips-integration-tests
-      - account-console-integration-tests
       - forms-integration-tests
       - webauthn-integration-tests
       - sssd-unit-tests
