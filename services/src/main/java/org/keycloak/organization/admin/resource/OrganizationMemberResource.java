@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
+import java.util.Objects;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -79,6 +80,10 @@ public class OrganizationMemberResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMember(UserRepresentation rep) {
+        if (rep == null || !Objects.equals(rep.getUsername(), rep.getEmail())) {
+            throw new BadRequestException("To add a member to the organization it is expected the username and the email is the same.");
+        }
+
         UsersResource usersResource = new UsersResource(session, auth, adminEvent);
         Response response = usersResource.createUser(rep);
 
