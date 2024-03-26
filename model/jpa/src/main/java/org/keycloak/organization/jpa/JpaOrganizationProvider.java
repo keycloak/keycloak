@@ -41,11 +41,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     private final EntityManager em;
     private final GroupProvider groupProvider;
-    private final KeycloakSession session;
     private final UserProvider userProvider;
 
     public JpaOrganizationProvider(KeycloakSession session) {
-        this.session = session;
         em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         groupProvider = session.groups();
         userProvider = session.users();
@@ -63,7 +61,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         em.persist(entity);
 
-        return new OrganizationAdapter(entity, session);
+        return new OrganizationAdapter(realm, entity);
     }
 
     @Override
@@ -118,11 +116,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<OrganizationModel> getOrganizationsStream(RealmModel realm) {
         throwExceptionIfRealmIsNull(realm);
-        TypedQuery<String> query = em.createNamedQuery("getByRealm", String.class);
+        TypedQuery<OrganizationEntity> query = em.createNamedQuery("getByRealm", OrganizationEntity.class);
 
         query.setParameter("realmId", realm.getId());
 
-        return closing(query.getResultStream().map(id -> getAdapter(realm, id)));
+        return closing(query.getResultStream().map(entity -> new OrganizationAdapter(realm, entity)));
     }
 
     @Override
@@ -193,7 +191,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelException("Organization [" + entity.getId() + " does not belong to realm [" + realm.getId() + "]");
         }
 
-        return new OrganizationAdapter(entity, session);
+        return new OrganizationAdapter(realm, entity);
     }
 
     private GroupModel createOrganizationGroup(RealmModel realm, String name) {
@@ -209,7 +207,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             throw new ModelException("A group with the same name already exist and it is bound to different organization");
         }
 
-        return groupProvider.createGroup(realm, KeycloakModelUtils.generateId(), groupName);
+        return groupProvider.createGroup(realm, groupName);
     }
 
     private String getCanonicalGroupName(String name) {
