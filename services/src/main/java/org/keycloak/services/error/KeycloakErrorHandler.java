@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
@@ -121,7 +122,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             WebApplicationException ex = (WebApplicationException) throwable;
             status = ex.getResponse().getStatus();
         }
-        if (throwable instanceof JsonProcessingException) {
+        if (throwable instanceof JsonProcessingException
+                || throwable instanceof ModelValidationException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
 

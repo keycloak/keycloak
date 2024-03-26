@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.models.OrganizationModel.USER_ORGANIZATION_ATTRIBUTE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,9 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 @EnableFeature(Feature.ORGANIZATION)
@@ -60,6 +64,24 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertEquals(expected.getEmail(), existing.getEmail());
         assertEquals(expected.getFirstName(), existing.getFirstName());
         assertEquals(expected.getLastName(), existing.getLastName());
+    }
+
+    @Test
+    public void testFailCreateUser() {
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        testRealm().users().userProfile().update(upConfig);
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        UserRepresentation expected = new UserRepresentation();
+
+        expected.setEmail("u@o.org");
+        expected.setUsername(expected.getEmail());
+        expected.singleAttribute(USER_ORGANIZATION_ATTRIBUTE, "invalid");
+
+        try (Response response = organization.members().addMember(expected)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertTrue(testRealm().users().search("u@o.org").isEmpty());
+        }
     }
 
     @Test
