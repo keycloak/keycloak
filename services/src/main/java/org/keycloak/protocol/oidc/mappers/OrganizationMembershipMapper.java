@@ -28,7 +28,6 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -70,11 +69,9 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-
-        RealmModel realm = keycloakSession.getContext().getRealm();
         UserModel user = userSession.getUser();
         OrganizationProvider organizationProvider = keycloakSession.getProvider(OrganizationProvider.class);
-        OrganizationModel organization = organizationProvider.getOrganizationByMember(realm, user);
+        OrganizationModel organization = organizationProvider.getByMember(user);
 
         if (organization != null) {
             Map<String, Map<String, Object>> claim = new HashMap<>();
