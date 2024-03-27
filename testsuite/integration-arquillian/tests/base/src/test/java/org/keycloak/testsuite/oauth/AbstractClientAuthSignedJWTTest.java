@@ -86,7 +86,6 @@ import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSAAlgorithm;
-import org.keycloak.crypto.ECDSASignatureProvider;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
@@ -806,10 +805,10 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             if (isClaimEnabled("subject")) reqToken.subject(clientId);
             if (isClaimEnabled("audience")) reqToken.audience(realmInfoUrl);
 
-            int now = Time.currentTime();
-            if (isClaimEnabled("issuedAt")) reqToken.issuedAt(now);
-            if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());
-            if (isClaimEnabled("notBefore")) reqToken.notBefore(now);
+            long now = Time.currentTime();
+            if (isClaimEnabled("issuedAt")) reqToken.iat(now);
+            if (isClaimEnabled("expiration")) reqToken.exp(now + getTokenTimeout());
+            if (isClaimEnabled("notBefore")) reqToken.nbf(now);
 
             return reqToken;
         }
@@ -934,10 +933,10 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
-        reqToken.expiration(now + 10);
-        reqToken.notBefore(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
 
         return reqToken;
     }

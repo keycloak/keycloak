@@ -200,10 +200,10 @@ public class AuthUtil {
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.issuedAt(now);
-        reqToken.expiration(now + sigLifetime);
-        reqToken.notBefore(now);
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + sigLifetime);
+        reqToken.nbf(now);
 
         String signedRequestToken = new JWSBuilder()
                 .jsonContent(reqToken)

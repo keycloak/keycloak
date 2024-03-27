@@ -120,7 +120,7 @@ public abstract class RSAVerifierTest {
 
     @Test
     public void testNotBeforeGood() throws Exception {
-        token.notBefore(Time.currentTime() - 100);
+        token.nbf(Time.currentTime() - 100L);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -136,7 +136,7 @@ public abstract class RSAVerifierTest {
 
     @Test
     public void testNotBeforeBad() {
-        token.notBefore(Time.currentTime() + 100);
+        token.nbf(Time.currentTime() + 100L);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -153,7 +153,7 @@ public abstract class RSAVerifierTest {
 
     @Test
     public void testExpirationGood() throws Exception {
-        token.expiration(Time.currentTime() + 100);
+        token.exp(Time.currentTime() + 100L);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -169,7 +169,7 @@ public abstract class RSAVerifierTest {
 
     @Test
     public void testExpirationBad() {
-        token.expiration(Time.currentTime() - 100);
+        token.exp(Time.currentTime() - 100L);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)

@@ -31,7 +31,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
@@ -66,10 +65,10 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
                 metadata.id(accessToken.getId());
                 metadata.setAcr(accessToken.getAcr());
                 metadata.type(accessToken.getType());
-                metadata.expiration(accessToken.getExpiration());
-                metadata.issuedAt(accessToken.getIssuedAt());
+                metadata.exp(accessToken.getExp());
+                metadata.iat(accessToken.getIat());
                 metadata.audience(accessToken.getAudience());
-                metadata.notBefore(accessToken.getNotBefore());
+                metadata.nbf(accessToken.getNbf());
                 metadata.setRealmAccess(null);
                 metadata.setResourceAccess(null);
 
