@@ -109,20 +109,20 @@ if [ -z "$JAVA_OPTS" ]; then
          JAVA_OPTS_KC_HEAP="$JAVA_OPTS_KC_HEAP -Xms64m -Xmx512m"
       fi
    else
-      echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values: $JAVA_OPTS_KC_HEAP"
+      echo "JAVA_OPTS_KC_HEAP already set in environment; overriding default settings"
    fi
 
    JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_KC_HEAP"
 
 else
-   echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
+   echo "JAVA_OPTS already set in environment; overriding default settings"
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
 if [ -z "$JAVA_ADD_OPENS" ]; then
    JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
 else
-   echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: $JAVA_ADD_OPENS"
+   echo "JAVA_ADD_OPENS already set in environment; overriding default settings"
 fi
 JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
 
@@ -130,12 +130,12 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
 if [ -z "$JAVA_LOCALE" ]; then
    JAVA_LOCALE="-Duser.language=en -Duser.country=US"
 else
-   echo "JAVA_LOCALE already set in environment; overriding default settings with values: $JAVA_LOCALE"
+   echo "JAVA_LOCALE already set in environment; overriding default settings"
 fi
 JAVA_OPTS="$JAVA_OPTS $JAVA_LOCALE"
 
 if [ -n "$JAVA_OPTS_APPEND" ]; then
-  echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
+  echo "Appending additional Java properties to JAVA_OPTS"
   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
 fi
 

@@ -62,7 +62,8 @@ public class JavaOptsScriptTest {
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + ".*"));
         assertThat(output, not(containsString("-Xms64m -Xmx512m")));
         assertThat(output, not(containsString("-XX:MaxRAMPercentage=70 -XX:MinRAMPercentage=70 -XX:InitialRAMPercentage=50")));
-        assertThat(output, containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values: -Xms128m"));
+        assertThat(output, containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings"));
+        assertThat(output, containsString(" -Xms128m "));
     }
 
     @Test
@@ -70,10 +71,10 @@ public class JavaOptsScriptTest {
     @WithEnvVars({"JAVA_OPTS_KC_HEAP", "-Xms128m", "JAVA_OPTS", "-Xmx256m"})
     void testCustomJavaHeapContainerOptsWithCustomJavaOpts(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, not(containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values:")));
+        assertThat(output, not(containsString("JAVA_OPTS_KC_HEAP already set in environment; overriding default settings with values")));
         assertThat(output, not(containsString("-Xms128m")));
 
-        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings with values: -Xmx256m"));
+        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings"));
         assertThat(output, containsString("Using JAVA_OPTS: -Xmx256m"));
     }
 
@@ -82,7 +83,7 @@ public class JavaOptsScriptTest {
     @WithEnvVars({ "JAVA_OPTS", "-Dfoo=bar"})
     void testJavaOpts(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings with values: -Dfoo=bar"));
+        assertThat(output, containsString("JAVA_OPTS already set in environment; overriding default settings"));
         assertThat(output, containsString("Using JAVA_OPTS: -Dfoo=bar"));
     }
 
@@ -91,7 +92,7 @@ public class JavaOptsScriptTest {
     @WithEnvVars({ "JAVA_OPTS_APPEND", "-Dfoo=bar"})
     void testJavaOptsAppend(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("Appending additional Java properties to JAVA_OPTS: -Dfoo=bar"));
+        assertThat(output, containsString("Appending additional Java properties to JAVA_OPTS"));
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + " -Dfoo=bar\\n.*"));
     }
 
@@ -100,7 +101,7 @@ public class JavaOptsScriptTest {
     @WithEnvVars({ "JAVA_ADD_OPENS", "-Dfoo=bar"})
     void testJavaAddOpens(LaunchResult result) {
         String output = result.getOutput();
-        assertThat(output, containsString("JAVA_ADD_OPENS already set in environment; overriding default settings with values: -Dfoo=bar"));
+        assertThat(output, containsString("JAVA_ADD_OPENS already set in environment; overriding default settings"));
         assertThat(output, not(containsString("--add-opens")));
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + " -Dfoo=bar.*"));
     }
