@@ -30,13 +30,13 @@ public final class Messages {
 
     }
 
-    public static IllegalStateException httpsConfigurationNotSet() {
+    public static String httpsConfigurationNotSet() {
         StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
         if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
             builder.append(" or start the server in development mode");
         }
         builder.append(".");
-        return new IllegalStateException(builder.toString());
+        return builder.toString();
     }
 
     public static void cliExecutionError(CommandLine cmd, String message, Throwable cause) {

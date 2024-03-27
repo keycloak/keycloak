@@ -99,12 +99,12 @@ public class OptionsDistTest {
 
     @Test
     @Order(7)
-    @Launch({"start", "--log=console", "--log-gelf-include-stack-trace=true"})
+    @Launch({"start-dev", "--log=console", "--log-gelf-include-stack-trace=true"})
     public void testDisabledGelfOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Disabled option: '--log-gelf-include-stack-trace'. Available only when GELF is activated");
         cliResult.assertError("Possible solutions: --log, --log-console-output, --log-console-format, --log-console-color, --log-level");
-        cliResult.assertError("Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.");
+        cliResult.assertError("Try '" + KeycloakDistribution.SCRIPT_CMD + " start-dev --help' for more information on the available options.");
         cliResult.assertError("Specify '--help-all' to obtain information on all options and their availability.");
     }
 
