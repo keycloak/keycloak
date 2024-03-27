@@ -16,3 +16,7 @@ KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest
 UserSessionLimitsTest
 ConcurrentLoginTest
+RefreshTokenTest
+OfflineTokenTest
+AccessTokenTest
+LogoutTest
