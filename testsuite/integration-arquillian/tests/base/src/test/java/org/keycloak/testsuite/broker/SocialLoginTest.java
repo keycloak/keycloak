@@ -387,7 +387,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void twitterLogin() {
         setTestProvider(TWITTER);
         performLogin();
-        navigateToLoginPage();
         assertUpdateProfile(false, false, true);
         appPage.assertCurrent();
     }
