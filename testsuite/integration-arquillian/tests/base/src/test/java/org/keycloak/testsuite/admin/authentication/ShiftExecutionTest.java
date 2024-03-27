@@ -39,7 +39,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
     public void testShiftExecution() {
 
         // copy built-in flow so we get a new editable flow
-        HashMap<String, String> params = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
