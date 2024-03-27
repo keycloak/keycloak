@@ -17,10 +17,11 @@
 package test.org.keycloak.quarkus.services.health;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.restassured.RestAssured;
 import org.hamcrest.Matchers;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -29,6 +30,11 @@ import java.sql.SQLException;
 import static io.restassured.RestAssured.given;
 
 public class KeycloakReadyHealthCheckTest {
+
+    @BeforeAll
+    static void setUpPort() {
+        RestAssured.port = 9000;
+    }
 
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
