@@ -741,7 +741,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        old-version: [19.0.3]
+        old-version: [22.0.5]
         database: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
