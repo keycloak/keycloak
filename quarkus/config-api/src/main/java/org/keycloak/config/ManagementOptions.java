@@ -27,7 +27,7 @@ public class ManagementOptions {
     public static final Option<Boolean> MANAGEMENT_ENABLED = new OptionBuilder<>("management-enabled", Boolean.class)
             .category(OptionCategory.MANAGEMENT)
             .description("If separate interface/port should be used for exposing the management endpoints.")
-            .defaultValue(Boolean.FALSE)
+            .defaultValue(Boolean.TRUE)
             .buildTime(true)
             .build();
 

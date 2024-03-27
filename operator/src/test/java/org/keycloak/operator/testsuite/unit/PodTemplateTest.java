@@ -382,7 +382,6 @@ public class PodTemplateTest {
         // Assert
         assertNotNull(container);
         assertThat(container.getArgs()).doesNotContain(KeycloakDeploymentDependentResource.OPTIMIZED_ARG);
-        assertThat(container.getEnv().stream()).anyMatch(envVar -> envVar.getName().equals("KC_MANAGEMENT_ENABLED"));
         assertThat(container.getEnv().stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
 
         var readiness = container.getReadinessProbe().getHttpGet();

@@ -47,8 +47,7 @@ public final class Constants {
             new ValueOrSecret("health-enabled", "true"),
             new ValueOrSecret("cache", "ispn"),
             new ValueOrSecret("cache-stack", "kubernetes"),
-            new ValueOrSecret("proxy", "passthrough"),
-            new ValueOrSecret("management-enabled", "true")
+            new ValueOrSecret("proxy", "passthrough")
     );
 
 

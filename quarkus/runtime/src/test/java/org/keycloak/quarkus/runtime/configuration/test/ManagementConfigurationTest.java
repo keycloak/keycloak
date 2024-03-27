@@ -29,8 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ManagementConfigurationTest extends ConfigurationTest {
 
     @Test
-    public void managementEnabledDefault() {
-        putEnvVar("KC_MANAGEMENT_ENABLED", "true");
+    public void managementDefaults() {
         initConfig();
 
         assertConfig(Map.of(
@@ -44,9 +43,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledBasicChanges() {
+    public void managementBasicChanges() {
         putEnvVars(Map.of(
-                "KC_MANAGEMENT_ENABLED", "true",
                 "KC_MANAGEMENT_PORT", "9999",
                 "KC_MANAGEMENT_RELATIVE_PATH", "/management2",
                 "KC_MANAGEMENT_HOST", "somehost"
@@ -63,7 +61,7 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledHttpsValues() {
+    public void managementHttpsValues() {
         putEnvVars(Map.of(
                 "KC_MANAGEMENT_ENABLED", "true",
                 "KC_MANAGEMENT_HOST", "host1",
@@ -95,8 +93,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledMappedValues() {
-        putEnvVars(Map.of("KC_MANAGEMENT_ENABLED", "true",
+    public void managementMappedValues() {
+        putEnvVars(Map.of(
                 "KC_HTTP_HOST", "host123",
                 "KC_HTTPS_CLIENT_AUTH", "required",
                 "KC_HTTPS_CIPHER_SUITES", "some-cipher-suite",
@@ -126,9 +124,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledDefaultHttps(){
+    public void managementDefaultHttps() {
         putEnvVars(Map.of(
-                "KC_MANAGEMENT_ENABLED", "true",
                 "KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
                 "KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem"
         ));
@@ -146,8 +143,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledDefaultHttpsManagementProps(){
-        putEnvVars(Map.of("KC_MANAGEMENT_ENABLED", "true",
+    public void managementDefaultHttpsManagementProps() {
+        putEnvVars(Map.of(
                 "KC_MANAGEMENT_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
                 "KC_MANAGEMENT_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem"
         ));
@@ -163,11 +160,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledDefaultHttpsCertDisabled() {
-        putEnvVars(Map.of(
-                "KC_MANAGEMENT_ENABLED", "true",
-                "KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem"
-        ));
+    public void managementDefaultHttpsCertDisabled() {
+        putEnvVar("KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem");
 
         initConfig();
 
@@ -179,11 +173,8 @@ public class ManagementConfigurationTest extends ConfigurationTest {
     }
 
     @Test
-    public void managementEnabledDefaultHttpsKeyDisabled() {
-        putEnvVars(Map.of(
-                "KC_MANAGEMENT_ENABLED", "true",
-                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem"
-        ));
+    public void managementDefaultHttpsKeyDisabled() {
+        putEnvVar("KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem");
 
         initConfig();
 
@@ -196,10 +187,7 @@ public class ManagementConfigurationTest extends ConfigurationTest {
 
     @Test
     public void managementEnabledDefaultHttpsKeystore(){
-        putEnvVars(Map.of(
-                "KC_MANAGEMENT_ENABLED", "true",
-                "KC_HTTPS_KEY_STORE_FILE", "keystore.p12"
-        ));
+        putEnvVar("KC_HTTPS_KEY_STORE_FILE", "keystore.p12");
 
         initConfig();
 

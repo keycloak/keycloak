@@ -72,20 +72,13 @@ Management:
 
 --management-enabled <true|false>
                      If separate interface/port should be used for exposing the management
-                       endpoints. Default: false.
---management-host <host>
-                     Host of the management interface. Default: 0.0.0.0. Available only when
-                       Management interface is enabled.
+                       endpoints. Default: true.
 --management-https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format for
                        the management server. Available only when Management interface is enabled.
 --management-https-certificate-key-file <file>
                      The file path to a private key in PEM format for the management server.
                        Available only when Management interface is enabled.
---management-https-cipher-suites <ciphers>
-                     The cipher suites to use for the management server. If none is given, a
-                       reasonable default is selected. Available only when Management interface is
-                       enabled.
 --management-https-client-auth <auth>
                      Configures the management interface to require/request client authentication.
                        Possible values are: none, request, required. Default: none. Available only
@@ -97,13 +90,6 @@ Management:
 --management-https-key-store-password <password>
                      The password of the key store file for the management server. Default:
                        password. Available only when Management interface is enabled.
---management-https-key-store-type <type>
-                     The type of the key store file for the management server. If not given, the
-                       type is automatically detected based on the file name. Available only when
-                       Management interface is enabled.
---management-https-protocols <protocols>
-                     The list of protocols to explicitly enable for the management server. Default:
-                       TLSv1.3,TLSv1.2. Available only when Management interface is enabled.
 --management-port <port>
                      Port of the management interface. Default: 9000. Available only when
                        Management interface is enabled.

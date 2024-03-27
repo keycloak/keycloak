@@ -32,8 +32,7 @@ import io.quarkus.test.junit.main.Launch;
 
 @DistributionTest(keepAlive = true,
         requestPort = 9000,
-        containerExposedPorts = {8080, 9000},
-        defaultOptions = "--management-enabled=true")
+        containerExposedPorts = {8080, 9000})
 public class MetricsDistTest {
 
     @Test

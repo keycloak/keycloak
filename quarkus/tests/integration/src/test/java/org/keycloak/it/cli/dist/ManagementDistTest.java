@@ -18,9 +18,6 @@ package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-import io.restassured.RestAssured;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -28,10 +25,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DistributionType;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import java.net.ConnectException;
 import java.net.SocketException;
 
 import static io.restassured.RestAssured.when;
@@ -47,7 +42,7 @@ public class ManagementDistTest {
 
     @Test
     @Order(1)
-    @Launch({"start", "--management-enabled=true", "--hostname=hostname", "--http-enabled=false"})
+    @Launch({"start", "--hostname=hostname", "--http-enabled=false"})
     void testManagementNoHttps(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
@@ -70,7 +65,7 @@ public class ManagementDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--management-enabled=true"})
+    @Launch({"start-dev"})
     void testManagementEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
@@ -90,7 +85,7 @@ public class ManagementDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--management-enabled=true", "--management-port=9005"})
+    @Launch({"start-dev", "--management-port=9005"})
     void testManagementDifferentPort(LaunchResult result, KeycloakDistribution distribution) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9005");
@@ -112,7 +107,7 @@ public class ManagementDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--management-enabled=true", "--management-relative-path=/management"})
+    @Launch({"start-dev", "--management-relative-path=/management"})
     void testManagementDifferentRelativePath(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9000");
@@ -136,7 +131,7 @@ public class ManagementDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--management-enabled=true", "--management-host=localhost"})
+    @Launch({"start-dev", "--management-host=localhost"})
     void testManagementDifferentHost(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://localhost:9000");
