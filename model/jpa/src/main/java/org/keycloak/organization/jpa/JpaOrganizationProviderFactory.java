@@ -57,8 +57,7 @@ public class JpaOrganizationProviderFactory implements OrganizationProviderFacto
         if (event instanceof RealmRemovedEvent) {
             KeycloakSession session = ((RealmRemovedEvent) event).getKeycloakSession();
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
-            RealmModel realm = ((RealmRemovedEvent) event).getRealm();
-            provider.removeOrganizations(realm);
+            provider.removeAll();
         }
     }
 }

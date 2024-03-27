@@ -26,6 +26,4 @@ public interface OrganizationModel {
     void setName(String name);
 
     String getName();
-
-    RealmModel getRealm();
 }

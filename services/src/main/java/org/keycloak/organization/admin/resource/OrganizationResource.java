@@ -68,8 +68,7 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        RealmModel realm = session.getContext().getRealm();
-        OrganizationModel model = provider.createOrganization(realm, organization.getName());
+        OrganizationModel model = provider.create(organization.getName());
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -77,7 +76,7 @@ public class OrganizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<OrganizationRepresentation> get() {
-        return provider.getOrganizationsStream(session.getContext().getRealm()).map(this::toRepresentation);
+        return provider.getAllStream().map(this::toRepresentation);
     }
 
     @Path("{id}")
@@ -99,7 +98,7 @@ public class OrganizationResource {
         }
 
         RealmModel realm = session.getContext().getRealm();
-        provider.removeOrganization(realm, getOrganization(realm, id));
+        provider.remove(getOrganization(realm, id));
 
         return Response.noContent().build();
     }
@@ -129,7 +128,7 @@ public class OrganizationResource {
             throw new BadRequestException();
         }
 
-        OrganizationModel model = provider.getOrganizationById(realm, id);
+        OrganizationModel model = provider.getById(id);
 
         if (model == null) {
             throw new NotFoundException();

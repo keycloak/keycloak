@@ -93,7 +93,7 @@ public class OrganizationMemberResource {
                 UserModel member = session.users().getUserByUsername(realm, rep.getEmail());
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
-                if (provider.addOrganizationMember(realm, organization, member)) {
+                if (provider.addMember(organization, member)) {
                     return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(member.getId()).build()).build();
                 }
 
@@ -107,7 +107,7 @@ public class OrganizationMemberResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<UserRepresentation> getMembers() {
-        return provider.getMembersStream(realm, organization).map(this::toRepresentation);
+        return provider.getMembersStream(organization).map(this::toRepresentation);
     }
 
     @Path("{id}")
@@ -149,7 +149,7 @@ public class OrganizationMemberResource {
         }
 
         UserModel member = getMember(id);
-        OrganizationModel organization = provider.getOrganizationByMember(realm, member);
+        OrganizationModel organization = provider.getByMember(member);
         OrganizationRepresentation rep = new OrganizationRepresentation();
 
         rep.setId(organization.getId());
@@ -158,7 +158,7 @@ public class OrganizationMemberResource {
     }
 
     private UserModel getMember(String id) {
-        UserModel member = provider.getMemberById(realm, organization, id);
+        UserModel member = provider.getMemberById(organization, id);
 
         if (member == null) {
             throw new NotFoundException();

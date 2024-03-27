@@ -74,7 +74,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         RealmModel realm = keycloakSession.getContext().getRealm();
         UserModel user = userSession.getUser();
         OrganizationProvider organizationProvider = keycloakSession.getProvider(OrganizationProvider.class);
-        OrganizationModel organization = organizationProvider.getOrganizationByMember(realm, user);
+        OrganizationModel organization = organizationProvider.getByMember(user);
 
         if (organization != null) {
             Map<String, Map<String, Object>> claim = new HashMap<>();
