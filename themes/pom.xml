@@ -14,20 +14,11 @@
 
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
         <!-- ignore folders for incremental builds by the maven build cache plugin -->
         <maven.build.cache.exclude.value.1>src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.value.1>
         <maven.build.cache.exclude.value.2>src/main/resources/theme/keycloak/common/resources/vendor</maven.build.cache.exclude.value.2>
-        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.value.3>
-        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.value.4>
-        <maven.build.cache.exclude.value.6>src/main/resources/theme/keycloak.v2/account/resources</maven.build.cache.exclude.value.6>
-        <maven.build.cache.exclude.glob.6>*.js</maven.build.cache.exclude.glob.6>
-        <maven.build.cache.exclude.value.7>src/main/resources/theme/keycloak.v2/account/resources</maven.build.cache.exclude.value.7>
-        <maven.build.cache.exclude.glob.7>*.js.map</maven.build.cache.exclude.glob.7>
-        <maven.build.cache.exclude.value.8>src/main/resources/theme/keycloak.v2/account/resources/public/app.css</maven.build.cache.exclude.value.8>
-        <maven.build.cache.exclude.value.9>src/main/resources/theme/keycloak.v2/account/web_modules</maven.build.cache.exclude.value.9>
-        <maven.build.cache.exclude.value.10>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.10>
-        <maven.build.cache.exclude.value.11>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.11>
+        <maven.build.cache.exclude.value.3>src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.value.3>
+        <maven.build.cache.exclude.value.4>src/main/resources/theme/keycloak.v2/welcome/resources/vendor</maven.build.cache.exclude.value.4>
     </properties>
 
     <dependencies>
@@ -86,8 +77,6 @@
                     <exclude>**/Gruntfile.js</exclude>
                     <exclude>**/Gemfile*</exclude>
                     <exclude>**/.*</exclude>
-
-                    <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -120,61 +109,6 @@
                         <directory>src/main/resources-community</directory>
                     </resource>
                 </resources>
-            </build>
-        </profile>
-
-        <profile>
-            <id>account2</id>
-            <activation>
-                <property>
-                    <name>!skipAccount2</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${dir.account2}/web_modules</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install-node-and-pnpm-account2</id>
-                                <goals>
-                                    <goal>install-node-and-pnpm</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>pnpm-install-account2</id>
-                                <goals>
-                                    <goal>pnpm</goal>
-                                </goals>
-                                <configuration>
-                                    <arguments>${pnpm.args.install}</arguments>
-                                    <workingDirectory>${dir.account2}</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>run-build-account2</id>
-                                <goals>
-                                    <goal>pnpm</goal>
-                                </goals>
-                                <configuration>
-                                    <arguments>run build</arguments>
-                                    <workingDirectory>${dir.account2}</workingDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
 

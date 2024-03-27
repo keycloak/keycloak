@@ -143,12 +143,6 @@
             </modules>
         </profile>
         <profile>
-            <id>base-ui</id>
-            <modules>
-                <module>base-ui</module>
-            </modules>
-        </profile>
-        <profile>
             <id>springboot</id>
             <modules>
                 <module>springboot-tests</module>

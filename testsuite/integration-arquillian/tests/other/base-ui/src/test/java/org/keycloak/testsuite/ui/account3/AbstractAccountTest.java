@@ -35,7 +35,6 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
 public abstract class AbstractAccountTest extends AbstractUiTest {
     public static final String ACCOUNT_THEME_NAME_KC = "keycloak.v2";
     public static final DateTimeFormatter DEFAULT_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a", Locale.ENGLISH);

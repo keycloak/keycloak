@@ -43,5 +43,4 @@
 /js/                                                        @keycloak/ui-maintainers
 /adapters/oidc/js/                                          @keycloak/ui-maintainers
 /rest/admin-ui-ext/                                         @keycloak/ui-maintainers
-/themes/src/main/resources/theme/keycloak.v2/account/       @keycloak/ui-maintainers
 /testsuite/integration-arquillian/tests/other/base-ui/      @keycloak/ui-maintainers
