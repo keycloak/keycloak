@@ -290,11 +290,8 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
         theRequest.setMetadata(metadata);
         List<Permission> permissions = authzClient.authorization("admin", "password").getPermissions(theRequest);
         assertNotNull(permissions);
-       Assert.assertTrue(((Map)permissions.get(0)).get("rsname").equals("service"));
-       Assert.assertTrue(((List)(((Map)permissions.get(0)).get("scopes"))).get(0).equals("read"));
-
-
-
+        Assert.assertTrue(permissions.get(0).getResourceName().equals("service"));
+        Assert.assertTrue(permissions.get(0).getScopes().contains("read"));
     }
 
 

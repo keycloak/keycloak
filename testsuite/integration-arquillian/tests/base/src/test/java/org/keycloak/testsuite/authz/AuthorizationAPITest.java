@@ -204,6 +204,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         List<Permission> permissions = authzClient.authorization("marta", "password").getPermissions(request);
         assertFalse(permissions.isEmpty());
+        assertTrue(permissions.get(0) instanceof Permission);
     }
 
     public void testResourceServerAsAudience(String clientId, String resourceServerClientId, String authzConfigFile) throws Exception {
