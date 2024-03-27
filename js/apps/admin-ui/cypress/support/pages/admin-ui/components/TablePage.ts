@@ -61,7 +61,7 @@ export default class TablePage extends CommonElements {
       )
       .contains(itemName)
       .parentsUntil("tbody")
-      .find(".pf-v5-c-select__toggle")
+      .find(".pf-v5-c-menu-toggle")
       .click()
       .get(this.dropdownMenuItem)
       .contains(actionItemName);

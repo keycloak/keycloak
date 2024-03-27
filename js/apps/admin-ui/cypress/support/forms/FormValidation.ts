@@ -27,7 +27,7 @@ export default class FormValidation {
   static #getHelperText(chain: Cypress.Chainable<JQuery<HTMLElement>>) {
     // A regular ID selector doesn't work here so we have to query by attribute.
     return chain
-      .invoke("attr", "id")
-      .then((id) => cy.get(`[id="${id}-helper"]`));
+      .invoke("attr", "data-testid")
+      .then((id) => cy.get(`[data-testid="${id}-helper"]`));
   }
 }
