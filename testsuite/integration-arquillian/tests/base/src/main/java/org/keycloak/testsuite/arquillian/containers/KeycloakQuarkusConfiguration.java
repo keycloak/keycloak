@@ -24,6 +24,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int bindHttpPort = 8080;
     private int bindHttpsPortOffset = 0;
     private int bindHttpsPort = Integer.getInteger("auth.server.https.port", 8543);
+    private int managementPort = 9000;
 
     private String keystoreFile = System.getProperty("auth.server.keystore");
 
@@ -59,7 +60,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         int newHttpsPort = baseHttpsPort + bindHttpsPortOffset;
         setBindHttpsPort(newHttpsPort);
 
-        log.info("Keycloak will listen for http on port: " + newPort + " and for https on port: " + newHttpsPort);
+        log.infof("Keycloak will listen for http on port: %d, for https on port: %d, and for management on port: %d\n", newPort, newHttpsPort, managementPort);
 
         if (this.keycloakConfigPropertyOverrides != null) {
             try {
@@ -101,6 +102,14 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public void setBindHttpPort(int bindHttpPort) {
         this.bindHttpPort = bindHttpPort;
+    }
+
+    public int getManagementPort() {
+        return managementPort;
+    }
+
+    public void setManagementPort(int managementPort) {
+        this.managementPort = managementPort;
     }
 
     public String getKeystoreFile() {

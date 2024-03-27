@@ -160,6 +160,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
+        commands.add("--management-port=" + configuration.getManagementPort());
 
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
