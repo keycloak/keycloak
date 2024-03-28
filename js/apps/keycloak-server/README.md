@@ -13,7 +13,7 @@ pnpm install
 After the dependencies are installed we can start the Keycloak server by running the following command:
 
 ```bash
-pnpm run start
+pnpm start
 ```
 
 This will download the [Nightly version](https://github.com/keycloak/keycloak/releases/tag/nightly) of the Keycloak server and run it locally on port `8180`. If a previously downloaded version was found in the `server/` directory then that one will be used instead. If you want to download the latest Nightly version you can remove the server directory before running the command to start the server.
@@ -21,7 +21,7 @@ This will download the [Nightly version](https://github.com/keycloak/keycloak/re
 If you want to run with a local Quarkus distribution of Keycloak for development purposes, you can do so by running this command instead: 
 
 ```bash
-pnpm run start -- --local
+pnpm start -- --local
 ```
 
 **All other arguments will be passed through to the underlying Keycloak server.**
