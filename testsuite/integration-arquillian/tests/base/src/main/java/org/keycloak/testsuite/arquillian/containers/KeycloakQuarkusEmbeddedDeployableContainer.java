@@ -53,4 +53,9 @@ public class KeycloakQuarkusEmbeddedDeployableContainer extends AbstractQuarkusD
         System.setProperty("quarkus.http.test-ssl-port", String.valueOf(configuration.getBindHttpsPort()));
         return args;
     }
+
+    @Override
+    protected void checkLiveness() {
+        // no-op, Keycloak would throw an exception in the test JVM if something went wrong
+    }
 }

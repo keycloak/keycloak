@@ -36,10 +36,10 @@ public class WelcomePage extends AuthServer {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "passwordConfirmation")
+    @FindBy(id = "password-confirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(id = "create-button")
+    @FindBy(tagName = "button")
     private WebElement createButton;
 
     @FindBy(css = ".welcome-header h1")
@@ -47,7 +47,8 @@ public class WelcomePage extends AuthServer {
 
     public boolean isPasswordSet() {
         return !(driver.getPageSource().contains("Please create an initial admin user to get started.") ||
-                 driver.getPageSource().contains("You need local access to create the initial admin user."));
+                 driver.getPageSource().contains("You need local access to create the initial admin user.") ||
+                driver.getPageSource().contains("To get started with Keycloak, you first create an administrative user."));
     }
 
     public void setPassword(String username, String password) {
