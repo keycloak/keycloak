@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -136,8 +137,16 @@ public class ProtocolMapperUtils {
     }
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
+        return getEntryStream(session, filter, ctx.getProtocolMappersStream());
+    }
+
+    public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientModel client, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
+        return getEntryStream(session, filter, client.getProtocolMappersStream());
+    }
+
+    private static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getEntryStream(KeycloakSession session, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter, Stream<ProtocolMapperModel> protocolMappersStream) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return ctx.getProtocolMappersStream()
+        return protocolMappersStream
                 .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
                     ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
                     if (mapper == null) {
