@@ -92,8 +92,17 @@ quarkus/data/*.db
 # Git ephemeral files
 *.versionsBackup
 
-# Node.js for frontend-maven-plugin #
+# frontend-maven-plugin
 node
+
+# Wireit
+.wireit
+
+# Vite
+dist
+
+# ESLint
+.eslintcache
 
 # NPM
 node_modules

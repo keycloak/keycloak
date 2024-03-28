@@ -33,11 +33,11 @@
   "scripts": {
     "build": "wireit",
     "duplicate-types": "shx cp dist/keycloak.d.ts dist/keycloak.d.mts && shx cp dist/keycloak-authz.d.ts dist/keycloak-authz.d.mts",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm build"
   },
   "wireit": {
     "build": {
-      "command": "rollup --config --configPlugin typescript && pnpm run duplicate-types",
+      "command": "rollup --config --configPlugin typescript && pnpm duplicate-types",
       "files": [
         "src/**",
         "package.json",

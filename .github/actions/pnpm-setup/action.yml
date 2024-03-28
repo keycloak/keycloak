@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "18"
+    default: "20"
 
   working-directory:
     description: The working directory where the `pnpm-lock.yaml` file is located.

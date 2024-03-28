@@ -73,14 +73,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
   keycloak-js:
     name: Keycloak JS
@@ -93,11 +89,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
   keycloak-masthead:
     name: Keycloak Masthead
@@ -110,14 +103,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
   ui-shared:
     name: UI Shared
@@ -130,14 +119,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
   account-ui:
     name: Account UI
@@ -150,14 +135,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
   admin-ui:
     name: Admin UI
@@ -170,20 +151,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} lint
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run test
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} test
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run build
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} build
 
-      - run: pnpm --filter ${{ env.WORKSPACE }} run cy:check-types
-        working-directory: js
+      - run: pnpm --filter ${{ env.WORKSPACE }} cy:check-types
 
   account-ui-e2e:
     name: Account UI E2E
@@ -198,8 +173,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
       - name: Download Keycloak server
         uses: actions/download-artifact@v3
@@ -222,11 +195,9 @@ jobs:
 
       - name: Install Playwright browsers
         run: pnpm --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
-        working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --filter ${{ env.WORKSPACE }} run test
-        working-directory: js
+        run: pnpm --filter ${{ env.WORKSPACE }} test
         env:
           KEYCLOAK_SERVER: http://localhost:8080
 
@@ -277,12 +248,9 @@ jobs:
           firefox-version: latest
 
       - uses: ./.github/actions/pnpm-setup
-        with:
-          working-directory: js
 
       - name: Compile Admin Client
-        run: pnpm --filter @keycloak/keycloak-admin-client run build
-        working-directory: js
+        run: pnpm --filter @keycloak/keycloak-admin-client build
 
       - name: Download Keycloak server
         uses: actions/download-artifact@v3
@@ -304,8 +272,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Start LDAP server
-        run: pnpm --filter ${{ env.WORKSPACE }} run cy:ldap-server &
-        working-directory: js
+        run: pnpm --filter ${{ env.WORKSPACE }} cy:ldap-server &
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
